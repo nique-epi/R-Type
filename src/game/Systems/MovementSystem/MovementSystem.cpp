@@ -1,15 +1,10 @@
 #include "MovementSystem.hpp"
 #include <span>
-#include <vector>
 #include "Bounds.hpp"
-#include "BoundsOf.hpp"
-#include "CollisionBox.hpp"
 #include "ComponentRegistry.hpp"
 #include "Entity.hpp"
 #include "Intent.hpp"
-#include "Obstacle.hpp"
 #include "ObstacleBlocking.hpp"
-#include "ObstacleContact.hpp"
 #include "Position.hpp"
 #include "ShipControl.hpp"
 #include "ShipMotion.hpp"
@@ -21,24 +16,10 @@ namespace rtype::game {
 
 namespace {
 
-/** @brief Fills @p boxes with the box of every obstacle that blocks ships. */
-void collectBlockingBoxes(engine::ComponentRegistry& components,
-                          std::vector<engine::Bounds>& boxes) {
-  boxes.clear();
-  components.forEach<Obstacle, Position>(
-      [&components, &boxes](engine::Entity body, const Obstacle& obstacle,
-                            const Position& position) {
-        const auto* const box = components.get<CollisionBox>(body);
-        if (obstacle.contact == ObstacleContact::Blocking && box != nullptr) {
-          boxes.push_back(boundsOf(position, *box));
-        }
-      });
-}
-
 /**
  * @brief Moves every entity with a Position, a ShipMotion and an Intent over
  * @p elapsed by the directions its Intent holds (see shipAfter()), stopped
- * against @p blocking and kept inside the play area.
+ * against @p blocking (see blockedByObstacles()).
  */
 void moveByIntent(engine::ComponentRegistry& components,
                   engine::Duration elapsed,
@@ -51,9 +32,9 @@ void moveByIntent(engine::ComponentRegistry& components,
           return;
         }
         const MovingShip from{.position = *position, .motion = motion};
-        const MovingShip moved = stoppedAtTheEdges(blockedByObstacles(
+        const MovingShip moved = blockedByObstacles(
             from, shipAfter(from, heldDirectionsOf(intent.direction), elapsed),
-            blocking));
+            blocking);
         *position = moved.position;
         motion = moved.motion;
       });

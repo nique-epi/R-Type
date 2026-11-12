@@ -21,10 +21,10 @@ namespace rtype::client {
                                  std::uint32_t shownTick);
 
 /**
- * @brief Fills @p boxes with the box of every blocking obstacle of
- * @p components, as it is drawn, moved @p lead logical units to the left:
- * where the server holds it when it plays the command predicted. Not during a
- * forEach of @p components.
+ * @brief Fills @p boxes with the boxes game::collectBlockingBoxes() gives of
+ * @p components, as they are drawn, moved @p lead logical units to the left:
+ * where the server holds them when it plays the command predicted. Not during
+ * a forEach of @p components.
  */
 void collectBlockingObstacles(engine::ComponentRegistry& components, float lead,
                               std::vector<engine::Bounds>& boxes);

@@ -1,8 +1,17 @@
 #include "ObstacleBlocking.hpp"
 #include <cmath>
 #include <span>
+#include <vector>
 #include "Bounds.hpp"
+#include "BoundsOf.hpp"
+#include "CollidingBoxes.hpp"
+#include "CollisionBox.hpp"
 #include "CollisionConstants.hpp"
+#include "ComponentRegistry.hpp"
+#include "Entity.hpp"
+#include "HitboxParts.hpp"
+#include "Obstacle.hpp"
+#include "ObstacleContact.hpp"
 #include "Overlaps.hpp"
 #include "Position.hpp"
 #include "ShipControl.hpp"
@@ -60,17 +69,16 @@ float pushAlong(AxisSpan span) {
                    (span.ship - span.shipHalf);
 }
 
-/** @returns Whether the ship, whose box is @p was before its step and @p is
- * after it, leaves @p obstacle along the horizontal axis. */
-bool leavesAcross(engine::Bounds was, engine::Bounds is,
-                  engine::Bounds obstacle) {
+/** @returns Whether the ship, whose box was @p was before its step, leaves
+ * @p obstacle along the horizontal axis, @p push being how far it moves along
+ * each axis to leave it. */
+bool leavesAcross(engine::Bounds was, engine::Bounds obstacle, Position push) {
   const bool cameAcross = !overlapsAlong(acrossOf(was, obstacle));
   const bool cameDown = !overlapsAlong(downOf(was, obstacle));
   if (cameAcross != cameDown) {
     return cameAcross;
   }
-  return std::abs(pushAlong(acrossOf(is, obstacle))) <=
-         std::abs(pushAlong(downOf(is, obstacle)));
+  return std::abs(push.x) <= std::abs(push.y);
 }
 
 /** @returns @p ship moved out of @p obstacle, which it overlaps, as
@@ -78,11 +86,13 @@ bool leavesAcross(engine::Bounds was, engine::Bounds is,
 MovingShip pushedOutOf(MovingShip ship, engine::Bounds was,
                        engine::Bounds obstacle) {
   const engine::Bounds is = shipBoundsAt(ship.position);
-  if (leavesAcross(was, is, obstacle)) {
-    ship.position.x += pushAlong(acrossOf(is, obstacle));
+  const Position push{.x = pushAlong(acrossOf(is, obstacle)),
+                      .y = pushAlong(downOf(is, obstacle))};
+  if (leavesAcross(was, obstacle, push)) {
+    ship.position.x += push.x;
     ship.motion.velocityX = 0.0F;
   } else {
-    ship.position.y += pushAlong(downOf(is, obstacle));
+    ship.position.y += push.y;
     ship.motion.velocityY = 0.0F;
   }
   return ship;
@@ -98,7 +108,24 @@ MovingShip blockedByObstacles(MovingShip before, MovingShip after,
       after = pushedOutOf(after, was, obstacle);
     }
   }
-  return after;
+  return stoppedAtTheEdges(after);
+}
+
+void collectBlockingBoxes(engine::ComponentRegistry& components,
+                          std::vector<engine::Bounds>& boxes) {
+  boxes.clear();
+  components.forEach<Obstacle, Position>(
+      [&components, &boxes](engine::Entity body, const Obstacle& obstacle,
+                            const Position& position) {
+        const auto* const box = components.get<CollisionBox>(body);
+        if (obstacle.contact != ObstacleContact::Blocking || box == nullptr) {
+          return;
+        }
+        for (const CollisionBox& part :
+             collidingBoxesOf(*box, components.get<HitboxParts>(body))) {
+          boxes.push_back(boundsOf(position, part));
+        }
+      });
 }
 
 }  // namespace rtype::game

@@ -7,6 +7,9 @@
 namespace rtype::game {
 
 void carryAlongTheScroll(engine::ComponentRegistry& components, float travel) {
+  if (travel == 0.0F) {
+    return;
+  }
   components.forEach<ScrollMotion, Position>(
       [travel](engine::Entity, const ScrollMotion&, Position& position) {
         position.x -= travel;

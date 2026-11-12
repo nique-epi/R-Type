@@ -140,13 +140,13 @@ void DamageRules::hurtTarget(engine::Entity target,
     applied.damage = 0;
     return;
   }
-  applied.damage = damageOf(components_, target, applied.damage);
-  applied.healthLeft = health->points;
+  const int dealt = applied.damage;
+  applied.damage = damageOf(components_, target, dealt);
+  health->points -= applied.damage;
+  applied.healthLeft = std::max(health->points, 0);
   if (applied.damage == 0) {
     return;
   }
-  health->points -= applied.damage;
-  applied.healthLeft = std::max(health->points, 0);
   announceBossHealth(target, applied.targetNetworkId, *health);
   if (health->points > 0) {
     events_.publish(EntityDamage{.networkId = applied.targetNetworkId});

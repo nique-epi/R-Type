@@ -52,6 +52,5 @@ constexpr float WALL_ROW_Y = 400.0F;
 constexpr float WALL_X = 500.0F;
 constexpr CollisionBox WALL_BOX{.width = 64.0F, .height = 256.0F};
 constexpr float AGAINST_THE_WALL_X = 404.0F;
-constexpr std::size_t TICKS_OF_ONE_SECOND = 60;
 
 }  // namespace rtype::game::testing

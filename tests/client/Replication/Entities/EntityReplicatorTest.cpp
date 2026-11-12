@@ -43,10 +43,10 @@ using rtype::client::testing::ANOTHER_PLAYER;
 using rtype::client::testing::APPLIED_TICK;
 using rtype::client::testing::BEFORE_THE_FIRST_PLAYER;
 using rtype::client::testing::BLOCKING_WALL_TYPE_NUMBER;
-using rtype::client::testing::boxOfThe;
 using rtype::client::testing::BYDO_BOX;
 using rtype::client::testing::BYDO_ID;
 using rtype::client::testing::BYDO_POSITION;
+using rtype::client::testing::componentOfThe;
 using rtype::client::testing::damaged;
 using rtype::client::testing::drawnAs;
 using rtype::client::testing::drawnEffects;
@@ -74,12 +74,10 @@ using rtype::client::testing::NAMED_LOOK;
 using rtype::client::testing::NEWER_TICK;
 using rtype::client::testing::NO_HISTORY_POSITION;
 using rtype::client::testing::NUMBER_OF_NO_TYPE;
-using rtype::client::testing::obstacleOfThe;
 using rtype::client::testing::OLDER_LOOK;
 using rtype::client::testing::OLDER_TICK;
 using rtype::client::testing::OWN_PLAYER;
 using rtype::client::testing::ownMissileSpawned;
-using rtype::client::testing::partsOfThe;
 using rtype::client::testing::pilotColorOfThe;
 using rtype::client::testing::PLAYER_MISSILE_ID;
 using rtype::client::testing::PLAYER_MISSILE_POSITION;
@@ -183,7 +181,7 @@ TEST_F(EntityReplicatorFixture, GivesAnEntityTheBoxOfItsType) {
   replicator().apply(spawned(BYDO_ID, DRIFTER_TYPE_NUMBER, BYDO_POSITION));
 
   const std::optional<CollisionBox> box =
-      boxOfThe(components(), EntityType::Enemy);
+      componentOfThe<CollisionBox>(components(), EntityType::Enemy);
   ASSERT_TRUE(box.has_value());
   EXPECT_FLOAT_EQ(box.value_or(CollisionBox{}).width, BYDO_BOX.width);
   EXPECT_FLOAT_EQ(box.value_or(CollisionBox{}).height, BYDO_BOX.height);
@@ -200,7 +198,7 @@ TEST_F(EntityReplicatorFixture, GivesAnEntityTheBoxesItsTypeLists) {
       spawned(BYDO_ID, TWO_BOX_ENEMY_TYPE_NUMBER, BYDO_POSITION));
 
   const std::optional<HitboxParts> parts =
-      partsOfThe(components(), EntityType::Enemy);
+      componentOfThe<HitboxParts>(components(), EntityType::Enemy);
   ASSERT_TRUE(parts.has_value());
   EXPECT_THAT(parts.value_or(HitboxParts{}).boxes,
               ElementsAreArray(TWO_BOX_ENEMY_PARTS));
@@ -217,7 +215,7 @@ TEST_F(EntityReplicatorFixture, AnObstacleIsCreatedWithItsContact) {
       spawned(WALL_ID, BLOCKING_WALL_TYPE_NUMBER, BYDO_POSITION));
 
   const std::optional<Obstacle> obstacle =
-      obstacleOfThe(components(), EntityType::Obstacle);
+      componentOfThe<Obstacle>(components(), EntityType::Obstacle);
   ASSERT_TRUE(obstacle.has_value());
   EXPECT_EQ(
       obstacle.value_or(Obstacle{.contact = ObstacleContact::Fatal}).contact,
@@ -232,7 +230,8 @@ TEST_F(EntityReplicatorFixture, AnObstacleIsCreatedWithItsContact) {
 TEST_F(EntityReplicatorFixture, AnEnemyIsCreatedWithoutObstacle) {
   replicator().apply(spawned(BYDO_ID, DRIFTER_TYPE_NUMBER, BYDO_POSITION));
 
-  EXPECT_FALSE(obstacleOfThe(components(), EntityType::Enemy).has_value());
+  EXPECT_FALSE(
+      componentOfThe<Obstacle>(components(), EntityType::Enemy).has_value());
 }
 
 /**
@@ -243,7 +242,8 @@ TEST_F(EntityReplicatorFixture, AnEnemyIsCreatedWithoutObstacle) {
 TEST_F(EntityReplicatorFixture, GivesAnEntityOfOneBoxNoHitboxParts) {
   replicator().apply(spawned(BYDO_ID, DRIFTER_TYPE_NUMBER, BYDO_POSITION));
 
-  EXPECT_FALSE(partsOfThe(components(), EntityType::Enemy).has_value());
+  EXPECT_FALSE(
+      componentOfThe<HitboxParts>(components(), EntityType::Enemy).has_value());
 }
 
 /**

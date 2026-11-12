@@ -60,28 +60,29 @@ std::uint32_t LevelDirectorFixture::place(std::string_view sheet,
 std::uint32_t LevelDirectorFixture::placeFollowingTheScroll(
     std::string_view sheet, game::Position position) {
   const std::uint32_t networkId = place(sheet, position);
-  std::optional<engine::Entity> placed;
-  world_.components().forEach<game::NetworkIdentity, game::Position>(
-      [networkId, &placed](engine::Entity body,
-                           const game::NetworkIdentity& identity,
-                           const game::Position&) {
-        if (identity.networkId == networkId) {
-          placed = body;
-        }
-      });
-  if (placed.has_value()) {
+  if (const std::optional<engine::Entity> placed = entityOf(networkId)) {
     world_.components().add(*placed, game::ScrollMotion{});
   }
   return networkId;
 }
 
 game::Position LevelDirectorFixture::positionOf(std::uint32_t networkId) {
-  game::Position found{};
+  const std::optional<engine::Entity> body = entityOf(networkId);
+  const auto* const position =
+      body.has_value() ? world_.components().get<game::Position>(*body)
+                       : nullptr;
+  return position == nullptr ? game::Position{} : *position;
+}
+
+std::optional<engine::Entity> LevelDirectorFixture::entityOf(
+    std::uint32_t networkId) {
+  std::optional<engine::Entity> found;
   world_.components().forEach<game::NetworkIdentity, game::Position>(
-      [networkId, &found](engine::Entity, const game::NetworkIdentity& identity,
-                          const game::Position& position) {
+      [networkId, &found](engine::Entity body,
+                          const game::NetworkIdentity& identity,
+                          const game::Position&) {
         if (identity.networkId == networkId) {
-          found = position;
+          found = body;
         }
       });
   return found;

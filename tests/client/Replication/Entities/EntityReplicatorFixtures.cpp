@@ -203,45 +203,6 @@ std::optional<std::uint8_t> shownLookOf(engine::ComponentRegistry& components,
   return look;
 }
 
-std::optional<game::CollisionBox> boxOfThe(
-    engine::ComponentRegistry& components, game::EntityType type) {
-  std::optional<game::CollisionBox> found;
-  components.forEach<game::CollisionBox, game::EntityType>(
-      [&found, type](engine::Entity, const game::CollisionBox& box,
-                     const game::EntityType& side) {
-        if (side == type) {
-          found = box;
-        }
-      });
-  return found;
-}
-
-std::optional<game::HitboxParts> partsOfThe(
-    engine::ComponentRegistry& components, game::EntityType type) {
-  std::optional<game::HitboxParts> found;
-  components.forEach<game::HitboxParts, game::EntityType>(
-      [&found, type](engine::Entity, const game::HitboxParts& parts,
-                     const game::EntityType& side) {
-        if (side == type) {
-          found = parts;
-        }
-      });
-  return found;
-}
-
-std::optional<game::Obstacle> obstacleOfThe(
-    engine::ComponentRegistry& components, game::EntityType type) {
-  std::optional<game::Obstacle> found;
-  components.forEach<game::Obstacle, game::EntityType>(
-      [&found, type](engine::Entity, const game::Obstacle& obstacle,
-                     const game::EntityType& side) {
-        if (side == type) {
-          found = obstacle;
-        }
-      });
-  return found;
-}
-
 network::EntitySpawned ownMissileSpawned(std::uint8_t owner) {
   return network::EntitySpawned{.entityId = PLAYER_MISSILE_ID,
                                 .entityType = PLAYER_MISSILE_TYPE_NUMBER,

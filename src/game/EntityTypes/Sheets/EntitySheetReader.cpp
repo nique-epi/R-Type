@@ -102,9 +102,7 @@ MotionSheet motionFrom(const engine::DataFileTable& gameplay) {
   const MotionKind kind =
       MOTION_KINDS.at(engine::choiceAt(motion, KIND_KEY, MOTION_KIND_NAMES));
   if (kind != MotionKind::Steady) {
-    engine::refuseUnknownKeys(motion, kind == MotionKind::Ship
-                                          ? SHIP_MOTION_KEYS
-                                          : SCROLL_MOTION_KEYS);
+    engine::refuseUnknownKeys(motion, KIND_ONLY_MOTION_KEYS);
     return MotionSheet{.kind = kind, .topSpeed = 0.0F};
   }
   engine::refuseUnknownKeys(motion, STEADY_MOTION_KEYS);

@@ -15,6 +15,7 @@ add_library(rtype_game_scripting STATIC
   LuauDeclarations.cpp
   LuauHitHandler.cpp
   LuauPreHit.cpp
+  LuauSingleCall.cpp
 )
 
 target_include_directories(rtype_game_scripting PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

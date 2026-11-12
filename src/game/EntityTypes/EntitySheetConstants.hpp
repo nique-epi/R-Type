@@ -114,8 +114,7 @@ constexpr std::array HITBOX_TABLE_KEYS{WIDTH_KEY, HEIGHT_KEY, OFFSET_X_KEY,
  * scroll have a kind only, a steady body its top speed too. */
 constexpr std::string_view KIND_KEY = "kind";
 constexpr std::string_view TOP_SPEED_KEY = "top_speed";
-constexpr std::array SHIP_MOTION_KEYS{KIND_KEY};
-constexpr std::array SCROLL_MOTION_KEYS{KIND_KEY};
+constexpr std::array KIND_ONLY_MOTION_KEYS{KIND_KEY};
 constexpr std::array STEADY_MOTION_KEYS{KIND_KEY, TOP_SPEED_KEY};
 
 /** @brief The key of `[gameplay.health]` and of `[gameplay.score]`. */

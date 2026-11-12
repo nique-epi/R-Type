@@ -10,6 +10,7 @@
 #include "EntityType.hpp"
 #include "EventBus.hpp"
 #include "Intent.hpp"
+#include "IsAMissile.hpp"
 #include "NetworkIdentity.hpp"
 #include "PlayfieldConstants.hpp"
 #include "Position.hpp"
@@ -27,9 +28,10 @@ struct EdgeExit {
   Direction heading{};
 };
 
-/** @returns Where a missile of @p type steered by @p intent flies: its
- * direction once a pilot has steered it somewhere, otherwise the way the
- * missiles of its side fly, right for a player, left for an enemy. */
+/** @returns Where a missile or an obstacle of @p type steered by @p intent
+ * flies: its direction once a pilot has steered it somewhere, otherwise right
+ * for a missile of a player, and left for a missile of an enemy and for an
+ * obstacle, which the scroll carries that way. */
 Direction headingOf(const Intent* intent, EntityType type) {
   const bool steered =
       intent != nullptr && intent->steered &&
@@ -85,18 +87,12 @@ bool hasLeftThePlayfield(EntityType type, const Position& position,
  */
 EdgeExit edgeExitOf(engine::ComponentRegistry& components,
                     engine::Entity entity, EntityType type) {
-  const bool measured = type == EntityType::PlayerMissile ||
-                        type == EntityType::EnemyMissile ||
-                        type == EntityType::Obstacle;
-  if (!measured) {
+  if (!isAMissile(type) && type != EntityType::Obstacle) {
     return EdgeExit{};
   }
   const CollisionBox* const box = components.get<CollisionBox>(entity);
-  return EdgeExit{
-      .box = box == nullptr ? CollisionBox{} : *box,
-      .heading = type == EntityType::Obstacle
-                     ? Direction{.x = -FULL_STEERING, .y = 0.0F}
-                     : headingOf(components.get<Intent>(entity), type)};
+  return EdgeExit{.box = box == nullptr ? CollisionBox{} : *box,
+                  .heading = headingOf(components.get<Intent>(entity), type)};
 }
 
 }  // namespace

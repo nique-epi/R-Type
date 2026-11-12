@@ -4,9 +4,11 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string_view>
 #include <vector>
 #include "BehaviourScripts.hpp"
+#include "Entity.hpp"
 #include "EventBus.hpp"
 #include "LevelChange.hpp"
 #include "LevelDirector.hpp"
@@ -47,6 +49,9 @@ class LevelDirectorFixture : public ::testing::Test {
   [[nodiscard]] const std::vector<std::uint32_t>& removed() const;
 
  private:
+  /** @returns The body of @p networkId; nothing when it is gone. */
+  [[nodiscard]] std::optional<engine::Entity> entityOf(std::uint32_t networkId);
+
   game::World world_;
   engine::EventBus events_;
   game::BehaviourScripts scripts_;

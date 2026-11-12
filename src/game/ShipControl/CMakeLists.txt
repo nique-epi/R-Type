@@ -11,6 +11,7 @@ target_include_directories(rtype_game_ship_control PUBLIC ${CMAKE_CURRENT_SOURCE
 target_link_libraries(rtype_game_ship_control
   PUBLIC
     rtype_engine_collision
+    rtype_engine_component_registry
     rtype_engine_time
     rtype_game_components
     rtype_game_ship_control_constants

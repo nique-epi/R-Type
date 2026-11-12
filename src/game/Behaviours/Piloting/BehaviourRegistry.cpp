@@ -10,6 +10,34 @@
 
 namespace rtype::game {
 
+namespace {
+
+/** @returns The item of @p items whose name() is @p name, or nullptr when none
+ * is: a behaviour or a hit handler. */
+template <typename Named>
+Named* namedIn(const std::vector<std::unique_ptr<Named>>& items,
+               std::string_view name) {
+  const auto found =
+      std::ranges::find_if(items, [name](const std::unique_ptr<Named>& item) {
+        return item->name() == name;
+      });
+  return found == items.end() ? nullptr : found->get();
+}
+
+/** @returns The names of @p items, in their order. */
+template <typename Named>
+std::vector<std::string_view> namesOf(
+    const std::vector<std::unique_ptr<Named>>& items) {
+  std::vector<std::string_view> names;
+  names.reserve(items.size());
+  for (const std::unique_ptr<Named>& item : items) {
+    names.push_back(item->name());
+  }
+  return names;
+}
+
+}  // namespace
+
 void BehaviourRegistry::add(std::unique_ptr<IBehaviour> behaviour) {
   if (find(behaviour->name()) != nullptr) {
     throw DuplicateBehaviourException(behaviour->name());
@@ -18,20 +46,11 @@ void BehaviourRegistry::add(std::unique_ptr<IBehaviour> behaviour) {
 }
 
 const IBehaviour* BehaviourRegistry::find(std::string_view name) const {
-  const auto found = std::ranges::find_if(
-      behaviours_, [name](const std::unique_ptr<IBehaviour>& behaviour) {
-        return behaviour->name() == name;
-      });
-  return found == behaviours_.end() ? nullptr : found->get();
+  return namedIn(behaviours_, name);
 }
 
 std::vector<std::string_view> BehaviourRegistry::names() const {
-  std::vector<std::string_view> names;
-  names.reserve(behaviours_.size());
-  for (const std::unique_ptr<IBehaviour>& behaviour : behaviours_) {
-    names.push_back(behaviour->name());
-  }
-  return names;
+  return namesOf(behaviours_);
 }
 
 void BehaviourRegistry::addHitHandler(std::unique_ptr<IHitHandler> handler) {
@@ -42,20 +61,11 @@ void BehaviourRegistry::addHitHandler(std::unique_ptr<IHitHandler> handler) {
 }
 
 IHitHandler* BehaviourRegistry::findHitHandler(std::string_view name) const {
-  const auto found = std::ranges::find_if(
-      hitHandlers_, [name](const std::unique_ptr<IHitHandler>& handler) {
-        return handler->name() == name;
-      });
-  return found == hitHandlers_.end() ? nullptr : found->get();
+  return namedIn(hitHandlers_, name);
 }
 
 std::vector<std::string_view> BehaviourRegistry::hitHandlerNames() const {
-  std::vector<std::string_view> names;
-  names.reserve(hitHandlers_.size());
-  for (const std::unique_ptr<IHitHandler>& handler : hitHandlers_) {
-    names.push_back(handler->name());
-  }
-  return names;
+  return namesOf(hitHandlers_);
 }
 
 }  // namespace rtype::game

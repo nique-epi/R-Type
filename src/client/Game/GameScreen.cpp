@@ -290,7 +290,7 @@ void GameScreen::update(engine::Duration elapsed) {
   applyEntityMessages();
   showOtherEntities(interpolationClock_, components_, feedback_);
   interpolationTally_->countFrame(interpolationClock_.renderTick(), serverTick);
-  prediction_.place(replicator_, components_);
+  prediction_.place(replicator_);
   tagPilotShips(components_, scoreBoard_.pilots(), *settings_);
   dressPilotShips(components_, shipLooks_->playerLooks());
   askForTheEndWhenDue();

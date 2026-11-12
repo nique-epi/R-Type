@@ -23,6 +23,7 @@ using rtype::engine::Duration;
 using rtype::engine::Entity;
 using rtype::engine::EntityRegistry;
 using rtype::engine::SIMULATION_TICK_DURATION;
+using rtype::engine::SIMULATION_TICKS_PER_SECOND;
 using rtype::engine::testing::ONE_SECOND;
 using rtype::game::Direction;
 using rtype::game::FULL_STEERING;
@@ -48,7 +49,6 @@ using rtype::game::testing::STEADY_ARRIVAL_X;
 using rtype::game::testing::STEADY_ARRIVAL_Y;
 using rtype::game::testing::STEADY_TOP_SPEED;
 using rtype::game::testing::steadyBodyAtSpeed;
-using rtype::game::testing::TICKS_OF_ONE_SECOND;
 using rtype::game::testing::TWICE_THE_FULL_STEERING;
 using rtype::game::testing::wallDoing;
 
@@ -285,7 +285,7 @@ TEST(MovementSystem, AShipStopsAgainstABlockingObstacle) {
   static_cast<void>(wallDoing(entities, components, ObstacleContact::Blocking));
   MovementSystem movement;
 
-  for (std::size_t tick = 0; tick < TICKS_OF_ONE_SECOND; ++tick) {
+  for (std::size_t tick = 0; tick < SIMULATION_TICKS_PER_SECOND; ++tick) {
     movement.update(components, SIMULATION_TICK_DURATION);
   }
 
@@ -307,7 +307,7 @@ TEST(MovementSystem, AShipFliesIntoAFatalObstacle) {
   static_cast<void>(wallDoing(entities, components, ObstacleContact::Fatal));
   MovementSystem movement;
 
-  for (std::size_t tick = 0; tick < TICKS_OF_ONE_SECOND; ++tick) {
+  for (std::size_t tick = 0; tick < SIMULATION_TICKS_PER_SECOND; ++tick) {
     movement.update(components, SIMULATION_TICK_DURATION);
   }
 

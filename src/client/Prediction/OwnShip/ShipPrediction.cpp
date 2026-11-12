@@ -26,9 +26,9 @@ float distanceBetween(game::Position first, game::Position second) {
 game::MovingShip oneTickLater(game::MovingShip ship, game::HeldChange change,
                               std::span<const engine::Bounds> obstacles) {
   ship.motion = game::motionAfterInput(ship.motion, change);
-  return game::stoppedAtTheEdges(game::blockedByObstacles(
+  return game::blockedByObstacles(
       ship, game::shipAfter(ship, change.now, engine::SIMULATION_TICK_DURATION),
-      obstacles));
+      obstacles);
 }
 
 }  // namespace
@@ -83,7 +83,7 @@ void ShipPrediction::reconcile(game::Position server,
 }
 
 void ShipPrediction::seeObstacles(std::span<const engine::Bounds> obstacles) {
-  obstacles_.assign(obstacles.begin(), obstacles.end());
+  obstacles_ = obstacles;
 }
 
 bool ShipPrediction::isStarted() const { return started_; }

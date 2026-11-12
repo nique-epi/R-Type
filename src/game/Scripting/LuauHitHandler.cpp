@@ -1,5 +1,4 @@
 #include "LuauHitHandler.hpp"
-#include <optional>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -7,10 +6,9 @@
 #include "EngineException.hpp"
 #include "GameScriptingConstants.hpp"
 #include "LuauBehaviourTables.hpp"
+#include "LuauCallArguments.hpp"
 #include "LuauHitHandlerParts.hpp"
-#include "LuauProtectedCall.hpp"
-#include "LuauResumeResult.hpp"
-#include "LuauThread.hpp"
+#include "LuauSingleCall.hpp"
 #include "ScriptMachine.hpp"
 #include "lua.h"
 
@@ -18,24 +16,9 @@ namespace rtype::game {
 
 namespace {
 
-/** @brief What pushing an on_hit function and its hit needs, and the thread
- * created for that call, which ends with it. */
-struct PendingReaction {
-  lua_State* machine{nullptr};
-  int function{0};
-  AppliedHit hit{};
-  std::optional<engine::LuauThread> thread = std::nullopt;
-  lua_State* threadState{nullptr};
-};
-
-/** @brief Pushes, on a thread created for the call, the function and the table
- * of its hit. */
-void pushReaction(void* context) {
-  auto& pending = *static_cast<PendingReaction*>(context);
-  pending.threadState = pending.thread.emplace(pending.machine).state();
-  lua_getref(pending.machine, pending.function);
-  pushAppliedHitTable(pending.machine, pending.hit);
-  lua_xmove(pending.machine, pending.threadState, 2);
+/** @brief Pushes the table of the AppliedHit @p value. */
+void pushAppliedHit(lua_State* machine, const void* value) {
+  pushAppliedHitTable(machine, *static_cast<const AppliedHit*>(value));
 }
 
 }  // namespace
@@ -61,16 +44,9 @@ void LuauHitHandler::onHit(const AppliedHit& hit) {
 }
 
 void LuauHitHandler::call(const AppliedHit& hit) {
-  engine::ScriptMachine& machine = parts_.machine.get();
-  PendingReaction pending{
-      .machine = machine.state(), .function = parts_.function, .hit = hit};
-  engine::runProtected(
-      machine.state(),
-      engine::LuauProtectedWork{.run = pushReaction, .context = &pending});
-  if (machine.resume(pending.threadState, 1) ==
-      engine::LuauResumeResult::Yielded) {
-    throw engine::ScriptException(std::string{WAIT_IN_ON_HIT_MESSAGE});
-  }
+  LuauSingleCall call{parts_.machine.get(), parts_.function};
+  call.run(LuauCallArguments{.push = pushAppliedHit, .value = &hit},
+           WAIT_IN_ON_HIT_MESSAGE);
 }
 
 void LuauHitHandler::reportOnce(std::string_view reason) {

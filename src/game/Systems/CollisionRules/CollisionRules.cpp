@@ -64,11 +64,9 @@ void CollisionRules::publishContactOf(CollidingEntity one,
       events_.publish(hit);
     }
   } else if (one.type == EntityType::Player &&
-             other.type == EntityType::Enemy &&
-             !components_.has<ViewDelay>(one.entity)) {
-    events_.publish(ShipContact{.player = one.entity, .enemy = other.entity});
-  } else if (one.type == EntityType::Player &&
-             other.type == EntityType::Obstacle) {
+             ((other.type == EntityType::Enemy &&
+               !components_.has<ViewDelay>(one.entity)) ||
+              other.type == EntityType::Obstacle)) {
     events_.publish(ShipContact{.player = one.entity, .enemy = other.entity});
   } else if (one.type == EntityType::Player &&
              other.type == EntityType::LookItem) {

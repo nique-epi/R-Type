@@ -4,7 +4,6 @@
 #include <cstdint>
 #include <deque>
 #include <span>
-#include <vector>
 #include "Bounds.hpp"
 #include "Position.hpp"
 #include "ShipControl.hpp"
@@ -56,7 +55,8 @@ class ShipPrediction {
 
   /** @brief Stops the ship against @p obstacles from the next command on,
    * the commands played again included, as the server stops it
-   * (blockedByObstacles()). */
+   * (blockedByObstacles()). The boxes are not copied: they must stay alive
+   * and unchanged until the next call. */
   void seeObstacles(std::span<const engine::Bounds> obstacles);
 
   [[nodiscard]] bool isStarted() const;
@@ -76,7 +76,7 @@ class ShipPrediction {
   game::MovingShip current_{};
   game::ShipDirections lastHeld_{};
   std::deque<PendingCommand> pending_;
-  std::vector<engine::Bounds> obstacles_;
+  std::span<const engine::Bounds> obstacles_;
 };
 
 }  // namespace rtype::client

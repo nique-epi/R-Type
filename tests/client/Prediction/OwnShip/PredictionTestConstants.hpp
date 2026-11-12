@@ -53,6 +53,7 @@ constexpr std::uint32_t SHOWN_TICK = 300;
 constexpr engine::Bounds WALL_ON_THE_RIGHT{
     .centerX = 600.0F, .centerY = 300.0F, .width = 64.0F, .height = 256.0F};
 constexpr float AGAINST_THE_WALL_ON_THE_RIGHT_X = 504.0F;
-constexpr std::uint32_t COMMANDS_OF_ONE_SECOND = 60;
+constexpr auto COMMANDS_OF_ONE_SECOND =
+    static_cast<std::uint32_t>(engine::SIMULATION_TICKS_PER_SECOND);
 
 }  // namespace rtype::client::testing

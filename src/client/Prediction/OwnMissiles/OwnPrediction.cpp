@@ -55,9 +55,8 @@ void OwnPrediction::followScroll(float scrollSpeed) {
 
 void OwnPrediction::ceaseFire() { firing_ = false; }
 
-void OwnPrediction::place(const EntityReplicator& replicator,
-                          engine::ComponentRegistry& components) {
-  placePredictedShip(ship_, replicator, components);
+void OwnPrediction::place(const EntityReplicator& replicator) {
+  placePredictedShip(ship_, replicator, components_.get());
   missiles_.touchEnemies();
 }
 

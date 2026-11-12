@@ -53,10 +53,10 @@ class OwnPrediction {
   void ceaseFire();
 
   /** @brief Puts the ship of the player where it is predicted (see
-   * placePredictedShip()), then plays the impact of every missile that
-   * touches an enemy drawn. Not during a forEach of @p components. */
-  void place(const EntityReplicator& replicator,
-             engine::ComponentRegistry& components);
+   * placePredictedShip()) in the registry of its parts, then plays the impact
+   * of every missile that touches an enemy drawn. Not during a forEach of that
+   * registry. */
+  void place(const EntityReplicator& replicator);
 
   /** @returns Who draws the missiles of the player, for the replicator. */
   [[nodiscard]] IOwnMissileListener& missiles();
@@ -68,8 +68,8 @@ class OwnPrediction {
   bool firing_{true};
   std::reference_wrapper<engine::ComponentRegistry> components_;
   float scrollSpeed_{0.0F};
-  /** @brief The blocking walls of the update in progress, kept so their room
-   * is reused from one update to the next. */
+  /** @brief The blocking walls of the update in progress, which the ship
+   * prediction reads until the next update; kept so their room is reused. */
   std::vector<engine::Bounds> obstacles_;
 };
 
