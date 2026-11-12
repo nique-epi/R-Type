@@ -38,6 +38,6 @@ constexpr std::uint64_t BYTES_PER_KIBIBYTE = 1024;
 constexpr const char* MACOS_TOTAL_MEMORY_SETTING = "hw.memsize";
 
 /** @brief The bits of the low half of a Windows FILETIME. */
-constexpr int FILETIME_LOW_PART_BITS = 32;
+constexpr unsigned FILETIME_LOW_PART_BITS = 32;
 
 }  // namespace rtype::server
