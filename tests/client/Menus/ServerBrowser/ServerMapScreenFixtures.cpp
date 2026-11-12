@@ -29,6 +29,7 @@ ServerRow serverOf(std::int64_t serverId, std::string_view name) {
   ServerRow server;
   server.id = serverId;
   server.name = std::string{name};
+  server.maximumPlayers = SERVER_SEATS;
   server.maximumPlayersPerGame = PLAYERS_PER_GAME;
   return server;
 }
@@ -56,6 +57,18 @@ std::vector<ServerRow> threeServers() {
 ServerListSnapshot readyList() {
   return ServerListSnapshot{.phase = ServerListPhase::Ready,
                             .servers = threeServers()};
+}
+
+ServerListSnapshot listWithLyonHolding(std::uint16_t players) {
+  ServerListSnapshot list = readyList();
+  list.servers.front().playerCount = players;
+  return list;
+}
+
+ServerListSnapshot listWithNoSeatOfThisVersion() {
+  ServerListSnapshot list = listWithLyonHolding(SERVER_SEATS);
+  list.servers.at(PARIS_INDEX).playerCount = SERVER_SEATS;
+  return list;
 }
 
 GameRow gameOf(std::uint16_t number, network::ListedGameState state) {

@@ -115,24 +115,25 @@ std::optional<MapDirection> directionOf(sf::Keyboard::Key key) {
   }
 }
 
-/** @returns Any game of the server of this version with the lowest ping: the
- * first one of a list sorted by ping. */
+/** @returns Whether QUICK PLAY may send a player to @p server: it is of this
+ * version and the master lists fewer players on it than its games hold. The
+ * count is the one of its last heartbeat, so the server may still refuse. */
+bool takesOneMorePlayer(const ServerRow& server) noexcept {
+  return server.compatibility == ServerCompatibility::Compatible &&
+         server.playerCount < server.maximumPlayers;
+}
+
+/** @returns Any game of the server with the lowest ping that
+ * takesOneMorePlayer(): the first one of a list sorted by ping. Nothing when
+ * no server does. */
 std::optional<ChosenGame> quickPlayGameOf(
     const std::vector<ServerRow>& servers) {
-  const auto found = std::ranges::find(servers, ServerCompatibility::Compatible,
-                                       &ServerRow::compatibility);
+  const auto found = std::ranges::find_if(servers, takesOneMorePlayer);
   if (found == servers.end()) {
     return std::nullopt;
   }
   return ChosenGame{.server = found->endpoint,
                     .request = gameRequestFor(network::ANY_GAME_CHOICE)};
-}
-
-/** @returns Whether a server of @p servers is of this version. */
-bool holdsAServerOfThisVersion(const std::vector<ServerRow>& servers) {
-  return std::ranges::any_of(servers, [](const ServerRow& server) noexcept {
-    return server.compatibility == ServerCompatibility::Compatible;
-  });
 }
 
 /** @returns The rows an arrow moves the choice of a game by: one up, one
@@ -306,7 +307,7 @@ void ServerMapScreen::update(engine::Duration elapsed) {
       chosen.has_value() && map_.stage() == ServerMapStage::Games) {
     panel_.show(games_->snapshot(), chosen->name);
   }
-  quickPlayChip_.setEnabled(holdsAServerOfThisVersion(map_.servers()));
+  quickPlayChip_.setEnabled(quickPlayGameOf(map_.servers()).has_value());
   repaint();
 }
 
