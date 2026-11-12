@@ -50,6 +50,7 @@ using rtype::client::testing::parisOnTheWholeMap;
 using rtype::client::testing::PLAYING_GAME_ROW_ON_THE_PANEL;
 using rtype::client::testing::readyList;
 using rtype::client::testing::REFRESH_INTERVAL;
+using rtype::client::testing::SERVER_GAME_PORT;
 using rtype::client::testing::SERVER_SEATS;
 using rtype::client::testing::ServerMapScreenFixture;
 using rtype::client::testing::SHORT_OF_THE_REFRESH;
@@ -445,6 +446,41 @@ TEST_F(ServerMapScreenFixture, QuickPlayJoinsNothingWhenNoServerHasASeat) {
 
   EXPECT_FALSE(choice().lastServer.has_value());
   EXPECT_THAT(navigator().calls(), IsEmpty());
+}
+
+/**
+ * Given Lyon at 24 ms and Paris at 88 ms, both with seats, and an old station
+ * When Q joins Lyon
+ * Then Paris is kept as the server to try if Lyon answers that it is full,
+ * and the old station is not
+ */
+TEST_F(ServerMapScreenFixture, QuickPlayKeepsTheOtherFreeServersToTryNext) {
+  openOn(readyList());
+
+  press(sf::Keyboard::Key::Q);
+
+  EXPECT_THAT(choice().nextServers,
+              ElementsAre(Endpoint{.address = std::string{PARIS_SERVER_ADDRESS},
+                                   .port = SERVER_GAME_PORT}));
+}
+
+/**
+ * Given Q joined Lyon and kept Paris, then the player came back to the map
+ * When a waiting game of the panel of Lyon is joined
+ * Then no server is kept: a full server named by the player is not left for
+ * another
+ */
+TEST_F(ServerMapScreenFixture, JoiningAGameOfThePanelKeepsNoOtherServer) {
+  openOn(readyList());
+  press(sf::Keyboard::Key::Q);
+  games().show(lyonGames());
+  press(sf::Keyboard::Key::Enter);
+  press(sf::Keyboard::Key::Enter);
+  press(sf::Keyboard::Key::Down);
+
+  press(sf::Keyboard::Key::Enter);
+
+  EXPECT_THAT(choice().nextServers, IsEmpty());
 }
 
 /**

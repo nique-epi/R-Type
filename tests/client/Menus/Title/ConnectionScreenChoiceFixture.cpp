@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 #include <string_view>
+#include "ConnectionRefused.hpp"
 #include "ConnectionRequest.hpp"
 #include "ConnectionScreen.hpp"
 #include "ConnectionScreenFixtures.hpp"
@@ -89,6 +90,16 @@ void ConnectionScreenChoiceFixture::openWith(ConnectionStart start) {
                             .choice = choice_,
                             .start = start},
       std::make_unique<RecordingInterfaceCanvas>(canvas_));
+}
+
+void ConnectionScreenChoiceFixture::keepANextServer() {
+  choice_.nextServers = {nextMapServer()};
+}
+
+void ConnectionScreenChoiceFixture::serverRefusesFor(
+    rtype::network::RefusalReason reason) {
+  connection_.setStatus(refusedFor(reason));
+  screen_->update(PRESS_DURATION);
 }
 
 void ConnectionScreenChoiceFixture::chooseEnter() {

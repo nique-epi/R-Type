@@ -61,6 +61,8 @@ using rtype::client::testing::LAUNCH_PORT_TEXT;
 using rtype::client::testing::LIVES_BOUNDS_REFUSAL;
 using rtype::client::testing::MAP_ADDRESS;
 using rtype::client::testing::MAP_PORT;
+using rtype::client::testing::NEXT_MAP_ADDRESS;
+using rtype::client::testing::NEXT_MAP_PORT;
 using rtype::client::testing::NEXT_PROTOCOL_VERSION;
 using rtype::client::testing::NICKNAME_FIELD_LABEL;
 using rtype::client::testing::NO_NICKNAME_TEXT;
@@ -771,4 +773,92 @@ TEST_F(ConnectionToMapServerFixture, AnEmptyNicknameIsNamed) {
 
   EXPECT_TRUE(connectAttemptsOf(connection()).empty());
   EXPECT_NE(writingOf(canvas(), MISSING_NICKNAME_STATUS), nullptr);
+}
+
+/**
+ * Given the screen the map opens for QUICK PLAY, another server kept behind
+ * the one it chose
+ * When the nickname is confirmed and the server answers that it is full
+ * Then a second attempt goes out to the kept server, with the same nickname
+ * and for the same game
+ */
+TEST_F(ConnectionToMapServerFixture, AFullServerIsLeftForTheNextOneKept) {
+  keepANextServer();
+  chooseEnter();
+
+  serverRefusesFor(RefusalReason::ServerFull);
+
+  EXPECT_EQ(
+      connectAttemptsOf(connection()),
+      (std::vector<ServerConnectionCall>{
+          ServerConnectionCall{
+              .request = ServerConnectionRequest::Connect,
+              .server = {.address = std::string(MAP_ADDRESS), .port = MAP_PORT},
+              .nickname = std::string(LAUNCH_NICKNAME),
+              .game = LAUNCH_GAME},
+          ServerConnectionCall{
+              .request = ServerConnectionRequest::Connect,
+              .server = {.address = std::string(NEXT_MAP_ADDRESS),
+                         .port = NEXT_MAP_PORT},
+              .nickname = std::string(LAUNCH_NICKNAME),
+              .game = LAUNCH_GAME}}));
+}
+
+/**
+ * Given a full server left for the only one kept
+ * When that one answers that it is full too
+ * Then no third attempt goes out, and the status line tells the refusal
+ */
+TEST_F(ConnectionToMapServerFixture, TheLastServerKeptShowsItsRefusal) {
+  keepANextServer();
+  chooseEnter();
+  serverRefusesFor(RefusalReason::ServerFull);
+
+  serverRefusesFor(RefusalReason::ServerFull);
+
+  EXPECT_EQ(connectAttemptsOf(connection()).size(), 2U);
+  EXPECT_NE(writingOf(canvas(), SERVER_FULL_STATUS), nullptr);
+}
+
+/**
+ * Given the screen the map opens, no server kept behind the one chosen
+ * When the server answers that it is full
+ * Then the attempt stays the only one, and the status line tells the refusal
+ */
+TEST_F(ConnectionToMapServerFixture, AFullServerWithNoneKeptShowsItsRefusal) {
+  chooseEnter();
+
+  serverRefusesFor(RefusalReason::ServerFull);
+
+  EXPECT_EQ(connectAttemptsOf(connection()).size(), 1U);
+  EXPECT_NE(writingOf(canvas(), SERVER_FULL_STATUS), nullptr);
+}
+
+/**
+ * Given the screen the map opens for QUICK PLAY, another server kept
+ * When the server refuses the nickname, already taken
+ * Then no attempt goes to the kept server: the player fixes the nickname here
+ */
+TEST_F(ConnectionToMapServerFixture, AnotherRefusalStaysOnItsServer) {
+  keepANextServer();
+  chooseEnter();
+
+  serverRefusesFor(RefusalReason::NicknameTaken);
+
+  EXPECT_EQ(connectAttemptsOf(connection()).size(), 1U);
+  EXPECT_NE(writingOf(canvas(), NICKNAME_TAKEN_STATUS), nullptr);
+}
+
+/**
+ * Given the form of ADDRESS, a server of an earlier QUICK PLAY still kept
+ * When the server typed in the form answers that it is full
+ * Then no attempt goes to the kept server: the player named this one
+ */
+TEST_F(ConnectionScreenChoiceFixture, TheFormNeverLeavesTheServerItNames) {
+  keepANextServer();
+  connectAs(TYPED_NICKNAME_TEXT);
+
+  serverRefusesFor(RefusalReason::ServerFull);
+
+  EXPECT_EQ(connectAttemptsOf(connection()).size(), 1U);
 }

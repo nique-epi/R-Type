@@ -3,6 +3,7 @@
 #include <memory>
 #include <string>
 #include <string_view>
+#include "ConnectionRefused.hpp"
 #include "ConnectionRequest.hpp"
 #include "ConnectionScreen.hpp"
 #include "ConnectionScreenFixtures.hpp"
@@ -51,6 +52,16 @@ void ConnectionToMapServerFixture::chooseANewGame() {
 void ConnectionToMapServerFixture::typeNickname(std::u32string_view nickname) {
   eraseCharacters(*screen_, LAUNCH_NICKNAME.size());
   typeText(*screen_, nickname);
+}
+
+void ConnectionToMapServerFixture::keepANextServer() {
+  choice_.nextServers = {nextMapServer()};
+}
+
+void ConnectionToMapServerFixture::serverRefusesFor(
+    rtype::network::RefusalReason reason) {
+  connection_.setStatus(refusedFor(reason));
+  screen_->update(PRESS_DURATION);
 }
 
 void ConnectionToMapServerFixture::chooseEnter() {

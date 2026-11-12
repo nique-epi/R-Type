@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 #include <memory>
 #include <string_view>
+#include "ConnectionRefused.hpp"
 #include "ConnectionScreen.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
@@ -28,6 +29,14 @@ class ConnectionToMapServerFixture : public ::testing::Test {
 
   /** @brief Presses and releases Enter, then lets the press last. */
   void chooseEnter();
+
+  /** @brief Writes nextMapServer() as the only server to try after a full
+   * one, as QUICK PLAY of the map does. */
+  void keepANextServer();
+
+  /** @brief Has the server refuse the attempt for @p reason, then runs a
+   * frame. */
+  void serverRefusesFor(rtype::network::RefusalReason reason);
 
   [[nodiscard]] const RecordingServerConnection& connection() const;
   [[nodiscard]] const InterfaceCanvasRecord& canvas() const;
