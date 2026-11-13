@@ -120,6 +120,11 @@ Menu accessTab(const OptionsTabsParts& parts) {
   SettingsService& service = parts.service.get();
   MenuBuilder builder = tabbedPanel(parts, ACCESS_TAB);
   builder
+      .row({.label = TEXT_SIZE_LABEL, .description = TEXT_SIZE_DESCRIPTION},
+           textSizeSelector(service))
+      .row({.label = HIGH_CONTRAST_LABEL,
+            .description = HIGH_CONTRAST_DESCRIPTION},
+           settingSwitch(service, HIGH_CONTRAST_SETTING))
       .row({.label = COLOR_MODE_LABEL, .description = COLOR_MODE_DESCRIPTION},
            colorModeSelector(service))
       .row({.label = REDUCE_FLASHES_LABEL,

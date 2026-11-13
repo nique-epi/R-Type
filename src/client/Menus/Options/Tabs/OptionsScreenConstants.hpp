@@ -104,8 +104,15 @@ constexpr std::string_view POINTED_TOO_LARGE_END =
     ": TOO LARGE FOR THIS SCREEN";
 constexpr std::string_view LARGER_TOO_LARGE_END = " IS TOO LARGE HERE";
 
-/** @brief ACCESS: the color modes, in the order of COLOR_MODES, and the
- * other rows. */
+/** @brief ACCESS: the text sizes, in the order of TEXT_SIZES, the color
+ * modes, in the order of COLOR_MODES, and the other rows. */
+constexpr const char* TEXT_SIZE_LABEL = "TEXT SIZE";
+constexpr const char* TEXT_SIZE_DESCRIPTION = "> LARGER TEXT IN MENUS AND HUD";
+constexpr std::array<std::string_view, TEXT_SIZE_COUNT> TEXT_SIZE_LABELS{
+    "NORMAL", "LARGE", "LARGEST"};
+constexpr const char* HIGH_CONTRAST_LABEL = "HIGH CONTRAST";
+constexpr const char* HIGH_CONTRAST_DESCRIPTION =
+    "> STRONGER COLORS, PLATES UNDER TEXT";
 constexpr const char* COLOR_MODE_LABEL = "COLOR MODE";
 constexpr const char* COLOR_MODE_DESCRIPTION = "> PILOT COLORS TOLD APART";
 constexpr std::array<std::string_view, COLOR_MODE_COUNT> COLOR_MODE_LABELS{
