@@ -3,6 +3,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <string>
+#include "BossStageTestConstants.hpp"
+#include "LevelBossesTestConstants.hpp"
 #include "LevelDirector.hpp"
 #include "LevelDirectorFixture.hpp"
 #include "LevelDirectorTestConstants.hpp"
@@ -19,7 +21,11 @@ using rtype::server::testing::LEVEL_SHIP_SHEET;
 using rtype::server::testing::LEVEL_THAT_FAILS;
 using rtype::server::testing::LEVEL_THAT_PAUSES;
 using rtype::server::testing::LEVEL_THAT_WAITS;
+using rtype::server::testing::LEVEL_WITH_A_BOSS;
+using rtype::server::testing::LEVEL_WITH_A_BOSS_AFTER_A_CHECKPOINT;
 using rtype::server::testing::LevelDirectorFixture;
+using rtype::server::testing::NO_BOSS;
+using rtype::server::testing::ONE_BOSS;
 using rtype::server::testing::SCROLL_OF_ONE_SECOND;
 using rtype::server::testing::SCROLL_OF_ONE_TICK;
 using rtype::server::testing::SCROLL_ONE_TICK_AFTER_THE_CHECKPOINT;
@@ -29,6 +35,9 @@ using rtype::server::testing::SPEED_OF_A_STOPPED_LEVEL;
 using rtype::server::testing::TICK_OF_THE_SECOND_ACT;
 using rtype::server::testing::TICKS_INTO_THE_SECOND_STAGE;
 using rtype::server::testing::TICKS_OF_ONE_SECOND;
+using rtype::server::testing::TICKS_TO_THE_BOSS;
+using rtype::server::testing::TICKS_UNTIL_THE_BOSS_ENTERS;
+using rtype::server::testing::TICKS_UNTIL_THE_SECOND_STAGE_ANNOUNCES;
 using rtype::server::testing::UNREGISTERED_LEVEL;
 using rtype::server::testing::WHERE_THE_ENEMY_IS;
 using rtype::server::testing::WHERE_THE_SHIP_IS;
@@ -227,4 +236,32 @@ TEST_F(LevelDirectorFixture, RefusesALevelNoScriptRegistered) {
   EXPECT_THROW(static_cast<void>(stagesOfLevel(
                    scripts().levels(), std::string{UNREGISTERED_LEVEL})),
                UnknownLevelException);
+}
+
+/**
+ * Given a level whose stage brings the Bydo Tyrant in
+ * When the warning of its arrival is over
+ * Then the boss is in the world
+ */
+TEST_F(LevelDirectorFixture, BringsTheBossAStageNamesIn) {
+  direct(LEVEL_WITH_A_BOSS);
+
+  tick(TICKS_TO_THE_BOSS);
+
+  EXPECT_EQ(bossCount(), ONE_BOSS);
+}
+
+/**
+ * Given a level whose second stage announced the Bydo Tyrant
+ * When the level restarts from its checkpoint and that warning would be over
+ * Then the boss announced before the restart never entered
+ */
+TEST_F(LevelDirectorFixture, ForgetsTheBossAnnouncedBeforeARestart) {
+  direct(LEVEL_WITH_A_BOSS_AFTER_A_CHECKPOINT);
+  tick(TICKS_UNTIL_THE_SECOND_STAGE_ANNOUNCES);
+
+  ASSERT_TRUE(director().restartFromCheckpoint());
+  tick(TICKS_UNTIL_THE_BOSS_ENTERS);
+
+  EXPECT_EQ(bossCount(), NO_BOSS);
 }

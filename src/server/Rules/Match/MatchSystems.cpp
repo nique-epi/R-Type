@@ -4,6 +4,7 @@
 #include <memory>
 #include <optional>
 #include <string_view>
+#include "BossEntranceParts.hpp"
 #include "BossStage.hpp"
 #include "BossStageParts.hpp"
 #include "CollisionRules.hpp"
@@ -125,11 +126,15 @@ std::unique_ptr<LevelDirector> levelDirectorFor(GameContext& game,
   if (settings.scripts == nullptr) {
     throw UnknownLevelException(*settings.level, {});
   }
-  return std::make_unique<LevelDirector>(
-      LevelDirectorParts{.world = world,
-                         .events = game.events.get(),
-                         .scripts = *settings.scripts,
-                         .level = *settings.level});
+  return std::make_unique<LevelDirector>(LevelDirectorParts{
+      .entrance = BossEntranceParts{.world = world,
+                                    .roster = game.roster.get(),
+                                    .send = game.send,
+                                    .events = game.events.get()},
+      .scripts = *settings.scripts,
+      .level = *settings.level,
+      .types = settings.types,
+      .bossHealthPercent = settings.waves.bossHealthPercent});
 }
 
 /** @returns Whether the boss of the level may come at this tick, after

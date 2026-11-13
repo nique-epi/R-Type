@@ -6,11 +6,17 @@
 #include <string_view>
 #include <vector>
 #include "BehaviourScripts.hpp"
+#include "Boss.hpp"
+#include "BossEntranceParts.hpp"
+#include "Entity.hpp"
 #include "EntityDestruction.hpp"
 #include "LevelChange.hpp"
 #include "LevelDirector.hpp"
 #include "LevelDirectorParts.hpp"
 #include "LevelDirectorTestConstants.hpp"
+#include "NetworkIdentity.hpp"
+#include "OutgoingDatagram.hpp"
+#include "PercentConstants.hpp"
 #include "Position.hpp"
 #include "ScriptSource.hpp"
 #include "ShippedEntitySheets.hpp"
@@ -31,11 +37,16 @@ void LevelDirectorFixture::direct(std::string_view script) {
   const std::vector<engine::ScriptSource> sources{engine::ScriptSource{
       .name = std::string{DIRECTED_LEVEL}, .text = std::string{script}}};
   scripts_.run(sources);
-  director_ = std::make_unique<LevelDirector>(
-      LevelDirectorParts{.world = world_,
-                         .events = events_,
-                         .scripts = scripts_,
-                         .level = std::string{DIRECTED_LEVEL}});
+  director_ = std::make_unique<LevelDirector>(LevelDirectorParts{
+      .entrance =
+          BossEntranceParts{.world = world_,
+                            .roster = roster_,
+                            .send = [](const network::OutgoingDatagram&) {},
+                            .events = events_},
+      .scripts = scripts_,
+      .level = std::string{DIRECTED_LEVEL},
+      .types = game::testing::shippedEntitySheets(),
+      .bossHealthPercent = rtype::game::WHOLE_PERCENT});
 }
 
 void LevelDirectorFixture::tick(std::size_t count) {
@@ -62,6 +73,14 @@ const std::vector<game::LevelChange>& LevelDirectorFixture::changes() const {
 
 const std::vector<std::uint32_t>& LevelDirectorFixture::removed() const {
   return removed_;
+}
+
+std::size_t LevelDirectorFixture::bossCount() {
+  std::size_t count = 0;
+  world_.components().forEach<game::Boss, game::NetworkIdentity>(
+      [&count](engine::Entity, const game::Boss&,
+               const game::NetworkIdentity&) { ++count; });
+  return count;
 }
 
 }  // namespace rtype::server::testing

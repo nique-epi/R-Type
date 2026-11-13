@@ -186,3 +186,45 @@ level.register("test_level", { function()
   error("the stage broke")
 end })
 )";
+
+/** @brief The sheet the bosses of these tests know as a boss. */
+constexpr std::string_view BOSS_OF_THE_TESTS = "tyrant";
+
+/** @brief A level whose stage names a biome, brings the boss in with 40 % of
+ * the health of its sheet, then names another biome once the boss entered. */
+constexpr std::string_view BRINGS_A_BOSS_IN = R"(
+level.register("test_level", { function()
+  level.biome("before")
+  level.boss("tyrant", { health_percent = 40 })
+  level.biome("after")
+end })
+)";
+constexpr int HEALTH_PERCENT_OF_THE_BOSS = 40;
+constexpr std::size_t TICKS_THE_BOSS_IS_AWAITED = 10;
+
+/** @brief A level whose stage brings the boss in without options: it has
+ * the whole health of its sheet. */
+constexpr std::string_view BRINGS_A_WHOLE_BOSS_IN = R"(
+level.register("test_level", { function()
+  level.boss("tyrant")
+end })
+)";
+constexpr int WHOLE_HEALTH_PERCENT = 100;
+
+/** @brief Levels whose stage brings in a sheet that is no boss, a boss
+ * without health, and a boss with more than the health of its sheet. */
+constexpr std::string_view BRINGS_IN_A_SHEET_THAT_IS_NO_BOSS = R"(
+level.register("test_level", { function()
+  level.boss("drifter")
+end })
+)";
+constexpr std::string_view BRINGS_IN_A_BOSS_WITHOUT_HEALTH = R"(
+level.register("test_level", { function()
+  level.boss("tyrant", { health_percent = 0 })
+end })
+)";
+constexpr std::string_view BRINGS_IN_A_BOSS_ABOVE_ITS_HEALTH = R"(
+level.register("test_level", { function()
+  level.boss("tyrant", { health_percent = 101 })
+end })
+)";
