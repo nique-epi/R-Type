@@ -116,6 +116,12 @@ class RecordingInterfaceCanvas : public rtype::client::IInterfaceCanvas {
 [[nodiscard]] std::optional<sf::Vector2i> anchorOf(
     const InterfaceCanvasRecord& record, std::string_view text);
 
+/** @returns The box a line written on a recording canvas covers: as wide as
+ * the canvas measures it at the text size of @p record, or of its style when
+ * larger, as tall as one line at that size, placed as its alignment says. */
+[[nodiscard]] sf::IntRect writtenBoxOf(const InterfaceCanvasRecord& record,
+                                       const RecordedWriting& writing);
+
 /** @returns Every pixel the fills of a record light, as (column, row). */
 [[nodiscard]] std::set<std::pair<int, int>> litPixelsOf(
     const InterfaceCanvasRecord& record);

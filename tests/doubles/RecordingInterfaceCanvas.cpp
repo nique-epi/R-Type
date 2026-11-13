@@ -107,6 +107,23 @@ std::optional<sf::Vector2i> anchorOf(const InterfaceCanvasRecord& record,
                             : std::optional<sf::Vector2i>(writing->anchor);
 }
 
+sf::IntRect writtenBoxOf(const InterfaceCanvasRecord& record,
+                         const RecordedWriting& writing) {
+  InterfaceCanvasRecord measuring;
+  measuring.metrics = rtype::client::TextMetrics{
+      .halfPixelsPerFontPixel =
+          rtype::client::halfPixelsOf(record.metrics, writing.style.scale)};
+  const RecordingInterfaceCanvas canvas(measuring);
+  const int width = canvas.textWidth(writing.text, writing.style.font);
+  sf::Vector2i topLeft = writing.anchor;
+  if (writing.style.alignment == rtype::client::TextAlignment::Right) {
+    topLeft.x -= width;
+  } else if (writing.style.alignment == rtype::client::TextAlignment::Center) {
+    topLeft.x -= width / 2;
+  }
+  return {topLeft, {width, rtype::client::lineHeightOf(measuring.metrics)}};
+}
+
 std::set<std::pair<int, int>> litPixelsOf(const InterfaceCanvasRecord& record) {
   std::set<std::pair<int, int>> pixels;
   for (const RecordedFill& fill : record.fills) {

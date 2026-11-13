@@ -22,5 +22,9 @@ constexpr sf::Color ITEM_NOTE_COLOR = PALE_BLUE;
  * the row. */
 constexpr int ITEM_TAG_GAP = 3;
 constexpr int ITEM_TAG_RISE = 1;
+/** @brief Above the size the fonts are drawn at, the gap between the two
+ * lines of a row, and the room under a row before the next. */
+constexpr int ITEM_STACKED_LINE_GAP = 2;
+constexpr int ITEM_STACKED_ROW_GAP = 4;
 
 }  // namespace rtype::client

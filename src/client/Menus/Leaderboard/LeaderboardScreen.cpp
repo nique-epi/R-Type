@@ -28,6 +28,8 @@
 #include "KeyNames.hpp"
 #include "LeaderboardFigure.hpp"
 #include "LeaderboardFilterChoice.hpp"
+#include "LeaderboardFrame.hpp"
+#include "LeaderboardFrames.hpp"
 #include "LeaderboardMessage.hpp"
 #include "LeaderboardPage.hpp"
 #include "LeaderboardPhase.hpp"
@@ -56,54 +58,76 @@ namespace {
 
 /** @returns Where a chip with this text lies: as MenuBuilder lays it ending at
  * @p right, on the row of the chips of the leaderboard. */
-sf::IntRect chipAreaEndingAt(const Button::Text& text, int right) {
+sf::IntRect chipAreaEndingAt(const Button::Text& text, int right, int top) {
   sf::IntRect area = MenuBuilder::chipArea(text, right);
-  area.position.y = LEADERBOARD_CHIPS_TOP;
+  area.position.y = top;
   return area;
 }
 
-sf::IntRect backChipArea() {
-  return chipAreaEndingAt({.label = BACK_LABEL, .keyName = CANCEL_KEY_NAME},
-                          LEADERBOARD_CHIPS_RIGHT);
+Button::Text backChipText(const LeaderboardFrame& frame) {
+  return {
+      .label = BACK_LABEL, .keyName = CANCEL_KEY_NAME, .size = frame.metrics};
 }
 
-sf::IntRect filterChipArea() {
-  return chipAreaEndingAt({.label = FILTER_LABEL, .keyName = FILTER_KEY_NAME},
-                          backChipArea().position.x - BUTTON_GAP);
+Button::Text filterChipText(const LeaderboardFrame& frame) {
+  return {
+      .label = FILTER_LABEL, .keyName = FILTER_KEY_NAME, .size = frame.metrics};
 }
 
-KeyChipParts backChipParts(std::function<void()> action, ISoundPlayer& sounds) {
-  return KeyChipParts{.text = {.label = BACK_LABEL, .keyName = CANCEL_KEY_NAME},
-                      .area = backChipArea(),
+sf::IntRect backChipArea(const LeaderboardFrame& frame) {
+  return chipAreaEndingAt(backChipText(frame), frame.chipsRight,
+                          frame.chipsTop);
+}
+
+sf::IntRect filterChipArea(const LeaderboardFrame& frame) {
+  return chipAreaEndingAt(filterChipText(frame),
+                          backChipArea(frame).position.x - BUTTON_GAP,
+                          frame.chipsTop);
+}
+
+KeyChipParts backChipParts(std::function<void()> action, ISoundPlayer& sounds,
+                           const LeaderboardFrame& frame) {
+  return KeyChipParts{.text = backChipText(frame),
+                      .area = backChipArea(frame),
                       .key = MENU_CANCEL_KEY,
                       .action = std::move(action),
                       .sounds = sounds};
 }
 
-KeyChipParts filterChipParts(std::function<void()> action,
-                             ISoundPlayer& sounds) {
-  return KeyChipParts{
-      .text = {.label = FILTER_LABEL, .keyName = FILTER_KEY_NAME},
-      .area = filterChipArea(),
-      .key = FILTER_KEY,
-      .action = std::move(action),
-      .sounds = sounds};
+KeyChipParts filterChipParts(std::function<void()> action, ISoundPlayer& sounds,
+                             const LeaderboardFrame& frame) {
+  return KeyChipParts{.text = filterChipText(frame),
+                      .area = filterChipArea(frame),
+                      .key = FILTER_KEY,
+                      .action = std::move(action),
+                      .sounds = sounds};
 }
 
 /** @returns The bar under NOT_ON_SERVER_MESSAGE, selected: the one thing the
  * screen asks of the player then. */
-KeyChipParts joinBarParts(std::function<void()> action, ISoundPlayer& sounds) {
-  return KeyChipParts{.text = {.label = JOIN_LABEL},
-                      .area = JOIN_BAR,
+KeyChipParts joinBarParts(std::function<void()> action, ISoundPlayer& sounds,
+                          const LeaderboardFrame& frame) {
+  return KeyChipParts{.text = {.label = JOIN_LABEL, .size = frame.metrics},
+                      .area = frame.joinBar,
                       .key = MENU_CONFIRM_KEY,
                       .action = std::move(action),
                       .sounds = sounds,
                       .restState = BarState::Selected};
 }
 
-/** @returns The strip of these tabs, one of them open, as wide as the panel. */
+/** @brief How the strip of the leaderboard is made: the names of its keys and
+ * the frame it lies over. */
+struct StripMaking {
+  std::reference_wrapper<const KeyNaming> keyName;
+  std::reference_wrapper<const LeaderboardFrame> frame;
+};
+
+/** @returns The strip of these tabs, one of them open, over the panel of the
+ * frame and as wide, at its text size. */
 TabStrip tabStripOf(const std::vector<LeaderboardTab>& tabs, std::size_t open,
-                    const KeyNaming& keyName) {
+                    const StripMaking& making) {
+  const KeyNaming& keyName = making.keyName.get();
+  const LeaderboardFrame& frame = making.frame.get();
   std::vector<std::string> labels;
   labels.reserve(tabs.size());
   for (const LeaderboardTab& tab : tabs) {
@@ -112,8 +136,9 @@ TabStrip tabStripOf(const std::vector<LeaderboardTab>& tabs, std::size_t open,
   TabStrip strip(
       std::move(labels), open,
       {.previous = keyName(PREVIOUS_TAB_KEY), .next = keyName(NEXT_TAB_KEY)},
-      LEADERBOARD_TABS_TOP_LEFT);
-  strip.setWidth(LEADERBOARD_TABS_WIDTH);
+      frame.tabsTopLeft);
+  strip.setWidth(frame.tabsWidth);
+  strip.setTextSize(frame.metrics);
   return strip;
 }
 
@@ -173,31 +198,35 @@ void paintCourt(IInterfaceCanvas& canvas,
 }
 
 /** @brief Paints the title and its rule, and the panel. */
-void paintPanel(IInterfaceCanvas& canvas) {
+void paintPanel(IInterfaceCanvas& canvas, const LeaderboardFrame& frame) {
   canvas.write(LEADERBOARD_LABEL, LEADERBOARD_TITLE_ANCHOR,
                LEADERBOARD_TITLE_STYLE);
-  canvas.fill(LEADERBOARD_RULE, RULE_COLOR);
-  CutCornerBox(LEADERBOARD_PANEL,
+  canvas.fill({{frame.panel.position.x, LEADERBOARD_RULE.position.y},
+               {frame.panel.size.x, LEADERBOARD_RULE.size.y}},
+              RULE_COLOR);
+  CutCornerBox(frame.panel,
                {.border = PANEL_BORDER_COLOR, .inside = PANEL_INSIDE_COLOR})
       .paint(canvas);
 }
 
 /** @brief Writes that the server is being asked, a dot more every
  * ASKING_DOT_TIME. */
-void paintAsking(IInterfaceCanvas& canvas, engine::Duration time) {
+void paintAsking(IInterfaceCanvas& canvas, engine::Duration time,
+                 sf::Vector2i anchor) {
   const auto dots =
       static_cast<std::size_t>((time / ASKING_DOT_TIME) % ASKING_DOT_STEPS);
-  canvas.write(std::string(ASKING_TEXT).append(dots, '.'), ASKING_ANCHOR,
+  canvas.write(std::string(ASKING_TEXT).append(dots, '.'), anchor,
                {.font = TextFont::Regular, .color = MESSAGE_LINE_COLOR});
 }
 
 /** @brief Writes what the panel says in place of rows. */
-void paintMessage(IInterfaceCanvas& canvas, LeaderboardMessage message) {
-  canvas.write(message.line, MESSAGE_LINE_ANCHOR,
+void paintMessage(IInterfaceCanvas& canvas, LeaderboardMessage message,
+                  const LeaderboardFrame& frame) {
+  canvas.write(message.line, frame.messageLine,
                {.font = TextFont::Regular,
                 .color = MESSAGE_LINE_COLOR,
                 .alignment = TextAlignment::Center});
-  canvas.write(message.detail, MESSAGE_DETAIL_ANCHOR,
+  canvas.write(message.detail, frame.messageDetail,
                {.font = TextFont::Small,
                 .color = MESSAGE_DETAIL_COLOR,
                 .alignment = TextAlignment::Center});
@@ -216,9 +245,10 @@ LeaderboardScreen::LeaderboardScreen(LeaderboardScreenParts parts,
       playfieldPointAt_(std::move(parts.playfieldPointAt)),
       keyName_(std::move(parts.keyName)),
       motion_(parts.motion),
+      frame_(leaderboardFrameOf(canvas_->textMetrics())),
       filterDialog_(parts.sounds.get()),
-      tabStrip_(tabStripOf(tabs_, 0, keyName_)),
-      list_(LEADERBOARD_LIST),
+      tabStrip_(tabStripOf(tabs_, 0, {.keyName = keyName_, .frame = frame_})),
+      list_(frame_.list),
       backChip_(backChipParts(
           [this] {
             if (joinedFromHere_) {
@@ -226,15 +256,16 @@ LeaderboardScreen::LeaderboardScreen(LeaderboardScreenParts parts,
             }
             navigator_->pop();
           },
-          parts.sounds)),
-      filterChip_(filterChipParts([this] { openFilter(); }, parts.sounds)),
+          parts.sounds, frame_)),
+      filterChip_(
+          filterChipParts([this] { openFilter(); }, parts.sounds, frame_)),
       joinChip_(joinBarParts(
           [this] {
             handleEvent(sf::Event::FocusLost{});
             joinedFromHere_ = true;
             navigator_->push(CONNECTION_FOR_LEADERBOARD_SCREEN);
           },
-          parts.sounds)) {
+          parts.sounds, frame_)) {
   ask();
   showPage(shownPage());
   repaint();
@@ -258,6 +289,11 @@ void LeaderboardScreen::handleEvent(const sf::Event& event) {
       filterChip_.handleEvent(event, playfieldPointAt_) ||
       joinChip_.handleEvent(event, playfieldPointAt_)) {
     return;
+  }
+  if (const auto* key = event.getIf<sf::Event::KeyPressed>();
+      key != nullptr &&
+      (key->code == LIST_DOWN_KEY || key->code == LIST_UP_KEY)) {
+    list_.scrollBy(key->code == LIST_DOWN_KEY ? 1 : -1);
   }
   if (endsTheHoldOfATabKey(event)) {
     tabKeyHeld_ = false;
@@ -305,7 +341,7 @@ void LeaderboardScreen::openTab(std::size_t tab) {
     left->stopAsking();
   }
   openTab_ = tab;
-  tabStrip_ = tabStripOf(tabs_, tab, keyName_);
+  tabStrip_ = tabStripOf(tabs_, tab, {.keyName = keyName_, .frame = frame_});
   ask();
   showPage(shownPage());
 }
@@ -341,12 +377,12 @@ void LeaderboardScreen::repaint() {
   const std::optional<LeaderboardMessage> message = messageOf(page);
   canvas_->clear();
   paintCourt(*canvas_, moves ? std::optional(elapsed_) : std::nullopt);
-  paintPanel(*canvas_);
+  paintPanel(*canvas_, frame_);
   tabStrip_.paint(*canvas_);
   if (page.phase == LeaderboardPhase::Asking) {
-    paintAsking(*canvas_, moves ? elapsed_ : engine::Duration{});
+    paintAsking(*canvas_, moves ? elapsed_ : engine::Duration{}, frame_.asking);
   } else if (message.has_value()) {
-    paintMessage(*canvas_, *message);
+    paintMessage(*canvas_, *message, frame_);
   }
   list_.paint(*canvas_);
   if (page.phase == LeaderboardPhase::NotOnServer) {
@@ -355,7 +391,7 @@ void LeaderboardScreen::repaint() {
   backChip_.paint(*canvas_);
   filterChip_.paint(*canvas_);
   if (canBeFiltered(page)) {
-    canvas_->write(filterSummaryOf(choice_), FILTER_SUMMARY_ANCHOR,
+    canvas_->write(filterSummaryOf(choice_), frame_.summaryAnchor,
                    FILTER_SUMMARY_STYLE);
   }
   filterDialog_.paint(*canvas_);

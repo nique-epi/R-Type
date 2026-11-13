@@ -4,9 +4,15 @@
 #include <chrono>
 #include <string_view>
 #include "PointerEvents.hpp"
+#include "TextMetrics.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client::testing {
+
+/** @brief The largest text size, and the longest nickname the protocol
+ * carries, which a row writes at the largest size on its first line. */
+constexpr TextMetrics LARGEST_TEXT{.halfPixelsPerFontPixel = 4};
+constexpr const char* LONGEST_NICKNAME = "CAPTAIN_STARDUST";
 
 /** @brief Where the design lays the court, its banners first. */
 constexpr sf::Vector2i LEFT_BANNER(8, 0);
