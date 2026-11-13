@@ -15,6 +15,7 @@
 #include "IInterfaceCanvas.hpp"
 #include "ImagePlacement.hpp"
 #include "ShadeSwap.hpp"
+#include "TextMetrics.hpp"
 #include "TextStyle.hpp"
 #include "TextureArea.hpp"
 
@@ -67,6 +68,9 @@ struct InterfaceCanvasRecord {
   std::vector<RecordedSmoothImage> smoothImages;
   int displayCount = 0;
   int showCount = 0;
+  /** @brief The text size the canvas reports and measures with, which
+   * clear() keeps; a test sets it to lay a screen out at a larger size. */
+  rtype::client::TextMetrics metrics{};
   /** @brief Where the canvas writes INTERFACE_CANVAS_LAID each time it is
    * shown, when a test shares one with other doubles. */
   DrawJournal* drawJournal = nullptr;
@@ -94,6 +98,7 @@ class RecordingInterfaceCanvas : public rtype::client::IInterfaceCanvas {
                        sf::Color tint) override;
   [[nodiscard]] int textWidth(std::string_view text,
                               rtype::client::TextFont font) const override;
+  [[nodiscard]] rtype::client::TextMetrics textMetrics() const override;
   void display() override;
   void show(sf::RenderTarget& target) const override;
 

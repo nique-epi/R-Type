@@ -16,6 +16,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <utility>
 #include "AssetLibrary.hpp"
 #include "BackgroundConstants.hpp"
 #include "ColoredPixel.hpp"
@@ -27,6 +28,8 @@
 #include "ShadeSwapShaderConstants.hpp"
 #include "SmoothImageSpot.hpp"
 #include "TextLine.hpp"
+#include "TextMeasures.hpp"
+#include "TextMetrics.hpp"
 #include "TextStyle.hpp"
 #include "TextWriter.hpp"
 #include "TextureArea.hpp"
@@ -93,8 +96,10 @@ sf::RenderStates statesFor(const std::optional<ShadeSwap>& recolor,
 
 }  // namespace
 
-InterfaceCanvas::InterfaceCanvas(const AssetLibrary& library)
-    : textures_(library),
+InterfaceCanvas::InterfaceCanvas(const AssetLibrary& library,
+                                 InterfaceLookSource look)
+    : look_(std::move(look)),
+      textures_(library),
       foundTextures_(textures_, INTERFACE_LOGGER_NAME),
       writer_(library),
       canvas_(CRISP_TEXT_DENSITY),
@@ -135,8 +140,10 @@ void InterfaceCanvas::plot(std::span<const ColoredPixel> pixels) {
 
 void InterfaceCanvas::write(std::string_view text, sf::Vector2i anchor,
                             TextStyle style) {
-  writer_.write(canvas_.canvas(),
-                TextLine{.text = text, .anchor = anchor, .style = style});
+  writer_.write(canvas_.canvas(), TextLine{.text = text,
+                                           .anchor = anchor,
+                                           .style = style,
+                                           .metrics = textMetrics()});
 }
 
 void InterfaceCanvas::drawImage(TextureArea image, ImagePlacement placement,
@@ -169,7 +176,11 @@ void InterfaceCanvas::drawSmoothImage(std::string_view assetId,
 }
 
 int InterfaceCanvas::textWidth(std::string_view text, TextFont font) const {
-  return writer_.width(text, font);
+  return widthAtSizeOf(textMetrics(), writer_.width(text, font));
+}
+
+TextMetrics InterfaceCanvas::textMetrics() const {
+  return look_ ? look_().text : TextMetrics{};
 }
 
 void InterfaceCanvas::display() {

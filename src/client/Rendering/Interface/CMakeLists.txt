@@ -9,6 +9,7 @@ target_link_libraries(rtype_client_interface
     rtype_client_sprites
 )
 
+add_subdirectory(TextMeasures)
 add_subdirectory(TextWriter)
 add_subdirectory(InterfacePixel)
 add_subdirectory(SmoothImageLayer)

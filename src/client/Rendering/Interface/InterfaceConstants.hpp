@@ -36,6 +36,15 @@ constexpr int TEXT_LINE_HEIGHT = static_cast<int>(TEXT_CHARACTER_SIZE);
  * paints, in pixels. */
 constexpr int BOX_CORNER_LENGTH = 8;
 
+/**
+ * @brief Half pixels of the picture one pixel of a font covers when the text
+ * is drawn as the fonts are designed, and how many half pixels make a pixel.
+ * A text size is a count of half pixels, so a font drawn half again as large
+ * still lands on whole pixels of a canvas of CRISP_TEXT_DENSITY.
+ */
+constexpr int NORMAL_TEXT_HALF_PIXELS = 2;
+constexpr int HALF_PIXELS_PER_PIXEL = 2;
+
 /** @brief Scale of an image drawImage() copies pixel for pixel. */
 constexpr int NATIVE_SCALE = 1;
 

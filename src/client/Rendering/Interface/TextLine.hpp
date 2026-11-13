@@ -2,6 +2,7 @@
 
 #include <SFML/System/Vector2.hpp>
 #include <string_view>
+#include "TextMetrics.hpp"
 #include "TextStyle.hpp"
 
 namespace rtype::client {
@@ -15,6 +16,12 @@ struct TextLine {
    * TextAlignment::Center, in pixels of the picture. */
   sf::Vector2i anchor;
   TextStyle style;
+  /** @brief How large the player chose the text: a line is written at the
+   * larger of this size and its style's scale. */
+  TextMetrics metrics{};
+  /** @brief Whether an outlined line is laid on an opaque plate instead of
+   * its outline, as HIGH CONTRAST asks. */
+  bool plated = false;
 };
 
 }  // namespace rtype::client

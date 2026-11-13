@@ -16,6 +16,8 @@
 #include "ImagePlacement.hpp"
 #include "InterfaceConstants.hpp"
 #include "RecordingInterfaceCanvasConstants.hpp"
+#include "TextMeasures.hpp"
+#include "TextMetrics.hpp"
 #include "TextStyle.hpp"
 #include "TextureArea.hpp"
 
@@ -72,7 +74,13 @@ int RecordingInterfaceCanvas::textWidth(std::string_view text,
   const int advance = font == rtype::client::TextFont::Regular
                           ? rtype::client::REGULAR_FONT_ADVANCE
                           : RECORDED_SMALL_ADVANCE;
-  return static_cast<int>(sf::Utf8::count(text.begin(), text.end())) * advance;
+  return rtype::client::widthAtSizeOf(
+      record_->metrics,
+      static_cast<int>(sf::Utf8::count(text.begin(), text.end())) * advance);
+}
+
+rtype::client::TextMetrics RecordingInterfaceCanvas::textMetrics() const {
+  return record_->metrics;
 }
 
 void RecordingInterfaceCanvas::display() { ++record_->displayCount; }

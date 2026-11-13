@@ -15,6 +15,7 @@ target_link_libraries(rtype_client_interface_canvas
   PRIVATE
     rtype_client_asset_library
     rtype_client_shaders
+    rtype_client_text_measures
 )
 
 rtype_enable_warnings(rtype_client_interface_canvas)

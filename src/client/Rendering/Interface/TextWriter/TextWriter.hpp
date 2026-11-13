@@ -9,6 +9,7 @@
 #include "LoadedFont.hpp"
 #include "Logger.hpp"
 #include "TextLine.hpp"
+#include "TextPlacement.hpp"
 #include "TextStyle.hpp"
 
 namespace rtype::client {
@@ -21,7 +22,9 @@ class AssetLibrary;
  *
  * A dense picture, whose texture gives each of its pixels CRISP_TEXT_DENSITY
  * pixels on each axis, gets text drawn at that many texture pixels per pixel
- * of the font, so a font pixel always covers whole texture pixels.
+ * of the font, so a font pixel always covers whole texture pixels, even half
+ * again as large. A line is written at the larger of the size the player
+ * chose (TextLine::metrics) and the scale of its style.
  *
  * Text is written at TEXT_CHARACTER_SIZE, the size the fonts are designed for.
  * A line is placed as the browser places a line as tall as its font: its
@@ -62,11 +65,11 @@ class TextWriter {
 
   /** @returns Where SFML places @p text, in pixels of the view, so the line
    * lands as write() says: its baseline under the anchor, shifted left by its
-   * width or half of it when aligned right or centered, on whole pixels of a
-   * texture of @p density, and on the same pixels as at NATIVE_DENSITY. */
+   * width or half of it, counted in whole font pixels, when aligned right or
+   * centered; on whole pixels of the texture. */
   [[nodiscard]] sf::Vector2f positionOf(const sf::Text& text,
                                         const TextLine& line,
-                                        int density) const;
+                                        TextPlacement placement) const;
 
   LoadedFont regularFont_;
   LoadedFont smallFont_;

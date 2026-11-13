@@ -20,6 +20,8 @@
 #include "LoadedFont.hpp"
 #include "RenderingConstants.hpp"
 #include "TextLine.hpp"
+#include "TextMeasures.hpp"
+#include "TextPlacement.hpp"
 #include "TextStyle.hpp"
 
 namespace rtype::client {
@@ -70,9 +72,11 @@ void TextWriter::write(sf::RenderTarget& target, const TextLine& line) const {
     target.setView(clippedViewOf(target, *line.style.clip));
   }
   const int density = densityOf(target);
-  sf::Text text =
-      lineOf(line.text, line.style.font, line.style.scale * density);
-  const sf::Vector2f position = positionOf(text, line, density);
+  const int fontPixels = halfPixelsOf(line.metrics, line.style.scale) *
+                         density / HALF_PIXELS_PER_PIXEL;
+  sf::Text text = lineOf(line.text, line.style.font, fontPixels);
+  const sf::Vector2f position = positionOf(
+      text, line, TextPlacement{.density = density, .fontPixels = fontPixels});
   const float shrink = 1.0F / static_cast<float>(density);
   text.setScale({shrink, shrink});
   const sf::RenderStates states(crispText_.has_value() ? &*crispText_
@@ -119,21 +123,22 @@ sf::Text TextWriter::lineOf(std::string_view text, TextFont font,
 }
 
 sf::Vector2f TextWriter::positionOf(const sf::Text& text, const TextLine& line,
-                                    int density) const {
+                                    TextPlacement placement) const {
   const int risingRows = loadedFontOf(line.style.font).baselineRow -
                          static_cast<int>(TEXT_CHARACTER_SIZE);
-  sf::Vector2i position(
-      line.anchor.x * density,
-      (line.anchor.y + (risingRows * line.style.scale)) * density);
+  sf::Vector2i position((line.anchor.x * placement.density),
+                        (line.anchor.y * placement.density) +
+                            (risingRows * placement.fontPixels));
   if (line.style.alignment != TextAlignment::Left) {
     const float lineWidth = widthOf(text);
-    position.x -= line.style.alignment == TextAlignment::Right
-                      ? static_cast<int>(std::round(lineWidth))
-                      : static_cast<int>(std::floor(
-                            lineWidth / static_cast<float>(density) * HALF)) *
-                            density;
+    const auto fontPixels = static_cast<float>(placement.fontPixels);
+    position.x -=
+        line.style.alignment == TextAlignment::Right
+            ? static_cast<int>(std::round(lineWidth))
+            : static_cast<int>(std::floor(lineWidth / fontPixels * HALF)) *
+                  placement.fontPixels;
   }
-  return sf::Vector2f(position) / static_cast<float>(density);
+  return sf::Vector2f(position) / static_cast<float>(placement.density);
 }
 
 }  // namespace rtype::client
