@@ -1,1 +1,1 @@
-target_sources(master_tests PRIVATE ServerKeyTest.cpp ServerStatusRuleTest.cpp ServerStatusRuleFixtures.cpp)
+target_sources(master_tests PRIVATE ServerKeyTest.cpp ServerStatusRuleTest.cpp ServerStatusRuleFixtures.cpp SiteVisitorAddressTest.cpp)

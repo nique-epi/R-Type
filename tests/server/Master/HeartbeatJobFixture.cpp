@@ -12,6 +12,7 @@
 #include "HeartbeatTimes.hpp"
 #include "HostedGame.hpp"
 #include "HostedGameState.hpp"
+#include "MachineCounters.hpp"
 #include "MasterAccess.hpp"
 #include "ResultsFileFixtures.hpp"
 #include "RunningMaster.hpp"
@@ -53,7 +54,15 @@ void HeartbeatJobFixture::startJob(HeartbeatTimes times) {
       .probeTokens = probeTokens_,
       .measures = nullptr,
       .times = times,
-      .resultsFile = folder_.path() / LINKED_RESULTS_FILE});
+      .resultsFile = folder_.path() / LINKED_RESULTS_FILE,
+      .machineCounters = [reads = std::uint64_t{0}]() mutable {
+        ++reads;
+        return std::optional<MachineCounters>{MachineCounters{
+            .processorTime = reads * LINKED_PROCESSOR_TIME_PER_READ,
+            .idleProcessorTime = reads * LINKED_IDLE_TIME_PER_READ,
+            .usedMemoryBytes = LINKED_USED_MEMORY_BYTES,
+            .totalMemoryBytes = LINKED_TOTAL_MEMORY_BYTES}};
+      }});
 }
 
 void HeartbeatJobFixture::publishGameOf(std::string_view pilot) {

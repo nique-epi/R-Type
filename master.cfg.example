@@ -10,6 +10,13 @@ set port 8080
 # space goes in quotes. Empty: r-type_master.db next to the executable.
 set database ""
 
+# The secret the web site sends in X-Site-Key when it creates a server for a
+# visitor: such a creation is counted under the address the site names in
+# X-Site-Client-Address, so each visitor has a quota of its own. Empty: the
+# master reads neither header. Draw it with `openssl rand -hex 32`, give the
+# site the same value (MASTER_SITE_KEY), and keep this file private.
+set site-key ""
+
 # Turn a module off (it is never installed). Refused when a module
 # that stays on depends on it: storage and http need logger, servers needs
 # storage and http.

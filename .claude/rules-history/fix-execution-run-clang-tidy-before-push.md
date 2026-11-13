@@ -157,3 +157,7 @@ To meet `readability-qualified-auto`, reported by the local clang-tidy on libc++
 ## Update (7 November 2026) — a const Win32 handle
 
 `StandardInputWindows.cpp`, the console input of the supervisor on Windows, declared `const HANDLE reader = callingThread();` and `const HANDLE input = ::GetStdHandle(STD_INPUT_HANDLE);`. No local run could lint the file; the `Clang-tidy (Windows-only files)` job reported `misc-misplaced-const` three times, the third on the copy of `reader` that a `std::stop_callback` lambda captures. The handles became plain `HANDLE` values, as in `ChildBindingWindows.cpp`, and the point added to the subsection on files the local machine cannot compile names the grep to run before the push.
+
+## Update (12 November 2026) — a signed shift count in a Windows file
+
+`ThisMachineWindows.cpp`, which reads the processor times of the machine with `GetSystemTimes()`, joined the two halves of a `FILETIME` with `std::uint64_t{time.dwHighDateTime} << FILETIME_LOW_PART_BITS`. The left operand was widened and unsigned; the count, `FILETIME_LOW_PART_BITS`, was a `constexpr int` of the constants header. No local run compiles the file, and the `Clang-tidy (Windows-only files)` job failed on `hicpp-signed-bitwise`. Root cause: only the operand that holds the value was checked, not the count, whose type sat in another header. The rule gained point 5 of "A file the local machine cannot compile": every operand of a bitwise operator is unsigned, the count included.

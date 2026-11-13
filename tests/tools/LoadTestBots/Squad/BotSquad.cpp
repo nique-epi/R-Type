@@ -3,14 +3,19 @@
 #include <cstddef>
 #include <cstdint>
 #include <exception>
+#include <memory>
 #include <string>
 #include <vector>
 #include "Bot.hpp"
 #include "BotLaunch.hpp"
+#include "BotPilot.hpp"
+#include "BotPilotKind.hpp"
 #include "BotReport.hpp"
 #include "BotSquadConstants.hpp"
 #include "ConnectionPhase.hpp"
+#include "IBotPilot.hpp"
 #include "ReadyRule.hpp"
+#include "RulePilot.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::tools {
@@ -23,12 +28,24 @@ std::string nicknameOf(std::size_t index) {
   return std::string{BOT_NICKNAME_PREFIX} + std::to_string(index + 1);
 }
 
+/** @returns The pilot of bot @p index of @p launch. */
+std::unique_ptr<IBotPilot> pilotFor(const BotLaunch& launch,
+                                    std::size_t index) {
+  switch (launch.pilot) {
+    case BotPilotKind::Rules:
+      return std::make_unique<RulePilot>(index);
+    case BotPilotKind::Random:
+      break;
+  }
+  return std::make_unique<BotPilot>(launch.seed +
+                                    static_cast<std::uint32_t>(index));
+}
+
 }  // namespace
 
 BotSquad::BotSquad(const BotLaunch& launch) {
   for (std::size_t index = 0; index < launch.botCount; ++index) {
-    Bot& bot =
-        bots_.emplace_back(launch.seed + static_cast<std::uint32_t>(index));
+    Bot& bot = bots_.emplace_back(pilotFor(launch, index));
     bot.join(launch.server, nicknameOf(index));
   }
 }

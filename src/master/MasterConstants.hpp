@@ -32,10 +32,11 @@ constexpr std::string_view MASTER_CONFIGURATION_FILE_NAME = "master.cfg";
  */
 constexpr std::string_view PORT_SETTING_NAME = "port";
 constexpr std::string_view DATABASE_SETTING_NAME = "database";
+constexpr std::string_view SITE_KEY_SETTING_NAME = "site-key";
 
 /** @brief Every setting of the master, in the order its usage lists them. */
-constexpr std::array MASTER_SETTING_NAMES{PORT_SETTING_NAME,
-                                          DATABASE_SETTING_NAME};
+constexpr std::array MASTER_SETTING_NAMES{
+    PORT_SETTING_NAME, DATABASE_SETTING_NAME, SITE_KEY_SETTING_NAME};
 
 /**
  * @brief The database of the master while DATABASE_SETTING_NAME is empty, in

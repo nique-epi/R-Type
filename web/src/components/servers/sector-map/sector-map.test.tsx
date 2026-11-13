@@ -35,6 +35,7 @@ function renderMap(readOnly = false) {
     onLeave: vi.fn(),
     onOpenServer: vi.fn(),
     onLeaderboard: vi.fn(),
+    onHost: vi.fn(),
     onExit: vi.fn(),
   };
   render(
@@ -106,6 +107,19 @@ describe('SectorMap', () => {
     press('q');
 
     expect(callbacks.onJoin).toHaveBeenCalledWith('nebula-lyon', 1);
+  });
+
+  it('opens the hosting page on H, and on its chip', () => {
+    const { callbacks, press } = renderMap();
+
+    press('h');
+    expect(callbacks.onHost).toHaveBeenCalledTimes(1);
+    expect(callbacks.onLeaderboard).not.toHaveBeenCalled();
+
+    fireEvent.click(
+      screen.getByRole('button', { name: new RegExp(fr.sectorMap.host, 'i') }),
+    );
+    expect(callbacks.onHost).toHaveBeenCalledTimes(2);
   });
 
   it('counts the servers it draws in its subtitle', () => {

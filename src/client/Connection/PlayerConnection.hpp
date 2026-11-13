@@ -7,6 +7,7 @@
 #include "DatagramRouter.hpp"
 #include "EntityMessageQueue.hpp"
 #include "GameLoadedReminder.hpp"
+#include "IEntityTypeTable.hpp"
 #include "IServerPingProbe.hpp"
 #include "InstallContext.hpp"
 #include "MessageDispatcher.hpp"
@@ -94,8 +95,10 @@ class PlayerConnection {
   [[nodiscard]] ServerSession& session();
   [[nodiscard]] const ServerSession& session() const;
   [[nodiscard]] WaitingRoom& waitingRoom();
-  [[nodiscard]] const WaitingRoom& waitingRoom() const;
   [[nodiscard]] EntityMessageQueue& entityMessages();
+
+  /** @returns The entity types of the content of the session. */
+  [[nodiscard]] const IEntityTypeTable& entityTypes() const;
 
   /** @returns The probe of the list of servers, on its own route. */
   [[nodiscard]] IServerPingProbe& pings();

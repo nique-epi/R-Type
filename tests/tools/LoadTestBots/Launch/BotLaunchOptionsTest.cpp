@@ -2,10 +2,12 @@
 #include "BotLaunch.hpp"
 #include "BotLaunchOptions.hpp"
 #include "BotLaunchOptionsTestConstants.hpp"
+#include "BotPilotKind.hpp"
 #include "EngineException.hpp"
 
 using rtype::engine::InvalidLaunchOptionValueException;
 using rtype::tools::BotLaunch;
+using rtype::tools::BotPilotKind;
 using rtype::tools::readBotLaunch;
 using rtype::tools::testing::A_RUN_OF_TWO_SECONDS;
 using rtype::tools::testing::ANOTHER_SEED;
@@ -21,6 +23,7 @@ using rtype::tools::testing::NO_SECOND;
 using rtype::tools::testing::ONE_BOT;
 using rtype::tools::testing::ONE_BOT_TOO_MANY;
 using rtype::tools::testing::TWO_SECONDS;
+using rtype::tools::testing::WITH_RULES;
 
 /**
  * Given no argument
@@ -55,7 +58,7 @@ TEST(BotLaunchOptions, AcceptsASquadOfOneBot) {
 }
 
 /**
- * Given a count of every seat of a server plus one game
+ * Given a count of the largest squad
  * When the tool reads its launch
  * Then that many bots join
  */
@@ -117,4 +120,22 @@ TEST(BotLaunchOptions, JoinsTheServerItIsGiven) {
 
   EXPECT_EQ(launch.server.address, ANOTHER_SERVER_ADDRESS);
   EXPECT_EQ(launch.server.port, ANOTHER_SERVER_PORT);
+}
+
+/**
+ * Given no option about the pilot
+ * When the tool reads its launch
+ * Then the bots fly at random
+ */
+TEST(BotLaunchOptions, BotsFlyAtRandomByDefault) {
+  EXPECT_EQ(readBotLaunch({}).pilot, BotPilotKind::Random);
+}
+
+/**
+ * Given the option of the rules
+ * When the tool reads its launch
+ * Then the rules fly the bots
+ */
+TEST(BotLaunchOptions, TheRulesCanFlyTheBots) {
+  EXPECT_EQ(readBotLaunch(WITH_RULES).pilot, BotPilotKind::Rules);
 }

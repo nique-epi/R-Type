@@ -36,6 +36,9 @@ void insertSample(SQLite::Database& connection, const HeartbeatRecord& record) {
   bindMeasure(insert, SENT_BYTES_PARAMETER, measures.sentBytesPerSecond);
   bindMeasure(insert, LOSS_PERCENT_PARAMETER, measures.lossPercent);
   bindMeasure(insert, AVERAGE_PING_PARAMETER, measures.averagePingMilliseconds);
+  bindMeasure(insert, CPU_PERCENT_PARAMETER, measures.cpuPercent);
+  bindMeasure(insert, USED_MEMORY_PARAMETER, measures.usedMemoryBytes);
+  bindMeasure(insert, TOTAL_MEMORY_PARAMETER, measures.totalMemoryBytes);
   insert.exec();
 }
 
@@ -58,7 +61,12 @@ network::ServerSample sampleIn(const SQLite::Statement& query) {
               measureIn(query.getColumn(SAMPLE_SENT_BYTES_COLUMN)),
           .lossPercent = measureIn(query.getColumn(SAMPLE_LOSS_PERCENT_COLUMN)),
           .averagePingMilliseconds =
-              measureIn(query.getColumn(SAMPLE_AVERAGE_PING_COLUMN))}};
+              measureIn(query.getColumn(SAMPLE_AVERAGE_PING_COLUMN)),
+          .cpuPercent = measureIn(query.getColumn(SAMPLE_CPU_PERCENT_COLUMN)),
+          .usedMemoryBytes =
+              measureIn(query.getColumn(SAMPLE_USED_MEMORY_COLUMN)),
+          .totalMemoryBytes =
+              measureIn(query.getColumn(SAMPLE_TOTAL_MEMORY_COLUMN))}};
 }
 
 }  // namespace

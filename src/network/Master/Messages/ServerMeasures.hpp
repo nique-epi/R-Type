@@ -20,6 +20,13 @@ struct ServerMeasures {
   std::optional<double> lossPercent;
   /** @brief The mean round trip to its players. */
   std::optional<double> averagePingMilliseconds;
+  /** @brief The share of the processors of its machine that is busy, every
+   * program counted, 0 to 100. */
+  std::optional<double> cpuPercent;
+  /** @brief The memory of its machine in use, every program counted, and all
+   * the memory of the machine, in bytes. */
+  std::optional<double> usedMemoryBytes;
+  std::optional<double> totalMemoryBytes;
 
   bool operator==(const ServerMeasures&) const = default;
 };

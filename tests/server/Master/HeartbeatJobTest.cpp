@@ -7,9 +7,12 @@ using rtype::server::testing::FAST_TIMES;
 using rtype::server::testing::FIRST_PILOT_NAME;
 using rtype::server::testing::GAMES_MEMBER_TEXT;
 using rtype::server::testing::HeartbeatJobFixture;
+using rtype::server::testing::LINKED_BUSY_PERCENT_TEXT;
 using rtype::server::testing::LINKED_DIFFICULTIES_TEXT;
 using rtype::server::testing::LINKED_PROBE_TOKEN;
 using rtype::server::testing::LINKED_PROBE_TOKEN_TEXT;
+using rtype::server::testing::LINKED_TOTAL_MEMORY_TEXT;
+using rtype::server::testing::LINKED_USED_MEMORY_TEXT;
 using rtype::server::testing::MASTER_DOWN_TIME;
 using rtype::server::testing::PROBE_TOKEN_MEMBER_TEXT;
 using rtype::server::testing::SECOND_PILOT_NAME;
@@ -87,4 +90,28 @@ TEST_F(HeartbeatJobFixture, TellsTheDifficultiesOfTheServer) {
   startJob(FAST_TIMES);
 
   EXPECT_TRUE(heartbeatSoonNames(LINKED_DIFFICULTIES_TEXT));
+}
+
+/**
+ * Given a job on a machine that uses 6 GB of its 8 GB
+ * When it starts
+ * Then its heartbeat tells the master the memory in use and all of it
+ */
+TEST_F(HeartbeatJobFixture, TellsTheMemoryOfTheMachine) {
+  startJob(FAST_TIMES);
+
+  EXPECT_TRUE(heartbeatSoonNames(LINKED_USED_MEMORY_TEXT));
+  EXPECT_TRUE(heartbeatSoonNames(LINKED_TOTAL_MEMORY_TEXT));
+}
+
+/**
+ * Given a job on a machine whose processors are idle a quarter of the time
+ * between two readings of its counters
+ * When its heartbeats go out
+ * Then the master is told three quarters of the processors are busy
+ */
+TEST_F(HeartbeatJobFixture, TellsTheBusyShareOfTheProcessors) {
+  startJob(FAST_TIMES);
+
+  EXPECT_TRUE(heartbeatSoonNames(LINKED_BUSY_PERCENT_TEXT));
 }

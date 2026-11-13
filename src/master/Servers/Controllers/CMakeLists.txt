@@ -9,12 +9,14 @@ target_include_directories(rtype_master_servers_controllers PUBLIC ${CMAKE_CURRE
 
 target_link_libraries(rtype_master_servers_controllers
   PUBLIC
+    rtype_engine_commands
     rtype_master_http_module
     rtype_master_probe_module
     rtype_master_servers_services
     rtype_network_exceptions
   PRIVATE
     nlohmann_json::nlohmann_json
+    rtype_master_servers_helpers
     rtype_network_master_routes
     rtype_network_master_validators
     rtype_network_transport

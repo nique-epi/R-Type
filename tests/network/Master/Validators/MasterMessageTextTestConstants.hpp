@@ -100,6 +100,9 @@ constexpr double PARIS_TICK_P95 = 4.25;
 constexpr double PARIS_RECEIVED_BYTES = 12000.0;
 constexpr double PARIS_SENT_BYTES = 34000.0;
 constexpr double PARIS_LOSS_PERCENT = 0.5;
+constexpr double PARIS_CPU_PERCENT = 62.5;
+constexpr double PARIS_USED_MEMORY_BYTES = 3'000'000'000.0;
+constexpr double PARIS_TOTAL_MEMORY_BYTES = 8'000'000'000.0;
 
 /** @brief Values just outside what a game or a measure may hold. */
 constexpr std::string_view PAUSED_STATE = "paused";
@@ -109,6 +112,8 @@ constexpr std::string_view GAME_NAME_OF_17_BYTES = "ABCDEFGHIJKLMNOPQ";
 constexpr std::string_view EMPTY_GAME_NAME{};
 constexpr double NEGATIVE_MEASURE = -1.0;
 constexpr double LOSS_ABOVE_ALL = 100.5;
+constexpr double CPU_OF_EVERY_PROCESSOR = 100.0;
+constexpr double CPU_ABOVE_ALL = 100.5;
 constexpr std::size_t GAMES_ABOVE_THE_MOST = 65;
 constexpr std::string_view FOURTH_PILOT = "SPARE";
 constexpr std::string_view FIFTH_PILOT = "ONE_TOO_MANY";
@@ -156,6 +161,9 @@ constexpr std::string_view FIRST_GAME_FRIENDLY_FIRE_POINTER =
     "/games/0/friendlyFire";
 constexpr std::string_view TICK_P50_POINTER = "/measures/tickP50Milliseconds";
 constexpr std::string_view LOSS_PERCENT_POINTER = "/measures/lossPercent";
+constexpr std::string_view CPU_PERCENT_POINTER = "/measures/cpuPercent";
+constexpr std::string_view USED_MEMORY_POINTER = "/measures/usedMemoryBytes";
+constexpr std::string_view TOTAL_MEMORY_POINTER = "/measures/totalMemoryBytes";
 constexpr std::string_view AVERAGE_PING_POINTER =
     "/measures/averagePingMilliseconds";
 

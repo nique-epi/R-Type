@@ -8,6 +8,7 @@
 #include <string_view>
 #include "BotLaunch.hpp"
 #include "BotLaunchConstants.hpp"
+#include "BotPilotKind.hpp"
 #include "ClientConstants.hpp"
 #include "EndpointText.hpp"
 #include "EngineException.hpp"
@@ -65,6 +66,22 @@ engine::LaunchOption valueOption(std::string_view name, Value& field,
       .record = [&field, read](std::string_view text) { field = read(text); }};
 }
 
+/** @returns The option @p name, which has @p kind fly the bots. */
+engine::LaunchOption pilotOption(std::string_view name, BotLaunch& launch,
+                                 BotPilotKind kind) {
+  return engine::LaunchOption{
+      .name = name,
+      .takesValue = false,
+      .record = [&launch, kind]([[maybe_unused]] std::string_view value) {
+        launch.pilot = kind;
+      }};
+}
+
+/** @returns The lines of the usage about what flies the bots. */
+std::string pilotUsage() {
+  return engine::usageEntry(RULES_OPTION, "Fly the bots with simple rules.");
+}
+
 /** @returns `--help`, which sets @p helpRequested. */
 engine::LaunchOption helpOption(bool& helpRequested) {
   return engine::LaunchOption{
@@ -87,6 +104,7 @@ BotLaunch readBotLaunch(std::span<const std::string_view> arguments) {
       valueOption(BOTS_OPTION, launch.botCount, botCountFrom),
       valueOption(SECONDS_OPTION, launch.duration, durationFrom),
       valueOption(SEED_OPTION, launch.seed, seedFrom),
+      pilotOption(RULES_OPTION, launch, BotPilotKind::Rules),
       helpOption(launch.helpRequested)};
   engine::readLaunchArguments(arguments, options);
   return launch;
@@ -115,6 +133,7 @@ std::string botUsage() {
       std::string(SEED_OPTION) + " <seed>",
       "Seed the actions of the bots are drawn from. Default: " +
           std::to_string(DEFAULT_BOT_SEED) + ".");
+  text += pilotUsage();
   text += engine::usageEntry(engine::HELP_OPTION,
                              "Print this help and start no bot.");
   return text;

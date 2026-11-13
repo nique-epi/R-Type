@@ -56,6 +56,7 @@ export const fr: Dictionary = {
     sheet: 'Fiche',
     back: 'Retour',
     leaderboard: 'Classement',
+    host: 'Heberger',
     keys: {
       quickPlay: 'Q',
       join: 'Entree',
@@ -63,6 +64,7 @@ export const fr: Dictionary = {
       sheet: 'I',
       back: 'Echap',
       leaderboard: 'L',
+      host: 'H',
     },
   },
   ranking: {

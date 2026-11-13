@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <cstdint>
+#include <functional>
 #include <optional>
 #include <random>
 #include <stop_token>
@@ -15,10 +16,12 @@
 #include "LatestServerMeasures.hpp"
 #include "LatestValue.hpp"
 #include "Logger.hpp"
+#include "MachineCounters.hpp"
 #include "MasterClient.hpp"
 #include "ResultsCourier.hpp"
 #include "RetryBackoff.hpp"
 #include "ServerIdentity.hpp"
+#include "ServerMeasures.hpp"
 
 namespace rtype::server {
 
@@ -34,7 +37,8 @@ namespace rtype::server {
  * once it is back.
  *
  * It never touches a game: it reads the list and the measures the supervised
- * games module publishes. A
+ * games module publishes, and adds to them the load of the machine, whose
+ * counters it reads once per heartbeat (see withMachineLoad()). A
  * master that refuses or does not answer is written in the journal once, not
  * at each try; the job registers again after a wait RetryBackoff draws under a
  * ceiling, which starts at the shorter of times.retry and times.maximumRetry
@@ -73,6 +77,10 @@ class HeartbeatJob {
    */
   [[nodiscard]] std::optional<std::uint64_t> unsentProbeToken(
       std::uint64_t revision) const;
+  /** @returns The measures of the games published last, with the load of the
+   * machine since the heartbeat before; it keeps the counters it read for the
+   * next one. */
+  [[nodiscard]] network::ServerMeasures measuresNow();
   /** @returns The wait before the next registration, its share of the ceiling
    * of backoff_ drawn from drawer_. */
   [[nodiscard]] std::chrono::milliseconds nextRetryWait();
@@ -86,6 +94,8 @@ class HeartbeatJob {
   const concurrency::LatestValue<std::uint64_t>& probeTokens_;
   std::uint64_t sentTokenRevision_{0};
   const LatestServerMeasures* measures_;
+  std::function<std::optional<MachineCounters>()> machineCounters_;
+  std::optional<MachineCounters> earlierCounters_;
   HeartbeatTimes times_;
   RetryBackoff backoff_;
   std::mt19937 drawer_;

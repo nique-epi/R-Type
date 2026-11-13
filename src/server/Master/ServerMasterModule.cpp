@@ -27,6 +27,7 @@
 #include "ServerIdentity.hpp"
 #include "ServerMasterConstants.hpp"
 #include "TextSettingDefinition.hpp"
+#include "ThisMachine.hpp"
 #include "TickDatagrams.hpp"
 #include "TimeConstants.hpp"
 
@@ -146,7 +147,8 @@ std::optional<HeartbeatJobParts> ServerMasterModule::jobParts() const {
       .probeTokens = probeTokens_,
       .measures = measures_,
       .times = {},
-      .resultsFile = resultsFile_->resultsFile()};
+      .resultsFile = resultsFile_->resultsFile(),
+      .machineCounters = countersOfThisMachine};
 }
 
 void ServerMasterModule::start() {

@@ -102,7 +102,10 @@ TEST(ConsoleTexts, WritesEachMeasureTakenOfTheGames) {
       .receivedBytesPerSecond = std::nullopt,
       .sentBytesPerSecond = std::nullopt,
       .lossPercent = LOSS_OF_TWO_PERCENT,
-      .averagePingMilliseconds = std::nullopt};
+      .averagePingMilliseconds = std::nullopt,
+      .cpuPercent = std::nullopt,
+      .usedMemoryBytes = std::nullopt,
+      .totalMemoryBytes = std::nullopt};
 
   EXPECT_EQ(measuresLineOf(measures), TWO_MEASURES_LINE);
 }

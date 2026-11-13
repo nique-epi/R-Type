@@ -56,9 +56,10 @@ constexpr std::string_view NO_SERVERS_BODY = R"({"servers":[]})";
 /** @brief The measures of the heartbeat of "Paris 1", as a sample keeps them.
  */
 constexpr std::string_view PARIS_MEASURES_BODY =
-    R"({"lossPercent":0.5,"receivedBytesPerSecond":12000.0,)"
-    R"("sentBytesPerSecond":34000.0,"tickP50Milliseconds":1.5,)"
-    R"("tickP95Milliseconds":4.25})";
+    R"({"cpuPercent":62.5,"lossPercent":0.5,)"
+    R"("receivedBytesPerSecond":12000.0,"sentBytesPerSecond":34000.0,)"
+    R"("tickP50Milliseconds":1.5,"tickP95Milliseconds":4.25,)"
+    R"("totalMemoryBytes":8000000000.0,"usedMemoryBytes":3000000000.0})";
 
 /** @brief The members of the lists the tests read. */
 constexpr std::string_view SERVERS_MEMBER_NAME = "servers";
