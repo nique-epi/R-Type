@@ -17,6 +17,7 @@
 #include <string>
 #include <string_view>
 #include "AssetLibrary.hpp"
+#include "BackgroundConstants.hpp"
 #include "ColoredPixel.hpp"
 #include "FragmentShader.hpp"
 #include "ImagePlacement.hpp"
@@ -96,6 +97,7 @@ InterfaceCanvas::InterfaceCanvas(const AssetLibrary& library)
     : textures_(library),
       foundTextures_(textures_, INTERFACE_LOGGER_NAME),
       writer_(library),
+      canvas_(CRISP_TEXT_DENSITY),
       logger_(std::string(INTERFACE_LOGGER_NAME)),
       shadeSwap_(loadFragmentShader(SHADE_SWAP_SHADER, logger_)) {}
 

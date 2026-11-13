@@ -39,10 +39,10 @@ void ScrollingBackground::draw(sf::RenderTarget& target) {
   starfield_.paint(pixels_);
   sf::RenderTexture& sky = sky_.canvas();
   sky.clear(SKY_COLOR);
-  sky.setView(shiftedBy(sky.getDefaultView(), offset_));
+  sky.setView(shiftedBy(sky_.pixelView(), offset_));
   sky.draw(pixels_);
   decor_.draw(sky);
-  sky.setView(sky.getDefaultView());
+  sky.setView(sky_.pixelView());
   sky.display();
   sky_.show(target);
   if (!halo_.isAvailable()) {

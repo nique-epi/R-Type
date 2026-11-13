@@ -3,6 +3,7 @@
 #include "IntegerScaleTestConstants.hpp"
 
 using rtype::client::integerScaleFactor;
+using rtype::client::sharpScaleOf;
 
 /**
  * Given a playfield 1600 x 900 pixels on screen, 3.33 times the background
@@ -47,4 +48,33 @@ TEST(IntegerScale, NarrowerAxisDecides) {
  */
 TEST(IntegerScale, EmptyPlayfieldStillGetsOne) {
   EXPECT_EQ(integerScaleFactor(NO_SIZE), ONCE);
+}
+
+/**
+ * Given a canvas that writes text, two texture pixels per pixel of its own
+ * When it is shown where the background is enlarged four times
+ * Then its texture is enlarged twice, so its pixels cover the same screen
+ */
+TEST(IntegerScale, ATextCanvasIsEnlargedByHalfTheFactor) {
+  EXPECT_EQ(sharpScaleOf(FOUR_TIMES, TEXT_CANVAS_DENSITY),
+            TEXT_CANVAS_AT_FOUR_TIMES);
+}
+
+/**
+ * Given a canvas that writes text
+ * When it is shown where the background is enlarged three times
+ * Then its texture is enlarged one and a half times
+ */
+TEST(IntegerScale, AnOddFactorEnlargesATextCanvasByAHalf) {
+  EXPECT_EQ(sharpScaleOf(THREE_TIMES, TEXT_CANVAS_DENSITY),
+            TEXT_CANVAS_AT_THREE_TIMES);
+}
+
+/**
+ * Given the sky, one texture pixel per pixel of its own
+ * When it is shown where the background is enlarged three times
+ * Then its texture is enlarged by the whole factor, as before
+ */
+TEST(IntegerScale, TheSkyIsEnlargedByTheWholeFactor) {
+  EXPECT_EQ(sharpScaleOf(THREE_TIMES, SKY_DENSITY), SKY_AT_THREE_TIMES);
 }

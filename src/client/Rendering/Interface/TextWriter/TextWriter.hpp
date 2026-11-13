@@ -19,6 +19,10 @@ class AssetLibrary;
  * @brief Writes lines of text with the two pixel fonts of the interface, on
  * whole pixels of a picture whose view is in its own pixels.
  *
+ * A dense picture, whose texture gives each of its pixels CRISP_TEXT_DENSITY
+ * pixels on each axis, gets text drawn at that many texture pixels per pixel
+ * of the font, so a font pixel always covers whole texture pixels.
+ *
  * Text is written at TEXT_CHARACTER_SIZE, the size the fonts are designed for.
  * A line is placed as the browser places a line as tall as its font: its
  * baseline sits REGULAR_FONT_BASELINE_ROW or SMALL_FONT_BASELINE_ROW below the
@@ -52,15 +56,17 @@ class TextWriter {
   [[nodiscard]] const LoadedFont& loadedFontOf(TextFont font) const;
 
   /** @returns A line of text in a font, at TEXT_CHARACTER_SIZE times
-   * @p scale, not placed. */
+   * @p scale pixels of the target's texture, not placed. */
   [[nodiscard]] sf::Text lineOf(std::string_view text, TextFont font,
                                 int scale) const;
 
-  /** @returns Where SFML places @p text so the line lands as write() says:
-   * its baseline under the anchor, shifted left by its width or half of it
-   * when aligned right or centered. */
-  [[nodiscard]] sf::Vector2i positionOf(const sf::Text& text,
-                                        const TextLine& line) const;
+  /** @returns Where SFML places @p text, in pixels of the view, so the line
+   * lands as write() says: its baseline under the anchor, shifted left by its
+   * width or half of it when aligned right or centered, on whole pixels of a
+   * texture of @p density, and on the same pixels as at NATIVE_DENSITY. */
+  [[nodiscard]] sf::Vector2f positionOf(const sf::Text& text,
+                                        const TextLine& line,
+                                        int density) const;
 
   LoadedFont regularFont_;
   LoadedFont smallFont_;

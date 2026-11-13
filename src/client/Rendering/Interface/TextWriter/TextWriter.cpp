@@ -27,15 +27,24 @@ namespace rtype::client {
 namespace {
 
 /** @returns The view of @p target, cut to the pixels of @p clip, which lie
- * inside the target. */
+ * inside the view; the clip is in pixels of the view, whatever the density of
+ * the target. */
 sf::View clippedViewOf(const sf::RenderTarget& target, sf::IntRect clip) {
   sf::View view = target.getView();
-  const sf::Vector2f size(target.getSize());
-  const sf::Vector2f position(clip.position);
+  const sf::Vector2f size = view.getSize();
+  const sf::Vector2f topLeft = view.getCenter() - (size * HALF);
+  const sf::Vector2f position = sf::Vector2f(clip.position) - topLeft;
   const sf::Vector2f extent(clip.size);
   view.setScissor(sf::FloatRect({position.x / size.x, position.y / size.y},
                                 {extent.x / size.x, extent.y / size.y}));
   return view;
+}
+
+/** @returns How many pixels of its texture @p target gives one pixel of its
+ * view: CRISP_TEXT_DENSITY on a dense PixelCanvas, NATIVE_DENSITY otherwise. */
+int densityOf(const sf::RenderTarget& target) {
+  return static_cast<int>(std::lround(static_cast<float>(target.getSize().x) /
+                                      target.getView().getSize().x));
 }
 
 /** @returns How wide a line is, in pixels: where a character after its last
@@ -60,8 +69,12 @@ void TextWriter::write(sf::RenderTarget& target, const TextLine& line) const {
     whole = target.getView();
     target.setView(clippedViewOf(target, *line.style.clip));
   }
-  sf::Text text = lineOf(line.text, line.style.font, line.style.scale);
-  const sf::Vector2i position = positionOf(text, line);
+  const int density = densityOf(target);
+  sf::Text text =
+      lineOf(line.text, line.style.font, line.style.scale * density);
+  const sf::Vector2f position = positionOf(text, line, density);
+  const float shrink = 1.0F / static_cast<float>(density);
+  text.setScale({shrink, shrink});
   const sf::RenderStates states(crispText_.has_value() ? &*crispText_
                                                        : nullptr);
   if (line.style.outlined) {
@@ -70,13 +83,13 @@ void TextWriter::write(sf::RenderTarget& target, const TextLine& line) const {
     text.setFillColor(outline);
     for (const auto& directions : {CROSS_DIRECTIONS, DIAGONAL_DIRECTIONS}) {
       for (const sf::Vector2i offset : directions) {
-        text.setPosition(sf::Vector2f(position + offset));
+        text.setPosition(position + sf::Vector2f(offset));
         target.draw(text, states);
       }
     }
   }
   text.setFillColor(line.style.color);
-  text.setPosition(sf::Vector2f(position));
+  text.setPosition(position);
   target.draw(text, states);
   if (whole.has_value()) {
     target.setView(*whole);
@@ -105,19 +118,22 @@ sf::Text TextWriter::lineOf(std::string_view text, TextFont font,
           TEXT_CHARACTER_SIZE * static_cast<unsigned int>(scale)};
 }
 
-sf::Vector2i TextWriter::positionOf(const sf::Text& text,
-                                    const TextLine& line) const {
+sf::Vector2f TextWriter::positionOf(const sf::Text& text, const TextLine& line,
+                                    int density) const {
   const int risingRows = loadedFontOf(line.style.font).baselineRow -
                          static_cast<int>(TEXT_CHARACTER_SIZE);
-  sf::Vector2i position(line.anchor.x,
-                        line.anchor.y + (risingRows * line.style.scale));
+  sf::Vector2i position(
+      line.anchor.x * density,
+      (line.anchor.y + (risingRows * line.style.scale)) * density);
   if (line.style.alignment != TextAlignment::Left) {
     const float lineWidth = widthOf(text);
     position.x -= line.style.alignment == TextAlignment::Right
                       ? static_cast<int>(std::round(lineWidth))
-                      : static_cast<int>(std::floor(lineWidth * HALF));
+                      : static_cast<int>(std::floor(
+                            lineWidth / static_cast<float>(density) * HALF)) *
+                            density;
   }
-  return position;
+  return sf::Vector2f(position) / static_cast<float>(density);
 }
 
 }  // namespace rtype::client

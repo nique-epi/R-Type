@@ -19,4 +19,12 @@ namespace rtype::client {
  */
 [[nodiscard]] unsigned int integerScaleFactor(sf::Vector2i playfieldPixels);
 
+/**
+ * @returns How much the texture of a canvas of @p density is enlarged so its
+ * pixels fill a picture enlarged @p factor times: factor / density. The
+ * factor comes from the background grid, never from the texture, so a denser
+ * canvas is shown at the same size and as sharp.
+ */
+[[nodiscard]] float sharpScaleOf(unsigned int factor, unsigned int density);
+
 }  // namespace rtype::client
