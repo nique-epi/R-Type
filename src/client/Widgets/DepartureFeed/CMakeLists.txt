@@ -8,10 +8,10 @@ target_link_libraries(rtype_client_departure_feed
     rtype_client_pilots
     rtype_client_widgets
   PRIVATE
+    rtype_client_text_measures
     rtype_client_entity_sprites
     rtype_client_pilot_color
     rtype_client_pilot_name
-    rtype_client_typing
 )
 
 rtype_enable_warnings(rtype_client_departure_feed)

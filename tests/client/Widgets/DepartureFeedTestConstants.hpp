@@ -17,7 +17,6 @@ constexpr std::uint8_t KAI_NUMBER = 3;
 constexpr std::string_view NOVA = "NOVA";
 constexpr std::string_view KAI = "KAI";
 constexpr std::string_view LONG_NAME = "CAPTAIN_STARDUST";
-constexpr std::string_view LONG_NAME_CUT = "CAPTAIN_ST";
 constexpr std::string_view FEED_LEFT_WORDS = "LEFT THE GAME";
 constexpr std::string_view FEED_LOST_WORDS = "SIGNAL LOST";
 constexpr std::string_view FEED_EXPELLED_WORDS = "WAS EXPELLED";
