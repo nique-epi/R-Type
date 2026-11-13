@@ -17,7 +17,7 @@ This page tells you how to run it, how a map is built, and how to write a biome 
 | Starting biome | Available | `generator/procedural/tools/new_biome.py` |
 | Biomes | Kept outside the repository, in the folder `--biomes` names | none |
 | Palette from pictures, sprite import, preview | Available | `generator/procedural/tools/` |
-| LDtk project generated for the Pit: six maps of three screens | Available, drawn by the client | `assets/biomes/fosse/` |
+| LDtk project generated for the Pit: six maps of three screens, the first opening on the cave entrance `cave_mouth` | Available, drawn by the client | `assets/biomes/fosse/` |
 | Drawing the maps in the game | Available, its tile layers only | `src/client/Rendering/Background/BiomeMap/` |
 
 ## Running it
@@ -185,7 +185,7 @@ python3 tools/import_sprites.py --biomes ../../../my_biomes --biome hive sheet.p
 
 The tool crops each sprite and moves each pixel to the nearest color of the palette. Name a file `<family>.<size>.<name>[.glow][.hang][.hero].png` and the sprite needs no line of `decor`: `size` is `large`, `medium` or `small`; `glow` makes it a light; `hang` keeps it under ceilings; `hero` keeps it for the hero of a zone.
 
-5. **Write the templates.** In a corridor, each one names a material, two connectors, the four profiles as `[x, y]` steps, a hero at x = 160 or x = 320, and the families of its clusters; a template with `"sky": true` has no ceiling. In a field, each one names its hero body and the places of its groups of bodies.
+5. **Write the templates.** In a corridor, each one names a material, two connectors, the four profiles as `[x, y]` steps, a hero at x = 160 or x = 320, and the families of its clusters; a template with `"sky": true` has no ceiling, and one with `"entrance": {"mouth": x}` opens the first map of a biome as the entrance of a cave: left of `x` the play plane is cut along a ragged rock edge and draws nothing, so the game shows open space there, and the client shows the far and second planes only right of the mouth. An entrance only opens a chain `--sequence` forces. In a field, each one names its hero body and the places of its groups of bodies.
 
 6. **Generate, look, export.**
 
