@@ -1,5 +1,6 @@
 #include "DialogMenus.hpp"
 #include "ConnectionPhase.hpp"
+#include "DialogMaking.hpp"
 #include "IScreenNavigator.hpp"
 #include "IServerConnection.hpp"
 #include "ISoundPlayer.hpp"
@@ -37,8 +38,10 @@ const char* lossMessageOf(ConnectionPhase ending) {
 
 }  // namespace
 
-Menu quitConfirmationMenu(IScreenNavigator& navigator, ISoundPlayer& sounds) {
-  return MenuBuilder(MenuBuilder::Frame::Dialog, &sounds)
+Menu quitConfirmationMenu(const DialogMaking& making) {
+  IScreenNavigator& navigator = making.navigator.get();
+  return MenuBuilder(MenuBuilder::Frame::Dialog, &making.sounds.get(),
+                     making.metrics)
       .heading(CONFIRM_HEADING)
       .message(QUIT_QUESTION)
       .cancelButton({.label = NO_LABEL}, [&navigator] { navigator.pop(); })
@@ -46,10 +49,11 @@ Menu quitConfirmationMenu(IScreenNavigator& navigator, ISoundPlayer& sounds) {
       .build();
 }
 
-Menu leaveGameConfirmationMenu(IScreenNavigator& navigator,
-                               ISoundPlayer& sounds,
+Menu leaveGameConfirmationMenu(const DialogMaking& making,
                                IServerConnection& connection) {
-  return MenuBuilder(MenuBuilder::Frame::Dialog, &sounds)
+  IScreenNavigator& navigator = making.navigator.get();
+  return MenuBuilder(MenuBuilder::Frame::Dialog, &making.sounds.get(),
+                     making.metrics)
       .heading(CONFIRM_HEADING)
       .message(QUIT_QUESTION)
       .cancelButton({.label = NO_LABEL}, [&navigator] { navigator.pop(); })
@@ -61,9 +65,10 @@ Menu leaveGameConfirmationMenu(IScreenNavigator& navigator,
       .build();
 }
 
-Menu connectionLostMenu(IScreenNavigator& navigator, ISoundPlayer& sounds,
-                        ConnectionPhase ending) {
-  return MenuBuilder(MenuBuilder::Frame::Dialog, &sounds)
+Menu connectionLostMenu(const DialogMaking& making, ConnectionPhase ending) {
+  IScreenNavigator& navigator = making.navigator.get();
+  return MenuBuilder(MenuBuilder::Frame::Dialog, &making.sounds.get(),
+                     making.metrics)
       .heading(CONNECTION_LOST_HEADING)
       .message(lossMessageOf(ending))
       .button({.label = RETRY_LABEL},

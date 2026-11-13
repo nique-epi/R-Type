@@ -12,6 +12,9 @@
 #include <vector>
 #include "BarRowWidth.hpp"
 #include "Button.hpp"
+#include "DialogLayout.hpp"
+#include "DialogLayouts.hpp"
+#include "DialogText.hpp"
 #include "IScreenNavigator.hpp"
 #include "InterfaceConstants.hpp"
 #include "KeyCap.hpp"
@@ -43,6 +46,19 @@ struct ColumnLine {
   TextStyle style;
   int spaceBelow{};
   int lineHeight = TEXT_LINE_HEIGHT;
+};
+
+/** @brief What a dialog was asked to write, as the builder holds it. */
+struct DialogParts {
+  std::reference_wrapper<const std::optional<std::string>> heading;
+  std::reference_wrapper<const std::optional<std::string>> message;
+  std::reference_wrapper<const std::vector<PendingButton>> bars;
+};
+
+/** @brief A dialog laid out and where its panel lies. */
+struct PlacedDialog {
+  DialogLayout layout;
+  sf::Vector2i topLeft;
 };
 
 /** @brief Where the bars of a page laid in two columns start, and how tall
@@ -318,43 +334,56 @@ int rowCountOf(const std::vector<PendingButton>& bars) {
       }));
 }
 
-/** @returns How far down its panel a dialog of @p rowCount rows places its
- * buttons: DIALOG_BUTTONS_TOP under a message, ROW_GAP under the last row
- * otherwise. */
-int dialogButtonsTopOf(int rowCount) {
-  if (rowCount == 0) {
-    return DIALOG_BUTTONS_TOP;
+/** @returns What a dialog writes, read from the parts asked of the
+ * builder. */
+DialogText dialogTextOf(const DialogParts& parts) {
+  const std::optional<std::string>& heading = parts.heading.get();
+  const std::optional<std::string>& message = parts.message.get();
+  DialogText text{.heading = heading.has_value() ? std::string_view(*heading)
+                                                 : std::string_view(),
+                  .message = message.has_value() ? std::string_view(*message)
+                                                 : std::string_view(),
+                  .rowCount = rowCountOf(parts.bars.get()),
+                  .barLabels = {}};
+  for (const PendingButton& pending : parts.bars.get()) {
+    if (pending.control == nullptr) {
+      text.barLabels.emplace_back(pending.text.label);
+    }
   }
-  return DIALOG_ROWS_TOP + (rowCount * DIALOG_ROW_PITCH) + ROW_GAP;
+  return text;
 }
 
-/** @returns The size of a dialog of @p rowCount rows: DIALOG_SIZE under a
- * message, and with rows as tall as ends DIALOG_MARGIN_UNDER_BUTTONS under its
- * buttons. */
-sf::Vector2i dialogSizeOf(int rowCount) {
-  if (rowCount == 0) {
-    return DIALOG_SIZE;
+/** @brief Writes the message of a dialog, one label per line of its layout,
+ * from where the layout puts the message. */
+void placeMessageLines(Menu::Content& content, const DialogLayout& layout,
+                       sf::Vector2i panel) {
+  int top = panel.y + layout.messageTop;
+  for (const std::string& line : layout.messageLines) {
+    content.labels.emplace_back(
+        line, sf::Vector2i(panel.x + DIALOG_MESSAGE_OFFSET.x, top),
+        DIALOG_MESSAGE_STYLE);
+    top += layout.messagePitch;
   }
-  return {DIALOG_SIZE.x, dialogButtonsTopOf(rowCount) + DIALOG_BUTTON_SIZE.y +
-                             DIALOG_MARGIN_UNDER_BUTTONS};
 }
 
 /** @brief Places the rows of a dialog under its heading and its buttons in a
  * centered row; rows keep Left and Right to step their values. */
 void placeDialogBars(Menu::Content& content, std::vector<PendingButton>& bars,
-                     sf::Vector2i panel) {
+                     const PlacedDialog& dialog) {
   const int rowCount = rowCountOf(bars);
   const int barCount = static_cast<int>(bars.size()) - rowCount;
+  const DialogLayout& layout = dialog.layout;
+  const sf::Vector2i panel = dialog.topLeft;
   const int rowWidth =
-      barRowWidth(barCount, DIALOG_BUTTON_SIZE, DIALOG_BUTTON_GAP);
+      barRowWidth(barCount, layout.buttonSize, DIALOG_BUTTON_GAP);
   placeRowsAndBarsOf(
       content, bars,
       RowsAndBars{
-          .firstRow = {panel.x + DIALOG_ROW_INSET, panel.y + DIALOG_ROWS_TOP},
-          .rowSize = DIALOG_ROW_SIZE,
-          .firstBar = {panel.x + ((DIALOG_SIZE.x - rowWidth) / SIDES_PER_AXIS),
-                       panel.y + dialogButtonsTopOf(rowCount)},
-          .barSize = DIALOG_BUTTON_SIZE,
+          .firstRow = {panel.x + DIALOG_ROW_INSET, panel.y + layout.rowsTop},
+          .rowSize = layout.rowSize,
+          .firstBar = {panel.x + ((layout.size.x - rowWidth) / SIDES_PER_AXIS),
+                       panel.y + layout.buttonsTop},
+          .barSize = layout.buttonSize,
           .barGap = DIALOG_BUTTON_GAP});
   if (rowCount > 0) {
     content.nextKeys = PANEL_NEXT_KEYS;
@@ -528,21 +557,23 @@ void MenuBuilder::placeColumn(Menu::Content& content) {
 }
 
 void MenuBuilder::placeDialog(Menu::Content& content) {
-  const sf::Vector2i size = dialogSizeOf(rowCountOf(buttons_));
+  const DialogLayout layout = dialogLayoutOf(
+      dialogTextOf(DialogParts{
+          .heading = heading_, .message = message_, .bars = buttons_}),
+      metrics_);
   const sf::Vector2i panelTopLeft =
-      (INTERFACE_AREA.size - size) / SIDES_PER_AXIS;
-  content.panel = sf::IntRect(panelTopLeft, size);
+      (INTERFACE_AREA.size - layout.size) / SIDES_PER_AXIS;
+  content.panel = sf::IntRect(panelTopLeft, layout.size);
   if (heading_.has_value()) {
     content.labels.emplace_back(std::move(*heading_),
                                 panelTopLeft + DIALOG_HEADING_OFFSET,
                                 DIALOG_HEADING_STYLE);
   }
   if (message_.has_value()) {
-    content.labels.emplace_back(std::move(*message_),
-                                panelTopLeft + DIALOG_MESSAGE_OFFSET,
-                                DIALOG_MESSAGE_STYLE);
+    placeMessageLines(content, layout, panelTopLeft);
   }
-  placeDialogBars(content, buttons_, panelTopLeft);
+  placeDialogBars(content, buttons_,
+                  PlacedDialog{.layout = layout, .topLeft = panelTopLeft});
 }
 
 void MenuBuilder::placeForm(Menu::Content& content) {

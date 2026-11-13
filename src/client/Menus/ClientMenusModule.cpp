@@ -7,6 +7,7 @@
 #include "ConnectionScreen.hpp"
 #include "ConnectionScreenParts.hpp"
 #include "ConnectionStart.hpp"
+#include "DialogMaking.hpp"
 #include "DialogMenus.hpp"
 #include "GameListSnapshot.hpp"
 #include "IScreen.hpp"
@@ -27,6 +28,7 @@
 #include "OptionsPlace.hpp"
 #include "OptionsScreen.hpp"
 #include "OptionsScreenParts.hpp"
+#include "PlayerSettings.hpp"
 #include "ScreenAssets.hpp"
 #include "ScreenBuilding.hpp"
 #include "ScreenContext.hpp"
@@ -35,6 +37,7 @@
 #include "ServerMapScreen.hpp"
 #include "ServerMapScreenParts.hpp"
 #include "SquadronStart.hpp"
+#include "TextMeasures.hpp"
 #include "TitleOpening.hpp"
 #include "TitleScreen.hpp"
 #include "TitleScreenParts.hpp"
@@ -92,24 +95,32 @@ std::unique_ptr<IScreen> buildOptionsScreen(const ScreenContext& context,
       interfaceCanvasOf(context));
 }
 
+/** @returns What a dialog of the title is made with in @p context: its
+ * screens, its sounds, and the text size of the settings. */
+DialogMaking dialogMakingOf(const ScreenContext& context) {
+  return DialogMaking{
+      .navigator = context.navigator.get(),
+      .sounds = soundsOf(context),
+      .metrics = textMetricsOf(context.services.settings.get().textSize)};
+}
+
 std::unique_ptr<IScreen> buildQuitConfirmationScreen(
     const ScreenContext& context) {
-  return dialogScreenOf(context, quitConfirmationMenu(context.navigator.get(),
-                                                      soundsOf(context)));
+  return dialogScreenOf(context, quitConfirmationMenu(dialogMakingOf(context)));
 }
 
 std::unique_ptr<IScreen> buildLeaveGameConfirmationScreen(
     const ScreenContext& context) {
-  return dialogScreenOf(context, leaveGameConfirmationMenu(
-                                     context.navigator.get(), soundsOf(context),
-                                     context.services.connection.get()));
+  return dialogScreenOf(
+      context, leaveGameConfirmationMenu(dialogMakingOf(context),
+                                         context.services.connection.get()));
 }
 
 std::unique_ptr<IScreen> buildConnectionLostScreen(
     const ScreenContext& context) {
   return dialogScreenOf(
       context,
-      connectionLostMenu(context.navigator.get(), soundsOf(context),
+      connectionLostMenu(dialogMakingOf(context),
                          context.services.connection.get().status().phase));
 }
 

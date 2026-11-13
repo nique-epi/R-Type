@@ -76,6 +76,9 @@ constexpr int FOOTER_TOP = 241;
  * centered row.
  */
 constexpr sf::Vector2i DIALOG_SIZE(272, 96);
+/** @brief The widest a dialog grows above the size the fonts are drawn at:
+ * the room between the safe margins. */
+constexpr int DIALOG_LARGEST_WIDTH = 432;
 constexpr sf::Vector2i DIALOG_HEADING_OFFSET(16, 12);
 constexpr sf::Vector2i DIALOG_MESSAGE_OFFSET(16, 32);
 constexpr int DIALOG_BUTTONS_TOP = 56;
