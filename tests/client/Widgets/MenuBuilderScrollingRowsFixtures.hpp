@@ -14,6 +14,11 @@
 [[nodiscard]] rtype::client::Menu panelOfNineRowsAt(
     RowControlRecord& record, rtype::client::TextMetrics metrics);
 
+/** @returns A page laid out at @p metrics: its heading, four bars FIRST to
+ * FOURTH, and an illustration of SQUADRON_LIKE_AREA asked for. */
+[[nodiscard]] rtype::client::Menu pageOfFourBarsAt(
+    rtype::client::TextMetrics metrics);
+
 /** @returns A press of the Down key. */
 [[nodiscard]] sf::Event downPress();
 

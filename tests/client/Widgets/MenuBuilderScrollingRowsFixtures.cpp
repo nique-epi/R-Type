@@ -20,6 +20,7 @@ using rtype::client::PlayfieldMapping;
 using rtype::client::TextMetrics;
 using rtype::client::testing::LONG_DESCRIPTION;
 using rtype::client::testing::NINE_ROW_LABELS;
+using rtype::client::testing::SQUADRON_LIKE_AREA;
 
 Menu panelOfNineRows(RowControlRecord& record) {
   return panelOfNineRowsAt(record, TextMetrics{});
@@ -35,6 +36,17 @@ Menu panelOfNineRowsAt(RowControlRecord& record, TextMetrics metrics) {
                     record, std::vector<sf::Keyboard::Key>{}, true));
   }
   return builder.cancelButton({.label = "BACK"}, [] {}).build();
+}
+
+Menu pageOfFourBarsAt(TextMetrics metrics) {
+  return MenuBuilder(MenuBuilder::Frame::Page, nullptr, metrics)
+      .heading("TITLE")
+      .button({.label = "FIRST"}, [] {})
+      .button({.label = "SECOND"}, [] {})
+      .button({.label = "THIRD"}, [] {})
+      .cancelButton({.label = "FOURTH"}, [] {})
+      .illustration(SQUADRON_LIKE_AREA)
+      .build();
 }
 
 sf::Event downPress() {

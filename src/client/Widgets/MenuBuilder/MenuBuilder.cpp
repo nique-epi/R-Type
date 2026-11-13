@@ -25,6 +25,7 @@
 #include "TabStrip.hpp"
 #include "TabbedPanelLayout.hpp"
 #include "TextField.hpp"
+#include "TextMeasures.hpp"
 #include "TextMetrics.hpp"
 #include "TextStyle.hpp"
 #include "WidgetConstants.hpp"
@@ -41,6 +42,22 @@ struct ColumnLine {
   int top{};
   TextStyle style;
   int spaceBelow{};
+  int lineHeight = TEXT_LINE_HEIGHT;
+};
+
+/** @brief Where the bars of a page laid in two columns start, and how tall
+ * each is. */
+struct BarGrid {
+  int top{};
+  int barHeight{};
+};
+
+/** @brief What closes a page: the area its screen paints in, its footer, and
+ * the text size the page is laid out at. */
+struct PageEnd {
+  std::optional<sf::Vector2i> illustration;
+  std::optional<std::string> footer;
+  TextMetrics metrics;
 };
 
 /** @brief Where the parts of a form lie, from the top of its panel, and how
@@ -64,7 +81,51 @@ int placeColumnLine(Menu::Content& content, std::optional<std::string>& text,
   }
   content.labels.emplace_back(std::move(*text),
                               sf::Vector2i(SAFE_MARGIN, line.top), line.style);
-  return line.top + TEXT_LINE_HEIGHT + line.spaceBelow;
+  return line.top + line.lineHeight + line.spaceBelow;
+}
+
+/** @returns The top of what comes under the bars of a page laid in two
+ * columns, as a page is above the size the fonts are drawn at, when one
+ * column of taller bars no longer fits over the description. */
+int placeBarsInTwoColumns(Menu::Content& content,
+                          std::vector<PendingButton>& bars,
+                          const BarGrid& grid) {
+  const int width =
+      (INTERFACE_AREA.size.x - (SIDES_PER_AXIS * SAFE_MARGIN) - BUTTON_GAP) /
+      SIDES_PER_AXIS;
+  int row = 0;
+  int column = 0;
+  for (PendingButton& pending : bars) {
+    const sf::Vector2i topLeft(
+        SAFE_MARGIN + (column * (width + BUTTON_GAP)),
+        grid.top + (row * (grid.barHeight + BUTTON_GAP)));
+    content.buttons.emplace_back(
+        std::move(pending.text), sf::IntRect(topLeft, {width, grid.barHeight}),
+        std::move(pending.action), std::move(pending.field));
+    column = (column + 1) % SIDES_PER_AXIS;
+    row += column == 0 ? 1 : 0;
+  }
+  const int rows = row + (column == 0 ? 0 : 1);
+  return grid.top + (rows * (grid.barHeight + BUTTON_GAP));
+}
+
+/** @brief Places the area the screen of a page paints in, at its right, as
+ * the page was drawn at the size of the fonts and never above it, where two
+ * columns of bars take its room; then the footer, its last line on the row
+ * it was drawn on. */
+void placePageEnd(Menu::Content& content, PageEnd end) {
+  const int right = INTERFACE_AREA.size.x - SAFE_MARGIN;
+  if (end.illustration.has_value() && end.metrics == TextMetrics{}) {
+    content.illustration = sf::IntRect(
+        {right - end.illustration->x, ILLUSTRATION_TOP}, *end.illustration);
+  }
+  if (end.footer.has_value()) {
+    content.labels.emplace_back(
+        std::move(*end.footer),
+        sf::Vector2i(right,
+                     FOOTER_TOP + TEXT_LINE_HEIGHT - lineHeightOf(end.metrics)),
+        FOOTER_STYLE);
+  }
 }
 
 /** @returns The top of what comes under the bars of a column. */
@@ -427,10 +488,12 @@ Menu MenuBuilder::build() {
 }
 
 void MenuBuilder::placeColumn(Menu::Content& content) {
+  const int lineHeight = lineHeightOf(metrics_);
   int top = placeColumnLine(content, version_,
                             {.top = SAFE_MARGIN,
                              .style = VERSION_STYLE,
-                             .spaceBelow = SPACE_BELOW_VERSION});
+                             .spaceBelow = SPACE_BELOW_VERSION,
+                             .lineHeight = lineHeight});
   if (logo_.has_value()) {
     logo_->area.position = {SAFE_MARGIN, top};
     top += logo_->area.size.y + SPACE_BELOW_HEADING;
@@ -439,24 +502,29 @@ void MenuBuilder::placeColumn(Menu::Content& content) {
   top = placeColumnLine(content, heading_,
                         {.top = top,
                          .style = PAGE_LINE_STYLE,
-                         .spaceBelow = SPACE_BELOW_HEADING});
+                         .spaceBelow = SPACE_BELOW_HEADING,
+                         .lineHeight = lineHeight});
   top = placeColumnLine(content, subtitle_,
                         {.top = top,
                          .style = PAGE_LINE_STYLE,
-                         .spaceBelow = SPACE_BELOW_SUBTITLE});
+                         .spaceBelow = SPACE_BELOW_SUBTITLE,
+                         .lineHeight = lineHeight});
   content.rule = sf::IntRect({SAFE_MARGIN, top}, RULE_SIZE);
-  top =
-      placeColumnBars(content, buttons_, top + RULE_SIZE.y + SPACE_BELOW_RULE);
+  top += RULE_SIZE.y + SPACE_BELOW_RULE;
+  if (metrics_ == TextMetrics{}) {
+    top = placeColumnBars(content, buttons_, top);
+  } else {
+    top = placeBarsInTwoColumns(
+        content, buttons_,
+        BarGrid{.top = top,
+                .barHeight = textBoxHeight(BUTTON_SIZE.y, metrics_)});
+    content.descriptionWidth =
+        INTERFACE_AREA.size.x - (SIDES_PER_AXIS * SAFE_MARGIN);
+  }
   content.descriptionAnchor = sf::Vector2i(SAFE_MARGIN, top);
-  const int right = INTERFACE_AREA.size.x - SAFE_MARGIN;
-  if (illustration_.has_value()) {
-    content.illustration = sf::IntRect(
-        {right - illustration_->x, ILLUSTRATION_TOP}, *illustration_);
-  }
-  if (footer_.has_value()) {
-    content.labels.emplace_back(std::move(*footer_),
-                                sf::Vector2i(right, FOOTER_TOP), FOOTER_STYLE);
-  }
+  placePageEnd(content, PageEnd{.illustration = illustration_,
+                                .footer = std::move(footer_),
+                                .metrics = metrics_});
 }
 
 void MenuBuilder::placeDialog(Menu::Content& content) {

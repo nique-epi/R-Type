@@ -19,6 +19,7 @@ using rtype::client::testing::LARGEST_TEXT;
 using rtype::client::testing::LAST_SHOWN_ROW_LABEL;
 using rtype::client::testing::ONE_NOTCH_DOWN;
 using rtype::client::testing::PRESSES_TO_THE_NINTH_ROW;
+using rtype::client::testing::SECOND_BAR_LABEL_AT_LARGEST;
 using rtype::client::testing::SECOND_DESCRIPTION_LINE;
 using rtype::client::testing::SECOND_DESCRIPTION_LINE_AT_LARGEST;
 using rtype::client::testing::SECOND_ROW;
@@ -114,4 +115,25 @@ TEST(MenuBuilderScrollingRows, AtTheLargestSizeTheDescriptionWraps) {
             FIRST_DESCRIPTION_LINE_AT_LARGEST);
   EXPECT_EQ(anchorOf(painting, SECOND_DESCRIPTION_LINE),
             SECOND_DESCRIPTION_LINE_AT_LARGEST);
+}
+
+/**
+ * Given a page of four bars laid out at the largest size
+ * When it is painted at that size
+ * Then its bars lie in two columns, the second at the top of the right one
+ */
+TEST(MenuBuilderScrollingRows, AtTheLargestSizeAPageLaysTwoColumns) {
+  const InterfaceCanvasRecord painting =
+      paintingAt(pageOfFourBarsAt(LARGEST_TEXT), LARGEST_TEXT);
+
+  EXPECT_EQ(anchorOf(painting, "SECOND"), SECOND_BAR_LABEL_AT_LARGEST);
+}
+
+/**
+ * Given the same page, which asks for an illustration
+ * When it is laid out at the largest size
+ * Then it gives no area for the illustration, which the two columns take
+ */
+TEST(MenuBuilderScrollingRows, AtTheLargestSizeAPageDropsItsIllustration) {
+  EXPECT_FALSE(pageOfFourBarsAt(LARGEST_TEXT).illustrationArea().has_value());
 }

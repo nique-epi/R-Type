@@ -43,6 +43,14 @@ constexpr const char* SECOND_DESCRIPTION_LINE = "PLATES UNDER TEXT";
 constexpr sf::Vector2i FIRST_DESCRIPTION_LINE_AT_LARGEST(120, 210);
 constexpr sf::Vector2i SECOND_DESCRIPTION_LINE_AT_LARGEST(120, 228);
 
+/** @brief The illustration a page asks for, as large as the squadron of the
+ * title, and where the label of the second of four bars of a page lies at
+ * the largest size: two columns of (480 - 48 - 8) / 2 = 212, the second at
+ * 24 + 212 + 8 = 244, its label 12 in; bars from 24 + 16 + 8 + 1 + 9 = 58,
+ * 28 tall, the label centered 6 lower. */
+constexpr sf::Vector2i SQUADRON_LIKE_AREA(168, 144);
+constexpr sf::Vector2i SECOND_BAR_LABEL_AT_LARGEST(256, 64);
+
 /** @brief A pixel inside the first shown row, left of its control. */
 constexpr sf::Vector2i INSIDE_THE_FIRST_SHOWN_ROW(60, 80);
 

@@ -10,6 +10,7 @@
 #include "PlayStart.hpp"
 #include "PlayfieldMapping.hpp"
 #include "Squadron.hpp"
+#include "TextSize.hpp"
 #include "TimeConstants.hpp"
 #include "TitleScreenParts.hpp"
 
@@ -44,9 +45,13 @@ class TitleScreen : public IScreen {
   [[nodiscard]] bool hidesScreensBelow() const override;
 
  private:
-  [[nodiscard]] static Menu buildMenu(IScreenNavigator& navigator,
-                                      ISoundPlayer& sounds,
-                                      PlayStart playStart);
+  /** @returns The menu of the title, laid out at the text size of the
+   * settings. */
+  [[nodiscard]] Menu buildMenu() const;
+
+  /** @brief Lays the menu out again when the text size changed since it was
+   * built, as the options change it over the title. */
+  void followTextSize();
   void repaint();
   /** @brief Puts the update panel over the title once a release waits, or
    * else WHAT'S NEW once notes wait; each once per title. */
@@ -56,6 +61,9 @@ class TitleScreen : public IScreen {
   PlayfieldMapping playfieldPointAt_;
   const PlayerSettings* settings_;
   IScreenNavigator* navigator_;
+  ISoundPlayer* sounds_;
+  PlayStart playStart_;
+  TextSize builtSize_;
   const IUpdateNotice* notice_;
   bool updateAsked_{};
   bool notesAsked_{};
