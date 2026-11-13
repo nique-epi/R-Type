@@ -5,7 +5,6 @@
 #include <cstdint>
 #include <string_view>
 #include "ProtocolConstants.hpp"
-#include "ServerConstants.hpp"
 
 namespace rtype::tools {
 
@@ -19,13 +18,6 @@ constexpr std::string_view SECONDS_OPTION = "--seconds";
 constexpr std::string_view SEED_OPTION = "--seed";
 
 /**
- * @brief The seats of a supervisor running MAXIMUM_RUNNING_GAMES games of
- * MAXIMUM_PLAYERS players: 32.
- */
-constexpr std::size_t SERVER_SEATS =
-    server::MAXIMUM_RUNNING_GAMES * network::MAXIMUM_PLAYERS;
-
-/**
  * @brief The bots of a launch that names no count: four full games, so the
  * server runs several games at once with every seat taken.
  */
@@ -34,12 +26,12 @@ constexpr std::size_t DEFAULT_BOT_COUNT =
     FULL_GAMES_BY_DEFAULT * network::MAXIMUM_PLAYERS;
 
 /**
- * @brief The most bots one launch runs: every seat of a server, plus one game
- * that the full server refuses, so its refusals show too. Each bot has a
- * socket and a network thread of its own, so the count is bounded.
+ * @brief The most bots one launch runs: far more than the seats of one
+ * supervisor, which refuses the bots it has no seat for, so a launch also
+ * loads the admission of a full server. Each bot has a socket and a network
+ * thread of its own, so the count is bounded.
  */
-constexpr std::size_t MAXIMUM_BOT_COUNT =
-    SERVER_SEATS + network::MAXIMUM_PLAYERS;
+constexpr std::size_t MAXIMUM_BOT_COUNT = 300;
 
 /** @brief The options that choose what flies the bots: the last one wins. */
 constexpr std::string_view RULES_OPTION = "--rules";
