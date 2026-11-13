@@ -8,6 +8,7 @@
 #include "BossTracker.hpp"
 #include "EffectTools.hpp"
 #include "EnemyAction.hpp"
+#include "EntityDestroyed.hpp"
 #include "FlashPreference.hpp"
 #include "IAudioService.hpp"
 #include "IInterfaceCanvas.hpp"
@@ -39,6 +40,11 @@ class BossPresentation {
 
   /** @brief Plays the roar when @p action is the roar of the boss. */
   void apply(const network::EnemyAction& action);
+
+  /** @brief Forgets the boss in play when @p destroyed removes it without a
+   * kill, as a level sent back to a checkpoint does: its bar goes, and the
+   * music of the game comes back. */
+  void apply(const network::EntityDestroyed& destroyed);
 
   /** @brief Moves its clock on by @p elapsed, and plays what falls in
    * between: shakes and steps. */
@@ -80,6 +86,8 @@ class BossPresentation {
   int chargeRow_{};
   /** @brief The network id of the boss drawn shielded, until its fight. */
   std::optional<std::uint32_t> shielded_;
+  /** @brief The network id of the boss its fight statuses name. */
+  std::optional<std::uint32_t> bossInPlay_;
   bool bossMusicStarted_{false};
   bool gameEnded_{false};
   bool playsALevel_{false};

@@ -28,6 +28,7 @@
 #include "EffectSpawner.hpp"
 #include "EnemyAction.hpp"
 #include "EnemyActionPlayer.hpp"
+#include "EntityDestroyed.hpp"
 #include "EntityFeedback.hpp"
 #include "EntityMessage.hpp"
 #include "EntityReplicator.hpp"
@@ -146,8 +147,8 @@ SkyLevel skyLevelOf(const network::LevelStatus& status) {
 /** @brief Hands an entity message to whoever it goes to: a PlayerLeft to the
  * board and the feed, an EnemyAction to the enemy it animates and to the boss,
  * an EffectPlayed to the player of the named effects, a BossStatus to the
- * boss, a LevelStatus to the sky and to the boss, anything else but GameEnded
- * to the replicator. */
+ * boss, an EntityDestroyed to the boss and to the replicator, a LevelStatus to
+ * the sky and to the boss, anything else but GameEnded to the replicator. */
 void routeEntityMessage(const EntityMessageRoutes& routes,
                         const EntityMessage& message) {
   std::visit(
@@ -163,6 +164,10 @@ void routeEntityMessage(const EntityMessageRoutes& routes,
           routes.namedEffects.get().apply(announced);
         } else if constexpr (std::is_same_v<Announced, network::BossStatus>) {
           routes.boss.get().apply(announced);
+        } else if constexpr (std::is_same_v<Announced,
+                                            network::EntityDestroyed>) {
+          routes.boss.get().apply(announced);
+          routes.replicator.get().apply(announced);
         } else if constexpr (std::is_same_v<Announced, network::LevelStatus>) {
           routes.sky.get().showLevel(skyLevelOf(announced));
           routes.boss.get().followLevel();
