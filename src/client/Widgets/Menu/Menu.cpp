@@ -32,10 +32,12 @@
 #include "ShiftedCanvas.hpp"
 #include "SoundConstants.hpp"
 #include "TextField.hpp"
+#include "TextMeasures.hpp"
 #include "TextureArea.hpp"
 #include "TimeConstants.hpp"
 #include "WidgetColors.hpp"
 #include "WidgetConstants.hpp"
+#include "WrappedLines.hpp"
 
 namespace rtype::client {
 
@@ -149,6 +151,27 @@ void paintScrollMarks(const Menu::Content& content, IInterfaceCanvas& canvas) {
   }
 }
 
+/** @brief Writes the description of the selected button where @p content
+ * asks, on as many lines as its width needs, each word whole. */
+void paintDescription(const Menu::Content& content, IInterfaceCanvas& canvas,
+                      std::string_view description) {
+  if (!content.descriptionAnchor.has_value() || description.empty()) {
+    return;
+  }
+  if (!content.descriptionWidth.has_value()) {
+    canvas.write(description, *content.descriptionAnchor,
+                 content.descriptionStyle);
+    return;
+  }
+  const int pitch = lineHeightOf(canvas.textMetrics()) + DESCRIPTION_LINE_GAP;
+  sf::Vector2i anchor = *content.descriptionAnchor;
+  for (const std::string& line :
+       wrappedLinesOf(description, *content.descriptionWidth, canvas)) {
+    canvas.write(line, anchor, content.descriptionStyle);
+    anchor.y += pitch;
+  }
+}
+
 /** @brief Paints the marks of the rows hidden by a scroll, then what the
  * buttons of @p content lay over everything, such as
  * an open list, each moved with its row. */
@@ -243,10 +266,9 @@ void Menu::paint(IInterfaceCanvas& canvas) const {
                                         .state = stateOf(button),
                                         .canvas = canvas});
   }
-  if (selected_.has_value() && content_.descriptionAnchor.has_value() &&
-      !content_.buttons[*selected_].description().empty()) {
-    canvas.write(content_.buttons[*selected_].description(),
-                 *content_.descriptionAnchor, content_.descriptionStyle);
+  if (selected_.has_value()) {
+    paintDescription(content_, canvas,
+                     content_.buttons[*selected_].description());
   }
   if (content_.statusAnchor.has_value() && !status_.empty()) {
     canvas.write(status_, *content_.statusAnchor, content_.statusStyle);

@@ -4,9 +4,15 @@
 #include <SFML/Window/Event.hpp>
 #include "Menu.hpp"
 #include "RecordingRowControl.hpp"
+#include "TextMetrics.hpp"
 
 /** @returns A tabbed panel of nine rows, ROW 1 to ROW 9, and BACK. */
 [[nodiscard]] rtype::client::Menu panelOfNineRows(RowControlRecord& record);
+
+/** @returns The same panel laid out at @p metrics, its first row described
+ * by LONG_DESCRIPTION. */
+[[nodiscard]] rtype::client::Menu panelOfNineRowsAt(
+    RowControlRecord& record, rtype::client::TextMetrics metrics);
 
 /** @returns A press of the Down key. */
 [[nodiscard]] sf::Event downPress();

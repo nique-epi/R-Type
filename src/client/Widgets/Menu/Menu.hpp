@@ -108,6 +108,9 @@ class Menu {
      * how: outlined on the sky of a page, in small print inside a form;
      * nowhere in a dialog or a room. */
     std::optional<sf::Vector2i> descriptionAnchor;
+    /** @brief How wide the description may run, on as many lines as it
+     * needs; none writes it on one line. */
+    std::optional<int> descriptionWidth;
     TextStyle descriptionStyle = PAGE_LINE_STYLE;
     /** @brief Where the status line is written: under the description of a
      * form, nowhere on a page or a dialog. */

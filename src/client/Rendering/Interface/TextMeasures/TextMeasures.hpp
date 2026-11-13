@@ -2,6 +2,7 @@
 
 #include <string_view>
 #include "TextMetrics.hpp"
+#include "TextSize.hpp"
 
 namespace rtype::client {
 
@@ -21,5 +22,9 @@ namespace rtype::client {
  * the larger of its own scale and the size of @p metrics, so a title written
  * twice as large is not made larger again. */
 [[nodiscard]] int halfPixelsOf(TextMetrics metrics, int styleScale);
+
+/** @returns The metrics of a text size of the options: two, three or four
+ * half pixels per font pixel. */
+[[nodiscard]] TextMetrics textMetricsOf(TextSize size);
 
 }  // namespace rtype::client

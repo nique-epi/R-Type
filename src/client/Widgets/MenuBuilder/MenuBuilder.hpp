@@ -17,6 +17,7 @@
 #include "RowControl.hpp"
 #include "TabStrip.hpp"
 #include "TextField.hpp"
+#include "TextMetrics.hpp"
 
 namespace rtype::client {
 
@@ -76,8 +77,11 @@ class MenuBuilder {
   };
 
   /** @param sounds Plays the click of the menu built, and must outlive it;
-   * a menu built without one is silent. */
-  explicit MenuBuilder(Frame frame, ISoundPlayer* sounds = nullptr);
+   * a menu built without one is silent.
+   * @param metrics The text size the menu is laid out at: every box that
+   * holds a line grows with it. */
+  explicit MenuBuilder(Frame frame, ISoundPlayer* sounds = nullptr,
+                       TextMetrics metrics = {});
 
   /** @brief Small line at the top of a page, such as the version of the
    * game. */
@@ -196,6 +200,7 @@ class MenuBuilder {
 
   Frame frame_;
   ISoundPlayer* sounds_;
+  TextMetrics metrics_;
   std::optional<std::string> version_;
   std::optional<Menu::Picture> logo_;
   std::optional<std::string> heading_;

@@ -52,7 +52,6 @@ constexpr char KEY_CAP_OPENING = '{';
 constexpr char KEY_CAP_CLOSING = '}';
 constexpr char INTERFACE_WORD_MARK = '*';
 constexpr std::string_view HELP_PUNCTUATION = ".,:!?";
-constexpr char WORD_SEPARATOR = ' ';
 
 /** @brief The steps of the help, in order: the parts of the waiting room, a
  * moment of a game, then the HELP chip again. */

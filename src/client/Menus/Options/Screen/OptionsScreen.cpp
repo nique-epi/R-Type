@@ -69,6 +69,7 @@ void OptionsScreen::update(engine::Duration elapsed) {
   }
   stamp_.age(elapsed);
   save();
+  tabs_.followTextSize();
   refresh();
   repaint();
 }

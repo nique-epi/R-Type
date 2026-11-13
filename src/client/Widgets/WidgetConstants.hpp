@@ -242,6 +242,12 @@ constexpr int ROW_CONTROL_TOP = 2;
 constexpr int PANEL_BARS_TOP =
     ROWS_PANEL_TOP_LEFT.y + ROWS_PANEL_SIZE.y + BUTTON_GAP;
 constexpr int SPACE_BESIDE_PANEL_BARS = 8;
+/** @brief Above the size the fonts are drawn at, the description of the
+ * selected row wraps on two lines beside the bars, one pixel apart. */
+constexpr int DESCRIPTION_LINES_BESIDE_BARS = 2;
+constexpr int DESCRIPTION_LINE_GAP = 2;
+/** @brief What separates the words of a line a widget wraps. */
+constexpr char WORD_SEPARATOR = ' ';
 constexpr int SPACE_ABOVE_PANEL_ILLUSTRATION = 10;
 
 /**

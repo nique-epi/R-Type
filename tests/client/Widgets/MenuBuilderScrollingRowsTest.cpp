@@ -10,11 +10,17 @@
 #include "RecordingRowControl.hpp"
 
 using rtype::client::Menu;
+using rtype::client::testing::FIRST_DESCRIPTION_LINE;
+using rtype::client::testing::FIRST_DESCRIPTION_LINE_AT_LARGEST;
 using rtype::client::testing::FIRST_SHOWN_ROW_LABEL;
+using rtype::client::testing::FOURTH_ROW_LABEL_AT_LARGEST;
 using rtype::client::testing::INSIDE_THE_FIRST_SHOWN_ROW;
+using rtype::client::testing::LARGEST_TEXT;
 using rtype::client::testing::LAST_SHOWN_ROW_LABEL;
 using rtype::client::testing::ONE_NOTCH_DOWN;
 using rtype::client::testing::PRESSES_TO_THE_NINTH_ROW;
+using rtype::client::testing::SECOND_DESCRIPTION_LINE;
+using rtype::client::testing::SECOND_DESCRIPTION_LINE_AT_LARGEST;
 using rtype::client::testing::SECOND_ROW;
 
 /**
@@ -78,4 +84,34 @@ TEST(MenuBuilderScrollingRows, ThePointerSelectsTheRowShownUnderIt) {
                    wholePlayfield());
 
   EXPECT_EQ(menu.selectedButton(), std::optional<std::size_t>(SECOND_ROW));
+}
+
+/**
+ * Given the panel of nine rows laid out at the largest text size
+ * When it is painted at that size
+ * Then four rows show, the fourth written at (36, 168), the fifth not at all
+ */
+TEST(MenuBuilderScrollingRows, AtTheLargestSizeAPanelShowsFourRows) {
+  RowControlRecord record;
+  const InterfaceCanvasRecord painting =
+      paintingAt(panelOfNineRowsAt(record, LARGEST_TEXT), LARGEST_TEXT);
+
+  EXPECT_EQ(anchorOf(painting, "ROW 4"), FOURTH_ROW_LABEL_AT_LARGEST);
+  EXPECT_EQ(writingOf(painting, "ROW 5"), nullptr);
+}
+
+/**
+ * Given the same panel, its first row described in 36 letters
+ * When it is painted at the largest size
+ * Then the description takes two lines right of BACK, each word whole
+ */
+TEST(MenuBuilderScrollingRows, AtTheLargestSizeTheDescriptionWraps) {
+  RowControlRecord record;
+  const InterfaceCanvasRecord painting =
+      paintingAt(panelOfNineRowsAt(record, LARGEST_TEXT), LARGEST_TEXT);
+
+  EXPECT_EQ(anchorOf(painting, FIRST_DESCRIPTION_LINE),
+            FIRST_DESCRIPTION_LINE_AT_LARGEST);
+  EXPECT_EQ(anchorOf(painting, SECOND_DESCRIPTION_LINE),
+            SECOND_DESCRIPTION_LINE_AT_LARGEST);
 }

@@ -25,6 +25,8 @@ rtype_enable_warnings(rtype_client_window_size_chart)
 
 add_subdirectory(RowWindow)
 add_subdirectory(RowScrolling)
+add_subdirectory(PanelLayouts)
+add_subdirectory(WrappedLines)
 add_subdirectory(ScrollMark)
 add_subdirectory(HangarBay)
 add_subdirectory(PaddedScore)

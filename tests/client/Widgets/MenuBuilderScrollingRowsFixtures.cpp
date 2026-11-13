@@ -12,18 +12,25 @@
 #include "PlayfieldMapping.hpp"
 #include "PointerEvents.hpp"
 #include "RecordingRowControl.hpp"
+#include "TextMetrics.hpp"
 
 using rtype::client::Menu;
 using rtype::client::MenuBuilder;
 using rtype::client::PlayfieldMapping;
+using rtype::client::TextMetrics;
+using rtype::client::testing::LONG_DESCRIPTION;
 using rtype::client::testing::NINE_ROW_LABELS;
 
 Menu panelOfNineRows(RowControlRecord& record) {
-  MenuBuilder builder(MenuBuilder::Frame::TabbedPanel);
+  return panelOfNineRowsAt(record, TextMetrics{});
+}
+
+Menu panelOfNineRowsAt(RowControlRecord& record, TextMetrics metrics) {
+  MenuBuilder builder(MenuBuilder::Frame::TabbedPanel, nullptr, metrics);
   builder.heading("SETTINGS")
       .tabs({"ACCESS"}, 0, {.previous = "Q", .next = "E"}, [](std::size_t) {});
   for (const char* label : NINE_ROW_LABELS) {
-    builder.row({.label = label},
+    builder.row({.label = label, .description = LONG_DESCRIPTION},
                 std::make_unique<RecordingRowControl>(
                     record, std::vector<sf::Keyboard::Key>{}, true));
   }

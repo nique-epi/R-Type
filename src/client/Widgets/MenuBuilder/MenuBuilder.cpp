@@ -17,12 +17,15 @@
 #include "KeyCap.hpp"
 #include "Menu.hpp"
 #include "PanelCursor.hpp"
+#include "PanelLayouts.hpp"
 #include "PendingButton.hpp"
 #include "RowControl.hpp"
 #include "RowScroll.hpp"
 #include "RowWindow.hpp"
 #include "TabStrip.hpp"
+#include "TabbedPanelLayout.hpp"
 #include "TextField.hpp"
+#include "TextMetrics.hpp"
 #include "TextStyle.hpp"
 #include "WidgetConstants.hpp"
 #include "WidgetStyles.hpp"
@@ -166,21 +169,22 @@ PanelCursor placeRowsAndBarsOf(Menu::Content& content,
 
 /** @returns The rows of @p content, when the panel of a tabbed panel holds
  * more of them than it shows: the first rows show, the rest scroll. */
-std::optional<RowScroll> rowScrollOf(const Menu::Content& content) {
+std::optional<RowScroll> rowScrollOf(const Menu::Content& content,
+                                     const TabbedPanelLayout& layout) {
   const auto rows = static_cast<std::size_t>(std::ranges::count_if(
       content.buttons,
       [](const Button& button) { return button.control() != nullptr; }));
-  if (rows <= PANEL_ROW_CAPACITY) {
+  if (rows <= layout.rowCapacity) {
     return std::nullopt;
   }
   const auto first = std::ranges::find_if(
       content.buttons,
       [](const Button& button) { return button.control() != nullptr; });
   return RowScroll{
-      .rows = RowWindow{.first = 0, .shown = PANEL_ROW_CAPACITY, .count = rows},
+      .rows = RowWindow{.first = 0, .shown = layout.rowCapacity, .count = rows},
       .firstButton = static_cast<std::size_t>(first - content.buttons.begin()),
-      .pitch = ROW_PITCH,
-      .viewport = PANEL_ROWS_VIEWPORT};
+      .pitch = layout.rowSize.y + ROW_GAP,
+      .viewport = rowsViewportOf(layout)};
 }
 
 /** @brief Takes out of @p bars every bar asked for after the cancel button: a
@@ -203,17 +207,46 @@ std::vector<PendingButton> barsAfterCancel(
 /** @brief Places @p bars in a row under the panel of rows, the last one ending
  * at the right end of the panel. */
 void placeBarsAtPanelEnd(Menu::Content& content,
-                         std::vector<PendingButton>& bars) {
+                         std::vector<PendingButton>& bars,
+                         const TabbedPanelLayout& layout) {
   const int rowWidth = barRowWidth(static_cast<int>(bars.size()),
-                                   PANEL_BAR_SIZE, SPACE_BESIDE_PANEL_BARS);
-  int barLeft = ROWS_PANEL_TOP_LEFT.x + ROWS_PANEL_SIZE.x - rowWidth;
+                                   layout.barSize, SPACE_BESIDE_PANEL_BARS);
+  int barLeft = layout.panel.position.x + layout.panel.size.x - rowWidth;
   for (PendingButton& pending : bars) {
     content.buttons.emplace_back(
         std::move(pending.text),
-        sf::IntRect({barLeft, PANEL_BARS_TOP}, PANEL_BAR_SIZE),
+        sf::IntRect({barLeft, layout.barsTop}, layout.barSize),
         std::move(pending.action), std::move(pending.field));
-    barLeft += PANEL_BAR_SIZE.x + SPACE_BESIDE_PANEL_BARS;
+    barLeft += layout.barSize.x + SPACE_BESIDE_PANEL_BARS;
   }
+}
+
+/** @returns How wide every bar of a row of @p bars is: @p narrowest, or the
+ * widest label of them and its padding when that is wider. */
+int barWidthFor(const std::vector<PendingButton>& bars, int narrowest,
+                TextMetrics metrics) {
+  int width = narrowest;
+  for (const PendingButton& pending : bars) {
+    if (pending.control == nullptr) {
+      width = std::max(width, regularTextWidth(metrics, pending.text.label) +
+                                  (SIDES_PER_AXIS * BUTTON_TEXT_OFFSET.x));
+    }
+  }
+  return width;
+}
+
+/** @returns Where the description of the selected row is written: beside the
+ * bars, on the middle row of a bar as the options were drawn, or at the top
+ * of the strip of the bars when it wraps on two lines at a larger size. */
+sf::Vector2i descriptionAnchorOf(const TabbedPanelLayout& layout,
+                                 PanelCursor end, TextMetrics metrics) {
+  if (metrics != TextMetrics{}) {
+    return {end.barLeft, layout.barsTop};
+  }
+  return {
+      end.barLeft,
+      centeredTextTop(
+          sf::IntRect({end.barLeft, layout.barsTop}, layout.barSize), metrics)};
 }
 
 /** @returns How many of @p bars are rows. */
@@ -270,8 +303,8 @@ void placeDialogBars(Menu::Content& content, std::vector<PendingButton>& bars,
 
 }  // namespace
 
-MenuBuilder::MenuBuilder(Frame frame, ISoundPlayer* sounds)
-    : frame_(frame), sounds_(sounds) {}
+MenuBuilder::MenuBuilder(Frame frame, ISoundPlayer* sounds, TextMetrics metrics)
+    : frame_(frame), sounds_(sounds), metrics_(metrics) {}
 
 MenuBuilder& MenuBuilder::version(std::string text) {
   version_ = std::move(text);
@@ -349,7 +382,7 @@ MenuBuilder& MenuBuilder::tabs(std::vector<std::string> labels,
                                std::size_t openTab, TabStrip::KeyNames keys,
                                std::function<void(std::size_t)> openTabAt) {
   tabStrip_.emplace(std::move(labels), openTab, std::move(keys),
-                    TAB_STRIP_TOP_LEFT);
+                    tabbedPanelLayoutOf(metrics_).tabsTopLeft);
   tabOpener_ = std::move(openTabAt);
   return *this;
 }
@@ -365,6 +398,9 @@ MenuBuilder& MenuBuilder::notice(std::string text) {
 }
 
 Menu MenuBuilder::build() {
+  for (PendingButton& pending : buttons_) {
+    pending.text.size = metrics_;
+  }
   Menu::Content content;
   content.cancelButton = cancelButton_;
   content.dimmed = dimmed_;
@@ -491,7 +527,7 @@ void MenuBuilder::placePanelHeader(Menu::Content& content) {
 }
 
 void MenuBuilder::placeRowsPanel(Menu::Content& content) {
-  content.panel = sf::IntRect(ROWS_PANEL_TOP_LEFT, ROWS_PANEL_SIZE);
+  content.panel = tabbedPanelLayoutOf(metrics_).panel;
   content.tabs = std::move(tabStrip_);
   content.openTab = std::move(tabOpener_);
   content.nextKeys = PANEL_NEXT_KEYS;
@@ -499,24 +535,30 @@ void MenuBuilder::placeRowsPanel(Menu::Content& content) {
 }
 
 PanelCursor MenuBuilder::placeRowsAndBars(Menu::Content& content) {
+  TabbedPanelLayout layout = tabbedPanelLayoutOf(metrics_);
+  layout.barSize.x = barWidthFor(buttons_, layout.barSize.x, metrics_);
   std::vector<PendingButton> trailing =
       barsAfterCancel(buttons_, cancelButton_);
   const PanelCursor end =
       placeRowsAndBarsOf(content, buttons_,
-                         RowsAndBars{.firstRow = FIRST_ROW_TOP_LEFT,
-                                     .rowSize = ROW_SIZE,
-                                     .firstBar = {SAFE_MARGIN, PANEL_BARS_TOP},
-                                     .barSize = PANEL_BAR_SIZE,
+                         RowsAndBars{.firstRow = layout.firstRowTopLeft,
+                                     .rowSize = layout.rowSize,
+                                     .firstBar = {SAFE_MARGIN, layout.barsTop},
+                                     .barSize = layout.barSize,
                                      .barGap = SPACE_BESIDE_PANEL_BARS});
-  placeBarsAtPanelEnd(content, trailing);
-  content.rowScroll = rowScrollOf(content);
+  placeBarsAtPanelEnd(content, trailing, layout);
+  content.rowScroll = rowScrollOf(content, layout);
   return end;
 }
 
 void MenuBuilder::placeDescriptionAndIllustration(Menu::Content& content,
                                                   PanelCursor end) {
-  content.descriptionAnchor =
-      sf::Vector2i(end.barLeft, PANEL_BARS_TOP + BUTTON_TEXT_OFFSET.y);
+  const TabbedPanelLayout layout = tabbedPanelLayoutOf(metrics_);
+  content.descriptionAnchor = descriptionAnchorOf(layout, end, metrics_);
+  if (metrics_ != TextMetrics{}) {
+    content.descriptionWidth = layout.panel.position.x + layout.panel.size.x -
+                               content.descriptionAnchor->x;
+  }
   if (illustration_.has_value()) {
     content.illustration =
         sf::IntRect({FIRST_ROW_TOP_LEFT.x + ROW_PADDING,

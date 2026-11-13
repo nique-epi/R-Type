@@ -1,6 +1,5 @@
 #include "ScreenBuilding.hpp"
 #include <SFML/System/Vector2.hpp>
-#include <cstddef>
 #include <memory>
 #include <utility>
 #include "AssetLibrary.hpp"
@@ -19,10 +18,9 @@
 #include "PlayerSettings.hpp"
 #include "PlayfieldMapping.hpp"
 #include "ReducedMotion.hpp"
-#include "ScreenBuildingConstants.hpp"
 #include "ScreenContext.hpp"
 #include "ScreenId.hpp"
-#include "TextMetrics.hpp"
+#include "TextMeasures.hpp"
 
 namespace rtype::client {
 
@@ -36,11 +34,8 @@ ISoundPlayer& soundsOf(const ScreenContext& context) {
 }
 
 InterfaceLook interfaceLookOf(const PlayerSettings& settings) {
-  return InterfaceLook{
-      .text = TextMetrics{.halfPixelsPerFontPixel =
-                              TEXT_SIZE_HALF_PIXELS[static_cast<std::size_t>(
-                                  settings.textSize)]},
-      .highContrast = settings.highContrast};
+  return InterfaceLook{.text = textMetricsOf(settings.textSize),
+                       .highContrast = settings.highContrast};
 }
 
 std::unique_ptr<IInterfaceCanvas> interfaceCanvasOf(

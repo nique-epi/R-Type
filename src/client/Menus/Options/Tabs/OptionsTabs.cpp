@@ -24,6 +24,8 @@
 #include "SettingDefinitionConstants.hpp"
 #include "SettingsConstants.hpp"
 #include "SettingsService.hpp"
+#include "TextMeasures.hpp"
+#include "TextSize.hpp"
 #include "WidgetConstants.hpp"
 #include "WindowLayout.hpp"
 #include "WindowSizeChartConstants.hpp"
@@ -36,7 +38,8 @@ namespace {
  * tab strip, and the notice that the game goes on when the options are over
  * a game. */
 MenuBuilder tabbedPanel(const OptionsTabsParts& parts, std::size_t tab) {
-  MenuBuilder builder(MenuBuilder::Frame::TabbedPanel, &parts.sounds.get());
+  MenuBuilder builder(MenuBuilder::Frame::TabbedPanel, &parts.sounds.get(),
+                      textMetricsOf(parts.service.get().settings().textSize));
   builder.heading(SETTINGS_HEADING)
       .tabs(textsOf(OPTIONS_TAB_LABELS), tab,
             {.previous = parts.keyName(PREVIOUS_TAB_KEY),
@@ -194,9 +197,20 @@ std::vector<Menu> buildTabs(const OptionsTabsParts& parts,
 }  // namespace
 
 OptionsTabs::OptionsTabs(const OptionsTabsParts& parts)
-    : service_(&parts.service.get()),
+    : parts_(parts),
+      service_(&parts.service.get()),
       window_(&parts.window.get()),
+      builtSize_(service_->settings().textSize),
       tabs_(buildTabs(parts, handles_)) {}
+
+void OptionsTabs::followTextSize() {
+  const TextSize size = service_->settings().textSize;
+  if (size == builtSize_) {
+    return;
+  }
+  builtSize_ = size;
+  tabs_ = buildTabs(parts_, handles_);
+}
 
 void OptionsTabs::openTab(std::size_t tab) {
   if (tab < tabs_.size()) {

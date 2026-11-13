@@ -28,6 +28,7 @@ target_link_libraries(rtype_client_screen_registry
     rtype_network_transport
   PRIVATE
     SFML::System
+    rtype_client_text_measures
     rtype_client_common_screens
     rtype_client_interface_canvas
     rtype_client_platform

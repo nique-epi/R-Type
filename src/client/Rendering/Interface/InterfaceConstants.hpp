@@ -2,8 +2,10 @@
 
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
+#include <array>
 #include <string_view>
 #include "BackgroundConstants.hpp"
+#include "TextSize.hpp"
 
 namespace rtype::client {
 
@@ -44,6 +46,12 @@ constexpr int BOX_CORNER_LENGTH = 8;
  */
 constexpr int NORMAL_TEXT_HALF_PIXELS = 2;
 constexpr int HALF_PIXELS_PER_PIXEL = 2;
+
+/** @brief The half pixels a font pixel covers at each text size, in the
+ * order of TEXT_SIZES: as the fonts are drawn, half again as large, twice as
+ * large. */
+constexpr std::array<int, TEXT_SIZE_COUNT> TEXT_SIZE_HALF_PIXELS{
+    NORMAL_TEXT_HALF_PIXELS, 3, 4};
 
 /** @brief How far the plate HIGH CONTRAST lays under a line reaches past
  * its letters on each side, in pixels, and how many sides of a line it grows

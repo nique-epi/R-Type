@@ -7,6 +7,7 @@
 #include "OptionsRowHandles.hpp"
 #include "OptionsTabsParts.hpp"
 #include "SettingsService.hpp"
+#include "TextSize.hpp"
 
 namespace rtype::client {
 
@@ -38,9 +39,16 @@ class OptionsTabs {
    * of the rows, on every tab. */
   void refreshDescriptions();
 
+  /** @brief Lays every tab out again when the text size changed since they
+   * were built, the same tab open; the first row, TEXT SIZE on ACCESS, is
+   * selected again. */
+  void followTextSize();
+
  private:
+  OptionsTabsParts parts_;
   SettingsService* service_;
   ISizableWindow* window_;
+  TextSize builtSize_;
   /** @brief Set while tabs_ is built, so declared, and initialized, before
    * it. */
   OptionsRowHandles handles_;

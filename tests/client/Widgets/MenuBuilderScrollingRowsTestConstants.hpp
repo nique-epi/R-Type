@@ -3,6 +3,7 @@
 #include <SFML/System/Vector2.hpp>
 #include <array>
 #include <cstddef>
+#include "TextMetrics.hpp"
 
 namespace rtype::client::testing {
 
@@ -25,6 +26,22 @@ constexpr std::size_t SECOND_ROW = 1;
 
 /** @brief One notch of the wheel toward the player, which scrolls down. */
 constexpr float ONE_NOTCH_DOWN = -1.0F;
+
+/** @brief The largest text size, and where its fourth and last shown row
+ * writes its label: tabs at 24 + 16 + 8 + 1 + 9 = 58, 24 tall, the panel at
+ * 82, the first row 4 inside at 86, rows 24 tall and 26 apart, the fourth at
+ * 164, its label centered 4 lower. */
+constexpr TextMetrics LARGEST_TEXT{.halfPixelsPerFontPixel = 4};
+constexpr sf::Vector2i FOURTH_ROW_LABEL_AT_LARGEST(36, 168);
+
+/** @brief The description of every row, 36 letters: 576 pixels at the
+ * largest size, where 336 are left right of BACK (88 wide from 24, then 8),
+ * so it takes two lines of at most 21 letters, the second 16 + 2 lower. */
+constexpr const char* LONG_DESCRIPTION = "> STRONGER COLORS, PLATES UNDER TEXT";
+constexpr const char* FIRST_DESCRIPTION_LINE = "> STRONGER COLORS,";
+constexpr const char* SECOND_DESCRIPTION_LINE = "PLATES UNDER TEXT";
+constexpr sf::Vector2i FIRST_DESCRIPTION_LINE_AT_LARGEST(120, 210);
+constexpr sf::Vector2i SECOND_DESCRIPTION_LINE_AT_LARGEST(120, 228);
 
 /** @brief A pixel inside the first shown row, left of its control. */
 constexpr sf::Vector2i INSIDE_THE_FIRST_SHOWN_ROW(60, 80);
