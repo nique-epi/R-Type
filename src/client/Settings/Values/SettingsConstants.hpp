@@ -107,6 +107,7 @@ constexpr std::string_view LAGOMETER_BACKGROUND_NAME = "lagometer_background";
 constexpr std::string_view SHIP_HEAD_NAME = "ship_head";
 constexpr std::string_view SHIP_EYES_NAME = "ship_eyes";
 constexpr std::string_view SHIP_FACE_NAME = "ship_face";
+constexpr std::string_view SHIP_HULL_NAME = "ship_hull";
 constexpr std::string_view SHIP_LOCKER_NAME = "ship_locker";
 
 /** @brief What separates the items of the locker in the settings file, and the
@@ -114,7 +115,8 @@ constexpr std::string_view SHIP_LOCKER_NAME = "ship_locker";
 constexpr char LOCKER_ITEM_SEPARATOR = ',';
 constexpr std::string_view EMPTY_LOCKER_VALUE = "none";
 
-/** @brief The value of a slot of the ship that wears nothing. */
+/** @brief The value of a slot of the ship that wears nothing; for the hull,
+ * the standard ship. */
 constexpr std::string_view NO_LOOK_ITEM_VALUE = "none";
 
 /** @brief Names of the keys of the bound actions, in the order of

@@ -1435,7 +1435,7 @@ The client neither sends nor shows a line yet.
 - A player gets at most one choice taken per `TICKS_BETWEEN_LOOK_CHOICES` ticks (6, `LOOK_CHOICE_INTERVAL` 100 ms), counted by the relay. A choice sooner is ignored and not kept.
 - Every player gets the looks again each time a player joins (`joined` hook), so a newcomer sees the others.
 - The look and the wait of a seat are cleared when its session closes, so the next player on the seat wears nothing.
-- A number the catalog does not know, or of another slot, is dropped when the message is read (`isLookNumberOf()`, `src/identifiers/ShipLookNumbers.hpp`).
+- A number the catalog does not know, or of another slot, is dropped when the message is read (`isLookNumberOf()`, `src/identifiers/ShipLookNumbers.hpp`): a hull (26 to 30) is accepted in the `hull` byte only, and an accessory never there. The server does not check that a player holds what it wears.
 
 ### Look items: `LookItemKeeper`
 
@@ -1443,7 +1443,7 @@ A look item is an entity of the side `look_item` (see [Writing an entity sheet](
 
 1. `CollisionRules` publishes a `LookItemTouched` for each ship that touches an item; the keeper records the claim (the item, its number, the player and the ship).
 2. At the start of the next tick, before the world systems run, `onTick()` groups the claims by item and gives it to the lowest player number among those that still fly the ship that touched it (`ConnectedPlayer::shipEntityId`): a ship destroyed in the same tick lost the claim.
-3. The item is destroyed, an `EntityDestruction` (`Removed`) is published, and the winner alone is sent a guaranteed `LookItemWon`.
+3. The item is destroyed, an `EntityDestruction` (`Removed`) is published, and the winner alone is sent a guaranteed `LookItemWon`, which names an accessory, never a hull: a sheet whose `look_item` names a hull is refused when the sheets are read.
 
 So an item disappears one tick (16.7 ms) after the contact, and two ships that touch it together never both win. An item no pilot can win stays in the world until the playfield removes it past the left edge.
 

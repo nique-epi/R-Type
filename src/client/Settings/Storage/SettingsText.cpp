@@ -260,6 +260,10 @@ std::optional<LineOutcome> applyLook(PlayerSettings& settings,
     return assign(lookItemOf(value, ShipLookSlot::Face),
                   settings.shipLook.face);
   }
+  if (name == SHIP_HULL_NAME) {
+    return assign(lookItemOf(value, ShipLookSlot::Hull),
+                  settings.shipLook.hull);
+  }
   return std::nullopt;
 }
 
@@ -437,6 +441,7 @@ std::string settingsText(const PlayerSettings& settings) {
   writeLine(text, SHIP_HEAD_NAME, lookItemValue(settings.shipLook.head));
   writeLine(text, SHIP_EYES_NAME, lookItemValue(settings.shipLook.eyes));
   writeLine(text, SHIP_FACE_NAME, lookItemValue(settings.shipLook.face));
+  writeLine(text, SHIP_HULL_NAME, lookItemValue(settings.shipLook.hull));
   writeLine(text, SHIP_LOCKER_NAME, lockerValue(settings.shipLocker));
   return text;
 }

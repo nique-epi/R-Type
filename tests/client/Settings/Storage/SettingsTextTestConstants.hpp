@@ -38,6 +38,7 @@ constexpr const char* FIRST_LAUNCH_FILE =
     "ship_head=none\n"
     "ship_eyes=none\n"
     "ship_face=none\n"
+    "ship_hull=none\n"
     "ship_locker=top_hat,cool_shades,mustache\n";
 
 /** @brief The ship wearing the crown, the third item of the locker, and the
@@ -100,5 +101,20 @@ constexpr int HIGHEST_VOLUME = 100;
 constexpr const char* INVALID_FIRST_LINE = "line 1: invalid value";
 constexpr const char* UNKNOWN_FIRST_LINE = "line 1: unknown setting";
 constexpr const char* FIRST_LINE_WITHOUT_SEPARATOR = "line 1: not NAME=VALUE";
+
+/** @brief The golden ace, the twenty-ninth item of the catalog and a hull;
+ * the line that names it, and a file that names the crown as a hull. */
+constexpr std::uint8_t FLIES_GOLDEN_ACE = 29;
+constexpr const char* GOLDEN_ACE_LINE = "ship_hull=golden_ace\n";
+constexpr const char* CROWN_AS_A_HULL_FILE = "ship_hull=crown\n";
+/** @brief A file written before the hulls: it names no hull. */
+constexpr const char* FILE_WITHOUT_A_HULL =
+    "ship_head=crown\n"
+    "ship_face=none\n";
+/** @brief A locker line naming a new accessory and a hull, at places 10 and
+ * 26 of the catalog. */
+constexpr const char* VOSTOK_AND_CHAPKA_LOCKER = "ship_locker=chapka,vostok\n";
+constexpr std::size_t CHAPKA_ITEM = 10;
+constexpr std::size_t VOSTOK_ITEM = 26;
 
 }  // namespace rtype::client::testing

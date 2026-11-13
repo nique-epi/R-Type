@@ -5,11 +5,13 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
+#include <string_view>
 #include <vector>
 #include "IInterfaceCanvas.hpp"
 #include "ImagePlacement.hpp"
 #include "InterfaceConstants.hpp"
 #include "RenderingConstants.hpp"
+#include "ShipHullSpriteConstants.hpp"
 #include "ShipLook.hpp"
 #include "ShipLookConstants.hpp"
 #include "ShipLookNumbers.hpp"
@@ -24,7 +26,7 @@ namespace rtype::client {
 using identifiers::lookIndexOf;
 using identifiers::lookNumberOf;
 using identifiers::NO_SHIP_LOOK_ITEM;
-using identifiers::SHIP_LOOK_ITEM_COUNT;
+using identifiers::SHIP_LOOK_ACCESSORY_COUNT;
 using identifiers::SHIP_LOOK_ITEM_SLOTS;
 using identifiers::ShipLook;
 using identifiers::ShipLookSlot;
@@ -39,9 +41,11 @@ std::uint8_t& slotOf(ShipLook& look, ShipLookSlot slot) {
     case ShipLookSlot::Eyes:
       return look.eyes;
     case ShipLookSlot::Face:
+      return look.face;
+    case ShipLookSlot::Hull:
       break;
   }
-  return look.face;
+  return look.hull;
 }
 
 }  // namespace
@@ -73,7 +77,7 @@ std::optional<std::size_t> itemInSlot(ShipLook look, ShipLookSlot slot) {
 
 std::vector<std::size_t> wornItemsOf(ShipLook look) {
   std::vector<std::size_t> worn;
-  for (std::size_t item = 0; item < SHIP_LOOK_ITEM_COUNT; ++item) {
+  for (std::size_t item = 0; item < SHIP_LOOK_ACCESSORY_COUNT; ++item) {
     if (wears(look, item)) {
       worn.push_back(item);
     }
@@ -99,7 +103,7 @@ void paintLookItem(IInterfaceCanvas& canvas, std::size_t item,
 
 void paintShipLook(IInterfaceCanvas& canvas, ShipLook look,
                    ShipPlacement ship) {
-  for (std::size_t item = 0; item < SHIP_LOOK_ITEM_COUNT; ++item) {
+  for (std::size_t item = 0; item < SHIP_LOOK_ACCESSORY_COUNT; ++item) {
     if (wears(look, item)) {
       paintLookItem(canvas, item, ship);
     }
@@ -119,6 +123,13 @@ void paintLookIcon(IInterfaceCanvas& canvas, std::size_t item,
                                 ((cell.size - (size * scale)) / HALF_DIVISOR),
                      .scale = scale},
       cell);
+}
+
+std::string_view lookItemLabelOf(std::size_t item) {
+  if (identifiers::isHullItem(item)) {
+    return SHIP_HULL_LABELS.at(item - SHIP_LOOK_ACCESSORY_COUNT);
+  }
+  return SHIP_LOOK_SPRITES.at(item).label;
 }
 
 }  // namespace rtype::client

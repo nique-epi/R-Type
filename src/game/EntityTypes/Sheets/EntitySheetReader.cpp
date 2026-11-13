@@ -390,7 +390,9 @@ std::optional<std::uint8_t> lookItemFrom(
     return std::nullopt;
   }
   return identifiers::lookNumberOf(engine::choiceAt(
-      gameplay, LOOK_ITEM_KEY, identifiers::SHIP_LOOK_ITEM_NAMES));
+      gameplay, LOOK_ITEM_KEY,
+      std::span<const std::string_view>{identifiers::SHIP_LOOK_ITEM_NAMES}
+          .first(identifiers::SHIP_LOOK_ACCESSORY_COUNT)));
 }
 
 /** @throws InconsistentEntitySheetException when @p sheet has a hurt zone,

@@ -5,20 +5,31 @@
 #include "LockerChoiceTestConstants.hpp"
 
 using rtype::client::lockerItemAt;
+using rtype::client::lockerItemShownIn;
 using rtype::client::lockerItemTowards;
+using rtype::client::lockerRowOf;
+using rtype::client::testing::ABOVE_THE_LAST_ITEM;
 using rtype::client::testing::BETWEEN_TWO_CELLS;
 using rtype::client::testing::CROWN_CELL;
 using rtype::client::testing::CROWN_CELL_MIDDLE;
 using rtype::client::testing::EIGHTH_CELL;
-using rtype::client::testing::EMPTY_CELL_MIDDLE;
+using rtype::client::testing::FIFTH_ROW_CELL;
 using rtype::client::testing::FIRST_CELL;
-using rtype::client::testing::LAST_ITEM_CELL;
+using rtype::client::testing::FIRST_COLUMN_OF_THE_SEVENTH_ROW;
+using rtype::client::testing::FIRST_ROWS;
+using rtype::client::testing::FOURTH_ROW_CELL;
+using rtype::client::testing::FROM_THE_FIRST_ROW;
+using rtype::client::testing::FROM_THE_THIRD_ROW;
+using rtype::client::testing::LAST_COLUMN_OF_THE_FOURTH_ROW;
+using rtype::client::testing::LAST_ITEM;
+using rtype::client::testing::LAST_ROWS;
 using rtype::client::testing::MIDDLE_CELL;
 using rtype::client::testing::MIDDLE_LEFT_CELL;
 using rtype::client::testing::MIDDLE_RIGHT_CELL;
-using rtype::client::testing::NINTH_CELL;
+using rtype::client::testing::ROW_OF_THE_LAST_ITEM;
 using rtype::client::testing::SECOND_CELL;
-using rtype::client::testing::SEVENTH_CELL;
+using rtype::client::testing::UNDER_THE_CELLS;
+using rtype::client::testing::UNDER_THE_CROWN_CELL_FROM_THE_THIRD_ROW;
 using Key = sf::Keyboard::Key;
 
 /**
@@ -34,8 +45,8 @@ TEST(LockerChoice, AnArrowMovesToTheNeighbourCell) {
 }
 
 /**
- * Given the first cell, in the top left corner
- * When Left or Up is pressed
+ * Given a cell against a side of the locker
+ * When the arrow of that side is pressed
  * Then the choice stays on it
  */
 TEST(LockerChoice, TheChoiceStaysAgainstASide) {
@@ -45,56 +56,74 @@ TEST(LockerChoice, TheChoiceStaysAgainstASide) {
 }
 
 /**
- * Given the ninth cell, above an empty cell
+ * Given the first cell of the fourth row, the last row shown at first
  * When Down is pressed
- * Then the choice stays on it
+ * Then the choice goes to the fifth row, not shown yet
  */
-TEST(LockerChoice, TheChoiceNeverGoesDownToAnEmptyCell) {
-  EXPECT_EQ(lockerItemTowards(NINTH_CELL, Key::Down), NINTH_CELL);
+TEST(LockerChoice, DownGoesPastTheRowsShown) {
+  EXPECT_EQ(lockerItemTowards(FOURTH_ROW_CELL, Key::Down), FIFTH_ROW_CELL);
 }
 
 /**
- * Given the last item, left of an empty cell
- * When Right is pressed
- * Then the choice stays on it
+ * Given the last item, in the bottom right corner of the last row
+ * When Down or Right is pressed
+ * Then the choice stays on it; Down from the item above reaches it
  */
-TEST(LockerChoice, TheChoiceNeverGoesRightToAnEmptyCell) {
-  EXPECT_EQ(lockerItemTowards(LAST_ITEM_CELL, Key::Right), LAST_ITEM_CELL);
+TEST(LockerChoice, TheChoiceStaysOnTheLastItem) {
+  EXPECT_EQ(lockerItemTowards(LAST_ITEM, Key::Down), LAST_ITEM);
+  EXPECT_EQ(lockerItemTowards(LAST_ITEM, Key::Right), LAST_ITEM);
+  EXPECT_EQ(lockerItemTowards(ABOVE_THE_LAST_ITEM, Key::Down), LAST_ITEM);
 }
 
 /**
- * Given the seventh cell, above the last item
- * When Down is pressed
- * Then the choice goes down to the last item
- */
-TEST(LockerChoice, TheChoiceGoesDownToTheLastItem) {
-  EXPECT_EQ(lockerItemTowards(SEVENTH_CELL, Key::Down), LAST_ITEM_CELL);
-}
-
-/**
- * Given any cell
- * When a key that is not an arrow is pressed
- * Then the choice does not move
+ * Given a cell of the locker
+ * When a key that is no arrow is pressed
+ * Then nothing is chosen
  */
 TEST(LockerChoice, AnotherKeyMovesNothing) {
   EXPECT_EQ(lockerItemTowards(MIDDLE_CELL, Key::Space), std::nullopt);
 }
 
 /**
- * Given the middle of the cell of the crown
+ * Given the middle of the cell of the crown, the locker at its first rows
  * When the item under it is asked
  * Then it is the crown
  */
 TEST(LockerChoice, ThePointerOnACellPicksItsItem) {
-  EXPECT_EQ(lockerItemAt(CROWN_CELL_MIDDLE), CROWN_CELL);
+  EXPECT_EQ(lockerItemAt(CROWN_CELL_MIDDLE, FROM_THE_FIRST_ROW), CROWN_CELL);
 }
 
 /**
- * Given a pixel between two cells, and one on a cell holding no item
+ * Given the same pixel, the locker scrolled two rows down
+ * When the item under it is asked
+ * Then it is the item two rows under the crown
+ */
+TEST(LockerChoice, ThePointerPicksTheItemOfTheRowsShown) {
+  EXPECT_EQ(lockerItemAt(CROWN_CELL_MIDDLE, FROM_THE_THIRD_ROW),
+            UNDER_THE_CROWN_CELL_FROM_THE_THIRD_ROW);
+}
+
+/**
+ * Given a pixel between two cells, and one under the last row shown
  * When the item under each is asked
  * Then there is none
  */
-TEST(LockerChoice, ThePointerOffTheItemsPicksNothing) {
-  EXPECT_EQ(lockerItemAt(BETWEEN_TWO_CELLS), std::nullopt);
-  EXPECT_EQ(lockerItemAt(EMPTY_CELL_MIDDLE), std::nullopt);
+TEST(LockerChoice, ThePointerOffTheCellsPicksNothing) {
+  EXPECT_EQ(lockerItemAt(BETWEEN_TWO_CELLS, FROM_THE_FIRST_ROW), std::nullopt);
+  EXPECT_EQ(lockerItemAt(UNDER_THE_CELLS, FROM_THE_FIRST_ROW), std::nullopt);
+}
+
+/**
+ * Given the last item and the first one
+ * When the row of the last and the choices kept among other rows are asked
+ * Then the last item is in the tenth row, and a hidden item is kept in its
+ * column in the nearest row shown
+ */
+TEST(LockerChoice, AHiddenChoiceIsKeptInTheNearestRowShown) {
+  EXPECT_EQ(lockerRowOf(LAST_ITEM), ROW_OF_THE_LAST_ITEM);
+  EXPECT_EQ(lockerItemShownIn(FIRST_CELL, LAST_ROWS),
+            FIRST_COLUMN_OF_THE_SEVENTH_ROW);
+  EXPECT_EQ(lockerItemShownIn(LAST_ITEM, FIRST_ROWS),
+            LAST_COLUMN_OF_THE_FOURTH_ROW);
+  EXPECT_EQ(lockerItemShownIn(CROWN_CELL, FIRST_ROWS), CROWN_CELL);
 }

@@ -327,9 +327,10 @@ void GameScreen::applyWorldState(const network::WorldState& state) {
 }
 
 void GameScreen::recordEnd(const network::GameEnded& ended) {
-  *result_ = GameResult{
-      .pilots = rankedPilots(finalPilotsOf(scoreBoard_.pilots(), ended)),
-      .outcome = ended.outcome};
+  *result_ = GameResult{.pilots = rankedPilots(flyingTheirHulls(
+                            finalPilotsOf(scoreBoard_.pilots(), ended),
+                            shipLooks_->playerLooks())),
+                        .outcome = ended.outcome};
   worldSeen_ = true;
   endedAt_ = effects_.sinceStart();
   interpolationTally_->endGame();

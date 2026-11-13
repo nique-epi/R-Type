@@ -48,7 +48,7 @@
 
 [difficulty.easy]
 enemies = ["drifter", "drifter", "weaver"]
-look_items = ["look_crown", "look_party_hat", "look_cowboy_hat", "look_propeller_cap"]
+look_items = ["look_crown", "look_party_hat", "look_cowboy_hat", "look_propeller_cap", "look_chapka", "look_santa_hat", "look_fez", "look_halo"]
 look_item_every = 3
 first_wave_bydos = 2
 bydos_added_per_wave = 1
@@ -60,7 +60,7 @@ level_waves = 5
 
 [difficulty.normal]
 enemies = ["drifter", "weaver", "drifter", "voltjelly", "weaver", "reaper"]
-look_items = ["look_crown", "look_party_hat", "look_cowboy_hat", "look_propeller_cap", "look_viking_helmet", "look_wizard_hat", "look_chef_toque"]
+look_items = ["look_crown", "look_party_hat", "look_cowboy_hat", "look_propeller_cap", "look_viking_helmet", "look_wizard_hat", "look_chef_toque", "look_chapka", "look_tricorn", "look_santa_hat", "look_halo", "look_devil_horns", "look_sombrero", "look_traffic_cone", "look_fez", "look_grad_cap", "look_antennae", "look_kabuto", "look_mohawk", "look_glasses_3d", "look_monocle", "look_long_beard"]
 look_item_every = 3
 first_wave_bydos = 3
 bydos_added_per_wave = 1
@@ -73,7 +73,7 @@ boss = "bydo_tyrant"
 
 [difficulty.hard]
 enemies = ["weaver", "drifter", "reaper", "weaver", "drillback", "voltjelly", "weaver", "bydomancer"]
-look_items = ["look_crown", "look_party_hat", "look_cowboy_hat", "look_propeller_cap", "look_viking_helmet", "look_wizard_hat", "look_chef_toque"]
+look_items = ["look_crown", "look_party_hat", "look_cowboy_hat", "look_propeller_cap", "look_viking_helmet", "look_wizard_hat", "look_chef_toque", "look_chapka", "look_tricorn", "look_santa_hat", "look_halo", "look_devil_horns", "look_sombrero", "look_traffic_cone", "look_fez", "look_grad_cap", "look_antennae", "look_kabuto", "look_mohawk", "look_glasses_3d", "look_monocle", "look_long_beard"]
 look_item_every = 3
 first_wave_bydos = 4
 bydos_added_per_wave = 2

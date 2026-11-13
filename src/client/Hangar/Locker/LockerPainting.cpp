@@ -7,9 +7,12 @@
 #include "BackgroundColorConstants.hpp"
 #include "ColoredPixel.hpp"
 #include "DitherPatch.hpp"
+#include "EntitySpriteConstants.hpp"
+#include "EntitySprites.hpp"
 #include "GlassStreak.hpp"
 #include "HangarColorConstants.hpp"
 #include "IInterfaceCanvas.hpp"
+#include "ImagePlacement.hpp"
 #include "InterfaceColorConstants.hpp"
 #include "LockerChoice.hpp"
 #include "LockerConstants.hpp"
@@ -19,11 +22,17 @@
 #include "MetalTexture.hpp"
 #include "MetalTextureConstants.hpp"
 #include "Outline.hpp"
+#include "PilotHull.hpp"
 #include "PixelShapes.hpp"
 #include "RenderingConstants.hpp"
+#include "ScrollMark.hpp"
+#include "ShipHulls.hpp"
 #include "ShipLookConstants.hpp"
+#include "ShipLookNumbers.hpp"
 #include "ShipLooks.hpp"
+#include "ShipSheetFrame.hpp"
 #include "TextStyle.hpp"
+#include "TextureArea.hpp"
 
 namespace rtype::client {
 
@@ -146,20 +155,53 @@ void paintCellBack(IInterfaceCanvas& canvas, sf::IntRect cell) {
 /** @brief Paints the item of @p slot when the locker holds it, its gold tag
  * when the ship wears it, and the cyan frame when it is the chosen one, held
  * or not. */
+/** @brief Draws the ship of the hull @p item, still, in the first pilot
+ * color, pixel for pixel, centred in @p cell. */
+void paintHullIcon(IInterfaceCanvas& canvas, std::size_t item,
+                   sf::IntRect cell) {
+  const ShipSheetFrame ship = pilotShipFrameOf(
+      PilotHull{.hull = identifiers::lookNumberOf(item), .color = 0},
+      PLAYER_SHIP_FRAME);
+  const sf::Vector2i size(ship.frame.width, ship.frame.height);
+  canvas.drawImage(
+      TextureArea{.assetId = ship.sheet, .rectangle = rectangleOf(ship.frame)},
+      ImagePlacement{.topLeft =
+                         cell.position + ((cell.size - size) / HALF_DIVISOR)},
+      cell);
+}
+
+/** @brief Paints the gold tag of a worn item in the corner of @p cell. */
+void paintWornTag(IInterfaceCanvas& canvas, sf::IntRect cell) {
+  const sf::Vector2i tag(
+      cell.position.x + cell.size.x - WORN_TAG_INSET - WORN_TAG_SIZE.x,
+      cell.position.y + WORN_TAG_INSET);
+  canvas.fill(grownBy({tag, WORN_TAG_SIZE}, 1), INK);
+  canvas.fill({tag, WORN_TAG_SIZE}, STAR_GOLD);
+}
+
+/** @brief Paints the item the cell at place @p slot shows, when the locker
+ * holds it: its icon, a hull as its whole ship, and its gold tag when the
+ * ship wears it; then the cyan frame when it is the chosen one, held or not.
+ * A cell past the last item shows nothing. */
 void paintCellItem(IInterfaceCanvas& canvas, std::size_t slot,
-                   LockerView view) {
+                   const LockerView& view) {
+  const std::size_t item = (view.rows.first * LOCKER_COLUMN_COUNT) + slot;
+  if (item >= SHIP_LOOK_ITEM_COUNT) {
+    return;
+  }
   const sf::IntRect cell = lockerCellArea(slot);
-  if (view.locker.items.test(slot)) {
-    paintLookIcon(canvas, slot, grownBy(cell, -CELL_ICON_INSET));
+  if (view.locker.items.test(item)) {
+    const sf::IntRect icon = grownBy(cell, -CELL_ICON_INSET);
+    if (identifiers::isHullItem(item)) {
+      paintHullIcon(canvas, item, icon);
+    } else {
+      paintLookIcon(canvas, item, icon);
+    }
+    if (wears(view.worn, item)) {
+      paintWornTag(canvas, cell);
+    }
   }
-  if (view.locker.items.test(slot) && wears(view.worn, slot)) {
-    const sf::Vector2i tag(
-        cell.position.x + cell.size.x - WORN_TAG_INSET - WORN_TAG_SIZE.x,
-        cell.position.y + WORN_TAG_INSET);
-    canvas.fill(grownBy({tag, WORN_TAG_SIZE}, 1), INK);
-    canvas.fill({tag, WORN_TAG_SIZE}, STAR_GOLD);
-  }
-  if (slot == view.chosen) {
+  if (item == view.chosen) {
     Outline(grownBy(cell, CHOSEN_FRAME_GAP), Outline::Line::Solid)
         .paint(canvas, HUD_CYAN);
     Outline(grownBy(cell, CHOSEN_FRAME_GAP - 1), Outline::Line::Solid)
@@ -226,11 +268,10 @@ void paintLocker(IInterfaceCanvas& canvas, LockerView view) {
   paintNameplateName(canvas, plate);
   for (std::size_t slot = 0; slot < LOCKER_SLOT_COUNT; ++slot) {
     paintCellBack(canvas, lockerCellArea(slot));
-    if (slot < SHIP_LOOK_ITEM_COUNT) {
-      paintCellItem(canvas, slot, view);
-    }
+    paintCellItem(canvas, slot, view);
   }
   paintGlass(canvas, body);
+  paintScrollMark(canvas, LOCKER_SCROLL_TRACK, view.rows);
 }
 
 }  // namespace rtype::client

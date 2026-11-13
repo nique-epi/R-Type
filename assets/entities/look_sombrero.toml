@@ -1,0 +1,41 @@
+# The entity type look_sombrero: a sombrero floating to the left. The
+# pilot whose ship touches it first (the lowest player number when several do
+# in one tick) wins it for the locker of the hangar.
+# [gameplay] is what the server gives an entity of this type, [appearance] how
+# the client draws it. Both programs read this file when they start, from
+# entities/look_sombrero.toml in the assets folder next to their executable, or
+# one level above it: the name of the file is the name of the type. Each one
+# reads only its own table, and stops with an error naming the file, the line
+# and the key when a key is missing, misspelt, out of its range, or does not
+# hold together with another key or another sheet. Every number is an integer:
+# 240, never 240.0. The keys are described on the page "Writing an entity
+# sheet" of the docs.
+
+[gameplay]
+side = "look_item"
+layer = "look_item"
+look_item = "sombrero"
+pilot = "straight"
+
+[gameplay.hitbox]
+width = 64
+height = 28
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 240
+
+[gameplay.behaviour]
+heading = -1
+
+[appearance]
+sheet = "sprites/looks.png"
+
+[appearance.idle]
+left = 270
+top = 0
+width = 16
+height = 7
+frames = 1
+spacing = 0
+frame_ms = 1000

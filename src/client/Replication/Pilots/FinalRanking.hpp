@@ -6,6 +6,7 @@
 #include "FinalPilot.hpp"
 #include "GameEnded.hpp"
 #include "PilotStatus.hpp"
+#include "PlayerLooks.hpp"
 
 namespace rtype::client {
 
@@ -19,6 +20,11 @@ namespace rtype::client {
  * the order of their numbers, the next rank skipping as many. */
 [[nodiscard]] std::vector<FinalPilot> rankedPilots(
     std::vector<FinalPilot> pilots);
+
+/** @returns The pilots, each flying the hull @p looks lists for its number;
+ * the standard ship for a pilot they do not list. */
+[[nodiscard]] std::vector<FinalPilot> flyingTheirHulls(
+    std::vector<FinalPilot> pilots, std::span<const network::PlayerLook> looks);
 
 /** @returns The sum of the scores, UINT32_MAX at most. */
 [[nodiscard]] std::uint32_t teamScoreOf(std::span<const FinalPilot> pilots);
