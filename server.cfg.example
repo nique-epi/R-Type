@@ -33,7 +33,9 @@ set input-delay 3
 set start-at-boss 0
 
 # [games] The level every game plays: one a script of a resource registered with
-# level.register, such as training_run of the resource training-run. The
+# level.register, such as campaign of the resource campaign, from open space
+# into the Pit with a mini-boss and the Bydo Tyrant, or training_run of the
+# resource training-run. The
 # game is then never vanilla. Empty plays the waves of its difficulty, the
 # survival mode.
 set level ""
@@ -89,6 +91,7 @@ set server-name "R-Type server"
 # supervisor serves them in its content pack. A wrong line or a missing
 # resource stops the server.
 # ensure crimson-drifter
+# ensure campaign
 
 # [games] The CSV file the game-statistics plugin writes a row per Bydo killed to, then
 # the total of each game, named after it: each game writes <name>_<its port><extension>,
