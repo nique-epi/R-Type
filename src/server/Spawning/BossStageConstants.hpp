@@ -13,6 +13,9 @@ namespace rtype::server {
 /** @brief Logger name the boss stage writes its log lines under. */
 constexpr std::string_view BOSS_STAGE_LOGGER_NAME = "BossStage";
 
+/** @brief Logger name the entrance of a boss writes its log lines under. */
+constexpr std::string_view BOSS_ENTRANCE_LOGGER_NAME = "BossEntrance";
+
 /** @brief Each player past the first adds BOSS_HEALTH_PER_EXTRA_PLAYER
  * percent to the health of the boss: 240 points for one player, 300, 360
  * and 420 for two, three and four, as co-op shooters raise the health of

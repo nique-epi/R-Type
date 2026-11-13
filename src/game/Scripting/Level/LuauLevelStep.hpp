@@ -13,15 +13,18 @@ class ComponentRegistry;
 
 namespace rtype::game {
 
+class ILevelBosses;
 struct LevelProgress;
 
 /** @brief What the functions of `level` know of the game and of the step in
- * progress: the progress of the level the game plays and the components of
- * its world, nullptr outside such a game, the thread of the stage that steps,
- * nullptr when none does, and the wait that stage asked for. */
+ * progress: the progress of the level the game plays, the components of its
+ * world and the bosses it brings in, nullptr outside such a game, the thread
+ * of the stage that steps, nullptr when none does, and the wait that stage
+ * asked for. */
 struct LuauLevelStep {
   LevelProgress* progress{nullptr};
   engine::ComponentRegistry* components{nullptr};
+  ILevelBosses* bosses{nullptr};
   lua_State* resumedThread{nullptr};
   std::optional<LuauLevelWait> wait = std::nullopt;
 };

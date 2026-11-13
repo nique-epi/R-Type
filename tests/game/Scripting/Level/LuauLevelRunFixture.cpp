@@ -2,6 +2,7 @@
 #include <gtest/gtest.h>
 #include <cstddef>
 #include <memory>
+#include <string>
 #include <string_view>
 #include <vector>
 #include "BehaviourScriptsFixtures.hpp"
@@ -10,10 +11,13 @@
 #include "LuauLevelRun.hpp"
 #include "LuauLevelRunParts.hpp"
 #include "LuauLevelRunTestConstants.hpp"
+#include "RecordingLevelBosses.hpp"
 #include "TimeConstants.hpp"
 
 LuauLevelRunFixture::LuauLevelRunFixture()
-    : scripts_(reportInto(log_)), components_(entities_) {}
+    : scripts_(reportInto(log_)),
+      components_(entities_),
+      bosses_({std::string{BOSS_OF_THE_TESTS}}) {}
 
 void LuauLevelRunFixture::play(std::string_view script) {
   scripts_.run(scriptsOf(script));
@@ -24,7 +28,8 @@ void LuauLevelRunFixture::play(std::string_view script) {
                                      .levels = scripts_.levels(),
                                      .stages = *stages,
                                      .progress = progress_,
-                                     .components = components_});
+                                     .components = components_,
+                                     .bosses = bosses_});
 }
 
 void LuauLevelRunFixture::tick(std::size_t count) {
@@ -43,4 +48,8 @@ rtype::game::LuauLevelRun& LuauLevelRunFixture::run() { return *run_; }
 
 rtype::game::LevelProgress& LuauLevelRunFixture::progress() {
   return progress_;
+}
+
+rtype::game::testing::RecordingLevelBosses& LuauLevelRunFixture::bosses() {
+  return bosses_;
 }
