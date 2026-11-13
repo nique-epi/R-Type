@@ -8,16 +8,20 @@
 #include <set>
 #include <utility>
 #include <vector>
+#include "BandMoment.hpp"
 #include "PilotStatus.hpp"
 #include "PlayerPalette.hpp"
+#include "PlayerPaletteConstants.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "StatusBand.hpp"
+#include "StatusBandLook.hpp"
 #include "StatusBandTestConstants.hpp"
 
 using rtype::client::paintStatusBand;
 using rtype::client::PilotState;
 using rtype::client::PilotStatus;
 using rtype::client::PlayerPalette;
+using rtype::client::StatusBandLook;
 using rtype::client::testing::SCORE;
 
 PilotStatus flying(std::uint8_t number, std::optional<std::uint8_t> lives) {
@@ -33,7 +37,19 @@ InterfaceCanvasRecord bandPaintingOf(std::vector<PilotStatus> pilots,
                                      const PlayerPalette& palette) {
   InterfaceCanvasRecord record;
   RecordingInterfaceCanvas canvas(record);
-  paintStatusBand(canvas, pilots, palette);
+  paintStatusBand(canvas, pilots, StatusBandLook{.palette = palette});
+  return record;
+}
+
+InterfaceCanvasRecord bandPaintingAt(std::vector<PilotStatus> pilots,
+                                     BandMoment moment) {
+  InterfaceCanvasRecord record;
+  record.metrics = moment.metrics;
+  RecordingInterfaceCanvas canvas(record);
+  paintStatusBand(canvas, pilots,
+                  StatusBandLook{.palette = rtype::client::PLAYER_COLORS,
+                                 .sinceStart = moment.sinceStart,
+                                 .flashes = moment.flashes});
   return record;
 }
 

@@ -483,7 +483,7 @@ void paintGameScene(IInterfaceCanvas& canvas, const PlayerPalette& palette,
     paintFrame(canvas, entityFrame(frameOf(ENEMY_MISSILE_ANIMATION, time)),
                {.topLeft = topLeft});
   }
-  paintStatusBand(canvas, stagedPilots(), palette);
+  paintStatusBand(canvas, stagedPilots(), StatusBandLook{.palette = palette});
 }
 
 /** @returns The step an event asks an open help for, on that step: the next

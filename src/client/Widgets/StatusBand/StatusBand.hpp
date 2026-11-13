@@ -3,7 +3,7 @@
 #include <span>
 #include "IInterfaceCanvas.hpp"
 #include "PilotStatus.hpp"
-#include "PlayerPalette.hpp"
+#include "StatusBandLook.hpp"
 
 namespace rtype::client {
 
@@ -15,8 +15,12 @@ namespace rtype::client {
  * holding its marker, then its nickname in the light shade of its color, and
  * against the right edge one word, the first that applies: LEFT or SIGNAL
  * LOST once it left, OUT, LAST LIFE, RESPAWN, then YOU for the local player.
- * The nickname keeps the room the word leaves, cut at a whole character; a
- * pilot the waiting room never named shows P and its number. On its second
+ * The nickname keeps the room the word leaves; a nickname longer than that
+ * runs through it, or, with REDUCE FLASHES, shows its parts in turn, each
+ * STATUS_TURN_DURATION; a pilot the waiting room never named shows P and its
+ * number. Above the size the fonts are drawn at, a bay holds one line, which
+ * shows the nickname, the score, then the word or the count of lives, each
+ * for STATUS_TURN_DURATION. On its second
  * row, STATUS_LIFE_ICON_LIMIT slots of lives, a small ship of its color for
  * each life left and a lost life for each of the others, or one ship and the
  * count past the limit, nothing while they are unknown, the unplugged plug,
@@ -34,6 +38,12 @@ namespace rtype::client {
  */
 void paintStatusBand(IInterfaceCanvas& canvas,
                      std::span<const PilotStatus> pilots,
-                     const PlayerPalette& palette);
+                     const StatusBandLook& look);
+
+/** @returns Whether the band of @p pilots changes from one frame to the next
+ * on @p canvas: a name too long for its room runs through it, and a bay at a
+ * larger text size shows its parts in turn. */
+[[nodiscard]] bool statusBandMoves(std::span<const PilotStatus> pilots,
+                                   const IInterfaceCanvas& canvas);
 
 }  // namespace rtype::client

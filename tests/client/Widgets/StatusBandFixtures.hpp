@@ -7,6 +7,7 @@
 #include <set>
 #include <utility>
 #include <vector>
+#include "BandMoment.hpp"
 #include "InterfaceColorConstants.hpp"
 #include "PilotStatus.hpp"
 #include "PlayerPalette.hpp"
@@ -20,6 +21,11 @@
 [[nodiscard]] InterfaceCanvasRecord bandPaintingOf(
     std::vector<rtype::client::PilotStatus> pilots,
     const rtype::client::PlayerPalette& palette = rtype::client::PLAYER_COLORS);
+
+/** @returns What the band painted for these pilots, in the colors of the
+ * game, at @p moment of the game and @p metrics. */
+[[nodiscard]] InterfaceCanvasRecord bandPaintingAt(
+    std::vector<rtype::client::PilotStatus> pilots, BandMoment moment);
 
 /** @returns The images of the record drawn from this source rectangle. */
 [[nodiscard]] std::vector<RecordedImage> imagesOf(

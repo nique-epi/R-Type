@@ -3,14 +3,17 @@
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Utf.hpp>
 #include <SFML/System/Vector2.hpp>
+#include <algorithm>
 #include <cstddef>
 #include <optional>
 #include <span>
 #include <string>
 #include <string_view>
+#include <vector>
 #include "CutCornerBox.hpp"
 #include "EntitySpriteConstants.hpp"
 #include "EntitySprites.hpp"
+#include "FlashPreference.hpp"
 #include "HudSpriteConstants.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "ImagePlacement.hpp"
@@ -26,8 +29,12 @@
 #include "ShadeSwap.hpp"
 #include "SpriteFrame.hpp"
 #include "StatusBandConstants.hpp"
+#include "StatusBandLook.hpp"
+#include "TextMeasures.hpp"
+#include "TextMetrics.hpp"
 #include "TextStyle.hpp"
 #include "TextureArea.hpp"
+#include "TimeConstants.hpp"
 #include "WidgetConstants.hpp"
 
 namespace rtype::client {
@@ -65,6 +72,28 @@ struct LifeCount {
 struct PilotBay {
   sf::Vector2i topLeft;
   PlayerShading shading;
+};
+
+/** @brief A bay being painted, and the look of the band. */
+struct PaintedBay {
+  PilotBay bay;
+  StatusBandLook look;
+};
+
+/** @brief A line of a bay that may not fit: its text, the room it lies in,
+ * and how it is written. */
+struct BayLine {
+  std::string_view text;
+  sf::IntRect room;
+  TextStyle style;
+};
+
+/** @brief The texts a bay shows in turn above the size the fonts are drawn
+ * at, kept while their lines are painted. */
+struct BayText {
+  std::string name;
+  std::string score;
+  std::string lives;
 };
 
 /** @returns The color of a pilot, 0 to PLAYER_COLOR_COUNT - 1: its number
@@ -163,15 +192,70 @@ std::optional<StatusWord> statusWordOf(const PilotStatus& pilot) {
   return goneWord.has_value() ? goneWord : flyingWordOf(pilot);
 }
 
-/** @returns The longest start of a name, in whole characters, that fits a
- * width in the regular font, REGULAR_FONT_ADVANCE pixels each. */
-std::string fittedName(std::string_view name, int width) {
-  const int characters = width / REGULAR_FONT_ADVANCE;
-  std::string_view::const_iterator end = name.begin();
-  for (int kept = 0; kept < characters && end != name.end(); ++kept) {
-    end = sf::Utf8::next(end, name.end());
+/** @returns How many whole characters of the regular font at @p metrics fit
+ * @p width, one at least. */
+std::size_t charactersIn(int width, TextMetrics metrics) {
+  return static_cast<std::size_t>(std::max(1, width / lineHeightOf(metrics)));
+}
+
+/** @returns The part of @p text shown at turn @p turn when it is shown
+ * @p characters whole characters at a time, the parts in a loop. */
+std::string_view partAtTurn(std::string_view text, std::size_t characters,
+                            std::size_t turn) {
+  const auto count =
+      static_cast<std::size_t>(sf::Utf8::count(text.begin(), text.end()));
+  const std::size_t parts = (count + characters - 1) / characters;
+  std::string_view::const_iterator start = text.begin();
+  for (std::size_t skipped = 0; skipped < (turn % parts) * characters;
+       ++skipped) {
+    start = sf::Utf8::next(start, text.end());
   }
-  return {name.begin(), end};
+  std::string_view::const_iterator end = start;
+  for (std::size_t kept = 0; kept < characters && end != text.end(); ++kept) {
+    end = sf::Utf8::next(end, text.end());
+  }
+  return {start, end};
+}
+
+/** @returns The turn a band shows at @p sinceStart, one per
+ * STATUS_TURN_DURATION. */
+std::size_t turnAt(engine::Duration sinceStart) {
+  return static_cast<std::size_t>(sinceStart / STATUS_TURN_DURATION);
+}
+
+/** @brief Writes @p line in its room: whole when it fits; otherwise running
+ * through the room, two copies STATUS_SCROLL_GAP apart, or, with REDUCE
+ * FLASHES, its parts that fit the room in turn. */
+void paintBayLine(IInterfaceCanvas& canvas, const BayLine& line,
+                  const StatusBandLook& look) {
+  const int width = canvas.textWidth(line.text, line.style.font);
+  if (width <= line.room.size.x) {
+    canvas.write(line.text, line.room.position, line.style);
+    return;
+  }
+  TextStyle clipped = line.style;
+  clipped.clip = line.room;
+  if (look.flashes == FlashPreference::Reduced) {
+    canvas.write(
+        partAtTurn(line.text,
+                   charactersIn(line.room.size.x, canvas.textMetrics()),
+                   turnAt(look.sinceStart)),
+        line.room.position, clipped);
+    return;
+  }
+  const int period = width + STATUS_SCROLL_GAP;
+  const int offset =
+      static_cast<int>((look.sinceStart / STATUS_SCROLL_STEP) % period);
+  for (const int copy : {0, period}) {
+    canvas.write(line.text, line.room.position + sf::Vector2i(copy - offset, 0),
+                 clipped);
+  }
+}
+
+/** @returns The color of the name of a pilot: the light shade of its color,
+ * dimmed once it is gone. */
+sf::Color nameColorOf(const PilotStatus& pilot, const PilotBay& bay) {
+  return isGone(pilot) ? GONE_TEXT_COLOR : bay.shading.shades.light;
 }
 
 /** @returns The room the first row of a bay leaves the name, in pixels: from
@@ -228,17 +312,19 @@ void paintWord(IInterfaceCanvas& canvas, const StatusWord& word,
  * right edge, then its name from STATUS_NAME_TOP_LEFT, in the light shade of
  * its color, cut to the room the word leaves. */
 void paintTitle(IInterfaceCanvas& canvas, const PilotStatus& pilot,
-                const PilotBay& bay) {
+                const PaintedBay& bay) {
   const std::optional<StatusWord> word = statusWordOf(pilot);
   if (word.has_value()) {
-    paintWord(canvas, *word, bay.topLeft);
+    paintWord(canvas, *word, bay.bay.topLeft);
   }
-  canvas.write(
-      fittedName(pilotNameOf(pilot.nickname, pilot.playerNumber),
-                 nameRoom(canvas, word)),
-      bay.topLeft + STATUS_NAME_TOP_LEFT,
-      {.font = TextFont::Regular,
-       .color = isGone(pilot) ? GONE_TEXT_COLOR : bay.shading.shades.light});
+  const std::string name = pilotNameOf(pilot.nickname, pilot.playerNumber);
+  paintBayLine(canvas,
+               BayLine{.text = name,
+                       .room = {bay.bay.topLeft + STATUS_NAME_TOP_LEFT,
+                                {nameRoom(canvas, word), TEXT_LINE_HEIGHT}},
+                       .style = {.font = TextFont::Regular,
+                                 .color = nameColorOf(pilot, bay.bay)}},
+               bay.look);
 }
 
 /** @brief Draws the same life count times, STATUS_LIFE_STEP apart. */
@@ -320,34 +406,102 @@ void paintScore(IInterfaceCanvas& canvas, const PilotStatus& pilot,
                     .zeroColor = LEADING_ZERO_COLOR});
 }
 
+/** @returns The parts a bay shows in turn above the size the fonts are
+ * drawn at: the name, the score, then the word, or the count of lives when
+ * there is no word and the lives are known. */
+std::vector<BayLine> largeBayLinesOf(const PilotStatus& pilot,
+                                     const PilotBay& bay, const BayText& text) {
+  std::vector<BayLine> lines{
+      BayLine{.text = text.name,
+              .room = {},
+              .style = {.font = TextFont::Regular,
+                        .color = nameColorOf(pilot, bay)}},
+      BayLine{
+          .text = text.score,
+          .room = {},
+          .style = {.font = TextFont::Regular,
+                    .color = isGone(pilot) ? GONE_TEXT_COLOR : SCORE_COLOR}}};
+  const std::optional<StatusWord> word = statusWordOf(pilot);
+  if (word.has_value()) {
+    lines.push_back(
+        BayLine{.text = word->text,
+                .room = {},
+                .style = {.font = word->font, .color = word->color}});
+  } else if (pilot.lives.has_value()) {
+    lines.push_back(
+        BayLine{.text = text.lives,
+                .room = {},
+                .style = {.font = TextFont::Regular, .color = SCORE_COLOR}});
+  }
+  return lines;
+}
+
+/** @brief Paints the one line of a bay above the size the fonts are drawn
+ * at: the part of its turn, from the name's place to the right edge of the
+ * word, on the middle row of the band. */
+void paintLargeLine(IInterfaceCanvas& canvas, const PilotStatus& pilot,
+                    const PaintedBay& bay) {
+  const BayText text{
+      .name = pilotNameOf(pilot.nickname, pilot.playerNumber),
+      .score = std::to_string(std::min(pilot.score, LARGEST_SHOWN_SCORE)),
+      .lives = LIVES_COUNT_PREFIX + std::to_string(pilot.lives.value_or(0))};
+  std::vector<BayLine> lines = largeBayLinesOf(pilot, bay.bay, text);
+  BayLine line = lines[turnAt(bay.look.sinceStart) % lines.size()];
+  const int lineHeight = lineHeightOf(canvas.textMetrics());
+  line.room = {
+      {bay.bay.topLeft.x + STATUS_NAME_TOP_LEFT.x,
+       bay.bay.topLeft.y + ((STATUS_BAND_ROWS - lineHeight) / SIDES_PER_AXIS)},
+      {STATUS_WORD_END.x - STATUS_NAME_TOP_LEFT.x, lineHeight}};
+  paintBayLine(canvas, line, bay.look);
+}
+
 /** @brief Paints the bay of a pilot: its frame when it is the local player,
- * its chip, name and word, then its lives and its score. */
+ * its chip, then its name and word, its lives and its score on two rows, or
+ * one line of them in turn above the size the fonts are drawn at. */
 void paintBay(IInterfaceCanvas& canvas, const PilotStatus& pilot,
-              const PlayerPalette& palette) {
-  const PilotBay bay = pilotBayOf(pilot, palette);
+              const StatusBandLook& look) {
+  const PaintedBay bay{.bay = pilotBayOf(pilot, look.palette.get()),
+                       .look = look};
   if (pilot.isLocalPlayer) {
-    Outline(
-        {bay.topLeft + STATUS_LOCAL_FRAME.position, STATUS_LOCAL_FRAME.size},
-        Outline::Line::Solid)
+    Outline({bay.bay.topLeft + STATUS_LOCAL_FRAME.position,
+             STATUS_LOCAL_FRAME.size},
+            Outline::Line::Solid)
         .paint(canvas, LOCAL_BAY_FRAME_COLOR);
   }
-  paintChip(canvas, pilot, bay);
+  paintChip(canvas, pilot, bay.bay);
+  if (canvas.textMetrics() != TextMetrics{}) {
+    paintLargeLine(canvas, pilot, bay);
+    return;
+  }
   paintTitle(canvas, pilot, bay);
-  paintLives(canvas, pilot, bay);
-  paintScore(canvas, pilot, bay.topLeft);
+  paintLives(canvas, pilot, bay.bay);
+  paintScore(canvas, pilot, bay.bay.topLeft);
 }
 
 }  // namespace
 
 void paintStatusBand(IInterfaceCanvas& canvas,
                      std::span<const PilotStatus> pilots,
-                     const PlayerPalette& palette) {
+                     const StatusBandLook& look) {
   paintPanel(canvas);
   for (const PilotStatus& pilot : pilots) {
     if (hasBay(pilot)) {
-      paintBay(canvas, pilot, palette);
+      paintBay(canvas, pilot, look);
     }
   }
+}
+
+bool statusBandMoves(std::span<const PilotStatus> pilots,
+                     const IInterfaceCanvas& canvas) {
+  if (canvas.textMetrics() != TextMetrics{}) {
+    return true;
+  }
+  return std::ranges::any_of(pilots, [&canvas](const PilotStatus& pilot) {
+    return hasBay(pilot) &&
+           canvas.textWidth(pilotNameOf(pilot.nickname, pilot.playerNumber),
+                            TextFont::Regular) >
+               nameRoom(canvas, statusWordOf(pilot));
+  });
 }
 
 }  // namespace rtype::client
