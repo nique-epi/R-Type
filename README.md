@@ -44,7 +44,7 @@ Each client is given its server with `-h`, so PLAY on the title joins it at once
 
 ## Features
 
-The client opens on a second of black and an intro set to the beats of its theme, which a key or a click skips, then on its title screen over a scrolling starfield: PLAY opens the server map, then the game, RANKING opens the best scores of a server, SETTINGS opens the options (sound, keys, display mode and window size, accessibility), QUIT asks before closing the client; the hangar, opened from the server map or from the own bay of the waiting room, dresses the ship with one of ten items, set on it by robotic arms (three are in the locker at first, the other seven are won by picking up look items in a game, and every pilot sees the items of the others); Escape during a game opens the options over it. It plays a theme, the sounds of the intro and of the game, and a click on its menus. The server answers each connection request with a challenge, an acceptance with a player number from 1 to 4, or a refusal when the game is full, and logs the datagrams of the players it admitted at the `debug` level.
+The client opens on a second of black and an intro set to the beats of its theme, which a key or a click skips, then on its title screen over a scrolling starfield: PLAY opens the server map, then the game, RANKING opens the best scores of a server, SETTINGS opens the options (sound, keys, display mode and window size, accessibility), QUIT asks before closing the client; the hangar, opened from the server map or from the own bay of the waiting room, dresses the ship with the items of a catalog of thirty, 25 accessories set on it by robotic arms and 5 hulls that replace it (three accessories are in the locker at first, the others are won by picking up look items in a game, the hulls are not, and every pilot sees the items and the hull of the others); Escape during a game opens the options over it. It plays a theme, the sounds of the intro and of the game, and a click on its menus. The server answers each connection request with a challenge, an acceptance with a player number from 1 to 4, or a refusal when the game is full, and logs the datagrams of the players it admitted at the `debug` level.
 
 ## Requirements
 
@@ -283,6 +283,14 @@ sh tests/tools/bandwidth/campaign.sh ./r-type_server ./build/tests/load_test_bot
 ```
 
 This runs the bandwidth campaign: a server and four bots from the same seed, three runs of one minute for each scenario, and one Markdown row per scenario with what one client received and sent per second. The results and the method are in [Network measurements](https://nique-epi.github.io/R-Type/measurements/).
+
+```bash
+cmake --preset bench
+cmake --build --preset bench --target script_budget_bench
+./build-bench/tests/script_budget_bench
+```
+
+This builds the bench of the scripts in Release in `build-bench/`, then measures 300 scripted bodies and 1000 bullets over 3600 ticks, and prints the time of a tick, the median and the worst, and the share of the scripts and of the collisions in it; `--cell-side <units>` sets the side of the collision cells; see [Scripting in Luau](https://nique-epi.github.io/R-Type/scripting/#what-a-script-costs).
 
 ## Logging
 

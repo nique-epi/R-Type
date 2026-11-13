@@ -24,8 +24,10 @@ std::optional<EntityTypeLook> EntityTypeLooks::lookOf(
   if (appearance == nullptr) {
     return std::nullopt;
   }
-  return EntityTypeLook{
-      .side = entry->side, .appearance = *appearance, .hitbox = entry->hitbox};
+  return EntityTypeLook{.side = entry->side,
+                        .appearance = *appearance,
+                        .hitbox = entry->hitbox,
+                        .hitboxParts = entry->hitboxParts};
 }
 
 game::ShipGun EntityTypeLooks::shipGun() const { return table_->shipGun(); }

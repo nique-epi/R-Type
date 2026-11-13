@@ -74,6 +74,14 @@ constexpr std::array CALM_LOOK_ITEMS{game::testing::LOOK_CROWN_SHEET,
                                      game::testing::LOOK_PARTY_HAT_SHEET};
 constexpr std::string_view AN_ENEMY_AS_A_LOOK_ITEM = R"(["weaver"])";
 
+/** @brief A look_item_every value and what it reads as, what a file without
+ * the key reads as, and the two values just outside 1 to 100. */
+constexpr std::string_view EVERY_THIRD_WAVE_VALUE = "3";
+constexpr std::size_t EVERY_THIRD_WAVE_COUNT = 3;
+constexpr std::size_t EACH_WAVE_COUNT = 1;
+constexpr std::string_view NEVER_VALUE = "0";
+constexpr std::string_view PAST_THE_MOST_WAVES_VALUE = "101";
+
 /** @brief A difficulty storm, written before calm in a file, and its waves. */
 constexpr std::string_view STORM_TABLE = R"([difficulty.storm]
 first_wave_bydos = 4

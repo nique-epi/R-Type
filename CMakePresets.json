@@ -20,6 +20,15 @@
       }
     },
     {
+      "name": "bench",
+      "inherits": "test",
+      "binaryDir": "${sourceDir}/build-bench",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/build-bench"
+      }
+    },
+    {
       "name": "sanitize",
       "inherits": "test",
       "binaryDir": "${sourceDir}/build-sanitize",
@@ -56,6 +65,11 @@
       "name": "test",
       "configurePreset": "test",
       "configuration": "Debug"
+    },
+    {
+      "name": "bench",
+      "configurePreset": "bench",
+      "configuration": "Release"
     },
     {
       "name": "sanitize",

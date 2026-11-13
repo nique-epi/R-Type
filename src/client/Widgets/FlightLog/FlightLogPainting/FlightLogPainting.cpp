@@ -16,6 +16,9 @@
 #include "FlightLogLook.hpp"
 #include "FlightLogTimingConstants.hpp"
 #include "IInterfaceCanvas.hpp"
+#include "KopecksLabel.hpp"
+#include "KopecksLabelConstants.hpp"
+#include "KopecksPainting.hpp"
 #include "MissionLogPage.hpp"
 #include "MotionPreference.hpp"
 #include "RankingPage.hpp"
@@ -85,6 +88,20 @@ void paintDust(IInterfaceCanvas& canvas, const FlightLogLook& look) {
   }
 }
 
+/** @brief Writes what the game earned the player, from KOPECKS_GAIN_TOP_LEFT
+ * rightwards, once the call to play again starts; nothing for no gain. */
+void paintKopecksGain(IInterfaceCanvas& canvas, const FlightLogLook& look) {
+  if (look.kopecksGained == 0 || look.sinceStart < look.schedule.promptStart) {
+    return;
+  }
+  KopecksLabel gain{.topRight = KOPECKS_GAIN_TOP_LEFT,
+                    .amount = look.kopecksGained,
+                    .prefix = KOPECKS_GAIN_PREFIX,
+                    .outlined = true};
+  gain.topRight.x += kopecksLabelWidth(gain);
+  paintKopecks(canvas, gain);
+}
+
 }  // namespace
 
 void paintFlightLog(IInterfaceCanvas& canvas, const FlightLogLook& look) {
@@ -106,6 +123,7 @@ void paintFlightLog(IInterfaceCanvas& canvas, const FlightLogLook& look) {
   paintTauntLabel(canvas, look, pose);
   paintDust(canvas, look);
   paintEndChoices(canvas, look);
+  paintKopecksGain(canvas, look);
 }
 
 }  // namespace rtype::client

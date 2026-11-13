@@ -17,6 +17,7 @@
 #include "MotionPreference.hpp"
 #include "PlayerPalette.hpp"
 #include "PlayfieldMapping.hpp"
+#include "RowWindow.hpp"
 #include "SettingsService.hpp"
 #include "TimeConstants.hpp"
 
@@ -58,6 +59,9 @@ class HangarScreen : public IScreen {
   /** @brief Wears the chosen item, an arm bringing it, or takes it off; does
    * nothing while an arm fits an item. */
   void choose();
+  /** @brief Scrolls the locker one row with the vertical wheel, then chooses
+   * the item under the pointer, or keeps the choice among the rows shown. */
+  void scrolled(const sf::Event::MouseWheelScrolled& wheel);
   void repaint();
 
   IScreenNavigator* navigator_;
@@ -71,6 +75,7 @@ class HangarScreen : public IScreen {
   MotionPreference motion_;
   KeyChip backChip_;
   std::size_t chosen_{};
+  RowWindow rows_;
   std::optional<FittingRun> fitting_;
   engine::Duration elapsed_{};
   bool confirmHeld_{false};

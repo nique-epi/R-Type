@@ -10,7 +10,7 @@ namespace rtype::server {
  */
 constexpr std::string_view WAVE_SPAWNER_LOGGER_NAME = "WaveSpawner";
 
-/** @brief The first wave that brings a look item. */
+/** @brief The first wave that may bring a look item. */
 constexpr std::size_t SECOND_WAVE = 2;
 
 /**

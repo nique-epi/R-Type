@@ -5,6 +5,7 @@
 #include <SFML/Window/Event.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <SFML/Window/Mouse.hpp>
+#include <cstddef>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -19,8 +20,6 @@
 #include "Endpoint.hpp"
 #include "GameRequest.hpp"
 #include "GameRow.hpp"
-#include "HangarScreenIdConstants.hpp"
-#include "HangarStar.hpp"
 #include "IGameCatalog.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "IScreenNavigator.hpp"
@@ -29,6 +28,8 @@
 #include "KeyChip.hpp"
 #include "KeyChipParts.hpp"
 #include "MapDirection.hpp"
+#include "MapPlaceConstants.hpp"
+#include "MapPlaces.hpp"
 #include "MenuBuilder.hpp"
 #include "MenuScreenIdConstants.hpp"
 #include "PlanetPose.hpp"
@@ -174,18 +175,20 @@ void openGamesOf(ServerMapChoice& map, IGameCatalog& games) {
   }
 }
 
-/** @returns Whether @p pixel picks the hangar star: only the whole map
- * shows it. */
-bool hangarStarShownAt(const ServerMapChoice& map, sf::Vector2i pixel) {
-  return map.stage() == ServerMapStage::ZoomedOut && hangarStarAt(pixel);
+/** @returns The place of MAP_PLACES that @p pixel picks: only the whole map
+ * shows them. */
+std::optional<std::size_t> placeShownAt(const ServerMapChoice& map,
+                                        sf::Vector2i pixel) {
+  return map.stage() == ServerMapStage::ZoomedOut ? mapPlaceAt(pixel)
+                                                  : std::nullopt;
 }
 
-/** @brief Lets go of @p heldKey, then pushes the hangar over the map: the
- * release of that key goes to the hangar. */
-void openHangar(std::optional<sf::Keyboard::Key>& heldKey,
-                IScreenNavigator& navigator) {
+/** @brief Lets go of @p heldKey, then pushes the screen of the place
+ * @p place over the map: the release of that key goes to that screen. */
+void openPlace(std::optional<sf::Keyboard::Key>& heldKey,
+               IScreenNavigator& navigator, std::size_t place) {
   heldKey.reset();
-  navigator.push(HANGAR_SCREEN);
+  navigator.push(MAP_PLACES.at(place).screen);
 }
 
 /** @brief Zooms in when the wheel turns up over the whole map, out when it
@@ -290,8 +293,8 @@ void ServerMapScreen::handleEvent(const sf::Event& event) {
     if (map_.stage() == ServerMapStage::Games) {
       static_cast<void>(panel_.chooseAt(pixel));
     }
-    hangarShown_ = hangarStarShownAt(map_, pixel);
-    chosenShown_ = !hangarShown_ && map_.chooseAt(pixel);
+    placeShown_ = placeShownAt(map_, pixel);
+    chosenShown_ = !placeShown_ && map_.chooseAt(pixel);
   } else if (const auto* click = event.getIf<sf::Event::MouseButtonPressed>();
              click != nullptr && click->button == sf::Mouse::Button::Left) {
     pointerPressed(interfacePixelAt(playfieldPointAt_(click->position)));
@@ -340,8 +343,8 @@ void ServerMapScreen::keyPressed(const sf::Event::KeyPressed& key) {
     chosenShown_ = true;
     return;
   }
-  if (key.code == HANGAR_KEY) {
-    openHangar(heldKey_, *navigator_);
+  if (const auto place = mapPlaceOpenedBy(key.code)) {
+    openPlace(heldKey_, *navigator_, *place);
     return;
   }
   if ((key.code != MENU_CONFIRM_KEY && key.code != REFRESH_KEY) ||
@@ -389,8 +392,8 @@ void ServerMapScreen::pointerPressed(sf::Vector2i pixel) {
     if (panel_.chooseAt(pixel)) {
       confirm();
     }
-  } else if (hangarStarShownAt(map_, pixel)) {
-    openHangar(heldKey_, *navigator_);
+  } else if (const auto place = placeShownAt(map_, pixel)) {
+    openPlace(heldKey_, *navigator_, *place);
   } else if (map_.chooseAt(pixel)) {
     openGamesOf(map_, *games_);
   }
@@ -433,7 +436,7 @@ void ServerMapScreen::repaint() {
     paintServerMapMessage(*canvas_, phase);
   }
   if (map_.stage() == ServerMapStage::ZoomedOut) {
-    paintHangarStar(*canvas_, hangarShown_ && !chosenShown_);
+    paintMapPlaces(*canvas_, chosenShown_ ? std::nullopt : placeShown_);
   }
   quickPlayChip_.paint(*canvas_);
   rankingChip_.paint(*canvas_);

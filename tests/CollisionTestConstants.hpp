@@ -66,6 +66,12 @@ constexpr rtype::engine::CollisionFilter SHIP_HITTING_ENEMIES_FILTER{
     .layer = PLAYER_LAYER, .hits = ENEMY_LAYER};
 
 /**
+ * @brief An enemy that hits the enemies, its own layer.
+ */
+constexpr rtype::engine::CollisionFilter ENEMY_HITTING_ENEMIES_FILTER{
+    .layer = ENEMY_LAYER, .hits = ENEMY_LAYER};
+
+/**
  * @brief Width and height of the square every collision test starts from.
  */
 constexpr float SQUARE_SIDE = 10.0F;
@@ -134,3 +140,19 @@ constexpr float WIDE_BOX_CENTER_Y = 200.0F;
  * @brief A coordinate beyond the left and the top edges of the playfield.
  */
 constexpr float BEYOND_THE_PLAYFIELD = -200.0F;
+
+/**
+ * @brief A missile of network id 42 at (30, -10) and an enemy at (10, 10): the
+ * missile lies 20 units right of the center of the enemy and 20 above it.
+ */
+constexpr std::uint32_t JUDGED_MISSILE_NETWORK_ID = 42;
+constexpr float JUDGED_MISSILE_X = 30.0F;
+constexpr float JUDGED_MISSILE_Y = -10.0F;
+constexpr float JUDGING_ENEMY_X = 10.0F;
+constexpr float JUDGING_ENEMY_Y = 10.0F;
+constexpr float JUDGED_MISSILE_OFFSET_X = 20.0F;
+constexpr float JUDGED_MISSILE_OFFSET_Y = -20.0F;
+
+/** @brief What the state of a target answers when asked about a hit. */
+constexpr bool CANCELS_HITS = false;
+constexpr bool LETS_HITS = true;

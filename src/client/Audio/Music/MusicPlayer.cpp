@@ -51,6 +51,12 @@ void MusicPlayer::start() {
 
 void MusicPlayer::stop() { music_.stop(); }
 
+void MusicPlayer::pause() {
+  if (music_.getStatus() == sf::SoundSource::Status::Playing) {
+    music_.pause();
+  }
+}
+
 void MusicPlayer::settingChanged(SettingId changed) {
   if (changesMusicVolume(changed)) {
     applyVolume();

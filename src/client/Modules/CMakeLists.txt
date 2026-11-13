@@ -15,6 +15,7 @@ target_link_libraries(rtype_client_modules
     rtype_client_connection_module
     rtype_client_game_module
     rtype_client_hangar_module
+    rtype_client_shop_module
     rtype_client_lobby_module
     rtype_client_logger_module
     rtype_client_menus_module

@@ -1,10 +1,12 @@
 #include "CollisionScene.hpp"
+#include <span>
 #include "Collision.hpp"
 #include "CollisionBox.hpp"
 #include "CollisionFilter.hpp"
 #include "CollisionTestConstants.hpp"
 #include "Entity.hpp"
 #include "EntityType.hpp"
+#include "HitboxParts.hpp"
 #include "Position.hpp"
 
 using rtype::engine::Entity;
@@ -34,6 +36,14 @@ Entity CollisionScene::spawnWith(EntityType type,
                                  rtype::engine::CollisionFilter filter) {
   const Entity entity = spawn(type, 0.0F, 0.0F);
   *components.get<rtype::engine::CollisionFilter>(entity) = filter;
+  return entity;
+}
+
+Entity CollisionScene::spawnInParts(EntityType type,
+                                    std::span<const CollisionBox> parts) {
+  const Entity entity = spawn(type, 0.0F, 0.0F);
+  components.add(
+      entity, rtype::game::HitboxParts{.boxes = {parts.begin(), parts.end()}});
   return entity;
 }
 

@@ -14,10 +14,12 @@
 #include "RecordingNavigator.hpp"
 #include "RecordingPlayerInputLink.hpp"
 #include "RecordingServerConnection.hpp"
+#include "RecordingSettingsStorage.hpp"
 #include "RecordingShipLookExchange.hpp"
 #include "RecordingSky.hpp"
 #include "RecordingSoundPlayer.hpp"
 #include "RecordingWaitingRoom.hpp"
+#include "SettingsService.hpp"
 
 /** @brief What a game screen alone is built from, every part a double, the
  * connection accepted as player 2 of a waiting room of three. */
@@ -26,6 +28,8 @@ struct LoneGameParts {
 
   RecordingNavigator navigator;
   rtype::client::PlayerSettings settings;
+  RecordingSettingsStorage settingsStorage;
+  rtype::client::SettingsService settingsService{settings, settingsStorage};
   RecordingPlayerInputLink inputs;
   FakeEntityMessageSource entityMessages;
   FakeServerTicks serverTicks;

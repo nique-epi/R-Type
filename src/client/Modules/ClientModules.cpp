@@ -12,6 +12,7 @@
 #include "ClientMenusModule.hpp"
 #include "ClientScreensModule.hpp"
 #include "ClientSettingsModule.hpp"
+#include "ClientShopModule.hpp"
 #include "ClientWindowModule.hpp"
 #include "FrameLoop.hpp"
 #include "IModule.hpp"
@@ -68,6 +69,7 @@ std::vector<std::unique_ptr<engine::IModule>> clientModules(
   modules.push_back(std::make_unique<ClientMenusModule>());
   modules.push_back(std::make_unique<ClientLobbyModule>());
   modules.push_back(std::make_unique<ClientHangarModule>());
+  modules.push_back(std::make_unique<ClientShopModule>());
   modules.push_back(std::make_unique<ClientGameModule>());
 #if RTYPE_MODULE_DEBUG
   modules.push_back(std::make_unique<ClientDebugModule>());

@@ -1,0 +1,1 @@
+rtype_add_test(NAME client_economy_tests SOURCES KopecksTest.cpp LookItemPurchaseTest.cpp LookItemPurchaseFixtures.cpp LIBS rtype_client_economy)

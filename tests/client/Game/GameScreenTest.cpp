@@ -28,6 +28,7 @@
 #include "GameScreenTestConstants.hpp"
 #include "IgnoringEntityLayer.hpp"
 #include "KeyPress.hpp"
+#include "LevelStatus.hpp"
 #include "LoneGameParts.hpp"
 #include "MenuScreenIdConstants.hpp"
 #include "PlayerPaletteTestConstants.hpp"
@@ -42,6 +43,7 @@
 #include "ScreenStack.hpp"
 #include "ScreenTestConstants.hpp"
 #include "SilenceWarningTestConstants.hpp"
+#include "SkyLevel.hpp"
 #include "SoundConstants.hpp"
 #include "TimeConstants.hpp"
 #include "TimeTestConstants.hpp"
@@ -750,6 +752,43 @@ TEST_F(GameScreenFixture, WithFlashesReducedTheStarsDoNotWarp) {
   screens().update(WARP_TOP_TIME);
 
   EXPECT_EQ(sky().lastSpeedFactor(), OWN_SPEED);
+}
+
+/**
+ * Given a game in progress
+ * When the server tells the biome and the scroll of its level
+ * Then the sky is shown that biome and that scroll
+ */
+TEST_F(GameScreenFixture, ShowsTheSkyTheLevelTheServerTells) {
+  entityMessages().queue(
+      rtype::network::LevelStatus{.biome = std::string{TOLD_BIOME},
+                                  .scrollPosition = TOLD_SCROLL_POSITION,
+                                  .scrollSpeed = TOLD_SCROLL_SPEED});
+
+  screens().update(ONE_FRAME);
+
+  EXPECT_EQ(sky().lastLevel(),
+            (rtype::client::SkyLevel{.biome = std::string{TOLD_BIOME},
+                                     .scrollPosition = TOLD_SCROLL_POSITION,
+                                     .scrollSpeed = TOLD_SCROLL_SPEED}));
+}
+
+/**
+ * Given a game whose sky shows the biome of its level
+ * When the game leaves the stack
+ * Then the sky shows no biome any more
+ */
+TEST_F(GameScreenFixture, LeavingTheGameTakesTheDecorOfTheLevelAway) {
+  entityMessages().queue(
+      rtype::network::LevelStatus{.biome = std::string{TOLD_BIOME},
+                                  .scrollPosition = TOLD_SCROLL_POSITION,
+                                  .scrollSpeed = TOLD_SCROLL_SPEED});
+  screens().update(ONE_FRAME);
+
+  screens().pop();
+  screens().applyPendingChanges();
+
+  EXPECT_EQ(sky().lastLevel(), rtype::client::SkyLevel{});
 }
 
 /**

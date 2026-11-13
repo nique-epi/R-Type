@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <optional>
 #include "ColorMode.hpp"
 #include "DisplayMode.hpp"
@@ -53,6 +54,8 @@ struct PlayerSettings {
   int lagometerBackground = DEFAULT_LAGOMETER_BACKGROUND;
   identifiers::ShipLook shipLook;
   ShipLocker shipLocker;
+  /** @brief What the player may spend at the shop, 0 to MAXIMUM_KOPECKS. */
+  std::uint32_t kopecks = 0;
 
   bool operator==(const PlayerSettings& other) const = default;
 };

@@ -10,6 +10,7 @@ target_link_libraries(rtype_client_flight_log_painting
     rtype_client_book_painting
     rtype_client_easing
     rtype_client_end_choices
+    rtype_client_kopecks_painting
     rtype_client_mission_log_page
     rtype_client_ranking_page
     rtype_client_taunt_label

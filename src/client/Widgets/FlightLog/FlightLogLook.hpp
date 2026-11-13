@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <functional>
 #include <span>
 #include <string>
@@ -38,6 +39,9 @@ struct FlightLogLook {
   FlashPreference flashes{};
   std::reference_wrapper<const PlayerPalette> palette;
   network::WireGameOutcome outcome{network::WireGameOutcome::Defeat};
+  /** @brief The kopecks the game earned the player, written under the book
+   * with the choices; nothing is written for none. */
+  std::uint32_t kopecksGained{};
 };
 
 }  // namespace rtype::client

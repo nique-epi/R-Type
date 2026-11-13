@@ -10,6 +10,7 @@
 #include "BeamOverlap.hpp"
 #include "Bounds.hpp"
 #include "BoundsOf.hpp"
+#include "CollidingBoxes.hpp"
 #include "CollisionBox.hpp"
 #include "CollisionConstants.hpp"
 #include "CollisionFilter.hpp"
@@ -20,6 +21,7 @@
 #include "EntityBounds.hpp"
 #include "EntityType.hpp"
 #include "EventBus.hpp"
+#include "HitboxParts.hpp"
 #include "HurtZone.hpp"
 #include "HurtingEnemy.hpp"
 #include "Intent.hpp"
@@ -30,6 +32,7 @@
 #include "PastEnemy.hpp"
 #include "PastTick.hpp"
 #include "Position.hpp"
+#include "PreHitCheck.hpp"
 #include "ShipContact.hpp"
 #include "Shootable.hpp"
 #include "SteadyMotion.hpp"
@@ -179,9 +182,9 @@ void recordHurts(engine::ComponentRegistry& components, PastTick& tick,
       });
 }
 
-/** @brief Adds to @p tick the box of every enemy that is not summoning and
- * every missile of an enemy of @p components, of those that have a collision
- * filter. */
+/** @brief Adds to @p tick each box (collidingBoxesOf()) of every enemy that
+ * is not summoning and the box of every missile of an enemy of @p components,
+ * of those that have a collision filter. */
 void recordBodiesAndMissiles(engine::ComponentRegistry& components,
                              PastTick& tick) {
   components.forEach<EntityType, Position>(
@@ -198,12 +201,15 @@ void recordBodiesAndMissiles(engine::ComponentRegistry& components,
         if (box == nullptr || filter == nullptr) {
           return;
         }
-        (isABody ? tick.bodies : tick.threats)
-            .push_back(PastEnemy{
-                .entity = entity,
-                .bounds = boundsOf(position, *box),
-                .kind = isABody ? ThreatKind::Body : ThreatKind::Missile,
-                .filter = *filter});
+        for (const CollisionBox& part :
+             collidingBoxesOf(*box, components.get<HitboxParts>(entity))) {
+          (isABody ? tick.bodies : tick.threats)
+              .push_back(PastEnemy{
+                  .entity = entity,
+                  .bounds = boundsOf(position, part),
+                  .kind = isABody ? ThreatKind::Body : ThreatKind::Missile,
+                  .filter = *filter});
+        }
       });
 }
 
@@ -247,9 +253,12 @@ void LagCompensatedHitSystem::testPlayerMissiles(
         if (!target.has_value()) {
           target = firstHitAmong(past.threats, *swept, shootableIn(components));
         }
-        if (target.has_value()) {
-          events_->publish(
-              MissileHit{.missile = missile, .target = target->entity});
+        if (!target.has_value()) {
+          return;
+        }
+        const MissileHit hit{.missile = missile, .target = target->entity};
+        if (targetLetsHit(components, hit)) {
+          events_->publish(hit);
         }
       });
 }
@@ -272,7 +281,10 @@ void LagCompensatedHitSystem::testShips(engine::ComponentRegistry& components) {
     const std::optional<PastEnemy> threat =
         firstThreatTo(enemiesAgo(delay.ticks), *tester, components);
     if (threat.has_value() && threat->kind == ThreatKind::Missile) {
-      events_->publish(MissileHit{.missile = threat->entity, .target = ship});
+      const MissileHit hit{.missile = threat->entity, .target = ship};
+      if (targetLetsHit(components, hit)) {
+        events_->publish(hit);
+      }
     } else if (threat.has_value()) {
       events_->publish(ShipContact{.player = ship, .enemy = threat->entity});
     }

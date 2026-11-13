@@ -1,0 +1,37 @@
+# A body of the script bench: the same as a Crimson Drifter, steered by a
+# script that waits and is resumed at every tick.
+
+[gameplay]
+side = "enemy"
+layer = "enemy"
+hits = ["player"]
+pilot = "bench_waiting"
+
+[gameplay.hitbox]
+width = 96
+height = 96
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 360
+
+[gameplay.behaviour]
+cruise_speed = 360
+
+[gameplay.health]
+points = 5
+
+[gameplay.score]
+points = 250
+
+[appearance]
+sheet = "sprites/crimson-drifter/crimson_drifter.png"
+
+[appearance.idle]
+left = 0
+top = 0
+width = 24
+height = 24
+frames = 2
+spacing = 2
+frame_ms = 250

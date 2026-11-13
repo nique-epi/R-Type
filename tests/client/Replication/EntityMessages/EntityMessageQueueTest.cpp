@@ -1,5 +1,6 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <string>
 #include <vector>
 #include "DeltaWorldState.hpp"
 #include "EnemyAction.hpp"
@@ -13,6 +14,7 @@
 #include "FixedEntityTypeSourceConstants.hpp"
 #include "GameEvent.hpp"
 #include "GameStarted.hpp"
+#include "LevelStatus.hpp"
 #include "PlayerLeft.hpp"
 #include "ProtocolConstants.hpp"
 #include "ServerSessionFixtures.hpp"
@@ -46,6 +48,9 @@ using testing::SHIP_TYPE_NUMBER;
 using ::testing::SizeIs;
 using testing::spawned;
 using testing::stateListing;
+using testing::STATUS_BIOME;
+using testing::STATUS_SCROLL_POSITION;
+using testing::STATUS_SCROLL_SPEED;
 using testing::THIRD_SEQUENCE;
 
 /**
@@ -310,6 +315,24 @@ TEST_F(EntityMessageQueueFixture, KeepsABossStatusOfAStartedGame) {
 
   EXPECT_THAT(drainedEntityMessages(),
               ElementsAre(EntityMessage{ARRIVING_BOSS_STATUS}));
+}
+
+/**
+ * Given a game started in the session
+ * When a LevelStatus arrives
+ * Then the connection hands it over
+ */
+TEST_F(EntityMessageQueueFixture, KeepsALevelStatusOfAStartedGame) {
+  accept();
+  deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
+  const network::LevelStatus status{.biome = std::string{STATUS_BIOME},
+                                    .scrollPosition = STATUS_SCROLL_POSITION,
+                                    .scrollSpeed = STATUS_SCROLL_SPEED};
+  deliverInSession(status, SECOND_SEQUENCE);
+
+  update();
+
+  EXPECT_THAT(drainedEntityMessages(), ElementsAre(EntityMessage{status}));
 }
 
 }  // namespace rtype::client

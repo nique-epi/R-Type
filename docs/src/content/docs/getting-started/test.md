@@ -21,6 +21,7 @@ This builds in Debug with the tests, then runs them. It must pass with zero warn
 | `test` | `build/` | the GoogleTest suites |
 | `sanitize` | `build-sanitize/` | AddressSanitizer and UndefinedBehaviorSanitizer; GCC or Clang only |
 | `modules-off` | `build-modules-off/` | every [optional module](/R-Type/getting-started/build/#optional-modules) turned off |
+| `bench` | `build-bench/` | the tests and tools in Release, for the [time the scripts take](/R-Type/scripting/#what-a-script-costs) |
 
 :::tip[Stress the server]
 Once the `test` preset is built, `./build/tests/malformed_datagrams --server 4242` sends a running server malformed datagrams for a minute, and `./build/tests/load_test_bots --bots 32 --seconds 60` has 32 players join and play; add `--rules` to fly them with simple rules. See [Network](/R-Type/network/).

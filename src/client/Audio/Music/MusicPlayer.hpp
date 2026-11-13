@@ -39,12 +39,14 @@ class MusicPlayer : public IMusicPlayer, public ISettingsListener {
    * play; writes why not when the file is missing or cannot be read. */
   void open(AssetLibrary& library);
 
-  /** @brief Starts the music from the start of its file, looping over the
-   * part of its track that loops, at the volume of the settings, unless it
-   * plays already or has no file. */
+  /** @brief Starts the music from the start of its file, or from where
+   * pause() left it, looping over the part of its track that loops, at the
+   * volume of the settings, unless it plays already or has no file. */
   void start() override;
 
   void stop() override;
+  /** @brief Pauses the music when it plays; start() then resumes it. */
+  void pause() override;
 
   /** @brief Sets the volume the settings now hold when @p changed moves it, so
    * the options change the music at once; ignores the other settings. */

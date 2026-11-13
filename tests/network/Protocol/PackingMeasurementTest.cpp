@@ -50,7 +50,7 @@ TEST(PackingMeasurement, TheCapturedStateIsAGameOfFour) {
 /**
  * Given the typical state of a game of four
  * When WorldStateCodec encodes it
- * Then its payload is 6 bytes, plus 16 per player, plus 9 per entity
+ * Then its payload is 6 bytes, plus 16 per player, plus 10 per entity
  */
 TEST(PackingMeasurement, APackedStateTakesTheSizeOfTheProtocol) {
   const WorldState state = capturedWorldState(LARGE_WORLD_STATE_BODY);
@@ -70,7 +70,7 @@ TEST(PackingMeasurement, APackedStateTakesTheSizeOfTheProtocol) {
 /**
  * Given the typical state of a game of four
  * When it is written without packing
- * Then it takes 13 bytes per entity and 21 per player instead of 9 and 16
+ * Then it takes 14 bytes per entity and 21 per player instead of 10 and 16
  */
 TEST(PackingMeasurement, AnUnpackedStateTakesMoreBytes) {
   const WorldState state = capturedWorldState(LARGE_WORLD_STATE_BODY);

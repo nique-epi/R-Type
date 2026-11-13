@@ -17,13 +17,16 @@
 #include "FixedEntityTypeSource.hpp"
 #include "FixedEntityTypeSourceConstants.hpp"
 #include "HitFlash.hpp"
+#include "HitboxParts.hpp"
 #include "Invulnerability.hpp"
 #include "Layer.hpp"
 #include "Lifetime.hpp"
+#include "NetworkIdentity.hpp"
 #include "PilotShip.hpp"
 #include "Position.hpp"
 #include "PositionHistory.hpp"
 #include "Reveal.hpp"
+#include "ShownLook.hpp"
 #include "SpeedLine.hpp"
 #include "Sprite.hpp"
 #include "SpriteAnimation.hpp"
@@ -184,6 +187,21 @@ std::optional<game::Position> historyPositionAt(
   return position;
 }
 
+std::optional<std::uint8_t> shownLookOf(engine::ComponentRegistry& components,
+                                        std::uint32_t networkId) {
+  std::optional<std::uint8_t> look;
+  components.forEach<game::NetworkIdentity, game::EntityType>(
+      [&components, &look, networkId](engine::Entity entity,
+                                      const game::NetworkIdentity& identity,
+                                      const game::EntityType&) {
+        if (identity.networkId == networkId) {
+          const auto* const shown = components.get<game::ShownLook>(entity);
+          look = shown == nullptr ? std::uint8_t{0} : shown->number;
+        }
+      });
+  return look;
+}
+
 std::optional<game::CollisionBox> boxOfThe(
     engine::ComponentRegistry& components, game::EntityType type) {
   std::optional<game::CollisionBox> found;
@@ -192,6 +210,19 @@ std::optional<game::CollisionBox> boxOfThe(
                      const game::EntityType& side) {
         if (side == type) {
           found = box;
+        }
+      });
+  return found;
+}
+
+std::optional<game::HitboxParts> partsOfThe(
+    engine::ComponentRegistry& components, game::EntityType type) {
+  std::optional<game::HitboxParts> found;
+  components.forEach<game::HitboxParts, game::EntityType>(
+      [&found, type](engine::Entity, const game::HitboxParts& parts,
+                     const game::EntityType& side) {
+        if (side == type) {
+          found = parts;
         }
       });
   return found;

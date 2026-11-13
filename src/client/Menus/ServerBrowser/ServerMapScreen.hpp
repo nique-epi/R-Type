@@ -2,6 +2,7 @@
 
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Keyboard.hpp>
+#include <cstddef>
 #include <memory>
 #include <optional>
 #include <vector>
@@ -45,8 +46,8 @@ namespace rtype::client {
  * any game of the server with the lowest ping among those of this version
  * that list fewer players than their games hold, and is disabled when none
  * does; RANKING opens the leaderboard, ADDRESS the connection form, BACK goes
- * one stage back, then closes the map. The hangar star of the whole map, or
- * HANGAR_KEY, pushes HANGAR_SCREEN.
+ * one stage back, then closes the map. A place of the whole map
+ * (MAP_PLACES: the hangar, the shop), or its key, pushes its screen.
  *
  * The list is read when the map opens, again every
  * SERVER_LIST_REFRESH_INTERVAL, on REFRESH_KEY, and GAMES_RECHECK_DELAY after
@@ -116,9 +117,10 @@ class ServerMapScreen : public IScreen {
   /** @brief Whether the whole map shows the corners and the bubble of the
    * chosen server: the pointer is over it, or an arrow or Tab chose it. */
   bool chosenShown_{false};
-  /** @brief Whether the pointer is over the hangar star: its corners and its
-   * bubble show, and the chosen server shows none. */
-  bool hangarShown_{false};
+  /** @brief The place of MAP_PLACES the pointer is over, if any: its corners
+   * and its bubble show, and the chosen server shows none. One at most, so
+   * two places never show their bubbles together. */
+  std::optional<std::size_t> placeShown_;
 };
 
 }  // namespace rtype::client

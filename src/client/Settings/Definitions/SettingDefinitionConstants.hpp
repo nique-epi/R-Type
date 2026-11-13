@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <cstdint>
 #include <optional>
 #include "ColorMode.hpp"
 #include "DisplayMode.hpp"
@@ -116,6 +117,14 @@ constexpr Setting<ShipLocker> SHIP_LOCKER_SETTING{
     .id = SettingId::ShipLocker,
     .range = std::nullopt};
 
+/** @brief The balance of the player: none to MAXIMUM_KOPECKS. */
+constexpr SettingRange KOPECKS_RANGE{
+    .minimum = 0, .maximum = static_cast<int>(MAXIMUM_KOPECKS)};
+constexpr Setting<std::uint32_t> KOPECKS_SETTING{
+    .member = &PlayerSettings::kopecks,
+    .id = SettingId::Kopecks,
+    .range = KOPECKS_RANGE};
+
 /** @brief Every setting a listener can be told about. */
 constexpr std::array ALL_SETTING_IDS{
     SettingId::MusicVolume,
@@ -139,6 +148,7 @@ constexpr std::array ALL_SETTING_IDS{
     SettingId::LagometerBackground,
     SettingId::ShipLook,
     SettingId::ShipLocker,
+    SettingId::Kopecks,
 };
 
 }  // namespace rtype::client

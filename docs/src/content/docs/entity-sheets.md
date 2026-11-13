@@ -7,13 +7,13 @@ sidebar:
 
 An entity sheet, `assets/entities/<name>.toml`, describes one type of entity: the ship of a player, a Bydo, a boss, a missile. This page is for whoever adds or tunes a type: it gives the keys, what each one gives an entity, the rules between keys and between sheets, and how to read the error a program prints, without opening the C++. Why the types are data and not code is told in [Architecture](/R-Type/architecture/#entity-types).
 
-Both programs read the folder `entities` (`ENTITY_SHEET_FOLDER_IN_ASSETS`) of the `assets/` folder next to their executable, or one level above it, once, when they start; the folder they are started from plays no part. On the server, each game process reads the table `[gameplay]` of each sheet (`EntitySheets`, `src/game/EntityTypes/`) when its games module starts, so when the first player who needs that game connects; the supervisor reads no sheet, before the waves file, which names its enemies among the sheets. The client reads the table `[appearance]` (`EntityAppearances`, `src/client/Rendering/Sprites/EntityAppearances/`) when its assets module is installed, before it opens its window. Each checks that the root of a sheet holds exactly these two tables, and only the keys of its own: the server never reads `[appearance]`, the client never reads `[gameplay]`.
+Both programs read the folder `entities` (`ENTITY_SHEET_FOLDER_IN_ASSETS`) of the `assets/` folder next to their executable, or one level above it, once, when they start; the folder they are started from plays no part. On the server, each game process reads the table `[gameplay]` of each sheet (`EntitySheets`, `src/game/EntityTypes/`) when its games module starts, so when the first player who needs that game connects; the supervisor reads no sheet, before the waves file, which names its enemies among the sheets. The client reads the table `[appearance]` (`EntityAppearances`, `src/client/Rendering/Sprites/EntityAppearances/`) when its assets module is installed, before it opens its window. Each checks that the root of a sheet holds exactly these two tables, and only the keys of its own: the client never reads `[gameplay]`, and the server reads of `[appearance]` only the names of its effects and looks (see [Named effects and looks](#named-effects-and-looks)), so a script asks for one the client draws.
 
 ## The folder and the names
 
 - Every `.toml` file of the folder is a sheet; any other file, and every sub-folder, is left alone. The name of the file without `.toml` is the name of the type: `weaver.toml` is `weaver`.
-- A name is 1 to 24 bytes (`MAXIMUM_ENTITY_TYPE_NAME_LENGTH`) of lowercase letters `a` to `z`, digits and `_`, so a file has the same name on every system. A folder holds at most 255 sheets (`MAXIMUM_ENTITY_TYPES`) and at least one: a type is numbered from 1 on one byte, and 0 names no type. Both limits and the check of a name (`isEntityTypeName()`) live in `src/identifiers/`, so a name the game accepts is one the table of the types can carry.
-- The server numbers the sheets from 1 in the order of their names. The twenty-three sheets the game ships are `bydo_tyrant` (1), `bydomancer` (2), `drifter` (3), `drillback` (4), `enemy_missile` (5), the seven look items `look_chef_toque` (6) to `look_wizard_hat` (12) in the order of their names, `orb_shard` (13), `player_missile` (14), `reaper` (15), `rune_orb` (16), `ship` (17), `tyrant_diver` (18), `tyrant_missile` (19), `tyrant_spore` (20), `tyrant_spore_shard` (21), `voltjelly` (22) and `weaver` (23). These numbers name the types on the wire for as long as the server runs, and every player learns them when it is accepted (see [Protocol](/R-Type/protocol/#entity-types)), so a new sheet whose name sorts first renumbers the others without breaking anything.
+- A name is 1 to 24 bytes (`MAXIMUM_CONTENT_NAME_LENGTH`) of lowercase letters `a` to `z`, digits and `_`, so a file has the same name on every system. A folder holds at most 255 sheets (`MAXIMUM_ENTITY_TYPES`) and at least one: a type is numbered from 1 on one byte, and 0 names no type. Both limits and the check of a name (`isContentName()`) live in `src/identifiers/`, so a name the game accepts is one the table of the types can carry.
+- The server numbers the sheets from 1 in the order of their names. The thirty-eight sheets the game ships are `bydo_tyrant` (1), `bydomancer` (2), `drifter` (3), `drillback` (4), `enemy_missile` (5), the 22 look items `look_antennae` (6) to `look_wizard_hat` (27) in the order of their names, `orb_shard` (28), `player_missile` (29), `reaper` (30), `rune_orb` (31), `ship` (32), `tyrant_diver` (33), `tyrant_missile` (34), `tyrant_spore` (35), `tyrant_spore_shard` (36), `voltjelly` (37) and `weaver` (38). These numbers name the types on the wire for as long as the server runs, and every player learns them when it is accepted (see [Protocol](/R-Type/protocol/#entity-types)), so a new sheet whose name sorts first renumbers the others without breaking anything.
 - The server makes the ship of every player from the sheet named `ship` (`SHIP_SHEET_NAME`, `src/server/ServerConstants.hpp`): without it, it stops before its first game.
 
 ## `[gameplay]`, key by key
@@ -60,6 +60,7 @@ projectile = "enemy_missile"
 | `pilot` | | `player`, or the name of a behaviour: `straight`, `weave`, `scatter`, `reaper`, `drillback`, `bydomancer`, `bydo_tyrant`, or one a server script of a resource registers | what writes its `Intent`: the input of its player, or that behaviour (see [Behaviours](#behaviours-and-their-settings) and [Scripting in Luau](/R-Type/scripting/)) |
 | `hitbox.width`, `hitbox.height` | logical units | 1 to 1024 | its `CollisionBox`, centered on its position |
 | `hitbox.offset_x`, `hitbox.offset_y` | logical units | -1024 to 1024; 0 when left out | where the center of its `CollisionBox` lies from its position, y growing downwards: the box of the Bydo Tyrant covers its body, 12 units right of and 4 below its center |
+| `hitbox.box` | | an array of tables, `[[gameplay.hitbox.box]]`, at least one, in place of the four keys above; enemies only | its `HitboxParts`: the rectangles it collides with, each with the four keys above (see [A hitbox of several boxes](#a-hitbox-of-several-boxes-hitboxbox)) |
 | `motion.kind` | | `ship`, `steady` | how a direction moves it: the drift, roll and dash of a ship (`ShipMotion`), or its top speed times the direction (`SteadyMotion`) |
 | `motion.top_speed` | logical units per second | 1 to 4096; for `steady` only | its speed on each axis at a full direction |
 | `[gameplay.behaviour]` | | the settings its behaviour declares | the values its behaviour reads |
@@ -99,7 +100,7 @@ projectile = "enemy_missile"
 | `boss.rage_below_percent` | percent | 1 to 99 | its `Boss`: it enrages once its health falls below its full health times this share, rounded down |
 | `boss.rage_attack` | | 0 to 255 | the attack it starts, in the phase `enraged`, when it enrages |
 | `boss.arrival_attack` | | 0 to 255 | the attack of its arrival: while it is in any phase of it, a hit takes nothing from it |
-| `look_item` | | the name of an item of the locker: `top_hat`, `party_hat`, `crown`, `propeller_cap`, `cowboy_hat`, `viking_helmet`, `wizard_hat`, `chef_toque`, `cool_shades`, `mustache`; for side `look_item` only | its `LookItem`: the item the pilot whose ship touches the body wins for the locker of the hangar (see [Ship looks](/R-Type/server/#look-items-lookitemkeeper)) |
+| `look_item` | | the name of an accessory of the catalog, one of the first 25 names of `SHIP_LOOK_ITEM_NAMES` (`top_hat` to `long_beard`); a hull (`war_shark`, `vostok`, `bydo_husk`, `golden_ace`, `golden_bydo`) is refused, since a hull never floats in a game; for side `look_item` only | its `LookItem`: the item the pilot whose ship touches the body wins for the locker of the hangar (see [Ship looks](/R-Type/server/#look-items-lookitemkeeper)) |
 
 - `side`, `layer`, `pilot`, `hitbox` and `motion` are required; the key `hits` and the tables `behaviour`, `health`, `score`, `gun`, `hurt_zone`, `survives_contact`, `fragile`, `burst`, `volley` and `boss` may be left out. The three keys of `boss` are required in it. A body without `health` takes no damage: a missile that hits it still disappears, and a ship pays a hit with a life instead (see [Lives](/R-Type/server/#lives-lifekeeper)). A body without `score` earns nothing, without `gun` fires nothing.
 - Any other key is refused, so a misspelt key stops the program instead of being ignored. Every number is a TOML integer: `240`, never `240.0` or `"240"`.
@@ -112,6 +113,7 @@ A sheet whose keys are each valid is refused when it does not hold together:
 
 - A `player` pilot steers a body of side `player`, and only such a body.
 - A body of side `player` moves as a `ship`, and only such a body. Its hitbox is 128 × 64 (`SHIP_WIDTH` × `SHIP_HEIGHT`, `src/game/ShipControl/ShipControlConstants.hpp`), centered on its position (no `offset_x` or `offset_y` other than 0), the box `shipAfter()` keeps on screen.
+- A hitbox gives the size of its one box (`width`, `height`, and the offsets if any) or lists its boxes (`box`), never both, and a list holds at least one box. Only a body of side `enemy` lists boxes: a ship, a missile and a look item keep one.
 - A missile, of side `player_missile` or `enemy_missile`, has no gun.
 - A missile flies towards the edge that removes it (see [Piloted bodies](/R-Type/server/#piloted-bodies-pilotsystem-and-playfieldexitsystem)): on its first tick its pilot steers a missile of side `player_missile` to the right and one of side `enemy_missile` to the left. A `straight` heading of 1 for the first, of -1 for the second; the `weave` goes left, and so does `scatter` on its first tick, still on the point it steers from, so both may pilot a missile of an enemy only. A missile flying the other way, or staying, would never be removed when it hits nothing. The check looks at the first tick only: a missile that turns later, as a shard of a burst, leaves by any edge it flies towards.
 - `[gameplay.behaviour]` stands only when the behaviour of the pilot declares settings, and then holds exactly those settings.
@@ -125,6 +127,30 @@ A sheet whose keys are each valid is refused when it does not hold together:
 - A sheet hits only layers a sheet of the folder lies in, and the sheets lie in at most 32 layers (`MAXIMUM_COLLISION_LAYERS`, `src/engine/Collision/Layers/`): a filter keeps one bit per layer.
 - A box names its `attack` and its `phase` together, or neither; a box that names neither has no `from_ms` or `until_ms`, and `until_ms` is above `from_ms`. An `attack` is a number the sheet gives its own attacks: the code knows no attack by name.
 - The waves file names enemies among the sheets of side `enemy`, and the boss of a difficulty among the sheets that have a `boss` (see [Writing the waves file](/R-Type/waves-file/#enemies)).
+
+## A hitbox of several boxes: `hitbox.box`
+
+One rectangle around a large enemy also covers the empty corners of its drawing, so a missile that flies through them hits it. A sheet of side `enemy` may list several rectangles instead, each laid from the position of the body as a hitbox of one box is:
+
+```toml
+[[gameplay.hitbox.box]]
+width = 160
+height = 120
+offset_y = -140
+
+[[gameplay.hitbox.box]]
+width = 320
+height = 200
+offset_x = 40
+offset_y = 60
+```
+
+- The body collides with each box and with nothing between them. A target two of its boxes touch on the same tick counts one contact, and the boxes of one body never collide with each other.
+- The server gives the body a `HitboxParts` (`src/game/Components/HitboxParts.hpp`) holding the boxes, in the order of the file, and reads them through `collidingBoxesOf()` (`CollidingBoxes.hpp`) in `CollisionSystem` and in `LagCompensatedHitSystem`. The client reads the same list from the sheet and tests its own missiles against it, so an impact it predicts is one the server counts.
+- Its `CollisionBox` becomes the smallest rectangle that holds every box. What needs one rectangle for the body reads that one: `PlayfieldExitSystem` to tell when it left the playfield, `WeaponSystem` to place the muzzle of its gun, and the size a script sets (`resizesTo` of its `Intent`), which changes that rectangle and leaves the boxes as they are.
+- A sheet with `width` and `height` has no `HitboxParts`, and collides with its `CollisionBox` alone, as before.
+
+No shipped sheet lists boxes yet.
 
 ## Collision layers: `layer` and `hits`
 
@@ -140,7 +166,7 @@ The shipped sheets use five layers:
 | the missiles of the Bydos, their orbs, spores and shards | `enemy_missile` | `player` |
 | the look items | `look_item` | nothing |
 
-What a kept contact means comes from the `side` of the two bodies (see [Collisions](/R-Type/server/#rules-collisionrules)): a missile disappears and hurts what it touched, a ship that touches an enemy loses a life, a ship that touches a look item picks it up. So a missile of a Bydo whose sheet adds `enemy` to its `hits` hurts the Bydos, and a Bydo whose sheet adds `player_missile` stops the missiles of the players, each with one word in one sheet. Between two missiles, each one that hits the layer of the other is the one that disappears, except a missile of a player and a missile of a Bydo: `player_missile` hits `enemy_missile` so that pair reaches the server, and the C++ list `SHOOTABLE_MISSILE_SHEETS` (`src/game/EntityTypes/EntitySheetConstants.hpp`) says which missiles of the Bydos it shoots down (see [Collisions](/R-Type/server/#rules-collisionrules)). Every missile of a Bydo the game ships is in the list today; a missile left out of it, or added by a resource, flies through the missiles of the players. A pair of two enemies, or of an enemy and a look item, means nothing yet, whatever their layers. `player_missile` hits `player` for friendly fire: the contact counts only when that rule of the game is on, and never for the ship of the player who fired. The hurt zone of an enemy hurts the ships its body touches, and the lag compensation follows the same layers (see [Lag compensation of the shots](/R-Type/server/#lag-compensation-of-the-shots)).
+What a kept contact means comes from the `side` of the two bodies (see [Collisions](/R-Type/server/#rules-collisionrules)): a missile disappears and hurts what it touched, unless the script of the body it touched cancels the hit (see [Judging a hit before it applies](/R-Type/scripting/#judging-a-hit-before-it-applies)), a ship that touches an enemy loses a life, a ship that touches a look item picks it up. So a missile of a Bydo whose sheet adds `enemy` to its `hits` hurts the Bydos, and a Bydo whose sheet adds `player_missile` stops the missiles of the players, each with one word in one sheet. Between two missiles, each one that hits the layer of the other is the one that disappears, except a missile of a player and a missile of a Bydo: `player_missile` hits `enemy_missile` so that pair reaches the server, and the C++ list `SHOOTABLE_MISSILE_SHEETS` (`src/game/EntityTypes/EntitySheetConstants.hpp`) says which missiles of the Bydos it shoots down (see [Collisions](/R-Type/server/#rules-collisionrules)). Every missile of a Bydo the game ships is in the list today; a missile left out of it, or added by a resource, flies through the missiles of the players. A pair of two enemies, or of an enemy and a look item, means nothing yet, whatever their layers. `player_missile` hits `player` for friendly fire: the contact counts only when that rule of the game is on, and never for the ship of the player who fired. The hurt zone of an enemy hurts the ships its body touches, and the lag compensation follows the same layers (see [Lag compensation of the shots](/R-Type/server/#lag-compensation-of-the-shots)).
 
 ## Behaviours and their settings
 
@@ -187,7 +213,7 @@ frame_ms = 250
 | `[appearance.enraged_idle]` | | the keys of `idle`; may be left out | the idle animation of an enemy once the server announced it enraged, which every attack that ends with `afterwards = "idle"` goes back to; the enemy keeps `idle` without it |
 | `[appearance.death]` | | the keys of `idle`; may be left out | the death the client plays once, centered where the enemy died, when the server says it was killed; its version without flash, played with REDUCE FLASHES, is the row right under it, frame for frame, `height` + `spacing` pixels lower. An enemy without it plays the Bydo explosion of `sprites/effects.png` |
 
-Every key of `idle` is required, `enraged_idle` and `death` are the only optional tables besides the attack animations, and any other key is refused. The keys and ranges live in `src/client/Rendering/Sprites/EntityAppearanceConstants.hpp`. A pixel of a sheet covers 4 × 4 logical units of the playfield, so a frame should be the hitbox divided by 4: 24 × 24 pixels for a box of 96 × 96. `EntityAppearances.EveryShippedSheetDrawsTheBoxTheServerHits` checks it for every shipped sheet whose boxes all hurt in an action only. A sheet with a box that always hurts, the Voltjelly and the Bydo Tyrant, draws a frame that holds its hitbox, offset included, and every such box instead: the Tyrant is drawn 128 × 128 pixels, 512 × 512 units, and hit on a box of 440 × 488 that covers its body (`AFrameHoldsTheBoxesThatAlwaysHurt`). The side of the sheet, never its appearance, picks the layer the entity is drawn in (see [Client](/R-Type/client/#drawing-order-layer)). Whether the sprite sheet exists is checked when the game screen loads it, like any other asset.
+Every key of `idle` is required, `enraged_idle`, `death`, `effects` and `looks` are the only optional tables besides the attack animations, and any other key is refused. The keys and ranges live in `src/client/Rendering/Sprites/EntityAppearanceConstants.hpp`. A pixel of a sheet covers 4 × 4 logical units of the playfield, so a frame should be the hitbox divided by 4: 24 × 24 pixels for a box of 96 × 96. `EntityAppearances.EveryShippedSheetDrawsTheBoxTheServerHits` checks it for every shipped sheet whose boxes all hurt in an action only. A sheet with a box that always hurts, the Voltjelly and the Bydo Tyrant, draws a frame that holds its hitbox, offset included, and every such box instead: the Tyrant is drawn 128 × 128 pixels, 512 × 512 units, and hit on a box of 440 × 488 that covers its body (`AFrameHoldsTheBoxesThatAlwaysHurt`). The side of the sheet, never its appearance, picks the layer the entity is drawn in (see [Client](/R-Type/client/#drawing-order-layer)). Whether the sprite sheet exists is checked when the game screen loads it, like any other asset.
 
 ### Attack animations
 
@@ -218,6 +244,38 @@ The frame keys are those of `idle`. The others:
 
 A phase the sheet leaves out has no animation: the enemy keeps what it plays when the server announces it. An attack table of another name, a phase of another name or any other key is refused. The end of an action is never announced, so the last phase of an attack plays `once` with `afterwards = "idle"` and lasts as long as the server keeps the enemy in that phase: the four 225 ms frames of the stunned Drillback last its 900 ms stun.
 
+### Named effects and looks
+
+A sheet names the effects and the looks a script of the server may ask the client to draw on a body of that type, so a resource gets visual effects without any code on the client. An effect plays once, centered on the body and following it while it moves; a look is an idle loop the body takes instead of `idle` until the script asks for another one:
+
+```toml
+[appearance.effects.spark]
+left = 0
+top = 30
+width = 16
+height = 16
+frames = 2
+spacing = 4
+frame_ms = 60
+anchor_y = -8
+
+[appearance.looks.cracked]
+left = 0
+top = 70
+width = 24
+height = 24
+frames = 3
+spacing = 2
+frame_ms = 120
+```
+
+- The name of each table is a name of the content, as the name of a sheet: 1 to 24 bytes of `a` to `z`, digits and `_` (`isContentName()`). A sheet names at most 16 effects and 16 looks (`MOST_EFFECTS`, `MOST_LOOKS`). Both programs refuse a sheet that breaks either rule.
+- An effect takes the frame keys of `idle` and the two anchors of an attack animation. Its version without flash, played with REDUCE FLASHES, is the row right under it, as for `death`.
+- A look takes the keys of `idle`. The looks are numbered from 1 in the order of their names, 0 being `idle` itself: the server sends that number in each world state, and the client finds the same look with it, since both read the same sheet. An attack that ends with `afterwards = "idle"` goes back to the look the body shows, which wins over `enraged_idle`.
+- The frames lie in the sprite sheet of `sheet`, the only image a content pack carries for a type.
+
+A script asks for them by name (see [Scripting](/R-Type/scripting/#what-the-function-returns-the-intent)). A name the sheet does not hold is dropped by the server; a client whose sheet does not hold the name, or that does not have the body, draws nothing.
+
 ## When a program refuses a sheet
 
 Each program stops on the first error and exits with code 1. A game process prints `game stopped: The module "games" failed to start:`, in its journal too, and its supervisor writes that the game crashed; the client prints `client stopped:`, then the absolute path of the file, the line and the column of what is wrong, the dotted name of the key and the rule it breaks. The messages below come from runs of the programs; the path is shortened to `…/entities/`.
@@ -237,6 +295,8 @@ Each program stops on the first error and exits with code 1. A game process prin
 | a behaviour table on the ship | `…/entities/ship.toml:39:1: gameplay.behaviour: only a behaviour that declares settings has a behaviour table` |
 | a gun on a missile | `…/entities/enemy_missile.toml:38:1: gameplay.gun: a missile has no gun` |
 | a missile flying away from its edge (`heading = -1` on `player_missile`) | `…/entities/player_missile.toml:14:9: gameplay.pilot: a missile flies towards the edge that removes it: the right one for a missile of a player, the left one for a missile of an enemy` |
+| a size beside a list of boxes | `…/entities/crawler.toml:16:1: gameplay.hitbox.width: a hitbox gives the size of its one box or lists its boxes, never both` |
+| several boxes on a missile | `…/entities/enemy_missile.toml:15:1: gameplay.hitbox: only a body of side enemy collides with several boxes` |
 | a ship of another box | `…/entities/ship.toml:15:1: gameplay.hitbox: a ship collides with the box shipAfter() keeps on screen` |
 | a projectile no sheet has (`"bullet"`) | `…/entities/drifter.toml:35:14: gameplay.gun.projectile: unknown value "bullet"; known: drifter, enemy_missile, player_missile, ship, weaver` |
 | a projectile of the wrong side (`"player_missile"` on a Bydo) | `…/entities/drifter.toml:35:14: gameplay.gun.projectile: a player fires missiles of a player, an enemy missiles of an enemy` |
@@ -297,7 +357,7 @@ The final boss, the diver it calls in and its projectiles: the Tyrant draws from
 
 The layer and the hits of each shipped sheet are in [Collision layers](#collision-layers-layer-and-hits). The values are **provisional** until gameplay tunes them; tuning them needs no rebuild. The Drifter and the Weaver share their frames, so the client draws both as the same Bydo; the diver of the Tyrant shares the idle frames of the Drillback, at a frame time of its own. The settings of the behaviours are commented in each sheet.
 
-The seven look items are bodies of side `look_item` that float to the left, `steady` at 240 units per second, piloted by `straight` with `heading` -1, with no health, score or gun. They draw from `sprites/looks.png`, one frame each:
+The 22 look items are bodies of side `look_item` that float to the left, `steady` at 240 units per second, piloted by `straight` with `heading` -1, with no health, score or gun. They draw from `sprites/looks.png`, one frame each:
 
 | Sheet | `look_item` | Hitbox | Frame on the sheet |
 |---|---|---|---|
@@ -308,6 +368,21 @@ The seven look items are bodies of side `look_item` that float to the left, `ste
 | `look_viking_helmet` | `viking_helmet` | 56 × 36 | 14 × 9 at 90 |
 | `look_wizard_hat` | `wizard_hat` | 48 × 48 | 12 × 12 at 108 |
 | `look_chef_toque` | `chef_toque` | 48 × 36 | 12 × 9 at 126 |
+| `look_chapka` | `chapka` | 56 × 36 | 14 × 9 at 180 |
+| `look_tricorn` | `tricorn` | 56 × 32 | 14 × 8 at 198 |
+| `look_santa_hat` | `santa_hat` | 52 × 36 | 13 × 9 at 216 |
+| `look_halo` | `halo` | 48 × 24 | 12 × 6 at 234 |
+| `look_devil_horns` | `devil_horns` | 52 × 28 | 13 × 7 at 252 |
+| `look_sombrero` | `sombrero` | 64 × 28 | 16 × 7 at 270 |
+| `look_traffic_cone` | `traffic_cone` | 40 × 36 | 10 × 9 at 288 |
+| `look_fez` | `fez` | 48 × 32 | 12 × 8 at 306 |
+| `look_grad_cap` | `grad_cap` | 56 × 36 | 14 × 9 at 324 |
+| `look_antennae` | `antennae` | 48 × 32 | 12 × 8 at 342 |
+| `look_kabuto` | `kabuto` | 48 × 40 | 12 × 10 at 360 |
+| `look_mohawk` | `mohawk` | 48 × 28 | 12 × 7 at 378 |
+| `look_glasses_3d` | `glasses_3d` | 44 × 16 | 11 × 4 at 396 |
+| `look_monocle` | `monocle` | 24 × 32 | 6 × 8 at 414 |
+| `look_long_beard` | `long_beard` | 48 × 36 | 12 × 9 at 432 |
 
 The top hat, the cool shades and the mustache are in the locker from the first launch and have no sheet.
 

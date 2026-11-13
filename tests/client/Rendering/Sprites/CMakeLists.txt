@@ -1,4 +1,5 @@
-target_sources(client_rendering_tests PRIVATE EntitySpritesFixtures.cpp EntitySpritesTest.cpp EntitySpriteConstantsTest.cpp PilotColorTest.cpp)
+target_link_libraries(client_rendering_tests PRIVATE rtype_client_ship_hulls)
+target_sources(client_rendering_tests PRIVATE ShipHullsTest.cpp ShipHullSpriteConstantsTest.cpp EntitySpritesFixtures.cpp EntitySpritesTest.cpp EntitySpriteConstantsTest.cpp PilotColorTest.cpp)
 target_sources(client_animation_tests PRIVATE AnimationTest.cpp AnimationSystemTest.cpp AnimatedScene.cpp)
 
 add_subdirectory(EntityAppearances)

@@ -31,6 +31,7 @@ target_link_libraries(rtype_client_title
     rtype_client_intro_overlay
     rtype_client_intro_painting
     rtype_client_intro_timeline
+    rtype_client_kopecks_painting
     rtype_client_menu_builder
     rtype_client_text_field
     rtype_identifiers

@@ -6,6 +6,10 @@
 
 namespace rtype::client {
 
+/** @brief The scale a hull is drawn at on the reference card: pixel for
+ * pixel, 32 x 16, where an accessory is drawn larger. */
+constexpr int BLUEPRINT_HULL_SCALE = 1;
+
 /** @brief The bay: its area, the ship DOCK_SHIP_SCALE times its size with its
  * top on DOCK_SHIP_TOP, a pixel higher every other DOCK_BOB_STEP. */
 constexpr sf::IntRect DOCK_AREA{{176, 34}, {280, 184}};

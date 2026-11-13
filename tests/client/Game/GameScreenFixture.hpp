@@ -16,11 +16,13 @@
 #include "RecordingPlayerInputLink.hpp"
 #include "RecordingScreen.hpp"
 #include "RecordingServerConnection.hpp"
+#include "RecordingSettingsStorage.hpp"
 #include "RecordingShipLookExchange.hpp"
 #include "RecordingSky.hpp"
 #include "RecordingSoundPlayer.hpp"
 #include "RecordingWaitingRoom.hpp"
 #include "ScreenStack.hpp"
+#include "SettingsService.hpp"
 
 /** @brief The real game screen alone in a stack whose other screens are
  * recording doubles, with a recording entity layer, a recording status
@@ -57,6 +59,8 @@ class GameScreenFixture : public ::testing::Test {
   std::vector<JournalEntry> journal_;
   EntityLayerRecord layerRecord_;
   rtype::client::PlayerSettings settings_;
+  RecordingSettingsStorage settingsStorage_;
+  rtype::client::SettingsService settingsService_{settings_, settingsStorage_};
   RecordingPlayerInputLink inputs_;
   FakeEntityMessageSource entityMessages_;
   FakeServerTicks serverTicks_;

@@ -193,9 +193,9 @@ DrawCall afterimageAt(engine::Entity entity, const game::Sprite& sprite,
 /** @returns The sprite of @p item on the sheet of the looks: its drawing, cut
  * from its cell, in the layer of the ships. */
 const game::Sprite& lookSpriteOf(std::size_t item) {
-  static const std::array<game::Sprite, identifiers::SHIP_LOOK_ITEM_COUNT>
+  static const std::array<game::Sprite, identifiers::SHIP_LOOK_ACCESSORY_COUNT>
       sprites = [] {
-        std::array<game::Sprite, identifiers::SHIP_LOOK_ITEM_COUNT> made{};
+        std::array<game::Sprite, identifiers::SHIP_LOOK_ACCESSORY_COUNT> made{};
         for (std::size_t index = 0; index < made.size(); ++index) {
           const game::SpriteFrame cell = SHIP_LOOK_CELLS.at(index);
           const sf::Vector2i size = SHIP_LOOK_SPRITES.at(index).size;
@@ -283,8 +283,8 @@ void RenderSystem::collectLooks(engine::ComponentRegistry& components) {
         if (look.shownRows.has_value() || look.rollAngle.has_value()) {
           return;
         }
-        for (std::size_t item = 0; item < identifiers::SHIP_LOOK_ITEM_COUNT;
-             ++item) {
+        for (std::size_t item = 0;
+             item < identifiers::SHIP_LOOK_ACCESSORY_COUNT; ++item) {
           if (!wears(worn.look, item)) {
             continue;
           }

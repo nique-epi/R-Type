@@ -15,9 +15,11 @@ LocalContent testLocalContent() {
   LocalContent content{
       .fingerprint = {},
       .types = {game::NumberedEntityType{.name = std::string{DRAWN_ENEMY_NAME},
-                                         .side = game::EntityType::Enemy},
+                                         .side = game::EntityType::Enemy,
+                                         .hitboxParts = {}},
                 game::NumberedEntityType{.name = std::string{DRAWN_SHIP_NAME},
-                                         .side = game::EntityType::Player}},
+                                         .side = game::EntityType::Player,
+                                         .hitboxParts = {}}},
       .gun = LOCAL_SHIP_GUN};
   content.fingerprint.bytes.fill(LOCAL_FINGERPRINT_BYTE);
   return content;

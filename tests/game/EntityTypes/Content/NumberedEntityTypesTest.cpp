@@ -31,7 +31,9 @@ using rtype::game::testing::LANCER_TYPE;
 using rtype::game::testing::MOST_SHEETS_LOADED;
 using rtype::game::testing::ONE_SHEET_TOO_MANY;
 using rtype::game::testing::ONE_TYPE;
+using rtype::game::testing::SECOND_LISTED_BOX_WIDTH;
 using rtype::game::testing::SHEET_OF_A_PLUGIN_PILOT;
+using rtype::game::testing::SHEET_OF_TWO_BOXES;
 using rtype::game::testing::SHEET_WITHOUT_BOX;
 using rtype::game::testing::SHEET_WITHOUT_SIDE;
 using rtype::game::testing::sheetText;
@@ -39,6 +41,7 @@ using rtype::game::testing::SHIP_TEXT;
 using rtype::game::testing::SHIP_TYPE;
 using rtype::game::testing::shippedEntitySheets;
 using rtype::game::testing::shippedSheetFolder;
+using rtype::game::testing::TWO_LISTED_BOXES;
 using rtype::game::testing::TWO_TYPES;
 using rtype::game::testing::WEAVER_TEXT;
 using rtype::game::testing::WEAVER_TYPE;
@@ -146,4 +149,21 @@ TEST(NumberedEntityTypes, RefusesOneTypePastTheMost) {
 
   EXPECT_THROW(static_cast<void>(numberedEntityTypesOf(sheets)),
                TooManyEntityTypesException);
+}
+
+/**
+ * Given a sheet whose hitbox lists two boxes
+ * When a client numbers its type
+ * Then the type keeps those two boxes, which the client tests its missiles
+ * against
+ */
+TEST(NumberedEntityTypes, KeepsTheBoxesAHitboxLists) {
+  const std::vector<SheetText> sheets{
+      sheetText(LANCER_TYPE, SHEET_OF_TWO_BOXES)};
+
+  const std::vector<NumberedEntityType> types = numberedEntityTypesOf(sheets);
+
+  ASSERT_EQ(types.size(), ONE_TYPE);
+  ASSERT_EQ(types[0].hitboxParts.size(), TWO_LISTED_BOXES);
+  EXPECT_FLOAT_EQ(types[0].hitboxParts.back().width, SECOND_LISTED_BOX_WIDTH);
 }

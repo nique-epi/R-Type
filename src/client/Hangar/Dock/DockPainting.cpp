@@ -20,6 +20,7 @@
 #include "DockConstants.hpp"
 #include "DockScene.hpp"
 #include "EntitySpriteConstants.hpp"
+#include "EntitySprites.hpp"
 #include "FittingRoute.hpp"
 #include "FittingRun.hpp"
 #include "FittingTimeline.hpp"
@@ -37,13 +38,16 @@
 #include "PilotShipPicture.hpp"
 #include "PixelShapes.hpp"
 #include "RenderingConstants.hpp"
+#include "ShipHulls.hpp"
 #include "ShipLook.hpp"
 #include "ShipLookConstants.hpp"
+#include "ShipLookNumbers.hpp"
 #include "ShipLookSlot.hpp"
 #include "ShipLookSpriteConstants.hpp"
 #include "ShipLooks.hpp"
 #include "ShipPicture.hpp"
 #include "ShipPlacement.hpp"
+#include "ShipSheetFrame.hpp"
 #include "SpriteFrame.hpp"
 #include "TextStyle.hpp"
 #include "TextureArea.hpp"
@@ -214,18 +218,39 @@ void paintDockedShip(IInterfaceCanvas& canvas, const DockScene& scene,
           ? PLAYER_SHIP_ANIMATION.frameAt(scene.elapsed)
                 .value_or(PLAYER_SHIP_FRAME)
           : PLAYER_SHIP_FRAME;
-  paintPilotShip(
-      canvas,
-      PilotShipPicture{
-          .frame = frame, .color = scene.shipColor, .palette = scene.palette},
-      ship);
-  paintShipLook(
-      canvas,
+  const identifiers::ShipLook shown =
       scene.fitting.has_value()
           ? lookShownAt(fittingProgressOf(*scene.fitting, scene.elapsed),
                         *scene.fitting)
-          : scene.worn,
-      ship);
+          : scene.worn;
+  paintPilotShip(canvas,
+                 PilotShipPicture{.frame = frame,
+                                  .color = scene.shipColor,
+                                  .hull = shown.hull,
+                                  .palette = scene.palette},
+                 ship);
+  paintShipLook(canvas, shown, ship);
+}
+
+/** @brief What the reference card draws: a rectangle of a sheet, and how
+ * many times larger. */
+struct BlueprintDrawing {
+  TextureArea image;
+  int scale{};
+};
+
+/** @returns The drawing of @p item on the card: its ship pixel for pixel for
+ * a hull, its drawing of the item sheet at BLUEPRINT_DRAWING_SCALE else. */
+BlueprintDrawing blueprintDrawingOf(std::size_t item) {
+  if (identifiers::isHullItem(item)) {
+    const ShipSheetFrame ship = hullItemFrameOf(item);
+    return {.image = TextureArea{.assetId = ship.sheet,
+                                 .rectangle = rectangleOf(ship.frame)},
+            .scale = BLUEPRINT_HULL_SCALE};
+  }
+  return {.image = TextureArea{.assetId = SHIP_LOOK_SHEET_ID,
+                               .rectangle = lookRectangleOf(item)},
+          .scale = BLUEPRINT_DRAWING_SCALE};
 }
 
 /** @brief Paints the panels of the wall, brushed and riveted. */
@@ -322,21 +347,19 @@ void paintDockWall(IInterfaceCanvas& canvas, std::optional<int> litBeacon) {
 void paintBlueprint(IInterfaceCanvas& canvas, std::size_t item) {
   paintBlueprintPaper(canvas);
   const sf::IntRect card = BLUEPRINT_AREA;
-  const sf::Vector2i size = SHIP_LOOK_SPRITES.at(item).size;
+  const BlueprintDrawing drawing = blueprintDrawingOf(item);
+  const sf::Vector2i size = drawing.image.rectangle.size;
   const sf::Vector2i topLeft(
       card.position.x +
-          ((card.size.x - (size.x * BLUEPRINT_DRAWING_SCALE)) / HALF_DIVISOR),
+          ((card.size.x - (size.x * drawing.scale)) / HALF_DIVISOR),
       card.position.y + BLUEPRINT_DRAWING_TOP);
-  canvas.drawImage(TextureArea{.assetId = SHIP_LOOK_SHEET_ID,
-                               .rectangle = lookRectangleOf(item)},
-                   ImagePlacement{.topLeft = topLeft,
-                                  .scale = BLUEPRINT_DRAWING_SCALE,
-                                  .tint = HUD_CYAN},
-                   card);
-  const int ruleTop =
-      topLeft.y + (size.y * BLUEPRINT_DRAWING_SCALE) + BLUEPRINT_RULE_GAP;
-  canvas.fill({{topLeft.x, ruleTop}, {size.x * BLUEPRINT_DRAWING_SCALE, 1}},
-              HUD_CYAN);
+  canvas.drawImage(
+      drawing.image,
+      ImagePlacement{
+          .topLeft = topLeft, .scale = drawing.scale, .tint = HUD_CYAN},
+      card);
+  const int ruleTop = topLeft.y + (size.y * drawing.scale) + BLUEPRINT_RULE_GAP;
+  canvas.fill({{topLeft.x, ruleTop}, {size.x * drawing.scale, 1}}, HUD_CYAN);
   canvas.write(
       std::to_string(size.x) + BLUEPRINT_SIZE_JOIN + std::to_string(size.y),
       {card.position.x + (card.size.x / HALF_DIVISOR),

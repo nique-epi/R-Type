@@ -33,6 +33,10 @@ constexpr std::string_view INPUT_DELAY_SETTING_NAME = "input-delay";
 /** @brief The setting that starts every game at its boss, without the
  * waves: 1 to skip them, 0 (the default) to play them. */
 constexpr std::string_view START_AT_BOSS_SETTING_NAME = "start-at-boss";
+/** @brief The setting that names the level every game plays, one a script
+ * registered with `level.register`; empty (the default) plays the waves of
+ * the difficulty of the game, the survival mode. */
+constexpr std::string_view LEVEL_SETTING_NAME = "level";
 constexpr std::string_view DATABASE_SETTING_NAME = "database";
 constexpr std::string_view MASTER_URL_SETTING_NAME = "master-url";
 constexpr std::string_view MASTER_KEY_SETTING_NAME = "master-key";
@@ -49,12 +53,12 @@ constexpr std::string_view GAME_STATISTICS_FILE_SETTING_NAME =
 
 /** @brief Every setting of the server, in the order its usage lists them. */
 constexpr std::array SERVER_SETTING_NAMES{
-    PORT_SETTING_NAME,        SEED_SETTING_NAME,
-    STATE_RATE_SETTING_NAME,  STATE_ENCODING_SETTING_NAME,
-    INPUT_DELAY_SETTING_NAME, START_AT_BOSS_SETTING_NAME,
-    DATABASE_SETTING_NAME,    MASTER_URL_SETTING_NAME,
-    MASTER_KEY_SETTING_NAME,  PUBLIC_ADDRESS_SETTING_NAME,
-    SERVER_NAME_SETTING_NAME};
+    PORT_SETTING_NAME,           SEED_SETTING_NAME,
+    STATE_RATE_SETTING_NAME,     STATE_ENCODING_SETTING_NAME,
+    INPUT_DELAY_SETTING_NAME,    START_AT_BOSS_SETTING_NAME,
+    LEVEL_SETTING_NAME,          DATABASE_SETTING_NAME,
+    MASTER_URL_SETTING_NAME,     MASTER_KEY_SETTING_NAME,
+    PUBLIC_ADDRESS_SETTING_NAME, SERVER_NAME_SETTING_NAME};
 
 /**
  * @brief The highest seed: the seed of a game is 32 bits.
@@ -154,7 +158,7 @@ constexpr std::string_view SHIP_SHEET_NAME = "ship";
  * are not vanilla. A test fails when the shipped file changes and this does
  * not.
  */
-constexpr std::uint64_t OFFICIAL_WAVES_FINGERPRINT = 0x03d17e5028bb4b87;
+constexpr std::uint64_t OFFICIAL_WAVES_FINGERPRINT = 0x9719fc671f2bf7f3;
 
 /**
  * @brief The fingerprint of the entity sheets the game ships, as
@@ -162,7 +166,7 @@ constexpr std::uint64_t OFFICIAL_WAVES_FINGERPRINT = 0x03d17e5028bb4b87;
  * are not vanilla. A test fails when a shipped sheet changes and this does
  * not.
  */
-constexpr std::uint64_t OFFICIAL_ENTITY_SHEETS_FINGERPRINT = 0xe8e4331930e36211;
+constexpr std::uint64_t OFFICIAL_ENTITY_SHEETS_FINGERPRINT = 0xfbbcd6ab4649e23a;
 
 /**
  * @brief Why the games of a server are not vanilla, as the lines of its journal
@@ -181,6 +185,8 @@ constexpr std::string_view CHANGED_LIVES_BREACH =
 constexpr std::string_view FRIENDLY_FIRE_BREACH = "friendly fire is on";
 constexpr std::string_view STARTS_AT_BOSS_BREACH =
     "every game starts at its boss and its ships never die";
+constexpr std::string_view PLAYS_A_LEVEL_BREACH =
+    "every game plays a level a script directs, not the waves";
 
 /**
  * @brief Launch option followed by the program the binary runs:

@@ -46,7 +46,7 @@ class WorldStateCodec {
   /**
    * @returns How many entities one payload holds, next to @p playerCount
    * players, so that the datagram stays within MAX_DATAGRAM_SIZE once the
-   * packet header and the message prefix are added. 122 for 4 players.
+   * packet header and the message prefix are added. 110 for 4 players.
    */
   [[nodiscard]] static std::size_t maximumEntitiesPerMessage(
       std::size_t playerCount);

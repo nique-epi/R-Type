@@ -41,9 +41,12 @@ using rtype::server::testing::calmFileNamed;
 using rtype::server::testing::calmFileWith;
 using rtype::server::testing::calmFileWithout;
 using rtype::server::testing::DIFFICULTIES_PAST_THE_MOST_OF_A_FILE;
+using rtype::server::testing::EACH_WAVE_COUNT;
 using rtype::server::testing::EMPTY_FILE;
 using rtype::server::testing::ENEMY_OUTSIDE_A_LIST;
 using rtype::server::testing::errorReading;
+using rtype::server::testing::EVERY_THIRD_WAVE_COUNT;
+using rtype::server::testing::EVERY_THIRD_WAVE_VALUE;
 using rtype::server::testing::FEWEST_BYDOS;
 using rtype::server::testing::FEWEST_WAVES;
 using rtype::server::testing::fileOfDifficulties;
@@ -60,6 +63,7 @@ using rtype::server::testing::MISSPELT_KEY_MESSAGE;
 using rtype::server::testing::MOST_BYDOS;
 using rtype::server::testing::MOST_DIFFICULTIES_OF_A_FILE;
 using rtype::server::testing::MOST_WAVES;
+using rtype::server::testing::NEVER_VALUE;
 using rtype::server::testing::NO_BYDO;
 using rtype::server::testing::NO_BYDO_MESSAGE;
 using rtype::server::testing::NO_ENEMY;
@@ -70,6 +74,7 @@ using rtype::server::testing::NOT_A_TOML_VALUE;
 using rtype::server::testing::NUMBER_AS_AN_ENEMY;
 using rtype::server::testing::ONE_BYDO_TOO_MANY;
 using rtype::server::testing::ONE_WAVE_TOO_MANY;
+using rtype::server::testing::PAST_THE_MOST_WAVES_VALUE;
 using rtype::server::testing::SEVENTEEN_BYTE_DIFFICULTY;
 using rtype::server::testing::shippedCatalog;
 using rtype::server::testing::SHORTEST_EQUAL_TO_THE_FIRST;
@@ -141,6 +146,50 @@ TEST(WaveCatalog, ADifficultyWithoutLookItemsHasNone) {
       WaveCatalog::fromText(calmFile(), TEST_FILE_NAME, shippedEntitySheets());
 
   EXPECT_TRUE(catalog.planOf("calm").lookItems.empty());
+}
+
+/**
+ * Given a waves file whose calm brings a look item every 3 waves
+ * When it is read
+ * Then the plan of calm says 3
+ */
+TEST(WaveCatalog, ReadsHowOftenAWaveBringsALookItem) {
+  const WaveCatalog catalog = WaveCatalog::fromText(
+      calmFileWith("look_item_every", EVERY_THIRD_WAVE_VALUE), TEST_FILE_NAME,
+      shippedEntitySheets());
+
+  EXPECT_EQ(catalog.planOf("calm").lookItemEvery, EVERY_THIRD_WAVE_COUNT);
+}
+
+/**
+ * Given a waves file whose calm has no look_item_every
+ * When it is read
+ * Then each wave from the second brings a look item
+ */
+TEST(WaveCatalog, ADifficultyWithoutLookItemEveryBringsOneEachWave) {
+  const WaveCatalog catalog =
+      WaveCatalog::fromText(calmFile(), TEST_FILE_NAME, shippedEntitySheets());
+
+  EXPECT_EQ(catalog.planOf("calm").lookItemEvery, EACH_WAVE_COUNT);
+}
+
+/**
+ * Given a waves file whose calm brings a look item every 0 waves, then every
+ * 101
+ * When each is read
+ * Then both are refused as out of range
+ */
+TEST(WaveCatalog, RefusesALookItemEveryOutsideOneToAHundred) {
+  const std::string never = calmFileWith("look_item_every", NEVER_VALUE);
+  const std::string pastTheMost =
+      calmFileWith("look_item_every", PAST_THE_MOST_WAVES_VALUE);
+
+  EXPECT_THROW(static_cast<void>(WaveCatalog::fromText(never, TEST_FILE_NAME,
+                                                       shippedEntitySheets())),
+               DataFileValueOutOfRangeException);
+  EXPECT_THROW(static_cast<void>(WaveCatalog::fromText(
+                   pastTheMost, TEST_FILE_NAME, shippedEntitySheets())),
+               DataFileValueOutOfRangeException);
 }
 
 /**

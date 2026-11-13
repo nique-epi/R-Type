@@ -14,6 +14,7 @@ target_link_libraries(rtype_client_mission_log_page
     rtype_client_pilot_color
     rtype_client_player_number_label
     rtype_client_player_shading
+    rtype_client_ship_hulls
     rtype_client_typing
     rtype_client_widget_text
 )

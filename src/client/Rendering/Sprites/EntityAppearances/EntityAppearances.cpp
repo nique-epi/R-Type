@@ -23,10 +23,13 @@
 #include "EntityAppearanceConstants.hpp"
 #include "EntitySheetConstants.hpp"
 #include "FrameAnchor.hpp"
+#include "NamedEffect.hpp"
+#include "NamedLook.hpp"
 #include "PathText.hpp"
 #include "SheetRow.hpp"
 #include "SheetText.hpp"
 #include "SheetTextReading.hpp"
+#include "SheetVisualNames.hpp"
 #include "SpriteFrame.hpp"
 #include "WholeNumberRange.hpp"
 
@@ -73,6 +76,13 @@ int optionalPixelsAt(const engine::DataFileTable& table, std::string_view key,
   return table.table.get().contains(key) ? pixelsAt(table, key, range) : 0;
 }
 
+/** @returns How far the frames of @p table hang from the center of the
+ * body; 0 on an axis the table leaves out. */
+FrameAnchor anchorOf(const engine::DataFileTable& table) {
+  return FrameAnchor{.x = optionalPixelsAt(table, ANCHOR_X_KEY, ANCHOR_RANGE),
+                     .y = optionalPixelsAt(table, ANCHOR_Y_KEY, ANCHOR_RANGE)};
+}
+
 /** @returns The animation of the attack phase @p table describes, every key
  * checked, which plays for @p key. */
 ActionAnimation actionAnimationOf(const engine::DataFileTable& table,
@@ -89,9 +99,7 @@ ActionAnimation actionAnimationOf(const engine::DataFileTable& table,
       .returnsToIdle =
           leavesAfterwards ||
           engine::choiceAt(table, AFTERWARDS_KEY, AFTERWARDS_NAMES) == 0,
-      .anchor = FrameAnchor{
-          .x = optionalPixelsAt(table, ANCHOR_X_KEY, ANCHOR_RANGE),
-          .y = optionalPixelsAt(table, ANCHOR_Y_KEY, ANCHOR_RANGE)}};
+      .anchor = anchorOf(table)};
 }
 
 /** @returns The attack number the key @p key of `[appearance]` names
@@ -180,6 +188,20 @@ void readEnragedIdle(const engine::DataFileTable& appearance,
       engine::millisecondsAt(*enraged, FRAME_TIME_KEY, FRAME_TIME_RANGE);
 }
 
+/** @returns The row right under @p frames, frame for frame, the frames of
+ * @p table: the version without flash of a death or an effect. */
+std::vector<game::SpriteFrame> framesWithoutFlashOf(
+    const engine::DataFileTable& table,
+    const std::vector<game::SpriteFrame>& frames) {
+  const int spacing = pixelsAt(table, FRAME_SPACING_KEY, FRAME_SPACING_RANGE);
+  std::vector<game::SpriteFrame> withoutFlash;
+  withoutFlash.reserve(frames.size());
+  for (const game::SpriteFrame& frame : frames) {
+    withoutFlash.push_back(frameUnder(frame, spacing));
+  }
+  return withoutFlash;
+}
+
 /** @brief Reads `[appearance.death]` into @p look, every key checked, and
  * the row right under its frames as its version without flash; leaves
  * @p look without death frames when the table is left out. */
@@ -192,12 +214,52 @@ void readDeath(const engine::DataFileTable& appearance,
   }
   engine::refuseUnknownKeys(*death, IDLE_KEYS);
   look.deathFrames = framesOf(*death);
-  const int spacing = pixelsAt(*death, FRAME_SPACING_KEY, FRAME_SPACING_RANGE);
-  for (const game::SpriteFrame& frame : look.deathFrames) {
-    look.deathFramesWithoutFlash.push_back(frameUnder(frame, spacing));
-  }
+  look.deathFramesWithoutFlash = framesWithoutFlashOf(*death, look.deathFrames);
   look.deathFrameDuration =
       engine::millisecondsAt(*death, FRAME_TIME_KEY, FRAME_TIME_RANGE);
+}
+
+/** @returns The frames of @p table, read like `[appearance.death]`, every
+ * key of EFFECT_KEYS checked, which @p name names. */
+NamedEffect effectFrom(const engine::DataFileTable& table, std::string name) {
+  engine::refuseUnknownKeys(table, EFFECT_KEYS);
+  std::vector<game::SpriteFrame> frames = framesOf(table);
+  std::vector<game::SpriteFrame> withoutFlash =
+      framesWithoutFlashOf(table, frames);
+  return NamedEffect{.name = std::move(name),
+                     .frames = std::move(frames),
+                     .framesWithoutFlash = std::move(withoutFlash),
+                     .frameDuration = engine::millisecondsAt(
+                         table, FRAME_TIME_KEY, FRAME_TIME_RANGE),
+                     .anchor = anchorOf(table)};
+}
+
+/** @returns The loop of @p table, read like `[appearance.idle]`. */
+NamedLook lookFrom(const engine::DataFileTable& table) {
+  engine::refuseUnknownKeys(table, IDLE_KEYS);
+  return NamedLook{.frames = framesOf(table),
+                   .frameDuration = engine::millisecondsAt(
+                       table, FRAME_TIME_KEY, FRAME_TIME_RANGE)};
+}
+
+/** @brief Reads into @p look the effects and the looks of @p appearance, each
+ * table named in @p names, in that order. */
+void readVisuals(const engine::DataFileTable& appearance,
+                 const game::SheetVisualNames& names, EntityAppearance& look) {
+  if (!names.effects.empty()) {
+    const engine::DataFileTable effects =
+        engine::tableAt(appearance, game::EFFECTS_TABLE_KEY);
+    for (const std::string& name : names.effects) {
+      look.effects.push_back(effectFrom(engine::tableAt(effects, name), name));
+    }
+  }
+  if (!names.looks.empty()) {
+    const engine::DataFileTable looks =
+        engine::tableAt(appearance, game::LOOKS_TABLE_KEY);
+    for (const std::string& name : names.looks) {
+      look.looks.push_back(lookFrom(engine::tableAt(looks, name)));
+    }
+  }
 }
 
 /** @returns The appearance the `[appearance]` table @p appearance
@@ -214,18 +276,23 @@ EntityAppearance appearanceFrom(const engine::DataFileTable& appearance) {
                         .actions = std::move(actions),
                         .enragedIdleFrames = {},
                         .deathFrames = {},
-                        .deathFramesWithoutFlash = {}};
+                        .deathFramesWithoutFlash = {},
+                        .effects = {},
+                        .looks = {}};
   readEnragedIdle(appearance, look);
   readDeath(appearance, look);
   return look;
 }
 
-/** @returns The appearance of the sheet @p text holds, which the errors call
- * @p source; `[gameplay]` must be there, and is not read. */
-EntityAppearance appearanceIn(std::string_view text, std::string_view source) {
-  const toml::table root = engine::parseDataFile(text, source);
-  return appearanceFrom(
-      game::sheetTableOf(engine::rootOf(root, source), game::APPEARANCE_KEY));
+/** @returns The appearance of @p sheet; `[gameplay]` must be there, and is
+ * not read. */
+EntityAppearance appearanceIn(const game::SheetText& sheet) {
+  const toml::table root = engine::parseDataFile(sheet.text, sheet.source);
+  const engine::DataFileTable appearance = game::sheetTableOf(
+      engine::rootOf(root, sheet.source), game::APPEARANCE_KEY);
+  EntityAppearance look = appearanceFrom(appearance);
+  readVisuals(appearance, game::visualNamesOf(appearance), look);
+  return look;
 }
 
 }  // namespace
@@ -240,7 +307,7 @@ EntityAppearances EntityAppearances::fromTexts(
     const std::filesystem::path& spriteFolder) {
   AppearancesByName appearances;
   for (const game::SheetText& sheet : sheets) {
-    EntityAppearance appearance = appearanceIn(sheet.text, sheet.source);
+    EntityAppearance appearance = appearanceIn(sheet);
     if (!spriteFolder.empty()) {
       appearance.sheet = logging::genericText(spriteFolder / appearance.sheet);
     }

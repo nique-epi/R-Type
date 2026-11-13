@@ -520,11 +520,11 @@ for (tick in ticks) {
 <p class="pitch">Le moteur sait dire si deux rectangles se touchent ; c'est le jeu qui décide ce que ça signifie.</p>
 <p class="refs">PR #57 · doc : <code>engine.md</code> § Collisions</p>
 <div class="block b-where"><div class="label">Où</div><p><code>src/engine/Collision/</code> (headers uniquement) : <code>Bounds</code>, <code>overlaps()</code> (<code>constexpr</code>), événement <code>Collision{first, second}</code>. Le système qui parcourt les entités est <code>CollisionSystem</code> dans <code>src/game/</code>.</p></div>
-<div class="block b-how"><div class="label">Comment</div><p>Rectangles alignés sur les axes, définis par centre + taille. Chevauchement = les intérieurs se coupent (se toucher par un bord ne compte pas). Le jeu teste <b>toutes les paires</b> de boîtes.</p></div>
+<div class="block b-how"><div class="label">Comment</div><p>Rectangles alignés sur les axes, définis par centre + taille. Chevauchement = les intérieurs se coupent (se toucher par un bord ne compte pas). Le jeu range d'abord les boîtes dans une <b>grille uniforme</b> et ne teste que les paires qui partagent une case.</p></div>
 <div class="block b-terms"><div class="label">Termes</div><dl class="terms">
 <dt>AABB</dt><dd>Axis-Aligned Bounding Box : boîte englobante non tournée, le test de collision le moins cher.</dd>
-<dt>Partition spatiale</dt><dd>Grille ou quadtree pour éviter de tester toutes les paires. Non utilisée ici.</dd></dl></div>
-<div class="block b-logic"><div class="label">Logique</div><p>Le test de toutes les paires est quadratique, mais mesuré : 100 boîtes = 2,6 µs, 1000 boîtes = 336 µs (2 % d'un tick). Une grille ne vaut pas sa complexité à cette échelle.</p></div>
+<dt>Partition spatiale</dt><dd>Grille ou quadtree pour éviter de tester toutes les paires. Ici, une grille uniforme (<code>UniformGrid</code>) de cases de 60 unités.</dd></dl></div>
+<div class="block b-logic"><div class="label">Logique</div><p>Le test de toutes les paires est quadratique : 1000 boîtes = 336 µs (2 % d'un tick). La grille, refaite à chaque tick, ne teste que les boîtes proches. Sa taille de case a été mesurée sur le banc d'essai des scripts (300 corps scriptés, 1000 balles) : 0,16 ms par tick avec des cases de 60, 0,19 ms avec 120, 0,25 ms avec 240.</p></div>
 </article>
 
 <h3 class="subcat">3.4 Identifiants, configuration et fichiers</h3>
@@ -1099,7 +1099,7 @@ for (tick in ticks) {
 <p class="refs">PR #57, #90, #99, #111 · doc : <code>server.md</code> § Collisions, Damage</p>
 <div class="block b-where"><div class="label">Où</div><p><code>src/game/Systems/</code> : <code>CollisionSystem</code>, <code>CollisionRules</code>, <code>HurtZoneSystem</code>, <code>DamageRules</code>. Score : <code>ScoreKeeper</code> (<code>src/server/Rules/Players/</code>). Événements : <code>src/game/Events/</code> (<code>MissileHit</code>, <code>ShipContact</code>, <code>EnemyKilled</code>…).</p></div>
 <div class="block b-how"><div class="label">Comment</div><ol>
-<li><code>CollisionSystem</code> teste toutes les paires de boîtes et publie <code>Collision</code>.</li>
+<li><code>CollisionSystem</code> teste les paires de boîtes qui partagent une case de sa grille et publie <code>Collision</code>.</li>
 <li><code>CollisionRules</code> ne garde que 4 paires : missile joueur × ennemi, missile ennemi × vaisseau, vaisseau × ennemi, vaisseau × objet d'apparence (+ missile joueur × autre joueur si tir ami activé) et publie <code>MissileHit</code>, <code>ShipContact</code>, <code>LookItemTouched</code>.</li>
 <li><code>HurtZoneSystem</code> : zones de dégâts spécifiques (aura, faux, rayons du boss) actives seulement pendant certaines phases d'attaque.</li>
 <li><code>DamageRules</code> : le missile disparaît, la cible perd 1 PV (<code>MISSILE_DAMAGE</code>) ; à 0, destruction + <code>EnemyKilled</code> → le tireur gagne les points de la fiche (Drifter 100, Weaver 200…).</li></ol></div>

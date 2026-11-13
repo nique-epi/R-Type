@@ -14,13 +14,13 @@
 #include "BossSheet.hpp"
 #include "BurstSheet.hpp"
 #include "CollisionSheet.hpp"
+#include "ContentName.hpp"
+#include "ContentNameConstants.hpp"
 #include "DataFileReading.hpp"
 #include "DataFileTable.hpp"
 #include "EntitySheet.hpp"
 #include "EntitySheetConstants.hpp"
 #include "EntityType.hpp"
-#include "EntityTypeConstants.hpp"
-#include "EntityTypeName.hpp"
 #include "GameException.hpp"
 #include "GunSheet.hpp"
 #include "HurtBeam.hpp"
@@ -36,6 +36,7 @@
 #include "SheetActionReading.hpp"
 #include "SheetText.hpp"
 #include "SheetTextReading.hpp"
+#include "SheetVisualNames.hpp"
 #include "ShipControlConstants.hpp"
 #include "ShipLookConstants.hpp"
 #include "ShipLookNumbers.hpp"
@@ -75,10 +76,10 @@ EntityType sideFrom(const engine::DataFileTable& gameplay) {
 CollisionSheet collisionFrom(const engine::DataFileTable& gameplay) {
   CollisionSheet collision{
       .layer = engine::textAt(gameplay, LAYER_KEY), .hits = {}, .filter = {}};
-  if (!identifiers::isEntityTypeName(collision.layer)) {
+  if (!identifiers::isContentName(collision.layer)) {
     throw InvalidCollisionLayerNameException(
         engine::placeOfKey(gameplay, LAYER_KEY),
-        identifiers::MAXIMUM_ENTITY_TYPE_NAME_LENGTH);
+        identifiers::MAXIMUM_CONTENT_NAME_LENGTH);
   }
   if (gameplay.table.get().contains(HITS_KEY)) {
     collision.hits = engine::textsAt(gameplay, HITS_KEY);
@@ -389,7 +390,9 @@ std::optional<std::uint8_t> lookItemFrom(
     return std::nullopt;
   }
   return identifiers::lookNumberOf(engine::choiceAt(
-      gameplay, LOOK_ITEM_KEY, identifiers::SHIP_LOOK_ITEM_NAMES));
+      gameplay, LOOK_ITEM_KEY,
+      std::span<const std::string_view>{identifiers::SHIP_LOOK_ITEM_NAMES}
+          .first(identifiers::SHIP_LOOK_ACCESSORY_COUNT)));
 }
 
 /** @throws InconsistentEntitySheetException when @p sheet has a hurt zone,
@@ -458,6 +461,16 @@ void checkShipMotion(const EntitySheet& sheet,
        sheet.hitbox.offsetX != 0.0F || sheet.hitbox.offsetY != 0.0F)) {
     throw InconsistentEntitySheetException(
         engine::placeOfKey(gameplay, HITBOX_KEY), SHIP_HITBOX_RULE);
+  }
+}
+
+/** @throws InconsistentEntitySheetException when @p sheet lists several boxes
+ * and its side is not enemy: a ship, a missile and an item keep one box. */
+void checkHitboxPartsBelongToAnEnemy(const EntitySheet& sheet,
+                                     const engine::DataFileTable& gameplay) {
+  if (!sheet.hitboxParts.empty() && sheet.side != EntityType::Enemy) {
+    throw InconsistentEntitySheetException(
+        engine::placeOfKey(gameplay, HITBOX_KEY), HITBOX_PARTS_SIDE_RULE);
   }
 }
 
@@ -542,6 +555,7 @@ void checkSheetHoldsTogether(const EntitySheet& sheet,
                              const engine::DataFileTable& gameplay) {
   checkPilotMatchesSide(sheet, gameplay);
   checkShipMotion(sheet, gameplay);
+  checkHitboxPartsBelongToAnEnemy(sheet, gameplay);
   checkWhatItFires(sheet, gameplay);
   checkMissileFliesTowardsItsEdge(sheet, gameplay);
   checkContactPartsBelongToAnEnemy(sheet, gameplay);
@@ -555,14 +569,15 @@ void checkSheetHoldsTogether(const EntitySheet& sheet,
 EntitySheet gameplayOf(const SheetText& sheet,
                        const BehaviourRegistry& behaviours) {
   const toml::table root = engine::parseDataFile(sheet.text, sheet.source);
-  const engine::DataFileTable gameplay =
-      gameplayTableOf(engine::rootOf(root, sheet.source));
+  const engine::DataFileTable sheetRoot = engine::rootOf(root, sheet.source);
+  const engine::DataFileTable gameplay = gameplayTableOf(sheetRoot);
   EntitySheet read{
       .name = sheet.name,
       .number = 0,
       .side = sideFrom(gameplay),
       .collision = collisionFrom(gameplay),
       .hitbox = hitboxOf(gameplay),
+      .hitboxParts = hitboxPartsOf(gameplay),
       .motion = motionFrom(gameplay),
       .pilot = pilotFrom(gameplay, behaviours),
       .health = pointsIn<int>(gameplay, HEALTH_KEY, HEALTH_RANGE),
@@ -574,7 +589,8 @@ EntitySheet gameplayOf(const SheetText& sheet,
       .burst = burstFrom(gameplay),
       .volleys = volleysFrom(gameplay),
       .boss = bossFrom(gameplay),
-      .lookItem = lookItemFrom(gameplay)};
+      .lookItem = lookItemFrom(gameplay),
+      .visualNames = visualNamesOf(sheetTableOf(sheetRoot, APPEARANCE_KEY))};
   checkSheetHoldsTogether(read, gameplay);
   return read;
 }

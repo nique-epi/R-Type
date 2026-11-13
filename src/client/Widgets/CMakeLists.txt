@@ -22,6 +22,8 @@ target_link_libraries(rtype_client_window_size_chart
 
 rtype_enable_warnings(rtype_client_window_size_chart)
 
+add_subdirectory(RowWindow)
+add_subdirectory(ScrollMark)
 add_subdirectory(HangarBay)
 add_subdirectory(PaddedScore)
 add_subdirectory(PilotName)
@@ -37,6 +39,7 @@ add_subdirectory(EdgePulse)
 add_subdirectory(WatchOut)
 add_subdirectory(IntroOverlay)
 add_subdirectory(CutCornerBox)
+add_subdirectory(KopecksPainting)
 add_subdirectory(Outline)
 add_subdirectory(SunkBox)
 add_subdirectory(CheckBox)

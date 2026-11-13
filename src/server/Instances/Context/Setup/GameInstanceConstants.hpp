@@ -71,8 +71,9 @@ constexpr std::array<std::string_view, 3> GAME_STAGES{
 
 /**
  * @brief Why a game in progress finishes, as its line says after "game
- * finished: ": no player is left in it, no player left in it has a life, or
- * the last wave of the level is over.
+ * finished: ": no player is left in it, no player left in it has a life, the
+ * last wave of the level is over, its boss is defeated, or the level a script
+ * directs is cleared or failed.
  */
 constexpr std::string_view NO_PLAYER_LEFT_FINISH_REASON = "no player left";
 constexpr std::string_view NO_LIFE_LEFT_FINISH_REASON =
@@ -80,6 +81,9 @@ constexpr std::string_view NO_LIFE_LEFT_FINISH_REASON =
 constexpr std::string_view LAST_WAVE_OVER_FINISH_REASON =
     "the last wave is over";
 constexpr std::string_view BOSS_DEFEATED_FINISH_REASON = "the boss is defeated";
+constexpr std::string_view LEVEL_CLEARED_FINISH_REASON = "the level is cleared";
+constexpr std::string_view LEVEL_FAILED_FINISH_REASON =
+    "the script of the level failed";
 
 /** @brief In a game started at its boss, the ticks of invulnerability each
  * ship is kept at, at every tick: more than the one tick LifeKeeper takes

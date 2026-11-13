@@ -18,6 +18,7 @@ target_link_libraries(rtype_client_hangar_dock
     rtype_client_outline
     rtype_client_pixel_rounding
     rtype_client_pixel_shapes
+    rtype_client_ship_hulls
     rtype_client_ship_looks
     rtype_client_ship_picture
     rtype_client_widgets

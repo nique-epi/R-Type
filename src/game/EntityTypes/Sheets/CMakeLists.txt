@@ -8,6 +8,7 @@ target_link_libraries(rtype_game_entity_sheets
     rtype_game_behaviours
     rtype_game_components
     rtype_game_entity_sheet_format
+    rtype_game_entity_content
     rtype_game_entity_sheet_texts
   PRIVATE
     rtype_engine_exceptions

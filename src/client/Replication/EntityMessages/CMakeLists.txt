@@ -12,11 +12,13 @@ target_link_libraries(rtype_client_entity_messages
     rtype_engine_time
     rtype_logging
     rtype_network_boss_status
+    rtype_network_effect_played
     rtype_network_enemy_action
     rtype_network_entity_destroyed
     rtype_network_entity_spawned
     rtype_network_game_ended
     rtype_network_game_event
+    rtype_network_level_status
     rtype_network_lobby_state
     rtype_network_message_dispatcher
     rtype_network_player_left

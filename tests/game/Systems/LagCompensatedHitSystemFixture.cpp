@@ -8,6 +8,7 @@
 #include "ComponentRegistry.hpp"
 #include "Entity.hpp"
 #include "EntityType.hpp"
+#include "HitboxParts.hpp"
 #include "LagCompensatedHitSystemTestConstants.hpp"
 #include "MissileHit.hpp"
 #include "Position.hpp"
@@ -27,6 +28,13 @@ engine::Entity LagCompensatedHitSystemFixture::enemyAt(Position position) {
   components_->add(enemy, EntityType::Enemy);
   components_->add(enemy, ENEMY_BOX);
   components_->add(enemy, ENEMY_FILTER);
+  return enemy;
+}
+
+engine::Entity LagCompensatedHitSystemFixture::tallEnemyAt(Position position) {
+  const engine::Entity enemy = enemyAt(position);
+  components_->add(enemy, HitboxParts{.boxes = {TALL_ENEMY_PARTS.begin(),
+                                                TALL_ENEMY_PARTS.end()}});
   return enemy;
 }
 

@@ -1,0 +1,4 @@
+numpy
+Pillow
+# needed only by tools/verify_ldtk.py --schema
+jsonschema

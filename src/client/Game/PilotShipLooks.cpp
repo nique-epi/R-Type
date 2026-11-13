@@ -6,9 +6,15 @@
 #include "EffectTargets.hpp"
 #include "Entity.hpp"
 #include "PilotColor.hpp"
+#include "PilotHull.hpp"
 #include "PilotShips.hpp"
 #include "PlayerLooks.hpp"
+#include "ShipHullSpriteConstants.hpp"
+#include "ShipHulls.hpp"
 #include "ShipLook.hpp"
+#include "Sprite.hpp"
+#include "SpriteAnimation.hpp"
+#include "SpriteFrame.hpp"
 #include "WornLook.hpp"
 
 namespace rtype::client {
@@ -23,6 +29,24 @@ identifiers::ShipLook lookOfPilotColor(
       static_cast<std::uint8_t>(playerNumberOfPilotColor(pilotColor));
   const identifiers::ShipLook* const found = network::findLook(looks, number);
   return found == nullptr ? identifiers::ShipLook{} : *found;
+}
+
+/** @brief Makes @p ship show the hull of @p pilot: its sprite reads the hull
+ * sheet and its animation plays the row of that hull and color. Nothing for
+ * the standard hull, which keeps the frames of its entity sheet. */
+void showHull(engine::ComponentRegistry& components, engine::Entity ship,
+              PilotHull pilot) {
+  const std::span<const game::SpriteFrame> frames = hullFramesOf(pilot);
+  auto* const sprite = components.get<game::Sprite>(ship);
+  if (frames.empty() || sprite == nullptr) {
+    return;
+  }
+  sprite->assetId = SHIP_HULL_SHEET_ID;
+  sprite->frame = pilotShipFrameOf(pilot, sprite->frame).frame;
+  if (auto* const animation = components.get<SpriteAnimation>(ship);
+      animation != nullptr) {
+    animation->animation.frames = frames;
+  }
 }
 
 }  // namespace
@@ -42,6 +66,8 @@ void dressPilotShips(engine::ComponentRegistry& components,
     } else {
       worn->look = look;
     }
+    showHull(components, ship,
+             PilotHull{.hull = look.hull, .color = *pilotColor});
   }
 }
 

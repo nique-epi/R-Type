@@ -3,10 +3,14 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <string_view>
 
 namespace rtype::server::testing {
 
 constexpr std::uint32_t MONSTER_NETWORK_ID = 7;
+
+/** @brief An effect a sheet names. */
+constexpr std::string_view SPARK_EFFECT = "spark";
 constexpr float MONSTER_X = 100.0F;
 constexpr float MONSTER_Y = 50.0F;
 constexpr std::uint8_t SECOND_PLAYER_NUMBER = 2;
@@ -41,5 +45,11 @@ constexpr std::uint8_t BOSS_TYPE_NUMBER = 3;
 constexpr std::uint16_t BOSS_POINTS_LEFT = 200;
 constexpr std::uint16_t BOSS_FULL_POINTS = 240;
 constexpr std::uint32_t BOSS_WARNING_MILLISECONDS = 4400;
+
+/** @brief A level in the biome wreck, scrolled 240 logical units, whose
+ * scroll is paused. */
+constexpr std::string_view LEVEL_BIOME = "wreck";
+constexpr float LEVEL_SCROLL_POSITION = 240.0F;
+constexpr float PAUSED_LEVEL_SCROLL_SPEED = 0.0F;
 
 }  // namespace rtype::server::testing

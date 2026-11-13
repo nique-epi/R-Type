@@ -4,6 +4,7 @@
 #include "EnemyPhase.hpp"
 #include "EntitySheet.hpp"
 #include "EntityTypesTestConstants.hpp"
+#include "HitboxParts.hpp"
 #include "HurtBox.hpp"
 #include "HurtZone.hpp"
 #include "ShippedEntitySheets.hpp"
@@ -25,6 +26,10 @@ HurtZone someHurtZone() {
                         .activeIn = ActionKey{.attack = STRIKE_BOX_ATTACK,
                                               .phase = EnemyPhase::Strike}}},
       .beams = {}};
+}
+
+HitboxParts someHitboxParts() {
+  return HitboxParts{.boxes = {HEAD_BOX, LEGS_BOX}};
 }
 
 EntitySheet drifterWith(const std::optional<HurtZone>& zone, bool survives) {

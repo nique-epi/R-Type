@@ -12,6 +12,7 @@
 #include "LookItemTouched.hpp"
 #include "MissileHit.hpp"
 #include "MissileOwner.hpp"
+#include "PreHitCheck.hpp"
 #include "ShipContact.hpp"
 #include "ShipPilot.hpp"
 #include "Shootable.hpp"
@@ -58,9 +59,9 @@ std::optional<CollidingEntity> CollisionRules::collidingEntityOf(
 void CollisionRules::publishContactOf(CollidingEntity one,
                                       CollidingEntity other) {
   if (isAMissile(one.type)) {
-    if (isAHitOf(one, other)) {
-      events_.publish(
-          MissileHit{.missile = one.entity, .target = other.entity});
+    const MissileHit hit{.missile = one.entity, .target = other.entity};
+    if (isAHitOf(one, other) && targetLetsHit(components_, hit)) {
+      events_.publish(hit);
     }
   } else if (one.type == EntityType::Player &&
              other.type == EntityType::Enemy &&

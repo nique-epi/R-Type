@@ -80,6 +80,7 @@ add_subdirectory(server)
 add_subdirectory(storage)
 add_subdirectory(tools/MalformedDatagrams)
 add_subdirectory(tools/LoadTestBots)
+add_subdirectory(tools/ScriptBudgetBench)
 
 # The scripts of tools/network-conditions/ are POSIX shell: their checks run
 # where a shell does.

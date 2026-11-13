@@ -90,7 +90,8 @@ EndScreen::EndScreen(EndScreenParts parts,
       flashes_(parts.flashes),
       palette_(parts.palette),
       pilots_(parts.result.get().pilots),
-      outcome_(parts.result.get().outcome) {
+      outcome_(parts.result.get().outcome),
+      kopecksGained_(parts.result.get().kopecksGained) {
   taunt_ = tauntLinesOf(coverTauntOf(parts, pilots_), pilots_);
   schedule_ = flightLogScheduleOf(pilots_, taunt_);
   if (motion_ == MotionPreference::Reduced) {
@@ -187,7 +188,8 @@ FlightLogLook EndScreen::lookNow() const {
                        .motion = motion_,
                        .flashes = flashes_,
                        .palette = palette_,
-                       .outcome = outcome_};
+                       .outcome = outcome_,
+                       .kopecksGained = kopecksGained_};
 }
 
 void EndScreen::repaint() {

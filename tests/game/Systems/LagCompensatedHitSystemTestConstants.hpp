@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstddef>
 #include "CollisionBox.hpp"
 #include "LagCompensationConstants.hpp"
@@ -29,5 +30,18 @@ constexpr std::size_t PAST_THE_KEPT_TICKS_BEHIND = MAXIMUM_REWIND_TICKS + 1;
 constexpr std::size_t FAR_CLAIM_TICKS_BEHIND = MAXIMUM_REWIND_TICKS + 8;
 constexpr std::size_t TICKS_GONE_BEFORE = MAXIMUM_REWIND_TICKS;
 constexpr std::size_t TICKS_GONE_AFTER = 6;
+
+/** @brief The two boxes of a tall enemy, each the box of an enemy, 200 units
+ * above and 200 below its Position: an enemy at
+ * WHERE_THE_PLAYER_SAW_THE_ENEMY has its lower box on
+ * WHERE_ITS_LOWER_BOX_IS, and nothing from y 148 to 452, where a missile of
+ * 24 units on its Position flies through. */
+constexpr float TALL_ENEMY_PART_DISTANCE = 200.0F;
+constexpr std::array TALL_ENEMY_PARTS{
+    CollisionBox{
+        .width = 96.0F, .height = 96.0F, .offsetY = -TALL_ENEMY_PART_DISTANCE},
+    CollisionBox{
+        .width = 96.0F, .height = 96.0F, .offsetY = TALL_ENEMY_PART_DISTANCE}};
+constexpr Position WHERE_ITS_LOWER_BOX_IS{.x = 500.0F, .y = 500.0F};
 
 }  // namespace rtype::game::testing

@@ -14,6 +14,7 @@
 #include "HurtZone.hpp"
 #include "MotionSheet.hpp"
 #include "PilotSheet.hpp"
+#include "SheetVisualNames.hpp"
 #include "VolleySheet.hpp"
 
 namespace rtype::game {
@@ -37,8 +38,12 @@ struct EntitySheet {
   /** @brief The collision layer it lies in and the layers it hits: which
    * contacts count. */
   CollisionSheet collision;
-  /** @brief The box it collides with, in logical units. */
+  /** @brief The box it collides with, in logical units; for a sheet that
+   * lists several boxes, the rectangle that encloses them. */
   CollisionBox hitbox{};
+  /** @brief The boxes it collides with when its sheet lists them, which
+   * become its HitboxParts; empty for a body of one box. */
+  std::vector<CollisionBox> hitboxParts;
   /** @brief How a direction of its Intent moves it. */
   MotionSheet motion{};
   /** @brief The behaviour that steers it; nothing for a body a player steers.
@@ -70,6 +75,9 @@ struct EntitySheet {
    * ship looks (the position of its name plus one); nothing for a body of
    * another side than look_item. */
   std::optional<std::uint8_t> lookItem{std::nullopt};
+  /** @brief The effects and the looks its `[appearance]` names, which a
+   * script of a body of this type may ask the client to draw. */
+  SheetVisualNames visualNames;
 };
 
 }  // namespace rtype::game

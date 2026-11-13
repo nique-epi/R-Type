@@ -20,7 +20,9 @@
 #include "ScreenAssetsTestConstants.hpp"
 #include "ScreenConstants.hpp"
 #include "SectorMapSpriteConstants.hpp"
+#include "ShipHullSpriteConstants.hpp"
 #include "ShipLookSpriteConstants.hpp"
+#include "ShopSpriteConstants.hpp"
 
 using rtype::client::AssetLibrary;
 using rtype::client::AssetLoadingStep;
@@ -39,7 +41,11 @@ using rtype::client::PLUG_ICON_ID;
 using rtype::client::PROFESSOR_SHEET_ID;
 using rtype::client::REGULAR_FONT_ID;
 using rtype::client::SECTOR_MAP_SHEET_ID;
+using rtype::client::SHIP_HULL_SHEET_ID;
 using rtype::client::SHIP_LOOK_SHEET_ID;
+using rtype::client::SHOP_FRONT_ID;
+using rtype::client::SHOP_KEEPER_SHEET_ID;
+using rtype::client::SHOP_SCENE_ID;
 using rtype::client::SMALL_FONT_ID;
 using rtype::client::titleAssets;
 using rtype::client::withEntitySheets;
@@ -190,10 +196,11 @@ TEST(ScreenAssets, AGameKeepsEveryTextureOfTheTitle) {
  */
 TEST(ScreenAssets, TheIntroLoadsTheTitleAndTheEffectSheet) {
   EXPECT_THAT(introAssets().textures,
-              UnorderedElementsAre(LOGO_ID, ENTITY_SHEET_ID, HUD_SHEET_ID,
-                                   PROFESSOR_SHEET_ID, LEADERBOARD_SHEET_ID,
-                                   SHIP_LOOK_SHEET_ID, SECTOR_MAP_SHEET_ID,
-                                   EFFECT_SHEET_ID));
+              UnorderedElementsAre(
+                  LOGO_ID, ENTITY_SHEET_ID, HUD_SHEET_ID, PROFESSOR_SHEET_ID,
+                  LEADERBOARD_SHEET_ID, SHIP_LOOK_SHEET_ID, SHIP_HULL_SHEET_ID,
+                  SECTOR_MAP_SHEET_ID, SHOP_SCENE_ID, SHOP_KEEPER_SHEET_ID,
+                  SHOP_FRONT_ID, EFFECT_SHEET_ID));
 }
 
 /**

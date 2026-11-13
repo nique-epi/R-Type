@@ -24,7 +24,8 @@ NumberedEntityType typeOf(const SheetText& sheet) {
   return NumberedEntityType{
       .name = sheet.name,
       .side = SIDES.at(engine::choiceAt(gameplay, SIDE_KEY, SIDE_NAMES)),
-      .hitbox = hitboxOf(gameplay)};
+      .hitbox = hitboxOf(gameplay),
+      .hitboxParts = hitboxPartsOf(gameplay)};
 }
 
 }  // namespace

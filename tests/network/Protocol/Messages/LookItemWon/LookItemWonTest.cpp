@@ -16,12 +16,12 @@ TEST(LookItemWon, EncodesTheItemInOneByte) {
 }
 
 /**
- * Given the last item of the catalog
+ * Given the last accessory of the catalog
  * When it is encoded then decoded
  * Then the decoded message equals the original
  */
 TEST(LookItemWon, DecodesWhatItEncoded) {
-  const LookItemWon won{.item = 10};
+  const LookItemWon won{.item = 25};
 
   EXPECT_EQ(decodeMessage<LookItemWon>(encodeMessage(won)), won);
 }
@@ -38,13 +38,24 @@ TEST(LookItemWon, RefusesNoItem) {
 }
 
 /**
- * Given a payload whose item is 11, one more than the catalog holds
+ * Given a payload whose item is 31, one more than the catalog holds
  * When it is decoded
  * Then it is refused
  */
 TEST(LookItemWon, RefusesANumberAboveTheCatalog) {
   EXPECT_THROW(
-      static_cast<void>(decodeMessage<LookItemWon>(byteSequence({0x0B}))),
+      static_cast<void>(decodeMessage<LookItemWon>(byteSequence({0x1F}))),
+      InvalidFieldValueException);
+}
+
+/**
+ * Given a payload whose item is 26, the first hull
+ * When it is decoded
+ * Then it is refused: a hull is never won in a game
+ */
+TEST(LookItemWon, RefusesAHull) {
+  EXPECT_THROW(
+      static_cast<void>(decodeMessage<LookItemWon>(byteSequence({0x1A}))),
       InvalidFieldValueException);
 }
 

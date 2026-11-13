@@ -52,4 +52,21 @@ constexpr std::array<game::SpriteFrame, Count> framesInRow(
   return frames;
 }
 
+/**
+ * @returns `Rows` rows of `Count` frames each: the first row starts at
+ * `first`, each next one frameUnder() the row before it, as a sheet whose
+ * rows all hold frames of one size lays them out.
+ */
+template <std::size_t Rows, std::size_t Count>
+constexpr std::array<std::array<game::SpriteFrame, Count>, Rows> rowsOfFrames(
+    game::SpriteFrame first, int spacing) {
+  std::array<std::array<game::SpriteFrame, Count>, Rows> rows{};
+  game::SpriteFrame start = first;
+  for (std::size_t row = 0; row < Rows; ++row) {
+    rows[row] = framesInRow<Count>(start, spacing);
+    start = frameUnder(start, spacing);
+  }
+  return rows;
+}
+
 }  // namespace rtype::client

@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <string_view>
 #include "ActionKey.hpp"
+#include "CollisionBox.hpp"
 #include "EnemyPhase.hpp"
 
 namespace rtype::game::testing {
@@ -17,6 +18,13 @@ constexpr float STRIKE_BOX_OFFSET_Y = 16.0F;
 constexpr float STRIKE_BOX_WIDTH = 40.0F;
 constexpr float STRIKE_BOX_HEIGHT = 24.0F;
 constexpr std::uint8_t STRIKE_BOX_ATTACK = 3;
+
+/** @brief The two boxes of a sheet that lists several: a head of 40 by 40,
+ * 60 units above its Position, and legs of 80 by 30, 50 below it. */
+constexpr CollisionBox HEAD_BOX{
+    .width = 40.0F, .height = 40.0F, .offsetY = -60.0F};
+constexpr CollisionBox LEGS_BOX{
+    .width = 80.0F, .height = 30.0F, .offsetY = 50.0F};
 
 /** @brief The action a fragile sheet of the tests is fragile in. */
 constexpr ActionKey STUNNED_IN_ATTACK_ZERO{.attack = 0,

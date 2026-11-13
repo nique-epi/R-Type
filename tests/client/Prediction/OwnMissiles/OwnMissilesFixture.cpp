@@ -5,6 +5,7 @@
 #include "Entity.hpp"
 #include "EntityType.hpp"
 #include "FixedEntityTypeSourceConstants.hpp"
+#include "HitboxParts.hpp"
 #include "OwnMissiles.hpp"
 #include "OwnMissilesTestConstants.hpp"
 #include "Position.hpp"
@@ -65,6 +66,17 @@ void OwnMissilesFixture::enemyAt(game::Position position) {
   components_.add(enemy, position);
   components_.add(enemy, game::EntityType::Enemy);
   components_.add(enemy, BYDO_BOX);
+  components_.add(enemy, game::Sprite{});
+}
+
+void OwnMissilesFixture::enemyOfTwoBoxesAt(game::Position position) {
+  const engine::Entity enemy = entities_.create();
+  components_.add(enemy, position);
+  components_.add(enemy, game::EntityType::Enemy);
+  components_.add(enemy, BYDO_BOX);
+  components_.add(enemy,
+                  game::HitboxParts{.boxes = {TWO_BOX_ENEMY_PARTS.begin(),
+                                              TWO_BOX_ENEMY_PARTS.end()}});
   components_.add(enemy, game::Sprite{});
 }
 

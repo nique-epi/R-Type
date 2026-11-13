@@ -11,6 +11,7 @@
 #include <type_traits>
 #include <utility>
 #include <variant>
+#include <vector>
 #include "ActionSet.hpp"
 #include "AnimationSystem.hpp"
 #include "ArrivalReveal.hpp"
@@ -21,6 +22,8 @@
 #include "BossStatus.hpp"
 #include "ChatWindow.hpp"
 #include "DepartureFeed.hpp"
+#include "EffectPlayed.hpp"
+#include "EffectPlayer.hpp"
 #include "EffectPreferences.hpp"
 #include "EffectSpawner.hpp"
 #include "EnemyAction.hpp"
@@ -29,6 +32,7 @@
 #include "EntityMessage.hpp"
 #include "EntityReplicator.hpp"
 #include "EntityReplicatorParts.hpp"
+#include "FinalPilot.hpp"
 #include "FinalRanking.hpp"
 #include "FlashPreference.hpp"
 #include "GameEnded.hpp"
@@ -45,6 +49,8 @@
 #include "ISky.hpp"
 #include "InterpolationClock.hpp"
 #include "InterpolationTally.hpp"
+#include "KopecksReward.hpp"
+#include "LevelStatus.hpp"
 #include "Logger.hpp"
 #include "MissionBanner.hpp"
 #include "MissionStart.hpp"
@@ -61,6 +67,7 @@
 #include "PositionInterpolation.hpp"
 #include "ScoreBoard.hpp"
 #include "ShipFlightSystem.hpp"
+#include "SkyLevel.hpp"
 // NOLINTNEXTLINE(misc-include-cleaner)
 #include "GameScreenIdConstants.hpp"
 #include "MenuScreenIdConstants.hpp"
@@ -121,14 +128,25 @@ void traceHeldActions(const logging::Logger& logger, const ActionSet& held,
 struct EntityMessageRoutes {
   std::reference_wrapper<EntityReplicator> replicator;
   std::reference_wrapper<EnemyActionPlayer> enemyActions;
+  std::reference_wrapper<EffectPlayer> namedEffects;
   std::reference_wrapper<BossPresentation> boss;
   std::reference_wrapper<ScoreBoard> scoreBoard;
   std::reference_wrapper<DepartureFeed> departures;
+  std::reference_wrapper<ISky> sky;
 };
+
+/** @returns What the sky shows of the level @p status tells. */
+SkyLevel skyLevelOf(const network::LevelStatus& status) {
+  return SkyLevel{.biome = status.biome,
+                  .scrollPosition = status.scrollPosition,
+                  .scrollSpeed = status.scrollSpeed};
+}
 
 /** @brief Hands an entity message to whoever it goes to: a PlayerLeft to the
  * board and the feed, an EnemyAction to the enemy it animates and to the boss,
- * a BossStatus to the boss, anything else but GameEnded to the replicator. */
+ * an EffectPlayed to the player of the named effects, a BossStatus to the
+ * boss, a LevelStatus to the sky, anything else but GameEnded to the
+ * replicator. */
 void routeEntityMessage(const EntityMessageRoutes& routes,
                         const EntityMessage& message) {
   std::visit(
@@ -140,8 +158,12 @@ void routeEntityMessage(const EntityMessageRoutes& routes,
         } else if constexpr (std::is_same_v<Announced, network::EnemyAction>) {
           routes.enemyActions.get().apply(announced);
           routes.boss.get().apply(announced);
+        } else if constexpr (std::is_same_v<Announced, network::EffectPlayed>) {
+          routes.namedEffects.get().apply(announced);
         } else if constexpr (std::is_same_v<Announced, network::BossStatus>) {
           routes.boss.get().apply(announced);
+        } else if constexpr (std::is_same_v<Announced, network::LevelStatus>) {
+          routes.sky.get().showLevel(skyLevelOf(announced));
         } else if constexpr (!std::is_same_v<Announced, network::GameEnded>) {
           routes.replicator.get().apply(announced);
         }
@@ -178,6 +200,7 @@ GameScreen::GameScreen(GameScreenParts parts,
       entityLayer_(std::move(entityLayer)),
       statusCanvas_(std::move(statusCanvas)),
       settings_(&parts.settings.get()),
+      settingsService_(&parts.settingsService.get()),
       effects_(entities_, components_, std::random_device{}()),
       feedback_(EntityFeedback{.effects = effects_, .sounds = parts.sounds}),
       prediction_(parts.connection.get().status().playerNumber,
@@ -193,6 +216,7 @@ GameScreen::GameScreen(GameScreenParts parts,
           .ownPlayerNumber = parts.connection.get().status().playerNumber,
           .ownMissiles = &prediction_.missiles()}),
       enemyActions_(components_),
+      namedEffects_(effects_.tools()),
       boss_(effects_.tools(), parts.sounds, parts.audio),
       playerCommands_(true, parts.settings.get().keys),
       inputs_(&parts.inputs.get()),
@@ -221,6 +245,7 @@ GameScreen::~GameScreen() {
   interpolationTally_->endGame();
   sky_->setSpeedFactor(1.0F);
   sky_->setOffset({});
+  sky_->showLevel(SkyLevel{});
 }
 
 void GameScreen::handleEvent(const sf::Event& event) {
@@ -278,9 +303,11 @@ void GameScreen::applyEntityMessages() {
   }
   const EntityMessageRoutes routes{.replicator = replicator_,
                                    .enemyActions = enemyActions_,
+                                   .namedEffects = namedEffects_,
                                    .boss = boss_,
                                    .scoreBoard = scoreBoard_,
-                                   .departures = departures_};
+                                   .departures = departures_,
+                                   .sky = *sky_};
   for (const EntityMessage& message : receivedEntityMessages_) {
     routeEntityMessage(routes, message);
     if (const auto* ended = std::get_if<network::GameEnded>(&message)) {
@@ -304,9 +331,15 @@ void GameScreen::applyWorldState(const network::WorldState& state) {
 }
 
 void GameScreen::recordEnd(const network::GameEnded& ended) {
-  *result_ = GameResult{
-      .pilots = rankedPilots(finalPilotsOf(scoreBoard_.pilots(), ended)),
-      .outcome = ended.outcome};
+  std::vector<FinalPilot> pilots = rankedPilots(flyingTheirHulls(
+      finalPilotsOf(scoreBoard_.pilots(), ended), shipLooks_->playerLooks()));
+  if (!kopecksGained_.has_value()) {
+    kopecksGained_ = kopecksEarnedBy(pilots, ended.outcome);
+    creditKopecks(*settingsService_, kopecksGained_.value_or(0));
+  }
+  *result_ = GameResult{.pilots = std::move(pilots),
+                        .outcome = ended.outcome,
+                        .kopecksGained = kopecksGained_.value_or(0)};
   worldSeen_ = true;
   endedAt_ = effects_.sinceStart();
   interpolationTally_->endGame();

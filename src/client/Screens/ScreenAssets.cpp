@@ -4,6 +4,9 @@
 #include "AssetLibrary.hpp"
 #include "AssetList.hpp"
 #include "AssetLoadingStep.hpp"
+#include "Biome.hpp"
+#include "BiomeConstants.hpp"
+#include "BiomeLayer.hpp"
 #include "EffectConstants.hpp"
 #include "EntityAppearances.hpp"
 #include "EntitySpriteConstants.hpp"
@@ -14,7 +17,9 @@
 #include "ProfessorSpriteConstants.hpp"
 #include "ScreenConstants.hpp"
 #include "SectorMapSpriteConstants.hpp"
+#include "ShipHullSpriteConstants.hpp"
 #include "ShipLookSpriteConstants.hpp"
+#include "ShopSpriteConstants.hpp"
 
 namespace rtype::client {
 
@@ -38,7 +43,9 @@ AssetList interfaceAssets() {
 AssetList titleAssets() {
   return AssetList{.textures = {LOGO_ID, ENTITY_SHEET_ID, HUD_SHEET_ID,
                                 PROFESSOR_SHEET_ID, LEADERBOARD_SHEET_ID,
-                                SHIP_LOOK_SHEET_ID, SECTOR_MAP_SHEET_ID}};
+                                SHIP_LOOK_SHEET_ID, SHIP_HULL_SHEET_ID,
+                                SECTOR_MAP_SHEET_ID, SHOP_SCENE_ID,
+                                SHOP_KEEPER_SHEET_ID, SHOP_FRONT_ID}};
 }
 
 AssetList gameAssets() {
@@ -46,6 +53,11 @@ AssetList gameAssets() {
   assets.textures.emplace_back(EFFECT_SHEET_ID);
   assets.textures.emplace_back(PLUG_ICON_ID);
   assets.textures.emplace_back(FLIGHT_LOG_SHEET_ID);
+  for (const Biome& biome : BIOMES) {
+    for (const BiomeLayer& layer : biome.layers) {
+      assets.textures.emplace_back(layer.image);
+    }
+  }
   return assets;
 }
 

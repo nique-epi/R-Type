@@ -10,8 +10,10 @@ target_link_libraries(rtype_client_pilots
   PUBLIC
     rtype_client_entities
     rtype_network_game_ended
+    rtype_identifiers
     rtype_network_lobby_state
     rtype_network_player_left
+    rtype_network_player_looks
     rtype_network_protocol
 )
 

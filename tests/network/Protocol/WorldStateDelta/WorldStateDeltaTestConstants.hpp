@@ -19,6 +19,9 @@ constexpr std::size_t ENTITIES_IN_A_LIST = 5;
 constexpr std::uint32_t MOVED_ENTITY_ID = 2;
 constexpr std::uint32_t VANISHED_ENTITY_ID = 4;
 
+/** @brief A look the entities of such a list do not show. */
+constexpr std::uint8_t OTHER_LOOK = 3;
+
 /** @brief The id of an entity such a list lacks. */
 constexpr std::uint32_t NEW_ENTITY_ID = 9;
 

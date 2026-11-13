@@ -14,6 +14,7 @@
 #include "GameException.hpp"
 #include "Instances/GameInstanceTestConstants.hpp"
 #include "JournalFile.hpp"
+#include "LogLevel.hpp"
 #include "Logger.hpp"
 #include "PlayfieldConstants.hpp"
 #include "Position.hpp"
@@ -21,6 +22,7 @@
 #include "ShippedEntitySheets.hpp"
 #include "SpawningConstants.hpp"
 #include "WaveEntryPosition.hpp"
+#include "WavePlan.hpp"
 #include "WavePlanFixtures.hpp"
 #include "WaveSpawner.hpp"
 #include "WaveSpawnerScene.hpp"
@@ -44,7 +46,9 @@ using rtype::logging::Logger;
 using rtype::logging::LogLevel;
 using rtype::network::EntitySpawned;
 using rtype::server::EmptyEnemyCycleException;
+using rtype::server::WavePlan;
 using rtype::server::WaveSpawner;
+using rtype::server::testing::EVERY_THIRD_WAVE;
 using rtype::server::testing::FIRST_PLAYER;
 using rtype::server::testing::FIRST_WAVE_LINE_TEXT;
 using rtype::server::testing::HALF_OF_THE_HEIGHT;
@@ -451,4 +455,56 @@ TEST(WaveSpawner, ALookItemDoesNotHoldAWaveOpen) {
   WaveSpawnerScene::runTicks(spawner, TICKS_OF_A_PAUSE);
 
   EXPECT_GT(scene.spawnsSent().size(), before);
+}
+
+/**
+ * Given a spawner whose plan brings the crown, then the party hat, with each
+ * third wave, playing until its fifth wave began with the sky cleared at each
+ * tick
+ * When the look items it announced are listed
+ * Then there is one, the crown: the third wave alone brought one
+ */
+TEST(WaveSpawner, ALookItemComesWithEachThirdWave) {
+  WaveSpawnerScene scene;
+  scene.connect(FIRST_PLAYER);
+  WavePlan plan = wavePlanWithLookItems(TEST_LOOK_ITEMS);
+  plan.lookItemEvery = EVERY_THIRD_WAVE;
+  WaveSpawner spawner = scene.makeSpawnerWith(SPAWNER_SEED, plan);
+
+  for (std::size_t tick = 0; tick < TICKS_OF_FOUR_WAVES; ++tick) {
+    WaveSpawnerScene::runTicks(spawner, 1);
+    scene.clearTheSky();
+  }
+
+  EXPECT_EQ(spawnsOfType(scene.spawnsSent(),
+                         shippedEntitySheets().named(LOOK_CROWN_SHEET).number)
+                .size(),
+            1U);
+  EXPECT_TRUE(
+      spawnsOfType(scene.spawnsSent(),
+                   shippedEntitySheets().named(LOOK_PARTY_HAT_SHEET).number)
+          .empty());
+}
+
+/**
+ * Given a spawner on another seed, whose plan brings the crown and the party
+ * hat, its first wave over
+ * When the second wave begins
+ * Then the party hat comes first: the seed gives where the turn starts
+ */
+TEST(WaveSpawner, TheSeedGivesTheFirstLookItem) {
+  WaveSpawnerScene scene;
+  scene.connect(FIRST_PLAYER);
+  WaveSpawner spawner = scene.makeSpawnerWith(
+      OTHER_SPAWNER_SEED, wavePlanWithLookItems(TEST_LOOK_ITEMS));
+  WaveSpawnerScene::runTicks(spawner, TICKS_TO_THE_WHOLE_FIRST_WAVE);
+  scene.clearTheSky();
+
+  WaveSpawnerScene::runTicks(spawner, 1);
+
+  EXPECT_EQ(
+      spawnsOfType(scene.spawnsSent(),
+                   shippedEntitySheets().named(LOOK_PARTY_HAT_SHEET).number)
+          .size(),
+      1U);
 }

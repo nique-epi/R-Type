@@ -1,7 +1,9 @@
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <string_view>
+#include "CollisionBox.hpp"
 #include "ShipGun.hpp"
 
 namespace rtype::client::testing {
@@ -15,9 +17,13 @@ constexpr std::uint8_t TYPE_WITHOUT_APPEARANCE_NUMBER = 2;
 constexpr std::uint8_t NUMBER_PAST_THE_TABLE = 3;
 
 /** @brief The box the client's own content of the tests gives
- * LOOKED_UP_TYPE_NAME, and the gun of its ships. */
+ * LOOKED_UP_TYPE_NAME, the two boxes it lists for it, the upper half 48 wide
+ * and the lower half 96 wide, and the gun of its ships. */
 constexpr float LOOKED_UP_BOX_WIDTH = 96.0F;
 constexpr float LOOKED_UP_BOX_HEIGHT = 48.0F;
+constexpr std::array LOOKED_UP_BOXES{
+    game::CollisionBox{.width = 48.0F, .height = 24.0F, .offsetY = -12.0F},
+    game::CollisionBox{.width = 96.0F, .height = 24.0F, .offsetY = 12.0F}};
 constexpr game::ShipGun LOOKED_UP_SHIP_GUN{.shipType = 0,
                                            .projectileType = 0,
                                            .intervalTicks = 20,

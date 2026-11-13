@@ -22,8 +22,9 @@ class AssetLibrary;
  * player enters it: those of the title, kept whole so a title built after a
  * game opens without a loading screen, which would close what is pushed over it
  * when it gives way; then the effect sheet, the plug icon of the status band,
- * and the sheet of the flight log, so the end screen opens without loading; the
- * end screen keeps them all, so the next game opens without loading too. */
+ * the sheet of the flight log, so the end screen opens without loading, and
+ * the layers of the decor of every biome (see BIOMES); the end screen keeps
+ * them all, so the next game opens without loading too. */
 [[nodiscard]] AssetList gameAssets();
 
 /**

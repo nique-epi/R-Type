@@ -10,6 +10,7 @@
 #include "SoundConstants.hpp"
 
 using rtype::client::PLAYER_SHOT_SOUND_ID;
+using rtype::client::testing::ENEMY_WHOSE_LOWER_BOX_IS_AT_THE_MUZZLE;
 using rtype::client::testing::FIRING_INPUT;
 using rtype::client::testing::INPUT_STILL_WAITING_FOR_IT;
 using rtype::client::testing::INPUT_THAT_REFUSES_THE_FIRST_SHOT;
@@ -251,4 +252,36 @@ TEST_F(OwnMissilesFixture, TheShotAfterAShiftedOneIsMovedNotFiredAgain) {
 
   EXPECT_EQ(drawnMissiles().size(), 2U);
   EXPECT_EQ(std::ranges::count(sounds().played(), PLAYER_SHOT_SOUND_ID), 2);
+}
+
+/**
+ * Given a missile drawn on the lower box of an enemy of two boxes, 200 units
+ * below the Position of that enemy
+ * When the missiles test what they touch
+ * Then the missile is gone
+ */
+TEST_F(OwnMissilesFixture, AMissileThatTouchesABoxOfAnEnemyIsGone) {
+  fireAt(FIRING_INPUT, SHIP_WHEN_IT_FIRES);
+  enemyOfTwoBoxesAt(ENEMY_WHOSE_LOWER_BOX_IS_AT_THE_MUZZLE);
+
+  missiles().touchEnemies();
+
+  EXPECT_THAT(drawnMissiles(), IsEmpty());
+}
+
+/**
+ * Given a missile drawn on the Position of an enemy of two boxes, between its
+ * boxes
+ * When the missiles test what they touch
+ * Then the missile flies on: the enemy is touched on its boxes only
+ */
+TEST_F(OwnMissilesFixture, AMissileBetweenTheBoxesOfAnEnemyFliesOn) {
+  fireAt(FIRING_INPUT, SHIP_WHEN_IT_FIRES);
+  enemyOfTwoBoxesAt(MISSILE_AT_THE_MUZZLE);
+
+  missiles().touchEnemies();
+
+  ASSERT_EQ(drawnMissiles().size(), 1U);
+  EXPECT_FLOAT_EQ(drawnMissiles().front().x, MISSILE_AT_THE_MUZZLE.x);
+  EXPECT_FLOAT_EQ(drawnMissiles().front().y, MISSILE_AT_THE_MUZZLE.y);
 }

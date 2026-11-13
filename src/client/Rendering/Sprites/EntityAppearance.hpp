@@ -3,6 +3,8 @@
 #include <string>
 #include <vector>
 #include "ActionAnimation.hpp"
+#include "NamedEffect.hpp"
+#include "NamedLook.hpp"
 #include "SpriteFrame.hpp"
 #include "TimeConstants.hpp"
 
@@ -12,8 +14,9 @@ namespace rtype::client {
  * @brief How the entities of one type look, as the `[appearance]` table of
  * its sheet describes it: the sprite sheet they are drawn from, the frames of
  * their idle animation, side by side in one row of that sheet, how long each
- * frame shows, the animation of each phase of each attack they have, and
- * their death when the sheet draws one.
+ * frame shows, the animation of each phase of each attack they have, their
+ * death when the sheet draws one, and the effects and looks a server may ask
+ * for by name.
  *
  * An Animation views idleFrames and the frames of an action, so an appearance
  * outlives every entity that plays it: EntityAppearances holds them for as long
@@ -42,6 +45,12 @@ struct EntityAppearance {
   std::vector<game::SpriteFrame> deathFramesWithoutFlash;
   /** @brief How long each frame of the death shows. */
   engine::Duration deathFrameDuration{};
+  /** @brief The effects of `[appearance.effects]`, in the order of their
+   * names; none when the sheet names none. */
+  std::vector<NamedEffect> effects;
+  /** @brief The looks of `[appearance.looks]`, in the order of their names:
+   * the look numbered n (game::lookNumberOf()) is looks[n - 1]. */
+  std::vector<NamedLook> looks;
 };
 
 }  // namespace rtype::client

@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <string_view>
 #include "SipHash.hpp"
+#include "WavePlanConstants.hpp"
 #include "WholeNumberRange.hpp"
 
 namespace rtype::server {
@@ -19,6 +20,13 @@ constexpr std::string_view DIFFICULTY_TABLE_KEY = "difficulty";
  */
 constexpr std::string_view ENEMIES_KEY = "enemies";
 constexpr std::string_view LOOK_ITEMS_KEY = "look_items";
+/** @brief The optional key of a difficulty that spaces its look items: one
+ * comes with each wave whose number is a multiple of it, never with the
+ * first, from 1 to MOST_WAVES_IN_A_LEVEL; DEFAULT_LOOK_ITEM_EVERY when left
+ * out. */
+constexpr std::string_view LOOK_ITEM_EVERY_KEY = "look_item_every";
+constexpr std::int64_t DEFAULT_LOOK_ITEM_EVERY =
+    static_cast<std::int64_t>(LOOK_ITEM_EVERY_WAVE);
 constexpr std::string_view FIRST_WAVE_BYDOS_KEY = "first_wave_bydos";
 constexpr std::string_view BYDOS_ADDED_PER_WAVE_KEY = "bydos_added_per_wave";
 constexpr std::string_view FIRST_SPAWN_INTERVAL_KEY = "first_spawn_interval_ms";
@@ -42,13 +50,14 @@ constexpr int DEFAULT_BOSS_HEALTH_PERCENT = 100;
 
 /**
  * @brief Every key the root of a waves file may hold, and every key a
- * difficulty may hold; all are required but `boss` and
- * `boss_health_percent`. Any other key is refused,
- * so a misspelt key never goes unnoticed.
+ * difficulty may hold; all are required but `boss`, `boss_health_percent`,
+ * `look_items` and `look_item_every`. Any other key is refused, so a misspelt
+ * key never goes unnoticed.
  */
 constexpr std::array ROOT_KEYS{DIFFICULTY_TABLE_KEY};
 constexpr std::array WAVE_PLAN_KEYS{ENEMIES_KEY,
                                     LOOK_ITEMS_KEY,
+                                    LOOK_ITEM_EVERY_KEY,
                                     FIRST_WAVE_BYDOS_KEY,
                                     BYDOS_ADDED_PER_WAVE_KEY,
                                     FIRST_SPAWN_INTERVAL_KEY,
@@ -98,6 +107,8 @@ constexpr engine::WholeNumberRange SPAWN_INTERVAL_CUT_RANGE{
 constexpr engine::WholeNumberRange WAVE_PAUSE_RANGE{
     .lowest = 0, .highest = LONGEST_WAVE_FILE_MILLISECONDS};
 constexpr engine::WholeNumberRange LEVEL_WAVES_RANGE{
+    .lowest = 1, .highest = MOST_WAVES_IN_A_LEVEL};
+constexpr engine::WholeNumberRange LOOK_ITEM_EVERY_RANGE{
     .lowest = 1, .highest = MOST_WAVES_IN_A_LEVEL};
 
 /**

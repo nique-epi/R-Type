@@ -15,6 +15,7 @@
 #include "ISoundPlayer.hpp"
 #include "IWaitingRoom.hpp"
 #include "InterpolationTally.hpp"
+#include "SettingsService.hpp"
 
 namespace rtype::client {
 
@@ -33,6 +34,9 @@ struct GameScreenParts {
    * of the controls, and whether effects reduce their flashes, read at each
    * update. */
   std::reference_wrapper<const PlayerSettings> settings;
+  /** @brief Changes and saves the settings, which must outlive the screen:
+   * the end of a game adds what it earned to the balance of the player. */
+  std::reference_wrapper<SettingsService> settingsService;
   /** @brief Where the actions held go to the server, which must outlive the
    * screen. */
   std::reference_wrapper<IPlayerInputLink> inputs;

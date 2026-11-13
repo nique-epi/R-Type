@@ -17,6 +17,7 @@
 #include "EntityType.hpp"
 #include "EntityTypeConstants.hpp"
 #include "FixedEntityTypeSourceConstants.hpp"
+#include "HitboxParts.hpp"
 #include "LastListedTicksTestConstants.hpp"
 #include "NetworkIdentity.hpp"
 #include "PilotTestConstants.hpp"
@@ -66,12 +67,15 @@ using rtype::client::testing::LAST_KEPT_TICK;
 using rtype::client::testing::listed;
 using rtype::client::testing::LISTING_TICK;
 using rtype::client::testing::LOOK_ITEM_ID;
+using rtype::client::testing::NAMED_LOOK;
 using rtype::client::testing::NEWER_TICK;
 using rtype::client::testing::NO_HISTORY_POSITION;
 using rtype::client::testing::NUMBER_OF_NO_TYPE;
+using rtype::client::testing::OLDER_LOOK;
 using rtype::client::testing::OLDER_TICK;
 using rtype::client::testing::OWN_PLAYER;
 using rtype::client::testing::ownMissileSpawned;
+using rtype::client::testing::partsOfThe;
 using rtype::client::testing::pilotColorOfThe;
 using rtype::client::testing::PLAYER_MISSILE_ID;
 using rtype::client::testing::PLAYER_MISSILE_POSITION;
@@ -88,21 +92,26 @@ using rtype::client::testing::secondPilotFlying;
 using rtype::client::testing::SHIP_ID;
 using rtype::client::testing::SHIP_POSITION;
 using rtype::client::testing::SHIP_TYPE_NUMBER;
+using rtype::client::testing::shownLookOf;
 using rtype::client::testing::spawned;
 using rtype::client::testing::speedLineColors;
 using rtype::client::testing::stateListing;
 using rtype::client::testing::stateListingPlayers;
 using rtype::client::testing::TICK_BETWEEN_THE_LISTINGS;
+using rtype::client::testing::TWO_BOX_ENEMY_PARTS;
+using rtype::client::testing::TWO_BOX_ENEMY_TYPE_NUMBER;
 using rtype::client::testing::UNANNOUNCED_ID;
 using rtype::client::testing::WEAVER_TYPE_NUMBER;
 using rtype::engine::Entity;
 using rtype::game::CollisionBox;
 using rtype::game::EntityType;
+using rtype::game::HitboxParts;
 using rtype::game::NetworkIdentity;
 using rtype::identifiers::NO_ENTITY_ID;
 using rtype::identifiers::NO_ENTITY_TYPE;
 using rtype::network::WorldState;
 using ::testing::ElementsAre;
+using ::testing::ElementsAreArray;
 using ::testing::IsEmpty;
 using ::testing::UnorderedElementsAre;
 
@@ -170,6 +179,34 @@ TEST_F(EntityReplicatorFixture, GivesAnEntityTheBoxOfItsType) {
   ASSERT_TRUE(box.has_value());
   EXPECT_FLOAT_EQ(box.value_or(CollisionBox{}).width, BYDO_BOX.width);
   EXPECT_FLOAT_EQ(box.value_or(CollisionBox{}).height, BYDO_BOX.height);
+}
+
+/**
+ * Given a replicator that has applied nothing
+ * When an enemy whose type lists two boxes is announced
+ * Then it carries those two boxes, which the missiles of the player are
+ * tested against
+ */
+TEST_F(EntityReplicatorFixture, GivesAnEntityTheBoxesItsTypeLists) {
+  replicator().apply(
+      spawned(BYDO_ID, TWO_BOX_ENEMY_TYPE_NUMBER, BYDO_POSITION));
+
+  const std::optional<HitboxParts> parts =
+      partsOfThe(components(), EntityType::Enemy);
+  ASSERT_TRUE(parts.has_value());
+  EXPECT_THAT(parts.value_or(HitboxParts{}).boxes,
+              ElementsAreArray(TWO_BOX_ENEMY_PARTS));
+}
+
+/**
+ * Given a replicator that has applied nothing
+ * When a Bydo, whose type has one box, is announced
+ * Then it carries no HitboxParts
+ */
+TEST_F(EntityReplicatorFixture, GivesAnEntityOfOneBoxNoHitboxParts) {
+  replicator().apply(spawned(BYDO_ID, DRIFTER_TYPE_NUMBER, BYDO_POSITION));
+
+  EXPECT_FALSE(partsOfThe(components(), EntityType::Enemy).has_value());
 }
 
 /**
@@ -258,6 +295,39 @@ TEST_F(EntityReplicatorFixture, RecordsTheFirstSampleOfAnEntityAStateCreates) {
   ASSERT_TRUE(position.has_value());
   EXPECT_FLOAT_EQ(position.value_or(NO_HISTORY_POSITION).x, FIRST_POSITION.x);
   EXPECT_FLOAT_EQ(position.value_or(NO_HISTORY_POSITION).y, FIRST_POSITION.y);
+}
+
+/**
+ * Given a Bydo the client has
+ * When a WorldState lists it with a look
+ * Then the Bydo shows that look
+ */
+TEST_F(EntityReplicatorFixture, ShowsTheLookAStateNames) {
+  replicator().apply(spawned(BYDO_ID, DRIFTER_TYPE_NUMBER, FIRST_POSITION));
+  rtype::network::EntityState bydo =
+      listed(BYDO_ID, DRIFTER_TYPE_NUMBER, FIRST_POSITION);
+  bydo.look = NAMED_LOOK;
+
+  replicator().apply(stateListing(APPLIED_TICK, {bydo}));
+
+  EXPECT_EQ(shownLookOf(components(), BYDO_ID), std::optional{NAMED_LOOK});
+}
+
+/**
+ * Given a Bydo a WorldState created with a look
+ * When an older WorldState arrives late, with another look
+ * Then the Bydo keeps the look of the newer state
+ */
+TEST_F(EntityReplicatorFixture, KeepsTheLookOfTheNewerState) {
+  rtype::network::EntityState bydo =
+      listed(BYDO_ID, DRIFTER_TYPE_NUMBER, FIRST_POSITION);
+  bydo.look = NAMED_LOOK;
+  replicator().apply(stateListing(APPLIED_TICK, {bydo}));
+  bydo.look = OLDER_LOOK;
+
+  replicator().apply(stateListing(OLDER_TICK, {bydo}));
+
+  EXPECT_EQ(shownLookOf(components(), BYDO_ID), std::optional{NAMED_LOOK});
 }
 
 /**

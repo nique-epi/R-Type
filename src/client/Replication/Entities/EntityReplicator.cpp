@@ -23,6 +23,7 @@
 #include "EntityTypeLook.hpp"
 #include "FlashGate.hpp"
 #include "GameEvent.hpp"
+#include "HitboxParts.hpp"
 #include "IEntityTypeSource.hpp"
 #include "ISoundPlayer.hpp"
 #include "NetworkEntityTable.hpp"
@@ -35,6 +36,7 @@
 #include "ProtocolConstants.hpp"
 #include "Reveal.hpp"
 #include "ShipFlight.hpp"
+#include "ShownLooks.hpp"
 #include "SoundConstants.hpp"
 #include "SummonConstants.hpp"
 #include "TimeConstants.hpp"
@@ -269,6 +271,11 @@ std::optional<engine::Entity> EntityReplicator::create(
       animatedSpriteOf(look->appearance.get(), look->side, announced.entityId));
   components_->add(entity, game::NetworkIdentity{announced.entityId});
   components_->add(entity, look->hitbox);
+  if (!look->hitboxParts.empty()) {
+    components_->add(entity,
+                     game::HitboxParts{.boxes = {look->hitboxParts.begin(),
+                                                 look->hitboxParts.end()}});
+  }
   components_->add(entity, AppearanceReference{&look->appearance.get()});
   entityByNetworkId_.bind(announced.entityId, entity);
   return entity;
@@ -303,10 +310,12 @@ std::vector<engine::Entity> EntityReplicator::applyEntities(
         entityByNetworkId_.find(listed.entityId);
     if (known.has_value()) {
       moveEntity(*components_, *known, sample);
+      showLook(*components_, *known, listed.look);
       lastListedTicks_.listed(listed.entityId, tick);
     } else if (const std::optional<engine::Entity> entity = create(listed);
                entity.has_value()) {
       moveEntity(*components_, *entity, sample);
+      showLook(*components_, *entity, listed.look);
       created.push_back(*entity);
       lastListedTicks_.listed(listed.entityId, tick);
     }
