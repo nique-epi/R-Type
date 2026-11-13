@@ -1,21 +1,8 @@
 #include <gtest/gtest.h>
-#include <SFML/System/Vector2.hpp>
 #include "IntegerScale.hpp"
+#include "IntegerScaleTestConstants.hpp"
 
 using rtype::client::integerScaleFactor;
-
-namespace {
-
-constexpr sf::Vector2i THREE_AND_A_THIRD_BACKGROUNDS(1600, 900);
-constexpr sf::Vector2i TWICE_THE_BACKGROUND(960, 540);
-constexpr sf::Vector2i JUST_UNDER_TWICE_THE_BACKGROUND(959, 539);
-constexpr sf::Vector2i FOUR_WIDE_THREE_HIGH(1920, 810);
-constexpr sf::Vector2i NO_SIZE(0, 0);
-constexpr unsigned int ONCE = 1;
-constexpr unsigned int TWICE = 2;
-constexpr unsigned int THREE_TIMES = 3;
-
-}  // namespace
 
 /**
  * Given a playfield 1600 x 900 pixels on screen, 3.33 times the background
