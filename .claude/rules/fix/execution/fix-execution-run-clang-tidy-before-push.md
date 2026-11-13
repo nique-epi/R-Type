@@ -76,6 +76,8 @@ A platform file such as `FineTimerResolutionWindows.cpp` is linted only by the C
 
 4. **A Win32 handle is never declared `const HANDLE`**: `HANDLE` is a typedef of `void*`, so `const` makes the pointer const, not the object, and `misc-misplaced-const` fails the Windows job, on the variable and again on each lambda that captures it by copy. Declare it `HANDLE reader = …;`, as `ChildBindingWindows.cpp` does; `.clang-tidy` asks no `const` on a pointer taken as a value. Before pushing such a file, `git grep -n 'const HANDLE' -- src` prints nothing.
 
+5. **Every operand of `<<`, `>>`, `&`, `|` or `^` in such a file is unsigned, the shift count included**: `hicpp-signed-bitwise` fails the Windows job on a signed one, and a constant declared `constexpr int` is signed. Declare a shift count `constexpr unsigned`, and widen a `DWORD` with `std::uint64_t{…}` before it is shifted. Before pushing, read each bitwise operator of the file and the type of both its operands, constants of other headers included.
+
 ### A finding the local clang-tidy does not report
 
 1. **The local run is not the CI's toolchain**: Homebrew clang-tidy 21 on libc++ here, clang-tidy 20 on libstdc++ on the CI. A file can be clean locally and fail on the CI: `cppcoreguidelines-pro-type-member-init` on `struct NavigatorCall { NavigatorRequest request; std::optional<ScreenId> screen; }` was reported by the CI only.
@@ -117,3 +119,5 @@ A platform file such as `FineTimerResolutionWindows.cpp` is linted only by the C
 - ✅ **After (right)**: both "Return value" sections read → the release only follows a granted request, its result cast to `void` with the reason → `--dump-config` shows `^::time` in `cert-err33-c` and `AllowCastToVoid: true` → push, report the file as linted by the CI only, follow the Windows job until green.
 - ❌ **Before (wrong)**: `RecordingNavigator.hpp` linted locally as a main file, exit 0, pushed → the CI fails on `pro-type-member-init` for `NavigatorCall::request`.
 - ✅ **After (right)**: every member of the new struct has a default initializer (`request{}`) before the push, whatever the local run says.
+- ❌ **Before (wrong)**: `ThisMachineWindows.cpp` joined the halves of a `FILETIME` with `std::uint64_t{time.dwHighDateTime} << FILETIME_LOW_PART_BITS`, the count a `constexpr int` → `use of a signed integer operand with a binary bitwise operator` on the Windows job.
+- ✅ **After (right)**: `constexpr unsigned FILETIME_LOW_PART_BITS = 32;`.
