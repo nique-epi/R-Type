@@ -8,10 +8,12 @@
 #include "ChoiceSelector.hpp"
 #include "KeyPress.hpp"
 #include "RecordingInterfaceCanvas.hpp"
+#include "TextMetrics.hpp"
 #include "ValueBinding.hpp"
 
 using rtype::client::BarState;
 using rtype::client::ChoiceSelector;
+using rtype::client::TextMetrics;
 using rtype::client::ValueBinding;
 using Key = sf::Keyboard::Key;
 
@@ -116,5 +118,5 @@ TEST_F(ChoiceSelectorTest, TheFirstModeHidesTheLeftArrow) {
 TEST_F(ChoiceSelectorTest, AClickOnTheBoxDoesAsEnter) {
   EXPECT_TRUE(colorMode().pointerPressed(IN_THE_BOX, COLOR_MODE_SELECTOR));
   EXPECT_EQ(mode(), 1U);
-  EXPECT_EQ(colorMode().width(), COLOR_MODE_SELECTOR.size.x);
+  EXPECT_EQ(colorMode().width(TextMetrics{}), COLOR_MODE_SELECTOR.size.x);
 }

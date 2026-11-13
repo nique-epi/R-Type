@@ -15,7 +15,7 @@ void paintFieldText(IInterfaceCanvas& canvas, const FieldText& field) {
   canvas.write(field.text, anchor,
                {.font = TextFont::Regular, .color = field.color});
   if (field.caret) {
-    canvas.fill({{anchor.x + regularTextWidth(field.text),
+    canvas.fill({{anchor.x + regularTextWidth(canvas.textMetrics(), field.text),
                   anchor.y - FIELD_CARET_OVERHANG},
                  FIELD_CARET_SIZE},
                 FIELD_CARET_COLOR);

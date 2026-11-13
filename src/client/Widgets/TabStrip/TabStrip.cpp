@@ -94,7 +94,8 @@ void TabStrip::paintTab(IInterfaceCanvas& canvas, std::size_t tab) const {
       .paint(canvas);
   const std::string& label = labels_[tab];
   canvas.write(label,
-               {centeredTextLeft(area, label), area.position.y + TAB_LABEL_TOP},
+               {centeredTextLeft(area, label, canvas.textMetrics()),
+                centeredTextTop(area, canvas.textMetrics())},
                {.font = TextFont::Regular,
                 .color = open ? OPEN_TAB_TEXT_COLOR : TAB_TEXT_COLOR});
 }

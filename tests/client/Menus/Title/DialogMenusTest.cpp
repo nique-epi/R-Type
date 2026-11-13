@@ -14,6 +14,7 @@
 #include "ScreenConstants.hpp"
 #include "ServerConnectionRequest.hpp"
 #include "SoundConstants.hpp"
+#include "TextMetrics.hpp"
 #include "WidgetConstants.hpp"
 #include "WidgetText.hpp"
 
@@ -29,6 +30,7 @@ using rtype::client::regularTextWidth;
 using rtype::client::SERVER_MAP_SCREEN;
 using rtype::client::SIDES_PER_AXIS;
 using rtype::client::SILENT_SERVER_MESSAGE;
+using rtype::client::TextMetrics;
 using rtype::client::TITLE_SCREEN;
 using ::testing::ElementsAre;
 using ::testing::IsEmpty;
@@ -218,9 +220,9 @@ TEST(DialogMenus, TheReasonsOfALostConnectionFitTheirPanel) {
   const int widestLine =
       DIALOG_SIZE.x - (SIDES_PER_AXIS * DIALOG_MESSAGE_OFFSET.x);
 
-  EXPECT_LE(regularTextWidth(SILENT_SERVER_MESSAGE), widestLine);
-  EXPECT_LE(regularTextWidth(CLOSED_SERVER_MESSAGE), widestLine);
-  EXPECT_LE(regularTextWidth(EXPELLED_MESSAGE), widestLine);
+  EXPECT_LE(regularTextWidth(TextMetrics{}, SILENT_SERVER_MESSAGE), widestLine);
+  EXPECT_LE(regularTextWidth(TextMetrics{}, CLOSED_SERVER_MESSAGE), widestLine);
+  EXPECT_LE(regularTextWidth(TextMetrics{}, EXPELLED_MESSAGE), widestLine);
 }
 
 /**

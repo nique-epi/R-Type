@@ -161,11 +161,13 @@ void paintRow(IInterfaceCanvas& canvas, const ChatRow& row, RowPlace place) {
                   .color = withAlpha(row.headColor, place.alpha),
                   .outlined = true});
   }
-  canvas.write(row.body,
-               place.topLeft + sf::Vector2i(regularTextWidth(row.head), 0),
-               {.font = TextFont::Regular,
-                .color = withAlpha(row.bodyColor, place.alpha),
-                .outlined = true});
+  canvas.write(
+      row.body,
+      place.topLeft +
+          sf::Vector2i(regularTextWidth(canvas.textMetrics(), row.head), 0),
+      {.font = TextFont::Regular,
+       .color = withAlpha(row.bodyColor, place.alpha),
+       .outlined = true});
 }
 
 void paintClosed(IInterfaceCanvas& canvas, const ChatView& view) {
@@ -229,8 +231,8 @@ void paintLabel(IInterfaceCanvas& canvas, sf::IntRect field, int top) {
       .font = TextFont::Regular, .color = CHAT_LABEL_COLOR, .outlined = true};
   canvas.write(CHAT_FIELD_LABEL, {CHAT_LEFT, top}, label);
   const int right = field.position.x + field.size.x;
-  if (CHAT_LEFT + regularTextWidth(CHAT_FIELD_LABEL) + CHAT_HINT_GAP +
-          canvas.textWidth(CHAT_FIELD_HINT, TextFont::Small) <=
+  if (CHAT_LEFT + regularTextWidth(canvas.textMetrics(), CHAT_FIELD_LABEL) +
+          CHAT_HINT_GAP + canvas.textWidth(CHAT_FIELD_HINT, TextFont::Small) <=
       right) {
     canvas.write(CHAT_FIELD_HINT, {right, top},
                  {.font = TextFont::Small,

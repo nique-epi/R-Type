@@ -6,10 +6,12 @@
 #include "KeyPress.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "Switch.hpp"
+#include "TextMetrics.hpp"
 #include "ValueBinding.hpp"
 
 using rtype::client::BarState;
 using rtype::client::Switch;
+using rtype::client::TextMetrics;
 using rtype::client::ValueBinding;
 using Key = sf::Keyboard::Key;
 
@@ -103,5 +105,5 @@ TEST_F(SwitchTest, ItWritesBothWords) {
   muteAll().paint(canvas, MUTE_ALL_SWITCH, BarState::Idle);
   EXPECT_NE(writingOf(record, "OFF"), nullptr);
   EXPECT_NE(writingOf(record, "ON"), nullptr);
-  EXPECT_EQ(muteAll().width(), MUTE_ALL_SWITCH.size.x);
+  EXPECT_EQ(muteAll().width(TextMetrics{}), MUTE_ALL_SWITCH.size.x);
 }

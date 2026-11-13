@@ -15,7 +15,9 @@ namespace rtype::client {
 LinkText::LinkText(std::string text, std::function<void()> action)
     : text_(std::move(text) + LINK_SUFFIX), action_(std::move(action)) {}
 
-int LinkText::width() const { return regularTextWidth(text_); }
+int LinkText::width(TextMetrics metrics) const {
+  return regularTextWidth(metrics, text_);
+}
 
 void LinkText::paint(IInterfaceCanvas& canvas, sf::IntRect area,
                      BarState row) const {

@@ -130,11 +130,11 @@ std::vector<HelpWord> wordsOf(std::string_view text,
 
 /** @returns How wide a word is written: its text or its keycap, then its
  * punctuation. */
-int widthOf(const HelpWord& word) {
+int widthOf(const HelpWord& word, TextMetrics metrics) {
   const int text = word.look == HelpWordLook::KeyCap
-                       ? KeyCap(word.text, KeyCap::Edge::Plain).width()
-                       : regularTextWidth(word.text);
-  return text + regularTextWidth(word.suffix);
+                       ? KeyCap(word.text, KeyCap::Edge::Plain).width(metrics)
+                       : regularTextWidth(metrics, word.text);
+  return text + regularTextWidth(metrics, word.suffix);
 }
 
 /** @returns The words in lines no wider than HELP_TEXT_WIDTH; a word wider
@@ -143,7 +143,7 @@ std::vector<std::vector<HelpWord>> linesOf(std::vector<HelpWord> words) {
   std::vector<std::vector<HelpWord>> lines;
   int used = 0;
   for (HelpWord& word : words) {
-    const int width = widthOf(word);
+    const int width = widthOf(word, TextMetrics{});
     if (lines.empty() || used + HELP_WORD_GAP + width > HELP_TEXT_WIDTH) {
       lines.emplace_back();
       used = -HELP_WORD_GAP;
@@ -342,18 +342,18 @@ int paintWord(IInterfaceCanvas& canvas, const HelpWord& word,
   if (word.look == HelpWordLook::KeyCap) {
     const KeyCap keyCap(word.text, KeyCap::Edge::Plain);
     keyCap.paint(canvas, topLeft - sf::Vector2i(0, CONTROL_TEXT_TOP));
-    width = keyCap.width();
+    width = keyCap.width(canvas.textMetrics());
   } else {
     canvas.write(word.text, topLeft,
                  word.look == HelpWordLook::Highlighted ? DIALOG_HEADING_STYLE
                                                         : DIALOG_MESSAGE_STYLE);
-    width = regularTextWidth(word.text);
+    width = regularTextWidth(canvas.textMetrics(), word.text);
   }
   if (!word.suffix.empty()) {
     canvas.write(word.suffix, topLeft + sf::Vector2i(width, 0),
                  DIALOG_MESSAGE_STYLE);
   }
-  return width + regularTextWidth(word.suffix);
+  return width + regularTextWidth(canvas.textMetrics(), word.suffix);
 }
 
 /** @brief Writes the lines of the bubble, HELP_BUBBLE_PADDING in from its
@@ -406,7 +406,8 @@ int paintKeyHint(IInterfaceCanvas& canvas, sf::Vector2i topRight,
   canvas.write(keyAndWord.second, {wordLeft, topRight.y + CONTROL_TEXT_TOP},
                HELP_FOOTER_STYLE);
   const KeyCap keyCap(std::string(keyAndWord.first), KeyCap::Edge::Plain);
-  const int keyCapLeft = wordLeft - HELP_KEY_WORD_GAP - keyCap.width();
+  const int keyCapLeft =
+      wordLeft - HELP_KEY_WORD_GAP - keyCap.width(canvas.textMetrics());
   keyCap.paint(canvas, {keyCapLeft, topRight.y});
   return keyCapLeft;
 }

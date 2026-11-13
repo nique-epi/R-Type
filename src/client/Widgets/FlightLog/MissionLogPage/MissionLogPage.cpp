@@ -155,7 +155,8 @@ void paintLines(IInterfaceCanvas& canvas, const FlightLogLook& look,
   canvas.write(
       typedPrefix(summary, lettersTypedAt(sinceOpen - DOWN_DELAY,
                                           DOWN_LETTER_TIME, summary.size())),
-      {centeredTextLeft(sf::IntRect(page, PAGE_SIZE), summary),
+      {centeredTextLeft(sf::IntRect(page, PAGE_SIZE), summary,
+                        canvas.textMetrics()),
        page.y + DOWN_LINE_TOP},
       {.font = TextFont::Regular, .color = PAPER_INK});
 }

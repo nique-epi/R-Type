@@ -31,7 +31,7 @@ class RecordingRowControl : public rtype::client::RowControl {
                       std::vector<sf::Keyboard::Key> usedKeys,
                       bool activatable);
 
-  [[nodiscard]] int width() const override;
+  [[nodiscard]] int width(rtype::client::TextMetrics metrics) const override;
   void paint(rtype::client::IInterfaceCanvas& canvas, sf::IntRect area,
              rtype::client::BarState row) const override;
   [[nodiscard]] bool isActivatable() const override;

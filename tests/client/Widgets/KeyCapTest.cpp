@@ -2,9 +2,11 @@
 #include "BackgroundColorConstants.hpp"
 #include "KeyCap.hpp"
 #include "RecordingInterfaceCanvas.hpp"
+#include "TextMetrics.hpp"
 
 using rtype::client::KeyCap;
 using rtype::client::STAR_GOLD;
+using rtype::client::TextMetrics;
 
 /**
  * Given a one-letter key and the space bar
@@ -12,8 +14,8 @@ using rtype::client::STAR_GOLD;
  * Then Q keeps the 14 pixels of the mockup and SPACE widens to its name
  */
 TEST(KeyCapTest, AKeyCapIsAtLeastFourteenPixelsWide) {
-  EXPECT_EQ(KeyCap("Q", KeyCap::Edge::Plain).width(), 14);
-  EXPECT_EQ(KeyCap("SPACE", KeyCap::Edge::Plain).width(), 46);
+  EXPECT_EQ(KeyCap("Q", KeyCap::Edge::Plain).width(TextMetrics{}), 14);
+  EXPECT_EQ(KeyCap("SPACE", KeyCap::Edge::Plain).width(TextMetrics{}), 46);
 }
 
 /**

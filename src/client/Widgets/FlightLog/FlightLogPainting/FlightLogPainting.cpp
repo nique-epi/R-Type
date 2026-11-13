@@ -98,7 +98,7 @@ void paintKopecksGain(IInterfaceCanvas& canvas, const FlightLogLook& look) {
                     .amount = look.kopecksGained,
                     .prefix = KOPECKS_GAIN_PREFIX,
                     .outlined = true};
-  gain.topRight.x += kopecksLabelWidth(gain);
+  gain.topRight.x += kopecksLabelWidth(gain, canvas.textMetrics());
   paintKopecks(canvas, gain);
 }
 

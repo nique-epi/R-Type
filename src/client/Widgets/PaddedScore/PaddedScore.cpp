@@ -7,6 +7,8 @@
 #include <string_view>
 #include "IInterfaceCanvas.hpp"
 #include "StatusBandConstants.hpp"
+#include "TextMeasures.hpp"
+#include "TextMetrics.hpp"
 #include "TextStyle.hpp"
 #include "WidgetText.hpp"
 
@@ -25,7 +27,11 @@ void paintLeadingZeros(IInterfaceCanvas& canvas, const PaddedScore& score,
   }
   canvas.write(
       std::string(static_cast<std::size_t>(missingDigits), LEADING_ZERO),
-      {score.end.x - (regularTextWidth(digits) * score.scale), score.end.y},
+      {score.end.x -
+           regularTextWidth(TextMetrics{.halfPixelsPerFontPixel = halfPixelsOf(
+                                            canvas.textMetrics(), score.scale)},
+                            digits),
+       score.end.y},
       {.font = TextFont::Regular,
        .color = score.zeroColor,
        .alignment = TextAlignment::Right,

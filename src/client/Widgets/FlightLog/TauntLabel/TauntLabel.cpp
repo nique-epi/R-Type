@@ -42,7 +42,9 @@ void writeTaunt(IInterfaceCanvas& canvas, const FlightLogLook& look,
   for (const std::string& line : look.taunt) {
     const std::size_t lineLetters = letterCountOf(std::string_view{line});
     canvas.write(typedPrefix(line, letters),
-                 {centeredTextLeft(sf::IntRect(label, LABEL_SIZE), line), top},
+                 {centeredTextLeft(sf::IntRect(label, LABEL_SIZE), line,
+                                   canvas.textMetrics()),
+                  top},
                  {.font = TextFont::Regular, .color = PAPER_INK});
     letters -= std::min(letters, lineLetters);
     top += TAUNT_LINE_PITCH;

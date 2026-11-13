@@ -28,15 +28,15 @@ std::string writtenAmountOf(const KopecksLabel& label) {
 
 }  // namespace
 
-int kopecksLabelWidth(const KopecksLabel& label) {
+int kopecksLabelWidth(const KopecksLabel& label, TextMetrics metrics) {
   return KOPECK_FRAME.width + KOPECKS_COIN_GAP +
-         regularTextWidth(writtenAmountOf(label));
+         regularTextWidth(metrics, writtenAmountOf(label));
 }
 
 void paintKopecks(IInterfaceCanvas& canvas, const KopecksLabel& label) {
   const std::string written = writtenAmountOf(label);
-  const int width =
-      KOPECK_FRAME.width + KOPECKS_COIN_GAP + regularTextWidth(written);
+  const int width = KOPECK_FRAME.width + KOPECKS_COIN_GAP +
+                    regularTextWidth(canvas.textMetrics(), written);
   canvas.write(written, label.topRight,
                {.font = TextFont::Regular,
                 .color = KOPECKS_COLOR,

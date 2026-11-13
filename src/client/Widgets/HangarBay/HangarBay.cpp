@@ -190,7 +190,8 @@ void paintCell(IInterfaceCanvas& canvas, sf::Vector2i topLeft,
     canvas.fill(insideOf(cell), *look.fill);
   }
   canvas.write(look.word,
-               {centeredTextLeft(cell, look.word), centeredTextTop(cell)},
+               {centeredTextLeft(cell, look.word, canvas.textMetrics()),
+                centeredTextTop(cell, canvas.textMetrics())},
                {.font = TextFont::Regular, .color = look.text});
 }
 

@@ -7,10 +7,12 @@
 #include "KeyPress.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "Slider.hpp"
+#include "TextMetrics.hpp"
 #include "ValueBinding.hpp"
 
 using rtype::client::BarState;
 using rtype::client::Slider;
+using rtype::client::TextMetrics;
 using rtype::client::ValueBinding;
 using Key = sf::Keyboard::Key;
 
@@ -83,7 +85,7 @@ class SliderTest : public ::testing::Test {
  * Then it is the 168 pixels of the picture: groove, gap and value
  */
 TEST_F(SliderTest, TakesTheWidthOfThePicture) {
-  EXPECT_EQ(slider().width(), FIRST_ROW_SLIDER.size.x);
+  EXPECT_EQ(slider().width(TextMetrics{}), FIRST_ROW_SLIDER.size.x);
 }
 
 /**

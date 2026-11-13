@@ -47,6 +47,10 @@ constexpr int ROUNDING_DIVISOR = 2;
 /** @brief Switch: two cells in a sunk box, the current one filled. */
 constexpr sf::Vector2i SWITCH_CELL_SIZE(30, 10);
 constexpr int SWITCH_CELL_INSET = 1;
+/** @brief Room around the widest word of a switch inside its cell, which is
+ * never narrower than SWITCH_CELL_SIZE: "OFF" is 24 pixels at the size the
+ * fonts are drawn, its cell 30. */
+constexpr int SWITCH_CELL_TEXT_PADDING = 6;
 constexpr const char* SWITCH_OFF_TEXT = "OFF";
 constexpr const char* SWITCH_ON_TEXT = "ON";
 

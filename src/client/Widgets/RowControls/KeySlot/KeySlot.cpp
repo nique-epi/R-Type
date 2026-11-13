@@ -17,17 +17,19 @@ namespace rtype::client {
 
 KeySlot::KeySlot(Wiring wiring) : wiring_(std::move(wiring)) {}
 
-int KeySlot::width() const {
+int KeySlot::width(TextMetrics metrics) const {
   if (listening_) {
-    return regularTextWidth(KEY_LISTENING_TEXT) +
+    return regularTextWidth(metrics, KEY_LISTENING_TEXT) +
            (SIDES_PER_AXIS * KEY_LISTENING_PADDING);
   }
   const int keyCapWidth =
-      KeyCap(wiring_.name(wiring_.key.read()), KeyCap::Edge::Plain).width();
+      KeyCap(wiring_.name(wiring_.key.read()), KeyCap::Edge::Plain)
+          .width(metrics);
   if (!wiring_.conflicts()) {
     return keyCapWidth;
   }
-  return regularTextWidth(KEY_CONFLICT_FLAG) + CONTROL_GAP + keyCapWidth;
+  return regularTextWidth(metrics, KEY_CONFLICT_FLAG) + CONTROL_GAP +
+         keyCapWidth;
 }
 
 void KeySlot::paint(IInterfaceCanvas& canvas, sf::IntRect area,
@@ -49,7 +51,8 @@ void KeySlot::paint(IInterfaceCanvas& canvas, sf::IntRect area,
     canvas.write(KEY_CONFLICT_FLAG, textAnchor,
                  {.font = TextFont::Regular,
                   .color = selected ? barTextColor(row) : CONFLICT_FLAG_COLOR});
-    keyCapTopLeft.x += regularTextWidth(KEY_CONFLICT_FLAG) + CONTROL_GAP;
+    keyCapTopLeft.x +=
+        regularTextWidth(canvas.textMetrics(), KEY_CONFLICT_FLAG) + CONTROL_GAP;
   }
   KeyCap(wiring_.name(wiring_.key.read()), edge).paint(canvas, keyCapTopLeft);
 }
