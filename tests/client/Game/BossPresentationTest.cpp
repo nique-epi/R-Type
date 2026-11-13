@@ -206,3 +206,50 @@ TEST_F(BossPresentationFixture, TheBarShowsOnceTheBossFights) {
 
   EXPECT_TRUE(presentation().look(FlashPreference::Full).bar.shown);
 }
+
+/**
+ * Given a game that plays a level, its boss fighting, its music playing
+ * When a restart from a checkpoint removes the boss
+ * Then its bar goes
+ */
+TEST_F(BossPresentationFixture, ARemovedBossLeavesNoBar) {
+  presentation().followLevel();
+  presentation().apply(PRESENTED_BOSS_ARRIVING);
+  presentation().apply(PRESENTED_BOSS_FIGHTING);
+
+  presentation().apply(PRESENTED_BOSS_REMOVED);
+
+  EXPECT_FALSE(presentation().look(FlashPreference::Full).bar.shown);
+}
+
+/**
+ * Given a game that plays a level, its boss fighting, its music playing
+ * When a restart from a checkpoint removes the boss
+ * Then the music of the game is played again
+ */
+TEST_F(BossPresentationFixture, ARemovedBossBringsTheMusicOfTheGameBack) {
+  presentation().followLevel();
+  presentation().apply(PRESENTED_BOSS_ARRIVING);
+  presentation().apply(PRESENTED_BOSS_FIGHTING);
+
+  presentation().apply(PRESENTED_BOSS_REMOVED);
+
+  EXPECT_EQ(audio().musicCalls(),
+            (std::vector<MusicCall>{MusicCall::Silence, MusicCall::BossMusic,
+                                    MusicCall::GameMusic}));
+}
+
+/**
+ * Given a game of waves, its boss fighting, its music playing
+ * When the body of the boss is destroyed by a kill
+ * Then the music of the boss goes on until the game ends
+ */
+TEST_F(BossPresentationFixture, AKilledBossKeepsItsMusicInTheWaves) {
+  presentation().apply(PRESENTED_BOSS_ARRIVING);
+  presentation().apply(PRESENTED_BOSS_FIGHTING);
+
+  presentation().apply(PRESENTED_BOSS_KILLED);
+
+  EXPECT_EQ(audio().musicCalls(),
+            (std::vector<MusicCall>{MusicCall::Silence, MusicCall::BossMusic}));
+}

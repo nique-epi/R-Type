@@ -10,6 +10,7 @@
 #include "EdgePulse.hpp"
 #include "EffectTools.hpp"
 #include "EnemyAction.hpp"
+#include "EntityDestroyed.hpp"
 #include "FlashPreference.hpp"
 #include "IAudioService.hpp"
 #include "IInterfaceCanvas.hpp"
@@ -44,6 +45,9 @@ void BossPresentation::apply(const network::BossStatus& status) {
     chargeSignalledAt_.reset();
   }
   tracker_.follow(status, now_);
+  if (status.stage != network::BossStage::Arriving) {
+    bossInPlay_ = status.bossEntityId;
+  }
   if (status.stage != network::BossStage::Arriving && shielded_.has_value()) {
     effects_.shield(*shielded_, false);
     shielded_.reset();
@@ -73,6 +77,21 @@ void BossPresentation::apply(const network::EnemyAction& action) {
   roarAt_ = now_;
   effects_.playRoar(action.entityId);
   sounds_->play(BOSS_ROAR_SOUND_ID);
+}
+
+void BossPresentation::apply(const network::EntityDestroyed& destroyed) {
+  if (destroyed.reason != network::DestructionReason::Removed ||
+      bossInPlay_ != destroyed.entityId) {
+    return;
+  }
+  tracker_.forget();
+  bossInPlay_.reset();
+  roarAt_.reset();
+  chargeSignalledAt_.reset();
+  if (bossMusicStarted_) {
+    bossMusicStarted_ = false;
+    audio_->playGameMusic();
+  }
 }
 
 void BossPresentation::advance(engine::Duration elapsed) {
