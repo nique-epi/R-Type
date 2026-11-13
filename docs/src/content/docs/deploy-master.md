@@ -59,7 +59,7 @@ Going back after the database was migrated is not guaranteed: the new master mig
 
 ## Setting it up once
 
-A member of the team does this once, with their own AWS, GitHub and Vercel accounts; nothing here runs by itself. `infra/bootstrap.sh --domain <domain> --bucket <bucket>` runs steps 1 to 4 below and waits for the A record of step 2 (`--deploy <tag>` also does step 5); it asks for the AWS account and for the Terraform plan first, and running it again skips what is done. It leaves the address of the master in Vercel, the game servers and the client to you. The steps are in the [README of `infra/`](https://github.com/nique-epi/R-Type/blob/main/infra/README.md), in this order:
+A member of the team does this once, with their own AWS, GitHub and Vercel accounts; nothing here runs by itself. `infra/bootstrap.sh --domain <domain> --bucket <bucket>` runs steps 1 to 4 below and waits for the A record of step 2 (`--deploy <tag>` also does step 5); it asks for the AWS account and for the Terraform plan first, and running it again skips what is done. It leaves the address of the master in Vercel, the game servers and the client to you, and the key of the site (see [Giving the site its key](#giving-the-site-its-key)). The steps are in the [README of `infra/`](https://github.com/nique-epi/R-Type/blob/main/infra/README.md), in this order:
 
 1. Create the S3 bucket of the Terraform state, then `terraform init`, `plan` and `apply` from `infra/terraform/`, with `master_domain` set to the domain of the master and `state_bucket` to that bucket.
 2. At the DNS provider of that domain, point an `A` record at the `master_public_ip` output.
@@ -74,9 +74,20 @@ The README also lists the symptoms of each step that goes wrong.
 
 The web site calls the master from its own server, at `MASTER_URL` (see [Master](/R-Type/master/#the-web-site)), and Vercel hosts it. Set `MASTER_URL` to the `master_url` output in the Vercel project, for the Production and Preview environments, then deploy the site again: a variable only reaches the deployments made after it changed, and `next.config.ts` reads it at the build too. The browser never calls the master, so the master needs no CORS.
 
+## Giving the site its key
+
+Every visitor of the site reaches the master from the address of Vercel, so they would share one quota of creations. The site and the master hold one secret, with which the site names the visitor it creates a server for (see [Master](/R-Type/master/#creating-a-game-server-post-apiservers)). Nothing sets it by itself, and without it the site still works, all its visitors under one quota:
+
+1. Draw it once: `openssl rand -hex 32`. Letters and digits only, so its line of `master.cfg` is never refused, and never written in the journal.
+2. On the instance (an SSM session), write the line `set site-key <secret>` in `/var/lib/rtype/master.cfg`, the folder the master starts from, readable by the user `rtype` only (`chown rtype:rtype`, `chmod 600`), then `systemctl restart rtype-master`. A deployment does not touch that file.
+3. In the Vercel project, set `MASTER_SITE_KEY` to the same value, as a sensitive variable, for Production only, then deploy the site again.
+
+The secret is in neither GitHub nor Terraform. To change it, do the three steps again; between steps 2 and 3 the creations of the site are counted under the address of Vercel.
+
 ## Limits
 
 - **HTTPS ends at Caddy.** Between Caddy and the master, on the machine, requests go in plain HTTP to `127.0.0.1:8080`. The master reads the address of each client in the `X-Forwarded-For` header Caddy writes, and trusts it only from `127.0.0.1` (see [Master](/R-Type/master/#the-http-api-masterhttpserver)).
+- **Whoever holds the key of the site creates servers without limit**, since it names the address each creation is counted under. It lives in `master.cfg` on the instance and in the variables of Vercel, nowhere else.
 - **An older release cannot reach it.** A client or a game server built before HTTPS refuses an `https://` address: the players and the hosts need a release that speaks it.
 - **The domain needs its record.** If the Elastic IP is ever replaced, only the A record changes; everything else holds the domain.
 - **One machine, one database, no backup.** A restart cuts the master for a few seconds; the games in progress go on, since no datagram of a game goes through the master.

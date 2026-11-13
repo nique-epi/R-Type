@@ -1,6 +1,7 @@
 add_subdirectory(Compression)
 add_subdirectory(Content)
 add_subdirectory(Handshake)
+add_subdirectory(Hashing)
 add_subdirectory(Http)
 add_subdirectory(Master)
 add_subdirectory(Protocol)

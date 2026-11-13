@@ -91,6 +91,15 @@ void writeProblemDocument(httplib::Response& response) {
   }
 }
 
+/** @returns @p text in lowercase, as a header name or a scheme is compared. */
+std::string lowercaseOf(std::string_view text) {
+  std::string lowercase{text};
+  std::ranges::transform(lowercase, lowercase.begin(), [](char letter) {
+    return static_cast<char>(std::tolower(static_cast<unsigned char>(letter)));
+  });
+  return lowercase;
+}
+
 /**
  * @returns The token after BEARER_SCHEME and its separator in @p
  * authorization, the scheme read in any case, or nothing for another scheme or
@@ -99,14 +108,9 @@ void writeProblemDocument(httplib::Response& response) {
 std::optional<std::string> bearerTokenIn(std::string_view authorization) {
   const std::string prefix =
       std::string{BEARER_SCHEME} + std::string{BEARER_SCHEME_SEPARATOR};
-  const bool hasPrefix =
-      authorization.size() > prefix.size() &&
-      std::ranges::equal(
-          authorization.substr(0, prefix.size()), prefix,
-          [](char letter, char expected) {
-            return std::tolower(static_cast<unsigned char>(letter)) ==
-                   std::tolower(static_cast<unsigned char>(expected));
-          });
+  const bool hasPrefix = authorization.size() > prefix.size() &&
+                         lowercaseOf(authorization.substr(0, prefix.size())) ==
+                             lowercaseOf(prefix);
   if (!hasPrefix) {
     return std::nullopt;
   }
@@ -127,6 +131,16 @@ std::unordered_map<std::string, std::string> queryParametersOf(
   return parameters;
 }
 
+/** @returns The headers of @p request by their name in lowercase. */
+std::unordered_map<std::string, std::string> headersOf(
+    const httplib::Request& request) {
+  std::unordered_map<std::string, std::string> headers;
+  for (const auto& [name, value] : request.headers) {
+    headers.emplace(lowercaseOf(name), value);
+  }
+  return headers;
+}
+
 ApiRequest apiRequestOf(const httplib::Request& request,
                         ForwardedAddress forwarded) {
   return ApiRequest{.body = request.body,
@@ -137,6 +151,7 @@ ApiRequest apiRequestOf(const httplib::Request& request,
                                       .forwardedFor = request.get_header_value(
                                           std::string{FORWARDED_FOR_HEADER})},
                         forwarded),
+                    .headers = headersOf(request),
                     .pathParameters = request.path_params,
                     .queryParameters = queryParametersOf(request)};
 }
