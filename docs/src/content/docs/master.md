@@ -18,7 +18,7 @@ This page tells you where to look when you need to change something. It describe
 | The games of a server, for the client, `GET /api/servers/{id}/games` | Available | `src/master/Servers/`, `src/network/Master/` |
 | The statuses of the servers, their list and their history, `GET /api/servers` | Available; the route that puts a server in maintenance is not written | `src/master/Servers/`, `src/network/Master/` |
 | The probe of the UDP port of each game server, module `probe` | Available | `src/master/Probe/`, `src/master/Servers/`, `src/server/Master/` |
-| The web site, a Next.js server of its own that calls the API | Available: the pages of the design in French and English (home, download, sector map, a server, leaderboard, wiki, team); the leaderboard reads `GET /api/leaderboard` | `web/` |
+| The web site, a Next.js server of its own that calls the API | Available: the pages of the design in French and English (home, download, sector map, a server, hosting, leaderboard, wiki, team); the hosting page creates a server with `POST /api/servers`, the leaderboard reads `GET /api/leaderboard` | `web/` |
 | The results of the games and the global leaderboard, `PUT /api/servers/me/results/{gameId}` and `GET /api/leaderboard` | Available; a game server sends its vanilla games after its heartbeats | `src/master/Leaderboard/`, `src/network/Master/` |
 | The master on AWS, installed from each release | Available; see [Deploying the master](/R-Type/deploy-master/) | `infra/`, `.github/workflows/deploy-master.yaml` |
 | A machine of game servers created for a LAN | Available; see [Game servers for a LAN](/R-Type/deploy-game-servers/) | `infra/game-servers/`, `infra/terraform-game/` |
@@ -103,13 +103,17 @@ The web site is a program of its own: a Next.js server, in `web/` (see [Web site
 | `/download` | the installer of the system of the reader, its steps, the other files of the release | the latest release |
 | `/servers` | the sector map, read only: a seat is taken in the game, so the map has no Join and no quick play | the list of servers, each with its games and its last ping |
 | `/servers/{id}` | the games of a server, its figures, the load of its machine (see [The load of a server](#the-load-of-a-server)) and the pilots of its last 100 samples (the master keeps one sample a second, a page of the list holds 100); a server created and not registered yet shows a waiting notice | the list, `GET /api/servers/{id}/samples` |
+| `/host` | the form that creates a server, with no account, then its key, shown once with a button that copies it, and the two lines of `server.cfg` that hold it; the home page, the hosting guide of the wiki and the key H of the sector map lead to it | nothing; it writes with `POST /api/servers` |
 | `/leaderboard` | the leaderboard screen of the game, by server or for everyone; the scope and the filters are in the address (`?scope=server&server=7&difficulty=hard&pilots=3`) and the page reads the ten best players again at each address | the leaderboard, and the list of servers for the first tab |
 | `/wiki/{keys,enemies,accessibility,host}` | the controls, the bestiary, the pilot palettes, the guide to host a server | nothing |
 | `/team` | the four members and their GitHub | nothing |
 
 - **The ping of a star** is the mean round trip of the players of its server at its last sample (`averagePingMilliseconds`), since the site cannot measure one from the browser. A server with no player has none, and is placed at `UNMEASURED_PING_MILLISECONDS` (75).
 - **The statuses of the master are folded to three**: `online` and `degraded` stay, `offline`, `unreachable` and `maintenance` are drawn offline, since none of them can be played on.
-- **The key of a server never leaves the page that created it**: the server action returns it to that page and logs nothing, and the hosting page refuses a name the form would not send (empty, or longer than 32 characters) without asking the master.
+- **The key of a server never leaves the page that created it**: the server action (`createServerAction()`, `web/src/components/blocks/host/`) returns it to that page and writes it in no journal, no address and no store, and the page keeps it in the state of one component, so a reload loses it; the page says so before and after the creation. The form and the action both refuse a name the master would refuse, empty or over `SERVER_NAME_MAXIMUM_BYTES` (32 bytes of UTF-8, so an accented letter counts as two), without asking the master.
+- **A creation that fails says why and keeps the name typed**: the 429 of the quota, a name the master refuses (400), and a master that does not answer within 5 seconds or answers anything else each have a message of their own.
+- **The site names the visitor it creates a server for**: when `MASTER_SITE_KEY` is set, the request carries it in `X-Site-Key`, and in `X-Site-Client-Address` the last address of the `X-Forwarded-For` the host of the site wrote, which Vercel overwrites with the public address of the client. The master does not read these two headers yet: until it does, it counts the address the site calls from, so the visitors of the site share one quota of creations (see [Creating a game server](#creating-a-game-server-post-apiservers)). The site must run behind a host that overwrites `X-Forwarded-For`, or a visitor chooses the address it is counted under.
+- **The lines of `server.cfg` the page gives** are `set master-url`, with `PUBLIC_MASTER_URL` (`https://master.rtype.app` by default, as `server.cfg.example` writes it), and `set master-key` with the key. `MASTER_URL` is never shown: it may be an address only the site reaches.
 
 ### The components of the site
 
@@ -400,7 +404,7 @@ void RouteAddingModule::install(rtype::engine::InstallContext& context) {
 | Change the size of a page of a list | `MINIMUM_PAGE_SIZE`, `DEFAULT_PAGE_SIZE` and `MAXIMUM_PAGE_SIZE` in `src/network/Master/Routes/MasterRouteConstants.hpp` |
 | Call the master from the game server | `MasterClient` (`src/network/Master/Client/`) |
 | Change where or how the master is deployed | [Deploying the master](/R-Type/deploy-master/#where-to-intervene) |
-| Add a page to the web site | `web/src/app/[lang]/` for its path, its title and its language, then a block in `web/src/components/blocks/` that builds it; its calls to the API in `web/src/lib/api/`, its words in `web/src/i18n/dictionaries/` |
+| Add a page to the web site | `web/src/app/[lang]/` for its path, its title and its language, then a block in `web/src/components/blocks/` that builds it; its calls to the API in `web/src/lib/api/`, its words in `web/src/i18n/dictionaries/`; a page that writes to the master does it in a server action beside its block, as `create-server.action.ts` does |
 | Change a color, a face or a size of the site | the tokens of `web/src/styles/globals.css` |
 | Add or change a word of the site | its label type in the component, then both `web/src/i18n/dictionaries/` |
 | Change what the games of a server are listed as | `listedStateOf()` in `ServersService.cpp` (`src/master/Servers/Services/`) and `GameListing` (`src/network/Master/Messages/`) |

@@ -294,9 +294,64 @@ export const frPages = {
     host: {
       title: 'Guide hote',
       configFile: 'server.cfg',
-      createKey: 'Créez une clé.',
+      createKey: 'Créez la clé de votre serveur sur {page}.',
+      createKeyPage: 'la page Héberger',
       pasteKey: 'Collez-la dans {file} :',
       launch: 'Lancez le serveur :',
+    },
+  },
+  hostPage: {
+    eyebrow: 'Serveurs ouverts',
+    title: 'Heberger',
+    lede: "Créez la clé de votre serveur, sans compte. Elle ne s'affiche qu'une fois : copiez-la avant de quitter la page.",
+    configFile: 'server.cfg',
+    guide: 'Lire le guide hote',
+    another: 'Creer un autre serveur',
+    form: {
+      title: 'Nouveau serveur',
+      name: 'Nom du serveur',
+      placeholder: 'Nebula Lyon',
+      counter: '{length} / {maximum}',
+      nameRequired: 'Donnez un nom au serveur',
+      nameTooLong:
+        'Ce nom est trop long : {maximum} caractères au plus, une lettre accentuée en compte deux',
+      shownOnceTitle: 'Une seule fois',
+      shownOnce:
+        "La clé du serveur ne s'affichera qu'une fois, juste après sa création. Aucun compte n'est demandé ; le master limite le nombre de serveurs créés par heure depuis une même adresse.",
+      submit: 'Creer le serveur',
+      pending: 'Creation...',
+    },
+    problems: {
+      invalidName: {
+        title: 'Nom refusé',
+        text: 'Donnez au serveur un nom de {maximum} caractères au plus.',
+      },
+      quota: {
+        title: 'Quota atteint',
+        text: 'Trop de serveurs ont été créés depuis votre adresse pendant la dernière heure. Réessayez plus tard : le nom saisi est gardé.',
+      },
+      refused: {
+        title: 'Nom refusé',
+        text: "Le master n'accepte pas ce nom. Essayez-en un autre, sans caractère spécial.",
+      },
+      unreachable: {
+        title: 'Master injoignable',
+        text: 'Le master ne répond pas. Réessayez dans un instant : le nom saisi est gardé.',
+      },
+    },
+    key: {
+      title: 'Cle du serveur',
+      created: 'Le serveur {name} est créé. Voici sa clé :',
+      shownOnceTitle: 'Une seule fois',
+      shownOnce:
+        'Cette clé ne sera plus jamais affichée : le site ne la garde pas. Copiez-la avant de quitter ou de recharger la page.',
+      pasteIn: 'Collez ces lignes dans le {file} du serveur :',
+      copy: 'Copier la cle',
+      copied: 'Copiee',
+      notCopiedYet: "La clé n'est pas encore copiée.",
+      copiedLine: 'Clé copiée dans le presse-papiers.',
+      copyFailed:
+        'Copie refusée par le navigateur : sélectionnez la clé à la main.',
     },
   },
   teamPage: {

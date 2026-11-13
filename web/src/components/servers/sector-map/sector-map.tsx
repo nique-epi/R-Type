@@ -51,6 +51,8 @@ export type SectorMapProps = {
   onLeave?: () => void;
   onOpenServer: (serverId: string) => void;
   onLeaderboard: () => void;
+  /** Opens the page that creates the key of a server. */
+  onHost: () => void;
   /** Escape on the whole sky: leave the map. */
   onExit: () => void;
   labels: SectorMapLabels;
@@ -66,7 +68,7 @@ function bearingOf(server: MapServer): Bearing {
  * the servers around it, further away the higher their ping. A click or
  * Enter on a star zooms on it, then lists its games; Escape steps back.
  * The arrows move between servers (between games once listed), Q joins the
- * nearest free seat, L and H open the leaderboard and the hosting form. A map
+ * nearest free seat, L and H open the leaderboard and the hosting page. A map
  * given no `onJoin` is read only: Q and Join are gone.
  */
 export function SectorMap({
@@ -76,6 +78,7 @@ export function SectorMap({
   onLeave,
   onOpenServer,
   onLeaderboard,
+  onHost,
   onExit,
   labels,
   locale,
@@ -209,6 +212,7 @@ export function SectorMap({
     escape: back,
     ...(onJoin ? { q: quickPlay } : {}),
     l: onLeaderboard,
+    h: onHost,
     ...(stage === 'games' && chosen
       ? {
           i: () => onOpenServer(chosen.id),
@@ -461,12 +465,17 @@ export function SectorMap({
                 </GameChip>
               </>
             ) : (
-              <GameChip
-                shortcut={labels.keys.leaderboard}
-                onClick={onLeaderboard}
-              >
-                {labels.leaderboard}
-              </GameChip>
+              <>
+                <GameChip shortcut={labels.keys.host} onClick={onHost}>
+                  {labels.host}
+                </GameChip>
+                <GameChip
+                  shortcut={labels.keys.leaderboard}
+                  onClick={onLeaderboard}
+                >
+                  {labels.leaderboard}
+                </GameChip>
+              </>
             )}
             <GameChip shortcut={labels.keys.back} onClick={back}>
               {labels.back}

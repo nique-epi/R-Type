@@ -1,7 +1,8 @@
 # R-Type web site
 
 The web site of R-Type: it presents the game, lets a player download it, shows
-the servers and their games, the leaderboard and the wiki. It is a Next.js
+the servers and their games, the leaderboard and the wiki, and gives a host
+the key of a new server. It is a Next.js
 program of its own, in `web/`, beside the C++ game and the **master**, the
 program that keeps the list of servers and the scores.
 
@@ -55,11 +56,13 @@ echo 'MASTER_URL=http://localhost:8081' > web/.env.local
 | `bun run typecheck`               | `next typegen` (types of the routes), then `tsc --noEmit`                             |
 | `bun run test`                    | Vitest, once                                                                          |
 
-| Variable            | Default                    | Role                                                             |
-| ------------------- | -------------------------- | ---------------------------------------------------------------- |
-| `MASTER_URL`        | `https://master.rtype.app` | where the Next.js server reaches the master                      |
-| `GITHUB_REPOSITORY` | `nique-epi/R-Type`         | the repository whose latest release the download page reads      |
-| `GITHUB_TOKEN`      | none                       | raises the GitHub API limit from 60 requests an hour per address |
+| Variable            | Default                    | Role                                                                                                      |
+| ------------------- | -------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `MASTER_URL`        | `https://master.rtype.app` | where the Next.js server reaches the master                                                               |
+| `MASTER_SITE_KEY`   | none                       | the secret the site names itself to the master with (see [Writing to the master](#writing-to-the-master)) |
+| `PUBLIC_MASTER_URL` | `https://master.rtype.app` | the address of the master the hosting page writes in the lines of `server.cfg`                            |
+| `GITHUB_REPOSITORY` | `nique-epi/R-Type`         | the repository whose latest release the download page reads                                               |
+| `GITHUB_TOKEN`      | none                       | raises the GitHub API limit from 60 requests an hour per address                                          |
 
 The variables are read and checked once, in [`src/config/env.config.ts`](src/config/env.config.ts),
 which `next.config.ts` runs at start: a wrong value stops the site with a
@@ -122,6 +125,7 @@ A test sits **beside the file it tests** (`ranking-view.ts`, `ranking-view.test.
 | [`lib/github/`](src/lib/github/)     | the latest GitHub release: reading it, finding the installer of the reader's system, the install steps (`systems.ts` lists the systems apart from the zod schema, so the browser never loads zod for it)       |
 | [`lib/gsap/`](src/lib/gsap/index.ts) | GSAP, registered once, and the media query of reduced motion                                                                                                                                                   |
 | [`lib/rtype/`](src/lib/rtype/)       | what the site knows of the game: servers and their seats, players, palettes, the ranking choice, the team, the example servers                                                                                 |
+| `lib/visitor-address.ts`             | `visitorAddressOf()`: the address of the visitor of a request, the last one of its `X-Forwarded-For`                                                                                                           |
 | `lib/site-paths.ts`                  | the path of each page in each language (`pathOf(locale, 'ranking')`)                                                                                                                                           |
 | `lib/fonts.ts`                       | the three fonts, loaded once                                                                                                                                                                                   |
 | `lib/shortcuts.ts`                   | `runShortcut()`: the keys of a screen of the game (Q, E, F, Escape...)                                                                                                                                         |
@@ -137,6 +141,7 @@ Every page lives under `app/[lang]/`, `lang` being `fr` (the default) or `en`.
 | `/download`                | `download/page.tsx`                   | the latest release (GitHub)                                            |
 | `/servers`                 | `servers/page.tsx`                    | the servers, their games and their ping (the sector map)               |
 | `/servers/[id]`            | `servers/[id]/page.tsx`               | one server, its games, the load of its machine, its last 100 samples   |
+| `/host`                    | `host/page.tsx`                       | nothing; its form creates a server on the master                       |
 | `/leaderboard`             | `leaderboard/page.tsx`                | the leaderboard; the scope and filters are in the query of the address |
 | `/wiki`, `/wiki/[section]` | `wiki/`                               | nothing; `/wiki` redirects to the first article                        |
 | `/team`                    | `team/page.tsx`                       | nothing                                                                |
@@ -201,6 +206,24 @@ the first visit), the block reads the master for that choice, and a click on a t
 ([`ranking-section.tsx`](src/components/ranking/ranking-section.tsx)) only changes the address with `router.push`:
 the server then reads the master again. So a leaderboard can be shared by its link.
 
+### Writing to the master
+
+The hosting page (`/host`) is the one page that writes: it creates a server
+with `POST /api/servers` and shows its key, which the master gives once.
+
+```mermaid
+flowchart LR
+  Form["HostServerSection (browser)"] --> Action["create-server.action.ts"]
+  Action --> Route["lib/api: createServer()"]
+  Route --> Master["master"]
+```
+
+- **A server action** ([`components/blocks/host/create-server.action.ts`](src/components/blocks/host/create-server.action.ts)) makes the call, so the browser still never talks to the master. The block hands it to the client component as a prop; the component only knows the type `CreateServer`.
+- **The key goes to the page that asked, and nowhere else**: the action returns it and writes it in no journal, no address and no store; the page keeps it in React state, so a reload loses it, and says so before and after the creation.
+- **The name is checked twice**, by the form and by the action, with `serverNameProblemOf()` ([`lib/rtype/server-name.ts`](src/lib/rtype/server-name.ts)): empty, or over 32 bytes of UTF-8, is refused without asking the master.
+- **The action never throws**: it returns a `ServerCreationOutcome` ([`lib/rtype/server-creation.ts`](src/lib/rtype/server-creation.ts)), `created`, `invalidName`, `quota` (the 429 of the master), `refused` (its 400) or `unreachable`, and the page has a message for each, the name typed staying in the form.
+- **The visitor is named to the master**: with `MASTER_SITE_KEY` set, `createServer()` sends it in `X-Site-Key`, and the address of the visitor in `X-Site-Client-Address`, so the master can count its quota of creations per visitor and not for the whole site. The master does not read them yet. The address is the last one of `X-Forwarded-For`, which Vercel overwrites; behind a host that passes on what the client sent, a visitor would choose it.
+
 ### Other server reads
 
 - **GitHub**: [`lib/github/latest-release.ts`](src/lib/github/latest-release.ts) reads the latest release, kept 10 minutes by Next.js (`revalidate`), with a timeout.
@@ -239,7 +262,7 @@ and a `data-slot` attribute, and merges the class names it is given with `cn()`.
 | `text/`     | `Heading`, `Eyebrow`, `Lede` (typography), `Keycap`, `CodeBlock`                                   |
 | `surfaces/` | `Panel`, `Table`, `Dialog`                                                                         |
 | `status/`   | `StatusBadge`, `Notice`, `ProgressBar`, `Stat`, `Tag`                                              |
-| `inputs/`   | `Tabs`                                                                                             |
+| `inputs/`   | `Tabs`, `TextField`                                                                                |
 | `icons/`    | `Triangle`, `PixelIcon`, `SideMarker`                                                              |
 
 ### `game/`: the screens of the game, in the page
@@ -371,14 +394,15 @@ buttons or the contents. The file explains its own constraints; in short:
 
 ## Where does a new thing go?
 
-| You want to...                                 | Put it in                                                                                                                                                                      |
-| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| add a page                                     | `app/[lang]/<route>/page.tsx` (thin), a block in `components/blocks/<page>/`, a path in `lib/site-paths.ts`, its words in the two `*-pages.ts` dictionaries                    |
-| read a new route of the master                 | the shape in `lib/api/schemas/master/`, the route in `lib/api/clients/master/endpoints/`, a function in `lib/api/routes/<group>/` with its test, a hook in `hooks/api/master/` |
-| add a small reusable piece (a button, a badge) | `components/primitives/<kind>/`, with `cva` variants and `cn()`                                                                                                                |
-| draw something of the game client              | `components/game/` (on a `GameScreen`) or `components/sprites/`                                                                                                                |
-| add a component of a page                      | `components/<page>/`: it takes its data and words as props                                                                                                                     |
-| add a word                                     | the label type of the component, then `i18n/dictionaries/fr.ts` and `en.ts` (or `*-pages.ts` for a page)                                                                       |
-| add a color or a utility                       | `src/styles/globals.css`                                                                                                                                                       |
-| animate something                              | [Adding an animation](#adding-an-animation)                                                                                                                                    |
-| add an environment variable                    | `src/config/env.config.ts` (zod), `.env.example`, this README                                                                                                                  |
+| You want to...                                 | Put it in                                                                                                                                                                                                                    |
+| ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| add a page                                     | `app/[lang]/<route>/page.tsx` (thin), a block in `components/blocks/<page>/`, a path in `lib/site-paths.ts`, its words in the two `*-pages.ts` dictionaries                                                                  |
+| read a new route of the master                 | the shape in `lib/api/schemas/master/`, the route in `lib/api/clients/master/endpoints/`, a function in `lib/api/routes/<group>/` with its test, a hook in `hooks/api/master/`                                               |
+| add a small reusable piece (a button, a badge) | `components/primitives/<kind>/`, with `cva` variants and `cn()`                                                                                                                                                              |
+| draw something of the game client              | `components/game/` (on a `GameScreen`) or `components/sprites/`                                                                                                                                                              |
+| change something on the master                 | a route with its test as above, then a server action beside the block of the page (`components/blocks/<page>/<name>.action.ts`) that returns an outcome and never throws; the block hands it to a client component as a prop |
+| add a component of a page                      | `components/<page>/`: it takes its data and words as props                                                                                                                                                                   |
+| add a word                                     | the label type of the component, then `i18n/dictionaries/fr.ts` and `en.ts` (or `*-pages.ts` for a page)                                                                                                                     |
+| add a color or a utility                       | `src/styles/globals.css`                                                                                                                                                                                                     |
+| animate something                              | [Adding an animation](#adding-an-animation)                                                                                                                                                                                  |
+| add an environment variable                    | `src/config/env.config.ts` (zod), `.env.example`, this README                                                                                                                                                                |

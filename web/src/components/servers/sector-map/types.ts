@@ -50,6 +50,7 @@ export type SectorMapLabels = {
   sheet: string;
   back: string;
   leaderboard: string;
+  host: string;
   keys: {
     quickPlay: string;
     join: string;
@@ -57,5 +58,6 @@ export type SectorMapLabels = {
     sheet: string;
     back: string;
     leaderboard: string;
+    host: string;
   };
 };

@@ -35,6 +35,18 @@ export const serversPageSchema = z.object({
   servers: z.array(listedServerSchema),
 });
 
+/** The shape of a key of a server: `rtk_`, then 64 hexadecimal digits. */
+const SERVER_KEY_PATTERN = /^rtk_[0-9a-f]{64}$/;
+
+/** The server `POST /api/servers` creates, with the key shown this once. */
+export const createdServerSchema = z.object({
+  id: z.number().int(),
+  name: z.string(),
+  key: z.string().regex(SERVER_KEY_PATTERN),
+});
+
+export type CreatedServer = z.infer<typeof createdServerSchema>;
+
 /** The state of a game as the master folds it for a player who picks one. */
 export const masterGameStateSchema = z.enum(['waiting', 'full', 'inGame']);
 

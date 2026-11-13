@@ -21,6 +21,7 @@ export default defineConfig({
     ],
     env: {
       MASTER_URL: 'http://master.test:8080',
+      MASTER_SITE_KEY: 'site-key-of-the-tests',
     },
   },
 });

@@ -13,7 +13,7 @@ export type SectorMapScreenProps = {
 };
 
 /**
- * The sector map as a page of the site: its Fiche and Classement
+ * The sector map as a page of the site: its Fiche, Classement and Heberger
  * buttons go to the pages of the language, and Escape on the whole sky goes
  * home. The map is read only, since a seat is taken from the game.
  */
@@ -31,6 +31,7 @@ export function SectorMapScreen({
       locale={locale}
       onOpenServer={id => router.push(serverPathOf(locale, id))}
       onLeaderboard={() => router.push(pathOf(locale, 'ranking'))}
+      onHost={() => router.push(pathOf(locale, 'host'))}
       onExit={() => router.push(pathOf(locale, 'home'))}
     />
   );
