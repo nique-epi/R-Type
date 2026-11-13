@@ -2,6 +2,8 @@ target_sources(client_screen_tests PRIVATE
   HangarScreenFixture.cpp
   HangarScreenFixtures.cpp
   HangarScreenTest.cpp
+  HangarScrollFixture.cpp
+  HangarScrollTest.cpp
   WonItemsTest.cpp
   ReducedMotionHangarFixture.cpp
 )

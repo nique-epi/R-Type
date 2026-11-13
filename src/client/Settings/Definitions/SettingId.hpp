@@ -27,6 +27,7 @@ enum class SettingId : std::uint8_t {
   LagometerBackground,
   ShipLook,
   ShipLocker,
+  Kopecks,
 };
 
 }  // namespace rtype::client

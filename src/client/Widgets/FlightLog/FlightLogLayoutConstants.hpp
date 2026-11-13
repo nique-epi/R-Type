@@ -157,4 +157,10 @@ constexpr sf::IntRect QUIT_BUTTON({OPEN_HINGE + BOOK_HALF_SIZE.x - QUIT_SIZE.x,
 constexpr sf::Vector2i QUIT_CROSS_OFFSET(5, 3);
 constexpr sf::Vector2i QUIT_LABEL_OFFSET(16, 3);
 
+/** @brief What the game earned the player, written with the choices: under
+ * the bottom-left corner of the open book, on the row of the label of QUIT. */
+constexpr sf::Vector2i KOPECKS_GAIN_TOP_LEFT(OPEN_HINGE - BOOK_HALF_SIZE.x,
+                                             QUIT_BUTTON.position.y +
+                                                 QUIT_LABEL_OFFSET.y);
+
 }  // namespace rtype::client

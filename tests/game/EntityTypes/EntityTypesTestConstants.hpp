@@ -59,6 +59,21 @@ constexpr std::string_view LOOK_PARTY_HAT_SHEET = "look_party_hat";
 constexpr std::string_view LOOK_PROPELLER_CAP_SHEET = "look_propeller_cap";
 constexpr std::string_view LOOK_VIKING_HELMET_SHEET = "look_viking_helmet";
 constexpr std::string_view LOOK_WIZARD_HAT_SHEET = "look_wizard_hat";
+constexpr std::string_view LOOK_ANTENNAE_SHEET = "look_antennae";
+constexpr std::string_view LOOK_CHAPKA_SHEET = "look_chapka";
+constexpr std::string_view LOOK_DEVIL_HORNS_SHEET = "look_devil_horns";
+constexpr std::string_view LOOK_FEZ_SHEET = "look_fez";
+constexpr std::string_view LOOK_GLASSES_3D_SHEET = "look_glasses_3d";
+constexpr std::string_view LOOK_GRAD_CAP_SHEET = "look_grad_cap";
+constexpr std::string_view LOOK_HALO_SHEET = "look_halo";
+constexpr std::string_view LOOK_KABUTO_SHEET = "look_kabuto";
+constexpr std::string_view LOOK_LONG_BEARD_SHEET = "look_long_beard";
+constexpr std::string_view LOOK_MOHAWK_SHEET = "look_mohawk";
+constexpr std::string_view LOOK_MONOCLE_SHEET = "look_monocle";
+constexpr std::string_view LOOK_SANTA_HAT_SHEET = "look_santa_hat";
+constexpr std::string_view LOOK_SOMBRERO_SHEET = "look_sombrero";
+constexpr std::string_view LOOK_TRAFFIC_CONE_SHEET = "look_traffic_cone";
+constexpr std::string_view LOOK_TRICORN_SHEET = "look_tricorn";
 
 /** @brief The names of every sheet the game ships, in the order of their
  * names, so of their numbers. */
@@ -67,11 +82,26 @@ constexpr std::array SHIPPED_SHEET_NAMES{BYDO_TYRANT_SHEET,
                                          DRIFTER_SHEET,
                                          DRILLBACK_SHEET,
                                          ENEMY_MISSILE_SHEET,
+                                         LOOK_ANTENNAE_SHEET,
+                                         LOOK_CHAPKA_SHEET,
                                          LOOK_CHEF_TOQUE_SHEET,
                                          LOOK_COWBOY_HAT_SHEET,
                                          LOOK_CROWN_SHEET,
+                                         LOOK_DEVIL_HORNS_SHEET,
+                                         LOOK_FEZ_SHEET,
+                                         LOOK_GLASSES_3D_SHEET,
+                                         LOOK_GRAD_CAP_SHEET,
+                                         LOOK_HALO_SHEET,
+                                         LOOK_KABUTO_SHEET,
+                                         LOOK_LONG_BEARD_SHEET,
+                                         LOOK_MOHAWK_SHEET,
+                                         LOOK_MONOCLE_SHEET,
                                          LOOK_PARTY_HAT_SHEET,
                                          LOOK_PROPELLER_CAP_SHEET,
+                                         LOOK_SANTA_HAT_SHEET,
+                                         LOOK_SOMBRERO_SHEET,
+                                         LOOK_TRAFFIC_CONE_SHEET,
+                                         LOOK_TRICORN_SHEET,
                                          LOOK_VIKING_HELMET_SHEET,
                                          LOOK_WIZARD_HAT_SHEET,
                                          ORB_SHARD_SHEET,

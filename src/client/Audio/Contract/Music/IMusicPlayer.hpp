@@ -16,6 +16,9 @@ class IMusicPlayer : public IMusicClock {
   /** @brief Stops the music: start() then plays it from the start of its
    * file again. */
   virtual void stop() = 0;
+  /** @brief Pauses a music that plays: start() then plays it on from where
+   * it was. A music that does not play is left as it is. */
+  virtual void pause() = 0;
 };
 
 }  // namespace rtype::client

@@ -8,11 +8,14 @@
 #include "ClientVersionConstants.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "IScreenNavigator.hpp"
+#include "KopecksLabelConstants.hpp"
+#include "KopecksPainting.hpp"
 #include "Menu.hpp"
 #include "MenuBuilder.hpp"
 #include "MenuScreenIdConstants.hpp"
 #include "PlayStart.hpp"
 #include "PlayerPreferences.hpp"
+#include "PlayerSettings.hpp"
 #include "ScreenConstants.hpp"
 #include "ScreenId.hpp"
 #include "SquadronConstants.hpp"
@@ -106,6 +109,7 @@ void TitleScreen::repaint() {
     squadron_.paint(*canvas_, squadronBox->position,
                     playerPaletteOf(*settings_));
   }
+  paintKopecksBalance(*canvas_, KOPECKS_BALANCE_TOP_RIGHT, settings_->kopecks);
   canvas_->display();
 }
 

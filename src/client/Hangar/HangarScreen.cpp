@@ -23,15 +23,18 @@
 #include "InterfacePixel.hpp"
 #include "KeyChipParts.hpp"
 #include "LockerChoice.hpp"
+#include "LockerConstants.hpp"
 #include "LockerPainting.hpp"
 #include "LockerView.hpp"
 #include "MenuBuilder.hpp"
 #include "MotionPreference.hpp"
+#include "PlayerSettings.hpp"
 #include "PlayfieldMapping.hpp"
+#include "RowWindow.hpp"
 #include "SettingDefinitionConstants.hpp"
 #include "ShipLocker.hpp"
 #include "ShipLook.hpp"
-#include "ShipLookSpriteConstants.hpp"
+#include "ShipLookNumbers.hpp"
 #include "ShipLooks.hpp"
 #include "SoundConstants.hpp"
 #include "TimeConstants.hpp"
@@ -43,28 +46,31 @@ using identifiers::ShipLook;
 
 namespace {
 
-/** @returns The item whose cell lies under @p position of the window. */
+/** @returns The item whose cell lies under @p position of the window, the
+ * locker showing its rows from @p firstRow. */
 std::optional<std::size_t> itemUnder(sf::Vector2i position,
-                                     const PlayfieldMapping& playfieldPointAt) {
-  return lockerItemAt(interfacePixelAt(playfieldPointAt(position)));
+                                     const PlayfieldMapping& playfieldPointAt,
+                                     std::size_t firstRow) {
+  return lockerItemAt(interfacePixelAt(playfieldPointAt(position)), firstRow);
 }
 
 Button::Text backText() {
   return {.label = BACK_LABEL, .keyName = CANCEL_KEY_NAME};
 }
 
-/** @returns The status line: the name of @p item, then what Enter does with
- * it, or that an arm is fitting an item. */
-std::string statusOf(std::size_t item, ShipLook worn, bool fitting,
-                     const ShipLocker& locker) {
-  if (!locker.items.test(item)) {
-    return LOCKED_STATUS;
+/** @returns The status line: how to get @p item when the locker does not
+ * hold it, else its name, then what Enter does with it, or that an arm is
+ * fitting an item. */
+std::string statusOf(std::size_t item, const PlayerSettings& settings,
+                     bool fitting) {
+  if (!settings.shipLocker.items.test(item)) {
+    return identifiers::isHullItem(item) ? LOCKED_HULL_STATUS : LOCKED_STATUS;
   }
-  const std::string status(SHIP_LOOK_SPRITES.at(item).label);
+  const std::string status(lookItemLabelOf(item));
   if (fitting) {
     return status + FITTING_HINT;
   }
-  return status + (wears(worn, item) ? TAKE_OFF_HINT : WEAR_HINT);
+  return status + (wears(settings.shipLook, item) ? TAKE_OFF_HINT : WEAR_HINT);
 }
 
 }  // namespace
@@ -84,7 +90,8 @@ HangarScreen::HangarScreen(HangarScreenParts parts,
                              .area = MenuBuilder::chipArea(backText()),
                              .key = MENU_CANCEL_KEY,
                              .action = [this] { navigator_->pop(); },
-                             .sounds = parts.sounds}) {
+                             .sounds = parts.sounds}),
+      rows_(LOCKER_ROWS_AT_OPENING) {
   repaint();
 }
 
@@ -98,14 +105,14 @@ void HangarScreen::handleEvent(const sf::Event& event) {
              event.is<sf::Event::FocusLost>()) {
     confirmHeld_ = false;
   } else if (const auto* moved = event.getIf<sf::Event::MouseMoved>()) {
-    if (const std::optional<std::size_t> item =
-            itemUnder(moved->position, playfieldPointAt_)) {
-      chosen_ = *item;
-    }
+    chosen_ = itemUnder(moved->position, playfieldPointAt_, rows_.first)
+                  .value_or(chosen_);
+  } else if (const auto* wheel = event.getIf<sf::Event::MouseWheelScrolled>()) {
+    scrolled(*wheel);
   } else if (const auto* click = event.getIf<sf::Event::MouseButtonPressed>();
              click != nullptr && click->button == sf::Mouse::Button::Left) {
     if (const std::optional<std::size_t> item =
-            itemUnder(click->position, playfieldPointAt_)) {
+            itemUnder(click->position, playfieldPointAt_, rows_.first)) {
       chosen_ = *item;
       choose();
     }
@@ -134,12 +141,22 @@ void HangarScreen::keyPressed(const sf::Event::KeyPressed& key) {
       sounds_->play(CLICK_SOUND_ID);
     }
     chosen_ = *next;
+    rows_ = rowsShowing(rows_, lockerRowOf(chosen_));
     return;
   }
   if (key.code == MENU_CONFIRM_KEY && !confirmHeld_) {
     confirmHeld_ = true;
     choose();
   }
+}
+
+void HangarScreen::scrolled(const sf::Event::MouseWheelScrolled& wheel) {
+  if (wheel.wheel != sf::Mouse::Wheel::Vertical) {
+    return;
+  }
+  rows_ = rowsScrolledBy(rows_, wheel.delta > 0.0F ? -1 : 1);
+  chosen_ = itemUnder(wheel.position, playfieldPointAt_, rows_.first)
+                .value_or(lockerItemShownIn(chosen_, rows_));
 }
 
 void HangarScreen::choose() {
@@ -158,7 +175,7 @@ void HangarScreen::choose() {
   }
   static_cast<void>(
       settings_->apply(SHIP_LOOK_SETTING, wearing(worn, chosen_)));
-  if (motion_ == MotionPreference::Full) {
+  if (motion_ == MotionPreference::Full && !identifiers::isHullItem(chosen_)) {
     fitting_ = FittingRun{.item = chosen_, .started = elapsed_, .before = worn};
     sounds_->play(ROBOT_ARM_SOUND_ID);
   }
@@ -170,8 +187,10 @@ void HangarScreen::repaint() {
   canvas_->clear();
   canvas_->write(HANGAR_LABEL, HANGAR_TITLE_ANCHOR, HANGAR_TITLE_STYLE);
   canvas_->fill(HANGAR_RULE, EDGE_BLUE);
-  paintLocker(*canvas_,
-              LockerView{.chosen = chosen_, .worn = worn, .locker = locker});
+  paintLocker(
+      *canvas_,
+      LockerView{
+          .chosen = chosen_, .worn = worn, .locker = locker, .rows = rows_});
   paintDockWall(*canvas_, litBeaconOf(elapsed_, motion_));
   paintBlueprint(*canvas_, chosen_);
   paintDock(*canvas_, DockScene{.palette = palette_,
@@ -180,7 +199,7 @@ void HangarScreen::repaint() {
                                 .fitting = fitting_,
                                 .elapsed = elapsed_,
                                 .motion = motion_});
-  canvas_->write(statusOf(chosen_, worn, fitting_.has_value(), locker),
+  canvas_->write(statusOf(chosen_, settings_->settings(), fitting_.has_value()),
                  HANGAR_STATUS_ANCHOR, HANGAR_STATUS_STYLE);
   backChip_.paint(*canvas_);
   canvas_->display();

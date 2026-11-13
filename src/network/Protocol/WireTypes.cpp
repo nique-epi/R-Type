@@ -168,10 +168,11 @@ void requireValidShipLook(const identifiers::ShipLook& look) {
   check(look.head, identifiers::ShipLookSlot::Head, HEAD_FIELD);
   check(look.eyes, identifiers::ShipLookSlot::Eyes, EYES_FIELD);
   check(look.face, identifiers::ShipLookSlot::Face, FACE_FIELD);
+  check(look.hull, identifiers::ShipLookSlot::Hull, HULL_FIELD);
 }
 
 void requireValidLookItem(std::uint8_t item) {
-  if (!identifiers::isLookItemNumber(item)) {
+  if (!identifiers::isAccessoryNumber(item)) {
     throw InvalidFieldValueException(ITEM_FIELD, item);
   }
 }
@@ -181,12 +182,14 @@ void writeShipLook(ByteWriter& writer, const identifiers::ShipLook& look) {
   writer.writeUint8(look.head);
   writer.writeUint8(look.eyes);
   writer.writeUint8(look.face);
+  writer.writeUint8(look.hull);
 }
 
 identifiers::ShipLook readShipLook(ByteReader& reader) {
   const identifiers::ShipLook look{.head = reader.readUint8(),
                                    .eyes = reader.readUint8(),
-                                   .face = reader.readUint8()};
+                                   .face = reader.readUint8(),
+                                   .hull = reader.readUint8()};
   requireValidShipLook(look);
   return look;
 }

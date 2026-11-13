@@ -9,6 +9,9 @@
 #include "FinalPilot.hpp"
 #include "GameEnded.hpp"
 #include "PilotStatus.hpp"
+#include "PlayerLooks.hpp"
+#include "ShipLook.hpp"
+#include "ShipLookConstants.hpp"
 
 namespace rtype::client {
 
@@ -49,6 +52,17 @@ std::vector<FinalPilot> rankedPilots(std::vector<FinalPilot> pilots) {
         place > 0 && pilots[place].score == pilots[place - 1].score;
     pilots[place].rank =
         tied ? pilots[place - 1].rank : static_cast<int>(place) + 1;
+  }
+  return pilots;
+}
+
+std::vector<FinalPilot> flyingTheirHulls(
+    std::vector<FinalPilot> pilots,
+    std::span<const network::PlayerLook> looks) {
+  for (FinalPilot& pilot : pilots) {
+    const identifiers::ShipLook* const look =
+        network::findLook(looks, pilot.playerNumber);
+    pilot.hull = look == nullptr ? identifiers::NO_SHIP_LOOK_ITEM : look->hull;
   }
   return pilots;
 }

@@ -95,6 +95,14 @@ constexpr MusicTrack HANGAR_AMBIENCE_TRACK{
 constexpr MusicTrack CROWD_AMBIENCE_TRACK{.assetId = "music/hangar_crowd.flac",
                                           .gain = CROWD_AMBIENCE_GAIN};
 
+/** @brief The music of the shop, and the music its radio plays instead once
+ * tuned; each loops over its whole file, at the MUSIC volume, while the
+ * theme is paused. */
+constexpr MusicTrack SHOP_MUSIC_TRACK{.assetId =
+                                          "music/hitchhiking_in_moscow.mp3"};
+constexpr MusicTrack SHOP_RADIO_TRACK{.assetId =
+                                          "music/papers_please_theme.mp3"};
+
 /**
  * @brief How the time of the intro follows the position of the music, which
  * moves by one audio block at a time (about 10 ms in SFML 3.0.2): each frame

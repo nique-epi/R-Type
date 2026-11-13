@@ -7,6 +7,7 @@ target_link_libraries(rtype_client_sprites
     rtype_client_animation
     rtype_client_rendering_interfaces
     rtype_engine_exceptions
+    rtype_identifiers
 )
 
 add_subdirectory(Animation)
@@ -15,3 +16,4 @@ add_subdirectory(EntityAppearances)
 add_subdirectory(AnimationSystem)
 add_subdirectory(AssetTextureSource)
 add_subdirectory(PilotColor)
+add_subdirectory(ShipHulls)

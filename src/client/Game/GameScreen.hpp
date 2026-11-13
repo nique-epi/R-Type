@@ -39,6 +39,7 @@
 #include "PlayerPalette.hpp"
 #include "ScoreBoard.hpp"
 #include "ScreenConstants.hpp"
+#include "SettingsService.hpp"
 #include "SilenceWarning.hpp"
 #include "SystemScheduler.hpp"
 #include "TimeConstants.hpp"
@@ -185,6 +186,7 @@ class GameScreen : public IScreen {
   std::unique_ptr<IEntityLayer> entityLayer_;
   std::unique_ptr<IInterfaceCanvas> statusCanvas_;
   const PlayerSettings* settings_;
+  SettingsService* settingsService_;
   engine::EntityRegistry entities_;
   engine::ComponentRegistry components_{entities_};
   EffectSpawner effects_;
@@ -207,6 +209,9 @@ class GameScreen : public IScreen {
   InterpolationClock interpolationClock_;
   InterpolationTally* interpolationTally_;
   std::optional<engine::Duration> endedAt_;
+  /** @brief What the end of the game earned the player, once credited: a copy
+   * of GameEnded the session lets through credits nothing more. */
+  std::optional<std::uint32_t> kopecksGained_;
   std::uint32_t paintedStatusRevision_{};
   logging::Logger logger_{std::string{GAME_SCREEN_LOGGER_NAME}};
   std::uint8_t loggedActions_{0};

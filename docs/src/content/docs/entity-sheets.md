@@ -13,7 +13,7 @@ Both programs read the folder `entities` (`ENTITY_SHEET_FOLDER_IN_ASSETS`) of th
 
 - Every `.toml` file of the folder is a sheet; any other file, and every sub-folder, is left alone. The name of the file without `.toml` is the name of the type: `weaver.toml` is `weaver`.
 - A name is 1 to 24 bytes (`MAXIMUM_CONTENT_NAME_LENGTH`) of lowercase letters `a` to `z`, digits and `_`, so a file has the same name on every system. A folder holds at most 255 sheets (`MAXIMUM_ENTITY_TYPES`) and at least one: a type is numbered from 1 on one byte, and 0 names no type. Both limits and the check of a name (`isContentName()`) live in `src/identifiers/`, so a name the game accepts is one the table of the types can carry.
-- The server numbers the sheets from 1 in the order of their names. The twenty-three sheets the game ships are `bydo_tyrant` (1), `bydomancer` (2), `drifter` (3), `drillback` (4), `enemy_missile` (5), the seven look items `look_chef_toque` (6) to `look_wizard_hat` (12) in the order of their names, `orb_shard` (13), `player_missile` (14), `reaper` (15), `rune_orb` (16), `ship` (17), `tyrant_diver` (18), `tyrant_missile` (19), `tyrant_spore` (20), `tyrant_spore_shard` (21), `voltjelly` (22) and `weaver` (23). These numbers name the types on the wire for as long as the server runs, and every player learns them when it is accepted (see [Protocol](/R-Type/protocol/#entity-types)), so a new sheet whose name sorts first renumbers the others without breaking anything.
+- The server numbers the sheets from 1 in the order of their names. The thirty-eight sheets the game ships are `bydo_tyrant` (1), `bydomancer` (2), `drifter` (3), `drillback` (4), `enemy_missile` (5), the 22 look items `look_antennae` (6) to `look_wizard_hat` (27) in the order of their names, `orb_shard` (28), `player_missile` (29), `reaper` (30), `rune_orb` (31), `ship` (32), `tyrant_diver` (33), `tyrant_missile` (34), `tyrant_spore` (35), `tyrant_spore_shard` (36), `voltjelly` (37) and `weaver` (38). These numbers name the types on the wire for as long as the server runs, and every player learns them when it is accepted (see [Protocol](/R-Type/protocol/#entity-types)), so a new sheet whose name sorts first renumbers the others without breaking anything.
 - The server makes the ship of every player from the sheet named `ship` (`SHIP_SHEET_NAME`, `src/server/ServerConstants.hpp`): without it, it stops before its first game.
 
 ## `[gameplay]`, key by key
@@ -100,7 +100,7 @@ projectile = "enemy_missile"
 | `boss.rage_below_percent` | percent | 1 to 99 | its `Boss`: it enrages once its health falls below its full health times this share, rounded down |
 | `boss.rage_attack` | | 0 to 255 | the attack it starts, in the phase `enraged`, when it enrages |
 | `boss.arrival_attack` | | 0 to 255 | the attack of its arrival: while it is in any phase of it, a hit takes nothing from it |
-| `look_item` | | the name of an item of the locker: `top_hat`, `party_hat`, `crown`, `propeller_cap`, `cowboy_hat`, `viking_helmet`, `wizard_hat`, `chef_toque`, `cool_shades`, `mustache`; for side `look_item` only | its `LookItem`: the item the pilot whose ship touches the body wins for the locker of the hangar (see [Ship looks](/R-Type/server/#look-items-lookitemkeeper)) |
+| `look_item` | | the name of an accessory of the catalog, one of the first 25 names of `SHIP_LOOK_ITEM_NAMES` (`top_hat` to `long_beard`); a hull (`war_shark`, `vostok`, `bydo_husk`, `golden_ace`, `golden_bydo`) is refused, since a hull never floats in a game; for side `look_item` only | its `LookItem`: the item the pilot whose ship touches the body wins for the locker of the hangar (see [Ship looks](/R-Type/server/#look-items-lookitemkeeper)) |
 
 - `side`, `layer`, `pilot`, `hitbox` and `motion` are required; the key `hits` and the tables `behaviour`, `health`, `score`, `gun`, `hurt_zone`, `survives_contact`, `fragile`, `burst`, `volley` and `boss` may be left out. The three keys of `boss` are required in it. A body without `health` takes no damage: a missile that hits it still disappears, and a ship pays a hit with a life instead (see [Lives](/R-Type/server/#lives-lifekeeper)). A body without `score` earns nothing, without `gun` fires nothing.
 - Any other key is refused, so a misspelt key stops the program instead of being ignored. Every number is a TOML integer: `240`, never `240.0` or `"240"`.
@@ -357,7 +357,7 @@ The final boss, the diver it calls in and its projectiles: the Tyrant draws from
 
 The layer and the hits of each shipped sheet are in [Collision layers](#collision-layers-layer-and-hits). The values are **provisional** until gameplay tunes them; tuning them needs no rebuild. The Drifter and the Weaver share their frames, so the client draws both as the same Bydo; the diver of the Tyrant shares the idle frames of the Drillback, at a frame time of its own. The settings of the behaviours are commented in each sheet.
 
-The seven look items are bodies of side `look_item` that float to the left, `steady` at 240 units per second, piloted by `straight` with `heading` -1, with no health, score or gun. They draw from `sprites/looks.png`, one frame each:
+The 22 look items are bodies of side `look_item` that float to the left, `steady` at 240 units per second, piloted by `straight` with `heading` -1, with no health, score or gun. They draw from `sprites/looks.png`, one frame each:
 
 | Sheet | `look_item` | Hitbox | Frame on the sheet |
 |---|---|---|---|
@@ -368,6 +368,21 @@ The seven look items are bodies of side `look_item` that float to the left, `ste
 | `look_viking_helmet` | `viking_helmet` | 56 × 36 | 14 × 9 at 90 |
 | `look_wizard_hat` | `wizard_hat` | 48 × 48 | 12 × 12 at 108 |
 | `look_chef_toque` | `chef_toque` | 48 × 36 | 12 × 9 at 126 |
+| `look_chapka` | `chapka` | 56 × 36 | 14 × 9 at 180 |
+| `look_tricorn` | `tricorn` | 56 × 32 | 14 × 8 at 198 |
+| `look_santa_hat` | `santa_hat` | 52 × 36 | 13 × 9 at 216 |
+| `look_halo` | `halo` | 48 × 24 | 12 × 6 at 234 |
+| `look_devil_horns` | `devil_horns` | 52 × 28 | 13 × 7 at 252 |
+| `look_sombrero` | `sombrero` | 64 × 28 | 16 × 7 at 270 |
+| `look_traffic_cone` | `traffic_cone` | 40 × 36 | 10 × 9 at 288 |
+| `look_fez` | `fez` | 48 × 32 | 12 × 8 at 306 |
+| `look_grad_cap` | `grad_cap` | 56 × 36 | 14 × 9 at 324 |
+| `look_antennae` | `antennae` | 48 × 32 | 12 × 8 at 342 |
+| `look_kabuto` | `kabuto` | 48 × 40 | 12 × 10 at 360 |
+| `look_mohawk` | `mohawk` | 48 × 28 | 12 × 7 at 378 |
+| `look_glasses_3d` | `glasses_3d` | 44 × 16 | 11 × 4 at 396 |
+| `look_monocle` | `monocle` | 24 × 32 | 6 × 8 at 414 |
+| `look_long_beard` | `long_beard` | 48 × 36 | 12 × 9 at 432 |
 
 The top hat, the cool shades and the mustache are in the locker from the first launch and have no sheet.
 

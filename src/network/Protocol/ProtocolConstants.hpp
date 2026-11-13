@@ -20,7 +20,8 @@ constexpr std::size_t INT16_WIRE_SIZE = sizeof(std::int16_t);
 constexpr std::uint32_t PROTOCOL_ID = 0x52545950;
 
 /**
- * @brief The version of the protocol this code speaks. Version 16 adds the
+ * @brief The version of the protocol this code speaks. Version 17 adds the
+ * hull to a ship look, see the Version 17 section; version 16 adds the
  * look of each entity to WorldState and DeltaWorldState, and EffectPlayed,
  * see the Version 16 section; version 15 removes the ban: the reason Banned of
  * ConnectionRefused (9), Expulsion (2) and PlayerLeft (4) is invalid again, see
@@ -47,7 +48,7 @@ constexpr std::uint32_t PROTOCOL_ID = 0x52545950;
  * body of a datagram as a zstd frame, see the Compression section; version 3
  * adds the outcome of a game to GameEnded, see the Version 3 section.
  */
-constexpr std::uint8_t PROTOCOL_VERSION = 16;
+constexpr std::uint8_t PROTOCOL_VERSION = 17;
 
 /**
  * @brief The session token of a datagram sent before the connection is
@@ -528,13 +529,14 @@ static_assert(LARGEST_PLAYER_CHAT_LINE_SIZE <= ORDERED_PAYLOAD_LIMIT,
               "a PlayerChatLine always fits in an OrderedMessage");
 
 /**
- * @brief The size of a ship look on the wire: head, eyes, face, one byte each.
+ * @brief The size of a ship look on the wire: head, eyes, face, hull, one
+ * byte each.
  */
-constexpr std::size_t SHIP_LOOK_WIRE_SIZE = 3 * UINT8_WIRE_SIZE;
+constexpr std::size_t SHIP_LOOK_WIRE_SIZE = 4 * UINT8_WIRE_SIZE;
 
 /**
  * @brief The largest PlayerLooks payload: the count, then a player number and
- * a ship look for each of MAXIMUM_PLAYERS players, 1 + 4 x 4 = 17 bytes.
+ * a ship look for each of MAXIMUM_PLAYERS players, 1 + 4 x 5 = 21 bytes.
  */
 constexpr std::size_t LARGEST_PLAYER_LOOKS_SIZE =
     UINT8_WIRE_SIZE +
@@ -595,6 +597,7 @@ constexpr std::string_view PLAYER_NUMBER_FIELD = "playerNumber";
 constexpr std::string_view HEAD_FIELD = "head";
 constexpr std::string_view EYES_FIELD = "eyes";
 constexpr std::string_view FACE_FIELD = "face";
+constexpr std::string_view HULL_FIELD = "hull";
 constexpr std::string_view ITEM_FIELD = "item";
 constexpr std::string_view ENTITY_ID_FIELD = "entityId";
 constexpr std::string_view ENTITY_TYPE_FIELD = "entityType";

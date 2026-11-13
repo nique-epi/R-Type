@@ -31,9 +31,12 @@
 #include "Outline.hpp"
 #include "PaddedScore.hpp"
 #include "PilotColor.hpp"
+#include "PilotHull.hpp"
 #include "PlayerNumberLabel.hpp"
 #include "PlayerShading.hpp"
 #include "ShadeSwap.hpp"
+#include "ShipHulls.hpp"
+#include "ShipSheetFrame.hpp"
 #include "TextStyle.hpp"
 #include "TextureArea.hpp"
 #include "TimeConstants.hpp"
@@ -183,6 +186,17 @@ struct Polaroid {
   std::optional<ShadeSwap> recolor = std::nullopt;
 };
 
+/** @returns The first frame of the ship @p pilot flew: its hull, in the row
+ * of its color. */
+TextureArea shipImageOf(const FinalPilot& pilot) {
+  const ShipSheetFrame ship = pilotShipFrameOf(
+      PilotHull{.hull = pilot.hull,
+                .color = pilotColorOfPlayerNumber(pilot.playerNumber)},
+      PLAYER_SHIP_FRAME);
+  return TextureArea{.assetId = ship.sheet,
+                     .rectangle = rectangleOf(ship.frame)};
+}
+
 /** @brief Paints the polaroid of a pilot: its frame and window on the sky,
  * its ship, its marker, YOU or its number, and the tape, the ship and the
  * marker in the shades of the palette. */
@@ -202,9 +216,7 @@ void paintPolaroid(IInterfaceCanvas& canvas, const FinalPilot& pilot,
     canvas.fill(sf::IntRect(topLeft + POLAROID_STARS[star], {1, 1}),
                 POLAROID_STAR_COLORS[star]);
   }
-  canvas.drawImage(TextureArea{.assetId = ENTITY_SHEET_ID,
-                               .rectangle = rectangleOf(
-                                   inPlayerColorRow(PLAYER_SHIP_FRAME, color))},
+  canvas.drawImage(shipImageOf(pilot),
                    ImagePlacement{.topLeft = topLeft + POLAROID_SHIP,
                                   .recolor = polaroid.recolor},
                    INTERFACE_AREA);

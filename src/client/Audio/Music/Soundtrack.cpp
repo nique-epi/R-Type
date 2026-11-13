@@ -34,7 +34,9 @@ void Soundtrack::playTheme() {
   silenceLeft_.reset();
   stopBoss();
   gameMusic_->stop();
-  theme_->start();
+  if (!themePaused_) {
+    theme_->start();
+  }
 }
 
 void Soundtrack::playGameMusic() {
@@ -43,6 +45,7 @@ void Soundtrack::playGameMusic() {
     return;
   }
   theme_->stop();
+  themePaused_ = false;
   silenceLeft_ = GAME_MUSIC_SILENCE;
 }
 
@@ -52,6 +55,7 @@ void Soundtrack::playBossMusic() {
   }
   silenceLeft_.reset();
   theme_->stop();
+  themePaused_ = false;
   gameMusic_->stop();
   alarmLeft_ = BOSS_ALARM_DURATION;
 }
@@ -59,6 +63,22 @@ void Soundtrack::playBossMusic() {
 void Soundtrack::silenceMusic() {
   silenceLeft_.reset();
   gameMusic_->stop();
+}
+
+void Soundtrack::pauseTheme() {
+  if (themePaused_ || !theme_->playingOffset().has_value()) {
+    return;
+  }
+  theme_->pause();
+  themePaused_ = true;
+}
+
+void Soundtrack::resumeTheme() {
+  if (!themePaused_) {
+    return;
+  }
+  themePaused_ = false;
+  theme_->start();
 }
 
 void Soundtrack::stopBoss() {

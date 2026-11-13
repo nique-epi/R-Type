@@ -14,6 +14,7 @@ class NullMusicPlayer final : public IMusicPlayer {
   void start() override;
 
   void stop() override;
+  void pause() override;
 
   /** @returns Nothing: this music never plays. */
   [[nodiscard]] std::optional<engine::Duration> playingOffset() const override;

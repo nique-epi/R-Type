@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <functional>
 #include "PlayerPalette.hpp"
 #include "SpriteFrame.hpp"
@@ -17,6 +18,9 @@ namespace rtype::client {
 struct PilotShipPicture {
   game::SpriteFrame frame;
   int color{};
+  /** @brief The hull the pilot flies: NO_SHIP_LOOK_ITEM for the standard
+   * ship, else the number of a hull of the catalog. */
+  std::uint8_t hull{};
   std::reference_wrapper<const PlayerPalette> palette;
 };
 

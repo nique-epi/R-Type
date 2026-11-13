@@ -260,6 +260,10 @@ std::optional<LineOutcome> applyLook(PlayerSettings& settings,
     return assign(lookItemOf(value, ShipLookSlot::Face),
                   settings.shipLook.face);
   }
+  if (name == SHIP_HULL_NAME) {
+    return assign(lookItemOf(value, ShipLookSlot::Hull),
+                  settings.shipLook.hull);
+  }
   return std::nullopt;
 }
 
@@ -310,6 +314,42 @@ std::optional<LineOutcome> applyLocker(PlayerSettings& settings,
   return LineOutcome::Applied;
 }
 
+/** @returns The balance @p text holds, a whole number from 0 to
+ * MAXIMUM_KOPECKS; nothing for any other text. */
+std::optional<std::uint32_t> kopecksOf(std::string_view text) {
+  const char* const first = std::to_address(text.begin());
+  const char* const last = std::to_address(text.end());
+  std::uint32_t value = 0;
+  const auto [stop, error] = std::from_chars(first, last, value);
+  if (error != std::errc() || stop != last || value > MAXIMUM_KOPECKS) {
+    return std::nullopt;
+  }
+  return value;
+}
+
+/** @returns What became of the balance, nothing when the line names another
+ * setting. A value that is no balance leaves the player none. */
+std::optional<LineOutcome> applyKopecks(PlayerSettings& settings,
+                                        SettingLine setting) {
+  if (setting.name != KOPECKS_NAME) {
+    return std::nullopt;
+  }
+  const std::optional<std::uint32_t> kopecks = kopecksOf(setting.value);
+  settings.kopecks = kopecks.value_or(0);
+  return kopecks.has_value() ? LineOutcome::Applied : LineOutcome::InvalidValue;
+}
+
+/** @returns What became of a line about what the player holds, the locker
+ * or the kopecks; nothing when it names another setting. */
+std::optional<LineOutcome> applyHoldings(PlayerSettings& settings,
+                                         SettingLine setting) {
+  if (const std::optional<LineOutcome> outcome =
+          applyLocker(settings, setting)) {
+    return outcome;
+  }
+  return applyKopecks(settings, setting);
+}
+
 /** @brief Applies @p setting when it names a setting written as a word or a
  * pair: the window size, the display and the color modes.
  * @returns What became of the line, nothing for any other name. */
@@ -352,7 +392,7 @@ LineOutcome applySetting(PlayerSettings& settings, SettingLine setting) {
     return *outcome;
   }
   if (const std::optional<LineOutcome> outcome =
-          applyLocker(settings, setting)) {
+          applyHoldings(settings, setting)) {
     return *outcome;
   }
   const std::optional<BoundAction> action =
@@ -437,7 +477,9 @@ std::string settingsText(const PlayerSettings& settings) {
   writeLine(text, SHIP_HEAD_NAME, lookItemValue(settings.shipLook.head));
   writeLine(text, SHIP_EYES_NAME, lookItemValue(settings.shipLook.eyes));
   writeLine(text, SHIP_FACE_NAME, lookItemValue(settings.shipLook.face));
+  writeLine(text, SHIP_HULL_NAME, lookItemValue(settings.shipLook.hull));
   writeLine(text, SHIP_LOCKER_NAME, lockerValue(settings.shipLocker));
+  writeLine(text, KOPECKS_NAME, std::to_string(settings.kopecks));
   return text;
 }
 

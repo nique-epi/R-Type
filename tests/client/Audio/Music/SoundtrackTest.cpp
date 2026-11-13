@@ -14,6 +14,7 @@ using rtype::client::testing::MOST_OF_THE_SILENCE;
 using rtype::client::testing::PART_OF_THE_SILENCE;
 using rtype::client::testing::REST_OF_THE_SILENCE;
 using rtype::client::testing::THE_WHOLE_SILENCE;
+using rtype::client::testing::WELL_INTO_THE_THEME;
 
 /**
  * Given the theme playing
@@ -284,4 +285,99 @@ TEST(Soundtrack, LeavingDuringTheAlarmCancelsTheMusicOfTheBoss) {
   soundtrack.advance(BOSS_ALARM_DURATION);
 
   EXPECT_FALSE(bossMusic.playingOffset().has_value());
+}
+
+/**
+ * Given the theme playing
+ * When a screen with a music of its own pauses it
+ * Then the theme is silent
+ */
+TEST(Soundtrack, APausedThemeIsSilent) {
+  FakeMusicPlayer theme;
+  FakeMusicPlayer gameMusic;
+  FakeMusicPlayer bossMusic;
+  Soundtrack soundtrack(SoundtrackParts{
+      .theme = theme, .gameMusic = gameMusic, .bossMusic = bossMusic});
+  theme.start();
+
+  soundtrack.pauseTheme();
+
+  EXPECT_FALSE(theme.playingOffset().has_value());
+}
+
+/**
+ * Given the theme paused 42 s into it
+ * When it is resumed
+ * Then it plays on from 42 s, not from its start
+ */
+TEST(Soundtrack, AResumedThemePlaysOnFromWhereItWas) {
+  FakeMusicPlayer theme;
+  FakeMusicPlayer gameMusic;
+  FakeMusicPlayer bossMusic;
+  Soundtrack soundtrack(SoundtrackParts{
+      .theme = theme, .gameMusic = gameMusic, .bossMusic = bossMusic});
+  theme.start();
+  theme.setPlayingOffset(WELL_INTO_THE_THEME);
+  soundtrack.pauseTheme();
+
+  soundtrack.resumeTheme();
+
+  EXPECT_EQ(theme.playingOffset(), WELL_INTO_THE_THEME);
+}
+
+/**
+ * Given the theme paused
+ * When the theme is asked for, as a title screen below does each frame
+ * Then it stays paused
+ */
+TEST(Soundtrack, AskingForAPausedThemeLeavesItPaused) {
+  FakeMusicPlayer theme;
+  FakeMusicPlayer gameMusic;
+  FakeMusicPlayer bossMusic;
+  Soundtrack soundtrack(SoundtrackParts{
+      .theme = theme, .gameMusic = gameMusic, .bossMusic = bossMusic});
+  theme.start();
+  soundtrack.pauseTheme();
+
+  soundtrack.playTheme();
+
+  EXPECT_FALSE(theme.playingOffset().has_value());
+}
+
+/**
+ * Given the theme paused
+ * When a game starts, then the theme is resumed
+ * Then the theme stays silent: the game stopped it for good
+ */
+TEST(Soundtrack, AGameStopsAPausedThemeForGood) {
+  FakeMusicPlayer theme;
+  FakeMusicPlayer gameMusic;
+  FakeMusicPlayer bossMusic;
+  Soundtrack soundtrack(SoundtrackParts{
+      .theme = theme, .gameMusic = gameMusic, .bossMusic = bossMusic});
+  theme.start();
+  soundtrack.pauseTheme();
+  soundtrack.playGameMusic();
+
+  soundtrack.resumeTheme();
+
+  EXPECT_FALSE(theme.playingOffset().has_value());
+}
+
+/**
+ * Given a theme that does not play
+ * When it is paused, then resumed
+ * Then it still does not play: resuming starts only what was paused
+ */
+TEST(Soundtrack, ResumingAThemeThatDidNotPlayStartsNothing) {
+  FakeMusicPlayer theme;
+  FakeMusicPlayer gameMusic;
+  FakeMusicPlayer bossMusic;
+  Soundtrack soundtrack(SoundtrackParts{
+      .theme = theme, .gameMusic = gameMusic, .bossMusic = bossMusic});
+  soundtrack.pauseTheme();
+
+  soundtrack.resumeTheme();
+
+  EXPECT_FALSE(theme.playingOffset().has_value());
 }

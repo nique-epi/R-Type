@@ -21,6 +21,8 @@ AudioService::AudioService(AssetLibrary& library, SettingsService& settings)
       spaceAmbience_(settings, SPACE_AMBIENCE_TRACK),
       hangarAmbience_(settings, HANGAR_AMBIENCE_TRACK),
       crowdAmbience_(settings, CROWD_AMBIENCE_TRACK),
+      shopMusic_(settings, SHOP_MUSIC_TRACK),
+      shopRadio_(settings, SHOP_RADIO_TRACK),
       soundtrack_(SoundtrackParts{
           .theme = theme_, .gameMusic = gameMusic_, .bossMusic = bossMusic_}) {
   settings_->subscribe(sounds_);
@@ -30,9 +32,13 @@ AudioService::AudioService(AssetLibrary& library, SettingsService& settings)
   settings_->subscribe(spaceAmbience_);
   settings_->subscribe(hangarAmbience_);
   settings_->subscribe(crowdAmbience_);
+  settings_->subscribe(shopMusic_);
+  settings_->subscribe(shopRadio_);
 }
 
 AudioService::~AudioService() {
+  settings_->unsubscribe(shopRadio_);
+  settings_->unsubscribe(shopMusic_);
   settings_->unsubscribe(crowdAmbience_);
   settings_->unsubscribe(hangarAmbience_);
   settings_->unsubscribe(spaceAmbience_);
@@ -61,7 +67,14 @@ void AudioService::setAmbience(Ambience ambience) {
   spaceAmbience_.stop();
   hangarAmbience_.stop();
   crowdAmbience_.stop();
+  shopMusic_.stop();
+  shopRadio_.stop();
   ambience_ = ambience;
+  if (ambience == Ambience::Shop || ambience == Ambience::ShopRadio) {
+    soundtrack_.pauseTheme();
+  } else {
+    soundtrack_.resumeTheme();
+  }
   switch (ambience) {
     case Ambience::Space:
       spaceAmbience_.start();
@@ -69,6 +82,12 @@ void AudioService::setAmbience(Ambience ambience) {
     case Ambience::Hangar:
       hangarAmbience_.start();
       crowdAmbience_.start();
+      break;
+    case Ambience::Shop:
+      shopMusic_.start();
+      break;
+    case Ambience::ShopRadio:
+      shopRadio_.start();
       break;
     case Ambience::None:
       break;
@@ -85,6 +104,8 @@ void AudioService::open() {
   spaceAmbience_.open(*library_);
   hangarAmbience_.open(*library_);
   crowdAmbience_.open(*library_);
+  shopMusic_.open(*library_);
+  shopRadio_.open(*library_);
 }
 
 void AudioService::update(engine::Duration elapsed) {

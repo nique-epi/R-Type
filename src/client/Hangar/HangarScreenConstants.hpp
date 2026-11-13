@@ -21,8 +21,10 @@ constexpr TextStyle HANGAR_STATUS_STYLE{.font = TextFont::Small,
 constexpr const char* WEAR_HINT = " - ENTER: WEAR";
 constexpr const char* TAKE_OFF_HINT = " - ENTER: TAKE OFF";
 
-/** @brief The status line of an item the player does not hold yet. */
-constexpr const char* LOCKED_STATUS = "LOCKED: PICK IT UP IN A MISSION";
+/** @brief The status line of an item the player does not hold yet: a look
+ * item is won in a mission or bought, a hull is only bought. */
+constexpr const char* LOCKED_STATUS = "LOCKED: WIN IT IN A MISSION OR BUY IT";
+constexpr const char* LOCKED_HULL_STATUS = "LOCKED: BUY IT AT THE SHOP";
 constexpr const char* FITTING_HINT = " - FITTING...";
 
 }  // namespace rtype::client

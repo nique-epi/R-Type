@@ -11,9 +11,13 @@ target_link_libraries(rtype_client_hangar_locker
     SFML::Window
     rtype_client_background
     rtype_client_interface
+    rtype_client_row_window
     rtype_client_settings_values
   PRIVATE
+    rtype_client_entity_sprites
     rtype_client_outline
+    rtype_client_scroll_mark
+    rtype_client_ship_hulls
     rtype_client_pixel_shapes
     rtype_client_random_range
     rtype_client_ship_looks

@@ -48,6 +48,11 @@ constexpr std::array TEST_LOOK_ITEMS{game::testing::LOOK_CROWN_SHEET,
 constexpr std::size_t TICKS_OF_FOUR_WAVES =
     engine::wholeTicksIn(std::chrono::seconds(40));
 
+/** @brief A plan that brings a look item with each third wave: within
+ * TICKS_OF_FOUR_WAVES, the waves 2 to 5 begin (the fourth wave takes 10.75
+ * seconds more, 38 in all), so the third alone brings one. */
+constexpr std::size_t EVERY_THIRD_WAVE = 3;
+
 /** @brief Where a look item enters, from the top: half of the way down. */
 constexpr float HALF_OF_THE_HEIGHT = 0.5F;
 

@@ -13,6 +13,7 @@
 #include "MotionPreference.hpp"
 #include "PilotShipPicture.hpp"
 #include "PlayerNumberLabel.hpp"
+#include "ShipLookConstants.hpp"
 #include "ShipLooks.hpp"
 #include "ShipPicture.hpp"
 #include "ShipPlacement.hpp"
@@ -152,11 +153,14 @@ void paintShip(IInterfaceCanvas& canvas, const HangarBay& bay,
           bay.topLeft.y + BAY_SHIP_TOP),
       .scale = BAY_SHIP_SCALE,
       .visibleArea = {bay.topLeft, HANGAR_BAY_SIZE}};
-  paintPilotShip(
-      canvas,
-      PilotShipPicture{
-          .frame = frame, .color = bay.color, .palette = bay.palette},
-      ship);
+  paintPilotShip(canvas,
+                 PilotShipPicture{.frame = frame,
+                                  .color = bay.color,
+                                  .hull = bay.pilot.has_value()
+                                              ? bay.pilot->look.hull
+                                              : identifiers::NO_SHIP_LOOK_ITEM,
+                                  .palette = bay.palette},
+                 ship);
   if (bay.pilot.has_value()) {
     paintShipLook(canvas, bay.pilot->look, ship);
   }

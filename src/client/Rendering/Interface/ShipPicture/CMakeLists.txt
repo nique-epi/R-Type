@@ -8,6 +8,7 @@ target_link_libraries(rtype_client_ship_picture
   PRIVATE
     rtype_client_entity_sprites
     rtype_client_player_shading
+    rtype_client_ship_hulls
 )
 
 rtype_enable_warnings(rtype_client_ship_picture)

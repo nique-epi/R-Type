@@ -1,16 +1,19 @@
 #pragma once
 
+#include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <array>
 #include <cstddef>
 #include <cstdint>
 #include "GlassStreak.hpp"
+#include "RowWindow.hpp"
 #include "ShipLookConstants.hpp"
 
 namespace rtype::client {
 
-/** @brief The locker: LOCKER_COLUMNS cells a row, LOCKER_ROWS rows, under a
- * name plate LOCKER_PLATE_HEIGHT tall, LOCKER_PADDING inside its sides. */
+/** @brief The locker: LOCKER_COLUMNS cells a row, LOCKER_ROWS rows shown,
+ * under a name plate LOCKER_PLATE_HEIGHT tall, LOCKER_PADDING inside its sides.
+ */
 constexpr sf::Vector2i LOCKER_TOP_LEFT{24, 34};
 constexpr int LOCKER_COLUMNS = 3;
 constexpr int LOCKER_ROWS = 4;
@@ -25,10 +28,31 @@ constexpr sf::Vector2i LOCKER_SIZE{
         ((LOCKER_ROWS - 1) * LOCKER_GAP) + LOCKER_PADDING};
 constexpr std::size_t LOCKER_COLUMN_COUNT =
     static_cast<std::size_t>(LOCKER_COLUMNS);
+constexpr std::size_t LOCKER_SHOWN_ROW_COUNT =
+    static_cast<std::size_t>(LOCKER_ROWS);
 constexpr std::size_t LOCKER_SLOT_COUNT =
-    LOCKER_COLUMN_COUNT * static_cast<std::size_t>(LOCKER_ROWS);
-static_assert(identifiers::SHIP_LOOK_ITEM_COUNT <= LOCKER_SLOT_COUNT,
-              "every item has a cell of the locker");
+    LOCKER_COLUMN_COUNT * LOCKER_SHOWN_ROW_COUNT;
+
+/** @brief The rows the items fill, LOCKER_COLUMNS to a row, the last one
+ * short when they do not fill it; the locker shows LOCKER_ROWS of them at a
+ * time, the first ones when the hangar opens. */
+constexpr std::size_t LOCKER_ITEM_ROW_COUNT =
+    (identifiers::SHIP_LOOK_ITEM_COUNT + LOCKER_COLUMN_COUNT - 1) /
+    LOCKER_COLUMN_COUNT;
+constexpr RowWindow LOCKER_ROWS_AT_OPENING{.first = 0,
+                                           .shown = LOCKER_SHOWN_ROW_COUNT,
+                                           .count = LOCKER_ITEM_ROW_COUNT};
+
+/** @brief The scroll mark of the locker: a track LOCKER_SCROLL_TRACK_WIDTH
+ * wide on its right upright, LOCKER_SCROLL_TRACK_INSET from its right side,
+ * between the glass door and the edge, as tall as the cells shown. */
+constexpr int LOCKER_SCROLL_TRACK_WIDTH = 2;
+constexpr int LOCKER_SCROLL_TRACK_INSET = 4;
+constexpr sf::IntRect LOCKER_SCROLL_TRACK{
+    {LOCKER_TOP_LEFT.x + LOCKER_SIZE.x - LOCKER_SCROLL_TRACK_INSET,
+     LOCKER_TOP_LEFT.y + LOCKER_PLATE_HEIGHT},
+    {LOCKER_SCROLL_TRACK_WIDTH,
+     (LOCKER_ROWS * LOCKER_CELL_SIZE) + ((LOCKER_ROWS - 1) * LOCKER_GAP)}};
 
 /** @brief The seeds of the strokes of the locker and of its plate, so they
  * look the same in every frame. */

@@ -3,6 +3,7 @@
 #include <SFML/Graphics/Rect.hpp>
 #include <cstddef>
 #include <optional>
+#include <string_view>
 #include <vector>
 #include "IInterfaceCanvas.hpp"
 #include "ShipLook.hpp"
@@ -46,5 +47,9 @@ void paintShipLook(IInterfaceCanvas& canvas, identifiers::ShipLook look,
  * MAXIMUM_LOOK_ICON_SCALE, at which it fits. */
 void paintLookIcon(IInterfaceCanvas& canvas, std::size_t item,
                    sf::IntRect cell);
+
+/** @returns The name @p item, a position in SHIP_LOOK_ITEM_NAMES, is shown
+ * under: the label of its drawing for an accessory, of its hull for a hull. */
+[[nodiscard]] std::string_view lookItemLabelOf(std::size_t item);
 
 }  // namespace rtype::client

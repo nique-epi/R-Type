@@ -1,5 +1,5 @@
 ---
-title: 'Network protocol: version 16'
+title: 'Network protocol: version 17'
 description: The datagrams the client and the server exchange over UDP, byte by byte, and what each side does when one is lost or cannot be read.
 sidebar:
   label: Protocol
@@ -11,7 +11,7 @@ This page is the specification of the protocol the client and the server speak: 
 
 ## Status of this document
 
-- This is version 16 of the protocol. It is the only version the code speaks. [Versions and compatibility](#versions-and-compatibility) says when the version changes and what two programs of different versions do; [Version 2](#version-2), [Version 3](#version-3), [Version 4](#version-4), [Version 5](#version-5), [Version 6](#version-6), [Version 7](#version-7), [Version 8](#version-8), [Version 9](#version-9), [Version 10](#version-10), [Version 11](#version-11), [Version 12](#version-12), [Version 13](#version-13), [Version 14](#version-14), [Version 15](#version-15) and [Version 16](#version-16) say what each changed from the version before, and what the rest of the second part of the project will change.
+- This is version 17 of the protocol. It is the only version the code speaks. [Versions and compatibility](#versions-and-compatibility) says when the version changes and what two programs of different versions do; [Version 2](#version-2), [Version 3](#version-3), [Version 4](#version-4), [Version 5](#version-5), [Version 6](#version-6), [Version 7](#version-7), [Version 8](#version-8), [Version 9](#version-9), [Version 10](#version-10), [Version 11](#version-11), [Version 12](#version-12), [Version 13](#version-13), [Version 14](#version-14), [Version 15](#version-15), [Version 16](#version-16) and [Version 17](#version-17) say what each changed from the version before, and what the rest of the second part of the project will change.
 - The words MUST, MUST NOT, SHOULD and MAY are used as in RFC 2119. A MUST is a rule every implementation follows to interoperate; a SHOULD names a behavior the code of this repository has and another implementation can drop without breaking the exchange.
 - Everything on this page is checked against the code of `src/network`, `src/server` and `src/client`. [Implementation status](#implementation-status) lists the rules the programs do not apply yet, so a rule never reads as working when it does not.
 - Numbers are decimal unless written `0x`. A size is in bytes.
@@ -78,7 +78,7 @@ Both changes together save 12 bytes on the 268 of the typical state, 4.5 %, befo
 
 ## Datagram
 
-A datagram is a 22-byte header followed by one or more messages. The header, byte by byte; every field is used in version 16.
+A datagram is a 22-byte header followed by one or more messages. The header, byte by byte; every field is used in version 17.
 
 <ByteLayout
   label="The 22-byte header: protocolId on bytes 0 to 3, version on byte 4, flags on byte 5, sessionToken on bytes 6 to 13, sequence on bytes 14 and 15, acknowledgedSequence on bytes 16 and 17, acknowledgementBits on bytes 18 to 21."
@@ -101,7 +101,7 @@ A datagram is a 22-byte header followed by one or more messages. The header, byt
   ]}
 />
 
-| Offset | Size | Field | In version 16 |
+| Offset | Size | Field | In version 17 |
 |---|---|---|---|
 | 0 | 4 | `protocolId` | `0x52545950`, `RTYP` in ASCII |
 | 4 | 1 | `version` | 16 |
@@ -131,7 +131,7 @@ A received datagram goes through these checks in order. No buffer is sized from 
 |---|---|
 | The datagram holds 25 to 1200 bytes | dropped |
 | `protocolId` is `RTYP` | dropped |
-| `version` is 13 | dropped; the server answers an unknown sender with `ConnectionRefused` (`IncompatibleVersion`) if the datagram holds at least 26 bytes |
+| `version` is not 17 | dropped; the server answers an unknown sender with `ConnectionRefused` (`IncompatibleVersion`) if the datagram holds at least 26 bytes |
 | `COMPRESSED` is set | the server drops the datagram; the client decodes the body and clears the flag, or drops the datagram when it cannot (see [Compression](#compression)) |
 | `flags` has no bit but `ACKNOWLEDGES` and `GUARANTEED`, once `COMPRESSED` is cleared | dropped |
 | The message sizes add up exactly to the end of the datagram | dropped |
@@ -163,7 +163,7 @@ The type identifies a message in both directions: `Disconnection` and `Heartbeat
 | 24 | `ServerInformationRequest` | `sentAt` `u32`, then `padding`, 77 bytes of 0 (see [Server information](#server-information)) | by anyone, outside any session, to learn what a server is and its round trip: a client that lists the servers |
 | 29 | `MasterProbe` | `secret` `u64`, `token` `u64` (see [Probe of the master](#probe-of-the-master)) | by the master, outside any session, to the registered address and UDP port of a game server, after each heartbeat it accepts, at most once a second |
 | 30 | `ChatLine` | `lineNumber` `u16`, `text` `string` (1 to 127 bytes) | when the player sends a line, then every 500 ms until the `PlayerChatLine` of that number comes back; one line at a time; the client gives up after 5 s (see [Chat](#chat)) |
-| 35 | `ShipLookChoice` | `head` `u8`, `eyes` `u8`, `face` `u8`: 0 for nothing, else the number of the item (see [Ship looks](#ship-looks)) | when the player changes its look in the waiting room, then every 500 ms until a `PlayerLooks` shows it |
+| 35 | `ShipLookChoice` | `head` `u8`, `eyes` `u8`, `face` `u8`, `hull` `u8`: 0 for nothing (the standard ship for `hull`), else the number of the item (see [Ship looks](#ship-looks)) | when the player changes its look in the waiting room, then every 500 ms until a `PlayerLooks` shows it |
 
 ### Server to client
 
@@ -192,8 +192,8 @@ The type identifies a message in both directions: `Disconnection` and `Heartbeat
 | 31 | `PlayerChatLine` | `lineNumber` `u16`, `text` `string` (1 to 127 bytes), `playerNumber` `u8` (1 to 4) | to every player of the game, its writer included, once for each new line the server takes, guaranteed and ordered (see [Chat](#chat)) |
 | 32 | `BossStatus` | `bossEntityId` `u32`, `health` `u16`, `fullHealth` `u16`, `stage` `u8`: 1 `Arriving`, 2 `Fighting`, 3 `Enraged`, 4 `Defeated` | when the last wave of a level with a boss is over, when the fight starts, at each hit that takes points from the boss, when it enrages and when it dies, guaranteed and ordered (see [Boss status](#boss-status)) |
 | 34 | `Expulsion` | `reason` `u8`: 1 `ByTheHost` | to a player of a game process, in its session, when the supervisor orders its expulsion: three in a row, then the session closes at the next tick (see [A peer disappears](#a-peer-disappears)) |
-| 36 | `PlayerLooks` | `playerCount` `u8` (0 to 4), then per player `playerNumber` `u8` (1 to 4), `head` `u8`, `eyes` `u8`, `face` `u8` | to every player when a player changes its look and when a player arrives, to one player alone when it sends its look unchanged, guaranteed and ordered (see [Ship looks](#ship-looks)) |
-| 37 | `LookItemWon` | `item` `u8` (1 to 10) | to the player who picked up a look item, alone, guaranteed and ordered (see [Ship looks](#ship-looks)) |
+| 36 | `PlayerLooks` | `playerCount` `u8` (0 to 4), then per player `playerNumber` `u8` (1 to 4), `head` `u8`, `eyes` `u8`, `face` `u8`, `hull` `u8` | to every player when a player changes its look and when a player arrives, to one player alone when it sends its look unchanged, guaranteed and ordered (see [Ship looks](#ship-looks)) |
+| 37 | `LookItemWon` | `item` `u8` (1 to 25) | to the player who picked up a look item, alone, guaranteed and ordered (see [Ship looks](#ship-looks)) |
 | 38 | `EffectPlayed` | `entityId` `u32`, `effect` `string` (1 to 24 bytes) | to every player, when a body plays an effect its sheet names, guaranteed and ordered (see [Named effects and looks](#named-effects-and-looks)) |
 | 39 | `LevelStatus` | `biome` `string` (0 to 24 bytes), `scrollPosition` `f32`, `scrollSpeed` `f32` | in a game that plays a level: when the level starts, when its biome changes, when its scroll stops or starts again and when it goes back to a checkpoint, guaranteed and ordered (see [Level status](#level-status)) |
 
@@ -220,8 +220,8 @@ A message is accepted only when its payload has exactly the size its fields add 
 | `LeaderboardAnswer` | as `LeaderboardRequest` for its first two fields; at most 10 rows; each `rank` is at least 1 and each nickname is valid |
 | `ServerInformationRequest` | the payload is 81 bytes: `sentAt`, then 77 bytes of 0; a shorter or longer one, or a byte of `padding` other than 0, is invalid |
 | `ChatLine`, `PlayerChatLine` | `text` is 1 to 127 bytes of valid UTF-8, no control character; `PlayerChatLine` names a `playerNumber` of 1 to 4 |
-| `ShipLookChoice`, `PlayerLooks` | each look byte is 0 or the number of an item of its slot: `head` 0 to 8, `eyes` 0 or 9, `face` 0 or 10; `PlayerLooks` has at most 4 players, each `playerNumber` 1 to 4 and listed once |
-| `LookItemWon` | `item` is 1 to 10 |
+| `ShipLookChoice`, `PlayerLooks` | each look byte is 0 or the number of an item of its slot: `head` 0, 1 to 8 or 11 to 22, `eyes` 0, 9, 23 or 24, `face` 0, 10 or 25, `hull` 0 or 26 to 30; `PlayerLooks` has at most 4 players, each `playerNumber` 1 to 4 and listed once |
+| `LookItemWon` | `item` is 1 to 25: a hull (26 to 30) is refused |
 | `EffectPlayed` | `entityId` is not 0; `effect` is a name of the content, 1 to 24 bytes of `a` to `z`, digits and `_`; whether the sheet of the body names it is for the receiver to look up |
 | `LevelStatus` | `biome` is empty or a biome name: 1 to 24 bytes among `a` to `z`, `0` to `9` and `_`; `scrollPosition` and `scrollSpeed` are finite and not negative |
 | `ServerInformation` | `gameVersion` and `name` are 1 to 32 bytes of valid UTF-8, no control character; `playerCount` is at most 4 times `gameCount`, and `playerCount` plus `freeSeatCount` too |
@@ -255,7 +255,7 @@ Alternative considered: a bucket of lines, as Source keeps (4 lines at once, the
 
 ### Ship looks
 
-A player dresses its ship in the hangar with items of a locker of 10: 8 for the head (numbers 1 to 8), the shades for the eyes (9) and the mustache for the face (10). A look is three bytes, one per slot, 0 for a slot that wears nothing. The server shows the look of every player to every player, in the waiting room and in the game.
+A player dresses its ship in the hangar with items of a catalog of 30: 20 for the head (numbers 1 to 8 and 11 to 22), 3 for the eyes (9, 23, 24), 2 for the face (10, 25) and 5 hulls (26 to 30), which replace the picture of the ship and hide nothing it wears. A look is four bytes, one per slot, 0 for a slot that wears nothing and for the standard ship. The server shows the look of every player to every player, in the waiting room and in the game.
 
 - **Choosing.** The server reads a `ShipLookChoice` only from a player with a session, and only while the game takes the choices of the waiting room, as it does a `ReadyState`; one sent during a game is ignored. The value is absolute, never a change.
 - **Sending again.** The client to server direction has no guaranteed channel, so a client MUST send its look again every 500 ms until a `PlayerLooks` lists its own `playerNumber` with that look, and sends nothing once the game started.
@@ -766,7 +766,7 @@ On the games captured while the dictionary was trained, the datagram of the serv
 
 ## Versions and compatibility
 
-A program speaks one version of the protocol, the number at offset 4 of every datagram it sends. This section says what stays the same in every version, which changes give the protocol a new number, and what two programs of different versions do when they meet. The sections after it apply these rules to each version, from version 2 to version 16.
+A program speaks one version of the protocol, the number at offset 4 of every datagram it sends. This section says what stays the same in every version, which changes give the protocol a new number, and what two programs of different versions do when they meet. The sections after it apply these rules to each version, from version 2 to version 17.
 
 ### What never changes
 
@@ -780,7 +780,7 @@ A program speaks one version of the protocol, the number at offset 4 of every da
 
 | Change | Example |
 |---|---|
-| A field added to, removed from or moved in the header or a message that already exists | `GameEnded` gains `outcome` before `playerCount` (version 3); `PlayerInput` repeats earlier inputs (version 5); `ConnectionRequest` gains `kind` and `number` (version 9); `ConnectionAccepted` announces the content pack (version 10); `EntitySpawned` gains `owner` and `firingInput`, `PlayerInput` gains `shownTick` (version 11); `ConnectionRequest` of kind `NewGame` gains `difficulty`, `lives` and `friendlyFire` (version 12); each entity of `WorldState` and `DeltaWorldState` gains `look` (version 16) |
+| A field added to, removed from or moved in the header or a message that already exists | `GameEnded` gains `outcome` before `playerCount` (version 3); `PlayerInput` repeats earlier inputs (version 5); `ConnectionRequest` gains `kind` and `number` (version 9); `ConnectionAccepted` announces the content pack (version 10); `EntitySpawned` gains `owner` and `firingInput`, `PlayerInput` gains `shownTick` (version 11); `ConnectionRequest` of kind `NewGame` gains `difficulty`, `lives` and `friendlyFire` (version 12); each entity of `WorldState` and `DeltaWorldState` gains `look` (version 16); a ship look gains `hull` (version 17) |
 | A field that keeps its place and changes its meaning | the acknowledgement fields of the header, written as 0 before (version 2); `entityType` read from a table (version 6) |
 | A flag or an encoding of the body a receiver of the version before cannot read | `COMPRESSED` (version 4) |
 | A message that already exists moved into an envelope | `EntityDestroyed`, `EnemyAction`, `GameEvent` and `PlayerLeft` inside `OrderedMessage` (version 7) |
@@ -850,7 +850,7 @@ Version 9 lets a player create or join a game: `ConnectionRequest` carries `kind
 
 `ChatLine` and `PlayerChatLine` (types 30 and 31) did not change `version`: a peer that does not know them skips them, and the ordered channel hands a `PlayerChatLine` over to a client without the chat, which skips it, so the order of the channel holds.
 
-`ShipLookChoice`, `PlayerLooks` and `LookItemWon` (types 35 to 37) did not change `version`: a peer that does not know them skips them. One consequence the version does not catch: an older client that downloads a content pack with a sheet of the side `look_item` cannot read it, so it cannot join a server that ships look items. Both programs are built from the same repository, so this is written here and not worked around.
+`ShipLookChoice`, `PlayerLooks` and `LookItemWon` (types 35 to 37) did not change `version` when they were added (version 17 changed their layout, see [Version 17](#version-17)): a peer that does not know them skips them. One consequence the version does not catch: an older client that downloads a content pack with a sheet of the side `look_item` cannot read it, so it cannot join a server that ships look items. Both programs are built from the same repository, so this is written here and not worked around.
 
 `LevelStatus` (type 39) did not change `version`: a peer that does not know it skips it, and a client without it plays the level under the sky it has.
 
@@ -887,6 +887,10 @@ Version 15 removes the ban of a player, since the project keeps no accounts and 
 Version 16 lets the content of a server draw visual effects without code on the client (see [Named effects and looks](#named-effects-and-looks)). Each entity of `WorldState` and `DeltaWorldState` gains `look`, 1 byte after `y`, so an entity takes 10 bytes instead of 9: a receiver of version 15 would read every entity after the first one at the wrong offset, so `version` became 16. A client of version 15 also refuses a content pack whose sheets hold `[appearance.effects]` or `[appearance.looks]`, an unknown key for it.
 
 `EffectPlayed` (type 38) was added in the same version. Alone it would have kept `version`: a peer that does not know it skips it and only loses the effect.
+
+## Version 17
+
+Version 17 gives a ship look a fourth byte, `hull`, after `face`: `ShipLookChoice` holds four bytes and `PlayerLooks` five per player (see [Ship looks](#ship-looks)). The catalog grows from 10 to 30 numbers, 25 accessories then 5 hulls; `LookItemWon` carries 1 to 25, never a hull, which is only bought. A peer of version 16 would read the fourth byte as trailing bytes and drop the message, so `version` became 17, and the server answers a client of version 16 with `ConnectionRefused` (`IncompatibleVersion`). The layout of the header and of every other message is the same as in version 16.
 
 ## Implementation status
 
