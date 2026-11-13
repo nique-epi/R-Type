@@ -33,14 +33,14 @@ SfmlDrawSurface::SfmlDrawSurface(sf::RenderTarget& canvas,
                                  const ITextureSource& textures,
                                  const TextWriter& writer)
     : canvas_(canvas),
-      textures_(textures),
+      textures_(textures, RENDERING_LOGGER_NAME),
       writer_(writer),
       logger_(std::string(RENDERING_LOGGER_NAME)),
       flashShader_(loadFragmentShader(FLASH_SHADER, logger_)),
       ghostShader_(loadFragmentShader(GHOST_SHADER, logger_)) {}
 
 void SfmlDrawSurface::draw(const SpriteDrawing& drawing) {
-  const sf::Texture* texture = foundTexture(drawing.assetId);
+  const sf::Texture* texture = textures_.found(drawing.assetId);
   if (texture == nullptr) {
     return;
   }
@@ -62,14 +62,6 @@ void SfmlDrawSurface::write(std::string_view text, game::Position center,
                .anchor = {middle.x,
                           middle.y - static_cast<int>(TEXT_LINE_HEIGHT * HALF)},
                .style = style});
-}
-
-const sf::Texture* SfmlDrawSurface::foundTexture(std::string_view assetId) {
-  const sf::Texture* texture = textures_.texture(assetId);
-  if (texture == nullptr && reportedMissingIds_.emplace(assetId).second) {
-    logger_.warn("no texture for asset id ", assetId);
-  }
-  return texture;
 }
 
 sf::Sprite SfmlDrawSurface::placedSprite(const sf::Texture& texture,

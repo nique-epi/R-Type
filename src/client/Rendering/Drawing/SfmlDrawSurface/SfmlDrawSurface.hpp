@@ -5,15 +5,13 @@
 #include <SFML/Graphics/Shader.hpp>
 #include <SFML/Graphics/Sprite.hpp>
 #include <SFML/Graphics/Texture.hpp>
-#include <functional>
 #include <optional>
-#include <set>
-#include <string>
 #include <string_view>
 #include "IDrawSurface.hpp"
 #include "ITextureSource.hpp"
 #include "Logger.hpp"
 #include "Position.hpp"
+#include "ReportingTextureSource.hpp"
 #include "SpriteDrawing.hpp"
 #include "SpriteTone.hpp"
 #include "TextStyle.hpp"
@@ -52,10 +50,6 @@ class SfmlDrawSurface : public IDrawSurface {
              TextStyle style) override;
 
  private:
-  /** @returns The texture of an id, or nullptr once the log says it is
-   * missing; a missing id is reported once. */
-  [[nodiscard]] const sf::Texture* foundTexture(std::string_view assetId);
-
   /** @returns The rectangle of the drawing as a sprite, its top-left corner
    * on the whole pixel nearest to where the center puts it. */
   [[nodiscard]] static sf::Sprite placedSprite(const sf::Texture& texture,
@@ -78,10 +72,9 @@ class SfmlDrawSurface : public IDrawSurface {
   void drawOutline(const sf::Sprite& sprite, sf::Color color);
 
   sf::RenderTarget& canvas_;
-  const ITextureSource& textures_;
+  ReportingTextureSource textures_;
   const TextWriter& writer_;
   logging::Logger logger_;
-  std::set<std::string, std::less<>> reportedMissingIds_;
   std::optional<sf::Shader> flashShader_;
   std::optional<sf::Shader> ghostShader_;
 };

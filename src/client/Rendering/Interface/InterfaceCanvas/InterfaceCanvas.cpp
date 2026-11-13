@@ -94,6 +94,7 @@ sf::RenderStates statesFor(const std::optional<ShadeSwap>& recolor,
 
 InterfaceCanvas::InterfaceCanvas(const AssetLibrary& library)
     : textures_(library),
+      foundTextures_(textures_, INTERFACE_LOGGER_NAME),
       writer_(library),
       logger_(std::string(INTERFACE_LOGGER_NAME)),
       shadeSwap_(loadFragmentShader(SHADE_SWAP_SHADER, logger_)) {}
@@ -138,7 +139,7 @@ void InterfaceCanvas::write(std::string_view text, sf::Vector2i anchor,
 
 void InterfaceCanvas::drawImage(TextureArea image, ImagePlacement placement,
                                 sf::IntRect visibleArea) {
-  const sf::Texture* texture = foundTexture(image.assetId);
+  const sf::Texture* texture = foundTextures_.found(image.assetId);
   const std::optional<sf::IntRect> visible =
       visiblePixelsOf(image, placement, visibleArea);
   if (texture == nullptr || !visible.has_value()) {
@@ -157,7 +158,7 @@ void InterfaceCanvas::drawImage(TextureArea image, ImagePlacement placement,
 
 void InterfaceCanvas::drawSmoothImage(std::string_view assetId,
                                       sf::IntRect area, sf::Color tint) {
-  const sf::Texture* texture = foundTexture(assetId);
+  const sf::Texture* texture = foundTextures_.found(assetId);
   if (texture == nullptr) {
     return;
   }
@@ -177,15 +178,6 @@ void InterfaceCanvas::display() {
 void InterfaceCanvas::show(sf::RenderTarget& target) const {
   canvas_.show(target);
   smoothImages_.show(target);
-}
-
-const sf::Texture* InterfaceCanvas::foundTexture(std::string_view assetId) {
-  const sf::Texture* texture = textures_.texture(assetId);
-  if (texture == nullptr && !reportedMissingIds_.contains(assetId)) {
-    reportedMissingIds_.emplace(assetId);
-    logger_.warn("no texture for asset id ", assetId);
-  }
-  return texture;
 }
 
 }  // namespace rtype::client
