@@ -7,7 +7,8 @@
 #include "TimeConstants.hpp"
 
 /** @brief The boss of the presentation tests: entity 51, its stage starting,
- * then its fight with 240 points; its roar, the strike of its attack 0. */
+ * then its fight with 240 points, then its death; its roar, the strike of its
+ * attack 0. */
 constexpr std::uint32_t PRESENTED_BOSS_ID = 51;
 constexpr rtype::network::BossStatus PRESENTED_BOSS_ARRIVING{
     .stage = rtype::network::BossStage::Arriving};
@@ -16,6 +17,11 @@ constexpr rtype::network::BossStatus PRESENTED_BOSS_FIGHTING{
     .health = 240,
     .fullHealth = 240,
     .stage = rtype::network::BossStage::Fighting};
+constexpr rtype::network::BossStatus PRESENTED_BOSS_DEFEATED{
+    .bossEntityId = PRESENTED_BOSS_ID,
+    .health = 0,
+    .fullHealth = 240,
+    .stage = rtype::network::BossStage::Defeated};
 constexpr rtype::network::EnemyAction PRESENTED_BOSS_ROAR{
     .entityId = PRESENTED_BOSS_ID,
     .attack = 0,

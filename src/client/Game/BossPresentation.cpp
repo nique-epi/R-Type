@@ -39,6 +39,10 @@ BossPresentation::BossPresentation(EffectTools tools, ISoundPlayer& sounds,
     : effects_(tools), sounds_(&sounds), audio_(&audio) {}
 
 void BossPresentation::apply(const network::BossStatus& status) {
+  if (status.stage == network::BossStage::Arriving) {
+    roarAt_.reset();
+    chargeSignalledAt_.reset();
+  }
   tracker_.follow(status, now_);
   if (status.stage != network::BossStage::Arriving && shielded_.has_value()) {
     effects_.shield(*shielded_, false);
@@ -85,6 +89,8 @@ void BossPresentation::advance(engine::Duration elapsed) {
   }
 }
 
+void BossPresentation::followLevel() { playsALevel_ = true; }
+
 void BossPresentation::endGame() {
   gameEnded_ = true;
   followMusic();
@@ -121,7 +127,10 @@ void BossPresentation::followMusic() {
     audio_->playBossMusic();
     return;
   }
-  if (gameEnded_ && bossMusicStarted_) {
+  const bool bossGone =
+      gameEnded_ ||
+      (playsALevel_ && tracker_.fight().stage == network::BossStage::Defeated);
+  if (bossGone && bossMusicStarted_) {
     bossMusicStarted_ = false;
     audio_->playGameMusic();
   }
