@@ -62,7 +62,11 @@ std::unique_ptr<IScreen> buildGameScreen(const ScreenContext& context,
                       .result = context.gameResult.get(),
                       .chat = context.services.chat.get(),
                       .interpolationTally = tally},
-      std::make_unique<EntityLayer>(context.services.assets.get()),
+      std::make_unique<EntityLayer>(
+          context.services.assets.get(),
+          [&settings = context.services.settings.get()] {
+            return interfaceLookOf(settings);
+          }),
       interfaceCanvasOf(context));
 }
 

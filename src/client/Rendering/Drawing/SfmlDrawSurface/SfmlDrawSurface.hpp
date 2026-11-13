@@ -9,6 +9,7 @@
 #include <string_view>
 #include "IDrawSurface.hpp"
 #include "ITextureSource.hpp"
+#include "InterfaceLookSource.hpp"
 #include "Logger.hpp"
 #include "Position.hpp"
 #include "ReportingTextureSource.hpp"
@@ -46,6 +47,10 @@ class SfmlDrawSurface : public IDrawSurface {
                   const TextWriter& writer);
 
   void draw(const SpriteDrawing& drawing) override;
+
+  /** @brief Gives the look the player chose, read at each line written: its
+   * text size, and the plate HIGH CONTRAST lays under an outlined line. */
+  void setLook(InterfaceLookSource look);
   void write(std::string_view text, game::Position center,
              TextStyle style) override;
 
@@ -74,6 +79,7 @@ class SfmlDrawSurface : public IDrawSurface {
   sf::RenderTarget& canvas_;
   ReportingTextureSource textures_;
   const TextWriter& writer_;
+  InterfaceLookSource look_;
   logging::Logger logger_;
   std::optional<sf::Shader> flashShader_;
   std::optional<sf::Shader> ghostShader_;
