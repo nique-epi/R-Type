@@ -124,6 +124,19 @@ sf::IntRect writtenBoxOf(const InterfaceCanvasRecord& record,
   return {topLeft, {width, rtype::client::lineHeightOf(measuring.metrics)}};
 }
 
+std::vector<std::string> writingsOffScreen(
+    const InterfaceCanvasRecord& record) {
+  std::vector<std::string> off;
+  for (const RecordedWriting& writing : record.writings) {
+    const sf::IntRect box = writtenBoxOf(record, writing);
+    if (box.findIntersection(rtype::client::INTERFACE_AREA) !=
+        std::optional(box)) {
+      off.push_back(writing.text);
+    }
+  }
+  return off;
+}
+
 std::set<std::pair<int, int>> litPixelsOf(const InterfaceCanvasRecord& record) {
   std::set<std::pair<int, int>> pixels;
   for (const RecordedFill& fill : record.fills) {

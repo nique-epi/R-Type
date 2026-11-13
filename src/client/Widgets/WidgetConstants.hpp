@@ -254,6 +254,11 @@ constexpr int SPACE_BESIDE_PANEL_BARS = 8;
  * selected row wraps on two lines beside the bars, one pixel apart. */
 constexpr int DESCRIPTION_LINES_BESIDE_BARS = 2;
 constexpr int DESCRIPTION_LINE_GAP = 2;
+
+/** @brief A byte of UTF-8 that continues a letter has these two high bits:
+ * 10, read through the mask of the two. */
+constexpr unsigned int UTF8_LEAD_MASK = 0xC0U;
+constexpr unsigned int UTF8_CONTINUATION_BITS = 0x80U;
 /** @brief What separates the words of a line a widget wraps. */
 constexpr char WORD_SEPARATOR = ' ';
 constexpr int SPACE_ABOVE_PANEL_ILLUSTRATION = 10;
@@ -323,5 +328,8 @@ constexpr sf::Vector2i RULE_STAMP_OFFSET(6, -4);
 constexpr sf::Vector2i ROOM_RULE_SIZE(TAB_STRIP_WIDTH, RULE_SIZE.y);
 constexpr int ROOM_ILLUSTRATION_TOP = TAB_STRIP_TOP_LEFT.y;
 constexpr int SPACE_ABOVE_ROOM_BARS = 12;
+/** @brief Above the size the fonts are drawn at, the lines a room keeps for
+ * its status line, which names a pilot of the longest nickname. */
+constexpr int ROOM_STATUS_LINES = 2;
 
 }  // namespace rtype::client

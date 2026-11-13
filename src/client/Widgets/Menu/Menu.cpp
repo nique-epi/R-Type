@@ -14,7 +14,6 @@
 #include <vector>
 #include "BarState.hpp"
 #include "Button.hpp"
-#include "ColoredPixel.hpp"
 #include "CutCornerBox.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "ISoundPlayer.hpp"
@@ -110,26 +109,12 @@ void paintButton(const Menu::Content& content, PaintedButton painted) {
     button.paint(painted.canvas.get(), painted.state);
     return;
   }
-  if (isHiddenRow(*content.rowScroll, painted.order)) {
+  if (!content.rowScroll.has_value() ||
+      isHiddenRow(*content.rowScroll, painted.order)) {
     return;
   }
   ShiftedCanvas shifted = canvasOfButton(content, painted.canvas.get());
   button.paint(shifted, painted.state);
-}
-
-/** @brief Paints a mark of 5 pixels at its widest, SCROLL_MARK_ROWS tall,
- * pointing up or down from @p tip, one row of pixels narrower by two each row.
- */
-void paintScrollMark(IInterfaceCanvas& canvas, sf::Vector2i tip, int towards) {
-  std::vector<ColoredPixel> pixels;
-  for (int row = 0; row < SCROLL_MARK_ROWS; ++row) {
-    for (int column = -row; column <= row; ++column) {
-      pixels.push_back(
-          ColoredPixel{.position = tip + sf::Vector2i(column, row * towards),
-                       .color = SCROLL_MARK_COLOR});
-    }
-  }
-  canvas.plot(pixels);
 }
 
 /** @brief Paints, in the padding of a panel that scrolls, a mark over its
@@ -143,10 +128,10 @@ void paintScrollMarks(const Menu::Content& content, IInterfaceCanvas& canvas) {
   const sf::IntRect area = scroll.viewport;
   const int middle = area.position.x + area.size.x - SCROLL_MARK_INSET;
   if (scroll.rows.first > 0) {
-    paintScrollMark(canvas, {middle, area.position.y - SCROLL_MARK_ROWS}, 1);
+    paintScrollArrow(canvas, {middle, area.position.y - SCROLL_MARK_ROWS}, 1);
   }
   if (scroll.rows.first < lastFirstRowOf(scroll.rows)) {
-    paintScrollMark(
+    paintScrollArrow(
         canvas, {middle, area.position.y + area.size.y + SCROLL_MARK_ROWS}, -1);
   }
 }
@@ -165,9 +150,43 @@ void paintDescription(const Menu::Content& content, IInterfaceCanvas& canvas,
   }
   const int pitch = lineHeightOf(canvas.textMetrics()) + DESCRIPTION_LINE_GAP;
   sf::Vector2i anchor = *content.descriptionAnchor;
-  for (const std::string& line :
-       wrappedLinesOf(description, *content.descriptionWidth, canvas)) {
+  for (const std::string& line : wrappedLinesOf(
+           description, {.width = *content.descriptionWidth}, canvas)) {
     canvas.write(line, anchor, content.descriptionStyle);
+    anchor.y += pitch;
+  }
+}
+
+/** @brief Draws the picture of @p content at its place, when it has one. */
+void paintPicture(const Menu::Content& content, IInterfaceCanvas& canvas) {
+  if (!content.picture.has_value()) {
+    return;
+  }
+  canvas.drawImage(
+      TextureArea{.assetId = content.picture->assetId,
+                  .rectangle = {{0, 0}, content.picture->area.size}},
+      ImagePlacement{.topLeft = content.picture->area.position},
+      INTERFACE_AREA);
+}
+
+/** @brief Writes the status line where @p content asks, on as many lines as
+ * its width needs when it has one, each line in the style of the status. */
+void paintStatus(const Menu::Content& content, IInterfaceCanvas& canvas,
+                 std::string_view status) {
+  if (!content.statusAnchor.has_value() || status.empty()) {
+    return;
+  }
+  if (!content.statusWidth.has_value()) {
+    canvas.write(status, *content.statusAnchor, content.statusStyle);
+    return;
+  }
+  const int pitch = lineHeightOf(canvas.textMetrics()) + DESCRIPTION_LINE_GAP;
+  sf::Vector2i anchor = *content.statusAnchor;
+  for (const std::string& line : wrappedLinesOf(
+           status,
+           {.width = *content.statusWidth, .font = content.statusStyle.font},
+           canvas)) {
+    canvas.write(line, anchor, content.statusStyle);
     anchor.y += pitch;
   }
 }
@@ -251,13 +270,7 @@ void Menu::paint(IInterfaceCanvas& canvas) const {
   if (content_.rule.has_value()) {
     canvas.fill(*content_.rule, RULE_COLOR);
   }
-  if (content_.picture.has_value()) {
-    canvas.drawImage(
-        TextureArea{.assetId = content_.picture->assetId,
-                    .rectangle = {{0, 0}, content_.picture->area.size}},
-        ImagePlacement{.topLeft = content_.picture->area.position},
-        INTERFACE_AREA);
-  }
+  paintPicture(content_, canvas);
   for (const Label& label : content_.labels) {
     label.paint(canvas);
   }
@@ -270,9 +283,7 @@ void Menu::paint(IInterfaceCanvas& canvas) const {
     paintDescription(content_, canvas,
                      content_.buttons[*selected_].description());
   }
-  if (content_.statusAnchor.has_value() && !status_.empty()) {
-    canvas.write(status_, *content_.statusAnchor, content_.statusStyle);
-  }
+  paintStatus(content_, canvas, status_);
   paintOverlays(content_, canvas);
 }
 

@@ -10,6 +10,7 @@ target_link_libraries(rtype_client_menu_builder
     rtype_client_key_cap
     rtype_client_panel_layouts
     rtype_client_dialog_layouts
+    rtype_client_room_layouts
     rtype_client_text_measures
     rtype_client_widget_text
 )

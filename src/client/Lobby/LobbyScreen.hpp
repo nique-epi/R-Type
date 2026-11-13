@@ -23,6 +23,7 @@
 #include "MotionPreference.hpp"
 #include "PlayerPalette.hpp"
 #include "PlayfieldMapping.hpp"
+#include "RoomLayout.hpp"
 #include "ShipLook.hpp"
 #include "TimeConstants.hpp"
 
@@ -66,6 +67,11 @@ struct HangarBay;
  * HANGAR, a chip beside RANKING, HANGAR_KEY, or a click on the bay of the
  * local player opens the hangar over the room the same way; the bay of the
  * local player shows what its ship wears.
+ * Above the size the fonts are drawn at, the bays grow taller, the chips take
+ * two rows, and the room grows taller than the picture: it scrolls with the
+ * wheel, down to BACK when a key of the menu selects it and back up when it
+ * selects READY, with a mark at each side that hides more of it.
+ *
  * The chat of the session shows at the bottom left, and its key opens it over
  * the room (ChatWindow): while it is open it takes every key, so READY, HELP
  * and BACK wait until it closes.
@@ -108,9 +114,9 @@ class LobbyScreen : public IScreen {
    * connection once per update. */
   void repaint();
 
-  /** @brief Paints one bay per player number, side by side in the
-   * illustration area of the menu. */
-  void paintBays();
+  /** @brief Paints one bay per player number on @p canvas, side by side in
+   * the illustration area of the menu. */
+  void paintBays(IInterfaceCanvas& canvas) const;
 
   /** @returns The bay of a slot, 0 to LOBBY_BAY_COUNT - 1: where it lies in
    * the area of the bays, its player number, the color of its ship, and the
@@ -138,6 +144,10 @@ class LobbyScreen : public IScreen {
   engine::Duration elapsed_{};
   bool readyKeyHeld_ = false;
   bool gameAsked_ = false;
+  /** @brief Where the room lays its parts at the text size of the canvas,
+   * and how far it is scrolled down, 0 to lastScrollOf(room_). */
+  RoomLayout room_;
+  int scroll_{};
   Menu menu_;
   HelpWalkthrough help_;
   KeyChip leaderboardChip_;

@@ -115,6 +115,9 @@ class Menu {
     /** @brief Where the status line is written: under the description of a
      * form, nowhere on a page or a dialog. */
     std::optional<sf::Vector2i> statusAnchor;
+    /** @brief How wide the status line may run, on as many lines as it needs;
+     * none writes it on one line. */
+    std::optional<int> statusWidth;
     /** @brief The area a screen paints its own picture in. */
     std::optional<sf::IntRect> illustration;
     /** @brief The keys that select the next and the previous button, besides

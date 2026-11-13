@@ -122,6 +122,11 @@ class RecordingInterfaceCanvas : public rtype::client::IInterfaceCanvas {
 [[nodiscard]] sf::IntRect writtenBoxOf(const InterfaceCanvasRecord& record,
                                        const RecordedWriting& writing);
 
+/** @returns The text of every line of @p record whose box, as writtenBoxOf()
+ * rebuilds it, leaves the interface picture, in the order written. */
+[[nodiscard]] std::vector<std::string> writingsOffScreen(
+    const InterfaceCanvasRecord& record);
+
 /** @returns Every pixel the fills of a record light, as (column, row). */
 [[nodiscard]] std::set<std::pair<int, int>> litPixelsOf(
     const InterfaceCanvasRecord& record);
