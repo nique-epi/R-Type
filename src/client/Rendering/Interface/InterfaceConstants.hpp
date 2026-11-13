@@ -45,6 +45,12 @@ constexpr int BOX_CORNER_LENGTH = 8;
 constexpr int NORMAL_TEXT_HALF_PIXELS = 2;
 constexpr int HALF_PIXELS_PER_PIXEL = 2;
 
+/** @brief How far the plate HIGH CONTRAST lays under a line reaches past
+ * its letters on each side, in pixels, and how many sides of a line it grows
+ * on along each axis. */
+constexpr float PLATE_MARGIN = 1.0F;
+constexpr float SIDES_OF_A_PLATE = 2.0F;
+
 /** @brief Scale of an image drawImage() copies pixel for pixel. */
 constexpr int NATIVE_SCALE = 1;
 

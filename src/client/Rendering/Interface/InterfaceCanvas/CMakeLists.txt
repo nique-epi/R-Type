@@ -16,6 +16,7 @@ target_link_libraries(rtype_client_interface_canvas
     rtype_client_asset_library
     rtype_client_shaders
     rtype_client_text_measures
+    rtype_client_high_contrast_colors
 )
 
 rtype_enable_warnings(rtype_client_interface_canvas)

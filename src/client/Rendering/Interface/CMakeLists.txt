@@ -10,6 +10,7 @@ target_link_libraries(rtype_client_interface
 )
 
 add_subdirectory(TextMeasures)
+add_subdirectory(HighContrastColors)
 add_subdirectory(TextWriter)
 add_subdirectory(InterfacePixel)
 add_subdirectory(SmoothImageLayer)

@@ -4,10 +4,12 @@
 #include <SFML/Graphics/Shader.hpp>
 #include <SFML/Graphics/Text.hpp>
 #include <SFML/System/Vector2.hpp>
+#include <cstdint>
 #include <optional>
 #include <string_view>
 #include "LoadedFont.hpp"
 #include "Logger.hpp"
+#include "OutlinedText.hpp"
 #include "TextLine.hpp"
 #include "TextPlacement.hpp"
 #include "TextStyle.hpp"
@@ -31,7 +33,8 @@ class AssetLibrary;
  * baseline sits REGULAR_FONT_BASELINE_ROW or SMALL_FONT_BASELINE_ROW below the
  * anchor, while SFML puts the baseline of a text TEXT_CHARACTER_SIZE below its
  * position. An outlined line is first drawn in INK one pixel away in each of
- * the eight directions of CROSS_DIRECTIONS and DIAGONAL_DIRECTIONS. Text is
+ * the eight directions of CROSS_DIRECTIONS and DIAGONAL_DIRECTIONS, or laid
+ * on a black plate when the line asks for one (TextLine::plated). Text is
  * drawn through CRISP_TEXT_FRAGMENT_SHADER, so its pixels are either lit or
  * transparent; where shaders are missing or the shader does not compile, it is
  * drawn smoothed, and the reason is logged once.
@@ -56,6 +59,17 @@ class TextWriter {
   [[nodiscard]] int width(std::string_view text, TextFont font) const;
 
  private:
+  /** @brief Draws @p text, already placed, in INK one pixel away in each of
+   * the eight directions, at the opacity of its color. */
+  static void drawOutline(sf::RenderTarget& target, sf::Text& text,
+                          OutlinedText outlined);
+
+  /** @brief Lays under @p text, already placed, a black plate PLATE_MARGIN
+   * larger on each side, at @p opacity, as HIGH CONTRAST asks for a line
+   * written over the game. */
+  static void drawPlate(sf::RenderTarget& target, const sf::Text& text,
+                        std::uint8_t opacity);
+
   [[nodiscard]] const LoadedFont& loadedFontOf(TextFont font) const;
 
   /** @returns A line of text in a font, at TEXT_CHARACTER_SIZE times

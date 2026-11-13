@@ -1,6 +1,7 @@
 #include "TextWriter.hpp"
 #include <SFML/Graphics/Color.hpp>
 #include <SFML/Graphics/Rect.hpp>
+#include <SFML/Graphics/RectangleShape.hpp>
 #include <SFML/Graphics/RenderStates.hpp>
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Graphics/Text.hpp>
@@ -8,6 +9,7 @@
 #include <SFML/System/String.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <cmath>
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -15,9 +17,11 @@
 #include "BackgroundConstants.hpp"
 #include "CrispTextShaderConstants.hpp"
 #include "FragmentShader.hpp"
+#include "HighContrastColorConstants.hpp"
 #include "InterfaceColorConstants.hpp"
 #include "InterfaceConstants.hpp"
 #include "LoadedFont.hpp"
+#include "OutlinedText.hpp"
 #include "RenderingConstants.hpp"
 #include "TextLine.hpp"
 #include "TextMeasures.hpp"
@@ -81,16 +85,12 @@ void TextWriter::write(sf::RenderTarget& target, const TextLine& line) const {
   text.setScale({shrink, shrink});
   const sf::RenderStates states(crispText_.has_value() ? &*crispText_
                                                        : nullptr);
-  if (line.style.outlined) {
-    sf::Color outline = INK;
-    outline.a = line.style.color.a;
-    text.setFillColor(outline);
-    for (const auto& directions : {CROSS_DIRECTIONS, DIAGONAL_DIRECTIONS}) {
-      for (const sf::Vector2i offset : directions) {
-        text.setPosition(position + sf::Vector2f(offset));
-        target.draw(text, states);
-      }
-    }
+  text.setPosition(position);
+  if (line.style.outlined && line.plated) {
+    drawPlate(target, text, line.style.color.a);
+  } else if (line.style.outlined) {
+    drawOutline(target, text,
+                OutlinedText{.color = line.style.color, .states = states});
   }
   text.setFillColor(line.style.color);
   text.setPosition(position);
@@ -98,6 +98,33 @@ void TextWriter::write(sf::RenderTarget& target, const TextLine& line) const {
   if (whole.has_value()) {
     target.setView(*whole);
   }
+}
+
+void TextWriter::drawOutline(sf::RenderTarget& target, sf::Text& text,
+                             OutlinedText outlined) {
+  sf::Color outline = INK;
+  outline.a = outlined.color.a;
+  text.setFillColor(outline);
+  const sf::Vector2f position = text.getPosition();
+  for (const auto& directions : {CROSS_DIRECTIONS, DIAGONAL_DIRECTIONS}) {
+    for (const sf::Vector2i offset : directions) {
+      text.setPosition(position + sf::Vector2f(offset));
+      target.draw(text, outlined.states);
+    }
+  }
+  text.setPosition(position);
+}
+
+void TextWriter::drawPlate(sf::RenderTarget& target, const sf::Text& text,
+                           std::uint8_t opacity) {
+  const sf::FloatRect bounds = text.getGlobalBounds();
+  const sf::Vector2f margin(PLATE_MARGIN, PLATE_MARGIN);
+  sf::RectangleShape plate(bounds.size + (margin * SIDES_OF_A_PLATE));
+  plate.setPosition(bounds.position - margin);
+  sf::Color color = HIGH_CONTRAST_BLACK;
+  color.a = opacity;
+  plate.setFillColor(color);
+  target.draw(plate);
 }
 
 int TextWriter::width(std::string_view text, TextFont font) const {

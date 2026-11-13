@@ -21,8 +21,11 @@
 #include "BackgroundConstants.hpp"
 #include "ColoredPixel.hpp"
 #include "FragmentShader.hpp"
+#include "HighContrastColors.hpp"
 #include "ImagePlacement.hpp"
 #include "InterfaceConstants.hpp"
+#include "InterfaceLook.hpp"
+#include "InterfaceLookSource.hpp"
 #include "PlayerColors.hpp"
 #include "ShadeSwap.hpp"
 #include "ShadeSwapShaderConstants.hpp"
@@ -41,6 +44,18 @@ namespace {
 /** @returns The pixels of an image that its copy, enlarged and placed as
  * asked, shows whole inside the visible area, from the top-left corner of
  * the image; nothing when it shows none. */
+/** @returns The look @p source gives now, or the look of a first launch when
+ * the canvas was given no source. */
+InterfaceLook lookOf(const InterfaceLookSource& source) {
+  return source ? source() : InterfaceLook{};
+}
+
+/** @returns The color @p color is drawn in under @p look: its high contrast
+ * replacement when HIGH CONTRAST is on, itself otherwise. */
+sf::Color shownColorOf(const InterfaceLook& look, sf::Color color) {
+  return look.highContrast ? highContrastOf(color) : color;
+}
+
 std::optional<sf::IntRect> visiblePixelsOf(TextureArea image,
                                            ImagePlacement placement,
                                            sf::IntRect visibleArea) {
@@ -111,7 +126,8 @@ void InterfaceCanvas::clear() {
   smoothImages_.clear();
 }
 
-void InterfaceCanvas::fill(sf::IntRect area, sf::Color color) {
+void InterfaceCanvas::fill(sf::IntRect area, sf::Color shade) {
+  const sf::Color color = shownColorOf(lookOf(look_), shade);
   const sf::Vector2f topLeft(area.position);
   const sf::Vector2f bottomRight(area.position + area.size);
   const std::array corners{
@@ -124,15 +140,17 @@ void InterfaceCanvas::fill(sf::IntRect area, sf::Color color) {
 }
 
 void InterfaceCanvas::plot(std::span<const ColoredPixel> pixels) {
+  const InterfaceLook look = lookOf(look_);
   sf::VertexArray triangles{sf::PrimitiveType::Triangles};
   for (const ColoredPixel& pixel : pixels) {
+    const sf::Color color = shownColorOf(look, pixel.color);
     const sf::Vector2f topLeft(pixel.position);
     const sf::Vector2f bottomRight = topLeft + sf::Vector2f{1.0F, 1.0F};
     const sf::Vector2f topRight{bottomRight.x, topLeft.y};
     const sf::Vector2f bottomLeft{topLeft.x, bottomRight.y};
     for (const sf::Vector2f corner :
          {topLeft, topRight, bottomLeft, topRight, bottomRight, bottomLeft}) {
-      triangles.append(sf::Vertex{.position = corner, .color = pixel.color});
+      triangles.append(sf::Vertex{.position = corner, .color = color});
     }
   }
   canvas_.canvas().draw(triangles);
@@ -140,10 +158,13 @@ void InterfaceCanvas::plot(std::span<const ColoredPixel> pixels) {
 
 void InterfaceCanvas::write(std::string_view text, sf::Vector2i anchor,
                             TextStyle style) {
+  const InterfaceLook look = lookOf(look_);
+  style.color = shownColorOf(look, style.color);
   writer_.write(canvas_.canvas(), TextLine{.text = text,
                                            .anchor = anchor,
                                            .style = style,
-                                           .metrics = textMetrics()});
+                                           .metrics = look.text,
+                                           .plated = look.highContrast});
 }
 
 void InterfaceCanvas::drawImage(TextureArea image, ImagePlacement placement,
@@ -179,9 +200,7 @@ int InterfaceCanvas::textWidth(std::string_view text, TextFont font) const {
   return widthAtSizeOf(textMetrics(), writer_.width(text, font));
 }
 
-TextMetrics InterfaceCanvas::textMetrics() const {
-  return look_ ? look_().text : TextMetrics{};
-}
+TextMetrics InterfaceCanvas::textMetrics() const { return lookOf(look_).text; }
 
 void InterfaceCanvas::display() {
   canvas_.canvas().display();
