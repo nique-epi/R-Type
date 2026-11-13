@@ -383,6 +383,7 @@ MenuBuilder& MenuBuilder::tabs(std::vector<std::string> labels,
                                std::function<void(std::size_t)> openTabAt) {
   tabStrip_.emplace(std::move(labels), openTab, std::move(keys),
                     tabbedPanelLayoutOf(metrics_).tabsTopLeft);
+  tabStrip_->setTextSize(metrics_);
   tabOpener_ = std::move(openTabAt);
   return *this;
 }

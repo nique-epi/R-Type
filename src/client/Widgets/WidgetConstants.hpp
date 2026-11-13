@@ -208,6 +208,11 @@ constexpr int TAB_HEIGHT = 16;
 constexpr int TAB_GAP = 4;
 constexpr int TAB_LABEL_TOP = 5;
 constexpr int TAB_KEY_CAP_TOP = 2;
+/** @brief Room on each side of the label of a tab as wide as its label, and
+ * the name the keycaps of a strip are as wide as: CONTROLS, 64 pixels and 4
+ * on each side, fits the 76 each of five tabs shares as the fonts are drawn. */
+constexpr int TAB_TEXT_PADDING = 4;
+constexpr const char* ONE_LETTER_KEY = "Q";
 constexpr sf::Vector2i ROWS_PANEL_TOP_LEFT(SAFE_MARGIN,
                                            TAB_STRIP_TOP_LEFT.y + TAB_HEIGHT);
 constexpr sf::Vector2i ROWS_PANEL_SIZE(TAB_STRIP_WIDTH, 150);
