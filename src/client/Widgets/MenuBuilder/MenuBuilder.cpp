@@ -19,6 +19,8 @@
 #include "PanelCursor.hpp"
 #include "PendingButton.hpp"
 #include "RowControl.hpp"
+#include "RowScroll.hpp"
+#include "RowWindow.hpp"
 #include "TabStrip.hpp"
 #include "TextField.hpp"
 #include "TextStyle.hpp"
@@ -160,6 +162,25 @@ PanelCursor placeRowsAndBarsOf(Menu::Content& content,
     }
   }
   return cursor;
+}
+
+/** @returns The rows of @p content, when the panel of a tabbed panel holds
+ * more of them than it shows: the first rows show, the rest scroll. */
+std::optional<RowScroll> rowScrollOf(const Menu::Content& content) {
+  const auto rows = static_cast<std::size_t>(std::ranges::count_if(
+      content.buttons,
+      [](const Button& button) { return button.control() != nullptr; }));
+  if (rows <= PANEL_ROW_CAPACITY) {
+    return std::nullopt;
+  }
+  const auto first = std::ranges::find_if(
+      content.buttons,
+      [](const Button& button) { return button.control() != nullptr; });
+  return RowScroll{
+      .rows = RowWindow{.first = 0, .shown = PANEL_ROW_CAPACITY, .count = rows},
+      .firstButton = static_cast<std::size_t>(first - content.buttons.begin()),
+      .pitch = ROW_PITCH,
+      .viewport = PANEL_ROWS_VIEWPORT};
 }
 
 /** @brief Takes out of @p bars every bar asked for after the cancel button: a
@@ -488,6 +509,7 @@ PanelCursor MenuBuilder::placeRowsAndBars(Menu::Content& content) {
                                      .barSize = PANEL_BAR_SIZE,
                                      .barGap = SPACE_BESIDE_PANEL_BARS});
   placeBarsAtPanelEnd(content, trailing);
+  content.rowScroll = rowScrollOf(content);
   return end;
 }
 

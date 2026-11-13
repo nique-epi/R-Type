@@ -11,8 +11,10 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include <vector>
 #include "BarState.hpp"
 #include "Button.hpp"
+#include "ColoredPixel.hpp"
 #include "CutCornerBox.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "ISoundPlayer.hpp"
@@ -21,8 +23,13 @@
 #include "InterfaceConstants.hpp"
 #include "InterfacePixel.hpp"
 #include "Label.hpp"
+#include "PaintedButton.hpp"
 #include "PlayfieldMapping.hpp"
 #include "RowControl.hpp"
+#include "RowScroll.hpp"
+#include "RowScrolling.hpp"
+#include "RowWindow.hpp"
+#include "ShiftedCanvas.hpp"
 #include "SoundConstants.hpp"
 #include "TextField.hpp"
 #include "TextureArea.hpp"
@@ -48,9 +55,113 @@ bool clicksWhenActivated(const Button& button) {
   return button.control() == nullptr && button.field() == nullptr;
 }
 
+/** @returns The press of the left button the event is, or nullptr. */
+const sf::Event::MouseButtonPressed* leftClickOf(const sf::Event& event) {
+  const auto* clicked = event.getIf<sf::Event::MouseButtonPressed>();
+  return clicked != nullptr && clicked->button == sf::Mouse::Button::Left
+             ? clicked
+             : nullptr;
+}
+
+/** @returns The release of the left button the event is, or nullptr. */
+const sf::Event::MouseButtonReleased* leftReleaseOf(const sf::Event& event) {
+  const auto* released = event.getIf<sf::Event::MouseButtonReleased>();
+  return released != nullptr && released->button == sf::Mouse::Button::Left
+             ? released
+             : nullptr;
+}
+
+/** @returns How many rows a turn of the wheel scrolls: one down for each notch
+ * turned toward the player, one up for each notch away. */
+int wheelStepOf(const sf::Event::MouseWheelScrolled& wheel) {
+  return wheel.delta < 0.0F ? 1 : -1;
+}
+
 /** @returns Whether the key is one of the list. */
 bool isOneOf(sf::Keyboard::Key key, std::span<const sf::Keyboard::Key> keys) {
   return std::ranges::find(keys, key) != keys.end();
+}
+
+/** @returns The canvas a button of @p content paints on: @p canvas, or the
+ * same moved up by the rows above the shown ones for a row of a panel that
+ * scrolls. */
+ShiftedCanvas canvasOfButton(const Menu::Content& content,
+                             IInterfaceCanvas& canvas) {
+  return {canvas, content.rowScroll.has_value()
+                      ? rowOffsetOf(*content.rowScroll)
+                      : sf::Vector2i()};
+}
+
+/** @returns Whether a button of @p content lies in its scrolling rows. */
+bool scrollsWithTheRows(const Menu::Content& content, std::size_t button) {
+  return content.rowScroll.has_value() &&
+         button >= content.rowScroll->firstButton &&
+         button <
+             content.rowScroll->firstButton + content.rowScroll->rows.count;
+}
+
+/** @brief Paints a button of @p content where it shows: a row of a panel that
+ * scrolls moves with the rows, and a row out of view is not painted. */
+void paintButton(const Menu::Content& content, PaintedButton painted) {
+  const Button& button = content.buttons[painted.order];
+  if (!scrollsWithTheRows(content, painted.order)) {
+    button.paint(painted.canvas.get(), painted.state);
+    return;
+  }
+  if (isHiddenRow(*content.rowScroll, painted.order)) {
+    return;
+  }
+  ShiftedCanvas shifted = canvasOfButton(content, painted.canvas.get());
+  button.paint(shifted, painted.state);
+}
+
+/** @brief Paints a mark of 5 pixels at its widest, SCROLL_MARK_ROWS tall,
+ * pointing up or down from @p tip, one row of pixels narrower by two each row.
+ */
+void paintScrollMark(IInterfaceCanvas& canvas, sf::Vector2i tip, int towards) {
+  std::vector<ColoredPixel> pixels;
+  for (int row = 0; row < SCROLL_MARK_ROWS; ++row) {
+    for (int column = -row; column <= row; ++column) {
+      pixels.push_back(
+          ColoredPixel{.position = tip + sf::Vector2i(column, row * towards),
+                       .color = SCROLL_MARK_COLOR});
+    }
+  }
+  canvas.plot(pixels);
+}
+
+/** @brief Paints, in the padding of a panel that scrolls, a mark over its
+ * rows when rows are hidden above, and one under them when rows are hidden
+ * below. */
+void paintScrollMarks(const Menu::Content& content, IInterfaceCanvas& canvas) {
+  if (!content.rowScroll.has_value()) {
+    return;
+  }
+  const RowScroll& scroll = *content.rowScroll;
+  const sf::IntRect area = scroll.viewport;
+  const int middle = area.position.x + area.size.x - SCROLL_MARK_INSET;
+  if (scroll.rows.first > 0) {
+    paintScrollMark(canvas, {middle, area.position.y - SCROLL_MARK_ROWS}, 1);
+  }
+  if (scroll.rows.first < lastFirstRowOf(scroll.rows)) {
+    paintScrollMark(
+        canvas, {middle, area.position.y + area.size.y + SCROLL_MARK_ROWS}, -1);
+  }
+}
+
+/** @brief Paints the marks of the rows hidden by a scroll, then what the
+ * buttons of @p content lay over everything, such as
+ * an open list, each moved with its row. */
+void paintOverlays(const Menu::Content& content, IInterfaceCanvas& canvas) {
+  paintScrollMarks(content, canvas);
+  ShiftedCanvas shifted = canvasOfButton(content, canvas);
+  for (std::size_t order = 0; order < content.buttons.size(); ++order) {
+    if (scrollsWithTheRows(content, order)) {
+      content.buttons[order].paintOverlay(shifted);
+    } else {
+      content.buttons[order].paintOverlay(canvas);
+    }
+  }
 }
 
 }  // namespace
@@ -62,9 +173,11 @@ Menu::Menu(Content content, ISoundPlayer* sounds)
 
 void Menu::handleEvent(const sf::Event& event,
                        const PlayfieldMapping& playfieldPointAt) {
+  const PlayfieldMapping mapping =
+      scrolledMappingOf(content_.rowScroll, playfieldPointAt);
   const std::optional<std::size_t> holder = rowHoldingInput();
   if (holder.has_value()) {
-    routeToControl(content_.buttons[*holder], event, playfieldPointAt);
+    routeToControl(content_.buttons[*holder], event, mapping);
     if (event.is<sf::Event::FocusLost>()) {
       focusLost();
     }
@@ -79,17 +192,15 @@ void Menu::handleEvent(const sf::Event& event,
   } else if (const auto* released = event.getIf<sf::Event::KeyReleased>()) {
     keyReleased(released->code);
   } else if (const auto* moved = event.getIf<sf::Event::MouseMoved>()) {
-    pointerMoved(interfacePixelAt(playfieldPointAt(moved->position)));
-  } else if (const auto* clicked =
-                 event.getIf<sf::Event::MouseButtonPressed>()) {
-    if (clicked->button == sf::Mouse::Button::Left) {
-      pointerPressed(interfacePixelAt(playfieldPointAt(clicked->position)));
-    }
-  } else if (const auto* unclicked =
-                 event.getIf<sf::Event::MouseButtonReleased>()) {
-    if (unclicked->button == sf::Mouse::Button::Left) {
-      pointerReleased(interfacePixelAt(playfieldPointAt(unclicked->position)));
-    }
+    pointerMoved(interfacePixelAt(mapping(moved->position)));
+  } else if (const auto* clicked = leftClickOf(event)) {
+    pointerPressed(interfacePixelAt(mapping(clicked->position)));
+  } else if (const auto* unclicked = leftReleaseOf(event)) {
+    pointerReleased(interfacePixelAt(mapping(unclicked->position)));
+  } else if (const auto* wheel = event.getIf<sf::Event::MouseWheelScrolled>();
+             wheel != nullptr && content_.rowScroll.has_value()) {
+    content_.rowScroll =
+        scrollMovedBy(*content_.rowScroll, wheelStepOf(*wheel));
   } else if (event.is<sf::Event::FocusLost>()) {
     focusLost();
   }
@@ -128,7 +239,9 @@ void Menu::paint(IInterfaceCanvas& canvas) const {
     label.paint(canvas);
   }
   for (std::size_t button = 0; button < content_.buttons.size(); ++button) {
-    content_.buttons[button].paint(canvas, stateOf(button));
+    paintButton(content_, PaintedButton{.order = button,
+                                        .state = stateOf(button),
+                                        .canvas = canvas});
   }
   if (selected_.has_value() && content_.descriptionAnchor.has_value() &&
       !content_.buttons[*selected_].description().empty()) {
@@ -138,9 +251,7 @@ void Menu::paint(IInterfaceCanvas& canvas) const {
   if (content_.statusAnchor.has_value() && !status_.empty()) {
     canvas.write(status_, *content_.statusAnchor, content_.statusStyle);
   }
-  for (const Button& button : content_.buttons) {
-    button.paintOverlay(canvas);
-  }
+  paintOverlays(content_, canvas);
 }
 
 void Menu::setStatus(std::string text) { status_ = std::move(text); }
@@ -330,6 +441,9 @@ void Menu::selectNeighbour(Direction direction) {
                                           : (button + count - 1) % count;
     if (content_.buttons[button].isEnabled()) {
       selected_ = button;
+      if (content_.rowScroll.has_value()) {
+        content_.rowScroll = scrollShowing(*content_.rowScroll, button);
+      }
       return;
     }
   }

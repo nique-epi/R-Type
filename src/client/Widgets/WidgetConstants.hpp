@@ -1,5 +1,6 @@
 #pragma once
 
+#include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <array>
@@ -219,6 +220,22 @@ constexpr sf::Vector2i ROW_SIZE(ROWS_PANEL_SIZE.x -
                                     (SIDES_PER_AXIS * ROWS_PANEL_PADDING),
                                 16);
 constexpr int ROW_GAP = 2;
+/** @brief From the top of a row to the top of the next one, how many rows
+ * the panel shows at once (8: 8 x 18 - 2 = 142, the panel's 150 less its
+ * padding), and the area those rows cover; a tab with more rows scrolls
+ * them. */
+constexpr int ROW_PITCH = ROW_SIZE.y + ROW_GAP;
+/** @brief The marks of hidden rows: 3 rows of pixels, 5 at their widest,
+ * their middle this far from the right end of the rows, in the padding of
+ * the panel; and their color. */
+constexpr int SCROLL_MARK_ROWS = 3;
+constexpr int SCROLL_MARK_INSET = 8;
+constexpr std::size_t PANEL_ROW_CAPACITY = static_cast<std::size_t>(
+    (ROWS_PANEL_SIZE.y - (SIDES_PER_AXIS * ROWS_PANEL_PADDING) + ROW_GAP) /
+    ROW_PITCH);
+constexpr sf::IntRect PANEL_ROWS_VIEWPORT(
+    FIRST_ROW_TOP_LEFT,
+    {ROW_SIZE.x, (static_cast<int>(PANEL_ROW_CAPACITY) * ROW_PITCH) - ROW_GAP});
 constexpr sf::Vector2i ROW_LABEL_OFFSET(8, 4);
 constexpr int ROW_PADDING = 8;
 constexpr int ROW_CONTROL_TOP = 2;

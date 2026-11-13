@@ -17,6 +17,7 @@
 #include "IInterfaceCanvas.hpp"
 #include "Label.hpp"
 #include "PlayfieldMapping.hpp"
+#include "RowScroll.hpp"
 #include "TabStrip.hpp"
 #include "TextField.hpp"
 #include "TextStyle.hpp"
@@ -124,6 +125,9 @@ class Menu {
     /** @brief Opens a tab by its order, when a click on the tabs,
      * PREVIOUS_TAB_KEY or NEXT_TAB_KEY asks for one. */
     std::function<void(std::size_t)> openTab;
+    /** @brief The rows of a panel that holds more rows than it shows; none
+     * when every row shows. */
+    std::optional<RowScroll> rowScroll;
     /** @brief How the status line is written: in gold under a form; small,
      * outlined, at the end of the rule of a tabbed panel. */
     TextStyle statusStyle = STATUS_STYLE;
