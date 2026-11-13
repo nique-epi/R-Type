@@ -3,6 +3,7 @@
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <cstdint>
+#include "AssetFileLookup.hpp"
 #include "BiomeDecor.hpp"
 #include "GaussianBlur.hpp"
 #include "ISky.hpp"
@@ -29,12 +30,14 @@ class ScrollingBackground : public ISky {
  public:
   /**
    * @param seed Seed of every random draw of the sky.
-   * @param textureOf Finds the pictures of the decor of a biome; it must not
+   * @param textureOf Finds the tilesets of the decor of a biome; it must not
    * be empty.
+   * @param fileOf Finds the LDtk project of a biome; it must not be empty.
    * @throws RenderTextureNotCreatedException when the sky or the halo cannot
    * get a render texture.
    */
-  ScrollingBackground(std::uint32_t seed, TextureLookup textureOf);
+  ScrollingBackground(std::uint32_t seed, TextureLookup textureOf,
+                      const AssetFileLookup& fileOf);
 
   /** @brief Moves the sky, see Starfield::advance, and the decor of the
    * level, see BiomeDecor::advance. */

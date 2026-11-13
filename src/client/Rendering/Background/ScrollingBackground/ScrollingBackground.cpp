@@ -6,6 +6,7 @@
 #include <SFML/System/Vector2.hpp>
 #include <cstdint>
 #include <utility>
+#include "AssetFileLookup.hpp"
 #include "BackgroundColorConstants.hpp"
 #include "BackgroundConstants.hpp"
 #include "ShiftedView.hpp"
@@ -16,8 +17,9 @@
 namespace rtype::client {
 
 ScrollingBackground::ScrollingBackground(std::uint32_t seed,
-                                         TextureLookup textureOf)
-    : starfield_(seed), decor_(std::move(textureOf)) {}
+                                         TextureLookup textureOf,
+                                         const AssetFileLookup& fileOf)
+    : starfield_(seed), decor_(std::move(textureOf), fileOf) {}
 
 void ScrollingBackground::advance(engine::Duration elapsed) {
   starfield_.advance(elapsed);

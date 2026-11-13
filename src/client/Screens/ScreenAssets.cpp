@@ -55,7 +55,7 @@ AssetList gameAssets() {
   assets.textures.emplace_back(FLIGHT_LOG_SHEET_ID);
   for (const Biome& biome : BIOMES) {
     for (const BiomeLayer& layer : biome.layers) {
-      assets.textures.emplace_back(layer.image);
+      assets.textures.emplace_back(layer.tileset);
     }
   }
   return assets;

@@ -1,49 +1,42 @@
 #include "BiomeDecor.hpp"
 #include <SFML/Graphics/RenderTarget.hpp>
-#include <SFML/Graphics/Sprite.hpp>
 #include <SFML/Graphics/Texture.hpp>
-#include <SFML/System/Vector2.hpp>
 #include <chrono>
-#include <cmath>
+#include <cstddef>
+#include <optional>
 #include <span>
+#include <string>
 #include <string_view>
 #include <utility>
-#include <vector>
+#include "AssetFileLookup.hpp"
 #include "BackgroundConstants.hpp"
 #include "Biome.hpp"
 #include "BiomeConstants.hpp"
 #include "BiomeLayer.hpp"
+#include "BiomeMap.hpp"
+#include "ClientException.hpp"
 #include "SkyLevel.hpp"
 #include "TextureLookup.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
 
-std::span<const BiomeLayer> layersOfBiome(std::string_view name) {
-  for (const Biome& biome : BIOMES) {
-    if (biome.name == name) {
-      return biome.layers;
+std::optional<std::size_t> biomeIndexOf(std::string_view name) {
+  for (std::size_t index = 0; index < BIOMES.size(); ++index) {
+    if (BIOMES.at(index).name == name) {
+      return index;
     }
   }
-  return {};
+  return std::nullopt;
 }
 
-std::vector<int> decorTileColumns(float scrolledPixels, int tileWidth) {
-  std::vector<int> columns;
-  if (tileWidth <= 0) {
-    return columns;
+BiomeDecor::BiomeDecor(TextureLookup textureOf, const AssetFileLookup& fileOf)
+    : textureOf_(std::move(textureOf)),
+      logger_(std::string(BACKGROUND_LOGGER_NAME)) {
+  for (const Biome& biome : BIOMES) {
+    maps_.push_back(readMaps(biome, fileOf));
   }
-  const auto scrolledIntoTile = static_cast<int>(
-      std::floor(std::fmod(scrolledPixels, static_cast<float>(tileWidth))));
-  for (int column = -scrolledIntoTile;
-       column < static_cast<int>(BACKGROUND_WIDTH); column += tileWidth) {
-    columns.push_back(column);
-  }
-  return columns;
 }
-
-BiomeDecor::BiomeDecor(TextureLookup textureOf)
-    : textureOf_(std::move(textureOf)) {}
 
 void BiomeDecor::show(const SkyLevel& level) { level_ = level; }
 
@@ -56,22 +49,43 @@ void BiomeDecor::advance(engine::Duration elapsed) {
 }
 
 void BiomeDecor::draw(sf::RenderTarget& canvas) const {
-  for (const BiomeLayer& layer : layersOfBiome(level_.biome)) {
-    const sf::Texture* const picture = textureOf_(layer.image);
-    if (picture == nullptr) {
-      continue;
-    }
-    sf::Sprite copy(*picture);
-    const float scrolledPixels =
-        level_.scrollPosition * layer.scrollFactor / BACKGROUND_PIXEL_SIZE;
-    for (const int column : decorTileColumns(
-             scrolledPixels, static_cast<int>(picture->getSize().x))) {
-      copy.setPosition({static_cast<float>(column), 0.0F});
-      canvas.draw(copy);
+  const std::optional<std::size_t> biome = biomeIndexOf(level_.biome);
+  if (!biome.has_value()) {
+    return;
+  }
+  const std::optional<BiomeMap>& map = maps_.at(*biome);
+  if (!map.has_value()) {
+    return;
+  }
+  const std::span<const BiomeLayer> layers = BIOMES.at(*biome).layers;
+  for (std::size_t index = 0; index < layers.size(); ++index) {
+    const sf::Texture* const tileset = textureOf_(layers[index].tileset);
+    if (tileset != nullptr) {
+      map->plane(index).draw(canvas, *tileset, enteredPixels(layers[index]));
     }
   }
 }
 
 float BiomeDecor::scrollPosition() const { return level_.scrollPosition; }
+
+bool BiomeDecor::hasMapsOf(std::string_view name) const {
+  const std::optional<std::size_t> biome = biomeIndexOf(name);
+  return biome.has_value() && maps_.at(*biome).has_value();
+}
+
+std::optional<BiomeMap> BiomeDecor::readMaps(
+    const Biome& biome, const AssetFileLookup& fileOf) const {
+  try {
+    return BiomeMap(fileOf(biome.project), biome.layers);
+  } catch (const BiomeMapException& error) {
+    logger_.error("the biome ", biome.name, " shows no decor: ", error.what());
+    return std::nullopt;
+  }
+}
+
+float BiomeDecor::enteredPixels(const BiomeLayer& layer) const {
+  return (level_.scrollPosition - level_.biomeSince) * layer.scrollFactor /
+         BACKGROUND_PIXEL_SIZE;
+}
 
 }  // namespace rtype::client

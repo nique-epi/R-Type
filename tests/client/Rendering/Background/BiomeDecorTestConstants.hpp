@@ -5,33 +5,14 @@
 #include <string_view>
 #include "TimeConstants.hpp"
 
-/** @brief A picture two skies wide, 960 pixels on a sky of 480, and one
- * narrower than the sky. */
-constexpr int PICTURE_TWO_SKIES_WIDE = 960;
-constexpr int PICTURE_NARROWER_THAN_THE_SKY = 200;
-constexpr int PICTURE_WITHOUT_WIDTH = 0;
-
-/** @brief Scrolls of a picture, in background pixels: none, a tenth of a
- * sky and a little more, more than a sky, and the whole picture. */
-constexpr float NO_SCROLL = 0.0F;
-constexpr float SCROLL_OF_A_HUNDRED_PIXELS = 100.0F;
-constexpr float SCROLL_OF_A_HUNDRED_PIXELS_AND_MORE = 100.9F;
-constexpr float SCROLL_OF_SIX_HUNDRED_PIXELS = 600.0F;
-constexpr float SCROLL_OF_THE_WHOLE_PICTURE = 960.0F;
-
-/** @brief Where the copies of a picture start, in background pixels. */
-constexpr int LEFT_EDGE_OF_THE_SKY = 0;
-constexpr int A_HUNDRED_PIXELS_LEFT_OF_THE_SKY = -100;
-constexpr int SIX_HUNDRED_PIXELS_LEFT_OF_THE_SKY = -600;
-constexpr int SECOND_COPY_AFTER_SIX_HUNDRED_PIXELS = 360;
-constexpr int SECOND_NARROW_COPY = 200;
-constexpr int THIRD_NARROW_COPY = 400;
-
-/** @brief A biome the client has a decor for, of three layers, and a name
- * no biome has. */
-constexpr std::string_view KNOWN_BIOME = "drift_fields";
-constexpr std::size_t LAYERS_OF_THE_KNOWN_BIOME = 3;
+/** @brief The biome the client has a decor for, its rank among the biomes,
+ * and a name no biome has. */
+constexpr std::string_view KNOWN_BIOME = "fosse";
+constexpr std::size_t RANK_OF_THE_KNOWN_BIOME = 0;
 constexpr std::string_view UNKNOWN_BIOME = "nowhere";
+
+/** @brief A file no assets folder holds. */
+constexpr std::string_view FILE_NOWHERE = "/nowhere/no_biome.ldtk";
 
 /** @brief A level scrolled 100 logical units that scrolls 120 units per
  * second, where it is one second later, and a level whose scroll is

@@ -1,43 +1,44 @@
 #pragma once
 
 #include <SFML/Graphics/RenderTarget.hpp>
-#include <span>
+#include <cstddef>
+#include <optional>
 #include <string_view>
 #include <vector>
+#include "AssetFileLookup.hpp"
+#include "Biome.hpp"
 #include "BiomeLayer.hpp"
+#include "BiomeMap.hpp"
+#include "Logger.hpp"
 #include "SkyLevel.hpp"
 #include "TextureLookup.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
 
-/** @returns The layers of the biome @p name among BIOMES; none for a name
- * no biome has. */
-[[nodiscard]] std::span<const BiomeLayer> layersOfBiome(std::string_view name);
+/** @returns The rank of the biome @p name among BIOMES; none for a name no
+ * biome has. */
+[[nodiscard]] std::optional<std::size_t> biomeIndexOf(std::string_view name);
 
 /**
- * @returns The columns of the sky, in background pixels, where the copies of
- * a picture @p tileWidth pixels wide start once it scrolled @p scrolledPixels
- * to the left, from the one that covers the left edge to the one that covers
- * the right edge; none for a picture without width.
- */
-[[nodiscard]] std::vector<int> decorTileColumns(float scrolledPixels,
-                                                int tileWidth);
-
-/**
- * @brief The decor of the biome a level shows: its layers, drawn over the
- * stars from the farthest to the nearest, each moving by its share of the
- * scroll of the level.
+ * @brief The decor of the biome a level shows: the planes of its maps, drawn
+ * over the stars from the farthest to the nearest, each moving by its share
+ * of the scroll of the level since the biome began.
  *
+ * The maps of every biome of BIOMES are read once, when the decor is built; a
+ * project that cannot be read is logged and its biome shows the stars alone.
  * The scroll the server tells is kept, then moved on at the speed it tells
  * until the next one comes, so the decor moves between two messages and
- * stops while the scroll of the level is paused. A layer whose picture is not
- * loaded is not drawn, and a biome the client has no decor for shows none.
+ * stops while the scroll of the level is paused. A plane whose tileset is not
+ * loaded is not drawn.
  */
 class BiomeDecor {
  public:
-  /** @param textureOf Finds the picture of a layer; it must not be empty. */
-  explicit BiomeDecor(TextureLookup textureOf);
+  /**
+   * @param textureOf Finds the tileset of a layer; it must not be empty.
+   * @param fileOf Finds the LDtk project of a biome; it must not be empty.
+   */
+  BiomeDecor(TextureLookup textureOf, const AssetFileLookup& fileOf);
 
   /** @brief Shows the biome and the scroll of @p level from now. */
   void show(const SkyLevel& level);
@@ -46,7 +47,7 @@ class BiomeDecor {
    * moves nothing. */
   void advance(engine::Duration elapsed);
 
-  /** @brief Draws the layers on @p canvas, whose pixels are those of the
+  /** @brief Draws the planes on @p canvas, whose pixels are those of the
    * background. */
   void draw(sf::RenderTarget& canvas) const;
 
@@ -54,8 +55,17 @@ class BiomeDecor {
    * units. */
   [[nodiscard]] float scrollPosition() const;
 
+  /** @returns Whether the maps of the biome @p name were read. */
+  [[nodiscard]] bool hasMapsOf(std::string_view name) const;
+
  private:
+  [[nodiscard]] std::optional<BiomeMap> readMaps(
+      const Biome& biome, const AssetFileLookup& fileOf) const;
+  [[nodiscard]] float enteredPixels(const BiomeLayer& layer) const;
+
   TextureLookup textureOf_;
+  logging::Logger logger_;
+  std::vector<std::optional<BiomeMap>> maps_;
   SkyLevel level_;
 };
 

@@ -13,46 +13,40 @@ constexpr float FAR_LAYER_SCROLL_FACTOR = 0.25F;
 constexpr float MIDDLE_LAYER_SCROLL_FACTOR = 0.5F;
 constexpr float NEAR_LAYER_SCROLL_FACTOR = 1.0F;
 
-/** @brief The asset ids of the layers of each biome, pictures written by
- * tests/tools/biome-layers/make_biome_layers.py. */
-constexpr std::string_view DRIFT_FIELDS_FAR_LAYER_ID =
-    "backgrounds/drift_fields_far.png";
-constexpr std::string_view DRIFT_FIELDS_MIDDLE_LAYER_ID =
-    "backgrounds/drift_fields_middle.png";
-constexpr std::string_view DRIFT_FIELDS_NEAR_LAYER_ID =
-    "backgrounds/drift_fields_near.png";
-constexpr std::string_view EMBER_REACH_FAR_LAYER_ID =
-    "backgrounds/ember_reach_far.png";
-constexpr std::string_view EMBER_REACH_MIDDLE_LAYER_ID =
-    "backgrounds/ember_reach_middle.png";
-constexpr std::string_view EMBER_REACH_NEAR_LAYER_ID =
-    "backgrounds/ember_reach_near.png";
+/** @brief The LDtk project of the Pit, written by generator/procedural/, and
+ * the tilesets of its three planes. */
+constexpr std::string_view FOSSE_PROJECT_ID = "biomes/fosse/fosse.ldtk";
+constexpr std::string_view FOSSE_FAR_TILESET_ID = "biomes/fosse/fosse_far.png";
+constexpr std::string_view FOSSE_MIDDLE_TILESET_ID =
+    "biomes/fosse/fosse_mid.png";
+constexpr std::string_view FOSSE_NEAR_TILESET_ID =
+    "biomes/fosse/fosse_near.png";
 
-/** @brief The layers of each biome, from the farthest to the nearest. */
-constexpr std::array DRIFT_FIELDS_LAYERS{
-    BiomeLayer{.image = DRIFT_FIELDS_FAR_LAYER_ID,
+/** @brief The tile layers of the project of the Pit, one per plane. */
+constexpr std::string_view FOSSE_FAR_LAYER_NAME = "Far";
+constexpr std::string_view FOSSE_MIDDLE_LAYER_NAME = "Mid";
+constexpr std::string_view FOSSE_NEAR_LAYER_NAME = "Near";
+
+/** @brief The layers of the Pit, from the farthest to the nearest. */
+constexpr std::array FOSSE_LAYERS{
+    BiomeLayer{.layer = FOSSE_FAR_LAYER_NAME,
+               .tileset = FOSSE_FAR_TILESET_ID,
                .scrollFactor = FAR_LAYER_SCROLL_FACTOR},
-    BiomeLayer{.image = DRIFT_FIELDS_MIDDLE_LAYER_ID,
+    BiomeLayer{.layer = FOSSE_MIDDLE_LAYER_NAME,
+               .tileset = FOSSE_MIDDLE_TILESET_ID,
                .scrollFactor = MIDDLE_LAYER_SCROLL_FACTOR},
-    BiomeLayer{.image = DRIFT_FIELDS_NEAR_LAYER_ID,
-               .scrollFactor = NEAR_LAYER_SCROLL_FACTOR}};
-constexpr std::array EMBER_REACH_LAYERS{
-    BiomeLayer{.image = EMBER_REACH_FAR_LAYER_ID,
-               .scrollFactor = FAR_LAYER_SCROLL_FACTOR},
-    BiomeLayer{.image = EMBER_REACH_MIDDLE_LAYER_ID,
-               .scrollFactor = MIDDLE_LAYER_SCROLL_FACTOR},
-    BiomeLayer{.image = EMBER_REACH_NEAR_LAYER_ID,
+    BiomeLayer{.layer = FOSSE_NEAR_LAYER_NAME,
+               .tileset = FOSSE_NEAR_TILESET_ID,
                .scrollFactor = NEAR_LAYER_SCROLL_FACTOR}};
 
 /** @brief The names the server gives the biomes, as a level script writes
  * them in `level.biome`. */
-constexpr std::string_view DRIFT_FIELDS_BIOME_NAME = "drift_fields";
-constexpr std::string_view EMBER_REACH_BIOME_NAME = "ember_reach";
+constexpr std::string_view FOSSE_BIOME_NAME = "fosse";
 
 /** @brief Every biome the client has a decor for; a name it lacks shows the
- * sky without any decor. */
-constexpr std::array BIOMES{
-    Biome{.name = DRIFT_FIELDS_BIOME_NAME, .layers = DRIFT_FIELDS_LAYERS},
-    Biome{.name = EMBER_REACH_BIOME_NAME, .layers = EMBER_REACH_LAYERS}};
+ * stars without any decor. */
+constexpr std::array BIOMES{Biome{.name = FOSSE_BIOME_NAME,
+                                  .project = FOSSE_PROJECT_ID,
+                                  .layers = FOSSE_LAYERS}};
 
 }  // namespace rtype::client
