@@ -13,6 +13,7 @@
 #include "SettingsConstants.hpp"
 #include "ShipLocker.hpp"
 #include "ShipLook.hpp"
+#include "TextSize.hpp"
 
 namespace rtype::client {
 
@@ -55,6 +56,14 @@ constexpr Setting<bool> AUTO_FIRE_SETTING{.member = &PlayerSettings::autoFire,
 constexpr Setting<bool> PILOT_NAMES_SETTING{
     .member = &PlayerSettings::pilotNames,
     .id = SettingId::PilotNames,
+    .range = std::nullopt};
+constexpr Setting<TextSize> TEXT_SIZE_SETTING{
+    .member = &PlayerSettings::textSize,
+    .id = SettingId::TextSize,
+    .range = std::nullopt};
+constexpr Setting<bool> HIGH_CONTRAST_SETTING{
+    .member = &PlayerSettings::highContrast,
+    .id = SettingId::HighContrast,
     .range = std::nullopt};
 constexpr Setting<identifiers::ShipLook> SHIP_LOOK_SETTING{
     .member = &PlayerSettings::shipLook,
@@ -138,6 +147,8 @@ constexpr std::array ALL_SETTING_IDS{
     SettingId::SoundCues,
     SettingId::AutoFire,
     SettingId::PilotNames,
+    SettingId::TextSize,
+    SettingId::HighContrast,
     SettingId::ChatShown,
     SettingId::ChatLetters,
     SettingId::ChatClosedLines,

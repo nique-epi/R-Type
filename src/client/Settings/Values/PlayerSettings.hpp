@@ -9,6 +9,7 @@
 #include "SettingsConstants.hpp"
 #include "ShipLocker.hpp"
 #include "ShipLook.hpp"
+#include "TextSize.hpp"
 
 namespace rtype::client {
 
@@ -17,11 +18,15 @@ namespace rtype::client {
  * next.
  *
  * A default-built value holds the settings of a first launch, except
- * reduceFlashes, which the client then takes from the system. Volumes are in
+ * reduceFlashes and highContrast, which the client then takes from the
+ * system. Volumes are in
  * percent, MINIMUM_VOLUME to MAXIMUM_VOLUME. windowSize stays empty until the
  * player picks a size: the window then opens at the largest one that fits. The
  * window opens windowed until the player picks another display mode.
  * pilotNames is on: the nickname of each pilot is written over its ship.
+ * textSize is NORMAL: the interface writes its text as its fonts are drawn.
+ * highContrast is off, except that the client takes it from the system on a
+ * first launch, as it does reduceFlashes.
  * chatShown is on: the chat of the session shows, and its key opens it.
  * chatLetters, chatClosedLines, chatOpenLines: the letters of a line of the
  * chat, and its lines while closed and while open. chatSeconds: how long a
@@ -44,6 +49,8 @@ struct PlayerSettings {
   bool soundCues = false;
   bool autoFire = false;
   bool pilotNames = true;
+  TextSize textSize = TextSize::Normal;
+  bool highContrast = false;
   bool chatShown = true;
   int chatLetters = DEFAULT_CHAT_LETTERS;
   int chatClosedLines = DEFAULT_CHAT_CLOSED_LINES;
