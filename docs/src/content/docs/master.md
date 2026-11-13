@@ -51,6 +51,7 @@ The master reads `master.cfg`, in the folder it is started from, between the ins
 |---|---|---|---|
 | `port` | 1 to 65535 | 8080 | The TCP port the HTTP API listens on, on every interface. |
 | `database` | a path | empty | The SQLite file of the master; empty for `r-type_master.db` next to the executable. |
+| `site-key` | a text | empty | The secret the web site names itself by when it creates a server for a visitor (see [Creating a game server](#creating-a-game-server-post-apiservers)); empty, the master reads nothing the site says of its visitor. Set it in `master.cfg`, never on the command line, which every user of the machine can read. |
 
 ## Modules
 
@@ -78,7 +79,7 @@ The storage starts before the HTTP API, so a database the master cannot open sto
 ```
 
 - **Errors:** an answer of 400 or more without a body gets a problem document of RFC 9457, `application/problem+json`, whose `title` is the phrase of its status, with the `detail` of the route when it gives one: `{"status":404,"title":"Not Found"}` for a path no route answers.
-- **The address of the client** is the one of the TCP connection, except for a request from `127.0.0.1`, the reverse proxy on the machine: its client is the last address of its `X-Forwarded-For` header, the one the proxy saw (`clientAddressOf()`, `src/network/Http/Server/`). A client that reaches the master from elsewhere cannot name another address, and Caddy drops the `X-Forwarded-For` a client sends before it writes its own. The supervisor serves its content pack with the same server, and reads the TCP peer only.
+- **The address of the client** is the one of the TCP connection, except for a request from `127.0.0.1`, the reverse proxy on the machine: its client is the last address of its `X-Forwarded-For` header, the one the proxy saw (`clientAddressOf()`, `src/network/Http/Server/`). A client that reaches the master from elsewhere cannot name another address, and Caddy drops the `X-Forwarded-For` a client sends before it writes its own. The supervisor serves its content pack with the same server, and reads the TCP peer only. A creation of the web site is the one exception, counted under the visitor the site names (see [Creating a game server](#creating-a-game-server-post-apiservers)).
 - **A route that throws** answers 500, and its reason goes to the journal only, never to the client.
 - **A body over 64 KiB** (`MAX_REQUEST_BODY_BYTES`) sent to a route answers 413 without being kept whole; cpp-httplib would keep up to 100 MiB. A path no route answers gets 404 without its body being read.
 - **One master per port:** by default cpp-httplib sets `SO_REUSEPORT`, which lets a second program bind the port of the first with no error. The master sets `SO_REUSEADDR` instead (`SO_EXCLUSIVEADDRUSE` on Windows), so a second master on the same port stops at its start, with an error naming the port.
@@ -101,7 +102,7 @@ The web site is a program of its own: a Next.js server, in `web/` (see [Web site
 | `/` | the hero, the servers with free seats, the Bydos, the features, the notes of the latest release | the list of servers, the latest release |
 | `/download` | the installer of the system of the reader, its steps, the other files of the release | the latest release |
 | `/servers` | the sector map, read only: a seat is taken in the game, so the map has no Join and no quick play | the list of servers, each with its games and its last ping |
-| `/servers/{id}` | the games of a server, its figures and the pilots of its last 100 samples (the master keeps one sample a second, a page of the list holds 100); a server created and not registered yet shows a waiting notice | the list, `GET /api/servers/{id}/samples` |
+| `/servers/{id}` | the games of a server, its figures, the load of its machine (see [The load of a server](#the-load-of-a-server)) and the pilots of its last 100 samples (the master keeps one sample a second, a page of the list holds 100); a server created and not registered yet shows a waiting notice | the list, `GET /api/servers/{id}/samples` |
 | `/host` | the form that creates a server, with no account, then its key, shown once with a button that copies it, and the two lines of `server.cfg` that hold it; the home page, the hosting guide of the wiki and the key H of the sector map lead to it | nothing; it writes with `POST /api/servers` |
 | `/leaderboard` | the leaderboard screen of the game, by server or for everyone; the scope and the filters are in the address (`?scope=server&server=7&difficulty=hard&pilots=3`) and the page reads the ten best players again at each address | the leaderboard, and the list of servers for the first tab |
 | `/wiki/{keys,enemies,accessibility,host}` | the controls, the bestiary, the pilot palettes, the guide to host a server | nothing |
@@ -154,7 +155,16 @@ The storage module opens its file with `rtype_storage` (`openDatabaseFile()`, se
 | 2 | `servers` | the status computed last, whether an admin put the server in maintenance, and the games, players, tick p95 and loss of the last heartbeat, written with it so the list and the statuses parse no JSON; the upgrade of a file of version 1 reads them once from the last heartbeat it kept, and leaves them empty for a text that is no heartbeat |
 | 2 | `status_changes` | each change of status of each server, at most one per server and per second, kept 7 days |
 | 3 | `servers` | the secret each server registered with, which its probes carry, and the second of its last valid answer to a probe; both empty for a server registered before |
+| 5 | `heartbeat_samples` | the load of the machine of the server in each sample: the share of its processors that is busy, its memory in use and all its memory; empty in the samples kept before, and for a server that does not measure them |
 | 4 | `game_results` | a row per player of each vanilla game a server reported: its server, the id of the game, the nickname, the account, the score, the date, the difficulty and the number of players; the key is the server, the game and the nickname, compared without case |
+
+## The load of a server
+
+A reader of the sheet of a server sees whether its machine runs flat out. The measure is of the whole machine, every program counted, so a machine another program fills reads as full: that is what a player who joins it gets.
+
+- **The server** sends, in the `measures` of each heartbeat, `cpuPercent`, the share of the processors that was busy since the heartbeat before, and `usedMemoryBytes` and `totalMemoryBytes`. A server that cannot read them, an older server, and the first heartbeat for `cpuPercent`, leave them out: they are never sent as 0.
+- **The master** keeps them in `heartbeat_samples` and gives them back in `GET /api/servers/{id}/samples`. It checks each alone, and does not compare the memory in use with all of it. They do not change the status of the server.
+- **The site** (`web/src/lib/rtype/server-load.ts`) reads the two gauges in the newest sample alone, and the curves in the samples it read. The memory gauge is `usedMemoryBytes` over `totalMemoryBytes`, at most 100 %. A load is written "loaded" from `BUSY_LOAD_PERCENT` (70 %) and "flat out" from `FLAT_OUT_LOAD_PERCENT` (90 %), in words and not by the color alone. A newest sample without the measure reads "not measured", never 0 %.
 
 ## Creating a game server: `POST /api/servers`
 
@@ -166,10 +176,12 @@ A host creates its server on the web site, whose hosting page calls `POST /api/s
 
 - **The key is shown this once.** It is `rtk_`, so a key that leaks in a log or a repository is recognized, then `SERVER_KEY_BYTES` (32) drawn by `hydro_random_buf()` of libhydrogen, which seeds itself from the system (`/dev/urandom` on Linux once `/dev/random` is ready, `/dev/urandom` on macOS, `RtlGenRandom` on Windows), in lowercase hexadecimal: 68 characters. It never goes in a URL or in the journal.
 - **The database keeps its fingerprint only**, `hydro_hash_hash()` of the key in the context `FINGERPRINT_CONTEXT`, so a copy of the file lets nobody act as a server. A key is 256 random bits, so a fast hash is enough: nobody can try every key, unlike every password.
-- **One address creates `MAXIMUM_CREATIONS_PER_ADDRESS` (5) servers per `CREATION_WINDOW` (1 hour) at most**; the next one answers 429. The count and the insert are one transaction, so requests sent at once cannot pass the quota together. The address is the one `clientAddressOf()` gives (see [The HTTP API](#the-http-api-masterhttpserver)). The web site calls the master from its own server, so every host who creates a server on the site shares the quota of the address of the site; the site already names its visitor in two headers the master does not read yet (see [The pages of the site](#the-pages-of-the-site)).
+- **One address creates `MAXIMUM_CREATIONS_PER_ADDRESS` (5) servers per `CREATION_WINDOW` (1 hour) at most**; the next one answers 429. The count and the insert are one transaction, so requests sent at once cannot pass the quota together. The address is the address of the client (see [The HTTP API](#the-http-api-masterhttpserver)), except for a creation of the web site.
+- **The web site creates for its visitors, each with a quota of its own.** The site calls the master from its own server, so all its visitors would share the quota of one address. It sends two headers with a creation: `X-Site-Key`, the secret both hold, and `X-Site-Client-Address`, the address of the visitor. When the `site-key` setting is not empty and `X-Site-Key` equals it, the creation is counted, and kept in `servers.created_by_address`, under the address of `X-Site-Client-Address` (`visitorAddressOf()`, `src/master/Servers/Services/Helpers/`). In every other case the creation is counted under the address of the client, with no error: an empty setting, a missing or wrong key, or an address that is no address. An address is an IPv4 one, or a text of 45 characters at most made of the characters of an IPv6 one with two colons at least; the master does not parse an IPv6 address further. A visitor and a client that reaches the master directly from the same address share one count.
+- **Whoever lacks the secret cannot choose its address.** The two keys are hashed and their hashes compared in constant time (`secretsMatch()`, `src/network/Hashing/`), so the time of an answer says nothing of the secret, and the master never writes it in its journal. Whoever holds the secret names any address, so creates without limit: the secret is 32 random bytes or more (`openssl rand -hex 32`), sent over HTTPS only, and changing it is one line of `master.cfg` and one variable of the site.
 - **Anyone who reaches the master may create a server** until accounts exist: the web site will then ask for a signed-in host. Revoking a key, and giving it an expiry, are not written yet.
 
-The host then writes the key in the `server.cfg` of that server, as the setting `master-key`, next to `master-url`; `server.cfg` is never committed, only `server.cfg.example`, with an empty key. The supervisor of the game server registers and sends its heartbeats from then on (see [Server](/R-Type/server/#link-with-the-master-servermastermodule)). One supervisor is one server on the master: it registers its own UDP port, `maximumGames` 8 (`MAXIMUM_RUNNING_GAMES`), and in each heartbeat the games it runs, numbered by place from 1 to 8 and named `GAME 1` to `GAME 8`; a place freed by a game that ended is given to the next game started, so a number names a place, not one game for ever. Its `measures` are the median and the 95th percentile of the ticks of its slowest game and the mean round trip of its players, each game counting as many times as it has players; it sends no traffic and no loss.
+The host then writes the key in the `server.cfg` of that server, as the setting `master-key`, next to `master-url`; `server.cfg` is never committed, only `server.cfg.example`, with an empty key. The supervisor of the game server registers and sends its heartbeats from then on (see [Server](/R-Type/server/#link-with-the-master-servermastermodule)). One supervisor is one server on the master: it registers its own UDP port, `maximumGames` 8 (`MAXIMUM_RUNNING_GAMES`), and in each heartbeat the games it runs, numbered by place from 1 to 8 and named `GAME 1` to `GAME 8`; a place freed by a game that ended is given to the next game started, so a number names a place, not one game for ever. Its `measures` are the median and the 95th percentile of the ticks of its slowest game and the mean round trip of its players, each game counting as many times as it has players, and the load of its machine: `cpuPercent`, `usedMemoryBytes` and `totalMemoryBytes` (see [Server](/R-Type/server/#the-load-of-the-machine)); it sends no traffic and no loss.
 
 ## Routes of a game server: `ServersModule`
 
@@ -215,7 +227,7 @@ The bodies are JSON, read and written by `rtype_network_master` (`src/network/Ma
 | `difficulties` | the tables of the waves file of the server, the difficulties a new game may be played at: 1 to `MAXIMUM_DIFFICULTIES` (16) nicknames of the protocol, none twice |
 | `probeSecret` | 1 to 9223372036854775807 (2^63 − 1, what a column `INTEGER` of SQLite holds); required in a registration, and never written in a list |
 | `probeToken` | optional, 1 to 18446744073709551615 (2^64 − 1): the token of the last probe, sent once |
-| `measures` | an object; each of `tickP50Milliseconds`, `tickP95Milliseconds`, `receivedBytesPerSecond`, `sentBytesPerSecond`, `lossPercent` (0 to 100) and `averagePingMilliseconds` is a number from 0, or left out when the server does not measure it, never sent as 0 |
+| `measures` | an object; each of `tickP50Milliseconds`, `tickP95Milliseconds`, `receivedBytesPerSecond`, `sentBytesPerSecond`, `lossPercent` (0 to 100), `averagePingMilliseconds`, `cpuPercent` (0 to 100, `MAXIMUM_CPU_PERCENT`), `usedMemoryBytes` and `totalMemoryBytes` is a number from 0, or left out when the server does not measure it, never sent as 0 |
 
 ## Listing the games of a server
 
@@ -293,7 +305,9 @@ Three routes read what the master keeps, to anyone, a page at a time. `GET /api/
 
 ```json
 {"samples":[{"takenAt":1800000000,"gameCount":2,"playerCount":3,
-             "measures":{"tickP95Milliseconds":4.25}}]}
+             "measures":{"tickP95Milliseconds":4.25,"cpuPercent":62.5,
+                         "usedMemoryBytes":3000000000.0,
+                         "totalMemoryBytes":8000000000.0}}]}
 {"statuses":[{"status":"offline","since":1800000000}]}
 ```
 
@@ -380,6 +394,7 @@ void RouteAddingModule::install(rtype::engine::InstallContext& context) {
 | Change what a server sends, or its bounds | `src/network/Master/`: `MasterMessageText.cpp` and `MasterMessageConstants.hpp` |
 | Change what a creation, a registration or a heartbeat answers | `ServersController` (`src/master/Servers/Controllers/`) |
 | Change the quota of creations | `MAXIMUM_CREATIONS_PER_ADDRESS` and `CREATION_WINDOW` in `src/master/Servers/Services/ServersServiceConstants.hpp` |
+| Change which creations are counted under a visitor, or what an address is | `visitorAddressOf()` in `src/master/Servers/Services/Helpers/SiteVisitorAddress.cpp`; the headers in `src/master/Http/HttpConstants.hpp` |
 | Change how long samples and changes of status are kept | `SAMPLE_RETENTION` in `src/master/Servers/Repositories/ServersRepositoryConstants.hpp`; `STATUS_CHANGE_RETENTION` follows it |
 | Change when a server is offline, unreachable or degraded | `OFFLINE_SILENCE`, `PROBE_ANSWER_SILENCE`, `DEGRADED_TICK_P95_MILLISECONDS` and `DEGRADED_LOSS_PERCENT` in `src/master/Servers/Services/Helpers/ServerStatusRuleConstants.hpp`, and `statusOf()` next to them |
 | Change how long a token of a probe lives, or how often a destination may be probed | `PROBE_TOKEN_WINDOWS` in `src/master/Servers/Services/ServersServiceConstants.hpp`; `PROBE_MINIMUM_GAP` in `src/master/Probe/ProbeConstants.hpp`, which follows `MINIMUM_NOTICE_GAP` in `src/network/Master/Validators/MasterMessageConstants.hpp` |
@@ -393,6 +408,7 @@ void RouteAddingModule::install(rtype::engine::InstallContext& context) {
 | Change a color, a face or a size of the site | the tokens of `web/src/styles/globals.css` |
 | Add or change a word of the site | its label type in the component, then both `web/src/i18n/dictionaries/` |
 | Change what the games of a server are listed as | `listedStateOf()` in `ServersService.cpp` (`src/master/Servers/Services/`) and `GameListing` (`src/network/Master/Messages/`) |
+| Change when the site calls a server loaded or flat out | `BUSY_LOAD_PERCENT` and `FLAT_OUT_LOAD_PERCENT`, `web/src/lib/rtype/server-load.ts` |
 | Change what a game server tells of its games | `supervisedHostedGames()` and `supervisedMeasures()` (`src/server/SupervisedGames/SupervisedGamesReport.cpp`) |
 | Add a setting of the master | the `install()` of the module that reads it, `master.cfg.example` and the table above |
 | Change what an error answers | `problemDetailsText()` in `src/network/Http/Server/HttpServer.cpp`, shared with the supervisor |

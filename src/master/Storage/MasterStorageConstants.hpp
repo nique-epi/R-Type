@@ -155,11 +155,24 @@ CREATE INDEX game_results_of_a_leaderboard
 )sql";
 
 /**
+ * @brief The fifth version: the load of the machine of a server in each of
+ * its samples, the share of its processors that is busy and its memory in use
+ * and in all. They are null in the samples kept before, and for a server that
+ * does not measure them.
+ */
+constexpr std::string_view MACHINE_LOAD_MIGRATION = R"sql(
+ALTER TABLE heartbeat_samples ADD COLUMN cpu_percent REAL;
+ALTER TABLE heartbeat_samples ADD COLUMN used_memory_bytes REAL;
+ALTER TABLE heartbeat_samples ADD COLUMN total_memory_bytes REAL;
+)sql";
+
+/**
  * @brief The migrations of the database of the master, in order:
  * MASTER_MIGRATIONS[0] is version 1. A change adds a migration at the end and
  * never edits one a master already applied.
  */
-constexpr std::array<std::string_view, 4> MASTER_MIGRATIONS{
-    SERVERS_MIGRATION, STATUSES_MIGRATION, PROBES_MIGRATION, RESULTS_MIGRATION};
+constexpr std::array<std::string_view, 5> MASTER_MIGRATIONS{
+    SERVERS_MIGRATION, STATUSES_MIGRATION, PROBES_MIGRATION, RESULTS_MIGRATION,
+    MACHINE_LOAD_MIGRATION};
 
 }  // namespace rtype::master

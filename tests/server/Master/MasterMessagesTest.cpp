@@ -93,18 +93,23 @@ TEST(MasterMessages, AHeartbeatCarriesTheMeasuresItIsGiven) {
       .receivedBytesPerSecond = std::nullopt,
       .sentBytesPerSecond = std::nullopt,
       .lossPercent = std::nullopt,
-      .averagePingMilliseconds = std::nullopt};
+      .averagePingMilliseconds = std::nullopt,
+      .cpuPercent = std::nullopt,
+      .usedMemoryBytes = std::nullopt,
+      .totalMemoryBytes = std::nullopt};
 
   EXPECT_EQ(heartbeatOf({}, measures, std::nullopt).measures, measures);
 }
 
 /**
- * Given no measures, as before the supervised games published any
+ * Given measures in which none was taken, as before the supervised games
+ * published any
  * When a heartbeat is written
  * Then it carries the games and no measure
  */
 TEST(MasterMessages, AHeartbeatWithoutMeasuresCarriesNone) {
-  const ServerHeartbeat heartbeat = heartbeatOf({}, std::nullopt, std::nullopt);
+  const ServerHeartbeat heartbeat =
+      heartbeatOf({}, ServerMeasures{}, std::nullopt);
 
   EXPECT_TRUE(heartbeat.games.empty());
   EXPECT_EQ(heartbeat.measures, ServerMeasures{});
@@ -144,7 +149,7 @@ TEST(MasterMessages, ADrawnSecretLiesWithinItsBounds) {
  */
 TEST(MasterMessages, AHeartbeatCarriesTheTokenItIsGiven) {
   const ServerHeartbeat heartbeat =
-      heartbeatOf({}, std::nullopt, PROBE_TOKEN_OF_A_HEARTBEAT);
+      heartbeatOf({}, ServerMeasures{}, PROBE_TOKEN_OF_A_HEARTBEAT);
 
   EXPECT_EQ(heartbeat.probeToken, PROBE_TOKEN_OF_A_HEARTBEAT);
 }

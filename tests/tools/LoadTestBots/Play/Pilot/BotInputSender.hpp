@@ -1,8 +1,10 @@
 #pragma once
 
 #include <cstdint>
-#include "BotPilot.hpp"
+#include <memory>
+#include "BotSight.hpp"
 #include "EntityMessage.hpp"
+#include "IBotPilot.hpp"
 #include "IPlayerInputLink.hpp"
 #include "IWaitingRoom.hpp"
 #include "PlayerInputPacer.hpp"
@@ -12,7 +14,7 @@ namespace rtype::tools {
 
 /**
  * @brief The hands of a bot: once its game started, it sends a PlayerInput of
- * what its BotPilot holds every PLAYER_INPUT_INTERVAL: a bot predicts nothing,
+ * what its pilot holds every PLAYER_INPUT_INTERVAL: a bot predicts nothing,
  * where the game screen sends one input per simulation tick. Before the game
  * starts, and once it ended, neither the pilot nor the pace move, and nothing
  * is sent. Each input repeats the ones the server has not confirmed, so the
@@ -26,20 +28,22 @@ namespace rtype::tools {
 class BotInputSender {
  public:
   /**
-   * @param seed The seed the pilot draws from.
+   * @param pilot What decides what the bot holds.
    * @param room Where the sender reads whether the game started; it must
    * outlive the sender.
    * @param link Where the inputs go; it must outlive the sender.
    */
-  BotInputSender(std::uint32_t seed, const client::IWaitingRoom& room,
+  BotInputSender(std::unique_ptr<IBotPilot> pilot,
+                 const client::IWaitingRoom& room,
                  client::IPlayerInputLink& link);
 
   /**
-   * @brief Moves the pilot and the pace by a frame of @p elapsed while the
-   * game runs, and sends what the pilot holds when an input is due.
+   * @brief Moves the pilot, which knows @p sight, and the pace by a frame of
+   * @p elapsed while the game runs, and sends what the pilot holds when an
+   * input is due.
    * @returns Whether an input went out in this frame.
    */
-  [[nodiscard]] bool advance(engine::Duration elapsed);
+  [[nodiscard]] bool advance(engine::Duration elapsed, const BotSight& sight);
 
   /**
    * @brief Confirms the inputs up to the newest one the server applied to the
@@ -52,7 +56,7 @@ class BotInputSender {
  private:
   const client::IWaitingRoom* room_;
   client::IPlayerInputLink* link_;
-  BotPilot pilot_;
+  std::unique_ptr<IBotPilot> pilot_;
   client::PlayerInputPacer pacer_;
 };
 

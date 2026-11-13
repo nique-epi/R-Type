@@ -6,6 +6,7 @@
 #include <string>
 #include <string_view>
 #include "HashingConstants.hpp"
+#include "SecretComparison.hpp"
 
 namespace rtype::network {
 
@@ -26,6 +27,15 @@ namespace rtype::network {
  * Windows).
  */
 void fillWithRandomBytes(std::span<std::byte> bytes);
+
+/**
+ * @returns Whether the presented secret of @p secrets is the expected one.
+ * Both are hashed by hashOf() in SECRET_COMPARISON_CONTEXT, and the hashes
+ * are compared by hydro_equal() of libhydrogen, whose time does not depend on
+ * the bytes: the time of an answer tells a caller neither the length of the
+ * expected secret nor how much of its guess was right.
+ */
+[[nodiscard]] bool secretsMatch(const SecretComparison& secrets);
 
 /** @returns @p bytes in lowercase hexadecimal, HEX_DIGITS_PER_BYTE digits per
  * byte. */

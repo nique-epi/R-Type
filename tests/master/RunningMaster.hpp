@@ -5,6 +5,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <vector>
 #include "Application.hpp"
 #include "ConfigurationReport.hpp"
 #include "CreatedServer.hpp"
@@ -18,7 +19,10 @@
  */
 class RunningMaster {
  public:
-  RunningMaster();
+  /** @param settingLines Lines of the command `set` run after those of the
+   * port and the database, such as the one of the site key; none by default.
+   */
+  explicit RunningMaster(std::vector<std::string> settingLines = {});
 
   /** @returns The TCP port its HTTP API listens on. */
   [[nodiscard]] std::uint16_t port() const;
@@ -53,6 +57,7 @@ class RunningMaster {
   JournalFile journal_;
   MasterDatabaseFile databaseFile_;
   std::uint16_t port_;
+  std::vector<std::string> settingLines_;
   rtype::engine::ConfigurationReport report_;
   std::unique_ptr<rtype::engine::Application> application_;
 

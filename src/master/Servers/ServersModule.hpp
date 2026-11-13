@@ -19,7 +19,9 @@ namespace rtype::master {
  * and `GET /api/servers/{id}/games`, `/samples` and `/statuses`, kept
  * in the tables `servers`, `heartbeat_samples` and `status_changes`.
  *
- * install() adds the routes to the MasterHttpServer; they read the database
+ * install() declares the `site-key` setting, the secret the web site names
+ * itself by when it creates a server for a visitor, and adds the routes to
+ * the MasterHttpServer; they read the database
  * only once the HTTP module listens, after the storage opened it. It provides
  * the ServersService, which tells another module the server of a key. start()
  * starts the ServerStatusJob, on its thread StatusWatch.

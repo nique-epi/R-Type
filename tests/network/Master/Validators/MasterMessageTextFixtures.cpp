@@ -80,7 +80,10 @@ ServerHeartbeat parisHeartbeat() {
                                  .receivedBytesPerSecond = PARIS_RECEIVED_BYTES,
                                  .sentBytesPerSecond = PARIS_SENT_BYTES,
                                  .lossPercent = PARIS_LOSS_PERCENT,
-                                 .averagePingMilliseconds = std::nullopt}};
+                                 .averagePingMilliseconds = std::nullopt,
+                                 .cpuPercent = PARIS_CPU_PERCENT,
+                                 .usedMemoryBytes = PARIS_USED_MEMORY_BYTES,
+                                 .totalMemoryBytes = PARIS_TOTAL_MEMORY_BYTES}};
 }
 
 GameListing parisGameListing() {
@@ -112,16 +115,19 @@ ServerListing parisServerListing() {
 
 SampleListing parisSampleListing() {
   return SampleListing{
-      .samples = {ServerSample{.takenAt = SAMPLE_DATE,
-                               .gameCount = LISTED_GAME_COUNT,
-                               .playerCount = LISTED_PLAYER_COUNT,
-                               .measures = ServerMeasures{
-                                   .tickP50Milliseconds = std::nullopt,
-                                   .tickP95Milliseconds = PARIS_TICK_P95,
-                                   .receivedBytesPerSecond = std::nullopt,
-                                   .sentBytesPerSecond = std::nullopt,
-                                   .lossPercent = PARIS_LOSS_PERCENT,
-                                   .averagePingMilliseconds = std::nullopt}}}};
+      .samples = {ServerSample{
+          .takenAt = SAMPLE_DATE,
+          .gameCount = LISTED_GAME_COUNT,
+          .playerCount = LISTED_PLAYER_COUNT,
+          .measures = ServerMeasures{.tickP50Milliseconds = std::nullopt,
+                                     .tickP95Milliseconds = PARIS_TICK_P95,
+                                     .receivedBytesPerSecond = std::nullopt,
+                                     .sentBytesPerSecond = std::nullopt,
+                                     .lossPercent = PARIS_LOSS_PERCENT,
+                                     .averagePingMilliseconds = std::nullopt,
+                                     .cpuPercent = std::nullopt,
+                                     .usedMemoryBytes = std::nullopt,
+                                     .totalMemoryBytes = std::nullopt}}}};
 }
 
 std::string gameListingTextWith(std::string_view pointer,

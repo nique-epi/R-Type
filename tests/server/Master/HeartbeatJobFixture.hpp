@@ -18,7 +18,9 @@
 namespace rtype::server::testing {
 
 /** @brief A running master that created one server, a job for it, and the
- * file of results of its games, in a folder of the test. */
+ * file of results of its games, in a folder of the test. The job reads
+ * counters of a machine of the test, whose processors are busy for
+ * LINKED_BUSY_PERCENT_TEXT between two readings. */
 class HeartbeatJobFixture : public ::testing::Test {
  protected:
   HeartbeatJobFixture();

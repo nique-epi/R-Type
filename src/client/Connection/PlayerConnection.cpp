@@ -91,12 +91,12 @@ const ServerSession& PlayerConnection::session() const { return session_; }
 
 WaitingRoom& PlayerConnection::waitingRoom() { return waitingRoom_; }
 
-const WaitingRoom& PlayerConnection::waitingRoom() const {
-  return waitingRoom_;
-}
-
 EntityMessageQueue& PlayerConnection::entityMessages() {
   return entityMessages_;
+}
+
+const IEntityTypeTable& PlayerConnection::entityTypes() const {
+  return entityTypes_;
 }
 
 IServerPingProbe& PlayerConnection::pings() { return pings_; }

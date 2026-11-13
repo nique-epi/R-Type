@@ -21,6 +21,13 @@ struct ApiRequest {
    */
   std::string remoteAddress;
   /**
+   * @brief The headers of the request, their names in lowercase, since a
+   * header name is read in any case (RFC 9110, section 5.1); a header given
+   * twice keeps one of its values. Whatever the client wrote: a route trusts
+   * none of them without a check of its own.
+   */
+  std::unordered_map<std::string, std::string> headers;
+  /**
    * @brief The parameters the path of the route names, such as `id` for
    * `/servers/:id/games`, as the text the client wrote; none for a path
    * without parameter.

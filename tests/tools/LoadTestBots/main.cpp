@@ -9,6 +9,7 @@
 #include <string_view>
 #include <thread>
 #include <vector>
+#include "BossFight.hpp"
 #include "BotConstants.hpp"
 #include "BotLaunch.hpp"
 #include "BotLaunchConstants.hpp"
@@ -91,9 +92,9 @@ double entitiesPerState(const BotReport& report) {
 void printBotLine(std::size_t number, const BotReport& report) {
   const rtype::tools::BotTraffic& traffic = report.trafficInGame;
   std::cout << "bot " << number << ": " << phaseText(report.phase) << ", "
-            << report.gamesEnded << " games ended, " << report.worldStates
-            << " world states and " << report.inputsInGame << " inputs in "
-            << secondsInGame(report)
+            << report.gamesEnded << " games ended, " << report.scoreEarned
+            << " points, " << report.worldStates << " world states and "
+            << report.inputsInGame << " inputs in " << secondsInGame(report)
             << " s of game: " << perSecondOfGame(report.worldStates, report)
             << " and " << perSecondOfGame(report.inputsInGame, report)
             << " per second, " << entitiesPerState(report)
@@ -109,8 +110,24 @@ void printBotLine(std::size_t number, const BotReport& report) {
             << " datagrams/s\n";
 }
 
-/** @brief Prints what @p launch asked, one line per bot of @p reports, then
- * how many are still in session. */
+/** @brief Prints one line for each fight of bot @p number with the boss: how
+ * it ended, the health the boss kept, how long the bot lived facing it and the
+ * lives it lost. */
+void printBossFights(std::size_t number, const BotReport& report) {
+  std::size_t fightNumber = 1;
+  for (const rtype::tools::BossFight& fight : report.bossFights) {
+    std::cout << "bot " << number << " boss fight " << fightNumber++ << ": "
+              << (fight.defeated ? "defeated" : "not defeated") << ", boss at "
+              << static_cast<unsigned>(fight.bossHealthLeftPercent)
+              << " % health, bot alive "
+              << std::chrono::duration<double>(fight.timeAlive).count()
+              << " s, " << fight.livesLost << " lives lost\n";
+  }
+}
+
+/** @brief Prints what @p launch asked, one line per bot of @p reports, each
+ * followed by the lines of its boss fights, then how many are still in
+ * session. */
 void printReport(const BotLaunch& launch, std::span<const BotReport> reports) {
   std::cout << rtype::tools::BOTS_PROGRAM_NAME << ": " << reports.size()
             << " bots for " << launch.duration.count() << " s on "
@@ -119,7 +136,8 @@ void printReport(const BotLaunch& launch, std::span<const BotReport> reports) {
             << std::fixed << std::setprecision(1);
   std::size_t number = 1;
   for (const BotReport& report : reports) {
-    printBotLine(number++, report);
+    printBotLine(number, report);
+    printBossFights(number++, report);
   }
   std::cout << "in session at the end: " << inSessionCount(reports) << " of "
             << reports.size() << " bots\n";

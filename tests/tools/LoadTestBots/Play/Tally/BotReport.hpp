@@ -1,6 +1,9 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
+#include <vector>
+#include "BossFight.hpp"
 #include "BotTraffic.hpp"
 #include "ConnectionPhase.hpp"
 #include "TimeConstants.hpp"
@@ -28,6 +31,11 @@ struct BotReport {
    * timeInGame, with their bytes: those of the UDP payload, without the
    * headers of IP and UDP. */
   BotTraffic trafficInGame;
+  /** @brief The points of every game of its run. */
+  std::uint64_t scoreEarned{0};
+  /** @brief Its fights with the boss that ended, one per game where the boss
+   * fought (see BossTally). */
+  std::vector<BossFight> bossFights;
 };
 
 }  // namespace rtype::tools

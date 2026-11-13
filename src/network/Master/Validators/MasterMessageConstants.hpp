@@ -43,6 +43,9 @@ constexpr std::string_view RECEIVED_BYTES_MEMBER = "receivedBytesPerSecond";
 constexpr std::string_view SENT_BYTES_MEMBER = "sentBytesPerSecond";
 constexpr std::string_view LOSS_PERCENT_MEMBER = "lossPercent";
 constexpr std::string_view AVERAGE_PING_MEMBER = "averagePingMilliseconds";
+constexpr std::string_view CPU_PERCENT_MEMBER = "cpuPercent";
+constexpr std::string_view USED_MEMORY_MEMBER = "usedMemoryBytes";
+constexpr std::string_view TOTAL_MEMORY_MEMBER = "totalMemoryBytes";
 
 /** @brief The member of the answer to a heartbeat that lists the orders. */
 constexpr std::string_view COMMANDS_MEMBER = "commands";
@@ -203,9 +206,11 @@ constexpr std::uint8_t LOWEST_PROTOCOL_VERSION = 0;
 constexpr std::uint8_t HIGHEST_PROTOCOL_VERSION =
     std::numeric_limits<std::uint8_t>::max();
 
-/** @brief The highest value of a measure, and of a share of lost datagrams. */
+/** @brief The highest value of a measure, of a share of lost datagrams and
+ * of a share of busy processors. */
 constexpr double MAXIMUM_MEASURE = std::numeric_limits<double>::max();
 constexpr double MAXIMUM_LOSS_PERCENT = 100.0;
+constexpr double MAXIMUM_CPU_PERCENT = 100.0;
 
 /**
  * @brief How often a game server tells the master its state when nothing

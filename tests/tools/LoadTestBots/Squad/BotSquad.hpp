@@ -17,9 +17,10 @@ namespace rtype::tools {
 class BotSquad {
  public:
   /**
-   * @brief Builds the botCount bots of @p launch, bot n (from 0) drawing from
-   * the seed of @p launch plus n and named BOT_NICKNAME_PREFIX then n + 1,
-   * opens their sockets and has each start joining the server of @p launch.
+   * @brief Builds the botCount bots of @p launch, each flown by the pilot it
+   * asks for, bot n (from 0) drawing from the seed of @p launch plus n and
+   * named BOT_NICKNAME_PREFIX then n + 1, opens their sockets and has each
+   * start joining the server of @p launch.
    * @throws SocketOpenException when the system refuses a socket.
    */
   explicit BotSquad(const BotLaunch& launch);

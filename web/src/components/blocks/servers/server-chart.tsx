@@ -1,9 +1,9 @@
 import { Heading } from '@/components/primitives/text/typography';
 import { SamplesChart } from '@/components/servers/samples-chart/samples-chart';
 import { format } from '@/i18n/format';
-import { formatDuration } from '@/i18n/format-duration';
 import { getDictionary } from '@/i18n/get-dictionary';
 import type { Locale } from '@/i18n/locales';
+import { sinceLabelOf } from './since-label';
 
 /** The value at the top of the chart when no server is busier than this. */
 const MINIMUM_CHART_MAXIMUM = 4;
@@ -27,13 +27,7 @@ export function ServerChart({
 }) {
   const dictionary = getDictionary(lang);
   const copy = dictionary.pages.serverPage;
-  const since = format(copy.since, {
-    duration: formatDuration(span, {
-      seconds: copy.durationSeconds,
-      minutes: copy.durationMinutes,
-      hours: copy.durationHours,
-    }),
-  });
+  const since = sinceLabelOf(copy, span);
 
   return (
     <section className="grid gap-4">
