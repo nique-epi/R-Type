@@ -3,9 +3,13 @@
 #include <gtest/gtest.h>
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include "BotInputSender.hpp"
+#include "BotPilot.hpp"
 #include "BotPilotTestConstants.hpp"
+#include "BotSight.hpp"
 #include "EntityMessage.hpp"
+#include "FixedEntityTypeTable.hpp"
 #include "RecordingPlayerInputLink.hpp"
 #include "RecordingWaitingRoom.hpp"
 #include "TimeConstants.hpp"
@@ -40,7 +44,9 @@ class BotInputSenderFixture : public ::testing::Test {
  private:
   RecordingWaitingRoom room_;
   RecordingPlayerInputLink link_;
-  BotInputSender sender_{PILOT_SEED, room_, link_};
+  FixedEntityTypeTable types_;
+  BotSight sight_{types_};
+  BotInputSender sender_{std::make_unique<BotPilot>(PILOT_SEED), room_, link_};
 };
 
 }  // namespace rtype::tools::testing

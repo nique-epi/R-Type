@@ -23,7 +23,7 @@ This builds in Debug with the tests, then runs them. It must pass with zero warn
 | `modules-off` | `build-modules-off/` | every [optional module](/R-Type/getting-started/build/#optional-modules) turned off |
 
 :::tip[Stress the server]
-Once the `test` preset is built, `./build/tests/malformed_datagrams --server 4242` sends a running server malformed datagrams for a minute, and `./build/tests/load_test_bots --bots 32 --seconds 60` has 32 players join and play. See [Network](/R-Type/network/).
+Once the `test` preset is built, `./build/tests/malformed_datagrams --server 4242` sends a running server malformed datagrams for a minute, and `./build/tests/load_test_bots --bots 32 --seconds 60` has 32 players join and play; add `--rules` to fly them with simple rules. See [Network](/R-Type/network/).
 :::
 
 ## Formatting and lint

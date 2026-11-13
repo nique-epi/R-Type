@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <vector>
 #include "ActionSet.hpp"
 #include "BotInputSender.hpp"
@@ -10,6 +11,8 @@
 #include "BotPilot.hpp"
 #include "BotPilotFixtures.hpp"
 #include "BotPilotTestConstants.hpp"
+#include "BotSight.hpp"
+#include "FixedEntityTypeTable.hpp"
 #include "RecordingWaitingRoom.hpp"
 #include "RefusingPlayerInputLink.hpp"
 #include "TimeConstants.hpp"
@@ -18,9 +21,11 @@ using rtype::client::ActionSet;
 using rtype::engine::SIMULATION_TICK_DURATION;
 using rtype::tools::BotInputSender;
 using rtype::tools::BotPilot;
+using rtype::tools::BotSight;
 using rtype::tools::testing::ACKNOWLEDGED_INPUT;
 using rtype::tools::testing::BOT_PLAYER_NUMBER;
 using rtype::tools::testing::BotInputSenderFixture;
+using rtype::tools::testing::FixedEntityTypeTable;
 using rtype::tools::testing::FRAMES_IN_A_SECOND;
 using rtype::tools::testing::HALF_A_TICK;
 using rtype::tools::testing::HALF_TICKS_IN_A_SECOND;
@@ -108,9 +113,11 @@ TEST(BotInputSender, SaysNothingWentOutWhenTheLinkSendsNothing) {
   RecordingWaitingRoom room;
   room.setGameStarted(true);
   RefusingPlayerInputLink link;
-  BotInputSender sender{PILOT_SEED, room, link};
+  BotInputSender sender{std::make_unique<BotPilot>(PILOT_SEED), room, link};
+  const FixedEntityTypeTable types;
+  const BotSight sight{types};
 
-  const bool said = sender.advance(SIMULATION_TICK_DURATION);
+  const bool said = sender.advance(SIMULATION_TICK_DURATION, sight);
 
   EXPECT_FALSE(said);
 }

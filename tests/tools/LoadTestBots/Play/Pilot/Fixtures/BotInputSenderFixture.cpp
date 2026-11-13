@@ -17,7 +17,7 @@ std::size_t BotInputSenderFixture::advanceFor(std::size_t frames,
                                               engine::Duration frame) {
   std::size_t sent = 0;
   for (std::size_t count = 0; count < frames; ++count) {
-    if (sender_.advance(frame)) {
+    if (sender_.advance(frame, sight_)) {
       ++sent;
     }
   }
