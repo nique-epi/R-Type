@@ -83,7 +83,8 @@ namespace rtype::network {
  * MAXIMUM_GAME_NAME_SIZE or not printable UTF-8, a state that is not one of
  * HOSTED_GAME_STATE_TEXTS, a difficulty or a player that is no valid nickname,
  * more than MAXIMUM_PLAYERS players in a game, a measure that is negative or
- * not a number, a loss above MAXIMUM_LOSS_PERCENT, a probeToken outside
+ * not a number, a loss above MAXIMUM_LOSS_PERCENT, a share of busy
+ * processors above MAXIMUM_CPU_PERCENT, a probeToken outside
  * LOWEST_PROBE_TOKEN to HIGHEST_PROBE_TOKEN.
  */
 [[nodiscard]] ServerHeartbeat heartbeatFromText(std::string_view text);

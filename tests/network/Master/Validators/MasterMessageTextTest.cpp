@@ -56,6 +56,9 @@ using rtype::network::testing::ADDRESS_POINTER;
 using rtype::network::testing::AVERAGE_PING_POINTER;
 using rtype::network::testing::CONFLICT_DETAIL;
 using rtype::network::testing::CONFLICT_PROBLEM;
+using rtype::network::testing::CPU_ABOVE_ALL;
+using rtype::network::testing::CPU_OF_EVERY_PROCESSOR;
+using rtype::network::testing::CPU_PERCENT_POINTER;
 using rtype::network::testing::createdServerRefusal;
 using rtype::network::testing::DEGRADED_STATUS_LISTING_TEXT;
 using rtype::network::testing::DEGRADED_TEXT;
@@ -184,6 +187,7 @@ using rtype::network::testing::SHORT_GAME_ID;
 using rtype::network::testing::SHORT_KEY;
 using rtype::network::testing::THIRD_PILOT;
 using rtype::network::testing::TICK_P50_POINTER;
+using rtype::network::testing::TOTAL_MEMORY_POINTER;
 using rtype::network::testing::UDP_PORT_POINTER;
 using rtype::network::testing::UNKNOWN_MEMBER_POINTER;
 using rtype::network::testing::UNKNOWN_MEMBER_VALUE;
@@ -191,6 +195,7 @@ using rtype::network::testing::UNKNOWN_STATUS_TEXT;
 using rtype::network::testing::UNREACHABLE_TEXT;
 using rtype::network::testing::UPPERCASE_GAME_ID;
 using rtype::network::testing::UPPERCASE_KEY;
+using rtype::network::testing::USED_MEMORY_POINTER;
 using rtype::network::testing::VANILLA_AS_TEXT;
 using rtype::network::testing::VANILLA_POINTER;
 using rtype::network::testing::WAITING_GAME_NUMBER;
@@ -627,6 +632,34 @@ TEST(MasterMessageText, RefusesAMeasureOutOfItsBounds) {
   EXPECT_THAT(
       heartbeatRefusal(heartbeatTextWith(LOSS_PERCENT_POINTER, LOSS_ABOVE_ALL)),
       HasSubstr(quoted(LOSS_PERCENT_POINTER)));
+}
+
+/**
+ * Given heartbeats whose share of busy processors is 100 %, then above it
+ * When each is read
+ * Then the first is accepted and the second refusal names that measure
+ */
+TEST(MasterMessageText, RefusesAShareOfBusyProcessorsAboveAHundred) {
+  EXPECT_THAT(heartbeatRefusal(heartbeatTextWith(CPU_PERCENT_POINTER,
+                                                 CPU_OF_EVERY_PROCESSOR)),
+              IsEmpty());
+  EXPECT_THAT(
+      heartbeatRefusal(heartbeatTextWith(CPU_PERCENT_POINTER, CPU_ABOVE_ALL)),
+      HasSubstr(quoted(CPU_PERCENT_POINTER)));
+}
+
+/**
+ * Given heartbeats whose memory in use, or whose whole memory, is negative
+ * When each is read
+ * Then each refusal names that measure
+ */
+TEST(MasterMessageText, RefusesANegativeMemory) {
+  EXPECT_THAT(heartbeatRefusal(
+                  heartbeatTextWith(USED_MEMORY_POINTER, NEGATIVE_MEASURE)),
+              HasSubstr(quoted(USED_MEMORY_POINTER)));
+  EXPECT_THAT(heartbeatRefusal(
+                  heartbeatTextWith(TOTAL_MEMORY_POINTER, NEGATIVE_MEASURE)),
+              HasSubstr(quoted(TOTAL_MEMORY_POINTER)));
 }
 
 /**

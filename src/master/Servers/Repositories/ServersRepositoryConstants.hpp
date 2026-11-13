@@ -53,10 +53,12 @@ constexpr std::string_view INSERT_SAMPLE_STATEMENT = R"sql(
 INSERT OR IGNORE INTO heartbeat_samples
   (server_id, taken_at, game_count, player_count, tick_p50_milliseconds,
    tick_p95_milliseconds, received_bytes_per_second, sent_bytes_per_second,
-   loss_percent, average_ping_milliseconds)
+   loss_percent, average_ping_milliseconds, cpu_percent, used_memory_bytes,
+   total_memory_bytes)
 VALUES
   (:server_id, :taken_at, :game_count, :player_count, :tick_p50,
-   :tick_p95, :received_bytes, :sent_bytes, :loss_percent, :average_ping)
+   :tick_p95, :received_bytes, :sent_bytes, :loss_percent, :average_ping,
+   :cpu_percent, :used_memory, :total_memory)
 )sql";
 constexpr std::string_view ERASE_OLD_SAMPLES_STATEMENT =
     "DELETE FROM heartbeat_samples WHERE taken_at < :oldest";
@@ -93,7 +95,8 @@ constexpr std::string_view SERVER_EXISTS_QUERY =
 constexpr std::string_view SAMPLES_OF_SERVER_QUERY = R"sql(
 SELECT taken_at, game_count, player_count, tick_p50_milliseconds,
        tick_p95_milliseconds, received_bytes_per_second, sent_bytes_per_second,
-       loss_percent, average_ping_milliseconds
+       loss_percent, average_ping_milliseconds, cpu_percent, used_memory_bytes,
+       total_memory_bytes
 FROM heartbeat_samples WHERE server_id = :server_id
 ORDER BY taken_at DESC LIMIT :limit OFFSET :offset
 )sql";
@@ -137,6 +140,9 @@ constexpr std::string_view RECEIVED_BYTES_PARAMETER = ":received_bytes";
 constexpr std::string_view SENT_BYTES_PARAMETER = ":sent_bytes";
 constexpr std::string_view LOSS_PERCENT_PARAMETER = ":loss_percent";
 constexpr std::string_view AVERAGE_PING_PARAMETER = ":average_ping";
+constexpr std::string_view CPU_PERCENT_PARAMETER = ":cpu_percent";
+constexpr std::string_view USED_MEMORY_PARAMETER = ":used_memory";
+constexpr std::string_view TOTAL_MEMORY_PARAMETER = ":total_memory";
 constexpr std::string_view OLDEST_PARAMETER = ":oldest";
 constexpr std::string_view STATUS_PARAMETER = ":status";
 constexpr std::string_view MAINTENANCE_PARAMETER = ":maintenance";
@@ -194,6 +200,9 @@ constexpr int SAMPLE_RECEIVED_BYTES_COLUMN = 5;
 constexpr int SAMPLE_SENT_BYTES_COLUMN = 6;
 constexpr int SAMPLE_LOSS_PERCENT_COLUMN = 7;
 constexpr int SAMPLE_AVERAGE_PING_COLUMN = 8;
+constexpr int SAMPLE_CPU_PERCENT_COLUMN = 9;
+constexpr int SAMPLE_USED_MEMORY_COLUMN = 10;
+constexpr int SAMPLE_TOTAL_MEMORY_COLUMN = 11;
 
 /** @brief The columns of STATUS_CHANGES_OF_SERVER_QUERY. */
 constexpr int CHANGED_AT_COLUMN = 0;

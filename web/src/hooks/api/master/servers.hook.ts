@@ -11,6 +11,7 @@ import {
 import { mapServerOf, type ServerDetails } from '@/lib/rtype/map-server';
 import type { RankingServer } from '@/lib/rtype/ranking-view';
 import { SAMPLE_SERVERS, sampleSeries } from '@/lib/rtype/sample-servers';
+import { type ServerLoad, serverLoadOf } from '@/lib/rtype/server-load';
 import type { MapServer } from '@/lib/rtype/servers';
 
 /** Where the servers come from: the master, or the examples while it is silent. */
@@ -115,6 +116,11 @@ export type ServerSheet = {
   pilots: readonly number[];
   /** Seconds between the oldest sample and the newest; 0 with fewer than two. */
   span: number;
+  /**
+   * The load of its machine over the same samples; nothing for an example
+   * and for a server that has not registered, which have no machine to read.
+   */
+  load: ServerLoad | null;
 };
 
 /** The pilots of an example server's chart: a day, as the mockup draws it. */
@@ -146,6 +152,7 @@ function sampleSheet(server: MapServer): ServerSheet {
       SAMPLE_CHART_MAXIMUM,
     ),
     span: SAMPLE_CHART_SPAN_SECONDS,
+    load: null,
   };
 }
 
@@ -186,7 +193,7 @@ export const getServerSheet = cache(
     );
     if (!listed) {
       return (await neverRegistered(serverId))
-        ? { source: 'master', server: null, pilots: [], span: 0 }
+        ? { source: 'master', server: null, pilots: [], span: 0, load: null }
         : null;
     }
 
@@ -200,6 +207,7 @@ export const getServerSheet = cache(
       ),
       pilots: pilotsOfSamples(kept),
       span: spanOf(kept),
+      load: serverLoadOf(kept),
     };
   },
 );

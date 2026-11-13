@@ -136,7 +136,7 @@ Every page lives under `app/[lang]/`, `lang` being `fr` (the default) or `en`.
 | `/`                        | `app/[lang]/page.tsx`                 | the servers with free seats, the latest release                        |
 | `/download`                | `download/page.tsx`                   | the latest release (GitHub)                                            |
 | `/servers`                 | `servers/page.tsx`                    | the servers, their games and their ping (the sector map)               |
-| `/servers/[id]`            | `servers/[id]/page.tsx`               | one server, its games and its last 100 samples                         |
+| `/servers/[id]`            | `servers/[id]/page.tsx`               | one server, its games, the load of its machine, its last 100 samples   |
 | `/leaderboard`             | `leaderboard/page.tsx`                | the leaderboard; the scope and filters are in the query of the address |
 | `/wiki`, `/wiki/[section]` | `wiki/`                               | nothing; `/wiki` redirects to the first article                        |
 | `/team`                    | `team/page.tsx`                       | nothing                                                                |

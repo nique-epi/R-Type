@@ -5,6 +5,7 @@ endif()
 add_library(rtype_server_master_module STATIC
   HeartbeatJob.cpp
   LastProblem.cpp
+  MachineLoad.cpp
   MasterMessages.cpp
   MasterProbeDesk.cpp
   ResultsCourier.cpp
@@ -29,6 +30,7 @@ target_link_libraries(rtype_server_master_module
     rtype_server_information_module
     rtype_server_supervised_games_module
     rtype_server_network_module
+    rtype_server_platform
     rtype_server_storage_database
   PRIVATE
     rtype_concurrency_interruptible_sleep

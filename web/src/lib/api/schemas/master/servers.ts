@@ -57,6 +57,9 @@ export const sampleSchema = z.object({
   measures: z
     .object({
       averagePingMilliseconds: z.number().optional(),
+      cpuPercent: z.number().optional(),
+      usedMemoryBytes: z.number().optional(),
+      totalMemoryBytes: z.number().optional(),
     })
     .optional(),
 });

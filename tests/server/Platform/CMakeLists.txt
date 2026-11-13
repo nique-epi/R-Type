@@ -1,2 +1,2 @@
-rtype_add_test(NAME server_platform_tests SOURCES FineTimerResolutionTest.cpp StopRequestTest.cpp StopSignalsTest.cpp LIBS rtype_server_platform)
+rtype_add_test(NAME server_platform_tests SOURCES FineTimerResolutionTest.cpp ProcCountersTest.cpp StopRequestTest.cpp StopSignalsTest.cpp ThisMachineTest.cpp LIBS rtype_server_platform)
 target_include_directories(server_platform_tests PRIVATE ${RTYPE_TEST_SOURCE_DIR}/server/Platform)
