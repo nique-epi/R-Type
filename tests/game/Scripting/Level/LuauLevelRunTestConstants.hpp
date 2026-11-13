@@ -124,6 +124,38 @@ constexpr rtype::engine::Duration SCROLL_AT_THE_CHECKPOINT =
     3 * rtype::engine::SIMULATION_TICK_DURATION;
 constexpr float SPEED_OF_A_MOVING_LEVEL = 120.0F;
 
+/** @brief A level whose stage names a biome, waits until it scrolled 120
+ * logical units and names it again: it still began at the start of the
+ * scroll. The second biome of WAITS_FOR_A_SECOND_OF_SCROLL is named at the
+ * step of tick 62, after 61 ticks of 2 units: 122 units. */
+constexpr std::string_view NAMES_A_BIOME_AGAIN = R"(
+level.register("test_level", { function()
+  level.biome("near")
+  level.wait_scroll(120)
+  level.biome("near")
+end })
+)";
+constexpr float WHERE_THE_FIRST_BIOME_BEGAN = 0.0F;
+constexpr float WHERE_THE_BIOME_AFTER_THE_SCROLL_BEGAN = 122.0F;
+
+/** @brief A level of two stages whose first names its biome after a wait of
+ * 50 ms, at the step of tick 4, after 3 ticks of 2 units: 6 units. The
+ * second names another at tick 5, 8 units in, and pauses the scroll. */
+constexpr std::string_view TWO_STAGES_WITH_A_LATE_BIOME = R"(
+level.register("test_level", {
+  function()
+    level.wait(50)
+    level.biome("first")
+  end,
+  function()
+    level.biome("second")
+    level.pause_scroll()
+    level.wait(50)
+  end,
+})
+)";
+constexpr float WHERE_THE_LATE_FIRST_BIOME_BEGAN = 6.0F;
+
 /** @brief A level whose stage fails, and what its error says. */
 constexpr std::string_view FAILS = R"(
 level.register("test_level", { function()

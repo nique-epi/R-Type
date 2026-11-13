@@ -6,10 +6,11 @@
 namespace rtype::network::testing {
 
 /** @brief The level of the status tests: the biome `wreck`, scrolled 240
- * logical units, at 120 units per second. */
+ * logical units, at 120 units per second, its biome begun at 96 units. */
 constexpr std::string_view STATUS_BIOME = "wreck";
 constexpr float STATUS_SCROLL_POSITION = 240.0F;
 constexpr float STATUS_SCROLL_SPEED = 120.0F;
+constexpr float STATUS_BIOME_SINCE = 96.0F;
 
 /** @brief A scroll that is paused, and values no scroll can have. */
 constexpr float PAUSED_SCROLL_SPEED = 0.0F;

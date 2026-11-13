@@ -91,6 +91,34 @@ TEST_F(LuauLevelRunFixture, ResumesAStageOnceTheLevelScrolledFarEnough) {
 }
 
 /**
+ * Given a level whose stage names a biome once it scrolled 122 units
+ * When the stage goes on
+ * Then that biome began where the scroll stood
+ */
+TEST_F(LuauLevelRunFixture, BeginsABiomeWhereTheScrollStands) {
+  play(WAITS_FOR_A_SECOND_OF_SCROLL);
+
+  tick(TICKS_JUST_SHORT_OF_A_SECOND_OF_SCROLL + 1);
+
+  EXPECT_NEAR(progress().biomeSince, WHERE_THE_BIOME_AFTER_THE_SCROLL_BEGAN,
+              SCROLL_TOLERANCE);
+}
+
+/**
+ * Given a level whose stage names the biome it already shows, once it
+ * scrolled
+ * When the stage goes on
+ * Then the biome still began where it was first named
+ */
+TEST_F(LuauLevelRunFixture, KeepsWhereABiomeBeganWhenItIsNamedAgain) {
+  play(NAMES_A_BIOME_AGAIN);
+
+  tick(TICKS_JUST_SHORT_OF_A_SECOND_OF_SCROLL + 1);
+
+  EXPECT_FLOAT_EQ(progress().biomeSince, WHERE_THE_FIRST_BIOME_BEGAN);
+}
+
+/**
  * Given a level whose stage pauses the scroll
  * When two seconds pass
  * Then the level has not scrolled, and a stage waiting for scroll still waits
@@ -219,6 +247,22 @@ TEST_F(LuauLevelRunFixture, RestartsWhereTheCheckpointWas) {
   EXPECT_TRUE(restarted);
   EXPECT_EQ(progress().scroll.travelled(), SCROLL_AT_THE_CHECKPOINT);
   EXPECT_EQ(progress().biome, BIOME_OF_THE_FIRST_STAGE);
+}
+
+/**
+ * Given a level deep into its second stage, whose first stage named its
+ * biome 6 units in
+ * When it restarts from its checkpoint
+ * Then that biome began 6 units in again
+ */
+TEST_F(LuauLevelRunFixture, RestartsWithWhereTheBiomeOfTheCheckpointBegan) {
+  play(TWO_STAGES_WITH_A_LATE_BIOME);
+  tick(TICKS_UNTIL_THE_SECOND_STAGE_IS_LATE);
+
+  static_cast<void>(run().restartFromCheckpoint());
+
+  EXPECT_NEAR(progress().biomeSince, WHERE_THE_LATE_FIRST_BIOME_BEGAN,
+              SCROLL_TOLERANCE);
 }
 
 /**

@@ -144,14 +144,18 @@ int resumeScroll(lua_State* state) {
   return 0;
 }
 
-/** @brief `level.biome(name)`: names the biome the players see from now. */
+/** @brief `level.biome(name)`: names the biome the players see from now; a
+ * new name begins where the scroll stands, the same name changes nothing. */
 int showBiome(lua_State* state) {
   LevelProgress& progress = progressOf(state);
   const std::string_view name = luaL_checkstring(state, LEVEL_BIOME_ARGUMENT);
   if (!identifiers::isBiomeName(name)) {
     throw engine::ScriptException(WRONG_BIOME_NAME_MESSAGE);
   }
-  progress.biome = name;
+  if (progress.biome != name) {
+    progress.biome = name;
+    progress.biomeSince = progress.scroll.position();
+  }
   return 0;
 }
 

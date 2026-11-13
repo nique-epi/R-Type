@@ -638,6 +638,7 @@ constexpr std::string_view STAGE_FIELD = "stage";
 constexpr std::string_view BIOME_FIELD = "biome";
 constexpr std::string_view SCROLL_POSITION_FIELD = "scrollPosition";
 constexpr std::string_view SCROLL_SPEED_FIELD = "scrollSpeed";
+constexpr std::string_view BIOME_SINCE_FIELD = "biomeSince";
 
 /**
  * @brief Wire steps in one logical unit: a coordinate is sent in eighths of a
