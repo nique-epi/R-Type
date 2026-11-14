@@ -19,7 +19,8 @@ constexpr engine::Duration WATCH_OUT_BLINK_STEP =
     std::chrono::milliseconds(150);
 
 /** @brief The text sits WATCH_OUT_TEXT_LEFT pixels from the left edge, its
- * top WATCH_OUT_TEXT_RISE rows above the lane. */
+ * top WATCH_OUT_TEXT_RISE rows above the lane, as many more as its line grew
+ * above the size the fonts are drawn at, never above the playfield. */
 constexpr int WATCH_OUT_TEXT_LEFT = 6;
 constexpr int WATCH_OUT_TEXT_RISE = 12;
 constexpr sf::Color WATCH_OUT_TEXT_COLOR = WARNING_ORANGE;

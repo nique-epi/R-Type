@@ -5,6 +5,7 @@
 #include <chrono>
 #include <cstdint>
 #include <string_view>
+#include "TextMetrics.hpp"
 #include "TimeConstants.hpp"
 
 /**
@@ -18,6 +19,11 @@ constexpr std::uint16_t BAR_AFTER_ONE_HIT = 230;
 constexpr std::uint16_t BAR_BELOW_HALF = 119;
 constexpr std::uint16_t BAR_LAST_POINT = 1;
 constexpr int GAUGE_INNER_COLUMNS = 98;
+
+/** @brief The largest text size, at which the name of the boss is 16 rows
+ * tall over a bar 16 rows from the top. */
+constexpr rtype::client::TextMetrics LARGEST_BAR_TEXT{.halfPixelsPerFontPixel =
+                                                          4};
 constexpr int COLUMNS_OF_110_POINTS_OF_120 = 90;
 constexpr int ONE_COLUMN = 1;
 
