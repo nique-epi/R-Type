@@ -9,7 +9,7 @@ sidebar:
 Players do not need to build anything. Every release of R-Type is published with installers for the three systems, and [rtype.app/download](https://rtype.app/download) picks the right one for your system.
 
 :::tip[The fastest way to play]
-Open [rtype.app/download](https://rtype.app/download), press **Download**, install, then press PLAY on the title screen: the server map lists the servers that are online.
+Open [rtype.app/download](https://rtype.app/download), press **Download**, install, then press PLAY on the title screen, then SERVER: the server map lists the servers that are online.
 :::
 
 ## Client

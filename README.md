@@ -21,7 +21,7 @@ cmake --workflow --preset build
 ./r-type_client
 ```
 
-Run the last two commands in two terminals. In the client, PLAY opens the server map, which needs the master; to join a server directly, launch the client with `-h <address>`, so PLAY joins it at once, or open the connection screen with D (ADDRESS) and press CONNECT. The sections below give the prerequisites for each system, every option, and a game of four.
+Run the last two commands in two terminals. In the client, PLAY then SERVER opens the server map, which needs the master; to join a server directly, launch the client with `-h <address>`, so SERVER joins it at once, or open the connection screen with D (ADDRESS) and press CONNECT. The sections below give the prerequisites for each system, every option, and a game of four.
 
 ### A game of four players
 
@@ -40,11 +40,11 @@ On each of the four machines, or four terminals of one machine, with a different
 ./r-type_client -h 192.168.1.20 -p 4242 -n DASH
 ```
 
-Each client is given its server with `-h`, so PLAY on the title joins it at once, its connection screen filled with these values; without `-h`, PLAY opens the server map, and D (ADDRESS) there opens the connection screen, where CONNECT joins. The supervisor sends the four pilots to the same game, where each gets a number from 1 to 4. A fifth player lands in a second game, and is refused only when the eight games are full. Once every connected pilot says it is ready in the waiting room, the game starts; the arrows move the ship and the space bar shoots, until the player changes the keys in SETTINGS. When it ends, the end screen ranks the four pilots.
+Each client is given its server with `-h`, so PLAY then SERVER joins it at once, its connection screen filled with these values; without `-h`, SERVER opens the server map, and D (ADDRESS) there opens the connection screen, where CONNECT joins. The supervisor sends the four pilots to the same game, where each gets a number from 1 to 4. A fifth player lands in a second game, and is refused only when the eight games are full. Once every connected pilot says it is ready in the waiting room, the game starts; the arrows move the ship and the space bar shoots, until the player changes the keys in SETTINGS. When it ends, the end screen ranks the four pilots.
 
 ## Features
 
-The client opens on a second of black and an intro set to the beats of its theme, which a key or a click skips, then on its title screen over a scrolling starfield: PLAY opens the server map, then the game, RANKING opens the best scores of a server, SETTINGS opens the options (sound, keys, display mode and window size, accessibility), QUIT asks before closing the client; the hangar, opened from the server map or from the own bay of the waiting room, dresses the ship with the items of a catalog of thirty, 25 accessories set on it by robotic arms and 5 hulls that replace it (three accessories are in the locker at first, the others are won by picking up look items in a game, the hulls are not, and every pilot sees the items and the hull of the others); Escape during a game opens the options over it. It plays a theme, the sounds of the intro and of the game, and a click on its menus. The server answers each connection request with a challenge, an acceptance with a player number from 1 to 4, or a refusal when the game is full, and logs the datagrams of the players it admitted at the `debug` level.
+The client opens on a second of black and an intro set to the beats of its theme, which a key or a click skips, then on its title screen over a scrolling starfield: PLAY opens the destination screen, whose SERVER opens the server map, then the game, SHOP the shop and HANGAR the hangar, RANKING opens the best scores of a server, SETTINGS opens the options (sound, keys, display mode and window size, accessibility), QUIT asks before closing the client; the hangar, opened from the destination screen or from the own bay of the waiting room, dresses the ship with the items of a catalog of thirty, 25 accessories set on it by robotic arms and 5 hulls that replace it (three accessories are in the locker at first, the others are won by picking up look items in a game, the hulls are not, and every pilot sees the items and the hull of the others); Escape during a game opens the options over it. It plays a theme, the sounds of the intro and of the game, and a click on its menus. The server answers each connection request with a challenge, an acceptance with a player number from 1 to 4, or a refusal when the game is full, and logs the datagrams of the players it admitted at the `debug` level.
 
 ## Requirements
 
@@ -185,7 +185,7 @@ The server reads the waves of Bydos from `assets/waves/waves.toml`, in the `asse
 ./r-type_client -h 192.168.1.20 -p 4243 -n ACE
 ```
 
-Without `-h`, PLAY opens the server map: the servers the master lists, `https://master.rtype.app` unless `set master-url` (in `client.cfg`, or `--set master-url=<url>`) names another, around the planet of the player by the ping the client measures, and the games of each; Enter or a click joins one, asking only for the callsign. The GLOBAL tab of the leaderboard reads the same master. Start the master and a server registered with it first (see [the master page](https://nique-epi.github.io/R-Type/master/)): without the master, the map shows `MASTER UNREACHABLE`.
+Without `-h`, PLAY then SERVER opens the server map: the servers the master lists, `https://master.rtype.app` unless `set master-url` (in `client.cfg`, or `--set master-url=<url>`) names another, around the planet of the player by the ping the client measures, and the games of each; Enter or a click joins one, asking only for the callsign. The GLOBAL tab of the leaderboard reads the same master. Start the master and a server registered with it first (see [the master page](https://nique-epi.github.io/R-Type/master/)): without the master, the map shows `MASTER UNREACHABLE`.
 
 The client is given the IPv4 address and the port of the server, `127.0.0.1` and 4242 by default, and the nickname of the player, `PILOT` by default; the connection screen, which D (ADDRESS) opens from the map, starts with them. CONNECT on that screen joins any server, without the master: without a server, the screen shows `SERVER UNREACHABLE` after 5 seconds.
 
