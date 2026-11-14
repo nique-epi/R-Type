@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
+#include "BossEntrance.hpp"
 #include "BossHealthScaling.hpp"
 #include "BossHealthScalingTestConstants.hpp"
-#include "BossStage.hpp"
 
 using rtype::server::BossHealthScaling;
 using rtype::server::scaledBossHealth;

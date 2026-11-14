@@ -1,6 +1,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <optional>
+#include <string>
+#include "AnnouncedBoss.hpp"
 #include "LevelCheckpoint.hpp"
 #include "LuauLevelConstants.hpp"
 #include "LuauLevelRunFixture.hpp"
@@ -9,6 +11,8 @@
 
 using rtype::game::LevelCheckpoint;
 using rtype::game::LuauLevelRunState;
+using rtype::game::testing::AnnouncedBoss;
+using ::testing::ElementsAre;
 using ::testing::HasSubstr;
 
 /**
@@ -324,4 +328,105 @@ TEST_F(LuauLevelRunFixture, RefusesABiomeNameTheProtocolCannotCarry) {
   EXPECT_THAT(run().failure(),
               HasSubstr(rtype::game::WRONG_BIOME_NAME_MESSAGE));
   EXPECT_TRUE(progress().biome.empty());
+}
+
+/**
+ * Given a level whose stage brings the boss in with 40 % of its health
+ * When the stage steps
+ * Then the boss is announced with that share of its health
+ */
+TEST_F(LuauLevelRunFixture, AnnouncesTheBossTheStageBringsIn) {
+  play(BRINGS_A_BOSS_IN);
+
+  tick(1);
+
+  EXPECT_THAT(
+      bosses().announced(),
+      ElementsAre(AnnouncedBoss{.name = std::string{BOSS_OF_THE_TESTS},
+                                .healthPercent = HEALTH_PERCENT_OF_THE_BOSS}));
+}
+
+/**
+ * Given a level whose stage brings the boss in without options
+ * When the stage steps
+ * Then the boss is announced with the whole health of its sheet
+ */
+TEST_F(LuauLevelRunFixture, AnnouncesABossWithoutOptionsWithItsWholeHealth) {
+  play(BRINGS_A_WHOLE_BOSS_IN);
+
+  tick(1);
+
+  EXPECT_THAT(
+      bosses().announced(),
+      ElementsAre(AnnouncedBoss{.name = std::string{BOSS_OF_THE_TESTS},
+                                .healthPercent = WHOLE_HEALTH_PERCENT}));
+}
+
+/**
+ * Given a level whose stage brought a boss in that has not entered
+ * When ten ticks pass
+ * Then the stage still waits for it
+ */
+TEST_F(LuauLevelRunFixture, HoldsTheStageUntilTheBossEntered) {
+  play(BRINGS_A_BOSS_IN);
+
+  tick(TICKS_THE_BOSS_IS_AWAITED);
+
+  EXPECT_EQ(progress().biome, BIOME_BEFORE_THE_WAIT);
+}
+
+/**
+ * Given a level whose stage brought a boss in
+ * When the boss enters and a tick passes
+ * Then the stage goes on
+ */
+TEST_F(LuauLevelRunFixture, ResumesTheStageOnceTheBossEntered) {
+  play(BRINGS_A_BOSS_IN);
+  tick(TICKS_THE_BOSS_IS_AWAITED);
+
+  bosses().enterAll();
+  tick(1);
+
+  EXPECT_EQ(progress().biome, BIOME_AFTER_THE_WAIT);
+}
+
+/**
+ * Given a level whose stage brings in a sheet that is no boss
+ * When the stage steps
+ * Then the level fails, saying a boss is needed
+ */
+TEST_F(LuauLevelRunFixture, RefusesToBringInASheetThatIsNoBoss) {
+  play(BRINGS_IN_A_SHEET_THAT_IS_NO_BOSS);
+
+  tick(1);
+
+  EXPECT_THAT(run().failure(), HasSubstr(rtype::game::NOT_A_BOSS_MESSAGE));
+}
+
+/**
+ * Given a level whose stage brings in a boss with 0 % of its health
+ * When the stage steps
+ * Then the level fails, saying what a health percent is
+ */
+TEST_F(LuauLevelRunFixture, RefusesABossWithoutHealth) {
+  play(BRINGS_IN_A_BOSS_WITHOUT_HEALTH);
+
+  tick(1);
+
+  EXPECT_THAT(run().failure(),
+              HasSubstr(rtype::game::WRONG_BOSS_HEALTH_PERCENT_MESSAGE));
+}
+
+/**
+ * Given a level whose stage brings in a boss with 101 % of its health
+ * When the stage steps
+ * Then the level fails, saying what a health percent is
+ */
+TEST_F(LuauLevelRunFixture, RefusesABossAboveTheHealthOfItsSheet) {
+  play(BRINGS_IN_A_BOSS_ABOVE_ITS_HEALTH);
+
+  tick(1);
+
+  EXPECT_THAT(run().failure(),
+              HasSubstr(rtype::game::WRONG_BOSS_HEALTH_PERCENT_MESSAGE));
 }

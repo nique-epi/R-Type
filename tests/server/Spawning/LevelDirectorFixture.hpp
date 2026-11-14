@@ -10,6 +10,7 @@
 #include "EventBus.hpp"
 #include "LevelChange.hpp"
 #include "LevelDirector.hpp"
+#include "PlayerRoster.hpp"
 #include "Position.hpp"
 #include "World.hpp"
 
@@ -37,11 +38,14 @@ class LevelDirectorFixture : public ::testing::Test {
   [[nodiscard]] game::BehaviourScripts& scripts();
   /** @returns The changes of the level published so far. */
   [[nodiscard]] const std::vector<game::LevelChange>& changes() const;
+  /** @returns How many bosses the world holds. */
+  [[nodiscard]] std::size_t bossCount();
   /** @returns The network ids of the bodies removed so far. */
   [[nodiscard]] const std::vector<std::uint32_t>& removed() const;
 
  private:
   game::World world_;
+  PlayerRoster roster_;
   engine::EventBus events_;
   game::BehaviourScripts scripts_;
   std::unique_ptr<LevelDirector> director_;

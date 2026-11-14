@@ -16,6 +16,7 @@ class ComponentRegistry;
 
 namespace rtype::game {
 
+class ILevelBosses;
 struct LevelProgress;
 
 /**
@@ -57,8 +58,10 @@ class LuauLevels {
   [[nodiscard]] std::vector<std::string> names() const;
 
   /** @brief Makes @p progress the level the scripts read and direct, in the
-   * world of @p components; both must outlive the game. */
-  void attach(LevelProgress& progress, engine::ComponentRegistry& components);
+   * world of @p components, bringing in @p bosses; all must outlive the
+   * game. */
+  void attach(LevelProgress& progress, engine::ComponentRegistry& components,
+              ILevelBosses& bosses);
 
   /** @brief Forgets the level of @p progress, unless another took its
    * place. */
