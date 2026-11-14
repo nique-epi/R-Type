@@ -1,7 +1,6 @@
 #include "LevelDirector.hpp"
 #include <string>
 #include <utility>
-#include <vector>
 #include "BehaviourScripts.hpp"
 #include "ComponentRegistry.hpp"
 #include "EnemyCount.hpp"
@@ -13,6 +12,7 @@
 #include "LevelDirectorConstants.hpp"
 #include "LevelDirectorParts.hpp"
 #include "LevelProgress.hpp"
+#include "LuauLevelEntry.hpp"
 #include "LuauLevelRunParts.hpp"
 #include "LuauLevelRunState.hpp"
 #include "LuauLevels.hpp"
@@ -22,23 +22,25 @@
 
 namespace rtype::server {
 
-std::vector<int> stagesOfLevel(const game::LuauLevels& levels,
-                               const std::string& level) {
-  const std::vector<int>* const stages = levels.stagesOf(level);
-  if (stages == nullptr) {
+const game::LuauLevelEntry& entryOfLevel(const game::LuauLevels& levels,
+                                         const std::string& level) {
+  const game::LuauLevelEntry* const entry = levels.entryOf(level);
+  if (entry == nullptr) {
     throw UnknownLevelException(level, levels.names());
   }
-  return *stages;
+  return *entry;
 }
 
 LevelDirector::LevelDirector(LevelDirectorParts parts)
     : parts_(std::move(parts)),
+      entry_(entryOfLevel(parts_.scripts.get().levels(), parts_.level)),
       run_(game::LuauLevelRunParts{
           .machine = parts_.scripts.get().machine(),
           .levels = parts_.scripts.get().levels(),
-          .stages = stagesOfLevel(parts_.scripts.get().levels(), parts_.level),
+          .entry = entry_,
           .progress = progress_,
           .components = parts_.world.get().components()}),
+      placer_(entry_.get().placements),
       logger_(std::string{LEVEL_DIRECTOR_LOGGER_NAME}) {}
 
 void LevelDirector::onTick() {
@@ -47,6 +49,7 @@ void LevelDirector::onTick() {
   if (failed() && !hadFailed) {
     logger_.warn("the level ", parts_.level, " failed: ", run_.failure());
   }
+  spawnDuePlacements();
   progress_.scroll.advance(engine::SIMULATION_TICK_DURATION);
   announceChange();
 }
@@ -65,6 +68,7 @@ bool LevelDirector::restartFromCheckpoint() {
     return false;
   }
   removeEveryBodyButTheShips();
+  placer_.restartAt(progress_.scroll.position());
   announcedBiome_.reset();
   logger_.info("the level ", parts_.level,
                " restarts from its last checkpoint, at ",
@@ -73,6 +77,13 @@ bool LevelDirector::restartFromCheckpoint() {
 }
 
 const game::LevelProgress& LevelDirector::progress() const { return progress_; }
+
+void LevelDirector::spawnDuePlacements() {
+  if (!progress_.placedEnemiesAsked) {
+    return;
+  }
+  placer_.spawnDue(progress_.scroll.position(), parts_.orders.get());
+}
 
 void LevelDirector::announceChange() {
   const bool moving = progress_.scroll.speed() > 0.0F;

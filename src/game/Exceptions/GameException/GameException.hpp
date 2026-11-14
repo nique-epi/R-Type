@@ -7,6 +7,7 @@
 #include <string_view>
 #include <vector>
 #include "DataFilePlace.hpp"
+#include "LdtkRefusal.hpp"
 
 namespace rtype::game {
 
@@ -138,6 +139,13 @@ class SharedContentFileException : public GameException {
   /** @param folders The folders that hold it, as the errors show them. */
   SharedContentFileException(const std::string& path,
                              const std::vector<std::string>& folders);
+};
+
+/** @brief An LDtk file cannot give the enemies of a level: the message names
+ * the file and says what is wrong. */
+class InvalidLdtkFileException : public GameException {
+ public:
+  explicit InvalidLdtkFileException(const LdtkRefusal& refusal);
 };
 
 }  // namespace rtype::game

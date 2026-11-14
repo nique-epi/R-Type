@@ -37,7 +37,10 @@
 #include "InstallContext.hpp"
 #include "IntegerSettingDefinition.hpp"
 #include "LevelDirector.hpp"
+#include "LevelPlacementFiles.hpp"
 #include "Logger.hpp"
+#include "LuauLevelEntry.hpp"
+#include "LuauLevels.hpp"
 #include "ModuleConstants.hpp"
 #include "PathText.hpp"
 #include "PlayerDatagrams.hpp"
@@ -149,6 +152,19 @@ void logHowGamesPlay(const logging::Logger& logger,
   }
 }
 
+/** @brief Writes in the journal, for each level that names an LDtk file, how
+ * many enemies it places. */
+void logLevelPlacements(const logging::Logger& logger,
+                        const game::LuauLevels& levels) {
+  for (const std::string& name : levels.names()) {
+    const game::LuauLevelEntry& entry = *levels.entryOf(name);
+    if (entry.ldtkFile.has_value()) {
+      logger.info("level ", name, ": ", entry.placements.size(),
+                  " enemies placed by ", *entry.ldtkFile);
+    }
+  }
+}
+
 /** @returns The setting START_AT_BOSS_SETTING_NAME, declared in
  * @p configuration: 1 starts every game at its boss, 0 (the default) plays
  * the waves. */
@@ -244,13 +260,16 @@ void ServerGamesModule::start() {
       [this](const std::string& message) { logger_.warn(message); });
   scripts_->run(game::scriptSourcesIn(settings_.contentFolders));
   if (!levelSetting_->text().empty()) {
-    static_cast<void>(stagesOfLevel(scripts_->levels(), levelSetting_->text()));
+    static_cast<void>(entryOfLevel(scripts_->levels(), levelSetting_->text()));
   }
   const game::EntitySheets& types =
       types_.emplace(game::EntitySheets::fromTexts(
           game::sheetTextsInFolders(settings_.contentFolders),
           scripts_->behaviours()));
   logEntitySheets(logger_, settings_.contentFolders, types);
+  game::readLevelPlacements(scripts_->levels(), settings_.contentFolders,
+                            types);
+  logLevelPlacements(logger_, scripts_->levels());
   runningGame_.keepEntityTypes(types);
   const WaveCatalog catalog =
       WaveCatalog::fromFiles(settings_.wavesFiles, types);

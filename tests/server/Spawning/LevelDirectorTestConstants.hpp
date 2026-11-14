@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <string_view>
 #include "Position.hpp"
 
@@ -92,5 +93,53 @@ constexpr std::string_view LEVEL_ENEMY_SHEET = "drifter";
 constexpr std::string_view LEVEL_SHIP_SHEET = "ship";
 constexpr game::Position WHERE_THE_ENEMY_IS{.x = 900.0F, .y = 300.0F};
 constexpr game::Position WHERE_THE_SHIP_IS{.x = 200.0F, .y = 500.0F};
+
+/** @brief The network id the recorded orders give every body. */
+constexpr std::uint32_t PLACED_ENEMY_ID = 77;
+
+/** @brief A placed Drifter, 96 units wide, whose center is at x 2224: its left
+ * edge reaches the right edge of the playfield once the level scrolled 256
+ * units. 128 ticks of scroll fall just short of it (a tick is 16666666 ns,
+ * so 128 ticks are 255.99999 units), 129 ticks are 258 units: it comes in at
+ * the step of tick 130, where it appears at x 1966. */
+constexpr game::Position WHERE_THE_DRIFTER_IS_PLACED{.x = 2224.0F, .y = 540.0F};
+constexpr std::size_t TICKS_BEFORE_THE_DRIFTER_COMES_IN = 129;
+constexpr float WHERE_THE_DRIFTER_APPEARS_X = 1966.0F;
+
+/** @brief A level whose stage asks for the placed enemies, then waits for a
+ * long time. */
+constexpr std::string_view LEVEL_THAT_SPAWNS_THE_PLACED = R"(
+level.register("directed", { function()
+  level.spawn_placed()
+  level.wait(60000)
+end })
+)";
+
+/** @brief Two placed Drifters whose left edge comes in once the level
+ * scrolled 4 units (at the step of tick 3) and 20 units (at the step of tick
+ * 12, since 10 ticks of scroll fall just short of 20): at the checkpoint of
+ * LEVEL_OF_TWO_STAGES_THAT_SPAWNS_THE_PLACED, 6 units, the first has come in
+ * and the second has not. */
+constexpr game::Position WHERE_THE_EARLY_DRIFTER_IS{.x = 1972.0F, .y = 300.0F};
+constexpr game::Position WHERE_THE_LATE_DRIFTER_IS{.x = 1988.0F, .y = 780.0F};
+constexpr std::size_t TICKS_UNTIL_BOTH_CAME_IN = 12;
+constexpr std::size_t TICKS_UNTIL_THE_LATE_ONE_COMES_IN_AGAIN = 11;
+constexpr std::size_t SPAWNS_BEFORE_THE_RESTART = 2;
+constexpr std::size_t SPAWNS_AFTER_THE_RESTART = 3;
+
+/** @brief A level of two stages: the first asks for the placed enemies and
+ * waits 50 ms, so it ends at tick 4 after 3 ticks of scroll, 6 units, where
+ * the checkpoint is; the second waits for a long time. */
+constexpr std::string_view LEVEL_OF_TWO_STAGES_THAT_SPAWNS_THE_PLACED = R"(
+level.register("directed", {
+  function()
+    level.spawn_placed()
+    level.wait(50)
+  end,
+  function()
+    level.wait(60000)
+  end,
+})
+)";
 
 }  // namespace rtype::server::testing

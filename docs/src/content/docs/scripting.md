@@ -199,22 +199,23 @@ A script may also write a level: what comes, when the decor moves and stops, whi
 level.register("training_run", {
 	function()
 		level.biome("drift_fields")
-		level.wait_scroll(240)
-		behaviours.spawn("drifter", { x = 1984, y = 540 })
+		level.spawn_placed()
+		level.wait_scroll(1264)
 		level.pause_scroll()
 		while level.enemies() > 0 do
 			level.wait(250)
 		end
 		level.resume_scroll()
+		behaviours.spawn("drifter", { x = 1984, y = 540 })
 	end,
 	function()
 		level.biome("ember_reach")
 		level.wait_scroll(1680)
 	end,
-})
+}, { ldtk = "levels/training_run.ldtk" })
 ```
 
-`level.register(name, stages)` takes the name the setting gives and a list of 1 to 64 functions (`MAXIMUM_LEVEL_STAGES`), the stages, run one after the other, each in a thread of its own. A name already registered, an empty name or a stage that is no function stops the supervisor at start. The level scrolls from 0 at 120 logical units per second (`LEVEL_SCROLL_SPEED`), and the events of a level are best hung on that scroll, so everything after a pause waits with it.
+`level.register(name, stages, options)` takes the name the setting gives, a list of 1 to 64 functions (`MAXIMUM_LEVEL_STAGES`), the stages, run one after the other, each in a thread of its own, and an optional table of options whose only key, `ldtk`, names the LDtk file that places the enemies of the level (see [Placing the enemies in LDtk](#placing-the-enemies-in-ldtk)). A name already registered, an empty name, a stage that is no function, an option no level has, or an `ldtk` path that is absolute or leaves its folder with `..` stops the supervisor at start. The level scrolls from 0 at 120 logical units per second (`LEVEL_SCROLL_SPEED`), and the events of a level are best hung on that scroll, so everything after a pause waits with it.
 
 | Function | Does |
 |---|---|
@@ -224,15 +225,36 @@ level.register("training_run", {
 | `level.pause_scroll()`, `level.resume_scroll()` | stop the scroll where it is, and let it move on. The decor of the players stops and moves with it. |
 | `level.biome(name)` | names the biome the players see from now: 1 to 24 lowercase letters, digits and underscores. A client draws the decor it has for that name (see [Client](/R-Type/client/#decor-of-a-biome-biomedecor)), and the stars alone for a name it does not know. |
 | `level.enemies()` | how many enemies the world holds, the bodies of side `enemy`. |
+| `level.placements()` | the enemies the LDtk file of the level places, sorted by `x`: a list of tables `{ entity, sheet, x, y, width, fields }` (see [Placing the enemies in LDtk](#placing-the-enemies-in-ldtk)); empty for a level without an `ldtk` option. |
+| `level.spawn_placed()` | from now on, each placed enemy appears as the scroll brings its left edge to the right edge of the playfield, for the rest of the level, restarts from a checkpoint included; calling it again changes nothing. It only runs during a game. |
 
 What a script may rely on:
 
-- **A stage steps before the bodies.** Each tick, the stage due runs first, then the level scrolls, then the bodies are steered, so a body a stage creates with `behaviours.spawn` appears at the end of that tick. A stage that waits costs nothing; one that runs has the 2 ms of a step.
-- **Each stage after the first starts at a checkpoint.** When a stage returns, the next one starts at the following tick, and the place it starts from is kept: the scroll and the biome of that moment. A team that loses every life past a checkpoint starts that stage again from its first line, at that scroll and in that biome, the scroll moving, with every enemy and missile removed and the lives of the rules given back. Before the first checkpoint, the game is lost.
+- **A stage steps before the bodies.** Each tick, the stage due runs first, then the placed enemies due come in, then the level scrolls, then the bodies are steered, so a body a stage creates with `behaviours.spawn`, or a placed enemy, appears at the end of that tick. A stage that waits costs nothing; one that runs has the 2 ms of a step.
+- **Each stage after the first starts at a checkpoint.** When a stage returns, the next one starts at the following tick, and the place it starts from is kept: the scroll and the biome of that moment. A team that loses every life past a checkpoint starts that stage again from its first line, at that scroll and in that biome, the scroll moving, with every enemy and missile removed and the lives of the rules given back; of the placed enemies, only those that come in after the checkpoint come back. Before the first checkpoint, the game is lost.
 - **The level is cleared once its last stage returned and no enemy is left.** The game is then won. A stage that fails, yields by itself or runs past its budget ends the game as lost, and the journal says why once.
 - **Any script may read and move the level during a game that plays one.** The behaviour of a boss may call `level.pause_scroll()` when it arrives. In a game that plays its waves, every function of `level` but `register` raises an error, which stops the body that called it. `bus.on` only runs in the function of a body, so a stage hears no event: it polls, as the example does with `level.enemies()`.
 
-The repository ships one level, `training_run`, in `resources/training-run/`: two stages, a pause of the scroll until a Reaper is destroyed, a checkpoint and two biomes. Play it with `ensure training-run` and `set level training_run` in `server.cfg`.
+The repository ships one level, `training_run`, in `resources/training-run/`: two stages, fifteen enemies placed in `levels/training_run.ldtk`, a pause of the scroll on each Reaper until it is destroyed, a checkpoint and two biomes. Play it with `ensure training-run` and `set level training_run` in `server.cfg`.
+
+## Placing the enemies in LDtk
+
+A level places its enemies in [LDtk](https://ldtk.io), on a layer of entities named `Mobs`, instead of writing each position in its script. The script names the file with the option `ldtk` of `level.register`, a path relative to its content folder, `levels/<level>.ldtk` by convention; a resource may also lay its file over one of the assets or of a resource started before it, the last folder that holds it winning. Each game process reads the file when it starts, after the entity sheets, and refuses to start on a file that is missing, that is not JSON, whose levels are saved in separate files, that has no `Mobs` layer of entities, or that places an entity the game cannot read: the error names the file, the entity and where it is placed (`the entity Ghost placed at 2224, 300 names no sheet ghost`), and the supervisor goes on. The reader is `ldtkPlacementsOf()` (`src/game/Level/Ldtk/`, `rtype_game_level_ldtk`), which reads the JSON with `nlohmann-json`.
+
+```
+resources/training-run/
+├── resource.toml
+├── levels/training_run.ldtk       the Mobs layer: 15 Drifters, Weavers, Reapers and Voltjellies
+└── server/training_run.luau       registers training_run with { ldtk = "levels/training_run.ldtk" }
+```
+
+Each entity of the layer gives one placement:
+
+- **The identifier names the sheet.** Each capital letter after a letter or a digit starts a word, the words are joined by underscores and the letters are lowercased: `Lamprey` places a `lamprey`, `BydoViolet` a `bydo_violet`. The sheet must exist and be one a behaviour pilots: a ship is refused.
+- **One LDtk pixel is 4 logical units** (`LDTK_PIXEL`): a level of 480 by 270 pixels is the 1920 by 1080 playfield, and one of its pixels is one pixel of the canvas of the client. The center of the entity is read from its pivot (`px + (0.5 - pivot) × size`), so a pivot at the top left or at the center places the same box. When a file holds several levels, they follow one another from left to right in the order of the file, the first starting at 0: `x` is the start of the level plus the pixel, times 4; `y` is the pixel times 4. `worldX` is not read.
+- **The custom fields come along**: `Int` and `Float` as numbers, `Bool` as booleans, `String`, `Multilines`, `Enum(...)` and `Color` as text; a field whose value is null is left out, and a field of another kind (a point, a tile, a reference, an array) is refused with its name.
+
+`level.placements()` lists them sorted by `x`, each as `{ entity = "Reaper", sheet = "reaper", x = 3184, y = 540, width = 96, fields = {} }`, in logical units of the level. `level.spawn_placed()` asks that they appear: each one once the scroll brings its left edge to the right edge of the playfield, at `x - PLAYFIELD_WIDTH - width / 2` units of scroll (an enemy placed on the first screen appears at its place at the first tick), with its center at `x - scroll`, `y`. It follows the pauses of the scroll, since it is the scroll that brings them in, and a restart from a checkpoint only brings back the enemies that come in after it. More than 256 placed enemies due in one tick (`MAXIMUM_SPAWN_ORDERS_PER_TICK`) make the game throw: a level places fewer in one step of the scroll. The script keeps the rest: biomes, pauses, checkpoints, and any enemy it still creates itself with `behaviours.spawn`, as the example above does once the sky is clear.
 
 ## What a script cannot do
 
@@ -302,5 +324,7 @@ The three sides found the same 9,457,143 collisions, about 2,600 a tick: 300 bod
 | Change what happens to a body whose subscribed function failed | `LuauBehaviour::steer()` in `src/game/Scripting/`, the only place that stops a script |
 | Change what a level script may call, or what it refuses | the functions of `LuauLevels` in `src/game/Scripting/Level/LuauLevels.cpp`, their names and messages in `LuauLevelConstants.hpp` |
 | Change when a stage is resumed, or what a checkpoint keeps | `LuauLevelRun` in `src/game/Scripting/Level/`, `LevelCheckpoint` in `src/game/Level/` |
+| Change how an LDtk file is read, or what it refuses | `ldtkPlacementsOf()` in `src/game/Level/Ldtk/LdtkPlacementReading.cpp`, the members and reasons in `LdtkConstants.hpp`; the check of the sheets in `readLevelPlacements()`, `src/game/Scripting/Level/LevelPlacementFiles.cpp` |
+| Change when a placed enemy comes in, or where it appears | `PlacedEnemySpawner` in `src/game/Spawning/`, ticked by `LevelDirector` in `src/server/Spawning/` |
 | Expose another function to the scripts | `ScriptMachine::expose()`, before the first script runs, as `BehaviourScripts` exposes `behaviours.register` |
 | Change which files are scripts | `scriptSourcesIn()` in `src/game/Scripting/BehaviourScriptFiles.cpp` |

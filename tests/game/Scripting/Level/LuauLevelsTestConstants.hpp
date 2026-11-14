@@ -43,3 +43,35 @@ constexpr std::string_view REGISTERS_A_STAGE_THAT_IS_NO_FUNCTION =
 constexpr std::string_view WAITS_WHILE_READ = "level.wait(50)";
 constexpr std::string_view READS_THE_SCROLL_WHILE_READ = "level.scroll()";
 constexpr std::string_view COUNTS_THE_ENEMIES_WHILE_READ = "level.enemies()";
+
+/** @brief A script that registers a level with the LDtk file that places its
+ * enemies, and that file. */
+constexpr std::string_view REGISTERS_A_LEVEL_WITH_AN_LDTK_FILE = R"(
+level.register("caves", { function() end }, { ldtk = "levels/caves.ldtk" })
+)";
+constexpr std::string_view CAVES_LDTK_FILE = "levels/caves.ldtk";
+
+/** @brief The LDtk file of the level the repository ships. */
+constexpr std::string_view SHIPPED_LEVEL_LDTK_FILE = "levels/training_run.ldtk";
+
+/** @brief Scripts whose LDtk file leaves its content folder, is absolute, or
+ * is no text, and one with an option no level has. */
+constexpr std::string_view REGISTERS_AN_LDTK_FILE_ABOVE_THE_CONTENT = R"(
+level.register("caves", { function() end }, { ldtk = "../caves.ldtk" })
+)";
+constexpr std::string_view REGISTERS_AN_ABSOLUTE_LDTK_FILE = R"(
+level.register("caves", { function() end }, { ldtk = "/tmp/caves.ldtk" })
+)";
+constexpr std::string_view REGISTERS_AN_LDTK_FILE_THAT_IS_NO_TEXT = R"(
+level.register("caves", { function() end }, { ldtk = 42 })
+)";
+constexpr std::string_view REGISTERS_AN_UNKNOWN_OPTION = R"(
+level.register("caves", { function() end }, { file = "levels/caves.ldtk" })
+)";
+
+/** @brief Scripts that reach the placements while they are first read,
+ * outside any game. */
+constexpr std::string_view READS_THE_PLACEMENTS_WHILE_READ =
+    "level.placements()";
+constexpr std::string_view SPAWNS_THE_PLACED_WHILE_READ =
+    "level.spawn_placed()";

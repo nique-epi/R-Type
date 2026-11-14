@@ -1,3 +1,5 @@
+add_subdirectory(Ldtk)
+
 add_library(rtype_game_level STATIC LevelScroll.cpp)
 
 target_include_directories(rtype_game_level PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
