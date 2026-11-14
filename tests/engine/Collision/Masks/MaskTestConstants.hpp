@@ -3,6 +3,7 @@
 #include <array>
 #include <cstdint>
 #include <string_view>
+#include "MaskArea.hpp"
 #include "MaskPixel.hpp"
 #include "MaskSpan.hpp"
 
@@ -116,3 +117,41 @@ constexpr int SQUARE_BELOW_TOP = 10;
 
 /** @brief The one drawn pixel of a WIDE_SIDE row, in its second word. */
 constexpr rtype::engine::MaskPixel PIXEL_IN_THE_SECOND_WORD{.x = 80, .y = 0};
+
+/** @brief A SMALL_WIDTH by SMALL_HEIGHT mask with its top-left pixel alone
+ * drawn. */
+constexpr std::array<std::string_view, 2> TOP_LEFT_DRAWN_ROWS{"#..", "..."};
+
+/** @brief The cell under the top-left pixel of a mask laid at 0, 0, and the
+ * cells under every other pixel of a SMALL_WIDTH by SMALL_HEIGHT mask. */
+constexpr rtype::engine::MaskArea TOP_LEFT_CELL{
+    .left = 0, .top = 0, .width = 1, .height = 1};
+constexpr rtype::engine::MaskArea ALL_BUT_THE_FIRST_COLUMN{
+    .left = 1, .top = 0, .width = 2, .height = 2};
+
+/** @brief The column just past the right edge of a SMALL_WIDTH mask laid at
+ * 0, 0, and the row just above its top edge. */
+constexpr rtype::engine::MaskArea COLUMN_PAST_THE_RIGHT_EDGE{
+    .left = 3, .top = 0, .width = 1, .height = 2};
+constexpr rtype::engine::MaskArea ROW_ABOVE_THE_TOP_EDGE{
+    .left = 0, .top = -1, .width = 3, .height = 1};
+
+/** @brief An area that starts two columns left of a mask laid at 0, 0 and
+ * reaches its first column only. */
+constexpr rtype::engine::MaskArea AREA_REACHING_THE_FIRST_COLUMN{
+    .left = -2, .top = 0, .width = 3, .height = 1};
+
+/** @brief An area of no column over a mask laid at 0, 0. */
+constexpr rtype::engine::MaskArea AREA_OF_NO_COLUMN{
+    .left = 0, .top = 0, .width = 0, .height = 2};
+
+/** @brief The cells of a whole WIDE_SIDE row laid at 0, 0. */
+constexpr rtype::engine::MaskArea WHOLE_WIDE_ROW{
+    .left = 0, .top = 0, .width = WIDE_SIDE, .height = 1};
+
+/** @brief Where a mask is laid away from the origin, and the cell under its
+ * top-left pixel there. */
+constexpr int MASK_AWAY_LEFT = 10;
+constexpr int MASK_AWAY_TOP = 5;
+constexpr rtype::engine::MaskArea CELL_UNDER_THE_MOVED_TOP_LEFT{
+    .left = MASK_AWAY_LEFT, .top = MASK_AWAY_TOP, .width = 1, .height = 1};
