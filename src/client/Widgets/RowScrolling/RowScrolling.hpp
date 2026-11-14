@@ -36,10 +36,15 @@ void paintPictureScrollMarks(IInterfaceCanvas& canvas, PictureScroll scroll);
  * past its first or its last row. */
 [[nodiscard]] RowScroll scrollMovedBy(RowScroll scroll, int step);
 
+/** @returns How far a picture @p height pixels tall may scroll down: how
+ * much taller than the interface picture it is, 0 when it fits. */
+[[nodiscard]] int lastPictureScrollOf(int height);
+
 /** @returns A mapping that reads a window pixel as @p mapping does, then
  * moves the point by @p offset, in pixels of the interface picture: the
  * place, in a picture painted moved by -offset, of what the pointer is over.
- */
+ * It reads @p mapping, which must outlive it: a screen builds it for the
+ * event it handles. */
 [[nodiscard]] PlayfieldMapping shiftedMappingOf(
     sf::Vector2i offset, const PlayfieldMapping& mapping);
 

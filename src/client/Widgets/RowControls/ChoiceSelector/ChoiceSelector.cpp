@@ -9,7 +9,6 @@
 #include <vector>
 #include "BarState.hpp"
 #include "IInterfaceCanvas.hpp"
-#include "InterfaceConstants.hpp"
 #include "RowControlConstants.hpp"
 #include "SunkBox.hpp"
 #include "TextMeasures.hpp"
@@ -98,7 +97,7 @@ bool ChoiceSelector::pointerPressed(sf::Vector2i pixel, sf::IntRect area) {
 int ChoiceSelector::boxWidth(TextMetrics metrics) const {
   int widest = 0;
   for (const std::string& choice : choices_) {
-    widest = std::max(widest, regularTextWidth(metrics, choice));
+    widest = std::max(widest, regularWidthOf(metrics, choice));
   }
   return widest + SELECTOR_BOX_PADDING;
 }

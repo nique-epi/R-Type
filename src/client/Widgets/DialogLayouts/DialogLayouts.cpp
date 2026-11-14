@@ -1,6 +1,7 @@
 #include "DialogLayouts.hpp"
 #include <SFML/System/Vector2.hpp>
 #include <algorithm>
+#include <cstddef>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -29,7 +30,7 @@ std::vector<std::string> wrappedWordsOf(std::string_view text, int width,
     const std::string joined =
         lines.empty() ? std::string(word)
                       : lines.back() + WORD_SEPARATOR + std::string(word);
-    if (!lines.empty() && regularTextWidth(metrics, joined) <= width) {
+    if (!lines.empty() && regularWidthOf(metrics, joined) <= width) {
       lines.back() = joined;
     } else {
       lines.emplace_back(word);
@@ -44,7 +45,7 @@ std::vector<std::string> wrappedWordsOf(std::string_view text, int width,
 int dialogButtonWidthOf(const DialogText& text, TextMetrics metrics) {
   int width = DIALOG_BUTTON_SIZE.x;
   for (const std::string_view label : text.barLabels) {
-    width = std::max(width, regularTextWidth(metrics, label) +
+    width = std::max(width, regularWidthOf(metrics, label) +
                                 (SIDES_PER_AXIS * BUTTON_TEXT_OFFSET.x));
   }
   return width;
@@ -60,8 +61,8 @@ int grownDialogWidthOf(const DialogText& text, TextMetrics metrics,
   }
   const int bars = static_cast<int>(text.barLabels.size());
   const int needed =
-      std::max({regularTextWidth(metrics, text.heading),
-                regularTextWidth(metrics, text.message),
+      std::max({regularWidthOf(metrics, text.heading),
+                regularWidthOf(metrics, text.message),
                 (bars * buttonWidth) + ((bars - 1) * DIALOG_BUTTON_GAP)});
   return std::clamp(needed + (SIDES_PER_AXIS * DIALOG_HEADING_OFFSET.x),
                     DIALOG_SIZE.x, DIALOG_LARGEST_WIDTH);

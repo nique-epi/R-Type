@@ -330,7 +330,7 @@ int barWidthFor(const std::vector<PendingButton>& bars, int narrowest,
   int width = narrowest;
   for (const PendingButton& pending : bars) {
     if (pending.control == nullptr) {
-      width = std::max(width, regularTextWidth(metrics, pending.text.label) +
+      width = std::max(width, regularWidthOf(metrics, pending.text.label) +
                                   (SIDES_PER_AXIS * BUTTON_TEXT_OFFSET.x));
     }
   }
@@ -751,8 +751,9 @@ void MenuBuilder::placeRoom(Menu::Content& content) {
     sf::IntRect area;
     if (cancelButton_ == index) {
       pending.text.keyName = CANCEL_KEY_NAME;
-      area = chipArea(pending.text);
-      area.position.y = room.lowerChipsTop;
+      area = chipArea(pending.text,
+                      sf::Vector2i(INTERFACE_AREA.size.x - SAFE_MARGIN,
+                                   room.lowerChipsTop));
     } else {
       area = sf::IntRect({barLeft, room.barsTop}, barSize);
       barLeft += barSize.x + BUTTON_GAP;
@@ -768,16 +769,16 @@ void MenuBuilder::placeRoom(Menu::Content& content) {
 }
 
 sf::IntRect MenuBuilder::chipArea(const Button::Text& text,
-                                  std::optional<int> right) {
+                                  std::optional<sf::Vector2i> topRight) {
   const int width = BUTTON_TEXT_OFFSET.x +
-                    regularTextWidth(text.size, text.label) + CHIP_KEY_CAP_GAP +
+                    regularWidthOf(text.size, text.label) + CHIP_KEY_CAP_GAP +
                     KeyCap(text.keyName, KeyCap::Edge::Plain).width(text.size) +
                     BAR_KEY_CAP_INSET;
-  const sf::Vector2i bottomRight =
-      INTERFACE_AREA.size - sf::Vector2i(SAFE_MARGIN, SAFE_MARGIN);
   const int height = textBoxHeight(CHIP_HEIGHT, text.size);
-  return {{right.value_or(bottomRight.x) - width, bottomRight.y - height},
-          {width, height}};
+  const sf::Vector2i corner = topRight.value_or(
+      sf::Vector2i(INTERFACE_AREA.size.x - SAFE_MARGIN,
+                   INTERFACE_AREA.size.y - SAFE_MARGIN - height));
+  return {{corner.x - width, corner.y}, {width, height}};
 }
 
 }  // namespace rtype::client

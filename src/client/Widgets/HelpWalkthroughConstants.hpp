@@ -121,8 +121,6 @@ constexpr int HELP_BUBBLE_PADDING = 8;
 constexpr int HELP_LINE_HEIGHT = 13;
 constexpr int HELP_WORD_GAP = REGULAR_FONT_ADVANCE;
 constexpr int HELP_FOOTER_GAP = 6;
-constexpr int HELP_TEXT_WIDTH =
-    HELP_BUBBLE_WIDTH - (SIDES_PER_AXIS * HELP_BUBBLE_PADDING);
 /** @brief Above the size the fonts are drawn at, the bubble is as wide as the
  * safe margin, so its taller lines stay few. */
 constexpr int HELP_LARGE_BUBBLE_WIDTH =

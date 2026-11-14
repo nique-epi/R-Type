@@ -10,7 +10,6 @@
 #include "TextMeasures.hpp"
 #include "TextMetrics.hpp"
 #include "TextStyle.hpp"
-#include "WidgetText.hpp"
 
 namespace rtype::client {
 
@@ -28,9 +27,9 @@ void paintLeadingZeros(IInterfaceCanvas& canvas, const PaddedScore& score,
   canvas.write(
       std::string(static_cast<std::size_t>(missingDigits), LEADING_ZERO),
       {score.end.x -
-           regularTextWidth(TextMetrics{.halfPixelsPerFontPixel = halfPixelsOf(
-                                            canvas.textMetrics(), score.scale)},
-                            digits),
+           regularWidthOf(TextMetrics{.halfPixelsPerFontPixel = halfPixelsOf(
+                                          canvas.textMetrics(), score.scale)},
+                          digits),
        score.end.y},
       {.font = TextFont::Regular,
        .color = score.zeroColor,

@@ -5,6 +5,7 @@
 #include <vector>
 #include "IInterfaceCanvas.hpp"
 #include "LineWrapping.hpp"
+#include "WrappedText.hpp"
 
 namespace rtype::client {
 
@@ -18,5 +19,11 @@ namespace rtype::client {
 [[nodiscard]] std::vector<std::string> wrappedLinesOf(
     std::string_view text, LineWrapping wrapping,
     const IInterfaceCanvas& canvas);
+
+/** @brief Writes @p text as @p wrapped asks: on one line at its anchor when
+ * it has no width; otherwise cut by wrappedLinesOf() in the font of its style,
+ * each line a line height and DESCRIPTION_LINE_GAP under the one before. */
+void writeWrappedLines(IInterfaceCanvas& canvas, std::string_view text,
+                       const WrappedText& wrapped);
 
 }  // namespace rtype::client

@@ -1,9 +1,11 @@
 #pragma once
 
+#include <cstdint>
 #include <span>
 #include "IInterfaceCanvas.hpp"
 #include "PilotStatus.hpp"
 #include "StatusBandLook.hpp"
+#include "TimeConstants.hpp"
 
 namespace rtype::client {
 
@@ -40,10 +42,14 @@ void paintStatusBand(IInterfaceCanvas& canvas,
                      std::span<const PilotStatus> pilots,
                      const StatusBandLook& look);
 
-/** @returns Whether the band of @p pilots changes from one frame to the next
- * on @p canvas: a name too long for its room runs through it, and a bay at a
- * larger text size shows its parts in turn. */
-[[nodiscard]] bool statusBandMoves(std::span<const PilotStatus> pilots,
-                                   const IInterfaceCanvas& canvas);
+/** @returns What the band of @p pilots on @p canvas shows of time at
+ * @p sinceStart, as a number that changes exactly when that does: the step
+ * of STATUS_SCROLL_STEP while a name runs through its room, the turn of
+ * STATUS_TURN_DURATION while the bays show their parts in turn above the size
+ * the fonts are drawn at, and 0 while nothing moves. A screen repaints the
+ * band when it changes. */
+[[nodiscard]] std::int64_t statusBandFrameOf(
+    std::span<const PilotStatus> pilots, const IInterfaceCanvas& canvas,
+    engine::Duration sinceStart);
 
 }  // namespace rtype::client

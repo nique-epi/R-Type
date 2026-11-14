@@ -5,6 +5,7 @@
 #include <SFML/System/Vector2.hpp>
 #include <algorithm>
 #include <cstddef>
+#include <cstdint>
 #include <optional>
 #include <span>
 #include <string>
@@ -202,9 +203,11 @@ std::size_t charactersIn(int width, TextMetrics metrics) {
  * @p characters whole characters at a time, the parts in a loop. */
 std::string_view partAtTurn(std::string_view text, std::size_t characters,
                             std::size_t turn) {
-  const auto count =
-      static_cast<std::size_t>(sf::Utf8::count(text.begin(), text.end()));
+  const std::size_t count = sf::Utf8::count(text.begin(), text.end());
   const std::size_t parts = (count + characters - 1) / characters;
+  if (parts == 0) {
+    return text;
+  }
   std::string_view::const_iterator start = text.begin();
   for (std::size_t skipped = 0; skipped < (turn % parts) * characters;
        ++skipped) {
@@ -491,17 +494,22 @@ void paintStatusBand(IInterfaceCanvas& canvas,
   }
 }
 
-bool statusBandMoves(std::span<const PilotStatus> pilots,
-                     const IInterfaceCanvas& canvas) {
-  if (canvas.textMetrics() != TextMetrics{}) {
-    return true;
+std::int64_t statusBandFrameOf(std::span<const PilotStatus> pilots,
+                               const IInterfaceCanvas& canvas,
+                               engine::Duration sinceStart) {
+  const bool turns = canvas.textMetrics() != TextMetrics{};
+  const bool runs =
+      std::ranges::any_of(pilots, [&canvas, turns](const PilotStatus& pilot) {
+        return hasBay(pilot) &&
+               canvas.textWidth(pilotNameOf(pilot.nickname, pilot.playerNumber),
+                                TextFont::Regular) >
+                   (turns ? STATUS_WORD_END.x - STATUS_NAME_TOP_LEFT.x
+                          : nameRoom(canvas, statusWordOf(pilot)));
+      });
+  if (runs) {
+    return sinceStart / STATUS_SCROLL_STEP;
   }
-  return std::ranges::any_of(pilots, [&canvas](const PilotStatus& pilot) {
-    return hasBay(pilot) &&
-           canvas.textWidth(pilotNameOf(pilot.nickname, pilot.playerNumber),
-                            TextFont::Regular) >
-               nameRoom(canvas, statusWordOf(pilot));
-  });
+  return turns ? sinceStart / STATUS_TURN_DURATION : 0;
 }
 
 }  // namespace rtype::client

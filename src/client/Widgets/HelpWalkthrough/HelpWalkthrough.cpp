@@ -136,8 +136,8 @@ std::vector<HelpWord> wordsOf(std::string_view text,
 int widthOf(const HelpWord& word, TextMetrics metrics) {
   const int text = word.look == HelpWordLook::KeyCap
                        ? KeyCap(word.text, KeyCap::Edge::Plain).width(metrics)
-                       : regularTextWidth(metrics, word.text);
-  return text + regularTextWidth(metrics, word.suffix);
+                       : regularWidthOf(metrics, word.text);
+  return text + regularWidthOf(metrics, word.suffix);
 }
 
 /** @returns How wide the bubble is at the text size of @p metrics:
@@ -149,7 +149,7 @@ int bubbleWidthOf(TextMetrics metrics) {
 /** @returns From one line of the bubble to the next at the text size of
  * @p metrics: a keycap tall, as HELP_LINE_HEIGHT is for the fonts as drawn. */
 int lineHeightIn(TextMetrics metrics) {
-  return HELP_LINE_HEIGHT - TEXT_LINE_HEIGHT + lineHeightOf(metrics);
+  return textBoxHeight(HELP_LINE_HEIGHT, metrics);
 }
 
 /** @returns The words in lines no wider than the text of the bubble at the
@@ -367,13 +367,13 @@ int paintWord(IInterfaceCanvas& canvas, const HelpWord& word,
     canvas.write(word.text, topLeft,
                  word.look == HelpWordLook::Highlighted ? DIALOG_HEADING_STYLE
                                                         : DIALOG_MESSAGE_STYLE);
-    width = regularTextWidth(canvas.textMetrics(), word.text);
+    width = regularWidthOf(canvas.textMetrics(), word.text);
   }
   if (!word.suffix.empty()) {
     canvas.write(word.suffix, topLeft + sf::Vector2i(width, 0),
                  DIALOG_MESSAGE_STYLE);
   }
-  return width + regularTextWidth(canvas.textMetrics(), word.suffix);
+  return width + regularWidthOf(canvas.textMetrics(), word.suffix);
 }
 
 /** @brief Writes the lines of the bubble, HELP_BUBBLE_PADDING in from its

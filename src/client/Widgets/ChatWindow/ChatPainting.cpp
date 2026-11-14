@@ -141,7 +141,7 @@ TextMetrics metricsOf(const PlayerSettings& settings) {
 /** @returns From one line of the chat to the next at the text size of
  * @p metrics: a line and its outline, as CHAT_LINE_PITCH is as drawn. */
 int linePitchOf(TextMetrics metrics) {
-  return CHAT_LINE_PITCH - TEXT_LINE_HEIGHT + lineHeightOf(metrics);
+  return textBoxHeight(CHAT_LINE_PITCH, metrics);
 }
 
 /** @returns The top row of the line @p fromBottom lines above the last one,
@@ -177,7 +177,7 @@ void paintRow(IInterfaceCanvas& canvas, const ChatRow& row, RowPlace place) {
   canvas.write(
       row.body,
       place.topLeft +
-          sf::Vector2i(regularTextWidth(canvas.textMetrics(), row.head), 0),
+          sf::Vector2i(regularWidthOf(canvas.textMetrics(), row.head), 0),
       {.font = TextFont::Regular,
        .color = withAlpha(row.bodyColor, place.alpha),
        .outlined = true});
@@ -257,7 +257,7 @@ void paintLabel(IInterfaceCanvas& canvas, sf::IntRect field, int top) {
       .font = TextFont::Regular, .color = CHAT_LABEL_COLOR, .outlined = true};
   canvas.write(CHAT_FIELD_LABEL, {CHAT_LEFT, top}, label);
   const int right = field.position.x + field.size.x;
-  if (CHAT_LEFT + regularTextWidth(canvas.textMetrics(), CHAT_FIELD_LABEL) +
+  if (CHAT_LEFT + regularWidthOf(canvas.textMetrics(), CHAT_FIELD_LABEL) +
           CHAT_HINT_GAP + canvas.textWidth(CHAT_FIELD_HINT, TextFont::Small) <=
       right) {
     canvas.write(CHAT_FIELD_HINT, {right, top},

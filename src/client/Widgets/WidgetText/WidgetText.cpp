@@ -11,14 +11,10 @@
 
 namespace rtype::client {
 
-int regularTextWidth(TextMetrics metrics, std::string_view text) {
-  return regularWidthOf(metrics, text);
-}
-
 int centeredTextLeft(sf::IntRect box, std::string_view text,
                      TextMetrics metrics) {
   return box.position.x +
-         ((box.size.x - regularTextWidth(metrics, text)) / SIDES_PER_AXIS);
+         ((box.size.x - regularWidthOf(metrics, text)) / SIDES_PER_AXIS);
 }
 
 int centeredTextTop(sf::IntRect box, TextMetrics metrics) {

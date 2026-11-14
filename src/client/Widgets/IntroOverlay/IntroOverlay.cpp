@@ -25,7 +25,6 @@
 #include "TextStyle.hpp"
 #include "TextureArea.hpp"
 #include "WidgetConstants.hpp"
-#include "WidgetText.hpp"
 
 namespace rtype::client {
 
@@ -131,7 +130,7 @@ void paintNameCards(IInterfaceCanvas& canvas, float real,
     canvas.fill(
         sf::IntRect({SAFE_MARGIN, top + INTRO_UNDERLINE_GAP - TEXT_LINE_HEIGHT +
                                       lineHeightOf(metrics)},
-                    {regularTextWidth(metrics, shown), 1}),
+                    {regularWidthOf(metrics, shown), 1}),
         colors.ship);
   }
 }

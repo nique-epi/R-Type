@@ -13,6 +13,8 @@
 #include "IInterfaceCanvas.hpp"
 #include "RowControlConstants.hpp"
 #include "SunkBox.hpp"
+#include "TextMeasures.hpp"
+#include "TextMetrics.hpp"
 #include "TextStyle.hpp"
 #include "ValueBinding.hpp"
 #include "WidgetColors.hpp"
@@ -30,7 +32,7 @@ Slider::Slider(Range range, ValueBinding<int> value,
 
 int Slider::width(TextMetrics metrics) const {
   return SLIDER_GROOVE_SIZE.x + CONTROL_GAP +
-         regularTextWidth(metrics, WIDEST_SLIDER_VALUE);
+         regularWidthOf(metrics, WIDEST_SLIDER_VALUE);
 }
 
 void Slider::paint(IInterfaceCanvas& canvas, sf::IntRect area,

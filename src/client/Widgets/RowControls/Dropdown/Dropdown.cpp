@@ -3,6 +3,7 @@
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Event.hpp>
+#include <algorithm>
 #include <cstddef>
 #include <functional>
 #include <optional>
@@ -17,11 +18,12 @@
 #include "IInterfaceCanvas.hpp"
 #include "RowControlConstants.hpp"
 #include "SunkBox.hpp"
+#include "TextMeasures.hpp"
+#include "TextMetrics.hpp"
 #include "TextStyle.hpp"
 #include "ValueBinding.hpp"
 #include "WidgetColors.hpp"
 #include "WidgetConstants.hpp"
-#include "WidgetText.hpp"
 
 namespace rtype::client {
 
@@ -54,7 +56,7 @@ Dropdown::Dropdown(DropdownParts parts)
 int Dropdown::width(TextMetrics metrics) const {
   int widest = 0;
   for (const std::string& choice : choices_) {
-    widest = std::max(widest, regularTextWidth(metrics, choice));
+    widest = std::max(widest, regularWidthOf(metrics, choice));
   }
   return std::max(DROPDOWN_BOX_SIZE.x,
                   DROPDOWN_TEXT_LEFT + widest + DROPDOWN_POINTER_SIZE.x +

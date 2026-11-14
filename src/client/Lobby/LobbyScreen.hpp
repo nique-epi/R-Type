@@ -21,6 +21,7 @@
 #include "LobbyState.hpp"
 #include "Menu.hpp"
 #include "MotionPreference.hpp"
+#include "PictureScroll.hpp"
 #include "PlayerPalette.hpp"
 #include "PlayfieldMapping.hpp"
 #include "RoomLayout.hpp"
@@ -145,9 +146,9 @@ class LobbyScreen : public IScreen {
   bool readyKeyHeld_ = false;
   bool gameAsked_ = false;
   /** @brief Where the room lays its parts at the text size of the canvas,
-   * and how far it is scrolled down, 0 to lastScrollOf(room_). */
+   * how far it is scrolled down and how far it may be. */
   RoomLayout room_;
-  int scroll_{};
+  PictureScroll scroll_;
   Menu menu_;
   HelpWalkthrough help_;
   KeyChip leaderboardChip_;

@@ -8,10 +8,6 @@
 
 namespace rtype::client {
 
-/** @returns How wide a line of UTF-8 text is in the regular font at
- * @p metrics, in pixels: one line height per character. */
-[[nodiscard]] int regularTextWidth(TextMetrics metrics, std::string_view text);
-
 /** @returns The left of a line of text in the regular font at @p metrics
  * centered in a box, in pixels. */
 [[nodiscard]] int centeredTextLeft(sf::IntRect box, std::string_view text,

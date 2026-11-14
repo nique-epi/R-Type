@@ -62,7 +62,6 @@
 #include "TimeConstants.hpp"
 #include "WidgetConstants.hpp"
 #include "WidgetStyles.hpp"
-#include "WidgetText.hpp"
 
 namespace rtype::client {
 
@@ -177,15 +176,6 @@ sf::Vector2i lobbyBaysSizeOf(TextMetrics metrics) {
   return {barRowWidth(LOBBY_BAY_COUNT, bay, HANGAR_BAY_GAP), bay.y};
 }
 
-/** @returns Where a chip with @p text lies: as MenuBuilder lays it ending at
- * @p right, on the row of chips whose top is @p top. */
-sf::IntRect chipAt(const Button::Text& text, std::optional<int> right,
-                   int top) {
-  sf::IntRect area = MenuBuilder::chipArea(text, right);
-  area.position.y = top;
-  return area;
-}
-
 /** @returns What the chips of the leaderboard and of the hangar say, at the
  * text size of @p metrics. */
 Button::Text leaderboardChipText(TextMetrics metrics) {
@@ -201,16 +191,17 @@ Button::Text hangarChipText(TextMetrics metrics) {
 /** @returns Where the room paints BACK, its cancel chip, on the lower row of
  * its chips. */
 sf::IntRect backChipArea(const RoomLayout& room, TextMetrics metrics) {
-  return chipAt(
+  return MenuBuilder::chipArea(
       {.label = BACK_LABEL, .keyName = CANCEL_KEY_NAME, .size = metrics},
-      std::nullopt, room.lowerChipsTop);
+      sf::Vector2i(INTERFACE_AREA.size.x - SAFE_MARGIN, room.lowerChipsTop));
 }
 
 /** @returns Where the room paints HELP, BUTTON_GAP to the left of BACK. */
 sf::IntRect helpChipArea(const RoomLayout& room, TextMetrics metrics) {
-  return chipAt(
+  return MenuBuilder::chipArea(
       {.label = HELP_LABEL, .keyName = HELP_KEY_NAME, .size = metrics},
-      backChipArea(room, metrics).position.x - BUTTON_GAP, room.lowerChipsTop);
+      sf::Vector2i(backChipArea(room, metrics).position.x - BUTTON_GAP,
+                   room.lowerChipsTop));
 }
 
 /** @returns Where the room paints RANKING: BUTTON_GAP to the left of HELP
@@ -218,19 +209,19 @@ sf::IntRect helpChipArea(const RoomLayout& room, TextMetrics metrics) {
  * on the upper row, once they take two. */
 sf::IntRect leaderboardChipArea(const RoomLayout& room, TextMetrics metrics) {
   const bool oneRow = room.upperChipsTop == room.lowerChipsTop;
-  const std::optional<int> right =
-      oneRow
-          ? std::optional(helpChipArea(room, metrics).position.x - BUTTON_GAP)
-          : std::nullopt;
-  return chipAt(leaderboardChipText(metrics), right, room.upperChipsTop);
+  const int right = oneRow ? helpChipArea(room, metrics).position.x - BUTTON_GAP
+                           : INTERFACE_AREA.size.x - SAFE_MARGIN;
+  return MenuBuilder::chipArea(leaderboardChipText(metrics),
+                               sf::Vector2i(right, room.upperChipsTop));
 }
 
 /** @returns Where the room paints HANGAR, BUTTON_GAP to the left of
  * RANKING, on its row. */
 sf::IntRect hangarChipArea(const RoomLayout& room, TextMetrics metrics) {
   const sf::IntRect leaderboard = leaderboardChipArea(room, metrics);
-  return chipAt(hangarChipText(metrics), leaderboard.position.x - BUTTON_GAP,
-                leaderboard.position.y);
+  return MenuBuilder::chipArea(hangarChipText(metrics),
+                               sf::Vector2i(leaderboard.position.x - BUTTON_GAP,
+                                            leaderboard.position.y));
 }
 
 /** @returns How far the room is scrolled after @p event: moved by
@@ -313,7 +304,7 @@ struct RoomParts {
  * the same arithmetic as MenuBuilder::placeRoom. */
 LobbyPartAreas partAreasOf(const RoomParts& parts) {
   const int readyWidth = std::max(
-      BUTTON_SIZE.x, regularTextWidth(parts.metrics, CANCEL_READY_LABEL) +
+      BUTTON_SIZE.x, regularWidthOf(parts.metrics, CANCEL_READY_LABEL) +
                          (SIDES_PER_AXIS * BUTTON_TEXT_OFFSET.x));
   const sf::IntRect ready(
       {(INTERFACE_AREA.size.x - readyWidth) / SIDES_PER_AXIS,
@@ -356,6 +347,7 @@ LobbyScreen::LobbyScreen(LobbyScreenParts parts,
       rulesLine_(rulesLineIfKnown(parts.rules)),
       room_(roomLayoutOf(lobbyBaysSizeOf(canvas_->textMetrics()).y,
                          canvas_->textMetrics())),
+      scroll_{.scroll = 0, .last = lastPictureScrollOf(room_.height)},
       menu_(buildMenu(parts.keyName(readyKey_))),
       help_(HelpWalkthroughParts{
           .sounds = parts.sounds,
@@ -391,7 +383,7 @@ LobbyScreen::LobbyScreen(LobbyScreenParts parts,
 }
 
 void LobbyScreen::handleEvent(const sf::Event& event) {
-  const auto pointAt = shiftedMappingOf({0, scroll_}, playfieldPointAt_);
+  const auto pointAt = shiftedMappingOf({0, scroll_.scroll}, playfieldPointAt_);
   if (!chat_.isOpen() && help_.handleEvent(event, pointAt)) {
     dropHeldInput(pointAt, leaderboardChip_, hangarChip_);
     return;
@@ -422,8 +414,7 @@ void LobbyScreen::handleEvent(const sf::Event& event) {
     return;
   }
   menu_.handleEvent(event, pointAt);
-  scroll_ = roomScrollAfter(event, menu_,
-                            {.scroll = scroll_, .last = lastScrollOf(room_)});
+  scroll_.scroll = roomScrollAfter(event, menu_, scroll_);
 }
 
 void LobbyScreen::update(engine::Duration elapsed) {
@@ -489,7 +480,7 @@ void LobbyScreen::repaint() {
   menu_.setLabel(READY_BUTTON, wantsReady() ? CANCEL_READY_LABEL : READY_LABEL);
   menu_.setStatus(std::move(status));
   canvas_->clear();
-  ShiftedCanvas room(*canvas_, {0, -scroll_});
+  ShiftedCanvas room(*canvas_, {0, -scroll_.scroll});
   if (!help_.showsGame()) {
     menu_.paint(room);
     paintBays(room);
@@ -500,8 +491,7 @@ void LobbyScreen::repaint() {
     }
     leaderboardChip_.paint(room);
     hangarChip_.paint(room);
-    paintPictureScrollMarks(*canvas_,
-                            {.scroll = scroll_, .last = lastScrollOf(room_)});
+    paintPictureScrollMarks(*canvas_, scroll_);
   }
   help_.paint(room, parts);
   chat_.paint(*canvas_, palette_.get(), LOBBY_CHAT_BOTTOM);

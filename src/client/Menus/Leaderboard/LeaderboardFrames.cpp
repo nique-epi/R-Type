@@ -45,7 +45,7 @@ void placeMessages(LeaderboardFrame& frame) {
   frame.asking = {middle - (ASKING_TEXT_LETTERS * lineHeight / SIDES_PER_AXIS),
                   lineTop + LEADERBOARD_LARGE_GAP};
   const sf::Vector2i bar(
-      std::max(BUTTON_SIZE.x, regularTextWidth(frame.metrics, JOIN_LABEL) +
+      std::max(BUTTON_SIZE.x, regularWidthOf(frame.metrics, JOIN_LABEL) +
                                   (SIDES_PER_AXIS * BUTTON_TEXT_OFFSET.x)),
       textBoxHeight(BUTTON_SIZE.y, frame.metrics));
   frame.joinBar = {{middle - (bar.x / SIDES_PER_AXIS),

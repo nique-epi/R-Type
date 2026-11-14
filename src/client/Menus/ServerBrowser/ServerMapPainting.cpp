@@ -34,7 +34,6 @@
 #include "StarLook.hpp"
 #include "StarMark.hpp"
 #include "StarName.hpp"
-#include "TextMeasures.hpp"
 #include "TextStyle.hpp"
 #include "TooltipLine.hpp"
 #include "WrappedLines.hpp"
@@ -228,17 +227,11 @@ void paintServerMapHeader(IInterfaceCanvas& canvas, std::size_t serverCount) {
   const TextStyle style{
       .font = TextFont::Small, .color = PALE_BLUE, .outlined = true};
   const ServerMapFrame frame = serverMapFrameOf(canvas.textMetrics());
-  if (!frame.subtitleWidth.has_value()) {
-    canvas.write(subtitle, SERVER_MAP_SUBTITLE_ANCHOR, style);
-    return;
-  }
-  sf::Vector2i anchor(SERVER_MAP_SUBTITLE_ANCHOR.x, frame.subtitleTop);
-  for (const std::string& line : wrappedLinesOf(
-           subtitle, {.width = *frame.subtitleWidth, .font = TextFont::Small},
-           canvas)) {
-    canvas.write(line, anchor, style);
-    anchor.y += lineHeightOf(canvas.textMetrics()) + SERVER_MAP_LINE_GAP;
-  }
+  writeWrappedLines(
+      canvas, subtitle,
+      {.anchor = {SERVER_MAP_SUBTITLE_ANCHOR.x, frame.subtitleTop},
+       .width = frame.subtitleWidth,
+       .style = style});
 }
 
 void paintServerMapMessage(IInterfaceCanvas& canvas, ServerListPhase phase) {

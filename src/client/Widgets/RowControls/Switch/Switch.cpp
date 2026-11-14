@@ -2,11 +2,14 @@
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Event.hpp>
+#include <algorithm>
 #include <utility>
 #include "BarState.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "RowControlConstants.hpp"
 #include "SunkBox.hpp"
+#include "TextMeasures.hpp"
+#include "TextMetrics.hpp"
 #include "TextStyle.hpp"
 #include "ValueBinding.hpp"
 #include "WidgetColors.hpp"
@@ -19,7 +22,7 @@ Switch::Switch(ValueBinding<bool> value) : value_(std::move(value)) {}
 
 int Switch::width(TextMetrics metrics) const {
   const int cell =
-      std::max(SWITCH_CELL_SIZE.x, regularTextWidth(metrics, SWITCH_OFF_TEXT) +
+      std::max(SWITCH_CELL_SIZE.x, regularWidthOf(metrics, SWITCH_OFF_TEXT) +
                                        SWITCH_CELL_TEXT_PADDING);
   return (SIDES_PER_AXIS * cell) + (SIDES_PER_AXIS * SWITCH_CELL_INSET);
 }

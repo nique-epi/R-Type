@@ -6,6 +6,7 @@
 #include <string>
 #include <utility>
 #include "IInterfaceCanvas.hpp"
+#include "TextMeasures.hpp"
 #include "TextMetrics.hpp"
 #include "TextStyle.hpp"
 #include "WidgetColors.hpp"
@@ -20,7 +21,7 @@ KeyCap::KeyCap(std::string name, Edge edge)
 int KeyCap::width(TextMetrics metrics) const {
   return std::max(
       KEY_CAP_MINIMUM_WIDTH,
-      regularTextWidth(metrics, name_) + (SIDES_PER_AXIS * KEY_CAP_PADDING));
+      regularWidthOf(metrics, name_) + (SIDES_PER_AXIS * KEY_CAP_PADDING));
 }
 
 void KeyCap::paint(IInterfaceCanvas& canvas, sf::Vector2i topLeft) const {

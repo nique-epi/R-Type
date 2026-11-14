@@ -16,6 +16,7 @@
 #include "IServerCatalog.hpp"
 #include "KeyChip.hpp"
 #include "MotionPreference.hpp"
+#include "PictureScroll.hpp"
 #include "PlanetPose.hpp"
 #include "PlayfieldMapping.hpp"
 #include "ServerChoice.hpp"
@@ -99,10 +100,10 @@ class ServerMapScreen : public IScreen {
   ServerChoice* choice_;
   std::unique_ptr<IInterfaceCanvas> canvas_;
   PlayfieldMapping playfieldPointAt_;
-  /** @brief Where the map lays its parts at the text size of the canvas, and
-   * how far the picture is scrolled down, 0 to lastMapScrollOf(frame_). */
+  /** @brief Where the map lays its parts at the text size of the canvas, how
+   * far the picture is scrolled down and how far it may be. */
   ServerMapFrame frame_;
-  int scroll_{};
+  PictureScroll scroll_;
   MotionPreference motion_;
   ServerMapChoice map_;
   GamePanel panel_;

@@ -31,7 +31,6 @@
 #include "ShiftedCanvas.hpp"
 #include "SoundConstants.hpp"
 #include "TextField.hpp"
-#include "TextMeasures.hpp"
 #include "TextureArea.hpp"
 #include "TimeConstants.hpp"
 #include "WidgetColors.hpp"
@@ -143,21 +142,10 @@ void paintDescription(const Menu::Content& content, IInterfaceCanvas& canvas,
   if (!content.descriptionAnchor.has_value() || description.empty()) {
     return;
   }
-  if (!content.descriptionWidth.has_value()) {
-    canvas.write(description, *content.descriptionAnchor,
-                 content.descriptionStyle);
-    return;
-  }
-  const int pitch = lineHeightOf(canvas.textMetrics()) + DESCRIPTION_LINE_GAP;
-  sf::Vector2i anchor = *content.descriptionAnchor;
-  for (const std::string& line :
-       wrappedLinesOf(description,
-                      {.width = *content.descriptionWidth,
-                       .font = content.descriptionStyle.font},
-                      canvas)) {
-    canvas.write(line, anchor, content.descriptionStyle);
-    anchor.y += pitch;
-  }
+  writeWrappedLines(canvas, description,
+                    {.anchor = *content.descriptionAnchor,
+                     .width = content.descriptionWidth,
+                     .style = content.descriptionStyle});
 }
 
 /** @brief Draws the picture of @p content at its place, when it has one. */
@@ -179,19 +167,10 @@ void paintStatus(const Menu::Content& content, IInterfaceCanvas& canvas,
   if (!content.statusAnchor.has_value() || status.empty()) {
     return;
   }
-  if (!content.statusWidth.has_value()) {
-    canvas.write(status, *content.statusAnchor, content.statusStyle);
-    return;
-  }
-  const int pitch = lineHeightOf(canvas.textMetrics()) + DESCRIPTION_LINE_GAP;
-  sf::Vector2i anchor = *content.statusAnchor;
-  for (const std::string& line : wrappedLinesOf(
-           status,
-           {.width = *content.statusWidth, .font = content.statusStyle.font},
-           canvas)) {
-    canvas.write(line, anchor, content.statusStyle);
-    anchor.y += pitch;
-  }
+  writeWrappedLines(canvas, status,
+                    {.anchor = *content.statusAnchor,
+                     .width = content.statusWidth,
+                     .style = content.statusStyle});
 }
 
 /** @brief Paints the marks of the rows hidden by a scroll, then what the

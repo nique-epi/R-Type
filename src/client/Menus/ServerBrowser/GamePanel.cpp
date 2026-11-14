@@ -24,7 +24,6 @@
 #include "ServerListPhase.hpp"
 #include "ServerMapFrames.hpp"
 #include "ServerMapScreenConstants.hpp"
-#include "TextMeasures.hpp"
 #include "TextMetrics.hpp"
 #include "TextStyle.hpp"
 #include "WrappedLines.hpp"
@@ -303,19 +302,11 @@ void GamePanel::paintDescription(IInterfaceCanvas& canvas) const {
       game != nullptr ? descriptionOf(*game) : NEW_GAME_DESCRIPTION;
   const TextStyle style{.font = TextFont::Small,
                         .color = enterActs ? HUD_CYAN : PALE_BLUE};
-  sf::Vector2i anchor =
-      inPanel(layout_, GAME_PANEL_PADDING, layout_.descriptionTop);
-  if (!layout_.descriptionWidth.has_value()) {
-    canvas.write(description, anchor, style);
-    return;
-  }
-  for (const std::string& line : wrappedLinesOf(
-           description,
-           {.width = *layout_.descriptionWidth, .font = TextFont::Small},
-           canvas)) {
-    canvas.write(line, anchor, style);
-    anchor.y += lineHeightOf(canvas.textMetrics()) + SERVER_MAP_LINE_GAP;
-  }
+  writeWrappedLines(
+      canvas, description,
+      {.anchor = inPanel(layout_, GAME_PANEL_PADDING, layout_.descriptionTop),
+       .width = layout_.descriptionWidth,
+       .style = style});
 }
 
 std::size_t GamePanel::entryCount() const {

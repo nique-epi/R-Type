@@ -12,9 +12,10 @@
 #include "Kopecks.hpp"
 #include "KopecksLabel.hpp"
 #include "KopecksLabelConstants.hpp"
+#include "TextMeasures.hpp"
+#include "TextMetrics.hpp"
 #include "TextStyle.hpp"
 #include "TextureArea.hpp"
-#include "WidgetText.hpp"
 
 namespace rtype::client {
 
@@ -30,13 +31,13 @@ std::string writtenAmountOf(const KopecksLabel& label) {
 
 int kopecksLabelWidth(const KopecksLabel& label, TextMetrics metrics) {
   return KOPECK_FRAME.width + KOPECKS_COIN_GAP +
-         regularTextWidth(metrics, writtenAmountOf(label));
+         regularWidthOf(metrics, writtenAmountOf(label));
 }
 
 void paintKopecks(IInterfaceCanvas& canvas, const KopecksLabel& label) {
   const std::string written = writtenAmountOf(label);
   const int width = KOPECK_FRAME.width + KOPECKS_COIN_GAP +
-                    regularTextWidth(canvas.textMetrics(), written);
+                    regularWidthOf(canvas.textMetrics(), written);
   canvas.write(written, label.topRight,
                {.font = TextFont::Regular,
                 .color = KOPECKS_COLOR,

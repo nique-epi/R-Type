@@ -222,6 +222,9 @@ class GameScreen : public IScreen {
   /** @brief The look the status was last painted in: a change of text size
    * or of HIGH CONTRAST repaints it. */
   std::optional<InterfaceLook> paintedLook_;
+  /** @brief What the band showed of time when last painted, which
+   * statusBandFrameOf() compares to repaint it only when it moves. */
+  std::int64_t paintedBandFrame_{};
   DepartureFeed departures_;
   SilenceWarning silence_;
   ChatWindow chat_;

@@ -44,8 +44,4 @@ RoomLayout roomLayoutOf(int illustrationHeight, TextMetrics metrics) {
                              lowerChipsTop + chipHeight + SAFE_MARGIN)};
 }
 
-int lastScrollOf(const RoomLayout& layout) {
-  return std::max(0, layout.height - INTERFACE_AREA.size.y);
-}
-
 }  // namespace rtype::client

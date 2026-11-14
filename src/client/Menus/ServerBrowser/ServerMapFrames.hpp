@@ -12,10 +12,6 @@ namespace rtype::client {
  * @p metrics. */
 [[nodiscard]] ServerMapFrame serverMapFrameOf(TextMetrics metrics);
 
-/** @returns How far the server map of @p frame may scroll down: how much
- * taller than the interface picture it is, 0 when it fits. */
-[[nodiscard]] int lastMapScrollOf(const ServerMapFrame& frame);
-
 /** @returns How far the map is scrolled after @p event: SERVER_MAP_PAGE_STEP
  * further down for Page Down, up for Page Up, never past either end; as it
  * was for any other event. */

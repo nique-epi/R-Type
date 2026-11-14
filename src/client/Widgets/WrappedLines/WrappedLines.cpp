@@ -7,7 +7,9 @@
 #include <vector>
 #include "IInterfaceCanvas.hpp"
 #include "LineWrapping.hpp"
+#include "TextMeasures.hpp"
 #include "WidgetConstants.hpp"
+#include "WrappedText.hpp"
 
 namespace rtype::client {
 
@@ -49,12 +51,12 @@ void addBrokenWord(std::vector<std::string>& lines, std::string_view word,
   for (std::size_t start = 0; start < word.size();) {
     const std::size_t next = nextLetterOf(word, start);
     const std::string_view letter = word.substr(start, next - start);
-    std::string longer = piece + std::string(letter);
-    if (!piece.empty() && !fitsOn(measure, longer)) {
+    const std::size_t kept = piece.size();
+    piece += letter;
+    if (kept > 0 && !fitsOn(measure, piece)) {
+      piece.resize(kept);
       lines.push_back(std::move(piece));
       piece = std::string(letter);
-    } else {
-      piece = std::move(longer);
     }
     start = next;
   }
@@ -100,6 +102,22 @@ std::vector<std::string> wrappedLinesOf(std::string_view text,
     start = end == std::string_view::npos ? text.size() : end + 1;
   }
   return lines;
+}
+
+void writeWrappedLines(IInterfaceCanvas& canvas, std::string_view text,
+                       const WrappedText& wrapped) {
+  if (!wrapped.width.has_value()) {
+    canvas.write(text, wrapped.anchor, wrapped.style);
+    return;
+  }
+  const int pitch = lineHeightOf(canvas.textMetrics()) + DESCRIPTION_LINE_GAP;
+  sf::Vector2i anchor = wrapped.anchor;
+  for (const std::string& line : wrappedLinesOf(
+           text, {.width = *wrapped.width, .font = wrapped.style.font},
+           canvas)) {
+    canvas.write(line, anchor, wrapped.style);
+    anchor.y += pitch;
+  }
 }
 
 }  // namespace rtype::client

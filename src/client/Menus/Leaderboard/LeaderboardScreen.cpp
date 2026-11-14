@@ -56,15 +56,6 @@ namespace rtype::client {
 
 namespace {
 
-/** @returns Where a chip with this text lies: as MenuBuilder lays it, its
- * top-right corner at @p topRight, on the row of the chips of the
- * leaderboard. */
-sf::IntRect chipAreaEndingAt(const Button::Text& text, sf::Vector2i topRight) {
-  sf::IntRect area = MenuBuilder::chipArea(text, topRight.x);
-  area.position.y = topRight.y;
-  return area;
-}
-
 Button::Text backChipText(const LeaderboardFrame& frame) {
   return {
       .label = BACK_LABEL, .keyName = CANCEL_KEY_NAME, .size = frame.metrics};
@@ -76,14 +67,15 @@ Button::Text filterChipText(const LeaderboardFrame& frame) {
 }
 
 sf::IntRect backChipArea(const LeaderboardFrame& frame) {
-  return chipAreaEndingAt(backChipText(frame),
-                          {frame.chipsRight, frame.chipsTop});
+  return MenuBuilder::chipArea(backChipText(frame),
+                               sf::Vector2i(frame.chipsRight, frame.chipsTop));
 }
 
 sf::IntRect filterChipArea(const LeaderboardFrame& frame) {
-  return chipAreaEndingAt(
+  return MenuBuilder::chipArea(
       filterChipText(frame),
-      {backChipArea(frame).position.x - BUTTON_GAP, frame.chipsTop});
+      sf::Vector2i(backChipArea(frame).position.x - BUTTON_GAP,
+                   frame.chipsTop));
 }
 
 KeyChipParts backChipParts(std::function<void()> action, ISoundPlayer& sounds,

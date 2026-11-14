@@ -219,7 +219,6 @@ constexpr int TAB_STRIP_WIDTH =
 constexpr int TAB_HEIGHT = 16;
 constexpr int TAB_GAP = 4;
 constexpr int TAB_LABEL_TOP = 5;
-constexpr int TAB_KEY_CAP_TOP = 2;
 /** @brief Room on each side of the label of a tab as wide as its label, and
  * the name the keycaps of a strip are as wide as: CONTROLS, 64 pixels and 4
  * on each side, fits the 76 each of five tabs shares as the fonts are drawn. */
@@ -250,9 +249,6 @@ constexpr int SCROLL_MARK_INSET = 8;
 constexpr std::size_t PANEL_ROW_CAPACITY = static_cast<std::size_t>(
     (ROWS_PANEL_SIZE.y - (SIDES_PER_AXIS * ROWS_PANEL_PADDING) + ROW_GAP) /
     ROW_PITCH);
-constexpr sf::IntRect PANEL_ROWS_VIEWPORT(
-    FIRST_ROW_TOP_LEFT,
-    {ROW_SIZE.x, (static_cast<int>(PANEL_ROW_CAPACITY) * ROW_PITCH) - ROW_GAP});
 constexpr sf::Vector2i ROW_LABEL_OFFSET(8, 4);
 constexpr int ROW_PADDING = 8;
 constexpr int ROW_CONTROL_TOP = 2;

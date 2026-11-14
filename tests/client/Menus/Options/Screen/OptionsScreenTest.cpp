@@ -22,10 +22,10 @@
 #include "RecordingSettingsStorage.hpp"
 #include "RecordingSoundPlayer.hpp"
 #include "SoundConstants.hpp"
+#include "TextMeasures.hpp"
 #include "TextMetrics.hpp"
 #include "WidgetColors.hpp"
 #include "WidgetConstants.hpp"
-#include "WidgetText.hpp"
 #include "WindowLayout.hpp"
 #include "WindowSizeSelection.hpp"
 
@@ -35,7 +35,7 @@ using rtype::client::DIM_LAYER_COLOR;
 using rtype::client::DISABLED_BAR_TEXT_COLOR;
 using rtype::client::DisplayMode;
 using rtype::client::PRESS_DURATION;
-using rtype::client::regularTextWidth;
+using rtype::client::regularWidthOf;
 using rtype::client::TextMetrics;
 using rtype::client::testing::ALONG_THE_TRACK;
 using rtype::client::testing::CHART_LEGEND;
@@ -407,9 +407,8 @@ TEST_F(OptionsScreenFixture, EveryDescriptionFitsBesideBack) {
     for (std::size_t row = 0; row < ROWS_IN_THE_LONGEST_TAB; ++row) {
       const RecordedWriting* line = descriptionOf(canvas());
       if (line != nullptr) {
-        EXPECT_LE(
-            DESCRIPTION_LEFT + regularTextWidth(TextMetrics{}, line->text),
-            DESCRIPTION_RIGHT)
+        EXPECT_LE(DESCRIPTION_LEFT + regularWidthOf(TextMetrics{}, line->text),
+                  DESCRIPTION_RIGHT)
             << line->text;
       }
       tap(Key::Down);

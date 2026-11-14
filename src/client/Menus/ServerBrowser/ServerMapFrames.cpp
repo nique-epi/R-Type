@@ -49,10 +49,6 @@ ServerMapFrame serverMapFrameOf(TextMetrics metrics) {
                          lowerChipsTop + chipHeight + SAFE_MARGIN)};
 }
 
-int lastMapScrollOf(const ServerMapFrame& frame) {
-  return std::max(0, frame.height - INTERFACE_AREA.size.y);
-}
-
 int pagedScrollOf(const sf::Event& event, PictureScroll scroll) {
   const auto* key = event.getIf<sf::Event::KeyPressed>();
   if (key == nullptr) {

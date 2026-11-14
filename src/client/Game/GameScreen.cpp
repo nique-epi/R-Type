@@ -47,7 +47,6 @@
 #include "IPlayerInputLink.hpp"
 #include "IScreenNavigator.hpp"
 #include "ISky.hpp"
-#include "InterfaceLook.hpp"
 #include "InterpolationClock.hpp"
 #include "InterpolationTally.hpp"
 #include "KopecksReward.hpp"
@@ -369,7 +368,8 @@ void GameScreen::repaintStatusWhenChanged() {
       silence_.isShown() != paintedSilence_ || boss != paintedBoss_ ||
       chat_.isShown() || paintedChat_ ||
       paintedLook_ != interfaceLookOf(*settings_) ||
-      statusBandMoves(scoreBoard_.pilots(), *statusCanvas_)) {
+      statusBandFrameOf(scoreBoard_.pilots(), *statusCanvas_,
+                        effects_.sinceStart()) != paintedBandFrame_) {
     repaintStatus(boss);
   }
 }
@@ -399,6 +399,8 @@ void GameScreen::repaintStatus(const BossLook& boss) {
   paintedChat_ = chat_.isShown();
   paintedBoss_ = boss;
   paintedLook_ = interfaceLookOf(*settings_);
+  paintedBandFrame_ = statusBandFrameOf(scoreBoard_.pilots(), *statusCanvas_,
+                                        effects_.sinceStart());
 }
 
 ActionSet GameScreen::playerActions() const {

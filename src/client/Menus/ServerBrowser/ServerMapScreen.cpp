@@ -82,44 +82,38 @@ Button::Text backText(TextMetrics metrics) {
   return {.label = BACK_LABEL, .keyName = CANCEL_KEY_NAME, .size = metrics};
 }
 
-/** @returns Where a chip with @p text lies, its top-right corner at
- * @p topRight. */
-sf::IntRect chipAreaEndingAt(const Button::Text& text, sf::Vector2i topRight) {
-  sf::IntRect area = MenuBuilder::chipArea(text, topRight.x);
-  area.position.y = topRight.y;
-  return area;
-}
-
 /** @returns Where BACK lies: at the right end of the lower row. */
 sf::IntRect backChipArea(const ChipRows& rows) {
-  return chipAreaEndingAt(backText(rows.metrics),
-                          {SERVER_MAP_CHIPS_RIGHT, rows.frame.lowerChipsTop});
+  return MenuBuilder::chipArea(
+      backText(rows.metrics),
+      sf::Vector2i(SERVER_MAP_CHIPS_RIGHT, rows.frame.lowerChipsTop));
 }
 
 /** @returns Where ADDRESS lies: just left of BACK. */
 sf::IntRect addressChipArea(const ChipRows& rows) {
-  return chipAreaEndingAt(
+  return MenuBuilder::chipArea(
       addressText(rows.metrics),
-      {backChipArea(rows).position.x - BUTTON_GAP, rows.frame.lowerChipsTop});
+      sf::Vector2i(backChipArea(rows).position.x - BUTTON_GAP,
+                   rows.frame.lowerChipsTop));
 }
 
 /** @returns Where RANKING lies: just left of ADDRESS while the chips take one
  * row; at the right end of the upper row once they take two. */
 sf::IntRect rankingChipArea(const ChipRows& rows) {
   const bool oneRow = rows.frame.upperChipsTop == rows.frame.lowerChipsTop;
-  return chipAreaEndingAt(
+  return MenuBuilder::chipArea(
       rankingText(rows.metrics),
-      {oneRow ? addressChipArea(rows).position.x - BUTTON_GAP
-              : SERVER_MAP_CHIPS_RIGHT,
-       rows.frame.upperChipsTop});
+      sf::Vector2i(oneRow ? addressChipArea(rows).position.x - BUTTON_GAP
+                          : SERVER_MAP_CHIPS_RIGHT,
+                   rows.frame.upperChipsTop));
 }
 
 /** @returns Where QUICK PLAY lies: alone on the left of the upper row, the
  * main action. */
 sf::IntRect quickPlayChipArea(const ChipRows& rows) {
-  sf::IntRect area =
-      chipAreaEndingAt(quickPlayText(rows.metrics),
-                       {SERVER_MAP_CHIPS_RIGHT, rows.frame.upperChipsTop});
+  sf::IntRect area = MenuBuilder::chipArea(
+      quickPlayText(rows.metrics),
+      sf::Vector2i(SERVER_MAP_CHIPS_RIGHT, rows.frame.upperChipsTop));
   area.position.x = SERVER_MAP_CHIPS_LEFT;
   return area;
 }
@@ -286,6 +280,7 @@ ServerMapScreen::ServerMapScreen(ServerMapScreenParts parts,
       canvas_(std::move(canvas)),
       playfieldPointAt_(std::move(parts.playfieldPointAt)),
       frame_(serverMapFrameOf(canvas_->textMetrics())),
+      scroll_{.scroll = 0, .last = lastPictureScrollOf(frame_.height)},
       motion_(parts.motion),
       panel_(canvas_->textMetrics()),
       sessionEnd_(parts.connection.get()),
@@ -313,11 +308,11 @@ ServerMapScreen::ServerMapScreen(ServerMapScreenParts parts,
 }
 
 void ServerMapScreen::handleEvent(const sf::Event& event) {
-  const auto pagePointAt = shiftedMappingOf({0, scroll_}, playfieldPointAt_);
-  const auto mapPointAt =
-      shiftedMappingOf({0, scroll_ - frame_.mapShift}, playfieldPointAt_);
-  scroll_ = pagedScrollOf(event,
-                          {.scroll = scroll_, .last = lastMapScrollOf(frame_)});
+  const auto pagePointAt =
+      shiftedMappingOf({0, scroll_.scroll}, playfieldPointAt_);
+  const auto mapPointAt = shiftedMappingOf(
+      {0, scroll_.scroll - frame_.mapShift}, playfieldPointAt_);
+  scroll_.scroll = pagedScrollOf(event, scroll_);
   quickPlayChip_.handleEvent(event, pagePointAt);
   rankingChip_.handleEvent(event, pagePointAt);
   addressChip_.handleEvent(event, pagePointAt);
@@ -455,8 +450,8 @@ void ServerMapScreen::refresh() {
 
 void ServerMapScreen::repaint() {
   canvas_->clear();
-  ShiftedCanvas page(*canvas_, {0, -scroll_});
-  ShiftedCanvas sector(*canvas_, {0, frame_.mapShift - scroll_});
+  ShiftedCanvas page(*canvas_, {0, -scroll_.scroll});
+  ShiftedCanvas sector(*canvas_, {0, frame_.mapShift - scroll_.scroll});
   const ServerListPhase phase = servers_->snapshot().phase;
   paintServerMapHeader(page, map_.servers().size());
   if (phase == ServerListPhase::Ready) {
@@ -483,8 +478,7 @@ void ServerMapScreen::repaint() {
        {&quickPlayChip_, &rankingChip_, &addressChip_, &backChip_}) {
     chip->paint(page);
   }
-  paintPictureScrollMarks(*canvas_,
-                          {.scroll = scroll_, .last = lastMapScrollOf(frame_)});
+  paintPictureScrollMarks(*canvas_, scroll_);
   canvas_->display();
 }
 

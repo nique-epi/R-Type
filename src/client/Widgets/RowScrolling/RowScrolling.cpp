@@ -1,5 +1,6 @@
 #include "RowScrolling.hpp"
 #include <SFML/System/Vector2.hpp>
+#include <algorithm>
 #include <cstddef>
 #include <optional>
 #include <vector>
@@ -79,10 +80,14 @@ RowScroll scrollMovedBy(RowScroll scroll, int step) {
 
 PlayfieldMapping shiftedMappingOf(sf::Vector2i offset,
                                   const PlayfieldMapping& mapping) {
-  return [offset, mapping](sf::Vector2i windowPixel) {
+  return [offset, &mapping](sf::Vector2i windowPixel) {
     return mapping(windowPixel) +
            (sf::Vector2f(offset) * BACKGROUND_PIXEL_SIZE);
   };
+}
+
+int lastPictureScrollOf(int height) {
+  return std::max(0, height - INTERFACE_AREA.size.y);
 }
 
 PlayfieldMapping scrolledMappingOf(const std::optional<RowScroll>& scroll,

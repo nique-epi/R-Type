@@ -11,6 +11,7 @@
 #include "IInterfaceCanvas.hpp"
 #include "KeyCap.hpp"
 #include "TabRun.hpp"
+#include "TextMeasures.hpp"
 #include "TextMetrics.hpp"
 #include "TextStyle.hpp"
 #include "WidgetColors.hpp"
@@ -37,7 +38,7 @@ std::vector<int> tabWidthsOf(const std::vector<std::string>& labels,
   std::vector<int> widths;
   widths.reserve(labels.size());
   for (const std::string& label : labels) {
-    widths.push_back(regularTextWidth(metrics, label) +
+    widths.push_back(regularWidthOf(metrics, label) +
                      (SIDES_PER_AXIS * TAB_TEXT_PADDING));
   }
   return widths;
