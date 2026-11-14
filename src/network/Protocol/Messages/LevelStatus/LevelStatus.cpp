@@ -34,6 +34,7 @@ void validate(const LevelStatus& message) {
   }
   requireScrollValue(SCROLL_POSITION_FIELD, message.scrollPosition);
   requireScrollValue(SCROLL_SPEED_FIELD, message.scrollSpeed);
+  requireScrollValue(BIOME_SINCE_FIELD, message.biomeSince);
 }
 
 }  // namespace
@@ -43,6 +44,7 @@ void encodePayload(ByteWriter& writer, const LevelStatus& message) {
   writer.writeString(message.biome);
   writer.writeFloat(message.scrollPosition);
   writer.writeFloat(message.scrollSpeed);
+  writer.writeFloat(message.biomeSince);
 }
 
 LevelStatus decodePayload(
@@ -52,10 +54,12 @@ LevelStatus decodePayload(
   std::string biome = reader.readString();
   const float scrollPosition = reader.readFloat();
   const float scrollSpeed = reader.readFloat();
+  const float biomeSince = reader.readFloat();
   requireFullyRead(reader);
   LevelStatus message{.biome = std::move(biome),
                       .scrollPosition = scrollPosition,
-                      .scrollSpeed = scrollSpeed};
+                      .scrollSpeed = scrollSpeed,
+                      .biomeSince = biomeSince};
   validate(message);
   return message;
 }

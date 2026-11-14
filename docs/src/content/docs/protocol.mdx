@@ -195,7 +195,7 @@ The type identifies a message in both directions: `Disconnection` and `Heartbeat
 | 36 | `PlayerLooks` | `playerCount` `u8` (0 to 4), then per player `playerNumber` `u8` (1 to 4), `head` `u8`, `eyes` `u8`, `face` `u8`, `hull` `u8` | to every player when a player changes its look and when a player arrives, to one player alone when it sends its look unchanged, guaranteed and ordered (see [Ship looks](#ship-looks)) |
 | 37 | `LookItemWon` | `item` `u8` (1 to 25) | to the player who picked up a look item, alone, guaranteed and ordered (see [Ship looks](#ship-looks)) |
 | 38 | `EffectPlayed` | `entityId` `u32`, `effect` `string` (1 to 24 bytes) | to every player, when a body plays an effect its sheet names, guaranteed and ordered (see [Named effects and looks](#named-effects-and-looks)) |
-| 39 | `LevelStatus` | `biome` `string` (0 to 24 bytes), `scrollPosition` `f32`, `scrollSpeed` `f32` | in a game that plays a level: when the level starts, when its biome changes, when its scroll stops or starts again and when it goes back to a checkpoint, guaranteed and ordered (see [Level status](#level-status)) |
+| 39 | `LevelStatus` | `biome` `string` (0 to 24 bytes), `scrollPosition` `f32`, `scrollSpeed` `f32`, `biomeSince` `f32` | in a game that plays a level: when the level starts, when its biome changes, when its scroll stops or starts again and when it goes back to a checkpoint, guaranteed and ordered (see [Level status](#level-status)) |
 
 ### Payload rules
 
@@ -223,7 +223,7 @@ A message is accepted only when its payload has exactly the size its fields add 
 | `ShipLookChoice`, `PlayerLooks` | each look byte is 0 or the number of an item of its slot: `head` 0, 1 to 8 or 11 to 22, `eyes` 0, 9, 23 or 24, `face` 0, 10 or 25, `hull` 0 or 26 to 30; `PlayerLooks` has at most 4 players, each `playerNumber` 1 to 4 and listed once |
 | `LookItemWon` | `item` is 1 to 25: a hull (26 to 30) is refused |
 | `EffectPlayed` | `entityId` is not 0; `effect` is a name of the content, 1 to 24 bytes of `a` to `z`, digits and `_`; whether the sheet of the body names it is for the receiver to look up |
-| `LevelStatus` | `biome` is empty or a biome name: 1 to 24 bytes among `a` to `z`, `0` to `9` and `_`; `scrollPosition` and `scrollSpeed` are finite and not negative |
+| `LevelStatus` | `biome` is empty or a biome name: 1 to 24 bytes among `a` to `z`, `0` to `9` and `_`; `scrollPosition`, `scrollSpeed` and `biomeSince` are finite and not negative |
 | `ServerInformation` | `gameVersion` and `name` are 1 to 32 bytes of valid UTF-8, no control character; `playerCount` is at most 4 times `gameCount`, and `playerCount` plus `freeSeatCount` too |
 | `ExpulsionOrder` | the nickname follows the rules of a nickname: 1 to 16 bytes of valid UTF-8, no control character |
 | `Expulsion` | `reason` is in the table of its message; the payload is 1 byte |
@@ -510,7 +510,7 @@ A hit during the arrival takes nothing from the boss and sends nothing. The boss
 
 ### Level status
 
-A `LevelStatus` tells what the players see of the level a game plays (see [Server](/R-Type/server/#level-a-script-directs-leveldirector)): its `biome`, empty before the level names one, how far it scrolled, `scrollPosition`, in logical units, and the speed of its scroll, `scrollSpeed`, in logical units per second, 0 while the scroll is paused. Each holds the whole state and replaces the one handed over before it. Between two of them a client moves the scroll on at `scrollSpeed`, so it draws the decor of the biome without a message per tick. A game that plays its waves sends none.
+A `LevelStatus` tells what the players see of the level a game plays (see [Server](/R-Type/server/#level-a-script-directs-leveldirector)): its `biome`, empty before the level names one, how far it scrolled, `scrollPosition`, in logical units, and the speed of its scroll, `scrollSpeed`, in logical units per second, 0 while the scroll is paused, and where the scroll stood when the biome began, `biomeSince`, in logical units, so a client that joins late or a team sent back to a checkpoint sees the maps of the biome where the others see them. Each holds the whole state and replaces the one handed over before it. Between two of them a client moves the scroll on at `scrollSpeed`, so it draws the decor of the biome without a message per tick. A game that plays its waves sends none.
 
 ### Named effects and looks
 

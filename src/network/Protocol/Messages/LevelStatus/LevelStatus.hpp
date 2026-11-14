@@ -17,9 +17,10 @@ namespace rtype::network {
  * the one handed over before it.
  *
  * The biome is empty before the level names one, otherwise a biome name (see
- * identifiers::isBiomeName()). The scroll position, in logical units, and the
+ * identifiers::isBiomeName()). The scroll position, in logical units, the
  * scroll speed, in logical units per second, 0 while the scroll is paused,
- * are finite and never negative.
+ * and the position of the scroll when the biome began, where its decor starts
+ * sliding in, are finite and never negative.
  */
 struct LevelStatus {
   static constexpr MessageType TYPE = MessageType::LevelStatus;
@@ -27,13 +28,14 @@ struct LevelStatus {
   std::string biome;
   float scrollPosition{};
   float scrollSpeed{};
+  float biomeSince{};
 
   bool operator==(const LevelStatus&) const = default;
 };
 
 /**
- * @brief Writes the biome, as a short string, then the scroll position and
- * the scroll speed.
+ * @brief Writes the biome, as a short string, then the scroll position, the
+ * scroll speed and the position the biome began at.
  * @throws InvalidFieldValueException when the status breaks a rule of
  * LevelStatus; nothing is written then.
  */
@@ -41,8 +43,9 @@ void encodePayload(ByteWriter& writer, const LevelStatus& message);
 
 /**
  * @brief Reads a LevelStatus from the whole of @p payload.
- * @throws BufferUnderflowException when @p payload ends before the speed.
- * @throws TrailingBytesException when bytes follow the speed.
+ * @throws BufferUnderflowException when @p payload ends before the position
+ * the biome began at.
+ * @throws TrailingBytesException when bytes follow that position.
  * @throws InvalidFieldValueException when the status breaks a rule of
  * LevelStatus.
  */

@@ -139,7 +139,8 @@ struct EntityMessageRoutes {
 SkyLevel skyLevelOf(const network::LevelStatus& status) {
   return SkyLevel{.biome = status.biome,
                   .scrollPosition = status.scrollPosition,
-                  .scrollSpeed = status.scrollSpeed};
+                  .scrollSpeed = status.scrollSpeed,
+                  .biomeSince = status.biomeSince};
 }
 
 /** @brief Hands an entity message to whoever it goes to: a PlayerLeft to the

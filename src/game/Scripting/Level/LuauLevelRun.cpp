@@ -83,6 +83,7 @@ bool LuauLevelRun::restartFromCheckpoint() {
   progress.scroll.returnTo(checkpoint.travelled);
   progress.scroll.resume();
   progress.biome = checkpoint.biome;
+  progress.biomeSince = checkpoint.biomeSince;
   return true;
 }
 
@@ -141,7 +142,8 @@ void LuauLevelRun::endStage() {
   progress.checkpoint =
       LevelCheckpoint{.stage = stage_,
                       .travelled = progress.scroll.travelled(),
-                      .biome = progress.biome};
+                      .biome = progress.biome,
+                      .biomeSince = progress.biomeSince};
 }
 
 void LuauLevelRun::fail(const std::string& reason) {

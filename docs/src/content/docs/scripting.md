@@ -198,7 +198,6 @@ A script may also write a level: what comes, when the decor moves and stops, whi
 ```lua
 level.register("training_run", {
 	function()
-		level.biome("drift_fields")
 		level.wait_scroll(240)
 		behaviours.spawn("drifter", { x = 1984, y = 540 })
 		level.pause_scroll()
@@ -208,7 +207,7 @@ level.register("training_run", {
 		level.resume_scroll()
 	end,
 	function()
-		level.biome("ember_reach")
+		level.biome("fosse")
 		level.wait_scroll(1680)
 	end,
 })
@@ -222,17 +221,17 @@ level.register("training_run", {
 | `level.wait_scroll(position)` | stops the stage until the level scrolled `position` logical units; while the scroll is paused short of it, the stage waits. It only runs in a stage. |
 | `level.scroll()` | how far the level scrolled, in logical units. |
 | `level.pause_scroll()`, `level.resume_scroll()` | stop the scroll where it is, and let it move on. The decor of the players stops and moves with it. |
-| `level.biome(name)` | names the biome the players see from now: 1 to 24 lowercase letters, digits and underscores. A client draws the decor it has for that name (see [Client](/R-Type/client/#decor-of-a-biome-biomedecor)), and the stars alone for a name it does not know. |
+| `level.biome(name)` | names the biome the players see from now: 1 to 24 lowercase letters, digits and underscores. A client draws the decor it has for that name (see [Client](/R-Type/client/#decor-of-a-biome-biomedecor)), and the stars alone for a name it does not know. A new name begins where the scroll stands: the biome enters from the right edge of the screen from there, through the entrance its first map opens on, if it has one; naming the biome already shown changes nothing. |
 | `level.enemies()` | how many enemies the world holds, the bodies of side `enemy`. |
 
 What a script may rely on:
 
 - **A stage steps before the bodies.** Each tick, the stage due runs first, then the level scrolls, then the bodies are steered, so a body a stage creates with `behaviours.spawn` appears at the end of that tick. A stage that waits costs nothing; one that runs has the 2 ms of a step.
-- **Each stage after the first starts at a checkpoint.** When a stage returns, the next one starts at the following tick, and the place it starts from is kept: the scroll and the biome of that moment. A team that loses every life past a checkpoint starts that stage again from its first line, at that scroll and in that biome, the scroll moving, with every enemy and missile removed and the lives of the rules given back. Before the first checkpoint, the game is lost.
+- **Each stage after the first starts at a checkpoint.** When a stage returns, the next one starts at the following tick, and the place it starts from is kept: the scroll and the biome of that moment, with where that biome began. A team that loses every life past a checkpoint starts that stage again from its first line, at that scroll and in that biome, the scroll moving, with every enemy and missile removed and the lives of the rules given back. Before the first checkpoint, the game is lost.
 - **The level is cleared once its last stage returned and no enemy is left.** The game is then won. A stage that fails, yields by itself or runs past its budget ends the game as lost, and the journal says why once.
 - **Any script may read and move the level during a game that plays one.** The behaviour of a boss may call `level.pause_scroll()` when it arrives. In a game that plays its waves, every function of `level` but `register` raises an error, which stops the body that called it. `bus.on` only runs in the function of a body, so a stage hears no event: it polls, as the example does with `level.enemies()`.
 
-The repository ships one level, `training_run`, in `resources/training-run/`: two stages, a pause of the scroll until a Reaper is destroyed, a checkpoint and two biomes. Play it with `ensure training-run` and `set level training_run` in `server.cfg`.
+The repository ships one level, `training_run`, in `resources/training-run/`: two stages, a pause of the scroll until a Reaper is destroyed, a checkpoint, the stars and then the biome `fosse`. Play it with `ensure training-run` and `set level training_run` in `server.cfg`.
 
 ## What a script cannot do
 
