@@ -3,6 +3,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <deque>
+#include <span>
+#include "Bounds.hpp"
 #include "Position.hpp"
 #include "ShipControl.hpp"
 #include "ShipDirections.hpp"
@@ -19,8 +21,9 @@ struct PendingCommand {
 
 /**
  * @brief Where the player's own ship is, as the client predicts it: the same
- * shipAfter() as the server, one simulation tick per command, corrected from
- * the position the server confirms.
+ * shipAfter() as the server, one simulation tick per command, stopped against
+ * the blocking obstacles it was shown (seeObstacles()), corrected from the
+ * position the server confirms.
  *
  * Each command is numbered and kept until the server confirms a newer one.
  * When the server says it received command N and puts the ship at P, the
@@ -50,6 +53,12 @@ class ShipPrediction {
    * number no pending command carries, or before restart(). */
   void reconcile(game::Position server, std::uint32_t acknowledged);
 
+  /** @brief Stops the ship against @p obstacles from the next command on,
+   * the commands played again included, as the server stops it
+   * (blockedByObstacles()). The boxes are not copied: they must stay alive
+   * and unchanged until the next call. */
+  void seeObstacles(std::span<const engine::Bounds> obstacles);
+
   [[nodiscard]] bool isStarted() const;
   [[nodiscard]] game::Position position() const;
 
@@ -67,6 +76,7 @@ class ShipPrediction {
   game::MovingShip current_{};
   game::ShipDirections lastHeld_{};
   std::deque<PendingCommand> pending_;
+  std::span<const engine::Bounds> obstacles_;
 };
 
 }  // namespace rtype::client

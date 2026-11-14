@@ -1,12 +1,9 @@
 #pragma once
 
-#include <memory>
 #include <span>
-#include <vector>
 #include "BehaviourRegistry.hpp"
 #include "IEntityOrders.hpp"
-#include "LuauBehaviour.hpp"
-#include "LuauBehaviourParts.hpp"
+#include "LuauDeclarations.hpp"
 #include "LuauEventBindings.hpp"
 #include "LuauLevels.hpp"
 #include "LuauResumeContext.hpp"
@@ -26,8 +23,9 @@ namespace rtype::game {
  * @brief The behaviours the server scripts of a game register: it runs the
  * scripts on a machine of its own, which exposes `behaviours.register(name,
  * settings, steer)`, `behaviours.wait(ms, intent)`, `behaviours.spawn(type,
- * position)`, `behaviours.destroy(id)` and `behaviours.pre_hit(function)` (see
- * LuauPreHit), `bus.on` and `bus.emit` (see
+ * position)`, `behaviours.destroy(id)`, `behaviours.pre_hit(function)` (see
+ * LuauPreHit) and `behaviours.on_hit(name, function)` (see LuauHitHandler),
+ * `bus.on` and `bus.emit` (see
  * LuauEventBindings) and the table `level` (see LuauLevels), and hands the
  * behaviours over with the built-in ones.
  *
@@ -51,9 +49,9 @@ class BehaviourScripts {
    */
   void run(std::span<const engine::ScriptSource> sources);
 
-  /** @brief Keeps a behaviour a script registered: its machine and its report
-   * are those of this object. */
-  void declare(LuauBehaviourParts parts);
+  /** @returns What the scripts declared so far, which behaviours() hands
+   * over. */
+  [[nodiscard]] LuauDeclarations& declarations();
 
   /** @returns The machine the scripts run on. */
   [[nodiscard]] engine::ScriptMachine& machine();
@@ -93,7 +91,7 @@ class BehaviourScripts {
   LuauResumeContext resumeContext_;
   LuauEventBindings eventBindings_;
   LuauLevels levels_;
-  std::vector<std::unique_ptr<LuauBehaviour>> declared_;
+  LuauDeclarations declarations_;
 };
 
 }  // namespace rtype::game

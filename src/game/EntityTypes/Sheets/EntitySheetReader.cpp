@@ -28,6 +28,7 @@
 #include "HurtWindow.hpp"
 #include "HurtZone.hpp"
 #include "IBehaviour.hpp"
+#include "IHitHandler.hpp"
 #include "IsAMissile.hpp"
 #include "MotionKind.hpp"
 #include "MotionSheet.hpp"
@@ -93,14 +94,15 @@ float unitsAt(const engine::DataFileTable& box, std::string_view key,
   return static_cast<float>(engine::wholeNumberAt(box, key, range));
 }
 
-/** @returns The motion `[gameplay.motion]` describes: a ship with its kind
- * only, a steady body with its top speed too. */
+/** @returns The motion `[gameplay.motion]` describes: a ship and a body that
+ * follows the scroll with their kind only, a steady body with its top speed
+ * too. */
 MotionSheet motionFrom(const engine::DataFileTable& gameplay) {
   const engine::DataFileTable motion = engine::tableAt(gameplay, MOTION_KEY);
   const MotionKind kind =
       MOTION_KINDS.at(engine::choiceAt(motion, KIND_KEY, MOTION_KIND_NAMES));
-  if (kind == MotionKind::Ship) {
-    engine::refuseUnknownKeys(motion, SHIP_MOTION_KEYS);
+  if (kind != MotionKind::Steady) {
+    engine::refuseUnknownKeys(motion, KIND_ONLY_MOTION_KEYS);
     return MotionSheet{.kind = kind, .topSpeed = 0.0F};
   }
   engine::refuseUnknownKeys(motion, STEADY_MOTION_KEYS);
@@ -128,6 +130,20 @@ const IBehaviour* behaviourOf(const engine::DataFileTable& gameplay,
   const std::string_view pilot =
       names.at(engine::choiceAt(gameplay, PILOT_KEY, names));
   return pilot == PLAYER_PILOT_NAME ? nullptr : behaviours.find(pilot);
+}
+
+/** @returns The handler `on_hit` names among those of @p behaviours; nullptr
+ * without the key.
+ * @throws engine::UnknownDataFileChoiceException when it names none of them.
+ */
+IHitHandler* onHitFrom(const engine::DataFileTable& gameplay,
+                       const BehaviourRegistry& behaviours) {
+  if (!gameplay.table.get().contains(ON_HIT_KEY)) {
+    return nullptr;
+  }
+  const std::vector<std::string_view> names = behaviours.hitHandlerNames();
+  return behaviours.findHitHandler(
+      names.at(engine::choiceAt(gameplay, ON_HIT_KEY, names)));
 }
 
 /** @throws InconsistentEntitySheetException when @p gameplay holds a table
@@ -549,6 +565,46 @@ void checkLookItemFliesLeft(const EntitySheet& sheet,
   }
 }
 
+/** @throws InconsistentEntitySheetException when @p sheet names a damage and
+ * is no missile. */
+void checkDamageBelongsToAMissile(const EntitySheet& sheet,
+                                  const engine::DataFileTable& gameplay) {
+  if (sheet.damage.has_value() && !isAMissile(sheet.side)) {
+    throw InconsistentEntitySheetException(
+        engine::placeOfKey(gameplay, DAMAGE_KEY), DAMAGE_SIDE_RULE);
+  }
+}
+
+/** @throws InconsistentEntitySheetException when a sheet of side obstacle
+ * has no obstacle table, or another sheet has one. */
+void checkObstacleMatchesSide(const EntitySheet& sheet,
+                              const engine::DataFileTable& gameplay) {
+  if (sheet.obstacle.has_value() != (sheet.side == EntityType::Obstacle)) {
+    throw InconsistentEntitySheetException(
+        engine::placeOfKey(gameplay, SIDE_KEY), OBSTACLE_SIDE_RULE);
+  }
+}
+
+/** @throws InconsistentEntitySheetException when a body that follows the
+ * scroll is neither an enemy nor an obstacle. */
+void checkScrollMotionSide(const EntitySheet& sheet,
+                           const engine::DataFileTable& gameplay) {
+  if (sheet.motion.kind == MotionKind::Scroll &&
+      sheet.side != EntityType::Enemy && sheet.side != EntityType::Obstacle) {
+    throw InconsistentEntitySheetException(
+        engine::placeOfKey(gameplay, MOTION_KEY), SCROLL_MOTION_SIDE_RULE);
+  }
+}
+
+/** @throws InconsistentEntitySheetException when a ship names an on_hit. */
+void checkOnHitBelongsToABody(const EntitySheet& sheet,
+                              const engine::DataFileTable& gameplay) {
+  if (sheet.onHit != nullptr && sheet.side == EntityType::Player) {
+    throw InconsistentEntitySheetException(
+        engine::placeOfKey(gameplay, ON_HIT_KEY), ON_HIT_SIDE_RULE);
+  }
+}
+
 /** @throws InconsistentEntitySheetException when the values of @p sheet, each
  * valid, do not hold together. */
 void checkSheetHoldsTogether(const EntitySheet& sheet,
@@ -562,6 +618,10 @@ void checkSheetHoldsTogether(const EntitySheet& sheet,
   checkBossHasHealth(sheet, gameplay);
   checkLookItemMatchesSide(sheet, gameplay);
   checkLookItemFliesLeft(sheet, gameplay);
+  checkDamageBelongsToAMissile(sheet, gameplay);
+  checkObstacleMatchesSide(sheet, gameplay);
+  checkScrollMotionSide(sheet, gameplay);
+  checkOnHitBelongsToABody(sheet, gameplay);
 }
 
 }  // namespace
@@ -590,7 +650,10 @@ EntitySheet gameplayOf(const SheetText& sheet,
       .volleys = volleysFrom(gameplay),
       .boss = bossFrom(gameplay),
       .lookItem = lookItemFrom(gameplay),
-      .visualNames = visualNamesOf(sheetTableOf(sheetRoot, APPEARANCE_KEY))};
+      .visualNames = visualNamesOf(sheetTableOf(sheetRoot, APPEARANCE_KEY)),
+      .damage = pointsIn<int>(gameplay, DAMAGE_KEY, DAMAGE_RANGE),
+      .obstacle = obstacleContactOf(gameplay),
+      .onHit = onHitFrom(gameplay, behaviours)};
   checkSheetHoldsTogether(read, gameplay);
   return read;
 }

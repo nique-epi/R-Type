@@ -12,7 +12,9 @@
 #include "EntityType.hpp"
 #include "GunSheet.hpp"
 #include "HurtZone.hpp"
+#include "IHitHandler.hpp"
 #include "MotionSheet.hpp"
+#include "ObstacleContact.hpp"
 #include "PilotSheet.hpp"
 #include "SheetVisualNames.hpp"
 #include "VolleySheet.hpp"
@@ -78,6 +80,15 @@ struct EntitySheet {
   /** @brief The effects and the looks its `[appearance]` names, which a
    * script of a body of this type may ask the client to draw. */
   SheetVisualNames visualNames;
+  /** @brief The health points it takes from what it hits, a missile only;
+   * nothing for a missile that takes MISSILE_DAMAGE. */
+  std::optional<int> damage{std::nullopt};
+  /** @brief What it does to a ship that touches it, a body of side obstacle
+   * only. */
+  std::optional<ObstacleContact> obstacle{std::nullopt};
+  /** @brief The handler `on_hit` names, which the registry the sheet was read
+   * with owns; nullptr without the key. */
+  IHitHandler* onHit{nullptr};
 };
 
 }  // namespace rtype::game

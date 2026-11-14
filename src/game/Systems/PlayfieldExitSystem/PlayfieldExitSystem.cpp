@@ -10,6 +10,7 @@
 #include "EntityType.hpp"
 #include "EventBus.hpp"
 #include "Intent.hpp"
+#include "IsAMissile.hpp"
 #include "NetworkIdentity.hpp"
 #include "PlayfieldConstants.hpp"
 #include "Position.hpp"
@@ -20,16 +21,17 @@ namespace rtype::game {
 
 namespace {
 
-/** @brief What decides whether a missile is out: its box, and where it
- * flies. */
-struct MissileExit {
+/** @brief What decides whether a missile or an obstacle is out: its box, and
+ * where it flies. */
+struct EdgeExit {
   CollisionBox box{};
   Direction heading{};
 };
 
-/** @returns Where a missile of @p type steered by @p intent flies: its
- * direction once a pilot has steered it somewhere, otherwise the way the
- * missiles of its side fly, right for a player, left for an enemy. */
+/** @returns Where a missile or an obstacle of @p type steered by @p intent
+ * flies: its direction once a pilot has steered it somewhere, otherwise right
+ * for a missile of a player, and left for a missile of an enemy and for an
+ * obstacle, which the scroll carries that way. */
 Direction headingOf(const Intent* intent, EntityType type) {
   const bool steered =
       intent != nullptr && intent->steered &&
@@ -42,9 +44,9 @@ Direction headingOf(const Intent* intent, EntityType type) {
       .y = 0.0F};
 }
 
-/** @returns Whether a missile at @p position, as @p exit says, is wholly
- * beyond an edge it flies towards: more than half its box beyond it. */
-bool hasFlownOut(const Position& position, const MissileExit& exit) {
+/** @returns Whether a body at @p position, as @p exit says, is wholly beyond
+ * an edge it flies towards: more than half its box beyond it. */
+bool hasFlownOut(const Position& position, const EdgeExit& exit) {
   const float halfWidth = exit.box.width * engine::HALF;
   const float halfHeight = exit.box.height * engine::HALF;
   const Direction heading = exit.heading;
@@ -57,18 +59,19 @@ bool hasFlownOut(const Position& position, const MissileExit& exit) {
 /**
  * @returns Whether an entity of @p type at @p position went out of the
  * playfield for good: an enemy or a look item more than ENEMY_EXIT_MARGIN
- * beyond the left edge, a missile wholly beyond an edge it flies towards (see
- * hasFlownOut()), with the box and the heading @p exit gives it. A ship never
- * is.
+ * beyond the left edge, a missile or an obstacle wholly beyond an edge it flies
+ * towards (see hasFlownOut()), with the box and the heading @p exit gives it:
+ * a wide wall stays while a part of it shows. A ship never is.
  */
 bool hasLeftThePlayfield(EntityType type, const Position& position,
-                         const MissileExit& exit) {
+                         const EdgeExit& exit) {
   switch (type) {
     case EntityType::Enemy:
     case EntityType::LookItem:
       return position.x < -ENEMY_EXIT_MARGIN;
     case EntityType::PlayerMissile:
     case EntityType::EnemyMissile:
+    case EntityType::Obstacle:
       return hasFlownOut(position, exit);
     case EntityType::Player:
       return false;
@@ -77,19 +80,19 @@ bool hasLeftThePlayfield(EntityType type, const Position& position,
 }
 
 /**
- * @returns The box and the heading of @p entity when @p type is a missile,
- * the only type whose exit hasLeftThePlayfield() measures with them: an empty
- * box without a CollisionBox. Nothing is looked up for any other type.
+ * @returns The box and the heading of @p entity when @p type is a missile or
+ * an obstacle, the only types whose exit hasLeftThePlayfield() measures with
+ * them: an empty box without a CollisionBox, and the left for an obstacle,
+ * which the scroll carries that way. Nothing is looked up for any other type.
  */
-MissileExit missileExitOf(engine::ComponentRegistry& components,
-                          engine::Entity entity, EntityType type) {
-  if (type != EntityType::PlayerMissile && type != EntityType::EnemyMissile) {
-    return MissileExit{};
+EdgeExit edgeExitOf(engine::ComponentRegistry& components,
+                    engine::Entity entity, EntityType type) {
+  if (!isAMissile(type) && type != EntityType::Obstacle) {
+    return EdgeExit{};
   }
   const CollisionBox* const box = components.get<CollisionBox>(entity);
-  return MissileExit{
-      .box = box == nullptr ? CollisionBox{} : *box,
-      .heading = headingOf(components.get<Intent>(entity), type)};
+  return EdgeExit{.box = box == nullptr ? CollisionBox{} : *box,
+                  .heading = headingOf(components.get<Intent>(entity), type)};
 }
 
 }  // namespace
@@ -103,7 +106,7 @@ void PlayfieldExitSystem::update(engine::ComponentRegistry& components,
       [this, &components](engine::Entity entity, const Position& position,
                           const EntityType& type) {
         if (!hasLeftThePlayfield(type, position,
-                                 missileExitOf(components, entity, type)) ||
+                                 edgeExitOf(components, entity, type)) ||
             components.get<Boss>(entity) != nullptr) {
           return;
         }

@@ -1,1 +1,1 @@
-target_sources(game_tests PRIVATE ShipControlTest.cpp ShipControlFixtures.cpp)
+target_sources(game_tests PRIVATE ShipControlTest.cpp ShipControlFixtures.cpp ObstacleBlockingTest.cpp)

@@ -49,6 +49,13 @@ constexpr rtype::engine::CollisionFilter PLAYER_MISSILE_FILTER{
  * stops the missiles of the players, missiles of an enemy that hit the
  * enemies or the missiles of the players, and a ship that hits the enemies.
  */
+/** @brief The filter of a wall, which no shipped sheet has yet: it lies in the
+ * wall layer and hits the ships. */
+constexpr rtype::engine::CollisionFilter OBSTACLE_FILTER{.layer = WALL_LAYER,
+                                                         .hits = PLAYER_LAYER};
+/** @brief The filter of a missile of a player that hits the walls. */
+constexpr rtype::engine::CollisionFilter WALL_HITTING_MISSILE_FILTER{
+    .layer = PLAYER_MISSILE_LAYER, .hits = WALL_LAYER};
 constexpr rtype::engine::CollisionFilter HARMLESS_ENEMY_FILTER{
     .layer = ENEMY_LAYER, .hits = rtype::engine::NO_COLLISION_LAYER};
 constexpr rtype::engine::CollisionFilter HARMLESS_ENEMY_MISSILE_FILTER{

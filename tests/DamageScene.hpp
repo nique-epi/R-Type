@@ -13,6 +13,8 @@
 #include "EntityDamage.hpp"
 #include "EntityDestruction.hpp"
 #include "Health.hpp"
+#include "IHitHandler.hpp"
+#include "MissileDamage.hpp"
 #include "MissileOwner.hpp"
 
 namespace rtype::game::testing {
@@ -36,6 +38,9 @@ struct DamageScene {
                            std::uint32_t points);
   /** @returns A missile of no player. */
   engine::Entity missile(std::uint32_t networkId);
+  /** @returns A missile of no player that takes @p damage from what it hits,
+   * as a sheet naming `[gameplay.damage]` makes it. */
+  engine::Entity missileDealing(std::uint32_t networkId, MissileDamage damage);
   /** @returns A Bydo with @p health, worth nothing. */
   engine::Entity bydo(std::uint32_t networkId, Health health);
   /** @returns A boss with @p health, its Boss @p boss, in the action
@@ -43,6 +48,11 @@ struct DamageScene {
   engine::Entity boss(Health health, Boss boss, CurrentAction current);
   /** @returns A Shootable missile of an enemy. */
   engine::Entity shootableMissile(std::uint32_t networkId);
+  /** @returns An obstacle without Health, as a wall of steel is. */
+  engine::Entity steelWall(std::uint32_t networkId);
+  /** @brief Makes @p handler told of the hits applied to @p body, as the
+   * sheet of a body that names an on_hit makes it. */
+  void reactingTo(engine::Entity body, IHitHandler& handler);
   /** @brief Publishes that @p missile hit @p target, and delivers it. */
   void hit(engine::Entity missile, engine::Entity target);
 

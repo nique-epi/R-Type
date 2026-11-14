@@ -1,6 +1,9 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
+#include <vector>
+#include "Bounds.hpp"
 #include "ComponentRegistry.hpp"
 #include "EntityReplicator.hpp"
 #include "IOwnMissileListener.hpp"
@@ -25,7 +28,9 @@ class OwnPrediction {
   OwnPrediction(std::uint8_t playerNumber, OwnMissilesParts parts);
 
   /** @brief Sends and predicts the commands of @p elapsed (see
-   * OwnShipPredictor::advance()), and flies the missiles along them. The
+   * OwnShipPredictor::advance()), the ship stopped against the blocking walls
+   * of the registry of its parts, moved ahead by the scroll, and flies the
+   * missiles along them. The
    * commands fire only while a state lists the ship and the game is not over:
    * without a ship, the server fires nothing, and the missiles already fired
    * fly on as the server's do. */
@@ -37,16 +42,21 @@ class OwnPrediction {
    * gives up the shots the server left unanswered. */
   void apply(const network::WorldState& state);
 
+  /** @brief Takes the speed the level scrolls at now, from its LevelStatus:
+   * the blocking walls drawn are moved ahead by it (scrollLeadOf()) before the
+   * ship is predicted against them. */
+  void followScroll(float scrollSpeed);
+
   /** @brief The game ended: no command fires a missile any more, as the
    * server fires nothing once a game is over; the missiles already fired fly
    * on. */
   void ceaseFire();
 
   /** @brief Puts the ship of the player where it is predicted (see
-   * placePredictedShip()), then plays the impact of every missile that
-   * touches an enemy drawn. Not during a forEach of @p components. */
-  void place(const EntityReplicator& replicator,
-             engine::ComponentRegistry& components);
+   * placePredictedShip()) in the registry of its parts, then plays the impact
+   * of every missile that touches an enemy drawn. Not during a forEach of that
+   * registry. */
+  void place(const EntityReplicator& replicator);
 
   /** @returns Who draws the missiles of the player, for the replicator. */
   [[nodiscard]] IOwnMissileListener& missiles();
@@ -56,6 +66,11 @@ class OwnPrediction {
   OwnShipPredictor ship_;
   OwnMissiles missiles_;
   bool firing_{true};
+  std::reference_wrapper<engine::ComponentRegistry> components_;
+  float scrollSpeed_{0.0F};
+  /** @brief The blocking walls of the update in progress, which the ship
+   * prediction reads until the next update; kept so their room is reused. */
+  std::vector<engine::Bounds> obstacles_;
 };
 
 }  // namespace rtype::client

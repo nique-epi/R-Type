@@ -29,6 +29,10 @@ InvalidWaveCurveException::InvalidWaveCurveException()
 DuplicateBehaviourException::DuplicateBehaviourException(std::string_view name)
     : GameException("A behaviour is already named " + std::string(name)) {}
 
+DuplicateHitHandlerException::DuplicateHitHandlerException(
+    std::string_view name)
+    : GameException("A hit handler is already named " + std::string(name)) {}
+
 MissingBehaviourSettingException::MissingBehaviourSettingException(
     std::size_t index)
     : GameException("The behaviour reads setting " + std::to_string(index) +

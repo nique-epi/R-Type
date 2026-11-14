@@ -70,6 +70,7 @@ game::Layer layerOf(game::EntityType side) {
       return game::Layer::EnemyMissiles;
     case game::EntityType::Enemy:
     case game::EntityType::LookItem:
+    case game::EntityType::Obstacle:
       break;
   }
   return game::Layer::Enemies;

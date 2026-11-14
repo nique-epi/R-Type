@@ -7,10 +7,10 @@
 namespace rtype::client::testing {
 
 /**
- * @brief The numbers the server gives the seven sheets the double knows, in
+ * @brief The numbers the server gives the eight sheets the double knows, in
  * the order of their names, from 1: drifter, enemy_missile, player_missile,
- * ship, weaver, a look item and an enemy of two boxes; then the first number
- * past them, which names no type.
+ * ship, weaver, a look item, an enemy of two boxes and a blocking wall; then
+ * the first number past them, which names no type.
  */
 constexpr std::uint8_t DRIFTER_TYPE_NUMBER = 1;
 constexpr std::uint8_t ENEMY_MISSILE_TYPE_NUMBER = 2;
@@ -19,7 +19,8 @@ constexpr std::uint8_t SHIP_TYPE_NUMBER = 4;
 constexpr std::uint8_t WEAVER_TYPE_NUMBER = 5;
 constexpr std::uint8_t LOOK_ITEM_TYPE_NUMBER = 6;
 constexpr std::uint8_t TWO_BOX_ENEMY_TYPE_NUMBER = 7;
-constexpr std::uint8_t NUMBER_OF_NO_TYPE = 8;
+constexpr std::uint8_t BLOCKING_WALL_TYPE_NUMBER = 8;
+constexpr std::uint8_t NUMBER_OF_NO_TYPE = 9;
 
 /**
  * @brief The boxes of the shipped sheets, by side: a Bydo of 96 by 96, a

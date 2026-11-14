@@ -980,6 +980,13 @@ The technique is the one described by Gabriel Gambetta in *Client-Side Predictio
 
 The movement of the other ships is not predicted: they are interpolated (see [Other entities: interpolation](#other-entities-interpolation-interpolationclock-positionhistory)).
 
+### Own ship prediction against the walls
+
+The prediction stops the ship against the blocking walls as the server does, so the player's ship halts at a wall without being pulled back at each state. The replicator gives each entity of a type whose sheet is an obstacle its `game::Obstacle` (`NumberedEntityType::obstacle`, read by `obstacleContactOf()`), and before each `OwnPrediction::advance()` the walls are collected with `game::collectBlockingBoxes()`, then handed to `ShipPrediction::seeObstacles()`, which runs `blockedByObstacles()` after `shipAfter` for every command, the replayed ones included.
+
+- The walls are drawn at the tick the interpolation shows, about 6 ticks behind the server, and the server plays a command later still. `collectBlockingObstacles()` (`src/client/Prediction/OwnShip/BlockingObstacles.hpp`) moves each one left by `scrollLeadOf()`: the scroll speed of the last `LevelStatus` times the ticks between the tick shown and the tick the server is at (`PlayerCommand::serverTick`, from `IServerTicks`), 0 while that clock is unknown. At 120 units per second, 6 ticks are 12 units.
+- What it leaves out is the trip of the input to the server: 3 units for a round trip of 50 ms at 120 units per second, below `RECONCILIATION_TOLERANCE` (16). A wall that moves otherwise than with the scroll is not led.
+
 ## Own missiles: `OwnPrediction`, `OwnMissiles`, `PredictedGun`
 
 The client fires the missiles of its player itself, from its predicted ship, so a missile leaves the cannon at the press of the key, whatever the ship does: the predicted ship is drawn ahead of the server, and a missile the server made would show a round trip late, behind it. This is the predicted spawn of Unity Netcode for Entities and the fake projectile of Unreal Tournament; the server tests the missile where the player saw the enemies (see [Server](/R-Type/server/#lag-compensation-of-the-shots)).

@@ -1,7 +1,10 @@
 #include "MovementSystem.hpp"
+#include <span>
+#include "Bounds.hpp"
 #include "ComponentRegistry.hpp"
 #include "Entity.hpp"
 #include "Intent.hpp"
+#include "ObstacleBlocking.hpp"
 #include "Position.hpp"
 #include "ShipControl.hpp"
 #include "ShipMotion.hpp"
@@ -15,20 +18,23 @@ namespace {
 
 /**
  * @brief Moves every entity with a Position, a ShipMotion and an Intent over
- * @p elapsed by the directions its Intent holds (see shipAfter()).
+ * @p elapsed by the directions its Intent holds (see shipAfter()), stopped
+ * against @p blocking (see blockedByObstacles()).
  */
 void moveByIntent(engine::ComponentRegistry& components,
-                  engine::Duration elapsed) {
+                  engine::Duration elapsed,
+                  std::span<const engine::Bounds> blocking) {
   components.forEach<Intent, ShipMotion>(
-      [&components, elapsed](engine::Entity body, const Intent& intent,
-                             ShipMotion& motion) {
+      [&components, elapsed, blocking](
+          engine::Entity body, const Intent& intent, ShipMotion& motion) {
         auto* const position = components.get<Position>(body);
         if (position == nullptr) {
           return;
         }
-        const MovingShip moved =
-            shipAfter(MovingShip{.position = *position, .motion = motion},
-                      heldDirectionsOf(intent.direction), elapsed);
+        const MovingShip from{.position = *position, .motion = motion};
+        const MovingShip moved = blockedByObstacles(
+            from, shipAfter(from, heldDirectionsOf(intent.direction), elapsed),
+            blocking);
         *position = moved.position;
         motion = moved.motion;
       });
@@ -58,7 +64,8 @@ void moveSteadily(engine::ComponentRegistry& components,
 
 void MovementSystem::update(engine::ComponentRegistry& components,
                             engine::Duration elapsed) {
-  moveByIntent(components, elapsed);
+  collectBlockingBoxes(components, blockingBoxes_);
+  moveByIntent(components, elapsed, blockingBoxes_);
   moveSteadily(components, elapsed);
 }
 

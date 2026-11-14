@@ -40,6 +40,12 @@ constexpr CollisionBox WIDER_MISSILE_BOX{.width = 40.0F, .height = 32.0F};
 /** @brief The network id of every entity the exit tests place. */
 constexpr std::uint32_t EXITING_NETWORK_ID = 7;
 
+/** @brief A wall 400 units wide: centered 200 units past the left edge it
+ * still shows its last unit, 201 units past it it shows nothing. */
+constexpr CollisionBox WIDE_WALL_BOX{.width = 400.0F, .height = 256.0F};
+constexpr float WALL_SHOWING_ITS_LAST_UNIT_X = -200.0F;
+constexpr float WALL_WHOLLY_PAST_THE_LEFT_EDGE_X = -201.0F;
+
 /** @brief Places one unit past half the 32 units of ENEMY_MISSILE_EXIT_BOX
  * beyond the right, the top and the bottom edges of the 1920 by 1080
  * playfield, and a column inside it. */

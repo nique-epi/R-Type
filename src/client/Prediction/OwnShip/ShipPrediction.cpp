@@ -2,6 +2,9 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <span>
+#include "Bounds.hpp"
+#include "ObstacleBlocking.hpp"
 #include "Position.hpp"
 #include "PredictionConstants.hpp"
 #include "ShipControl.hpp"
@@ -17,10 +20,15 @@ float distanceBetween(game::Position first, game::Position second) {
 }
 
 /** @returns @p ship one tick later, after the input @p change: the presses it
- * records first, then the tick holding the directions it holds now. */
-game::MovingShip oneTickLater(game::MovingShip ship, game::HeldChange change) {
+ * records first, then the tick holding the directions it holds now, stopped
+ * against @p obstacles and kept inside the play area, as the server moves
+ * it. */
+game::MovingShip oneTickLater(game::MovingShip ship, game::HeldChange change,
+                              std::span<const engine::Bounds> obstacles) {
   ship.motion = game::motionAfterInput(ship.motion, change);
-  return game::shipAfter(ship, change.now, engine::SIMULATION_TICK_DURATION);
+  return game::blockedByObstacles(
+      ship, game::shipAfter(ship, change.now, engine::SIMULATION_TICK_DURATION),
+      obstacles);
 }
 
 }  // namespace
@@ -47,10 +55,11 @@ void ShipPrediction::predict(game::ShipDirections held,
         PendingCommand{.inputNumber = inputNumber, .held = held, .after = {}});
     return;
   }
-  current_ =
-      oneTickLater(current_, game::HeldChange{.before = lastHeld_,
-                                              .now = held,
-                                              .inputNumber = inputNumber});
+  current_ = oneTickLater(
+      current_,
+      game::HeldChange{
+          .before = lastHeld_, .now = held, .inputNumber = inputNumber},
+      obstacles_);
   lastHeld_ = held;
   pending_.push_back(PendingCommand{
       .inputNumber = inputNumber, .held = held, .after = current_});
@@ -71,6 +80,10 @@ void ShipPrediction::reconcile(game::Position server,
   }
   replayAfterFront(
       game::MovingShip{.position = server, .motion = confirmed.motion});
+}
+
+void ShipPrediction::seeObstacles(std::span<const engine::Bounds> obstacles) {
+  obstacles_ = obstacles;
 }
 
 bool ShipPrediction::isStarted() const { return started_; }
@@ -94,10 +107,12 @@ void ShipPrediction::replayFrom(std::size_t first, game::MovingShip from) {
       first > 0 ? pending_[first - 1].held : pending_[first].held;
   for (std::size_t index = first; index < pending_.size(); ++index) {
     PendingCommand& command = pending_[index];
-    replayed = oneTickLater(
-        replayed, game::HeldChange{.before = before,
-                                   .now = command.held,
-                                   .inputNumber = command.inputNumber});
+    replayed =
+        oneTickLater(replayed,
+                     game::HeldChange{.before = before,
+                                      .now = command.held,
+                                      .inputNumber = command.inputNumber},
+                     obstacles_);
     command.after = replayed;
     before = command.held;
   }

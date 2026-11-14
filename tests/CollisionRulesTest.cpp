@@ -713,3 +713,69 @@ TEST(CollisionRules, AContactTheRulesLeaveAsksNoTarget) {
 
   EXPECT_TRUE(state->askedHits().empty());
 }
+
+/**
+ * Given a ship over an obstacle
+ * When a Collision names them
+ * Then the ship gets a ShipContact with the obstacle
+ */
+TEST(CollisionRules, AShipTouchingAnObstacleIsAContact) {
+  CollisionScene scene;
+  const Entity ship = scene.spawn(EntityType::Player, 0.0F, 0.0F);
+  const Entity wall = scene.spawn(EntityType::Obstacle, 0.0F, 0.0F);
+  const CollisionRules rules(scene.events, scene.components);
+  Recorded recorded;
+  record(scene, recorded);
+
+  scene.events.publish(Collision{.first = ship, .second = wall});
+  scene.events.dispatch();
+
+  ASSERT_EQ(recorded.shipContacts.size(), 1U);
+  EXPECT_EQ(recorded.shipContacts[0].player, ship);
+  EXPECT_EQ(recorded.shipContacts[0].enemy, wall);
+}
+
+/**
+ * Given a ship whose player sees the world late, over an obstacle
+ * When a Collision names them
+ * Then the ship still gets its ShipContact: no lag test records an obstacle,
+ * so the contact is judged in the present
+ */
+TEST(CollisionRules, AShipSeeingLateTouchingAnObstacleIsAContact) {
+  CollisionScene scene;
+  const Entity ship = scene.spawn(EntityType::Player, 0.0F, 0.0F);
+  scene.components.add(ship, ViewDelay{.ticks = 0});
+  const Entity wall = scene.spawn(EntityType::Obstacle, 0.0F, 0.0F);
+  const CollisionRules rules(scene.events, scene.components);
+  Recorded recorded;
+  record(scene, recorded);
+
+  scene.events.publish(Collision{.first = wall, .second = ship});
+  scene.events.dispatch();
+
+  ASSERT_EQ(recorded.shipContacts.size(), 1U);
+  EXPECT_EQ(recorded.shipContacts[0].enemy, wall);
+}
+
+/**
+ * Given a missile of a player whose player sees the world late, over an
+ * obstacle
+ * When a Collision names them
+ * Then it is a MissileHit on the obstacle, judged in the present
+ */
+TEST(CollisionRules, AMissileSeeingLateHitsAnObstacleInThePresent) {
+  CollisionScene scene;
+  const Entity missile =
+      scene.spawnWith(EntityType::PlayerMissile, WALL_HITTING_MISSILE_FILTER);
+  scene.components.add(missile, ViewDelay{.ticks = 0});
+  const Entity wall = scene.spawn(EntityType::Obstacle, 0.0F, 0.0F);
+  const CollisionRules rules(scene.events, scene.components);
+  Recorded recorded;
+  record(scene, recorded);
+
+  scene.events.publish(Collision{.first = missile, .second = wall});
+  scene.events.dispatch();
+
+  ASSERT_EQ(recorded.missileHits.size(), 1U);
+  EXPECT_EQ(recorded.missileHits[0].target, wall);
+}

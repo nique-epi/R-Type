@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <array>
 #include <cstdint>
 #include "PredictionFixtures.hpp"
 #include "PredictionTestConstants.hpp"
@@ -7,8 +8,10 @@
 #include "TimeConstants.hpp"
 
 using rtype::client::ShipPrediction;
+using rtype::client::testing::AGAINST_THE_WALL_ON_THE_RIGHT_X;
 using rtype::client::testing::BEYOND_THE_TOLERANCE;
 using rtype::client::testing::COMMAND_AFTER_THE_DOUBLE_TAP_WINDOW;
+using rtype::client::testing::COMMANDS_OF_ONE_SECOND;
 using rtype::client::testing::FIRST_COMMAND;
 using rtype::client::testing::HOLDING_DOWN;
 using rtype::client::testing::HOLDING_NOTHING;
@@ -21,6 +24,7 @@ using rtype::client::testing::shipAfterCommands;
 using rtype::client::testing::START;
 using rtype::client::testing::THIRD_COMMAND;
 using rtype::client::testing::TWO_COMMANDS;
+using rtype::client::testing::WALL_ON_THE_RIGHT;
 
 /**
  * Given a prediction started at rest
@@ -220,4 +224,46 @@ TEST(ShipPrediction, ARestartPlaysTheCommandsTheServerDidNotApplyYet) {
       HOLDING_RIGHT, static_cast<std::uint32_t>(TWO_COMMANDS));
   EXPECT_FLOAT_EQ(prediction.position().x, server.position.x);
   EXPECT_FLOAT_EQ(prediction.position().y, server.position.y);
+}
+
+/**
+ * Given a prediction started at x 400 that sees a blocking wall whose left
+ * side is at x 568
+ * When it predicts a second of commands holding right
+ * Then the ship rests against the wall, its center at x 504, as the server
+ * stops it
+ */
+TEST(ShipPrediction, APredictedShipStopsAgainstAWallItSees) {
+  ShipPrediction prediction;
+  const std::array walls{WALL_ON_THE_RIGHT};
+  prediction.seeObstacles(walls);
+  prediction.restart(START, OLDER_THAN_ANY_KEPT_COMMAND);
+
+  for (std::uint32_t command = FIRST_COMMAND; command <= COMMANDS_OF_ONE_SECOND;
+       ++command) {
+    prediction.predict(HOLDING_RIGHT, command);
+  }
+
+  EXPECT_FLOAT_EQ(prediction.position().x, AGAINST_THE_WALL_ON_THE_RIGHT_X);
+}
+
+/**
+ * Given a second of commands holding right, kept before the ship appears, and
+ * a blocking wall whose left side is at x 568
+ * When the prediction starts at x 400 and plays them again
+ * Then the ship rests against the wall: the commands played again are stopped
+ * too
+ */
+TEST(ShipPrediction, CommandsPlayedAgainStopAgainstTheWall) {
+  ShipPrediction prediction;
+  const std::array walls{WALL_ON_THE_RIGHT};
+  prediction.seeObstacles(walls);
+  for (std::uint32_t command = FIRST_COMMAND; command <= COMMANDS_OF_ONE_SECOND;
+       ++command) {
+    prediction.predict(HOLDING_RIGHT, command);
+  }
+
+  prediction.restart(START, OLDER_THAN_ANY_KEPT_COMMAND);
+
+  EXPECT_FLOAT_EQ(prediction.position().x, AGAINST_THE_WALL_ON_THE_RIGHT_X);
 }

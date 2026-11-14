@@ -7,6 +7,7 @@
 #include "EnemyPhase.hpp"
 #include "EntityType.hpp"
 #include "MotionKind.hpp"
+#include "ObstacleContact.hpp"
 #include "TimeConstants.hpp"
 #include "WholeNumberRange.hpp"
 
@@ -65,12 +66,31 @@ constexpr std::string_view BURST_KEY = "burst";
 constexpr std::string_view VOLLEY_KEY = "volley";
 constexpr std::string_view BOSS_KEY = "boss";
 constexpr std::string_view LOOK_ITEM_KEY = "look_item";
+/** @brief `[gameplay.damage]`: the health points a missile takes from what it
+ * hits, in POINTS_KEY; MISSILE_DAMAGE without the table. */
+constexpr std::string_view DAMAGE_KEY = "damage";
+/** @brief `[gameplay.obstacle]`, required of a sheet of side obstacle and of
+ * it only: what it does to a ship that touches it, in CONTACT_KEY. */
+constexpr std::string_view OBSTACLE_KEY = "obstacle";
+/** @brief The name of the hit handler of `behaviours.on_hit` a body is told
+ * of each hit of; any side but player. */
+constexpr std::string_view ON_HIT_KEY = "on_hit";
 constexpr std::array GAMEPLAY_KEYS{
-    SIDE_KEY,     PILOT_KEY,  LAYER_KEY,     HITS_KEY,
-    HITBOX_KEY,   MOTION_KEY, BEHAVIOUR_KEY, HEALTH_KEY,
-    SCORE_KEY,    GUN_KEY,    HURT_ZONE_KEY, SURVIVES_CONTACT_KEY,
-    FRAGILE_KEY,  BURST_KEY,  VOLLEY_KEY,    BOSS_KEY,
-    LOOK_ITEM_KEY};
+    SIDE_KEY,      PILOT_KEY,  LAYER_KEY,     HITS_KEY,
+    HITBOX_KEY,    MOTION_KEY, BEHAVIOUR_KEY, HEALTH_KEY,
+    SCORE_KEY,     GUN_KEY,    HURT_ZONE_KEY, SURVIVES_CONTACT_KEY,
+    FRAGILE_KEY,   BURST_KEY,  VOLLEY_KEY,    BOSS_KEY,
+    LOOK_ITEM_KEY, DAMAGE_KEY, OBSTACLE_KEY,  ON_HIT_KEY};
+
+/** @brief The key of `[gameplay.obstacle]`, and the contacts it may name, with
+ * the ObstacleContact of each, in the same order. */
+constexpr std::string_view CONTACT_KEY = "contact";
+constexpr std::array OBSTACLE_KEYS{CONTACT_KEY};
+constexpr std::array CONTACT_NAMES{std::string_view{"blocking"},
+                                   std::string_view{"fatal"}};
+constexpr std::array CONTACTS{ObstacleContact::Blocking,
+                              ObstacleContact::Fatal};
+static_assert(CONTACT_NAMES.size() == CONTACTS.size(), "one name per contact");
 
 /** @brief The keys of one box of a hitbox, in logical units: its size, and
  * where its center is from the Position of the body, 0 without them. */
@@ -90,11 +110,11 @@ constexpr std::string_view BOX_KEY = "box";
 constexpr std::array HITBOX_TABLE_KEYS{WIDTH_KEY, HEIGHT_KEY, OFFSET_X_KEY,
                                        OFFSET_Y_KEY, BOX_KEY};
 
-/** @brief The keys of `[gameplay.motion]`: a ship has a kind only, a steady
- * body its top speed too. */
+/** @brief The keys of `[gameplay.motion]`: a ship and a body that follows the
+ * scroll have a kind only, a steady body its top speed too. */
 constexpr std::string_view KIND_KEY = "kind";
 constexpr std::string_view TOP_SPEED_KEY = "top_speed";
-constexpr std::array SHIP_MOTION_KEYS{KIND_KEY};
+constexpr std::array KIND_ONLY_MOTION_KEYS{KIND_KEY};
 constexpr std::array STEADY_MOTION_KEYS{KIND_KEY, TOP_SPEED_KEY};
 
 /** @brief The key of `[gameplay.health]` and of `[gameplay.score]`. */
@@ -224,18 +244,20 @@ constexpr std::string_view PLAYER_PILOT_NAME = "player";
 /** @brief The sides a sheet may name, and the EntityType of each, in the same
  * order. */
 constexpr std::array SIDE_NAMES{
-    std::string_view{"player"}, std::string_view{"enemy"},
+    std::string_view{"player"},         std::string_view{"enemy"},
     std::string_view{"player_missile"}, std::string_view{"enemy_missile"},
-    std::string_view{"look_item"}};
-constexpr std::array SIDES{EntityType::Player, EntityType::Enemy,
+    std::string_view{"look_item"},      std::string_view{"obstacle"}};
+constexpr std::array SIDES{EntityType::Player,        EntityType::Enemy,
                            EntityType::PlayerMissile, EntityType::EnemyMissile,
-                           EntityType::LookItem};
+                           EntityType::LookItem,      EntityType::Obstacle};
 static_assert(SIDE_NAMES.size() == SIDES.size(), "one name per side");
 
 /** @brief The motions a sheet may name, and the MotionKind of each. */
 constexpr std::array MOTION_KIND_NAMES{std::string_view{"ship"},
-                                       std::string_view{"steady"}};
-constexpr std::array MOTION_KINDS{MotionKind::Ship, MotionKind::Steady};
+                                       std::string_view{"steady"},
+                                       std::string_view{"scroll"}};
+constexpr std::array MOTION_KINDS{MotionKind::Ship, MotionKind::Steady,
+                                  MotionKind::Scroll};
 static_assert(MOTION_KIND_NAMES.size() == MOTION_KINDS.size(),
               "one name per motion");
 
@@ -246,6 +268,7 @@ constexpr engine::WholeNumberRange TOP_SPEED_RANGE{.lowest = 1,
                                                    .highest = 4096};
 constexpr engine::WholeNumberRange HEALTH_RANGE{.lowest = 1, .highest = 1000};
 constexpr engine::WholeNumberRange SCORE_RANGE{.lowest = 0, .highest = 1000000};
+constexpr engine::WholeNumberRange DAMAGE_RANGE{.lowest = 1, .highest = 1000};
 constexpr engine::WholeNumberRange GUN_INTERVAL_RANGE{.lowest = 1,
                                                       .highest = 60000};
 constexpr engine::WholeNumberRange FIRST_SHOT_RANGE{.lowest = 0,
@@ -331,6 +354,14 @@ constexpr std::string_view LOOK_ITEM_SIDE_RULE =
     "look_item is given by a sheet of side look_item, and only by it";
 constexpr std::string_view LOOK_ITEM_HEADING_RULE =
     "a look item flies to the left, where the playfield removes it";
+constexpr std::string_view DAMAGE_SIDE_RULE = "only a missile deals damage";
+constexpr std::string_view ON_HIT_SIDE_RULE =
+    "a ship answers a hit with its lives, never an on_hit";
+constexpr std::string_view SCROLL_MOTION_SIDE_RULE =
+    "only an enemy or an obstacle follows the scroll";
+constexpr std::string_view OBSTACLE_SIDE_RULE =
+    "a sheet of side obstacle says what it does to a ship in "
+    "[gameplay.obstacle], and only such a sheet";
 constexpr std::string_view PROJECTILE_SIDE_RULE =
     "a player fires missiles of a player, an enemy missiles of an enemy";
 

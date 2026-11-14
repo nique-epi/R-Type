@@ -40,7 +40,7 @@ class CollisionScene {
 };
 
 /** @returns The collision filter the shipped sheets give a body of side
- * @p type. */
+ * @p type; OBSTACLE_FILTER for an obstacle, a side no shipped sheet has. */
 rtype::engine::CollisionFilter shippedFilterOf(rtype::game::EntityType type);
 
 /**

@@ -18,6 +18,7 @@
 #include "Fragile.hpp"
 #include "Gun.hpp"
 #include "Health.hpp"
+#include "HitReaction.hpp"
 #include "HitboxParts.hpp"
 #include "HurtZone.hpp"
 #include "Intent.hpp"
@@ -25,15 +26,18 @@
 #include "Lives.hpp"
 #include "LivesConstants.hpp"
 #include "LookItem.hpp"
+#include "MissileDamage.hpp"
 #include "MissileOwner.hpp"
 #include "MotionKind.hpp"
 #include "MotionSheet.hpp"
 #include "NetworkEntityTable.hpp"
 #include "NetworkIdentity.hpp"
+#include "Obstacle.hpp"
 #include "Pilot.hpp"
 #include "PilotSheet.hpp"
 #include "Position.hpp"
 #include "ScoreValue.hpp"
+#include "ScrollMotion.hpp"
 #include "ShardBurst.hpp"
 #include "ShipMotion.hpp"
 #include "ShipPilot.hpp"
@@ -83,6 +87,10 @@ void addMotion(engine::ComponentRegistry& components, const BodyStart& start) {
     components.add(start.body, ShipMotion{});
     return;
   }
+  if (motion.kind == MotionKind::Scroll) {
+    components.add(start.body, ScrollMotion{});
+    return;
+  }
   components.add(start.body, SteadyMotion{.topSpeed = motion.topSpeed});
 }
 
@@ -121,6 +129,9 @@ void addCombat(engine::ComponentRegistry& components, const BodyStart& start) {
                               .shardNumber = sheet.burst->shardNumber,
                               .count = sheet.burst->count});
   }
+  if (sheet.damage.has_value()) {
+    components.add(start.body, MissileDamage{.points = *sheet.damage});
+  }
 }
 
 /** @returns Whether @p sheet is a missile of an enemy that
@@ -134,7 +145,9 @@ bool isShootable(const EntitySheet& sheet) {
 /** @brief Gives @p start the parts that decide what its contact with a ship
  * or a missile does: the CurrentAction of an enemy, then the HurtZone and the
  * SurvivesContact and the Fragile its sheet declares, the Shootable of a
- * missile SHOOTABLE_MISSILE_SHEETS names, and the LookItem of a look item. */
+ * missile SHOOTABLE_MISSILE_SHEETS names, the LookItem of a look item, the
+ * Obstacle of an obstacle with a SurvivesContact: a wall stands when a ship
+ * crashes into it, and the HitReaction of a sheet that names an on_hit. */
 void addContactParts(engine::ComponentRegistry& components,
                      const BodyStart& start) {
   const EntitySheet& sheet = start.sheet.get();
@@ -155,6 +168,13 @@ void addContactParts(engine::ComponentRegistry& components,
   }
   if (sheet.lookItem.has_value()) {
     components.add(start.body, LookItem{.number = *sheet.lookItem});
+  }
+  if (sheet.obstacle.has_value()) {
+    components.add(start.body, Obstacle{.contact = *sheet.obstacle});
+    components.add(start.body, SurvivesContact{});
+  }
+  if (sheet.onHit != nullptr) {
+    components.add(start.body, HitReaction{.handler = sheet.onHit});
   }
 }
 

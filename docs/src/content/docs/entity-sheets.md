@@ -54,17 +54,18 @@ projectile = "enemy_missile"
 
 | Key | Unit | Accepted | What it gives the entity |
 |---|---|---|---|
-| `side` | | `player`, `enemy`, `player_missile`, `enemy_missile`, `look_item` | its `EntityType`: what a contact with it means (see [Collisions](/R-Type/server/#rules-collisionrules)), and the layer the client draws it in (a `look_item` is drawn in the layer of the Bydos) |
+| `side` | | `player`, `enemy`, `player_missile`, `enemy_missile`, `look_item`, `obstacle` | its `EntityType`: what a contact with it means (see [Collisions](/R-Type/server/#rules-collisionrules)), and the layer the client draws it in (a `look_item` and an `obstacle` are drawn in the layer of the Bydos) |
 | `layer` | | a name of 1 to 24 lowercase letters, digits and `_`, which the sheets choose | the collision layer it lies in (see [Collision layers](#collision-layers-layer-and-hits)) |
 | `hits` | | an array of names of layers, each one a layer some sheet lies in; nothing when left out | the layers it hits: a contact counts when one of the two bodies hits the layer of the other |
 | `pilot` | | `player`, or the name of a behaviour: `straight`, `weave`, `scatter`, `reaper`, `drillback`, `bydomancer`, `bydo_tyrant`, or one a server script of a resource registers | what writes its `Intent`: the input of its player, or that behaviour (see [Behaviours](#behaviours-and-their-settings) and [Scripting in Luau](/R-Type/scripting/)) |
 | `hitbox.width`, `hitbox.height` | logical units | 1 to 1024 | its `CollisionBox`, centered on its position |
 | `hitbox.offset_x`, `hitbox.offset_y` | logical units | -1024 to 1024; 0 when left out | where the center of its `CollisionBox` lies from its position, y growing downwards: the box of the Bydo Tyrant covers its body, 12 units right of and 4 below its center |
 | `hitbox.box` | | an array of tables, `[[gameplay.hitbox.box]]`, at least one, in place of the four keys above; enemies only | its `HitboxParts`: the rectangles it collides with, each with the four keys above (see [A hitbox of several boxes](#a-hitbox-of-several-boxes-hitboxbox)) |
-| `motion.kind` | | `ship`, `steady` | how a direction moves it: the drift, roll and dash of a ship (`ShipMotion`), or its top speed times the direction (`SteadyMotion`) |
+| `motion.kind` | | `ship`, `steady`, `scroll` | how a direction moves it: the drift, roll and dash of a ship (`ShipMotion`), its top speed times the direction (`SteadyMotion`), or the scroll of its level, its direction left aside (`ScrollMotion`, an enemy or an obstacle only; see [Walls](#walls-side-obstacle)) |
 | `motion.top_speed` | logical units per second | 1 to 4096; for `steady` only | its speed on each axis at a full direction |
 | `[gameplay.behaviour]` | | the settings its behaviour declares | the values its behaviour reads |
-| `health.points` | points | 1 to 1000 | its `Health`: each missile that hits it takes `MISSILE_DAMAGE` (1) |
+| `health.points` | points | 1 to 1000 | its `Health`: each missile that hits it takes the `damage` of its sheet, `MISSILE_DAMAGE` (1) for a missile whose sheet names none |
+| `damage.points` | points | 1 to 1000; missiles only | its `MissileDamage`: the health points it takes from what it hits |
 | `score.points` | points | 0 to 1000000 | its `ScoreValue`: what the player whose missile destroys it earns |
 | `gun.interval_ms` | milliseconds | 1 to 60000 | the time between two shots of its `Gun` |
 | `gun.first_shot_ms` | milliseconds | 0 to 60000 | the time before its first shot: 0 for a gun ready at once |
@@ -100,9 +101,11 @@ projectile = "enemy_missile"
 | `boss.rage_below_percent` | percent | 1 to 99 | its `Boss`: it enrages once its health falls below its full health times this share, rounded down |
 | `boss.rage_attack` | | 0 to 255 | the attack it starts, in the phase `enraged`, when it enrages |
 | `boss.arrival_attack` | | 0 to 255 | the attack of its arrival: while it is in any phase of it, a hit takes nothing from it |
+| `obstacle.contact` | | `blocking`, `fatal`; required of side `obstacle`, and of it only | its `Obstacle`: a ship that touches it is stopped against it, or loses a life (see [Walls](#walls-side-obstacle)) |
+| `on_hit` | | the name of a hit handler a server script declares with `behaviours.on_hit`; any side but `player` | its `HitReaction`: the function told of each hit of a missile once it applied (see [Reacting to a hit once it applied](/R-Type/scripting/#reacting-to-a-hit-once-it-applied)) |
 | `look_item` | | the name of an accessory of the catalog, one of the first 25 names of `SHIP_LOOK_ITEM_NAMES` (`top_hat` to `long_beard`); a hull (`war_shark`, `vostok`, `bydo_husk`, `golden_ace`, `golden_bydo`) is refused, since a hull never floats in a game; for side `look_item` only | its `LookItem`: the item the pilot whose ship touches the body wins for the locker of the hangar (see [Ship looks](/R-Type/server/#look-items-lookitemkeeper)) |
 
-- `side`, `layer`, `pilot`, `hitbox` and `motion` are required; the key `hits` and the tables `behaviour`, `health`, `score`, `gun`, `hurt_zone`, `survives_contact`, `fragile`, `burst`, `volley` and `boss` may be left out. The three keys of `boss` are required in it. A body without `health` takes no damage: a missile that hits it still disappears, and a ship pays a hit with a life instead (see [Lives](/R-Type/server/#lives-lifekeeper)). A body without `score` earns nothing, without `gun` fires nothing.
+- `side`, `layer`, `pilot`, `hitbox` and `motion` are required, and `obstacle` for a sheet of side `obstacle`; the keys `hits` and `on_hit` and the tables `behaviour`, `health`, `score`, `damage`, `gun`, `hurt_zone`, `survives_contact`, `fragile`, `burst`, `volley` and `boss` may be left out. The three keys of `boss` are required in it. A body without `health` takes no damage: a missile that hits it still disappears, and a ship pays a hit with a life instead (see [Lives](/R-Type/server/#lives-lifekeeper)). A body without `score` earns nothing, without `gun` fires nothing.
 - Any other key is refused, so a misspelt key stops the program instead of being ignored. Every number is a TOML integer: `240`, never `240.0` or `"240"`.
 - A duration of the gun becomes the nearest whole number of ticks of a sixtieth of a second: 333 ms are 20 ticks, 1500 ms are 90. The interval is at least 1 tick (`MINIMUM_GUN_INTERVAL_TICKS`), and so is the time before a burst (`MINIMUM_BURST_TICKS`).
 - The keys, the choices and the ranges live in `src/game/EntityTypes/EntitySheetConstants.hpp`.
@@ -122,7 +125,8 @@ A sheet whose keys are each valid is refused when it does not hold together:
 - A `boss` has a `health`: its bar shows it and its rage reads it.
 - A volley is made of a sheet of the folder of side `enemy` or `enemy_missile`, and its gap leaves at least one body: `gap_count` is below `count`.
 - A beam that sweeps, `to_deg` other than `from_deg`, names `until_ms`, the end of its sweep; a beam without `until_ms` keeps `from_deg`.
-- Only a missile has a `burst`, and it bursts into missiles of its own side, of a sheet of the folder.
+- Only a missile has a `burst`, and it bursts into missiles of its own side, of a sheet of the folder. Only a missile names a `damage`.
+- A sheet of side `obstacle` says what it does to a ship in `[gameplay.obstacle]`, and only such a sheet. Only an enemy or an obstacle moves as `scroll`. A ship names no `on_hit`: it answers a hit with its lives.
 - A body of side `look_item` names its item with `look_item`, and no other side does. On its first tick the pilot of a look item steers it to the left, the edge that removes it, so an item nobody picks up does not stay for the rest of the game. Its hitbox is the size it is drawn at, as for every shipped sheet.
 - A sheet hits only layers a sheet of the folder lies in, and the sheets lie in at most 32 layers (`MAXIMUM_COLLISION_LAYERS`, `src/engine/Collision/Layers/`): a filter keeps one bit per layer.
 - A box names its `attack` and its `phase` together, or neither; a box that names neither has no `from_ms` or `until_ms`, and `until_ms` is above `from_ms`. An `attack` is a number the sheet gives its own attacks: the code knows no attack by name.
@@ -154,7 +158,7 @@ No shipped sheet lists boxes yet.
 
 ## Collision layers: `layer` and `hits`
 
-Which bodies touch each other is written in the sheets, as the layers and masks of Godot are: `layer` says where a body lies, `hits` what it hits. The server looks at a pair of bodies only when one of the two hits the layer of the other, whichever of the two says so, and drops any other pair before it compares their boxes. The names are free: a layer exists as soon as a sheet lies in it, so a new kind of body, a wall for example, takes a layer of its own without a line of C++. A layer misspelt in `hits` stops the program, since no sheet lies in it; a misspelt `layer` makes a new layer that no sheet hits.
+Which bodies touch each other is written in the sheets, as the layers and masks of Godot are: `layer` says where a body lies, `hits` what it hits. The server looks at a pair of bodies only when one of the two hits the layer of the other, whichever of the two says so, and drops any other pair before it compares their boxes. The names are free: a layer exists as soon as a sheet lies in it, so a new kind of body, a wall (see [Walls](#walls-side-obstacle)), takes a layer of its own without a line of C++. A layer misspelt in `hits` stops the program, since no sheet lies in it; a misspelt `layer` makes a new layer that no sheet hits.
 
 The shipped sheets use five layers:
 
@@ -166,7 +170,19 @@ The shipped sheets use five layers:
 | the missiles of the Bydos, their orbs, spores and shards | `enemy_missile` | `player` |
 | the look items | `look_item` | nothing |
 
-What a kept contact means comes from the `side` of the two bodies (see [Collisions](/R-Type/server/#rules-collisionrules)): a missile disappears and hurts what it touched, unless the script of the body it touched cancels the hit (see [Judging a hit before it applies](/R-Type/scripting/#judging-a-hit-before-it-applies)), a ship that touches an enemy loses a life, a ship that touches a look item picks it up. So a missile of a Bydo whose sheet adds `enemy` to its `hits` hurts the Bydos, and a Bydo whose sheet adds `player_missile` stops the missiles of the players, each with one word in one sheet. Between two missiles, each one that hits the layer of the other is the one that disappears, except a missile of a player and a missile of a Bydo: `player_missile` hits `enemy_missile` so that pair reaches the server, and the C++ list `SHOOTABLE_MISSILE_SHEETS` (`src/game/EntityTypes/EntitySheetConstants.hpp`) says which missiles of the Bydos it shoots down (see [Collisions](/R-Type/server/#rules-collisionrules)). Every missile of a Bydo the game ships is in the list today; a missile left out of it, or added by a resource, flies through the missiles of the players. A pair of two enemies, or of an enemy and a look item, means nothing yet, whatever their layers. `player_missile` hits `player` for friendly fire: the contact counts only when that rule of the game is on, and never for the ship of the player who fired. The hurt zone of an enemy hurts the ships its body touches, and the lag compensation follows the same layers (see [Lag compensation of the shots](/R-Type/server/#lag-compensation-of-the-shots)).
+What a kept contact means comes from the `side` of the two bodies (see [Collisions](/R-Type/server/#rules-collisionrules)): a missile disappears and hurts what it touched, unless the script of the body it touched cancels the hit (see [Judging a hit before it applies](/R-Type/scripting/#judging-a-hit-before-it-applies)), a ship that touches an enemy loses a life, a ship that touches a look item picks it up, a ship that touches an obstacle is stopped or loses a life (see [Walls](#walls-side-obstacle)). So a missile of a Bydo whose sheet adds `enemy` to its `hits` hurts the Bydos, and a Bydo whose sheet adds `player_missile` stops the missiles of the players, each with one word in one sheet. Between two missiles, each one that hits the layer of the other is the one that disappears, except a missile of a player and a missile of a Bydo: `player_missile` hits `enemy_missile` so that pair reaches the server, and the C++ list `SHOOTABLE_MISSILE_SHEETS` (`src/game/EntityTypes/EntitySheetConstants.hpp`) says which missiles of the Bydos it shoots down (see [Collisions](/R-Type/server/#rules-collisionrules)). Every missile of a Bydo the game ships is in the list today; a missile left out of it, or added by a resource, flies through the missiles of the players. A pair of two enemies, or of an enemy and a look item, means nothing yet, whatever their layers. `player_missile` hits `player` for friendly fire: the contact counts only when that rule of the game is on, and never for the ship of the player who fired. The hurt zone of an enemy hurts the ships its body touches, and the lag compensation follows the same layers (see [Lag compensation of the shots](/R-Type/server/#lag-compensation-of-the-shots)).
+
+## Walls: side `obstacle`
+
+An obstacle is a wall or a piece of the decor, neither an enemy nor a missile: the level does not wait for it to be destroyed (`enemiesIn()` counts enemies only), it is worth points only when its sheet names a `score`, and the lag compensation never tests it, so every contact with it is judged in the present.
+
+- A missile that hits a wall disappears; a wall with `health` loses points and explodes once it has none, as a Bydo, and every player sees it, a wall without `health` only stops the missile. Its layer is a layer of its own, which the sheet of the missile adds to its `hits`.
+- `contact = "fatal"`: a ship that touches the wall loses a life, and the wall stays (`SurvivesContact`).
+- `contact = "blocking"`: the ship is stopped against the side it came across, and loses its speed along that axis, as against an edge of the screen (`blockedByObstacles()`, `src/game/ShipControl/`). The client predicts its own ship against the same walls, so it stops without a jerk (see [Prediction](/R-Type/client/#own-ship-prediction-against-the-walls)). A ship a wall pins against an edge stays over it, and is crushed: it loses a life.
+- With `motion.kind = "scroll"`, the wall follows the scroll of its level, and stops while the level pauses it; in a game that plays no level, it stands where it appears. Its pilot still writes an `Intent`, which nothing reads: `straight` with a `heading` of 0 suits it.
+- A wall is removed once its box is wholly past the left edge, so a wide wall stays while a part of it shows.
+
+No shipped sheet is an obstacle yet; a server script places one with `behaviours.spawn`.
 
 ## Behaviours and their settings
 

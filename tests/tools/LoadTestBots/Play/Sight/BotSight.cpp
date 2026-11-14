@@ -21,7 +21,7 @@ namespace rtype::tools {
 namespace {
 
 /** @returns The kind of @p type; nothing for a type a bot does not look at:
- * unknown, a ship or a missile of a player. */
+ * unknown, a ship, a missile of a player or an obstacle. */
 std::optional<EntityKind> kindOf(const game::NumberedEntityType* type) {
   if (type == nullptr) {
     return std::nullopt;
@@ -35,6 +35,7 @@ std::optional<EntityKind> kindOf(const game::NumberedEntityType* type) {
       return EntityKind::Item;
     case game::EntityType::Player:
     case game::EntityType::PlayerMissile:
+    case game::EntityType::Obstacle:
       break;
   }
   return std::nullopt;

@@ -4,7 +4,6 @@
 #include <cstdint>
 #include <exception>
 #include <limits>
-#include <memory>
 #include <optional>
 #include <span>
 #include <string>
@@ -14,9 +13,10 @@
 #include "BuiltInBehaviours.hpp"
 #include "GameScriptingConstants.hpp"
 #include "IEntityOrders.hpp"
-#include "LuauBehaviour.hpp"
 #include "LuauBehaviourParts.hpp"
+#include "LuauDeclarations.hpp"
 #include "LuauEventBindings.hpp"
+#include "LuauHitHandlerParts.hpp"
 #include "LuauLevels.hpp"
 #include "LuauPreHit.hpp"
 #include "LuauResumeContext.hpp"
@@ -202,6 +202,20 @@ int declarePreHit(lua_State* state) {
   return 0;
 }
 
+/** @brief `behaviours.on_hit(name, function)`: keeps a hit handler a sheet may
+ * name in `on_hit`, in the BehaviourScripts of its upvalue. */
+int declareHitHandler(lua_State* state) {
+  BehaviourScripts& scripts = scriptsOf(state);
+  std::string name = luaL_checkstring(state, ON_HIT_NAME_ARGUMENT);
+  luaL_checktype(state, ON_HIT_FUNCTION_ARGUMENT, LUA_TFUNCTION);
+  scripts.declarations().hitHandler(
+      LuauHitHandlerParts{.machine = scripts.machine(),
+                          .name = std::move(name),
+                          .function = lua_ref(state, ON_HIT_FUNCTION_ARGUMENT),
+                          .reportFailure = scripts.reportFailure()});
+  return 0;
+}
+
 /** @brief `behaviours.register(name, settings, steer)`: keeps a behaviour in
  * the BehaviourScripts of its upvalue. */
 int registerBehaviour(lua_State* state) {
@@ -210,13 +224,14 @@ int registerBehaviour(lua_State* state) {
   std::vector<LuauSetting> settings = settingsOf(state);
   luaL_checktype(state, REGISTER_STEER_ARGUMENT, LUA_TFUNCTION);
   const int steer = lua_ref(state, REGISTER_STEER_ARGUMENT);
-  scripts.declare(LuauBehaviourParts{.machine = scripts.machine(),
-                                     .name = std::move(name),
-                                     .settings = std::move(settings),
-                                     .steer = steer,
-                                     .reportFailure = scripts.reportFailure(),
-                                     .resumeContext = scripts.resumeContext(),
-                                     .eventBindings = scripts.eventBindings()});
+  scripts.declarations().behaviour(
+      LuauBehaviourParts{.machine = scripts.machine(),
+                         .name = std::move(name),
+                         .settings = std::move(settings),
+                         .steer = steer,
+                         .reportFailure = scripts.reportFailure(),
+                         .resumeContext = scripts.resumeContext(),
+                         .eventBindings = scripts.eventBindings()});
   return 0;
 }
 
@@ -237,7 +252,9 @@ BehaviourScripts::BehaviourScripts(ScriptFailureReport reportFailure)
       engine::ScriptFunction{.name = DESTROY_FUNCTION_NAME,
                              .function = destroyBody},
       engine::ScriptFunction{.name = PRE_HIT_FUNCTION_NAME,
-                             .function = declarePreHit}};
+                             .function = declarePreHit},
+      engine::ScriptFunction{.name = ON_HIT_FUNCTION_NAME,
+                             .function = declareHitHandler}};
   machine_.expose(BEHAVIOURS_TABLE, functions, this);
 }
 
@@ -247,9 +264,7 @@ void BehaviourScripts::run(std::span<const engine::ScriptSource> sources) {
   }
 }
 
-void BehaviourScripts::declare(LuauBehaviourParts parts) {
-  declared_.push_back(std::make_unique<LuauBehaviour>(std::move(parts)));
-}
+LuauDeclarations& BehaviourScripts::declarations() { return declarations_; }
 
 engine::ScriptMachine& BehaviourScripts::machine() { return machine_; }
 
@@ -278,10 +293,7 @@ const ScriptFailureReport& BehaviourScripts::reportFailure() const {
 
 BehaviourRegistry BehaviourScripts::behaviours() {
   BehaviourRegistry registry = builtInBehaviours();
-  for (std::unique_ptr<LuauBehaviour>& behaviour : declared_) {
-    registry.add(std::move(behaviour));
-  }
-  declared_.clear();
+  declarations_.handOverTo(registry);
   return registry;
 }
 

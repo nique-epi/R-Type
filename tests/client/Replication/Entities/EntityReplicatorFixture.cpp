@@ -25,6 +25,7 @@ void EntityReplicatorFixture::announceOneOfEachType() {
                             ENEMY_MISSILE_POSITION));
   replicator_.apply(
       spawned(LOOK_ITEM_ID, LOOK_ITEM_TYPE_NUMBER, BYDO_POSITION));
+  replicator_.apply(spawned(WALL_ID, BLOCKING_WALL_TYPE_NUMBER, BYDO_POSITION));
 }
 
 std::size_t EntityReplicatorFixture::entityCount() const {

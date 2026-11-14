@@ -2,6 +2,7 @@
 
 #include <span>
 #include <string>
+#include "AppliedHit.hpp"
 #include "BehaviourView.hpp"
 #include "IncomingHit.hpp"
 #include "Intent.hpp"
@@ -26,6 +27,12 @@ void pushViewTable(lua_State* state, const BehaviourView& view,
  * `missile` the network id of the missile, `offset` where it lies from the
  * center of the body, `{x, y}` in logical units. */
 void pushHitTable(lua_State* state, const IncomingHit& hit);
+
+/** @brief Pushes on @p state the table an on_hit function reads of a hit
+ * applied: `id` the network id of the body hit, `missile` that of the
+ * missile, `damage` the health points it took, `health` those the body has
+ * left, absent for a body without Health, and `destroyed`. */
+void pushAppliedHitTable(lua_State* state, const AppliedHit& hit);
 
 /**
  * @returns The intent the table at @p index of @p state describes, read with

@@ -10,6 +10,7 @@
 #include <string>
 #include <string_view>
 #include "ActionKey.hpp"
+#include "AppliedHit.hpp"
 #include "BehaviourView.hpp"
 #include "CollisionBox.hpp"
 #include "ContentName.hpp"
@@ -249,6 +250,19 @@ void pushHitTable(lua_State* state, const IncomingHit& hit) {
   lua_createtable(state, 0, 2);
   setNumber(state, HIT_MISSILE_KEY, static_cast<double>(hit.missileNetworkId));
   setPoint(state, HIT_OFFSET_KEY, hit.offset);
+}
+
+void pushAppliedHitTable(lua_State* state, const AppliedHit& hit) {
+  lua_createtable(state, 0, APPLIED_HIT_FIELDS);
+  setNumber(state, APPLIED_HIT_ID_KEY,
+            static_cast<double>(hit.targetNetworkId));
+  setNumber(state, HIT_MISSILE_KEY, static_cast<double>(hit.missileNetworkId));
+  setNumber(state, APPLIED_HIT_DAMAGE_KEY, static_cast<double>(hit.damage));
+  if (hit.healthLeft.has_value()) {
+    setNumber(state, APPLIED_HIT_HEALTH_KEY,
+              static_cast<double>(*hit.healthLeft));
+  }
+  setFlag(state, APPLIED_HIT_DESTROYED_KEY, hit.destroyed);
 }
 
 Intent intentFromTable(lua_State* state, int index) {

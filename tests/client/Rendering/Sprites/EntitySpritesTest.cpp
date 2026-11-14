@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include <cstdint>
-#include "AllEntityTypes.hpp"
+#include "AllEntityTypesConstants.hpp"
 #include "AnimatedSprite.hpp"
 #include "Animation.hpp"
 #include "EntitySprites.hpp"
