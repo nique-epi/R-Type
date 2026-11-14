@@ -221,4 +221,9 @@ InvalidGridLayoutException::InvalidGridLayoutException(std::size_t maximumLines)
           "A collision grid needs a positive cell side and at most " +
           std::to_string(maximumLines) + " cells along each axis") {}
 
+InvalidPixelMaskException::InvalidPixelMaskException(int maximumSide)
+    : EngineException("A pixel mask is 1 to " + std::to_string(maximumSide) +
+                      " pixels on each side, and is read and written inside "
+                      "them, at most one word of pixels at a time") {}
+
 }  // namespace rtype::engine

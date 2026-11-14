@@ -1,6 +1,7 @@
 add_subdirectory(Shapes)
 add_subdirectory(Grid)
 add_subdirectory(Layers)
+add_subdirectory(Masks)
 
 add_library(rtype_engine_collision INTERFACE)
 
@@ -11,4 +12,5 @@ target_link_libraries(rtype_engine_collision
     rtype_engine_entity_registry
     rtype_engine_collision_shapes
     rtype_engine_collision_layers
+    rtype_engine_collision_masks
 )

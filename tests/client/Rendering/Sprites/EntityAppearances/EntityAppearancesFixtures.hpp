@@ -1,10 +1,15 @@
 #pragma once
 
+#include <span>
+#include <string>
 #include <string_view>
+#include <vector>
 #include "CollisionBox.hpp"
+#include "EntityAppearance.hpp"
 #include "EntityAppearances.hpp"
 #include "EntitySheet.hpp"
 #include "HurtBox.hpp"
+#include "PixelMask.hpp"
 #include "SpriteFrame.hpp"
 
 /** @returns The appearances of one sheet, named READ_TYPE_NAME, holding
@@ -41,3 +46,27 @@
  * @p box, offset from the body. */
 [[nodiscard]] bool holds(rtype::game::SpriteFrame frame,
                          const rtype::game::HurtBox& box);
+
+/** @returns The rows of @p mask, from the top: DRAWN_MASK_PIXEL for a drawn
+ * pixel and CLEAR_MASK_PIXEL for a clear one, as a sheet writes them. */
+[[nodiscard]] std::vector<std::string> rowsOf(
+    const rtype::engine::PixelMask& mask);
+
+/** @returns @p rows with @p times pixels of outline peeled: a drawn pixel
+ * stays only when its four neighbours are drawn, a neighbour outside the rows
+ * counting as clear. */
+[[nodiscard]] std::vector<std::string> peeled(std::vector<std::string> rows,
+                                              int times);
+
+/** @returns @p rows as texts, one per row, to compare with what peeled() and
+ * rowsOf() give. */
+[[nodiscard]] std::vector<std::string> rowsFrom(
+    std::span<const std::string_view> rows);
+
+/** @returns The rows a mask must hold: the pixels drawn in a frame of the
+ * idle or enraged idle animation of @p look, read in its PNG, peeled
+ * @p erosion times, then cut to @p hitbox, as
+ * tests/tools/collision-masks/write_masks.py writes them. */
+[[nodiscard]] std::vector<std::string> expectedMaskRows(
+    const rtype::client::EntityAppearance& look, int erosion,
+    const rtype::game::CollisionBox& hitbox);

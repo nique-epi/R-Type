@@ -12,6 +12,10 @@
  * define) with sf::Image, which needs no graphics card. */
 sf::Image shippedSheet(std::string_view assetId);
 
+/** @returns true when the pixel at @p column, @p row lies inside @p image and
+ * is not transparent. */
+bool isVisible(const sf::Image& image, int column, int row);
+
 /** @returns true when two rectangles share a pixel. */
 bool overlap(rtype::game::SpriteFrame first, rtype::game::SpriteFrame second);
 

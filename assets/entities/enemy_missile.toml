@@ -26,6 +26,18 @@ top_speed = 360
 [gameplay.behaviour]
 heading = -1
 
+[gameplay.mask]
+rows = [
+  "..####..",
+  ".######.",
+  "########",
+  "########",
+  "########",
+  "########",
+  ".######.",
+  "..####..",
+]
+
 [appearance]
 sheet = "sprites/entities.png"
 
