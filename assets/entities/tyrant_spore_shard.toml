@@ -24,6 +24,18 @@ height = 32
 kind = "steady"
 top_speed = 300
 
+[gameplay.mask]
+rows = [
+  "..####..",
+  ".######.",
+  "########",
+  "########",
+  "########",
+  "########",
+  ".######.",
+  "..####..",
+]
+
 [appearance]
 sheet = "sprites/entities.png"
 
