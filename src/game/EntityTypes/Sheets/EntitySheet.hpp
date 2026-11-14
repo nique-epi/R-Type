@@ -12,6 +12,7 @@
 #include "EntityType.hpp"
 #include "GunSheet.hpp"
 #include "HurtZone.hpp"
+#include "MaskSheet.hpp"
 #include "MotionSheet.hpp"
 #include "PilotSheet.hpp"
 #include "SheetVisualNames.hpp"
@@ -44,6 +45,10 @@ struct EntitySheet {
   /** @brief The boxes it collides with when its sheet lists them, which
    * become its HitboxParts; empty for a body of one box. */
   std::vector<CollisionBox> hitboxParts;
+  /** @brief The mask an entity of the type is touched on, laid like its
+   * sprite; nothing for a sheet without `[gameplay.mask]`, which collides with
+   * its boxes alone. */
+  std::optional<MaskSheet> mask;
   /** @brief How a direction of its Intent moves it. */
   MotionSheet motion{};
   /** @brief The behaviour that steers it; nothing for a body a player steers.
