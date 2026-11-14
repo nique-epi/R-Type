@@ -23,9 +23,9 @@ using rtype::client::SERVER_MAP_SCREEN;
 using rtype::client::SHOP_SCREEN;
 using rtype::client::testing::BALANCE_TEXT;
 using rtype::client::testing::CHOSEN_CARD_MIDDLE;
-using rtype::client::testing::HANGAR_HOUSE_SOURCE;
-using rtype::client::testing::HOUSE_FILLING_THE_BOX;
-using rtype::client::testing::MAP_SHEET;
+using rtype::client::testing::DESTINATIONS_SHEET;
+using rtype::client::testing::HANGAR_FILLING_THE_BOX;
+using rtype::client::testing::HANGAR_SOURCE;
 using rtype::client::testing::RIGHT_CARD_MIDDLE;
 using rtype::client::testing::SERVER_DESCRIPTION_LINE;
 using rtype::client::testing::SPENT_BALANCE;
@@ -182,15 +182,15 @@ TEST_F(DestinationScreenFixture, EscapeClosesTheScreen) {
 /**
  * Given the destination screen just opened, HANGAR at the left
  * When it is painted
- * Then the sprite of HANGAR is the house of the hangar of the sheet of the
- * map, enlarged to fill the box of a sprite, at the side as in the middle
+ * Then the sprite of HANGAR is the hangar of the sheet of the destinations,
+ * enlarged to fill the box of a sprite
  */
-TEST_F(DestinationScreenFixture, TheHangarCardShowsTheHouseOfTheMap) {
+TEST_F(DestinationScreenFixture, TheHangarCardShowsTheHangar) {
   EXPECT_TRUE(std::ranges::any_of(
       canvas().images, [](const RecordedImage& image) noexcept {
-        return image.assetId == MAP_SHEET &&
-               image.source == HANGAR_HOUSE_SOURCE &&
-               image.scale == HOUSE_FILLING_THE_BOX;
+        return image.assetId == DESTINATIONS_SHEET &&
+               image.source == HANGAR_SOURCE &&
+               image.scale == HANGAR_FILLING_THE_BOX;
       }));
 }
 

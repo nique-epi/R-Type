@@ -11,7 +11,6 @@ target_link_libraries(rtype_client_menus_destinations
     rtype_client_interface
     rtype_client_key_chip
     rtype_client_screens_module
-    rtype_client_sector_map_interfaces
     rtype_client_widgets
     rtype_client_window_display
     rtype_engine_time

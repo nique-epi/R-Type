@@ -13,12 +13,13 @@ namespace rtype::client::testing {
 constexpr sf::Vector2i CHOSEN_CARD_MIDDLE{240, 130};
 constexpr sf::Vector2i RIGHT_CARD_MIDDLE{390, 130};
 
-/** @brief The house of the hangar, 9 pixels at top 47 of the sheet of the
- * map, and the largest whole factor at which it fits the box of 64 pixels a
- * sprite of a card fills: 7, 63 pixels. */
-constexpr std::string_view MAP_SHEET = "sprites/sector_map.png";
-constexpr sf::IntRect HANGAR_HOUSE_SOURCE{{0, 47}, {9, 9}};
-constexpr int HOUSE_FILLING_THE_BOX = 7;
+/** @brief The hangar, 32 x 24 pixels at (64, 0) of the sheet of the
+ * destinations, after the planet and the basket, 30 pixels wide each and 2
+ * apart; and the largest whole factor at which it fits the box of 64 pixels a
+ * sprite of a card fills: 2, 64 pixels wide. */
+constexpr std::string_view DESTINATIONS_SHEET = "sprites/destinations.png";
+constexpr sf::IntRect HANGAR_SOURCE{{64, 0}, {32, 24}};
+constexpr int HANGAR_FILLING_THE_BOX = 2;
 
 /** @brief The name of the card in the middle is written twice the size of a
  * line. */

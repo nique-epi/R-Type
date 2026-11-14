@@ -15,7 +15,6 @@
 #include "InterfaceConstants.hpp"
 #include "KopecksLabelConstants.hpp"
 #include "RenderingConstants.hpp"
-#include "SectorMapSpriteConstants.hpp"
 #include "ShopScreenIdConstants.hpp"
 #include "TextStyle.hpp"
 #include "WidgetColors.hpp"
@@ -137,8 +136,8 @@ constexpr DestinationCard SHOP_CARD{
 constexpr DestinationCard HANGAR_CARD{
     .label = HANGAR_LABEL,
     .description = "DRESS YOUR SHIP FROM YOUR LOCKER",
-    .sheet = SECTOR_MAP_SHEET_ID,
-    .frame = HANGAR_HOUSE_FRAME,
+    .sheet = DESTINATION_SHEET_ID,
+    .frame = DESTINATION_HANGAR_FRAME,
     .screen = HANGAR_SCREEN};
 constexpr std::size_t DESTINATION_COUNT = DESTINATION_CARD_AREAS.size();
 
