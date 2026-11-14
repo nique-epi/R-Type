@@ -5,7 +5,7 @@
 -- The first stage crosses open space, with the stars alone: two groups of
 -- Bydos come as the level scrolls, then the scroll stops until a Reaper is
 -- destroyed. The second stage starts at a checkpoint, in the biome fosse,
--- whose maps slide in from the right: a team that loses every life there
+-- entered through its cave: a team that loses every life there
 -- starts that stage again. The level is cleared once
 -- its last stage is over and no enemy is left. The functions of `level` are
 -- described on the page "Scripting enemies in Luau" of the docs.
