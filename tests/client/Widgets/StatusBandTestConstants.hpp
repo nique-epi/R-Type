@@ -4,9 +4,12 @@
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <array>
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <utility>
+#include "TextMetrics.hpp"
+#include "TimeConstants.hpp"
 
 namespace rtype::client::testing {
 
@@ -66,11 +69,23 @@ constexpr std::size_t NAME_AND_SCORE = 2;
  * protocol carries, the second holding characters of two bytes. */
 constexpr const char* LONGEST_NICKNAME = "CAPTAIN_STARDUST";
 constexpr const char* NICKNAME_WITH_ACCENTS = "ÉLODIE_ÉTOILE";
-/** @brief What the room of 93 pixels of the first row keeps of them: 11
- * characters of 8 pixels; 5 once RESPAWN (7 characters of 6 pixels on the
- * recording canvas) and its gap of 4 take their part. */
-constexpr const char* LONGEST_NICKNAME_CUT = "CAPTAIN_STA";
-constexpr const char* LONGEST_NICKNAME_BESIDE_A_WORD = "CAPTA";
-constexpr const char* NICKNAME_WITH_ACCENTS_CUT = "ÉLODIE_ÉTOI";
+/** @brief The room of the first row of a bay for the nickname: 93 pixels
+ * from 19 to 112; 47 once RESPAWN (7 characters of 6 pixels on the recording
+ * canvas) and its gap of 4 take their part. */
+constexpr int NAME_ROOM = 93;
+constexpr int NAME_ROOM_BESIDE_RESPAWN = 47;
+/** @brief What a turn of REDUCE FLASHES shows of the nicknames: 11 whole
+ * characters of 8 pixels fit the room, the first turn shows the first 11,
+ * the second turn the 5 left. */
+constexpr const char* NICKNAME_WITH_ACCENTS_FIRST_TURN = "ÉLODIE_ÉTOI";
+constexpr const char* LONGEST_NICKNAME_SECOND_TURN = "RDUST";
+constexpr rtype::engine::Duration SECOND_TURN = std::chrono::seconds(2);
+/** @brief The largest text size; at it, a bay of a pilot with a word shows
+ * its name, its score, then its word, two seconds each, on one line 16
+ * tall, (24 - 16) / 2 = 4 under the top of the band at 246, from x 20 of the
+ * first bay (1 + 19). */
+constexpr rtype::client::TextMetrics LARGEST_TEXT{.halfPixelsPerFontPixel = 4};
+constexpr rtype::engine::Duration THIRD_TURN = std::chrono::seconds(4);
+constexpr sf::Vector2i LARGE_LINE_OF_THE_FIRST_BAY(20, 250);
 
 }  // namespace rtype::client::testing

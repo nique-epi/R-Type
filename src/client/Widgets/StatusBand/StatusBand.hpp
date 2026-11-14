@@ -1,9 +1,11 @@
 #pragma once
 
+#include <cstdint>
 #include <span>
 #include "IInterfaceCanvas.hpp"
 #include "PilotStatus.hpp"
-#include "PlayerPalette.hpp"
+#include "StatusBandLook.hpp"
+#include "TimeConstants.hpp"
 
 namespace rtype::client {
 
@@ -15,8 +17,12 @@ namespace rtype::client {
  * holding its marker, then its nickname in the light shade of its color, and
  * against the right edge one word, the first that applies: LEFT or SIGNAL
  * LOST once it left, OUT, LAST LIFE, RESPAWN, then YOU for the local player.
- * The nickname keeps the room the word leaves, cut at a whole character; a
- * pilot the waiting room never named shows P and its number. On its second
+ * The nickname keeps the room the word leaves; a nickname longer than that
+ * runs through it, or, with REDUCE FLASHES, shows its parts in turn, each
+ * STATUS_TURN_DURATION; a pilot the waiting room never named shows P and its
+ * number. Above the size the fonts are drawn at, a bay holds one line, which
+ * shows the nickname, the score, then the word or the count of lives, each
+ * for STATUS_TURN_DURATION. On its second
  * row, STATUS_LIFE_ICON_LIMIT slots of lives, a small ship of its color for
  * each life left and a lost life for each of the others, or one ship and the
  * count past the limit, nothing while they are unknown, the unplugged plug,
@@ -34,6 +40,16 @@ namespace rtype::client {
  */
 void paintStatusBand(IInterfaceCanvas& canvas,
                      std::span<const PilotStatus> pilots,
-                     const PlayerPalette& palette);
+                     const StatusBandLook& look);
+
+/** @returns What the band of @p pilots on @p canvas shows of time at
+ * @p sinceStart, as a number that changes exactly when that does: the step
+ * of STATUS_SCROLL_STEP while a name runs through its room, the turn of
+ * STATUS_TURN_DURATION while the bays show their parts in turn above the size
+ * the fonts are drawn at, and 0 while nothing moves. A screen repaints the
+ * band when it changes. */
+[[nodiscard]] std::int64_t statusBandFrameOf(
+    std::span<const PilotStatus> pilots, const IInterfaceCanvas& canvas,
+    engine::Duration sinceStart);
 
 }  // namespace rtype::client

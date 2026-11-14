@@ -10,14 +10,17 @@
 #include "IScreen.hpp"
 #include "ISoundPlayer.hpp"
 #include "InterfaceCanvas.hpp"
+#include "InterfaceLook.hpp"
 #include "LoadingScreen.hpp"
 #include "LoadingScreenParts.hpp"
 #include "Menu.hpp"
 #include "MotionPreference.hpp"
+#include "PlayerSettings.hpp"
 #include "PlayfieldMapping.hpp"
 #include "ReducedMotion.hpp"
 #include "ScreenContext.hpp"
 #include "ScreenId.hpp"
+#include "TextMeasures.hpp"
 
 namespace rtype::client {
 
@@ -30,9 +33,17 @@ ISoundPlayer& soundsOf(const ScreenContext& context) {
   return context.services.audio.get().sounds();
 }
 
+InterfaceLook interfaceLookOf(const PlayerSettings& settings) {
+  return InterfaceLook{.text = textMetricsOf(settings.textSize),
+                       .highContrast = settings.highContrast};
+}
+
 std::unique_ptr<IInterfaceCanvas> interfaceCanvasOf(
     const ScreenContext& context) {
-  return std::make_unique<InterfaceCanvas>(context.services.assets.get());
+  const PlayerSettings& settings = context.services.settings.get();
+  return std::make_unique<InterfaceCanvas>(
+      context.services.assets.get(),
+      [&settings] { return interfaceLookOf(settings); });
 }
 
 PlayfieldMapping playfieldMappingOf(const ScreenContext& context) {

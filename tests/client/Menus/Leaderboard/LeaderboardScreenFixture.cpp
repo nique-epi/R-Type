@@ -6,6 +6,7 @@
 #include "LeaderboardPage.hpp"
 #include "LeaderboardScreen.hpp"
 #include "LeaderboardScreenParts.hpp"
+#include "LeaderboardScreenTestConstants.hpp"
 #include "LeaderboardTab.hpp"
 #include "MotionPreference.hpp"
 #include "OptionsScreenFixtures.hpp"
@@ -23,9 +24,17 @@ using rtype::client::LeaderboardScreen;
 using rtype::client::LeaderboardScreenParts;
 using rtype::client::LeaderboardTab;
 using rtype::client::MotionPreference;
+using rtype::client::TextMetrics;
+using rtype::client::testing::LARGEST_TEXT;
 
-LeaderboardScreenFixture::LeaderboardScreenFixture(MotionPreference motion)
-    : screen_(std::make_unique<LeaderboardScreen>(
+LeaderboardScreenFixture::LeaderboardScreenFixture(MotionPreference motion,
+                                                   TextMetrics metrics)
+    : canvas_([metrics] {
+        InterfaceCanvasRecord record;
+        record.metrics = metrics;
+        return record;
+      }()),
+      screen_(std::make_unique<LeaderboardScreen>(
           LeaderboardScreenParts{
               .navigator = navigator_,
               .sounds = sounds_,
@@ -69,3 +78,6 @@ void LeaderboardScreenFixture::closeScreen() { screen_.reset(); }
 
 StillLeaderboardFixture::StillLeaderboardFixture()
     : LeaderboardScreenFixture(MotionPreference::Reduced) {}
+
+LargestLeaderboardFixture::LargestLeaderboardFixture()
+    : LeaderboardScreenFixture(MotionPreference::Full, LARGEST_TEXT) {}

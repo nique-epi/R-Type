@@ -10,6 +10,7 @@
 #include <SFML/System/Vector2.hpp>
 #include <string>
 #include <string_view>
+#include <utility>
 #include "BackgroundConstants.hpp"
 #include "EntitySprites.hpp"
 #include "FlashShaderConstants.hpp"
@@ -17,6 +18,8 @@
 #include "GhostShaderConstants.hpp"
 #include "ITextureSource.hpp"
 #include "InterfaceConstants.hpp"
+#include "InterfaceLook.hpp"
+#include "InterfaceLookSource.hpp"
 #include "PixelRounding.hpp"
 #include "Position.hpp"
 #include "RenderingConstants.hpp"
@@ -24,6 +27,7 @@
 #include "SpriteTone.hpp"
 #include "SpriteToneColorConstants.hpp"
 #include "TextLine.hpp"
+#include "TextMeasures.hpp"
 #include "TextStyle.hpp"
 #include "TextWriter.hpp"
 
@@ -33,14 +37,14 @@ SfmlDrawSurface::SfmlDrawSurface(sf::RenderTarget& canvas,
                                  const ITextureSource& textures,
                                  const TextWriter& writer)
     : canvas_(canvas),
-      textures_(textures),
+      textures_(textures, RENDERING_LOGGER_NAME),
       writer_(writer),
       logger_(std::string(RENDERING_LOGGER_NAME)),
       flashShader_(loadFragmentShader(FLASH_SHADER, logger_)),
       ghostShader_(loadFragmentShader(GHOST_SHADER, logger_)) {}
 
 void SfmlDrawSurface::draw(const SpriteDrawing& drawing) {
-  const sf::Texture* texture = foundTexture(drawing.assetId);
+  const sf::Texture* texture = textures_.found(drawing.assetId);
   if (texture == nullptr) {
     return;
   }
@@ -51,8 +55,13 @@ void SfmlDrawSurface::draw(const SpriteDrawing& drawing) {
   drawToned(sprite, drawing.tone);
 }
 
+void SfmlDrawSurface::setLook(InterfaceLookSource look) {
+  look_ = std::move(look);
+}
+
 void SfmlDrawSurface::write(std::string_view text, game::Position center,
                             TextStyle style) {
+  const InterfaceLook look = look_ ? look_() : InterfaceLook{};
   const sf::Vector2i middle =
       nearestPixel(sf::Vector2f(center.x, center.y) / BACKGROUND_PIXEL_SIZE);
   style.alignment = TextAlignment::Center;
@@ -60,16 +69,10 @@ void SfmlDrawSurface::write(std::string_view text, game::Position center,
       canvas_,
       TextLine{.text = text,
                .anchor = {middle.x,
-                          middle.y - static_cast<int>(TEXT_LINE_HEIGHT * HALF)},
-               .style = style});
-}
-
-const sf::Texture* SfmlDrawSurface::foundTexture(std::string_view assetId) {
-  const sf::Texture* texture = textures_.texture(assetId);
-  if (texture == nullptr && reportedMissingIds_.emplace(assetId).second) {
-    logger_.warn("no texture for asset id ", assetId);
-  }
-  return texture;
+                          middle.y - (lineHeightOf(look.text) / HALF_DIVISOR)},
+               .style = style,
+               .metrics = look.text,
+               .plated = look.highContrast});
 }
 
 sf::Sprite SfmlDrawSurface::placedSprite(const sf::Texture& texture,

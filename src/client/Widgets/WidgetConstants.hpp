@@ -1,5 +1,6 @@
 #pragma once
 
+#include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <array>
@@ -75,6 +76,9 @@ constexpr int FOOTER_TOP = 241;
  * centered row.
  */
 constexpr sf::Vector2i DIALOG_SIZE(272, 96);
+/** @brief The widest a dialog grows above the size the fonts are drawn at:
+ * the room between the safe margins. */
+constexpr int DIALOG_LARGEST_WIDTH = 432;
 constexpr sf::Vector2i DIALOG_HEADING_OFFSET(16, 12);
 constexpr sf::Vector2i DIALOG_MESSAGE_OFFSET(16, 32);
 constexpr int DIALOG_BUTTONS_TOP = 56;
@@ -97,6 +101,15 @@ constexpr int SPACE_AROUND_FORM_BUTTONS = 10;
 constexpr sf::Vector2i FORM_BUTTON_SIZE(BUTTON_SIZE.x / SIDES_PER_AXIS,
                                         BUTTON_SIZE.y);
 constexpr int FORM_BUTTON_GAP = BUTTON_GAP;
+/** @brief Above the size the fonts are drawn at, the lines a form keeps for
+ * the line about its selected bar and for its status line; and, its fields
+ * one box tall, the room left of each box for its label: the letters of the
+ * longest label, ADDRESS, in the regular font, which is never narrower than
+ * the small one, and a gap. At the largest size the box keeps 288 pixels,
+ * 17 letters, more than the 16 of the longest nickname. */
+constexpr int FORM_TEXT_LINES = 2;
+constexpr int FIELD_LABEL_LETTERS = 7;
+constexpr int FIELD_LABEL_SIDE_GAP = 8;
 
 /** @brief Shortest time a button looks pressed before its action runs, so
  * even a quick click is seen. */
@@ -206,7 +219,11 @@ constexpr int TAB_STRIP_WIDTH =
 constexpr int TAB_HEIGHT = 16;
 constexpr int TAB_GAP = 4;
 constexpr int TAB_LABEL_TOP = 5;
-constexpr int TAB_KEY_CAP_TOP = 2;
+/** @brief Room on each side of the label of a tab as wide as its label, and
+ * the name the keycaps of a strip are as wide as: CONTROLS, 64 pixels and 4
+ * on each side, fits the 76 each of five tabs shares as the fonts are drawn. */
+constexpr int TAB_TEXT_PADDING = 4;
+constexpr const char* ONE_LETTER_KEY = "Q";
 constexpr sf::Vector2i ROWS_PANEL_TOP_LEFT(SAFE_MARGIN,
                                            TAB_STRIP_TOP_LEFT.y + TAB_HEIGHT);
 constexpr sf::Vector2i ROWS_PANEL_SIZE(TAB_STRIP_WIDTH, 150);
@@ -219,12 +236,36 @@ constexpr sf::Vector2i ROW_SIZE(ROWS_PANEL_SIZE.x -
                                     (SIDES_PER_AXIS * ROWS_PANEL_PADDING),
                                 16);
 constexpr int ROW_GAP = 2;
+/** @brief From the top of a row to the top of the next one, how many rows
+ * the panel shows at once (8: 8 x 18 - 2 = 142, the panel's 150 less its
+ * padding), and the area those rows cover; a tab with more rows scrolls
+ * them. */
+constexpr int ROW_PITCH = ROW_SIZE.y + ROW_GAP;
+/** @brief The marks of hidden rows: 3 rows of pixels, 5 at their widest,
+ * their middle this far from the right end of the rows, in the padding of
+ * the panel; and their color. */
+constexpr int SCROLL_MARK_ROWS = 3;
+constexpr int SCROLL_MARK_INSET = 8;
+constexpr std::size_t PANEL_ROW_CAPACITY = static_cast<std::size_t>(
+    (ROWS_PANEL_SIZE.y - (SIDES_PER_AXIS * ROWS_PANEL_PADDING) + ROW_GAP) /
+    ROW_PITCH);
 constexpr sf::Vector2i ROW_LABEL_OFFSET(8, 4);
 constexpr int ROW_PADDING = 8;
 constexpr int ROW_CONTROL_TOP = 2;
 constexpr int PANEL_BARS_TOP =
     ROWS_PANEL_TOP_LEFT.y + ROWS_PANEL_SIZE.y + BUTTON_GAP;
 constexpr int SPACE_BESIDE_PANEL_BARS = 8;
+/** @brief Above the size the fonts are drawn at, the description of the
+ * selected row wraps on two lines beside the bars, one pixel apart. */
+constexpr int DESCRIPTION_LINES_BESIDE_BARS = 2;
+constexpr int DESCRIPTION_LINE_GAP = 2;
+
+/** @brief A byte of UTF-8 that continues a letter has these two high bits:
+ * 10, read through the mask of the two. */
+constexpr unsigned int UTF8_LEAD_MASK = 0xC0U;
+constexpr unsigned int UTF8_CONTINUATION_BITS = 0x80U;
+/** @brief What separates the words of a line a widget wraps. */
+constexpr char WORD_SEPARATOR = ' ';
 constexpr int SPACE_ABOVE_PANEL_ILLUSTRATION = 10;
 
 /**
@@ -292,5 +333,11 @@ constexpr sf::Vector2i RULE_STAMP_OFFSET(6, -4);
 constexpr sf::Vector2i ROOM_RULE_SIZE(TAB_STRIP_WIDTH, RULE_SIZE.y);
 constexpr int ROOM_ILLUSTRATION_TOP = TAB_STRIP_TOP_LEFT.y;
 constexpr int SPACE_ABOVE_ROOM_BARS = 12;
+/** @brief Above the size the fonts are drawn at, the lines a room keeps for
+ * its status line, which names a pilot of the longest nickname. */
+constexpr int ROOM_STATUS_LINES = 2;
+/** @brief How far in from the corners of the picture the marks of a picture
+ * that scrolls lie. */
+constexpr int PICTURE_SCROLL_MARK_INSET = SAFE_MARGIN / SIDES_PER_AXIS;
 
 }  // namespace rtype::client

@@ -6,6 +6,7 @@
 #include <SFML/Window/Keyboard.hpp>
 #include <SFML/Window/Mouse.hpp>
 #include <algorithm>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
@@ -13,7 +14,9 @@
 #include <span>
 #include <string>
 #include <utility>
+#include "BarRowWidth.hpp"
 #include "BoundAction.hpp"
+#include "Button.hpp"
 #include "ChatWindow.hpp"
 #include "GameRules.hpp"
 #include "GameRulesLine.hpp"
@@ -41,13 +44,20 @@
 #include "Menu.hpp"
 #include "MenuBuilder.hpp"
 #include "MenuScreenIdConstants.hpp"
+#include "PictureScroll.hpp"
 #include "PilotColor.hpp"
 #include "PlayerLooks.hpp"
 #include "PlayfieldMapping.hpp"
+#include "RoomLayout.hpp"
+#include "RoomLayouts.hpp"
+#include "RowScrolling.hpp"
 #include "ScreenConstants.hpp"
 #include "ScreenId.hpp"
+#include "ShiftedCanvas.hpp"
 #include "ShipLook.hpp"
 #include "SoundConstants.hpp"
+#include "TextMeasures.hpp"
+#include "TextMetrics.hpp"
 #include "TextStyle.hpp"
 #include "TimeConstants.hpp"
 #include "WidgetConstants.hpp"
@@ -159,31 +169,78 @@ sf::Vector2i bayTopLeft(sf::IntRect area, int slot) {
          sf::Vector2i(slot * (HANGAR_BAY_SIZE.x + HANGAR_BAY_GAP), 0);
 }
 
-/** @returns Where the room paints BACK, its cancel chip. */
-sf::IntRect backChipArea() {
+/** @returns How large the four bays are side by side at the text size of
+ * @p metrics: as wide as the rule, as tall as one bay. */
+sf::Vector2i lobbyBaysSizeOf(TextMetrics metrics) {
+  const sf::Vector2i bay = hangarBayLayoutOf(metrics).size;
+  return {barRowWidth(LOBBY_BAY_COUNT, bay, HANGAR_BAY_GAP), bay.y};
+}
+
+/** @returns What the chips of the leaderboard and of the hangar say, at the
+ * text size of @p metrics. */
+Button::Text leaderboardChipText(TextMetrics metrics) {
+  return {.label = LEADERBOARD_LABEL,
+          .keyName = LEADERBOARD_KEY_NAME,
+          .size = metrics};
+}
+
+Button::Text hangarChipText(TextMetrics metrics) {
+  return {.label = HANGAR_LABEL, .keyName = HANGAR_KEY_NAME, .size = metrics};
+}
+
+/** @returns Where the room paints BACK, its cancel chip, on the lower row of
+ * its chips. */
+sf::IntRect backChipArea(const RoomLayout& room, TextMetrics metrics) {
   return MenuBuilder::chipArea(
-      {.label = BACK_LABEL, .keyName = CANCEL_KEY_NAME});
+      {.label = BACK_LABEL, .keyName = CANCEL_KEY_NAME, .size = metrics},
+      sf::Vector2i(INTERFACE_AREA.size.x - SAFE_MARGIN, room.lowerChipsTop));
 }
 
 /** @returns Where the room paints HELP, BUTTON_GAP to the left of BACK. */
-sf::IntRect helpChipArea() {
-  return MenuBuilder::chipArea({.label = HELP_LABEL, .keyName = HELP_KEY_NAME},
-                               backChipArea().position.x - BUTTON_GAP);
+sf::IntRect helpChipArea(const RoomLayout& room, TextMetrics metrics) {
+  return MenuBuilder::chipArea(
+      {.label = HELP_LABEL, .keyName = HELP_KEY_NAME, .size = metrics},
+      sf::Vector2i(backChipArea(room, metrics).position.x - BUTTON_GAP,
+                   room.lowerChipsTop));
 }
 
-/** @returns Where the room paints RANKING, BUTTON_GAP to the left of HELP. */
-sf::IntRect leaderboardChipArea() {
-  return MenuBuilder::chipArea(
-      {.label = LEADERBOARD_LABEL, .keyName = LEADERBOARD_KEY_NAME},
-      helpChipArea().position.x - BUTTON_GAP);
+/** @returns Where the room paints RANKING: BUTTON_GAP to the left of HELP
+ * while the chips take one row; against the right side of the safe margin,
+ * on the upper row, once they take two. */
+sf::IntRect leaderboardChipArea(const RoomLayout& room, TextMetrics metrics) {
+  const bool oneRow = room.upperChipsTop == room.lowerChipsTop;
+  const int right = oneRow ? helpChipArea(room, metrics).position.x - BUTTON_GAP
+                           : INTERFACE_AREA.size.x - SAFE_MARGIN;
+  return MenuBuilder::chipArea(leaderboardChipText(metrics),
+                               sf::Vector2i(right, room.upperChipsTop));
 }
 
 /** @returns Where the room paints HANGAR, BUTTON_GAP to the left of
- * RANKING. */
-sf::IntRect hangarChipArea() {
-  return MenuBuilder::chipArea(
-      {.label = HANGAR_LABEL, .keyName = HANGAR_KEY_NAME},
-      leaderboardChipArea().position.x - BUTTON_GAP);
+ * RANKING, on its row. */
+sf::IntRect hangarChipArea(const RoomLayout& room, TextMetrics metrics) {
+  const sf::IntRect leaderboard = leaderboardChipArea(room, metrics);
+  return MenuBuilder::chipArea(hangarChipText(metrics),
+                               sf::Vector2i(leaderboard.position.x - BUTTON_GAP,
+                                            leaderboard.position.y));
+}
+
+/** @returns How far the room is scrolled after @p event: moved by
+ * ROOM_SCROLL_STEP a notch of the wheel, never past either end; at its
+ * bottom once a key that moves the selection selects BACK, at its top once
+ * it selects READY; unchanged by any other event. */
+int roomScrollAfter(const sf::Event& event, const Menu& menu,
+                    PictureScroll room) {
+  if (const auto* wheel = event.getIf<sf::Event::MouseWheelScrolled>();
+      wheel != nullptr && wheel->wheel == sf::Mouse::Wheel::Vertical) {
+    const auto notches = static_cast<int>(std::lround(wheel->delta));
+    return std::clamp(room.scroll - (notches * ROOM_SCROLL_STEP), 0, room.last);
+  }
+  const auto* key = event.getIf<sf::Event::KeyPressed>();
+  if (key == nullptr || std::ranges::find(ROOM_SELECTION_KEYS, key->code) ==
+                            ROOM_SELECTION_KEYS.end()) {
+    return room.scroll;
+  }
+  return menu.selectedButton() == ROOM_BACK_BUTTON ? room.last : 0;
 }
 
 /** @returns Whether @p event presses the left button inside @p area, read on
@@ -213,7 +270,8 @@ std::optional<sf::IntRect> ownBayArea(std::optional<sf::IntRect> bays,
   if (!bays.has_value() || !ownSlot.has_value()) {
     return std::nullopt;
   }
-  return sf::IntRect(bayTopLeft(*bays, *ownSlot), HANGAR_BAY_SIZE);
+  return sf::IntRect(bayTopLeft(*bays, *ownSlot),
+                     {HANGAR_BAY_SIZE.x, bays->size.y});
 }
 
 /** @returns The bay of the local player in the room of @p menu: nothing while
@@ -227,27 +285,40 @@ std::optional<sf::IntRect> ownBayAreaIn(const Menu& menu,
       ownSlotOf(waitingRoom.lobbyPlayers(), connection.status().playerNumber));
 }
 
+/** @brief What the room reads to place the parts its help explains: its
+ * layout, its bays, the slot of the local player, how wide the status line
+ * is written, and the text size. */
+struct RoomParts {
+  RoomLayout room;
+  sf::IntRect bays;
+  std::optional<int> ownSlot;
+  int statusWidth{};
+  TextMetrics metrics;
+};
+
 /** @returns Where the room paints the parts its help explains, as
  * MenuBuilder lays a room: the bays, where the menu lays its illustration;
- * READY, its only bar, centered SPACE_ABOVE_ROOM_BARS under them; the status
- * line BUTTON_GAP under READY, centered; then BACK. Menu gives no area of a
- * bar, so READY and the status line are placed by the same arithmetic as
- * MenuBuilder::placeRoom. */
-LobbyPartAreas partAreasOf(sf::IntRect bays, std::optional<int> ownSlot,
-                           int statusWidth) {
+ * READY, its only bar, centered where the layout puts the bars, as wide as
+ * its longer label needs; the status line under READY, centered; then BACK.
+ * Menu gives no area of a bar, so READY and the status line are placed by
+ * the same arithmetic as MenuBuilder::placeRoom. */
+LobbyPartAreas partAreasOf(const RoomParts& parts) {
+  const int readyWidth = std::max(
+      BUTTON_SIZE.x, regularWidthOf(parts.metrics, CANCEL_READY_LABEL) +
+                         (SIDES_PER_AXIS * BUTTON_TEXT_OFFSET.x));
   const sf::IntRect ready(
-      {(INTERFACE_AREA.size.x - BUTTON_SIZE.x) / SIDES_PER_AXIS,
-       bays.position.y + bays.size.y + SPACE_ABOVE_ROOM_BARS},
-      BUTTON_SIZE);
-  const int statusShown = std::max(statusWidth, BUTTON_SIZE.x);
-  return {.bays = bays,
-          .ownBay = ownBayArea(bays, ownSlot).value_or(bays),
+      {(INTERFACE_AREA.size.x - readyWidth) / SIDES_PER_AXIS,
+       parts.room.barsTop},
+      {readyWidth, parts.room.barHeight});
+  const int statusShown = std::max(parts.statusWidth, readyWidth);
+  return {.bays = parts.bays,
+          .ownBay = ownBayArea(parts.bays, parts.ownSlot).value_or(parts.bays),
           .ready = ready,
           .status = sf::IntRect(
               {(INTERFACE_AREA.size.x - statusShown) / SIDES_PER_AXIS,
-               ready.position.y + ready.size.y + BUTTON_GAP},
-              {statusShown, TEXT_LINE_HEIGHT}),
-          .back = backChipArea()};
+               parts.room.statusTop},
+              {statusShown, lineHeightOf(parts.metrics)}),
+          .back = backChipArea(parts.room, parts.metrics)};
 }
 
 /** @returns The look @p looks shows on the player numbered @p number; nothing
@@ -274,16 +345,21 @@ LobbyScreen::LobbyScreen(LobbyScreenParts parts,
       motion_(parts.motion),
       place_(parts.place),
       rulesLine_(rulesLineIfKnown(parts.rules)),
+      room_(roomLayoutOf(lobbyBaysSizeOf(canvas_->textMetrics()).y,
+                         canvas_->textMetrics())),
+      scroll_{.scroll = 0, .last = lastPictureScrollOf(room_.height)},
       menu_(buildMenu(parts.keyName(readyKey_))),
-      help_(HelpWalkthroughParts{.sounds = parts.sounds,
-                                 .keys = parts.keys,
-                                 .keyName = parts.keyName,
-                                 .palette = parts.palette,
-                                 .motion = parts.motion,
-                                 .chipArea = helpChipArea()}),
+      help_(HelpWalkthroughParts{
+          .sounds = parts.sounds,
+          .keys = parts.keys,
+          .keyName = parts.keyName,
+          .palette = parts.palette,
+          .motion = parts.motion,
+          .chipArea = helpChipArea(room_, canvas_->textMetrics()),
+          .metrics = canvas_->textMetrics()}),
       leaderboardChip_(KeyChipParts{
-          .text = {.label = LEADERBOARD_LABEL, .keyName = LEADERBOARD_KEY_NAME},
-          .area = leaderboardChipArea(),
+          .text = leaderboardChipText(canvas_->textMetrics()),
+          .area = leaderboardChipArea(room_, canvas_->textMetrics()),
           .key = LEADERBOARD_KEY,
           .action =
               [this] {
@@ -292,28 +368,29 @@ LobbyScreen::LobbyScreen(LobbyScreenParts parts,
               },
           .sounds = parts.sounds}),
       look_(&parts.look.get()),
-      hangarChip_(KeyChipParts{
-          .text = {.label = HANGAR_LABEL, .keyName = HANGAR_KEY_NAME},
-          .area = hangarChipArea(),
-          .key = HANGAR_KEY,
-          .action =
-              [this] {
-                handleEvent(sf::Event::FocusLost{});
-                navigator_->push(HANGAR_SCREEN);
-              },
-          .sounds = parts.sounds}),
+      hangarChip_(
+          KeyChipParts{.text = hangarChipText(canvas_->textMetrics()),
+                       .area = hangarChipArea(room_, canvas_->textMetrics()),
+                       .key = HANGAR_KEY,
+                       .action =
+                           [this] {
+                             handleEvent(sf::Event::FocusLost{});
+                             navigator_->push(HANGAR_SCREEN);
+                           },
+                       .sounds = parts.sounds}),
       chat_(parts.chat.get(), parts.settings.get()) {
   repaint();
 }
 
 void LobbyScreen::handleEvent(const sf::Event& event) {
-  if (!chat_.isOpen() && help_.handleEvent(event, playfieldPointAt_)) {
-    dropHeldInput(playfieldPointAt_, leaderboardChip_, hangarChip_);
+  const auto pointAt = shiftedMappingOf({0, scroll_.scroll}, playfieldPointAt_);
+  if (!chat_.isOpen() && help_.handleEvent(event, pointAt)) {
+    dropHeldInput(pointAt, leaderboardChip_, hangarChip_);
     return;
   }
   if (chat_.handleEvent(event)) {
     readyKeyHeld_ = false;
-    dropHeldInput(playfieldPointAt_, leaderboardChip_, hangarChip_, menu_);
+    dropHeldInput(pointAt, leaderboardChip_, hangarChip_, menu_);
     return;
   }
   if (const std::optional<bool> down = readyKeyDownOf(event, readyKey_)) {
@@ -325,18 +402,19 @@ void LobbyScreen::handleEvent(const sf::Event& event) {
     return;
   }
   readyKeyHeld_ = readyKeyHeld_ && !event.is<sf::Event::FocusLost>();
-  if (leaderboardChip_.handleEvent(event, playfieldPointAt_) ||
-      hangarChip_.handleEvent(event, playfieldPointAt_)) {
+  if (leaderboardChip_.handleEvent(event, pointAt) ||
+      hangarChip_.handleEvent(event, pointAt)) {
     return;
   }
   if (clicksInside(event, ownBayAreaIn(menu_, *waitingRoom_, *connection_),
-                   playfieldPointAt_)) {
+                   pointAt)) {
     readyKeyHeld_ = false;
-    dropHeldInput(playfieldPointAt_, leaderboardChip_, hangarChip_, menu_);
+    dropHeldInput(pointAt, leaderboardChip_, hangarChip_, menu_);
     navigator_->push(HANGAR_SCREEN);
     return;
   }
-  menu_.handleEvent(event, playfieldPointAt_);
+  menu_.handleEvent(event, pointAt);
+  scroll_.scroll = roomScrollAfter(event, menu_, scroll_);
 }
 
 void LobbyScreen::update(engine::Duration elapsed) {
@@ -358,10 +436,10 @@ void LobbyScreen::draw(sf::RenderTarget& target) const {
 bool LobbyScreen::hidesScreensBelow() const { return true; }
 
 Menu LobbyScreen::buildMenu(std::string readyKeyName) {
-  return MenuBuilder(MenuBuilder::Frame::Room, sounds_)
+  return MenuBuilder(MenuBuilder::Frame::Room, sounds_, canvas_->textMetrics())
       .heading(LOBBY_HEADING)
-      .illustration(LOBBY_BAYS_SIZE)
-      .button({.label = READY_LABEL, .keyName = std::move(readyKeyName)},
+      .illustration(lobbyBaysSizeOf(canvas_->textMetrics()))
+      .button({.label = CANCEL_READY_LABEL, .keyName = std::move(readyKeyName)},
               [this] { toggleReady(); })
       .cancelButton({.label = BACK_LABEL}, [this] { leave(); })
       .build();
@@ -393,38 +471,41 @@ void LobbyScreen::repaint() {
       waitingRoom_->lobbyPlayers();
   const std::uint8_t ownNumber = connection_->status().playerNumber;
   std::string status = statusLine(players, ownNumber);
-  const LobbyPartAreas parts =
-      partAreasOf(menu_.illustrationArea().value_or(sf::IntRect()),
-                  ownSlotOf(players, ownNumber),
-                  canvas_->textWidth(status, ROOM_STATUS_STYLE.font));
+  const LobbyPartAreas parts = partAreasOf(
+      {.room = room_,
+       .bays = menu_.illustrationArea().value_or(sf::IntRect()),
+       .ownSlot = ownSlotOf(players, ownNumber),
+       .statusWidth = canvas_->textWidth(status, ROOM_STATUS_STYLE.font),
+       .metrics = canvas_->textMetrics()});
   menu_.setLabel(READY_BUTTON, wantsReady() ? CANCEL_READY_LABEL : READY_LABEL);
   menu_.setStatus(std::move(status));
   canvas_->clear();
+  ShiftedCanvas room(*canvas_, {0, -scroll_.scroll});
   if (!help_.showsGame()) {
-    menu_.paint(*canvas_);
-    paintBays();
+    menu_.paint(room);
+    paintBays(room);
     const std::string pilots = pilotCount(players.size());
-    canvas_->write(pilots, PILOT_COUNT_ANCHOR, PILOT_COUNT_STYLE);
+    room.write(pilots, PILOT_COUNT_ANCHOR, PILOT_COUNT_STYLE);
     if (rulesLine_.has_value()) {
-      canvas_->write(*rulesLine_, rulesAnchorOf(*canvas_, pilots),
-                     GAME_RULES_STYLE);
+      room.write(*rulesLine_, rulesAnchorOf(room, pilots), GAME_RULES_STYLE);
     }
-    leaderboardChip_.paint(*canvas_);
-    hangarChip_.paint(*canvas_);
+    leaderboardChip_.paint(room);
+    hangarChip_.paint(room);
+    paintPictureScrollMarks(*canvas_, scroll_);
   }
-  help_.paint(*canvas_, parts);
+  help_.paint(room, parts);
   chat_.paint(*canvas_, palette_.get(), LOBBY_CHAT_BOTTOM);
   canvas_->display();
 }
 
-void LobbyScreen::paintBays() {
+void LobbyScreen::paintBays(IInterfaceCanvas& canvas) const {
   const std::optional<sf::IntRect> area = menu_.illustrationArea();
   if (!area.has_value()) {
     return;
   }
   const BayMotion motion{.elapsed = elapsed_, .preference = motion_};
   for (int slot = 0; slot < LOBBY_BAY_COUNT; ++slot) {
-    paintHangarBay(*canvas_, bayOf(*area, slot), motion);
+    paintHangarBay(canvas, bayOf(*area, slot), motion);
   }
 }
 

@@ -30,6 +30,23 @@ constexpr int BAY_NICKNAME_TOP = 70;
 constexpr sf::IntRect BAY_STATE_CELL({8, 86}, {86, 16});
 
 /**
+ * @brief Above the size the fonts are drawn at: the ship at its own size,
+ * the space under the row of the number before the band, under the band
+ * before the ship, and between the parts under it; the lines the nickname
+ * and the word of the cell may take, the padding of the cell around its
+ * lines, and the space under the cell, as on the bay drawn.
+ */
+constexpr int LARGE_BAY_SHIP_SCALE = 1;
+constexpr int LARGE_BAY_BAND_GAP = 4;
+constexpr int LARGE_BAY_SHIP_GAP = 6;
+constexpr int LARGE_BAY_PART_GAP = 4;
+constexpr int LARGE_BAY_NICKNAME_LINES = 3;
+constexpr int LARGE_BAY_CELL_LINES = 2;
+constexpr int LARGE_BAY_CELL_PADDING = 8;
+constexpr int BAY_SPACE_UNDER_CELL =
+    HANGAR_BAY_SIZE.y - BAY_STATE_CELL.position.y - BAY_STATE_CELL.size.y;
+
+/**
  * @brief Beacons of an open bay: BEACON_COUNT squares in a row across the
  * middle of the place of the ship, BEACON_SPACING apart, one lit at a time
  * for BEACON_STEP, from left to right, the way a ship comes in.

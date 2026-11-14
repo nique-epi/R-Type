@@ -15,6 +15,7 @@
 #include "IInterfaceCanvas.hpp"
 #include "ImagePlacement.hpp"
 #include "ShadeSwap.hpp"
+#include "TextMetrics.hpp"
 #include "TextStyle.hpp"
 #include "TextureArea.hpp"
 
@@ -67,6 +68,9 @@ struct InterfaceCanvasRecord {
   std::vector<RecordedSmoothImage> smoothImages;
   int displayCount = 0;
   int showCount = 0;
+  /** @brief The text size the canvas reports and measures with, which
+   * clear() keeps; a test sets it to lay a screen out at a larger size. */
+  rtype::client::TextMetrics metrics{};
   /** @brief Where the canvas writes INTERFACE_CANVAS_LAID each time it is
    * shown, when a test shares one with other doubles. */
   DrawJournal* drawJournal = nullptr;
@@ -94,6 +98,7 @@ class RecordingInterfaceCanvas : public rtype::client::IInterfaceCanvas {
                        sf::Color tint) override;
   [[nodiscard]] int textWidth(std::string_view text,
                               rtype::client::TextFont font) const override;
+  [[nodiscard]] rtype::client::TextMetrics textMetrics() const override;
   void display() override;
   void show(sf::RenderTarget& target) const override;
 
@@ -110,6 +115,25 @@ class RecordingInterfaceCanvas : public rtype::client::IInterfaceCanvas {
  * clear() was anchored, or nothing. */
 [[nodiscard]] std::optional<sf::Vector2i> anchorOf(
     const InterfaceCanvasRecord& record, std::string_view text);
+
+/** @returns The box a line written on a recording canvas covers: as wide as
+ * the canvas measures it at the text size of @p record, or of its style when
+ * larger, as tall as one line at that size, placed as its alignment says. */
+[[nodiscard]] sf::IntRect writtenBoxOf(const InterfaceCanvasRecord& record,
+                                       const RecordedWriting& writing);
+
+/** @returns The text of every line of @p record whose box, as writtenBoxOf()
+ * rebuilds it, leaves the interface picture, in the order written. */
+[[nodiscard]] std::vector<std::string> writingsOffScreen(
+    const InterfaceCanvasRecord& record);
+
+/** @returns The text of every line of @p record that runs past the left or
+ * the right side of the interface picture, as writtenBoxOf() rebuilds its
+ * box, in the order written; a line with no letter writes nothing and is
+ * left out. A line above or under the picture, carried there by a motion or
+ * a scroll, is not counted. */
+[[nodiscard]] std::vector<std::string> writingsOutSideways(
+    const InterfaceCanvasRecord& record);
 
 /** @returns Every pixel the fills of a record light, as (column, row). */
 [[nodiscard]] std::set<std::pair<int, int>> litPixelsOf(

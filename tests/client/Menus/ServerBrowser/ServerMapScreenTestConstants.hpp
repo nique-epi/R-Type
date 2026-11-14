@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <string_view>
+#include "TextMetrics.hpp"
 
 namespace rtype::client::testing {
 
@@ -35,6 +36,19 @@ constexpr std::uint16_t ONE_SEAT_LEFT = 15;
 constexpr std::uint16_t WAITING_GAME_NUMBER = 1;
 constexpr std::uint16_t PLAYING_GAME_NUMBER = 2;
 constexpr std::string_view WAITING_GAME_NAME = "ALPHA WING";
+
+/**
+ * @brief The largest text size; the pilots of the waiting game of Lyon of its
+ * seats, written on the second line of its row at that size; enough Page Down
+ * to reach the bottom of the map; and the middle of BACK once the map is
+ * scrolled to its bottom: the chips are 24 rows tall on rows 260 and 292 under
+ * a map moved 30 rows down, the picture 336 tall scrolls 66 rows, so BACK
+ * spans rows 226 to 250, from 330 to 456.
+ */
+constexpr TextMetrics LARGEST_MAP_TEXT{.halfPixelsPerFontPixel = 4};
+constexpr std::string_view WAITING_GAME_SEATS = "2/4";
+constexpr int PAGES_TO_THE_BOTTOM = 3;
+constexpr sf::Vector2i SCROLLED_BACK_MIDDLE(390, 238);
 constexpr std::string_view PLAYING_GAME_NAME = "LAST STAND";
 constexpr std::uint8_t TWO_PILOTS = 2;
 

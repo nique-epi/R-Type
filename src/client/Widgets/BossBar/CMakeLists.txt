@@ -10,6 +10,8 @@ target_link_libraries(rtype_client_boss_bar
   PRIVATE
     rtype_client_easing
     rtype_client_effect_interfaces
+    rtype_client_shifted_canvas
+    rtype_client_text_measures
     rtype_network_boss_status
 )
 

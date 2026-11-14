@@ -41,7 +41,7 @@ class KeySlot : public RowControl {
 
   explicit KeySlot(Wiring wiring);
 
-  [[nodiscard]] int width() const override;
+  [[nodiscard]] int width(TextMetrics metrics) const override;
   void paint(IInterfaceCanvas& canvas, sf::IntRect area,
              BarState row) const override;
   [[nodiscard]] bool isActivatable() const override;

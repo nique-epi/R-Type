@@ -47,7 +47,7 @@ OptionsScreen::OptionsScreen(OptionsScreenParts parts,
           .askToReset =
               [this](const std::string& question,
                      const std::function<void()>& reset) {
-                dialog_.ask(question, reset);
+                dialog_.ask(question, reset, canvas_->textMetrics());
               }}) {
   refresh();
   repaint();
@@ -69,6 +69,7 @@ void OptionsScreen::update(engine::Duration elapsed) {
   }
   stamp_.age(elapsed);
   save();
+  tabs_.followTextSize();
   refresh();
   repaint();
 }

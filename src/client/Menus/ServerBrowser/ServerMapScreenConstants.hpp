@@ -75,6 +75,16 @@ constexpr const char* ZOOM_IN_HINT = "ENTER OR SCROLL: ZOOM IN";
 constexpr int SERVER_MAP_CHIPS_TOP = 226;
 constexpr int SERVER_MAP_CHIPS_LEFT = 24;
 constexpr int SERVER_MAP_CHIPS_RIGHT = 456;
+
+/**
+ * @brief Above the size the fonts are drawn at: the rows between two lines
+ * that go together, the lines the subtitle keeps, the rows between the
+ * subtitle and the map, and how far Page Up and Page Down scroll the map.
+ */
+constexpr int SERVER_MAP_LINE_GAP = 2;
+constexpr int SERVER_MAP_SUBTITLE_LINES = 2;
+constexpr int SERVER_MAP_SPACE_ABOVE_MAP = 4;
+constexpr int SERVER_MAP_PAGE_STEP = 48;
 constexpr const char* QUICK_PLAY_LABEL = "QUICK PLAY";
 constexpr const char* QUICK_PLAY_KEY_NAME = "Q";
 constexpr sf::Keyboard::Key QUICK_PLAY_KEY = sf::Keyboard::Key::Q;
@@ -103,6 +113,14 @@ constexpr int GAME_ROW_HIGHLIGHT_LEFT = 8;
 constexpr int GAME_ROW_HIGHLIGHT_RISE = 2;
 constexpr int GAME_ROW_HIGHLIGHT_HEIGHT = 12;
 constexpr int GAME_PANEL_DESCRIPTION_TOP = 152;
+/** @brief Above the size the fonts are drawn at: the rows under the rule
+ * before the first game, the rows left under the two lines of a game, the
+ * lines the line about the chosen game keeps, and the columns between the
+ * pilots of a game and the word of its state on its second line. */
+constexpr int GAME_PANEL_SPACE_UNDER_RULE = 4;
+constexpr int GAME_PANEL_ROW_GAP = 4;
+constexpr int GAME_PANEL_DESCRIPTION_LINES = 3;
+constexpr int GAME_STATE_GAP = 8;
 constexpr const char* GAME_COLUMN_LABEL = "GAME";
 constexpr const char* PILOTS_COLUMN_LABEL = "PILOTS";
 constexpr const char* STATE_COLUMN_LABEL = "STATE";
@@ -121,8 +139,9 @@ constexpr const char* NO_GAME_TITLE = "NO GAME YET";
 constexpr const char* NEW_GAME_ROW_LABEL = "+ NEW GAME";
 constexpr const char* NEW_GAME_DESCRIPTION =
     "+ NEW GAME: ENTER TO SET ITS RULES.";
-constexpr int GAME_PANEL_EMPTY_MESSAGE_ROW =
-    GAME_PANEL_FIRST_ROW + (2 * GAME_ROW_PITCH);
+/** @brief The rows of games the message of an empty list stands under, when
+ * + NEW GAME shows above it. */
+constexpr std::size_t EMPTY_MESSAGE_ROWS = 2;
 constexpr const char* SEARCHING_GAMES_TITLE = "ASKING THE MASTER...";
 
 }  // namespace rtype::client

@@ -8,6 +8,7 @@
 #include "LeaderboardFilterChoice.hpp"
 #include "Menu.hpp"
 #include "PlayfieldMapping.hpp"
+#include "TextMetrics.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -32,10 +33,12 @@ class LeaderboardFilterDialog {
   LeaderboardFilterDialog& operator=(LeaderboardFilterDialog&&) = delete;
   ~LeaderboardFilterDialog() = default;
 
-  /** @brief Opens the dialog on @p choice; APPLY runs @p apply with what the
-   * player picked and closes it; BACK closes it. */
+  /** @brief Opens the dialog on @p choice, laid out at the text size of
+   * @p metrics; APPLY runs @p apply with what the player picked and closes
+   * it; BACK closes it. */
   void open(LeaderboardFilterChoice choice,
-            const std::function<void(LeaderboardFilterChoice)>& apply);
+            const std::function<void(LeaderboardFilterChoice)>& apply,
+            TextMetrics metrics = {});
 
   [[nodiscard]] bool isOpen() const;
 

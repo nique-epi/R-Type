@@ -16,6 +16,7 @@
 #include "HelpWalkthroughConstants.hpp"
 #include "HelpWalkthroughTestConstants.hpp"
 #include "KeyPress.hpp"
+#include "LargestLobbyFixture.hpp"
 #include "LobbyAfterGameFixture.hpp"
 #include "LobbyRulesFixture.hpp"
 #include "LobbyScreen.hpp"
@@ -33,6 +34,7 @@
 #include "SoundConstants.hpp"
 #include "WidgetConstants.hpp"
 
+using rtype::client::BACK_LABEL;
 using rtype::client::CLICK_SOUND_ID;
 using rtype::client::GAME_SCREEN;
 using rtype::client::HANGAR_SCREEN;
@@ -53,6 +55,7 @@ using rtype::client::testing::FIRST_BAY_NICKNAME;
 using rtype::client::testing::FIRST_STEP_WORD;
 using rtype::client::testing::HELP_CHIP_MIDDLE;
 using rtype::client::testing::LEADERBOARD_CHIP_MIDDLE;
+using rtype::client::testing::LONGEST_NICKNAME;
 using rtype::client::testing::LOOK_SHEET;
 using rtype::client::testing::OTHER_NICKNAME;
 using rtype::client::testing::OTHER_NUMBER;
@@ -65,6 +68,7 @@ using rtype::client::testing::RULES_LINE_TOP;
 using rtype::client::testing::THIRD_BAY_MIDDLE;
 using rtype::client::testing::THIRD_BAY_NICKNAME;
 using rtype::client::testing::WEARS_TOP_HAT;
+using rtype::client::testing::WHEEL_PAST_THE_BOTTOM;
 using rtype::network::GameRules;
 using rtype::testing::CHOSEN_DIFFICULTY;
 using rtype::testing::CHOSEN_LIVES;
@@ -72,6 +76,7 @@ using rtype::testing::HARD_RULES_LINE;
 using ::testing::Contains;
 using ::testing::ElementsAre;
 using ::testing::IsEmpty;
+using ::testing::Not;
 
 /**
  * Given the server lists players 1 and 3
@@ -677,4 +682,70 @@ TEST_F(LobbyScreenFixture, TheLobbySendsTheLookOfTheSettings) {
 
   EXPECT_EQ(shipLooks().chosenLooks().back(),
             (rtype::identifiers::ShipLook{.head = WEARS_TOP_HAT}));
+}
+
+/**
+ * Given the waiting room at the largest text size and four pilots of the
+ * longest nickname
+ * When it shows its top, then the wheel scrolls it to its bottom
+ * Then every text off screen at the top shows at the bottom
+ */
+TEST_F(LargestLobbyFixture, ScrollingTheRoomShowsEveryText) {
+  listFourLongestPilots();
+  const std::vector<std::string> hiddenAtTheTop = writingsOffScreen(canvas());
+
+  turnTheWheel(WHEEL_PAST_THE_BOTTOM);
+
+  ASSERT_THAT(hiddenAtTheTop, Not(IsEmpty()));
+  const std::vector<std::string> hiddenAtTheBottom =
+      writingsOffScreen(canvas());
+  for (const std::string& text : hiddenAtTheTop) {
+    EXPECT_THAT(hiddenAtTheBottom, Not(Contains(text))) << text;
+  }
+}
+
+/**
+ * Given the waiting room at the largest text size
+ * When the server lists a pilot of the longest nickname in the first bay
+ * Then the bay writes every letter of it, over several rows
+ */
+TEST_F(LargestLobbyFixture, ABayWritesTheWholeLongestNickname) {
+  listFourLongestPilots();
+
+  EXPECT_EQ(nicknameOfTheFirstBay(), LONGEST_NICKNAME);
+}
+
+/**
+ * Given the waiting room at the largest text size, shown at its top
+ * When the down arrow selects BACK
+ * Then the room scrolls down to it
+ */
+TEST_F(LargestLobbyFixture, SelectingBackScrollsTheRoomToIt) {
+  listFourLongestPilots();
+  ASSERT_THAT(writingsOffScreen(canvas()), Contains(BACK_LABEL));
+
+  tap(sf::Keyboard::Key::Down, sf::Keyboard::Scancode::Down);
+  screen().update(ONE_FRAME);
+
+  EXPECT_THAT(writingsOffScreen(canvas()), Not(Contains(BACK_LABEL)));
+}
+
+/**
+ * Given the waiting room at the largest text size, its help open
+ * When Enter walks through every step of the help
+ * Then no line of a step runs past a side of the screen
+ */
+TEST_F(LargestLobbyFixture, NoLineOfTheHelpRunsPastASide) {
+  listFourLongestPilots();
+  tap(sf::Keyboard::Key::H, sf::Keyboard::Scan::H);
+  std::vector<std::string> outSideways;
+
+  for (std::size_t step = 0; step < HELP_STEPS.size(); ++step) {
+    screen().update(ONE_FRAME);
+    const std::vector<std::string> now = writingsOutSideways(canvas());
+    outSideways.insert(outSideways.end(), now.begin(), now.end());
+    tap(sf::Keyboard::Key::Enter, sf::Keyboard::Scan::Enter);
+  }
+
+  EXPECT_THAT(outSideways, IsEmpty());
 }

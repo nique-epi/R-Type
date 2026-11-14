@@ -7,6 +7,7 @@
 #include "IScreenNavigator.hpp"
 #include "ISoundPlayer.hpp"
 #include "ServerChoice.hpp"
+#include "TextMetrics.hpp"
 
 namespace rtype::client {
 
@@ -29,6 +30,8 @@ struct NewGameMenuParts {
   network::Endpoint server;
   /** @brief The difficulties of the server, as the master lists them. */
   std::vector<std::string> difficulties;
+  /** @brief The text size the dialog is laid out at. */
+  TextMetrics metrics{};
 };
 
 }  // namespace rtype::client

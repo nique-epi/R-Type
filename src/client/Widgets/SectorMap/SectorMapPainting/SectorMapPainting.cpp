@@ -17,6 +17,7 @@
 #include "IInterfaceCanvas.hpp"
 #include "ImagePlacement.hpp"
 #include "InterfaceColorConstants.hpp"
+#include "InterfaceConstants.hpp"
 #include "LabelSide.hpp"
 #include "MapView.hpp"
 #include "MiniMap.hpp"
@@ -33,6 +34,8 @@
 #include "StarLook.hpp"
 #include "StarMark.hpp"
 #include "StarName.hpp"
+#include "TextMeasures.hpp"
+#include "TextMetrics.hpp"
 #include "TextStyle.hpp"
 #include "TextureArea.hpp"
 #include "TimeConstants.hpp"
@@ -69,6 +72,25 @@ void addDashes(std::vector<ColoredPixel>& pixels, sf::Vector2f start,
   travelled += length;
 }
 
+/** @brief Where the lines of a bubble stand, from its top: the first one and
+ * from one to the next. */
+struct TooltipRows {
+  int firstLine{};
+  int pitch{};
+};
+
+/** @returns The rows of a bubble written at @p metrics: as drawn at the size
+ * the fonts are drawn at; above it, under the taller title, one line height
+ * and TOOLTIP_LINE_GAP apart. */
+TooltipRows tooltipRowsOf(TextMetrics metrics) {
+  if (metrics == TextMetrics{}) {
+    return {.firstLine = TOOLTIP_FIRST_LINE, .pitch = TOOLTIP_LINE_PITCH};
+  }
+  const int lineHeight = lineHeightOf(metrics);
+  return {.firstLine = TOOLTIP_TITLE_TOP + lineHeight + TOOLTIP_TITLE_GAP,
+          .pitch = lineHeight + TOOLTIP_LINE_GAP};
+}
+
 /** @brief Writes the label of the ring of @p milliseconds under the map,
  * where it crosses the axis of the planet, when there is room. */
 void paintRingLabel(IInterfaceCanvas& canvas, int milliseconds,
@@ -81,11 +103,12 @@ void paintRingLabel(IInterfaceCanvas& canvas, int milliseconds,
       crossing >= left + SECTOR_MAP_AREA.size.x - RING_LABEL_ROOM) {
     return;
   }
-  canvas.write(
-      std::to_string(milliseconds) + std::string{PING_UNIT_SUFFIX},
-      {crossing + RING_LABEL_SHIFT,
-       SECTOR_MAP_AREA.position.y + SECTOR_MAP_AREA.size.y - RING_LABEL_LIFT},
-      TextStyle{.font = TextFont::Small, .color = BLUE});
+  canvas.write(std::to_string(milliseconds) + std::string{PING_UNIT_SUFFIX},
+               {crossing + RING_LABEL_SHIFT,
+                SECTOR_MAP_AREA.position.y + SECTOR_MAP_AREA.size.y -
+                    (RING_LABEL_LIFT - TEXT_LINE_HEIGHT +
+                     lineHeightOf(canvas.textMetrics()))},
+               TextStyle{.font = TextFont::Small, .color = BLUE});
 }
 
 /** @returns The frames of the planet of a server that looks like @p look:
@@ -172,9 +195,23 @@ std::vector<ColoredPixel> sectorPlanetPixels(PlanetPose pose) {
 
 sf::IntRect tooltipAreaOf(const ServerTooltip& tooltip) {
   const int lineCount = static_cast<int>(tooltip.lines.size());
+  const TooltipRows rows = tooltipRowsOf(tooltip.metrics);
   return sf::IntRect{
       tooltip.topLeft,
-      {tooltip.width, TOOLTIP_BOTTOM + (lineCount * TOOLTIP_LINE_PITCH)}};
+      {tooltip.width, rows.firstLine + (lineCount * rows.pitch) +
+                          (TOOLTIP_BOTTOM - TOOLTIP_FIRST_LINE)}};
+}
+
+int tooltipWidthFor(const IInterfaceCanvas& canvas,
+                    const ServerTooltip& tooltip) {
+  if (tooltip.metrics == TextMetrics{}) {
+    return tooltip.width;
+  }
+  int widest = canvas.textWidth(tooltip.title, TextFont::Regular);
+  for (const TooltipLine& line : tooltip.lines) {
+    widest = std::max(widest, canvas.textWidth(line.text, TextFont::Small));
+  }
+  return std::max(tooltip.width, widest + (2 * TOOLTIP_PADDING));
 }
 
 void paintPingRings(IInterfaceCanvas& canvas, const MapView& view) {
@@ -251,13 +288,13 @@ void paintServerTooltip(IInterfaceCanvas& canvas,
       tooltip.title,
       tooltip.topLeft + sf::Vector2i{TOOLTIP_PADDING, TOOLTIP_TITLE_TOP},
       TextStyle{.font = TextFont::Regular, .color = HUD_CYAN});
+  const TooltipRows rows = tooltipRowsOf(tooltip.metrics);
   for (int index = 0; index < lineCount; ++index) {
     const TooltipLine& line = tooltip.lines.at(static_cast<std::size_t>(index));
     canvas.write(
         line.text,
-        tooltip.topLeft +
-            sf::Vector2i{TOOLTIP_PADDING,
-                         TOOLTIP_FIRST_LINE + (index * TOOLTIP_LINE_PITCH)},
+        tooltip.topLeft + sf::Vector2i{TOOLTIP_PADDING,
+                                       rows.firstLine + (index * rows.pitch)},
         TextStyle{.font = TextFont::Small, .color = line.color});
   }
 }

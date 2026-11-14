@@ -2,6 +2,7 @@
 
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Keyboard.hpp>
+#include <array>
 #include <cstddef>
 #include "BarRowWidth.hpp"
 #include "EntitySpriteConstants.hpp"
@@ -25,8 +26,18 @@ constexpr const char* CANCEL_READY_LABEL = "CANCEL READY";
 constexpr sf::Keyboard::Key LEADERBOARD_KEY = sf::Keyboard::Key::L;
 constexpr const char* LEADERBOARD_KEY_NAME = "L";
 
-/** @brief Order of the main bar in the menu of the waiting room. */
+/** @brief Order of the main bar and of BACK in the menu of the waiting
+ * room. */
 constexpr std::size_t READY_BUTTON = 0;
+constexpr std::size_t ROOM_BACK_BUTTON = 1;
+
+/**
+ * @brief How far a notch of the wheel scrolls the room, and the keys of the
+ * menu that move its selection and scroll the room to it.
+ */
+constexpr int ROOM_SCROLL_STEP = 16;
+constexpr std::array ROOM_SELECTION_KEYS{
+    sf::Keyboard::Key::Up, sf::Keyboard::Key::Down, sf::Keyboard::Key::Tab};
 
 /** @brief One bay per player number, side by side under the rule, as wide as
  * it. */

@@ -15,6 +15,10 @@ target_link_libraries(rtype_client_menu
   PRIVATE
     rtype_client_cut_corner_box
     rtype_client_interface_pixel
+    rtype_client_row_scrolling
+    rtype_client_shifted_canvas
+    rtype_client_text_measures
+    rtype_client_wrapped_lines
 )
 
 rtype_enable_warnings(rtype_client_menu)

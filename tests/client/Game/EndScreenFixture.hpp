@@ -14,6 +14,7 @@
 #include "RecordingNavigator.hpp"
 #include "RecordingServerConnection.hpp"
 #include "RecordingSoundPlayer.hpp"
+#include "TextMetrics.hpp"
 #include "TimeConstants.hpp"
 
 /** @brief An end screen after the game of the design system, its pointer
@@ -22,8 +23,10 @@ class EndScreenFixture : public ::testing::Test {
  protected:
   EndScreenFixture();
 
-  /** @brief An end screen after a game that ended with @p outcome. */
-  explicit EndScreenFixture(rtype::network::WireGameOutcome outcome);
+  /** @brief An end screen after a game that ended with @p outcome, its
+   * canvas at the text size of @p metrics. */
+  explicit EndScreenFixture(rtype::network::WireGameOutcome outcome,
+                            rtype::client::TextMetrics metrics = {});
 
   /** @brief Builds the screen again, with this motion preference. */
   void rebuildWith(rtype::client::MotionPreference motion);

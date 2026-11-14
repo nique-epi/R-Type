@@ -18,6 +18,9 @@
 #include "FlashPreference.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "InterfaceColorConstants.hpp"
+#include "InterfaceConstants.hpp"
+#include "ShiftedCanvas.hpp"
+#include "TextMeasures.hpp"
 #include "TextStyle.hpp"
 #include "TimeConstants.hpp"
 #include "WidgetConstants.hpp"
@@ -226,14 +229,16 @@ void paintBossBar(IInterfaceCanvas& canvas, const BossBarLook& look) {
   if (!look.shown) {
     return;
   }
-  paintNames(canvas);
-  paintGauge(canvas, BOSS_PHASE_TWO_GAUGE, look.phaseTwo);
-  paintGauge(canvas, BOSS_PHASE_ONE_GAUGE, look.phaseOne);
+  ShiftedCanvas lowered(
+      canvas, {0, lineHeightOf(canvas.textMetrics()) - TEXT_LINE_HEIGHT});
+  paintNames(lowered);
+  paintGauge(lowered, BOSS_PHASE_TWO_GAUGE, look.phaseTwo);
+  paintGauge(lowered, BOSS_PHASE_ONE_GAUGE, look.phaseOne);
   if (look.phaseTwo.state == BossGaugeState::Enraged) {
-    paintHotPixels(canvas, look.phaseTwo.fill, look.flickerStep);
+    paintHotPixels(lowered, look.phaseTwo.fill, look.flickerStep);
   }
   if (look.shatterMilliseconds.has_value()) {
-    paintShards(canvas, *look.shatterMilliseconds);
+    paintShards(lowered, *look.shatterMilliseconds);
   }
 }
 

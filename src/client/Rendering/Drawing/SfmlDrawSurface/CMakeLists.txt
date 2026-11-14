@@ -5,6 +5,7 @@ target_include_directories(rtype_client_sfml_draw_surface PUBLIC ${CMAKE_CURRENT
 target_link_libraries(rtype_client_sfml_draw_surface
   PUBLIC
     rtype_client_drawing
+    rtype_client_reporting_texture_source
     rtype_client_text_writer
     rtype_logging
     SFML::Graphics
@@ -13,6 +14,7 @@ target_link_libraries(rtype_client_sfml_draw_surface
     rtype_client_entity_sprites
     rtype_client_shaders
     rtype_client_pixel_rounding
+    rtype_client_text_measures
 )
 
 rtype_enable_warnings(rtype_client_sfml_draw_surface)

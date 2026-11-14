@@ -10,6 +10,7 @@
 #include "FlightLogTimingConstants.hpp"
 #include "GlowingCallPainting.hpp"
 #include "SoundConstants.hpp"
+#include "TextMetrics.hpp"
 #include "TimeConstants.hpp"
 #include "Typing.hpp"
 
@@ -25,12 +26,16 @@ engine::Duration times(engine::Duration step, std::size_t count) {
 }  // namespace
 
 FlightLogSchedule flightLogScheduleOf(std::span<const FinalPilot> pilots,
-                                      std::span<const std::string> taunt) {
+                                      std::span<const std::string> taunt,
+                                      TextMetrics metrics) {
   const engine::Duration openStart =
       TAUNT_START + typingTimeOf(TAUNT_LETTER_TIME, letterCountOf(taunt)) +
       TAUNT_HOLD;
   const engine::Duration opened = openStart + OPEN_TIME;
-  const engine::Duration rowsStart = opened + ROWS_DELAY;
+  const engine::Duration rowsStart =
+      opened + (metrics == TextMetrics{}
+                    ? ROWS_DELAY
+                    : TEAM_DELAY + TEAM_COUNT_TIME + MISSION_LOG_HOLD);
   const std::size_t laterRows = pilots.empty() ? 0 : pilots.size() - 1;
   const engine::Duration promptStart =
       rowsStart + times(ROW_STEP, laterRows) + ROW_TIME + PROMPT_DELAY;

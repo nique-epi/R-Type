@@ -6,6 +6,7 @@ target_link_libraries(rtype_client_interface_canvas
   PUBLIC
     rtype_client_asset_texture_source
     rtype_client_pixel_canvas
+    rtype_client_reporting_texture_source
     rtype_client_interface
     rtype_client_smooth_image_layer
     rtype_client_text_writer
@@ -14,6 +15,8 @@ target_link_libraries(rtype_client_interface_canvas
   PRIVATE
     rtype_client_asset_library
     rtype_client_shaders
+    rtype_client_text_measures
+    rtype_client_high_contrast_colors
 )
 
 rtype_enable_warnings(rtype_client_interface_canvas)

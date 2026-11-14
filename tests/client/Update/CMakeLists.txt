@@ -10,6 +10,7 @@ rtype_add_test(NAME client_update_tests
     ${RTYPE_TEST_SOURCE_DIR}/doubles/RecordingInterfaceCanvas.cpp
     ${RTYPE_TEST_SOURCE_DIR}/doubles/RecordingNavigator.cpp
   LIBS
+    rtype_client_text_measures
     rtype_client_exceptions
     rtype_client_update_notes
     rtype_client_update_releases

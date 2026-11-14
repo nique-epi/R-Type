@@ -51,6 +51,11 @@ template <std::size_t Count>
 
 /** @returns The selector of the color mode, which reads and changes it through
  * @p service. */
+/** @returns The selector of the text size, which reads and changes it through
+ * @p service. */
+[[nodiscard]] std::unique_ptr<RowControl> textSizeSelector(
+    SettingsService& service);
+
 [[nodiscard]] std::unique_ptr<RowControl> colorModeSelector(
     SettingsService& service);
 

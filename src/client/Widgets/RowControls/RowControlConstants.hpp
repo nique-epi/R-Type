@@ -31,7 +31,6 @@ constexpr sf::Vector2i SLIDER_GROOVE_SIZE(132, CONTROL_HEIGHT);
 constexpr int SLIDER_TRACK_INSET = 4;
 constexpr int SLIDER_TRACK_LENGTH =
     SLIDER_GROOVE_SIZE.x - (SIDES_PER_AXIS * SLIDER_TRACK_INSET);
-constexpr int SLIDER_TRACK_TOP = 5;
 constexpr int SLIDER_TRACK_THICKNESS = 2;
 constexpr sf::Vector2i SLIDER_THUMB_SIZE(6, 10);
 constexpr int SLIDER_THUMB_TOP = 1;
@@ -47,6 +46,10 @@ constexpr int ROUNDING_DIVISOR = 2;
 /** @brief Switch: two cells in a sunk box, the current one filled. */
 constexpr sf::Vector2i SWITCH_CELL_SIZE(30, 10);
 constexpr int SWITCH_CELL_INSET = 1;
+/** @brief Room around the widest word of a switch inside its cell, which is
+ * never narrower than SWITCH_CELL_SIZE: "OFF" is 24 pixels at the size the
+ * fonts are drawn, its cell 30. */
+constexpr int SWITCH_CELL_TEXT_PADDING = 6;
 constexpr const char* SWITCH_OFF_TEXT = "OFF";
 constexpr const char* SWITCH_ON_TEXT = "ON";
 

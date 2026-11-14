@@ -12,4 +12,8 @@ unsigned int integerScaleFactor(sf::Vector2i playfieldPixels) {
   return static_cast<unsigned int>(std::max(1, std::min(horizontal, vertical)));
 }
 
+float sharpScaleOf(unsigned int factor, unsigned int density) {
+  return static_cast<float>(factor) / static_cast<float>(density);
+}
+
 }  // namespace rtype::client

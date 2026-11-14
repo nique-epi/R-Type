@@ -13,6 +13,8 @@
 #include "IInterfaceCanvas.hpp"
 #include "RowControlConstants.hpp"
 #include "SunkBox.hpp"
+#include "TextMeasures.hpp"
+#include "TextMetrics.hpp"
 #include "TextStyle.hpp"
 #include "ValueBinding.hpp"
 #include "WidgetColors.hpp"
@@ -28,15 +30,16 @@ Slider::Slider(Range range, ValueBinding<int> value,
       inactive_(std::move(inactive)),
       unit_(std::move(unit)) {}
 
-int Slider::width() const {
-  return SLIDER_GROOVE_SIZE.x + CONTROL_GAP + SLIDER_VALUE_WIDTH;
+int Slider::width(TextMetrics metrics) const {
+  return SLIDER_GROOVE_SIZE.x + CONTROL_GAP +
+         regularWidthOf(metrics, WIDEST_SLIDER_VALUE);
 }
 
 void Slider::paint(IInterfaceCanvas& canvas, sf::IntRect area,
                    BarState row) const {
   const bool dimmed = inactive_();
   const int value = value_.read();
-  const sf::IntRect groove(area.position, SLIDER_GROOVE_SIZE);
+  const sf::IntRect groove(area.position, {SLIDER_GROOVE_SIZE.x, area.size.y});
   const int thumbCenter = trackPixelOf(value);
   const Look look = lookOf(row, dimmed);
   paintTrack(canvas, groove, thumbCenter, look.fill);
@@ -58,7 +61,8 @@ bool Slider::keyPressed(const sf::Event::KeyPressed& key) {
 }
 
 bool Slider::pointerPressed(sf::Vector2i pixel, sf::IntRect area) {
-  if (!sf::IntRect(area.position, SLIDER_GROOVE_SIZE).contains(pixel)) {
+  if (!sf::IntRect(area.position, {SLIDER_GROOVE_SIZE.x, area.size.y})
+           .contains(pixel)) {
     return false;
   }
   dragging_ = true;
@@ -86,8 +90,10 @@ void Slider::moveTo(int value) const {
 void Slider::paintTrack(IInterfaceCanvas& canvas, sf::IntRect groove,
                         int thumbCenter, sf::Color fill) {
   SunkBox(groove, SunkBox::Sides::Shaded).paint(canvas);
-  const sf::Vector2i trackStart(groove.position.x + SLIDER_TRACK_INSET,
-                                groove.position.y + SLIDER_TRACK_TOP);
+  const sf::Vector2i trackStart(
+      groove.position.x + SLIDER_TRACK_INSET,
+      groove.position.y +
+          ((groove.size.y - SLIDER_TRACK_THICKNESS) / SIDES_PER_AXIS));
   canvas.fill({trackStart, {SLIDER_TRACK_LENGTH, SLIDER_TRACK_THICKNESS}},
               SLIDER_TRACK_COLOR);
   canvas.fill({trackStart,
@@ -100,7 +106,8 @@ void Slider::paintThumb(IInterfaceCanvas& canvas, sf::IntRect groove,
   const sf::IntRect thumbArea(
       {groove.position.x + thumbCenter - (SLIDER_THUMB_SIZE.x / SIDES_PER_AXIS),
        groove.position.y + SLIDER_THUMB_TOP},
-      SLIDER_THUMB_SIZE);
+      {SLIDER_THUMB_SIZE.x,
+       groove.size.y - (SIDES_PER_AXIS * SLIDER_THUMB_TOP)});
   const sf::Vector2i border(BORDER_THICKNESS, BORDER_THICKNESS);
   canvas.fill(thumbArea, SLIDER_THUMB_OUTLINE_COLOR);
   canvas.fill(

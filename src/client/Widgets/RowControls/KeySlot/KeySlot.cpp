@@ -8,6 +8,8 @@
 #include "KeyCap.hpp"
 #include "RowControlConstants.hpp"
 #include "SunkBox.hpp"
+#include "TextMeasures.hpp"
+#include "TextMetrics.hpp"
 #include "TextStyle.hpp"
 #include "WidgetColors.hpp"
 #include "WidgetConstants.hpp"
@@ -17,17 +19,18 @@ namespace rtype::client {
 
 KeySlot::KeySlot(Wiring wiring) : wiring_(std::move(wiring)) {}
 
-int KeySlot::width() const {
+int KeySlot::width(TextMetrics metrics) const {
   if (listening_) {
-    return regularTextWidth(KEY_LISTENING_TEXT) +
+    return regularWidthOf(metrics, KEY_LISTENING_TEXT) +
            (SIDES_PER_AXIS * KEY_LISTENING_PADDING);
   }
   const int keyCapWidth =
-      KeyCap(wiring_.name(wiring_.key.read()), KeyCap::Edge::Plain).width();
+      KeyCap(wiring_.name(wiring_.key.read()), KeyCap::Edge::Plain)
+          .width(metrics);
   if (!wiring_.conflicts()) {
     return keyCapWidth;
   }
-  return regularTextWidth(KEY_CONFLICT_FLAG) + CONTROL_GAP + keyCapWidth;
+  return regularWidthOf(metrics, KEY_CONFLICT_FLAG) + CONTROL_GAP + keyCapWidth;
 }
 
 void KeySlot::paint(IInterfaceCanvas& canvas, sf::IntRect area,
@@ -49,7 +52,8 @@ void KeySlot::paint(IInterfaceCanvas& canvas, sf::IntRect area,
     canvas.write(KEY_CONFLICT_FLAG, textAnchor,
                  {.font = TextFont::Regular,
                   .color = selected ? barTextColor(row) : CONFLICT_FLAG_COLOR});
-    keyCapTopLeft.x += regularTextWidth(KEY_CONFLICT_FLAG) + CONTROL_GAP;
+    keyCapTopLeft.x +=
+        regularWidthOf(canvas.textMetrics(), KEY_CONFLICT_FLAG) + CONTROL_GAP;
   }
   KeyCap(wiring_.name(wiring_.key.read()), edge).paint(canvas, keyCapTopLeft);
 }

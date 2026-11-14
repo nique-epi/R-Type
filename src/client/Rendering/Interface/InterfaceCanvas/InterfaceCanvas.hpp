@@ -6,19 +6,19 @@
 #include <SFML/Graphics/Shader.hpp>
 #include <SFML/Graphics/Texture.hpp>
 #include <SFML/System/Vector2.hpp>
-#include <functional>
 #include <optional>
-#include <set>
 #include <span>
-#include <string>
 #include <string_view>
 #include "AssetTextureSource.hpp"
 #include "ColoredPixel.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "ImagePlacement.hpp"
+#include "InterfaceLookSource.hpp"
 #include "Logger.hpp"
 #include "PixelCanvas.hpp"
+#include "ReportingTextureSource.hpp"
 #include "SmoothImageLayer.hpp"
+#include "TextMetrics.hpp"
 #include "TextStyle.hpp"
 #include "TextWriter.hpp"
 #include "TextureArea.hpp"
@@ -45,12 +45,15 @@ class AssetLibrary;
 class InterfaceCanvas : public IInterfaceCanvas {
  public:
   /**
+   * @param look Gives the look the player chose, read at each line written;
+   * none keeps the look of a first launch.
    * @throws AssetNotLoadedException when a font of the interface is not
    * loaded.
    * @throws RenderTextureNotCreatedException when the canvas cannot get its
    * render texture.
    */
-  explicit InterfaceCanvas(const AssetLibrary& library);
+  explicit InterfaceCanvas(const AssetLibrary& library,
+                           InterfaceLookSource look = {});
 
   InterfaceCanvas(const InterfaceCanvas&) = delete;
   InterfaceCanvas& operator=(const InterfaceCanvas&) = delete;
@@ -70,22 +73,20 @@ class InterfaceCanvas : public IInterfaceCanvas {
                        sf::Color tint) override;
   [[nodiscard]] int textWidth(std::string_view text,
                               TextFont font) const override;
+  [[nodiscard]] TextMetrics textMetrics() const override;
   void display() override;
   void show(sf::RenderTarget& target) const override;
 
  private:
-  /** @returns The loaded texture of an id, or nullptr once the log says it is
-   * missing; a missing id is reported once. */
-  [[nodiscard]] const sf::Texture* foundTexture(std::string_view assetId);
-
+  InterfaceLookSource look_;
   AssetTextureSource textures_;
+  ReportingTextureSource foundTextures_;
   TextWriter writer_;
   PixelCanvas canvas_;
   logging::Logger logger_;
   /** @brief The shade swap shader, none where the graphics card has none or
    * it did not compile. */
   std::optional<sf::Shader> shadeSwap_;
-  std::set<std::string, std::less<>> reportedMissingIds_;
   SmoothImageLayer smoothImages_;
 };
 

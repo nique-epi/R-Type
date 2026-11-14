@@ -108,6 +108,14 @@ constexpr int STATUS_LIFE_ICON_LIMIT = 3;
 /** @brief Lives of a pilot on its last life, which the band warns of. */
 constexpr int LAST_LIFE_COUNT = 1;
 
+/** @brief How long a bay shows each part of a name too long for its room
+ * with REDUCE FLASHES, or each of its parts above the size the fonts are
+ * drawn at; how long a name that runs takes to move one pixel; and the room
+ * between the end of a running name and its next copy. */
+constexpr engine::Duration STATUS_TURN_DURATION = std::chrono::seconds(2);
+constexpr engine::Duration STATUS_SCROLL_STEP = std::chrono::milliseconds(50);
+constexpr int STATUS_SCROLL_GAP = 16;
+
 /** @brief Words of the band. */
 constexpr const char* LIVES_COUNT_PREFIX = "x";
 constexpr const char* OUT_TEXT = "OUT";

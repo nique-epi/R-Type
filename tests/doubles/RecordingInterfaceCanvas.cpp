@@ -16,6 +16,8 @@
 #include "ImagePlacement.hpp"
 #include "InterfaceConstants.hpp"
 #include "RecordingInterfaceCanvasConstants.hpp"
+#include "TextMeasures.hpp"
+#include "TextMetrics.hpp"
 #include "TextStyle.hpp"
 #include "TextureArea.hpp"
 
@@ -72,7 +74,13 @@ int RecordingInterfaceCanvas::textWidth(std::string_view text,
   const int advance = font == rtype::client::TextFont::Regular
                           ? rtype::client::REGULAR_FONT_ADVANCE
                           : RECORDED_SMALL_ADVANCE;
-  return static_cast<int>(sf::Utf8::count(text.begin(), text.end())) * advance;
+  return rtype::client::widthAtSizeOf(
+      record_->metrics,
+      static_cast<int>(sf::Utf8::count(text.begin(), text.end())) * advance);
+}
+
+rtype::client::TextMetrics RecordingInterfaceCanvas::textMetrics() const {
+  return record_->metrics;
 }
 
 void RecordingInterfaceCanvas::display() { ++record_->displayCount; }
@@ -97,6 +105,50 @@ std::optional<sf::Vector2i> anchorOf(const InterfaceCanvasRecord& record,
   const RecordedWriting* writing = writingOf(record, text);
   return writing == nullptr ? std::nullopt
                             : std::optional<sf::Vector2i>(writing->anchor);
+}
+
+sf::IntRect writtenBoxOf(const InterfaceCanvasRecord& record,
+                         const RecordedWriting& writing) {
+  InterfaceCanvasRecord measuring;
+  measuring.metrics = rtype::client::TextMetrics{
+      .halfPixelsPerFontPixel =
+          rtype::client::halfPixelsOf(record.metrics, writing.style.scale)};
+  const RecordingInterfaceCanvas canvas(measuring);
+  const int width = canvas.textWidth(writing.text, writing.style.font);
+  sf::Vector2i topLeft = writing.anchor;
+  if (writing.style.alignment == rtype::client::TextAlignment::Right) {
+    topLeft.x -= width;
+  } else if (writing.style.alignment == rtype::client::TextAlignment::Center) {
+    topLeft.x -= width / 2;
+  }
+  return {topLeft, {width, rtype::client::lineHeightOf(measuring.metrics)}};
+}
+
+std::vector<std::string> writingsOffScreen(
+    const InterfaceCanvasRecord& record) {
+  std::vector<std::string> off;
+  for (const RecordedWriting& writing : record.writings) {
+    const sf::IntRect box = writtenBoxOf(record, writing);
+    if (box.findIntersection(rtype::client::INTERFACE_AREA) !=
+        std::optional(box)) {
+      off.push_back(writing.text);
+    }
+  }
+  return off;
+}
+
+std::vector<std::string> writingsOutSideways(
+    const InterfaceCanvasRecord& record) {
+  std::vector<std::string> out;
+  for (const RecordedWriting& writing : record.writings) {
+    const sf::IntRect box = writtenBoxOf(record, writing);
+    if (!writing.text.empty() &&
+        (box.position.x < 0 ||
+         box.position.x + box.size.x > rtype::client::INTERFACE_AREA.size.x)) {
+      out.push_back(writing.text);
+    }
+  }
+  return out;
 }
 
 std::set<std::pair<int, int>> litPixelsOf(const InterfaceCanvasRecord& record) {

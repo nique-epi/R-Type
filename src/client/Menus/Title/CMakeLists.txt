@@ -26,6 +26,7 @@ target_link_libraries(rtype_client_title
     rtype_network_constants
     rtype_network_protocol
   PRIVATE
+    rtype_client_text_measures
     rtype_client_intro_cast_builder
     rtype_client_intro_cues
     rtype_client_intro_overlay

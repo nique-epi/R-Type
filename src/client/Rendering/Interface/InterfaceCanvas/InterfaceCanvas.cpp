@@ -16,16 +16,23 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <utility>
 #include "AssetLibrary.hpp"
+#include "BackgroundConstants.hpp"
 #include "ColoredPixel.hpp"
 #include "FragmentShader.hpp"
+#include "HighContrastColors.hpp"
 #include "ImagePlacement.hpp"
 #include "InterfaceConstants.hpp"
+#include "InterfaceLook.hpp"
+#include "InterfaceLookSource.hpp"
 #include "PlayerColors.hpp"
 #include "ShadeSwap.hpp"
 #include "ShadeSwapShaderConstants.hpp"
 #include "SmoothImageSpot.hpp"
 #include "TextLine.hpp"
+#include "TextMeasures.hpp"
+#include "TextMetrics.hpp"
 #include "TextStyle.hpp"
 #include "TextWriter.hpp"
 #include "TextureArea.hpp"
@@ -37,6 +44,18 @@ namespace {
 /** @returns The pixels of an image that its copy, enlarged and placed as
  * asked, shows whole inside the visible area, from the top-left corner of
  * the image; nothing when it shows none. */
+/** @returns The look @p source gives now, or the look of a first launch when
+ * the canvas was given no source. */
+InterfaceLook lookOf(const InterfaceLookSource& source) {
+  return source ? source() : InterfaceLook{};
+}
+
+/** @returns The color @p color is drawn in under @p look: its high contrast
+ * replacement when HIGH CONTRAST is on, itself otherwise. */
+sf::Color shownColorOf(const InterfaceLook& look, sf::Color color) {
+  return look.highContrast ? highContrastOf(color) : color;
+}
+
 std::optional<sf::IntRect> visiblePixelsOf(TextureArea image,
                                            ImagePlacement placement,
                                            sf::IntRect visibleArea) {
@@ -92,9 +111,13 @@ sf::RenderStates statesFor(const std::optional<ShadeSwap>& recolor,
 
 }  // namespace
 
-InterfaceCanvas::InterfaceCanvas(const AssetLibrary& library)
-    : textures_(library),
+InterfaceCanvas::InterfaceCanvas(const AssetLibrary& library,
+                                 InterfaceLookSource look)
+    : look_(std::move(look)),
+      textures_(library),
+      foundTextures_(textures_, INTERFACE_LOGGER_NAME),
       writer_(library),
+      canvas_(CRISP_TEXT_DENSITY),
       logger_(std::string(INTERFACE_LOGGER_NAME)),
       shadeSwap_(loadFragmentShader(SHADE_SWAP_SHADER, logger_)) {}
 
@@ -103,7 +126,8 @@ void InterfaceCanvas::clear() {
   smoothImages_.clear();
 }
 
-void InterfaceCanvas::fill(sf::IntRect area, sf::Color color) {
+void InterfaceCanvas::fill(sf::IntRect area, sf::Color shade) {
+  const sf::Color color = shownColorOf(lookOf(look_), shade);
   const sf::Vector2f topLeft(area.position);
   const sf::Vector2f bottomRight(area.position + area.size);
   const std::array corners{
@@ -116,15 +140,17 @@ void InterfaceCanvas::fill(sf::IntRect area, sf::Color color) {
 }
 
 void InterfaceCanvas::plot(std::span<const ColoredPixel> pixels) {
+  const InterfaceLook look = lookOf(look_);
   sf::VertexArray triangles{sf::PrimitiveType::Triangles};
   for (const ColoredPixel& pixel : pixels) {
+    const sf::Color color = shownColorOf(look, pixel.color);
     const sf::Vector2f topLeft(pixel.position);
     const sf::Vector2f bottomRight = topLeft + sf::Vector2f{1.0F, 1.0F};
     const sf::Vector2f topRight{bottomRight.x, topLeft.y};
     const sf::Vector2f bottomLeft{topLeft.x, bottomRight.y};
     for (const sf::Vector2f corner :
          {topLeft, topRight, bottomLeft, topRight, bottomRight, bottomLeft}) {
-      triangles.append(sf::Vertex{.position = corner, .color = pixel.color});
+      triangles.append(sf::Vertex{.position = corner, .color = color});
     }
   }
   canvas_.canvas().draw(triangles);
@@ -132,13 +158,18 @@ void InterfaceCanvas::plot(std::span<const ColoredPixel> pixels) {
 
 void InterfaceCanvas::write(std::string_view text, sf::Vector2i anchor,
                             TextStyle style) {
-  writer_.write(canvas_.canvas(),
-                TextLine{.text = text, .anchor = anchor, .style = style});
+  const InterfaceLook look = lookOf(look_);
+  style.color = shownColorOf(look, style.color);
+  writer_.write(canvas_.canvas(), TextLine{.text = text,
+                                           .anchor = anchor,
+                                           .style = style,
+                                           .metrics = look.text,
+                                           .plated = look.highContrast});
 }
 
 void InterfaceCanvas::drawImage(TextureArea image, ImagePlacement placement,
                                 sf::IntRect visibleArea) {
-  const sf::Texture* texture = foundTexture(image.assetId);
+  const sf::Texture* texture = foundTextures_.found(image.assetId);
   const std::optional<sf::IntRect> visible =
       visiblePixelsOf(image, placement, visibleArea);
   if (texture == nullptr || !visible.has_value()) {
@@ -157,7 +188,7 @@ void InterfaceCanvas::drawImage(TextureArea image, ImagePlacement placement,
 
 void InterfaceCanvas::drawSmoothImage(std::string_view assetId,
                                       sf::IntRect area, sf::Color tint) {
-  const sf::Texture* texture = foundTexture(assetId);
+  const sf::Texture* texture = foundTextures_.found(assetId);
   if (texture == nullptr) {
     return;
   }
@@ -166,8 +197,10 @@ void InterfaceCanvas::drawSmoothImage(std::string_view assetId,
 }
 
 int InterfaceCanvas::textWidth(std::string_view text, TextFont font) const {
-  return writer_.width(text, font);
+  return widthAtSizeOf(textMetrics(), writer_.width(text, font));
 }
+
+TextMetrics InterfaceCanvas::textMetrics() const { return lookOf(look_).text; }
 
 void InterfaceCanvas::display() {
   canvas_.canvas().display();
@@ -177,15 +210,6 @@ void InterfaceCanvas::display() {
 void InterfaceCanvas::show(sf::RenderTarget& target) const {
   canvas_.show(target);
   smoothImages_.show(target);
-}
-
-const sf::Texture* InterfaceCanvas::foundTexture(std::string_view assetId) {
-  const sf::Texture* texture = textures_.texture(assetId);
-  if (texture == nullptr && !reportedMissingIds_.contains(assetId)) {
-    reportedMissingIds_.emplace(assetId);
-    logger_.warn("no texture for asset id ", assetId);
-  }
-  return texture;
 }
 
 }  // namespace rtype::client

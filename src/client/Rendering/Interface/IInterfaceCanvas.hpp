@@ -7,6 +7,7 @@
 #include <string_view>
 #include "ColoredPixel.hpp"
 #include "ImagePlacement.hpp"
+#include "TextMetrics.hpp"
 #include "TextStyle.hpp"
 #include "TextureArea.hpp"
 
@@ -83,9 +84,14 @@ class IInterfaceCanvas {
                                sf::Color tint) = 0;
 
   /** @returns How wide a line of UTF-8 text is in a font, in pixels, as
-   * write() places it. */
+   * write() places it at the text size the player chose. */
   [[nodiscard]] virtual int textWidth(std::string_view text,
                                       TextFont font) const = 0;
+
+  /** @returns The text size the player chose, which every line is written at
+   * unless its style asks for a larger one; boxes around text are measured
+   * with it. */
+  [[nodiscard]] virtual TextMetrics textMetrics() const = 0;
 
   /** @brief Ends the picture started by clear(): show() lays it until the
    * next display(). */

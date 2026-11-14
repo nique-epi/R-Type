@@ -20,6 +20,7 @@
 #include "FlightLogColorConstants.hpp"
 #include "FlightLogLayoutConstants.hpp"
 #include "FlightLogLook.hpp"
+#include "FlightLogPages.hpp"
 #include "FlightLogTextConstants.hpp"
 #include "FlightLogTimingConstants.hpp"
 #include "GameEnded.hpp"
@@ -27,6 +28,7 @@
 #include "IInterfaceCanvas.hpp"
 #include "ImagePlacement.hpp"
 #include "InterfaceConstants.hpp"
+#include "MissionLogLayout.hpp"
 #include "MotionPreference.hpp"
 #include "Outline.hpp"
 #include "PaddedScore.hpp"
@@ -135,7 +137,8 @@ void paintStamp(IInterfaceCanvas& canvas, const FlightLogLook& look,
     return;
   }
   const int scale = stampScaleAt(age, look.motion);
-  const sf::IntRect box(page + STAMP_BOX.position, STAMP_BOX.size);
+  const sf::IntRect stamp = missionLogLayoutOf(canvas.textMetrics()).stampBox;
+  const sf::IntRect box(page + stamp.position, stamp.size);
   writeStamp(canvas, box, scale, stampTextOf(look.outcome));
   if (scale == TITLE_SCALE) {
     paintStampFrame(canvas, box);
@@ -152,20 +155,23 @@ void paintLines(IInterfaceCanvas& canvas, const FlightLogLook& look,
                page + MISSION_LOG_TOP_LEFT,
                {.font = TextFont::Small, .color = PAPER_LABEL_COLOR});
   const std::string_view summary = summaryTextOf(look.outcome);
+  const MissionLogLayout layout = missionLogLayoutOf(canvas.textMetrics());
   canvas.write(
       typedPrefix(summary, lettersTypedAt(sinceOpen - DOWN_DELAY,
                                           DOWN_LETTER_TIME, summary.size())),
-      {centeredTextLeft(sf::IntRect(page, PAGE_SIZE), summary),
-       page.y + DOWN_LINE_TOP},
+      {centeredTextLeft(sf::IntRect(page, {layout.width, PAGE_SIZE.y}), summary,
+                        canvas.textMetrics()),
+       page.y + layout.summaryTop},
       {.font = TextFont::Regular, .color = PAPER_INK});
 }
 
 void paintTeamScore(IInterfaceCanvas& canvas, const FlightLogLook& look,
                     sf::Vector2i page) {
   const engine::Duration sinceOpen = look.sinceStart - look.schedule.opened;
+  const MissionLogLayout layout = missionLogLayoutOf(canvas.textMetrics());
   canvas.write(
       TEAM_SCORE_TEXT,
-      {page.x + (PAGE_SIZE.x / SIDES_PER_AXIS), page.y + TEAM_LABEL_TOP},
+      {page.x + (layout.width / SIDES_PER_AXIS), page.y + layout.teamLabelTop},
       {.font = TextFont::Small,
        .color = PAPER_LABEL_COLOR,
        .alignment = TextAlignment::Center});
@@ -173,7 +179,7 @@ void paintTeamScore(IInterfaceCanvas& canvas, const FlightLogLook& look,
       easeOutCubic(progressBetween(sinceOpen, TEAM_DELAY, TEAM_COUNT_TIME));
   paintPaddedScore(canvas,
                    {.value = countedScore(teamScoreOf(look.pilots), counted),
-                    .end = page + TEAM_SCORE_END,
+                    .end = page + layout.teamScoreEnd,
                     .digitColor = PAPER_INK,
                     .zeroColor = PAPER_FAINT_COLOR,
                     .scale = TITLE_SCALE});
@@ -226,23 +232,34 @@ void paintPolaroid(IInterfaceCanvas& canvas, const FinalPilot& pilot,
                    ImagePlacement{.topLeft = topLeft + POLAROID_MARKER,
                                   .recolor = polaroid.recolor},
                    INTERFACE_AREA);
+  const MissionLogLayout layout = missionLogLayoutOf(canvas.textMetrics());
   canvas.write(pilot.isLocalPlayer ? std::string{LOCAL_PLAYER_TAG}
                                    : playerNumberLabel(pilot.playerNumber),
-               topLeft + POLAROID_CAPTION,
-               {.font = TextFont::Small, .color = PAPER_INK});
+               topLeft + layout.caption,
+               {.font = TextFont::Small,
+                .color = PAPER_INK,
+                .alignment = layout.captionAlignment});
   canvas.fill(sf::IntRect(topLeft + POLAROID_TAPE.position, POLAROID_TAPE.size),
               TAPE_COLOR);
 }
 
-/** @returns Where the polaroid in slot @p slot lies on @p page: one polaroid
- * per pilot of @p look, side by side, centered on the page. */
-sf::Vector2i polaroidTopLeft(const FlightLogLook& look, sf::Vector2i page,
-                             int slot) {
-  const int count = static_cast<int>(look.pilots.size());
-  const int width = barRowWidth(count, POLAROID_SIZE, POLAROID_GAP);
-  return {page.x + ((PAGE_SIZE.x - width) / SIDES_PER_AXIS) +
+/** @brief The row of the polaroids: the top-left corner of the page, how
+ * wide the page is and how many polaroids it holds, and the top of the row
+ * on the page. */
+struct PolaroidRow {
+  sf::Vector2i page;
+  int pageWidth{};
+  int count{};
+  int top{};
+};
+
+/** @returns Where the polaroid in slot @p slot of @p row lies: side by side,
+ * centered on the page. */
+sf::Vector2i polaroidTopLeft(const PolaroidRow& row, int slot) {
+  const int width = barRowWidth(row.count, POLAROID_SIZE, POLAROID_GAP);
+  return {row.page.x + ((row.pageWidth - width) / SIDES_PER_AXIS) +
               (slot * (POLAROID_SIZE.x + POLAROID_GAP)),
-          page.y + POLAROID_TOP};
+          row.page.y + row.top};
 }
 
 /** @returns How many rows above its place a polaroid shown @p sinceShown ago
@@ -275,6 +292,11 @@ engine::Duration sinceShownOf(const FlightLogLook& look, int slot) {
 void paintPolaroids(IInterfaceCanvas& canvas, const FlightLogLook& look,
                     sf::Vector2i page) {
   const std::vector<FinalPilot> numbered = pilotsByNumber(look.pilots);
+  const MissionLogLayout layout = missionLogLayoutOf(canvas.textMetrics());
+  const PolaroidRow row{.page = page,
+                        .pageWidth = layout.width,
+                        .count = static_cast<int>(numbered.size()),
+                        .top = layout.polaroidTop};
   for (int slot = 0; std::cmp_less(slot, numbered.size()); ++slot) {
     const engine::Duration sinceShown = sinceShownOf(look, slot);
     if (sinceShown < engine::Duration::zero()) {
@@ -284,7 +306,7 @@ void paintPolaroids(IInterfaceCanvas& canvas, const FlightLogLook& look,
     paintPolaroid(
         canvas, pilot,
         Polaroid{
-            .topLeft = polaroidTopLeft(look, page, slot) -
+            .topLeft = polaroidTopLeft(row, slot) -
                        sf::Vector2i(0, polaroidDropAt(sinceShown, look.motion)),
             .recolor = shadingOf(look.palette, static_cast<std::size_t>(
                                                    pilotColorOfPlayerNumber(

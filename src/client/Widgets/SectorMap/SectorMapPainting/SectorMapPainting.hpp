@@ -51,6 +51,12 @@ void paintStarName(IInterfaceCanvas& canvas, const StarName& name);
 /** @brief Paints the bubble @p tooltip. */
 void paintServerTooltip(IInterfaceCanvas& canvas, const ServerTooltip& tooltip);
 
+/** @returns How wide @p tooltip must be on @p canvas: its own width at the
+ * size the fonts are drawn at; above it, at least as wide as its title and
+ * its widest line need with their padding. */
+[[nodiscard]] int tooltipWidthFor(const IInterfaceCanvas& canvas,
+                                  const ServerTooltip& tooltip);
+
 /** @brief Paints @p map, scaled from the map to its frame. */
 void paintMiniMap(IInterfaceCanvas& canvas, const MiniMap& map);
 

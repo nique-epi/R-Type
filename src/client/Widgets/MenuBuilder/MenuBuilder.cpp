@@ -8,19 +8,31 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 #include "BarRowWidth.hpp"
 #include "Button.hpp"
+#include "DialogLayout.hpp"
+#include "DialogLayouts.hpp"
+#include "DialogText.hpp"
 #include "IScreenNavigator.hpp"
 #include "InterfaceConstants.hpp"
 #include "KeyCap.hpp"
 #include "Menu.hpp"
 #include "PanelCursor.hpp"
+#include "PanelLayouts.hpp"
 #include "PendingButton.hpp"
+#include "RoomLayout.hpp"
+#include "RoomLayouts.hpp"
 #include "RowControl.hpp"
+#include "RowScroll.hpp"
+#include "RowWindow.hpp"
 #include "TabStrip.hpp"
+#include "TabbedPanelLayout.hpp"
 #include "TextField.hpp"
+#include "TextMeasures.hpp"
+#include "TextMetrics.hpp"
 #include "TextStyle.hpp"
 #include "WidgetConstants.hpp"
 #include "WidgetStyles.hpp"
@@ -36,6 +48,35 @@ struct ColumnLine {
   int top{};
   TextStyle style;
   int spaceBelow{};
+  int lineHeight = TEXT_LINE_HEIGHT;
+};
+
+/** @brief What a dialog was asked to write, as the builder holds it. */
+struct DialogParts {
+  std::reference_wrapper<const std::optional<std::string>> heading;
+  std::reference_wrapper<const std::optional<std::string>> message;
+  std::reference_wrapper<const std::vector<PendingButton>> bars;
+};
+
+/** @brief A dialog laid out and where its panel lies. */
+struct PlacedDialog {
+  DialogLayout layout;
+  sf::Vector2i topLeft;
+};
+
+/** @brief Where the bars of a page laid in two columns start, and how tall
+ * each is. */
+struct BarGrid {
+  int top{};
+  int barHeight{};
+};
+
+/** @brief What closes a page: the area its screen paints in, its footer, and
+ * the text size the page is laid out at. */
+struct PageEnd {
+  std::optional<sf::Vector2i> illustration;
+  std::optional<std::string> footer;
+  TextMetrics metrics;
 };
 
 /** @brief Where the parts of a form lie, from the top of its panel, and how
@@ -43,6 +84,8 @@ struct ColumnLine {
 struct FormLayout {
   sf::Vector2i panelTopLeft;
   sf::Vector2i panelSize;
+  sf::Vector2i fieldSize = FIELD_SIZE;
+  sf::Vector2i buttonSize = FORM_BUTTON_SIZE;
   int fieldsTop{};
   int buttonsTop{};
   int descriptionTop{};
@@ -59,7 +102,51 @@ int placeColumnLine(Menu::Content& content, std::optional<std::string>& text,
   }
   content.labels.emplace_back(std::move(*text),
                               sf::Vector2i(SAFE_MARGIN, line.top), line.style);
-  return line.top + TEXT_LINE_HEIGHT + line.spaceBelow;
+  return line.top + line.lineHeight + line.spaceBelow;
+}
+
+/** @returns The top of what comes under the bars of a page laid in two
+ * columns, as a page is above the size the fonts are drawn at, when one
+ * column of taller bars no longer fits over the description. */
+int placeBarsInTwoColumns(Menu::Content& content,
+                          std::vector<PendingButton>& bars,
+                          const BarGrid& grid) {
+  const int width =
+      (INTERFACE_AREA.size.x - (SIDES_PER_AXIS * SAFE_MARGIN) - BUTTON_GAP) /
+      SIDES_PER_AXIS;
+  int row = 0;
+  int column = 0;
+  for (PendingButton& pending : bars) {
+    const sf::Vector2i topLeft(
+        SAFE_MARGIN + (column * (width + BUTTON_GAP)),
+        grid.top + (row * (grid.barHeight + BUTTON_GAP)));
+    content.buttons.emplace_back(
+        std::move(pending.text), sf::IntRect(topLeft, {width, grid.barHeight}),
+        std::move(pending.action), std::move(pending.field));
+    column = (column + 1) % SIDES_PER_AXIS;
+    row += column == 0 ? 1 : 0;
+  }
+  const int rows = row + (column == 0 ? 0 : 1);
+  return grid.top + (rows * (grid.barHeight + BUTTON_GAP));
+}
+
+/** @brief Places the area the screen of a page paints in, at its right, as
+ * the page was drawn at the size of the fonts and never above it, where two
+ * columns of bars take its room; then the footer, its last line on the row
+ * it was drawn on. */
+void placePageEnd(Menu::Content& content, PageEnd end) {
+  const int right = INTERFACE_AREA.size.x - SAFE_MARGIN;
+  if (end.illustration.has_value() && end.metrics == TextMetrics{}) {
+    content.illustration = sf::IntRect(
+        {right - end.illustration->x, ILLUSTRATION_TOP}, *end.illustration);
+  }
+  if (end.footer.has_value()) {
+    content.labels.emplace_back(
+        std::move(*end.footer),
+        sf::Vector2i(right,
+                     FOOTER_TOP + TEXT_LINE_HEIGHT - lineHeightOf(end.metrics)),
+        FOOTER_STYLE);
+  }
 }
 
 /** @returns The top of what comes under the bars of a column. */
@@ -76,12 +163,32 @@ int placeColumnBars(Menu::Content& content, std::vector<PendingButton>& bars,
   return top;
 }
 
-/** @returns Where the parts of a form holding these bars lie. */
-FormLayout formLayoutOf(const std::vector<PendingButton>& bars) {
-  const int fieldCount = static_cast<int>(
+/** @returns The top of what comes under the bars of a page: one column as
+ * the page was drawn, while @p grid keeps the height the bars were drawn at;
+ * two columns of taller bars otherwise, the description under them then as
+ * wide as the safe margin. */
+int placePageBars(Menu::Content& content, std::vector<PendingButton>& bars,
+                  const BarGrid& grid) {
+  if (grid.barHeight == BUTTON_SIZE.y) {
+    return placeColumnBars(content, bars, grid.top);
+  }
+  content.descriptionWidth =
+      INTERFACE_AREA.size.x - (SIDES_PER_AXIS * SAFE_MARGIN);
+  return placeBarsInTwoColumns(content, bars, grid);
+}
+
+/** @returns How many of @p bars are text fields. */
+int fieldCountOf(const std::vector<PendingButton>& bars) {
+  return static_cast<int>(
       std::ranges::count_if(bars, [](const PendingButton& pending) noexcept {
         return pending.field.has_value();
       }));
+}
+
+/** @returns Where the parts of a form holding these bars lie, as the forms
+ * were drawn at the size the fonts are drawn at. */
+FormLayout formLayoutOf(const std::vector<PendingButton>& bars) {
+  const int fieldCount = fieldCountOf(bars);
   const int fieldsTop =
       FORM_HEADING_OFFSET.y + TEXT_LINE_HEIGHT + SPACE_BELOW_FORM_HEADING;
   const int buttonsTop = fieldsTop + (fieldCount * FIELD_SIZE.y) +
@@ -115,13 +222,13 @@ void placeFormBars(Menu::Content& content, std::vector<PendingButton>& bars,
   for (PendingButton& pending : bars) {
     sf::IntRect area;
     if (pending.field.has_value()) {
-      area =
-          sf::IntRect({panel.x + FORM_HEADING_OFFSET.x, fieldTop}, FIELD_SIZE);
-      fieldTop += FIELD_SIZE.y + SPACE_BETWEEN_FIELDS;
+      area = sf::IntRect({panel.x + FORM_HEADING_OFFSET.x, fieldTop},
+                         layout.fieldSize);
+      fieldTop += layout.fieldSize.y + SPACE_BETWEEN_FIELDS;
     } else {
       area = sf::IntRect({buttonLeft, panel.y + layout.buttonsTop},
-                         FORM_BUTTON_SIZE);
-      buttonLeft += FORM_BUTTON_SIZE.x + FORM_BUTTON_GAP;
+                         layout.buttonSize);
+      buttonLeft += layout.buttonSize.x + FORM_BUTTON_GAP;
     }
     content.buttons.emplace_back(std::move(pending.text), area,
                                  std::move(pending.action),
@@ -162,6 +269,26 @@ PanelCursor placeRowsAndBarsOf(Menu::Content& content,
   return cursor;
 }
 
+/** @returns The rows of @p content, when the panel of a tabbed panel holds
+ * more of them than it shows: the first rows show, the rest scroll. */
+std::optional<RowScroll> rowScrollOf(const Menu::Content& content,
+                                     const TabbedPanelLayout& layout) {
+  const auto rows = static_cast<std::size_t>(std::ranges::count_if(
+      content.buttons,
+      [](const Button& button) { return button.control() != nullptr; }));
+  if (rows <= layout.rowCapacity) {
+    return std::nullopt;
+  }
+  const auto first = std::ranges::find_if(
+      content.buttons,
+      [](const Button& button) { return button.control() != nullptr; });
+  return RowScroll{
+      .rows = RowWindow{.first = 0, .shown = layout.rowCapacity, .count = rows},
+      .firstButton = static_cast<std::size_t>(first - content.buttons.begin()),
+      .pitch = layout.rowSize.y + ROW_GAP,
+      .viewport = rowsViewportOf(layout)};
+}
+
 /** @brief Takes out of @p bars every bar asked for after the cancel button: a
  * tabbed panel lays them against the right end of its panel.
  * @returns Those bars, in the order they were asked for. */
@@ -182,17 +309,85 @@ std::vector<PendingButton> barsAfterCancel(
 /** @brief Places @p bars in a row under the panel of rows, the last one ending
  * at the right end of the panel. */
 void placeBarsAtPanelEnd(Menu::Content& content,
-                         std::vector<PendingButton>& bars) {
+                         std::vector<PendingButton>& bars,
+                         const TabbedPanelLayout& layout) {
   const int rowWidth = barRowWidth(static_cast<int>(bars.size()),
-                                   PANEL_BAR_SIZE, SPACE_BESIDE_PANEL_BARS);
-  int barLeft = ROWS_PANEL_TOP_LEFT.x + ROWS_PANEL_SIZE.x - rowWidth;
+                                   layout.barSize, SPACE_BESIDE_PANEL_BARS);
+  int barLeft = layout.panel.position.x + layout.panel.size.x - rowWidth;
   for (PendingButton& pending : bars) {
     content.buttons.emplace_back(
         std::move(pending.text),
-        sf::IntRect({barLeft, PANEL_BARS_TOP}, PANEL_BAR_SIZE),
+        sf::IntRect({barLeft, layout.barsTop}, layout.barSize),
         std::move(pending.action), std::move(pending.field));
-    barLeft += PANEL_BAR_SIZE.x + SPACE_BESIDE_PANEL_BARS;
+    barLeft += layout.barSize.x + SPACE_BESIDE_PANEL_BARS;
   }
+}
+
+/** @returns How wide every bar of a row of @p bars is: @p narrowest, or the
+ * widest label of them and its padding when that is wider. */
+int barWidthFor(const std::vector<PendingButton>& bars, int narrowest,
+                TextMetrics metrics) {
+  int width = narrowest;
+  for (const PendingButton& pending : bars) {
+    if (pending.control == nullptr) {
+      width = std::max(width, regularWidthOf(metrics, pending.text.label) +
+                                  (SIDES_PER_AXIS * BUTTON_TEXT_OFFSET.x));
+    }
+  }
+  return width;
+}
+
+/**
+ * @returns Where the parts of a form holding these bars lie above the size the
+ * fonts are drawn at: as wide as the safe margin, each field one box tall, its
+ * label beside it, the buttons as wide as their labels need, then the line
+ * about the selected bar and the status line, FORM_TEXT_LINES lines each.
+ */
+FormLayout largeFormLayoutOf(const std::vector<PendingButton>& bars,
+                             TextMetrics metrics) {
+  const int fieldCount = fieldCountOf(bars);
+  const int lineHeight = lineHeightOf(metrics);
+  const int width = INTERFACE_AREA.size.x - (SIDES_PER_AXIS * SAFE_MARGIN);
+  const sf::Vector2i fieldSize(
+      width - (SIDES_PER_AXIS * FORM_HEADING_OFFSET.x),
+      lineHeight + (SIDES_PER_AXIS * FIELD_TEXT_PADDING));
+  const sf::Vector2i buttonSize(barWidthFor(bars, FORM_BUTTON_SIZE.x, metrics),
+                                textBoxHeight(FORM_BUTTON_SIZE.y, metrics));
+  const int fieldsTop =
+      FORM_HEADING_OFFSET.y + lineHeight + SPACE_BELOW_FORM_HEADING;
+  const int buttonsTop = fieldsTop + (fieldCount * fieldSize.y) +
+                         ((fieldCount - 1) * SPACE_BETWEEN_FIELDS) +
+                         SPACE_AROUND_FORM_BUTTONS;
+  const int textHeight = FORM_TEXT_LINES * (lineHeight + DESCRIPTION_LINE_GAP);
+  const int descriptionTop =
+      buttonsTop + buttonSize.y + SPACE_AROUND_FORM_BUTTONS;
+  const int statusTop = descriptionTop + textHeight + SPACE_BELOW_DESCRIPTION;
+  const sf::Vector2i panelSize(width,
+                               statusTop + textHeight + FORM_HEADING_OFFSET.y);
+  return FormLayout{
+      .panelTopLeft = (INTERFACE_AREA.size - panelSize) / SIDES_PER_AXIS,
+      .panelSize = panelSize,
+      .fieldSize = fieldSize,
+      .buttonSize = buttonSize,
+      .fieldsTop = fieldsTop,
+      .buttonsTop = buttonsTop,
+      .descriptionTop = descriptionTop,
+      .statusTop = statusTop,
+      .buttonCount = static_cast<int>(bars.size()) - fieldCount};
+}
+
+/** @returns Where the description of the selected row is written: beside the
+ * bars, on the middle row of a bar as the options were drawn, or at the top
+ * of the strip of the bars when it wraps on two lines at a larger size. */
+sf::Vector2i descriptionAnchorOf(const TabbedPanelLayout& layout,
+                                 PanelCursor end, TextMetrics metrics) {
+  if (metrics != TextMetrics{}) {
+    return {end.barLeft, layout.barsTop};
+  }
+  return {
+      end.barLeft,
+      centeredTextTop(
+          sf::IntRect({end.barLeft, layout.barsTop}, layout.barSize), metrics)};
 }
 
 /** @returns How many of @p bars are rows. */
@@ -203,43 +398,56 @@ int rowCountOf(const std::vector<PendingButton>& bars) {
       }));
 }
 
-/** @returns How far down its panel a dialog of @p rowCount rows places its
- * buttons: DIALOG_BUTTONS_TOP under a message, ROW_GAP under the last row
- * otherwise. */
-int dialogButtonsTopOf(int rowCount) {
-  if (rowCount == 0) {
-    return DIALOG_BUTTONS_TOP;
+/** @returns What a dialog writes, read from the parts asked of the
+ * builder. */
+DialogText dialogTextOf(const DialogParts& parts) {
+  const std::optional<std::string>& heading = parts.heading.get();
+  const std::optional<std::string>& message = parts.message.get();
+  DialogText text{.heading = heading.has_value() ? std::string_view(*heading)
+                                                 : std::string_view(),
+                  .message = message.has_value() ? std::string_view(*message)
+                                                 : std::string_view(),
+                  .rowCount = rowCountOf(parts.bars.get()),
+                  .barLabels = {}};
+  for (const PendingButton& pending : parts.bars.get()) {
+    if (pending.control == nullptr) {
+      text.barLabels.emplace_back(pending.text.label);
+    }
   }
-  return DIALOG_ROWS_TOP + (rowCount * DIALOG_ROW_PITCH) + ROW_GAP;
+  return text;
 }
 
-/** @returns The size of a dialog of @p rowCount rows: DIALOG_SIZE under a
- * message, and with rows as tall as ends DIALOG_MARGIN_UNDER_BUTTONS under its
- * buttons. */
-sf::Vector2i dialogSizeOf(int rowCount) {
-  if (rowCount == 0) {
-    return DIALOG_SIZE;
+/** @brief Writes the message of a dialog, one label per line of its layout,
+ * from where the layout puts the message. */
+void placeMessageLines(Menu::Content& content, const DialogLayout& layout,
+                       sf::Vector2i panel) {
+  int top = panel.y + layout.messageTop;
+  for (const std::string& line : layout.messageLines) {
+    content.labels.emplace_back(
+        line, sf::Vector2i(panel.x + DIALOG_MESSAGE_OFFSET.x, top),
+        DIALOG_MESSAGE_STYLE);
+    top += layout.messagePitch;
   }
-  return {DIALOG_SIZE.x, dialogButtonsTopOf(rowCount) + DIALOG_BUTTON_SIZE.y +
-                             DIALOG_MARGIN_UNDER_BUTTONS};
 }
 
 /** @brief Places the rows of a dialog under its heading and its buttons in a
  * centered row; rows keep Left and Right to step their values. */
 void placeDialogBars(Menu::Content& content, std::vector<PendingButton>& bars,
-                     sf::Vector2i panel) {
+                     const PlacedDialog& dialog) {
   const int rowCount = rowCountOf(bars);
   const int barCount = static_cast<int>(bars.size()) - rowCount;
+  const DialogLayout& layout = dialog.layout;
+  const sf::Vector2i panel = dialog.topLeft;
   const int rowWidth =
-      barRowWidth(barCount, DIALOG_BUTTON_SIZE, DIALOG_BUTTON_GAP);
+      barRowWidth(barCount, layout.buttonSize, DIALOG_BUTTON_GAP);
   placeRowsAndBarsOf(
       content, bars,
       RowsAndBars{
-          .firstRow = {panel.x + DIALOG_ROW_INSET, panel.y + DIALOG_ROWS_TOP},
-          .rowSize = DIALOG_ROW_SIZE,
-          .firstBar = {panel.x + ((DIALOG_SIZE.x - rowWidth) / SIDES_PER_AXIS),
-                       panel.y + dialogButtonsTopOf(rowCount)},
-          .barSize = DIALOG_BUTTON_SIZE,
+          .firstRow = {panel.x + DIALOG_ROW_INSET, panel.y + layout.rowsTop},
+          .rowSize = layout.rowSize,
+          .firstBar = {panel.x + ((layout.size.x - rowWidth) / SIDES_PER_AXIS),
+                       panel.y + layout.buttonsTop},
+          .barSize = layout.buttonSize,
           .barGap = DIALOG_BUTTON_GAP});
   if (rowCount > 0) {
     content.nextKeys = PANEL_NEXT_KEYS;
@@ -249,8 +457,8 @@ void placeDialogBars(Menu::Content& content, std::vector<PendingButton>& bars,
 
 }  // namespace
 
-MenuBuilder::MenuBuilder(Frame frame, ISoundPlayer* sounds)
-    : frame_(frame), sounds_(sounds) {}
+MenuBuilder::MenuBuilder(Frame frame, ISoundPlayer* sounds, TextMetrics metrics)
+    : frame_(frame), sounds_(sounds), metrics_(metrics) {}
 
 MenuBuilder& MenuBuilder::version(std::string text) {
   version_ = std::move(text);
@@ -328,7 +536,8 @@ MenuBuilder& MenuBuilder::tabs(std::vector<std::string> labels,
                                std::size_t openTab, TabStrip::KeyNames keys,
                                std::function<void(std::size_t)> openTabAt) {
   tabStrip_.emplace(std::move(labels), openTab, std::move(keys),
-                    TAB_STRIP_TOP_LEFT);
+                    tabbedPanelLayoutOf(metrics_).tabsTopLeft);
+  tabStrip_->setTextSize(metrics_);
   tabOpener_ = std::move(openTabAt);
   return *this;
 }
@@ -344,6 +553,9 @@ MenuBuilder& MenuBuilder::notice(std::string text) {
 }
 
 Menu MenuBuilder::build() {
+  for (PendingButton& pending : buttons_) {
+    pending.text.size = metrics_;
+  }
   Menu::Content content;
   content.cancelButton = cancelButton_;
   content.dimmed = dimmed_;
@@ -369,10 +581,12 @@ Menu MenuBuilder::build() {
 }
 
 void MenuBuilder::placeColumn(Menu::Content& content) {
+  const int lineHeight = lineHeightOf(metrics_);
   int top = placeColumnLine(content, version_,
                             {.top = SAFE_MARGIN,
                              .style = VERSION_STYLE,
-                             .spaceBelow = SPACE_BELOW_VERSION});
+                             .spaceBelow = SPACE_BELOW_VERSION,
+                             .lineHeight = lineHeight});
   if (logo_.has_value()) {
     logo_->area.position = {SAFE_MARGIN, top};
     top += logo_->area.size.y + SPACE_BELOW_HEADING;
@@ -381,46 +595,48 @@ void MenuBuilder::placeColumn(Menu::Content& content) {
   top = placeColumnLine(content, heading_,
                         {.top = top,
                          .style = PAGE_LINE_STYLE,
-                         .spaceBelow = SPACE_BELOW_HEADING});
+                         .spaceBelow = SPACE_BELOW_HEADING,
+                         .lineHeight = lineHeight});
   top = placeColumnLine(content, subtitle_,
                         {.top = top,
                          .style = PAGE_LINE_STYLE,
-                         .spaceBelow = SPACE_BELOW_SUBTITLE});
+                         .spaceBelow = SPACE_BELOW_SUBTITLE,
+                         .lineHeight = lineHeight});
   content.rule = sf::IntRect({SAFE_MARGIN, top}, RULE_SIZE);
-  top =
-      placeColumnBars(content, buttons_, top + RULE_SIZE.y + SPACE_BELOW_RULE);
+  top += RULE_SIZE.y + SPACE_BELOW_RULE;
+  top = placePageBars(
+      content, buttons_,
+      BarGrid{.top = top, .barHeight = textBoxHeight(BUTTON_SIZE.y, metrics_)});
   content.descriptionAnchor = sf::Vector2i(SAFE_MARGIN, top);
-  const int right = INTERFACE_AREA.size.x - SAFE_MARGIN;
-  if (illustration_.has_value()) {
-    content.illustration = sf::IntRect(
-        {right - illustration_->x, ILLUSTRATION_TOP}, *illustration_);
-  }
-  if (footer_.has_value()) {
-    content.labels.emplace_back(std::move(*footer_),
-                                sf::Vector2i(right, FOOTER_TOP), FOOTER_STYLE);
-  }
+  placePageEnd(content, PageEnd{.illustration = illustration_,
+                                .footer = std::move(footer_),
+                                .metrics = metrics_});
 }
 
 void MenuBuilder::placeDialog(Menu::Content& content) {
-  const sf::Vector2i size = dialogSizeOf(rowCountOf(buttons_));
+  const DialogLayout layout = dialogLayoutOf(
+      dialogTextOf(DialogParts{
+          .heading = heading_, .message = message_, .bars = buttons_}),
+      metrics_);
   const sf::Vector2i panelTopLeft =
-      (INTERFACE_AREA.size - size) / SIDES_PER_AXIS;
-  content.panel = sf::IntRect(panelTopLeft, size);
+      (INTERFACE_AREA.size - layout.size) / SIDES_PER_AXIS;
+  content.panel = sf::IntRect(panelTopLeft, layout.size);
   if (heading_.has_value()) {
     content.labels.emplace_back(std::move(*heading_),
                                 panelTopLeft + DIALOG_HEADING_OFFSET,
                                 DIALOG_HEADING_STYLE);
   }
   if (message_.has_value()) {
-    content.labels.emplace_back(std::move(*message_),
-                                panelTopLeft + DIALOG_MESSAGE_OFFSET,
-                                DIALOG_MESSAGE_STYLE);
+    placeMessageLines(content, layout, panelTopLeft);
   }
-  placeDialogBars(content, buttons_, panelTopLeft);
+  placeDialogBars(content, buttons_,
+                  PlacedDialog{.layout = layout, .topLeft = panelTopLeft});
 }
 
 void MenuBuilder::placeForm(Menu::Content& content) {
-  const FormLayout layout = formLayoutOf(buttons_);
+  const FormLayout layout = metrics_ == TextMetrics{}
+                                ? formLayoutOf(buttons_)
+                                : largeFormLayoutOf(buttons_, metrics_);
   const sf::Vector2i panel = layout.panelTopLeft;
   content.panel = sf::IntRect(panel, layout.panelSize);
   if (heading_.has_value()) {
@@ -435,6 +651,12 @@ void MenuBuilder::placeForm(Menu::Content& content) {
   content.descriptionStyle = FORM_DESCRIPTION_STYLE;
   content.selectsOnHover = false;
   content.statusAnchor = sf::Vector2i(left, panel.y + layout.statusTop);
+  if (metrics_ != TextMetrics{}) {
+    const int textWidth =
+        layout.panelSize.x - (SIDES_PER_AXIS * FORM_HEADING_OFFSET.x);
+    content.descriptionWidth = textWidth;
+    content.statusWidth = textWidth;
+  }
 }
 
 void MenuBuilder::placeTabbedPanel(Menu::Content& content) {
@@ -470,7 +692,7 @@ void MenuBuilder::placePanelHeader(Menu::Content& content) {
 }
 
 void MenuBuilder::placeRowsPanel(Menu::Content& content) {
-  content.panel = sf::IntRect(ROWS_PANEL_TOP_LEFT, ROWS_PANEL_SIZE);
+  content.panel = tabbedPanelLayoutOf(metrics_).panel;
   content.tabs = std::move(tabStrip_);
   content.openTab = std::move(tabOpener_);
   content.nextKeys = PANEL_NEXT_KEYS;
@@ -478,23 +700,30 @@ void MenuBuilder::placeRowsPanel(Menu::Content& content) {
 }
 
 PanelCursor MenuBuilder::placeRowsAndBars(Menu::Content& content) {
+  TabbedPanelLayout layout = tabbedPanelLayoutOf(metrics_);
+  layout.barSize.x = barWidthFor(buttons_, layout.barSize.x, metrics_);
   std::vector<PendingButton> trailing =
       barsAfterCancel(buttons_, cancelButton_);
   const PanelCursor end =
       placeRowsAndBarsOf(content, buttons_,
-                         RowsAndBars{.firstRow = FIRST_ROW_TOP_LEFT,
-                                     .rowSize = ROW_SIZE,
-                                     .firstBar = {SAFE_MARGIN, PANEL_BARS_TOP},
-                                     .barSize = PANEL_BAR_SIZE,
+                         RowsAndBars{.firstRow = layout.firstRowTopLeft,
+                                     .rowSize = layout.rowSize,
+                                     .firstBar = {SAFE_MARGIN, layout.barsTop},
+                                     .barSize = layout.barSize,
                                      .barGap = SPACE_BESIDE_PANEL_BARS});
-  placeBarsAtPanelEnd(content, trailing);
+  placeBarsAtPanelEnd(content, trailing, layout);
+  content.rowScroll = rowScrollOf(content, layout);
   return end;
 }
 
 void MenuBuilder::placeDescriptionAndIllustration(Menu::Content& content,
                                                   PanelCursor end) {
-  content.descriptionAnchor =
-      sf::Vector2i(end.barLeft, PANEL_BARS_TOP + BUTTON_TEXT_OFFSET.y);
+  const TabbedPanelLayout layout = tabbedPanelLayoutOf(metrics_);
+  content.descriptionAnchor = descriptionAnchorOf(layout, end, metrics_);
+  if (metrics_ != TextMetrics{}) {
+    content.descriptionWidth = layout.panel.position.x + layout.panel.size.x -
+                               content.descriptionAnchor->x;
+  }
   if (illustration_.has_value()) {
     content.illustration =
         sf::IntRect({FIRST_ROW_TOP_LEFT.x + ROW_PADDING,
@@ -505,44 +734,51 @@ void MenuBuilder::placeDescriptionAndIllustration(Menu::Content& content,
 
 void MenuBuilder::placeRoom(Menu::Content& content) {
   placeHeadingAndRule(content, ROOM_RULE_SIZE);
-  int barsTop = ROOM_ILLUSTRATION_TOP;
+  const RoomLayout room =
+      roomLayoutOf(illustration_.has_value() ? illustration_->y : 0, metrics_);
   if (illustration_.has_value()) {
     content.illustration =
         sf::IntRect({SAFE_MARGIN, ROOM_ILLUSTRATION_TOP}, *illustration_);
-    barsTop += illustration_->y + SPACE_ABOVE_ROOM_BARS;
   }
+  const sf::Vector2i barSize(barWidthFor(buttons_, BUTTON_SIZE.x, metrics_),
+                             room.barHeight);
   const int barCount =
       static_cast<int>(buttons_.size()) - (cancelButton_.has_value() ? 1 : 0);
-  const int rowWidth = barRowWidth(barCount, BUTTON_SIZE, BUTTON_GAP);
+  const int rowWidth = barRowWidth(barCount, barSize, BUTTON_GAP);
   int barLeft = (INTERFACE_AREA.size.x - rowWidth) / SIDES_PER_AXIS;
   for (std::size_t index = 0; index < buttons_.size(); ++index) {
     PendingButton& pending = buttons_[index];
     sf::IntRect area;
     if (cancelButton_ == index) {
       pending.text.keyName = CANCEL_KEY_NAME;
-      area = chipArea(pending.text);
+      area = chipArea(pending.text,
+                      sf::Vector2i(INTERFACE_AREA.size.x - SAFE_MARGIN,
+                                   room.lowerChipsTop));
     } else {
-      area = sf::IntRect({barLeft, barsTop}, BUTTON_SIZE);
-      barLeft += BUTTON_SIZE.x + BUTTON_GAP;
+      area = sf::IntRect({barLeft, room.barsTop}, barSize);
+      barLeft += barSize.x + BUTTON_GAP;
     }
     content.buttons.emplace_back(std::move(pending.text), area,
                                  std::move(pending.action),
                                  std::move(pending.field));
   }
-  content.statusAnchor = sf::Vector2i(INTERFACE_AREA.size.x / SIDES_PER_AXIS,
-                                      barsTop + BUTTON_SIZE.y + BUTTON_GAP);
+  content.statusAnchor =
+      sf::Vector2i(INTERFACE_AREA.size.x / SIDES_PER_AXIS, room.statusTop);
+  content.statusWidth = room.statusWidth;
   content.statusStyle = ROOM_STATUS_STYLE;
 }
 
 sf::IntRect MenuBuilder::chipArea(const Button::Text& text,
-                                  std::optional<int> right) {
-  const int width =
-      BUTTON_TEXT_OFFSET.x + regularTextWidth(text.label) + CHIP_KEY_CAP_GAP +
-      KeyCap(text.keyName, KeyCap::Edge::Plain).width() + BAR_KEY_CAP_INSET;
-  const sf::Vector2i bottomRight =
-      INTERFACE_AREA.size - sf::Vector2i(SAFE_MARGIN, SAFE_MARGIN);
-  return {{right.value_or(bottomRight.x) - width, bottomRight.y - CHIP_HEIGHT},
-          {width, CHIP_HEIGHT}};
+                                  std::optional<sf::Vector2i> topRight) {
+  const int width = BUTTON_TEXT_OFFSET.x +
+                    regularWidthOf(text.size, text.label) + CHIP_KEY_CAP_GAP +
+                    KeyCap(text.keyName, KeyCap::Edge::Plain).width(text.size) +
+                    BAR_KEY_CAP_INSET;
+  const int height = textBoxHeight(CHIP_HEIGHT, text.size);
+  const sf::Vector2i corner = topRight.value_or(
+      sf::Vector2i(INTERFACE_AREA.size.x - SAFE_MARGIN,
+                   INTERFACE_AREA.size.y - SAFE_MARGIN - height));
+  return {{corner.x - width, corner.y}, {width, height}};
 }
 
 }  // namespace rtype::client

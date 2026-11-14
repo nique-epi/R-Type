@@ -1,5 +1,6 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <cstddef>
@@ -23,6 +24,7 @@
 #include "Endpoint.hpp"
 #include "GameRules.hpp"
 #include "GameRulesTestConstants.hpp"
+#include "LargestConnectionFixture.hpp"
 #include "LobbyScreenIdConstants.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
@@ -34,6 +36,7 @@
 #include "SoundConstants.hpp"
 
 using rtype::client::ACCEPTED_STATUS_DURATION;
+using rtype::client::ADDRESS_LABEL;
 using rtype::client::CLICK_SOUND_ID;
 using rtype::client::CONNECTING_STATUS;
 using rtype::client::ConnectionPhase;
@@ -861,4 +864,32 @@ TEST_F(ConnectionScreenChoiceFixture, TheFormNeverLeavesTheServerItNames) {
   serverRefusesFor(RefusalReason::ServerFull);
 
   EXPECT_EQ(connectAttemptsOf(connection()).size(), 1U);
+}
+
+/**
+ * Given the connection screen asking for a server, at the largest text size
+ * When a frame goes by
+ * Then every line it writes stays on screen
+ */
+TEST_F(LargestConnectionFixture, EveryLineStaysOnScreen) {
+  screen().update(ONE_FRAME);
+
+  EXPECT_THAT(writingsOffScreen(canvas()), IsEmpty());
+}
+
+/**
+ * Given the connection screen asking for a server, at the largest text size
+ * When a frame goes by
+ * Then the label of the address stands left of the address in its box
+ */
+TEST_F(LargestConnectionFixture, ALabelStandsLeftOfItsBox) {
+  screen().update(ONE_FRAME);
+
+  const RecordedWriting* label = writingOf(canvas(), ADDRESS_LABEL);
+  const RecordedWriting* address = writingOf(canvas(), LAUNCH_ADDRESS);
+  ASSERT_NE(label, nullptr);
+  ASSERT_NE(address, nullptr);
+  const sf::IntRect labelBox = writtenBoxOf(canvas(), *label);
+  EXPECT_LE(labelBox.position.x + labelBox.size.x,
+            writtenBoxOf(canvas(), *address).position.x);
 }

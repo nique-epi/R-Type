@@ -9,6 +9,8 @@ target_link_libraries(rtype_client_end_choices
     rtype_client_cut_corner_box
     rtype_client_entity_sprites
     rtype_client_glowing_call_painting
+    rtype_client_text_measures
+    rtype_client_widget_text
 )
 
 rtype_enable_warnings(rtype_client_end_choices)

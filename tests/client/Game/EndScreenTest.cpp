@@ -11,6 +11,7 @@
 #include "FlightLogTextConstants.hpp"
 #include "FlightLogTimingConstants.hpp"
 #include "KeyPress.hpp"
+#include "LargestEndScreenFixture.hpp"
 #include "LobbyScreenIdConstants.hpp"
 #include "MenuScreenIdConstants.hpp"
 #include "MotionPreference.hpp"
@@ -38,6 +39,8 @@ using rtype::client::TITLE_SCREEN;
 using rtype::client::VICTORY_STAMP_TEXT;
 using rtype::client::testing::ACE_NICKNAME;
 using rtype::client::testing::DESIGN_LANDING;
+using rtype::client::testing::LARGEST_CALL_PIXEL;
+using rtype::client::testing::LARGEST_QUIT_PIXEL;
 using rtype::client::testing::NOVA_NICKNAME;
 using rtype::client::testing::NOWHERE_PIXEL;
 using rtype::client::testing::PROMPT_MIDDLE_PIXEL;
@@ -45,6 +48,7 @@ using rtype::client::testing::QUIT_MIDDLE_PIXEL;
 using rtype::client::testing::STARDUST_NICKNAME;
 using rtype::client::testing::VICTORY_TAUNT_FIRST_LINE;
 using rtype::client::testing::WHEN_THE_TAUNT_IS_TYPED;
+using rtype::client::testing::WHOLE_END_SCREEN;
 using ::testing::Contains;
 using ::testing::ElementsAre;
 using ::testing::IsEmpty;
@@ -128,6 +132,61 @@ TEST_F(EndScreenFixture, AClickOnQuitQuits) {
   EXPECT_THAT(navigator().calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::ReplaceAll,
                                         .screen = TITLE_SCREEN}));
+}
+
+/**
+ * Given the end screen at the largest text size, the longest nickname among
+ * its pilots, its book landed
+ * When it runs to its choices
+ * Then no line it writes runs past a side of the screen at any frame
+ */
+TEST_F(LargestEndScreenFixture, NoLineRunsPastASideOfTheScreen) {
+  advance(DESIGN_LANDING);
+
+  EXPECT_THAT(writingsOutSidewaysFor(WHOLE_END_SCREEN), IsEmpty());
+}
+
+/**
+ * Given the end screen at the largest text size
+ * When it ran to its choices
+ * Then the wide page shows the ranking, the longest nickname whole
+ */
+TEST_F(LargestEndScreenFixture, TheRankingWritesTheWholeLongestName) {
+  advance(WHOLE_END_SCREEN);
+
+  EXPECT_NE(writingOf(canvas(), STARDUST_NICKNAME), nullptr);
+}
+
+/**
+ * Given the end screen at the largest text size, ready for its choices
+ * When a click lands on QUIT where it grew past its drawn size
+ * Then the player quits
+ */
+TEST_F(LargestEndScreenFixture, AClickOnTheGrownQuitQuits) {
+  advance(WHOLE_END_SCREEN);
+
+  click(LARGEST_QUIT_PIXEL);
+  advance(PRESS_DURATION + EXIT_TIME);
+
+  EXPECT_THAT(navigator().calls(),
+              ElementsAre(NavigatorCall{.request = NavigatorRequest::ReplaceAll,
+                                        .screen = TITLE_SCREEN}));
+}
+
+/**
+ * Given the end screen at the largest text size, ready for its choices
+ * When a click lands on the call where it grew past its drawn size
+ * Then the player replays once the book left
+ */
+TEST_F(LargestEndScreenFixture, AClickOnTheGrownCallReplays) {
+  advance(WHOLE_END_SCREEN);
+
+  click(LARGEST_CALL_PIXEL);
+  advance(PRESS_DURATION + EXIT_TIME);
+
+  EXPECT_THAT(navigator().calls(),
+              ElementsAre(NavigatorCall{.request = NavigatorRequest::ReplaceAll,
+                                        .screen = LOBBY_AFTER_GAME_SCREEN}));
 }
 
 /**

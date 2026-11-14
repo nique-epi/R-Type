@@ -66,8 +66,10 @@
 #include "PlayerPreferences.hpp"
 #include "PositionInterpolation.hpp"
 #include "ScoreBoard.hpp"
+#include "ScreenBuilding.hpp"
 #include "ShipFlightSystem.hpp"
 #include "SkyLevel.hpp"
+#include "StatusBandLook.hpp"
 // NOLINTNEXTLINE(misc-include-cleaner)
 #include "GameScreenIdConstants.hpp"
 #include "MenuScreenIdConstants.hpp"
@@ -364,7 +366,10 @@ void GameScreen::repaintStatusWhenChanged() {
       paintedPalette_ != playerPaletteOf(*settings_) ||
       departures_.revision() != paintedDepartures_ ||
       silence_.isShown() != paintedSilence_ || boss != paintedBoss_ ||
-      chat_.isShown() || paintedChat_) {
+      chat_.isShown() || paintedChat_ ||
+      paintedLook_ != interfaceLookOf(*settings_) ||
+      statusBandFrameOf(scoreBoard_.pilots(), *statusCanvas_,
+                        effects_.sinceStart()) != paintedBandFrame_) {
     repaintStatus(boss);
   }
 }
@@ -374,7 +379,10 @@ void GameScreen::repaintStatus(const BossLook& boss) {
   const PlayerPalette& palette = playerPaletteOf(*settings_);
   statusCanvas_->clear();
   paintBossAlert(*statusCanvas_, boss);
-  paintStatusBand(*statusCanvas_, scoreBoard_.pilots(), palette);
+  paintStatusBand(*statusCanvas_, scoreBoard_.pilots(),
+                  StatusBandLook{.palette = palette,
+                                 .sinceStart = effects_.sinceStart(),
+                                 .flashes = flashPreferenceOf(*settings_)});
   paintMissionBanner(*statusCanvas_, banner);
   paintBossBar(*statusCanvas_, boss.bar);
   departures_.paint(
@@ -390,6 +398,9 @@ void GameScreen::repaintStatus(const BossLook& boss) {
   paintedSilence_ = silence_.isShown();
   paintedChat_ = chat_.isShown();
   paintedBoss_ = boss;
+  paintedLook_ = interfaceLookOf(*settings_);
+  paintedBandFrame_ = statusBandFrameOf(scoreBoard_.pilots(), *statusCanvas_,
+                                        effects_.sinceStart());
 }
 
 ActionSet GameScreen::playerActions() const {

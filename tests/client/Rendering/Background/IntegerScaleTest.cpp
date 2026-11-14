@@ -1,21 +1,9 @@
 #include <gtest/gtest.h>
-#include <SFML/System/Vector2.hpp>
 #include "IntegerScale.hpp"
+#include "IntegerScaleTestConstants.hpp"
 
 using rtype::client::integerScaleFactor;
-
-namespace {
-
-constexpr sf::Vector2i THREE_AND_A_THIRD_BACKGROUNDS(1600, 900);
-constexpr sf::Vector2i TWICE_THE_BACKGROUND(960, 540);
-constexpr sf::Vector2i JUST_UNDER_TWICE_THE_BACKGROUND(959, 539);
-constexpr sf::Vector2i FOUR_WIDE_THREE_HIGH(1920, 810);
-constexpr sf::Vector2i NO_SIZE(0, 0);
-constexpr unsigned int ONCE = 1;
-constexpr unsigned int TWICE = 2;
-constexpr unsigned int THREE_TIMES = 3;
-
-}  // namespace
+using rtype::client::sharpScaleOf;
 
 /**
  * Given a playfield 1600 x 900 pixels on screen, 3.33 times the background
@@ -60,4 +48,33 @@ TEST(IntegerScale, NarrowerAxisDecides) {
  */
 TEST(IntegerScale, EmptyPlayfieldStillGetsOne) {
   EXPECT_EQ(integerScaleFactor(NO_SIZE), ONCE);
+}
+
+/**
+ * Given a canvas that writes text, two texture pixels per pixel of its own
+ * When it is shown where the background is enlarged four times
+ * Then its texture is enlarged twice, so its pixels cover the same screen
+ */
+TEST(IntegerScale, ATextCanvasIsEnlargedByHalfTheFactor) {
+  EXPECT_EQ(sharpScaleOf(FOUR_TIMES, TEXT_CANVAS_DENSITY),
+            TEXT_CANVAS_AT_FOUR_TIMES);
+}
+
+/**
+ * Given a canvas that writes text
+ * When it is shown where the background is enlarged three times
+ * Then its texture is enlarged one and a half times
+ */
+TEST(IntegerScale, AnOddFactorEnlargesATextCanvasByAHalf) {
+  EXPECT_EQ(sharpScaleOf(THREE_TIMES, TEXT_CANVAS_DENSITY),
+            TEXT_CANVAS_AT_THREE_TIMES);
+}
+
+/**
+ * Given the sky, one texture pixel per pixel of its own
+ * When it is shown where the background is enlarged three times
+ * Then its texture is enlarged by the whole factor, as before
+ */
+TEST(IntegerScale, TheSkyIsEnlargedByTheWholeFactor) {
+  EXPECT_EQ(sharpScaleOf(THREE_TIMES, SKY_DENSITY), SKY_AT_THREE_TIMES);
 }

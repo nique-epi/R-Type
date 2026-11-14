@@ -15,6 +15,7 @@
 #include "RecordingSoundPlayer.hpp"
 #include "ScreenInputs.hpp"
 #include "ScreenTestConstants.hpp"
+#include "TextMetrics.hpp"
 #include "WidgetConstants.hpp"
 
 using rtype::client::ConnectionGoal;
@@ -23,8 +24,14 @@ using rtype::client::ConnectionScreenParts;
 using rtype::client::ConnectionStatus;
 using rtype::client::PRESS_DURATION;
 
-ConnectionScreenFixture::ConnectionScreenFixture(ConnectionGoal goal)
-    : choice_(launchChoice()),
+ConnectionScreenFixture::ConnectionScreenFixture(
+    ConnectionGoal goal, rtype::client::TextMetrics metrics)
+    : canvas_([metrics] {
+        InterfaceCanvasRecord record;
+        record.metrics = metrics;
+        return record;
+      }()),
+      choice_(launchChoice()),
       screen_(ConnectionScreenParts{.navigator = navigator_,
                                     .sounds = sounds_,
                                     .connection = connection_,

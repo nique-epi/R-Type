@@ -3,6 +3,7 @@
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Event.hpp>
+#include <algorithm>
 #include <cstddef>
 #include <functional>
 #include <optional>
@@ -17,6 +18,8 @@
 #include "IInterfaceCanvas.hpp"
 #include "RowControlConstants.hpp"
 #include "SunkBox.hpp"
+#include "TextMeasures.hpp"
+#include "TextMetrics.hpp"
 #include "TextStyle.hpp"
 #include "ValueBinding.hpp"
 #include "WidgetColors.hpp"
@@ -25,6 +28,12 @@
 namespace rtype::client {
 
 namespace {
+/** @returns How tall a line of the open list is under a box of @p area: as
+ * tall as LIST_ITEM_HEIGHT at the size the fonts are drawn, and growing with
+ * the line of the box. */
+int itemHeightOf(sf::IntRect area) {
+  return LIST_ITEM_HEIGHT - CONTROL_HEIGHT + area.size.y;
+}
 
 /** @returns The color of a part of the box, its text or its pointer: dimmed on
  * a disabled row, the lit color of that part while the list is open or its row
@@ -44,7 +53,15 @@ Dropdown::Dropdown(DropdownParts parts)
       value_(std::move(parts.value)),
       imposedText_(std::move(parts.imposedText)) {}
 
-int Dropdown::width() const { return DROPDOWN_BOX_SIZE.x; }
+int Dropdown::width(TextMetrics metrics) const {
+  int widest = 0;
+  for (const std::string& choice : choices_) {
+    widest = std::max(widest, regularWidthOf(metrics, choice));
+  }
+  return std::max(DROPDOWN_BOX_SIZE.x,
+                  DROPDOWN_TEXT_LEFT + widest + DROPDOWN_POINTER_SIZE.x +
+                      (SIDES_PER_AXIS * DROPDOWN_POINTER_RIGHT));
+}
 
 void Dropdown::paint(IInterfaceCanvas& canvas, sf::IntRect area,
                      BarState row) const {
@@ -165,7 +182,7 @@ std::optional<std::size_t> Dropdown::pointedChoice() const {
 }
 
 sf::IntRect Dropdown::listArea(sf::IntRect area) const {
-  const int height = (static_cast<int>(choices_.size()) * LIST_ITEM_HEIGHT) +
+  const int height = (static_cast<int>(choices_.size()) * itemHeightOf(area)) +
                      (SIDES_PER_AXIS * LIST_PADDING);
   return {{area.position.x, area.position.y + area.size.y},
           {area.size.x, height}};
@@ -173,10 +190,11 @@ sf::IntRect Dropdown::listArea(sf::IntRect area) const {
 
 sf::IntRect Dropdown::itemArea(std::size_t choice, sf::IntRect area) const {
   const sf::IntRect list = listArea(area);
+  const int itemHeight = itemHeightOf(area);
   return {{list.position.x + LIST_PADDING,
            list.position.y + LIST_PADDING +
-               (static_cast<int>(choice) * LIST_ITEM_HEIGHT)},
-          {list.size.x - (SIDES_PER_AXIS * LIST_PADDING), LIST_ITEM_HEIGHT}};
+               (static_cast<int>(choice) * itemHeight)},
+          {list.size.x - (SIDES_PER_AXIS * LIST_PADDING), itemHeight}};
 }
 
 std::optional<std::size_t> Dropdown::choiceAt(sf::Vector2i pixel,

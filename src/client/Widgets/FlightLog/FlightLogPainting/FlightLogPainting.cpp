@@ -23,6 +23,7 @@
 #include "MotionPreference.hpp"
 #include "RankingPage.hpp"
 #include "TauntLabel.hpp"
+#include "TextMetrics.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -88,6 +89,46 @@ void paintDust(IInterfaceCanvas& canvas, const FlightLogLook& look) {
   }
 }
 
+/** @brief Paints, once the ranking replaces the mission log on the wide
+ * page, the blank paper of the turning page over it, narrowing from the
+ * right to the left over PAGE_TURN_TIME, its edge drawn; nothing with reduced
+ * motion. */
+void paintPageTurn(IInterfaceCanvas& canvas, const FlightLogLook& look,
+                   sf::Vector2i page) {
+  const float share =
+      progressBetween(look.sinceStart, look.schedule.rowsStart, PAGE_TURN_TIME);
+  if (look.motion == MotionPreference::Reduced || share >= 1.0F) {
+    return;
+  }
+  const int covered = pixelsOf(WIDE_PAGE_WIDTH, 1.0F - easeOutCubic(share));
+  canvas.fill(sf::IntRect(page, {covered, PAGE_SIZE.y}), PAPER_COLOR);
+  canvas.fill(sf::IntRect(page + sf::Vector2i(covered, 0), {1, PAGE_SIZE.y}),
+              PAPER_FAINT_COLOR);
+}
+
+/** @brief Paints the pages of the open book: the mission log on the left
+ * page and the ranking on the right one, as drawn at the size the fonts are
+ * drawn at; above it, one wide page over both, the mission log until the
+ * rows start, then the ranking, the page turning to it. */
+void paintOpenPages(IInterfaceCanvas& canvas, const FlightLogLook& look,
+                    BookPose pose) {
+  const sf::Vector2i left(pose.hinge - PAGE_INSET.x - PAGE_SIZE.x,
+                          pose.top + PAGE_INSET.y);
+  if (canvas.textMetrics() == TextMetrics{}) {
+    paintMissionLogPage(canvas, look, left);
+    paintRankingPage(canvas, look,
+                     {pose.hinge + PAGE_INSET.x, pose.top + PAGE_INSET.y});
+    return;
+  }
+  canvas.fill(sf::IntRect(left, {WIDE_PAGE_WIDTH, PAGE_SIZE.y}), PAPER_COLOR);
+  if (look.sinceStart < look.schedule.rowsStart) {
+    paintMissionLogPage(canvas, look, left);
+    return;
+  }
+  paintRankingPage(canvas, look, left);
+  paintPageTurn(canvas, look, left);
+}
+
 /** @brief Writes what the game earned the player, from KOPECKS_GAIN_TOP_LEFT
  * rightwards, once the call to play again starts; nothing for no gain. */
 void paintKopecksGain(IInterfaceCanvas& canvas, const FlightLogLook& look) {
@@ -98,7 +139,7 @@ void paintKopecksGain(IInterfaceCanvas& canvas, const FlightLogLook& look) {
                     .amount = look.kopecksGained,
                     .prefix = KOPECKS_GAIN_PREFIX,
                     .outlined = true};
-  gain.topRight.x += kopecksLabelWidth(gain);
+  gain.topRight.x += kopecksLabelWidth(gain, canvas.textMetrics());
   paintKopecks(canvas, gain);
 }
 
@@ -114,11 +155,7 @@ void paintFlightLog(IInterfaceCanvas& canvas, const FlightLogLook& look) {
   paintBook(canvas, pose);
   if (pose.open >= 1.0F && !look.exit.choice.has_value()) {
     paintRibbon(canvas, pose);
-    paintMissionLogPage(
-        canvas, look,
-        {pose.hinge - PAGE_INSET.x - PAGE_SIZE.x, pose.top + PAGE_INSET.y});
-    paintRankingPage(canvas, look,
-                     {pose.hinge + PAGE_INSET.x, pose.top + PAGE_INSET.y});
+    paintOpenPages(canvas, look, pose);
   }
   paintTauntLabel(canvas, look, pose);
   paintDust(canvas, look);

@@ -26,6 +26,7 @@ target_link_libraries(rtype_client_options_tabs
     rtype_client_link_text
     rtype_client_menu_builder
     rtype_client_switch
+    rtype_client_text_measures
     rtype_client_widgets
 )
 

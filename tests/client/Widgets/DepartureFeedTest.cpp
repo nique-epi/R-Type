@@ -179,13 +179,13 @@ TEST(DepartureFeed, AnExpelledPilotWasExpelled) {
 /**
  * Given a feed with the line of a pilot whose nickname has sixteen letters
  * When it is painted
- * Then its first ten letters are written
+ * Then the whole nickname is written, never cut
  */
-TEST(DepartureFeed, ALongNameIsCutToTenLetters) {
+TEST(DepartureFeed, ALongNameIsWrittenWhole) {
   const InterfaceCanvasRecord record =
       feedPaintingOf(pilotIn(NOVA_NUMBER, LONG_NAME, PilotState::Left));
 
-  EXPECT_NE(writingOf(record, LONG_NAME_CUT), nullptr);
+  EXPECT_NE(writingOf(record, LONG_NAME), nullptr);
 }
 
 /**

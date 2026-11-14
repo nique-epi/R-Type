@@ -5,10 +5,12 @@
 #include <functional>
 #include <optional>
 #include <string_view>
+#include "HangarBayLayout.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "MotionPreference.hpp"
 #include "PlayerPalette.hpp"
 #include "ShipLook.hpp"
+#include "TextMetrics.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -59,11 +61,20 @@ struct BayMotion {
   MotionPreference preference{};
 };
 
+/** @returns Where a bay lays its parts at the text size of @p metrics:
+ * HANGAR_BAY_SIZE large with the parts as drawn at the size the fonts are
+ * drawn at; above it, the ship at its own size and the bay taller, for a
+ * nickname of LARGE_BAY_NICKNAME_LINES lines and a cell of
+ * LARGE_BAY_CELL_LINES. */
+[[nodiscard]] HangarBayLayout hangarBayLayoutOf(TextMetrics metrics);
+
 /**
- * @brief Paints a bay, HANGAR_BAY_SIZE large.
+ * @brief Paints a bay, as large as hangarBayLayoutOf() says at the text size
+ * of @p canvas.
  *
  * With a pilot: its number, YOU for the local player, a band of the ship
- * color, the ship enlarged BAY_SHIP_SCALE times, the nickname, and a cell that
+ * color, the ship enlarged as the layout says, the nickname, on as many lines
+ * as the layout holds, each letter shown, and a cell that
  * says whether the pilot is ready, gold and ending in three dots while the
  * server does not show what the local player asked, so the wait is never told
  * by its color alone. A ready pilot's ship plays PLAYER_SHIP_ANIMATION,

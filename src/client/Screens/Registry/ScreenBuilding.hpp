@@ -5,8 +5,10 @@
 #include "IInterfaceCanvas.hpp"
 #include "IScreen.hpp"
 #include "ISoundPlayer.hpp"
+#include "InterfaceLook.hpp"
 #include "Menu.hpp"
 #include "MotionPreference.hpp"
+#include "PlayerSettings.hpp"
 #include "PlayfieldMapping.hpp"
 #include "ScreenContext.hpp"
 #include "ScreenId.hpp"
@@ -20,8 +22,12 @@ namespace rtype::client {
 /** @returns The player of the short sounds of the audio service. */
 [[nodiscard]] ISoundPlayer& soundsOf(const ScreenContext& context);
 
+/** @returns The look of the interface the settings ask for: the text size of
+ * TEXT SIZE and whether HIGH CONTRAST is on. */
+[[nodiscard]] InterfaceLook interfaceLookOf(const PlayerSettings& settings);
+
 /** @returns A new picture for a menu, written with the fonts of the asset
- * library. */
+ * library, in the look the settings of the context ask for at each frame. */
 [[nodiscard]] std::unique_ptr<IInterfaceCanvas> interfaceCanvasOf(
     const ScreenContext& context);
 
