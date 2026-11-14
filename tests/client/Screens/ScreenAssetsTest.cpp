@@ -7,6 +7,7 @@
 #include <string>
 #include "AssetLibrary.hpp"
 #include "AssetLoadingStep.hpp"
+#include "DestinationSpriteConstants.hpp"
 #include "EffectConstants.hpp"
 #include "EntityAppearances.hpp"
 #include "EntitySpriteConstants.hpp"
@@ -26,6 +27,7 @@
 
 using rtype::client::AssetLibrary;
 using rtype::client::AssetLoadingStep;
+using rtype::client::DESTINATION_SHEET_ID;
 using rtype::client::EFFECT_SHEET_ID;
 using rtype::client::ENTITY_SHEET_ID;
 using rtype::client::EntityAppearances;
@@ -169,6 +171,16 @@ TEST(ScreenAssets, TheTitleLoadsTheSheetsOfTheHelpOfTheWaitingRoom) {
 }
 
 /**
+ * Given the assets of the title screen
+ * When their textures are listed
+ * Then they hold the sheet of the destination screen, which PLAY pushes over
+ * the title without loading
+ */
+TEST(ScreenAssets, TheTitleLoadsTheSheetOfTheDestinations) {
+  EXPECT_THAT(titleAssets().textures, Contains(DESTINATION_SHEET_ID));
+}
+
+/**
  * Given the assets of a game
  * When their textures are listed
  * Then they hold the professor sheet, so the help of the waiting room after
@@ -200,7 +212,7 @@ TEST(ScreenAssets, TheIntroLoadsTheTitleAndTheEffectSheet) {
                   LOGO_ID, ENTITY_SHEET_ID, HUD_SHEET_ID, PROFESSOR_SHEET_ID,
                   LEADERBOARD_SHEET_ID, SHIP_LOOK_SHEET_ID, SHIP_HULL_SHEET_ID,
                   SECTOR_MAP_SHEET_ID, SHOP_SCENE_ID, SHOP_KEEPER_SHEET_ID,
-                  SHOP_FRONT_ID, EFFECT_SHEET_ID));
+                  SHOP_FRONT_ID, DESTINATION_SHEET_ID, EFFECT_SHEET_ID));
 }
 
 /**
