@@ -1,4 +1,5 @@
 add_library(rtype_client_economy STATIC
+  ChipsExchange.cpp
   Kopecks.cpp
   LookItemPurchase.cpp
 )

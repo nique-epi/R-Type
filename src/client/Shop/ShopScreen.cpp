@@ -48,7 +48,9 @@ Button::Text backText() {
 
 /** @returns What @p settings lets the player buy with and already holds. */
 Purse purseOf(const PlayerSettings& settings) {
-  return Purse{.kopecks = settings.kopecks, .locker = settings.shipLocker};
+  return Purse{.kopecks = settings.kopecks,
+               .chips = settings.chips,
+               .locker = settings.shipLocker};
 }
 
 /** @brief Changes what the shop plays: the music of the radio instead of
