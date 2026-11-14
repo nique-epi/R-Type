@@ -18,6 +18,8 @@ using rtype::client::readSettingsText;
 using rtype::client::settingsText;
 using rtype::client::testing::A_BALANCE;
 using rtype::client::testing::A_BALANCE_LINE;
+using rtype::client::testing::A_STACK_OF_CHIPS;
+using rtype::client::testing::A_STACK_OF_CHIPS_LINE;
 using rtype::client::testing::ANY_VOLUME;
 using rtype::client::testing::BALANCE_PAST_THE_LARGEST_FILE;
 using rtype::client::testing::BARE_HEAD_FILE;
@@ -33,6 +35,7 @@ using rtype::client::testing::CHANGED_MUSIC_VOLUME;
 using rtype::client::testing::CHAPKA_ITEM;
 using rtype::client::testing::CHAT_LINES_PAST_THEIR_RANGES;
 using rtype::client::testing::CHAT_PAST_ITS_RANGES_FILE;
+using rtype::client::testing::CHIPS_PAST_THE_LARGEST_FILE;
 using rtype::client::testing::CROWN_AND_SHADES_FILE;
 using rtype::client::testing::CROWN_AS_A_HULL_FILE;
 using rtype::client::testing::CROWN_LINE;
@@ -50,6 +53,7 @@ using rtype::client::testing::LAGOMETER_LINES_PAST_THEIR_RANGES;
 using rtype::client::testing::LAGOMETER_PAST_ITS_RANGES_FILE;
 using rtype::client::testing::LOWEST_VOLUME;
 using rtype::client::testing::NEGATIVE_BALANCE_FILE;
+using rtype::client::testing::NEGATIVE_CHIPS_FILE;
 using rtype::client::testing::SHADES_ON_THE_HEAD_FILE;
 using rtype::client::testing::SMALLER_WINDOW;
 using rtype::client::testing::UNKNOWN_FIRST_LINE;
@@ -59,6 +63,7 @@ using rtype::client::testing::WEARS_CROWN;
 using rtype::client::testing::WEARS_NOTHING;
 using rtype::client::testing::WEARS_SHADES;
 using rtype::client::testing::WORDS_AS_A_BALANCE_FILE;
+using rtype::client::testing::WORDS_AS_CHIPS_FILE;
 using Scan = sf::Keyboard::Scan;
 
 /**
@@ -491,18 +496,61 @@ TEST(SettingsTextTest, TheBalanceIsWrittenAndReadBack) {
 }
 
 /**
- * Given files whose balance is words, is negative, or passes the largest
- * When each is read
+ * Given settings holding 1250 kopecks, and files whose balance is words, is
+ * negative, or passes the largest
+ * When each file is read over those settings
  * Then the player holds no kopeck and the line is listed as invalid
  */
 TEST(SettingsTextTest, ABalanceThatIsNoBalanceLeavesNone) {
+  PlayerSettings holding;
+  holding.kopecks = A_BALANCE;
   for (const char* const file : {WORDS_AS_A_BALANCE_FILE, NEGATIVE_BALANCE_FILE,
                                  BALANCE_PAST_THE_LARGEST_FILE}) {
     SCOPED_TRACE(file);
     const rtype::client::SettingsReading reading =
-        readSettingsText(file, PlayerSettings{});
+        readSettingsText(file, holding);
 
     EXPECT_EQ(reading.settings.kopecks, 0U);
+    EXPECT_EQ(reading.ignoredLines,
+              std::vector<std::string>{INVALID_FIRST_LINE});
+  }
+}
+
+/**
+ * Given settings whose player holds 1250 kopecks and 300 chips
+ * When they are written, then read back
+ * Then the file holds the line of the chips, and both read back unmixed
+ */
+TEST(SettingsTextTest, TheChipsAreWrittenAndReadBackApartFromTheKopecks) {
+  PlayerSettings settings;
+  settings.kopecks = A_BALANCE;
+  settings.chips = A_STACK_OF_CHIPS;
+
+  const PlayerSettings read =
+      readSettingsText(settingsText(settings), PlayerSettings{}).settings;
+
+  EXPECT_NE(settingsText(settings).find(A_STACK_OF_CHIPS_LINE),
+            std::string::npos);
+  EXPECT_EQ(read.chips, A_STACK_OF_CHIPS);
+  EXPECT_EQ(read.kopecks, A_BALANCE);
+}
+
+/**
+ * Given settings holding 300 chips, and files whose chips are words, are
+ * negative, or pass the largest
+ * When each file is read over those settings
+ * Then the player holds no chip and the line is listed as invalid
+ */
+TEST(SettingsTextTest, ChipsThatAreNoNumberLeaveNone) {
+  PlayerSettings holding;
+  holding.chips = A_STACK_OF_CHIPS;
+  for (const char* const file : {WORDS_AS_CHIPS_FILE, NEGATIVE_CHIPS_FILE,
+                                 CHIPS_PAST_THE_LARGEST_FILE}) {
+    SCOPED_TRACE(file);
+    const rtype::client::SettingsReading reading =
+        readSettingsText(file, holding);
+
+    EXPECT_EQ(reading.settings.chips, 0U);
     EXPECT_EQ(reading.ignoredLines,
               std::vector<std::string>{INVALID_FIRST_LINE});
   }

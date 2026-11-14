@@ -125,6 +125,13 @@ constexpr Setting<std::uint32_t> KOPECKS_SETTING{
     .id = SettingId::Kopecks,
     .range = KOPECKS_RANGE};
 
+/** @brief The chips of the player: none to MAXIMUM_CHIPS. */
+constexpr SettingRange CHIPS_RANGE{.minimum = 0,
+                                   .maximum = static_cast<int>(MAXIMUM_CHIPS)};
+constexpr Setting<std::uint32_t> CHIPS_SETTING{.member = &PlayerSettings::chips,
+                                               .id = SettingId::Chips,
+                                               .range = CHIPS_RANGE};
+
 /** @brief Every setting a listener can be told about. */
 constexpr std::array ALL_SETTING_IDS{
     SettingId::MusicVolume,
@@ -149,6 +156,7 @@ constexpr std::array ALL_SETTING_IDS{
     SettingId::ShipLook,
     SettingId::ShipLocker,
     SettingId::Kopecks,
+    SettingId::Chips,
 };
 
 }  // namespace rtype::client

@@ -15,6 +15,7 @@
 #include "ColorMode.hpp"
 #include "InputConstants.hpp"
 #include "KeyNames.hpp"
+#include "NamedBalance.hpp"
 #include "NamedNumber.hpp"
 #include "PixelSize.hpp"
 #include "PlayerSettings.hpp"
@@ -314,40 +315,31 @@ std::optional<LineOutcome> applyLocker(PlayerSettings& settings,
   return LineOutcome::Applied;
 }
 
-/** @returns The balance @p text holds, a whole number from 0 to
- * MAXIMUM_KOPECKS; nothing for any other text. */
-std::optional<std::uint32_t> kopecksOf(std::string_view text) {
-  const char* const first = std::to_address(text.begin());
-  const char* const last = std::to_address(text.end());
-  std::uint32_t value = 0;
-  const auto [stop, error] = std::from_chars(first, last, value);
-  if (error != std::errc() || stop != last || value > MAXIMUM_KOPECKS) {
-    return std::nullopt;
-  }
-  return value;
+/** @brief Sets @p balance to the whole number @p text holds within the range
+ * of its setting, or to none when @p text holds no such number.
+ * @returns Applied, or InvalidValue when the player was left none. */
+LineOutcome applyBalance(PlayerSettings& settings, const NamedBalance& balance,
+                         std::string_view text) {
+  const std::optional<int> parsed = integerIn(text, balance.setting->range);
+  settings.*balance.setting->member =
+      static_cast<std::uint32_t>(parsed.value_or(0));
+  return parsed.has_value() ? LineOutcome::Applied : LineOutcome::InvalidValue;
 }
 
-/** @returns What became of the balance, nothing when the line names another
- * setting. A value that is no balance leaves the player none. */
-std::optional<LineOutcome> applyKopecks(PlayerSettings& settings,
-                                        SettingLine setting) {
-  if (setting.name != KOPECKS_NAME) {
-    return std::nullopt;
-  }
-  const std::optional<std::uint32_t> kopecks = kopecksOf(setting.value);
-  settings.kopecks = kopecks.value_or(0);
-  return kopecks.has_value() ? LineOutcome::Applied : LineOutcome::InvalidValue;
-}
-
-/** @returns What became of a line about what the player holds, the locker
- * or the kopecks; nothing when it names another setting. */
+/** @returns What became of a line about what the player holds, the locker or
+ * a balance of BALANCE_NUMBERS; nothing when it names another setting. */
 std::optional<LineOutcome> applyHoldings(PlayerSettings& settings,
                                          SettingLine setting) {
   if (const std::optional<LineOutcome> outcome =
           applyLocker(settings, setting)) {
     return outcome;
   }
-  return applyKopecks(settings, setting);
+  for (const NamedBalance& balance : BALANCE_NUMBERS) {
+    if (setting.name == balance.name) {
+      return applyBalance(settings, balance, setting.value);
+    }
+  }
+  return std::nullopt;
 }
 
 /** @brief Applies @p setting when it names a setting written as a word or a
@@ -430,10 +422,12 @@ std::string ignoredLine(std::size_t number, LineOutcome outcome) {
   return text;
 }
 
-/** @brief Writes a line for each of @p numbers. */
+/** @brief Writes a line for each of @p numbers, a list of NamedNumber or of
+ * NamedBalance. */
+template <typename NamedSettings>
 void writeNumbers(std::string& text, const PlayerSettings& settings,
-                  std::span<const NamedNumber> numbers) {
-  for (const NamedNumber& number : numbers) {
+                  const NamedSettings& numbers) {
+  for (const auto& number : numbers) {
     writeLine(text, number.name,
               std::to_string(settings.*number.setting->member));
   }
@@ -479,7 +473,7 @@ std::string settingsText(const PlayerSettings& settings) {
   writeLine(text, SHIP_FACE_NAME, lookItemValue(settings.shipLook.face));
   writeLine(text, SHIP_HULL_NAME, lookItemValue(settings.shipLook.hull));
   writeLine(text, SHIP_LOCKER_NAME, lockerValue(settings.shipLocker));
-  writeLine(text, KOPECKS_NAME, std::to_string(settings.kopecks));
+  writeNumbers(text, settings, BALANCE_NUMBERS);
   return text;
 }
 

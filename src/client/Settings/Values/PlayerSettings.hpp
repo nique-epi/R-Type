@@ -56,6 +56,8 @@ struct PlayerSettings {
   ShipLocker shipLocker;
   /** @brief What the player may spend at the shop, 0 to MAXIMUM_KOPECKS. */
   std::uint32_t kopecks = 0;
+  /** @brief What the player may bet at the casino, 0 to MAXIMUM_CHIPS. */
+  std::uint32_t chips = 0;
 
   bool operator==(const PlayerSettings& other) const = default;
 };

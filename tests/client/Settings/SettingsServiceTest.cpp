@@ -231,7 +231,8 @@ TEST_F(SettingsServiceFixture, RestoringTakesTheSettingsAndTellsEveryOne) {
                                     SettingId::LagometerBackground,
                                     SettingId::ShipLook,
                                     SettingId::ShipLocker,
-                                    SettingId::Kopecks}));
+                                    SettingId::Kopecks,
+                                    SettingId::Chips}));
 }
 
 /**

@@ -28,6 +28,7 @@ enum class SettingId : std::uint8_t {
   ShipLook,
   ShipLocker,
   Kopecks,
+  Chips,
 };
 
 }  // namespace rtype::client

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include "NamedBalance.hpp"
 #include "NamedNumber.hpp"
 #include "SettingDefinitionConstants.hpp"
 #include "SettingsConstants.hpp"
@@ -29,6 +30,13 @@ constexpr std::array LAGOMETER_NUMBERS{
                 .setting = &LAGOMETER_SCALE_SETTING},
     NamedNumber{.name = LAGOMETER_BACKGROUND_NAME,
                 .setting = &LAGOMETER_BACKGROUND_SETTING},
+};
+
+/** @brief The balances of the file, written last: the kopecks, then the
+ * chips. Each is read within the range of its setting. */
+constexpr std::array BALANCE_NUMBERS{
+    NamedBalance{.name = KOPECKS_NAME, .setting = &KOPECKS_SETTING},
+    NamedBalance{.name = CHIPS_NAME, .setting = &CHIPS_SETTING},
 };
 
 }  // namespace rtype::client

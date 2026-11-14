@@ -116,6 +116,13 @@ constexpr std::string_view SHIP_LOCKER_NAME = "ship_locker";
 constexpr std::string_view KOPECKS_NAME = "kopecks";
 constexpr std::uint32_t MAXIMUM_KOPECKS = 999'999;
 
+/** @brief The chips of the casino, changed one for one with kopecks at its
+ * cashier: the name of their line, and the largest number a player holds, the
+ * largest balance of kopecks, so a whole balance can be changed either way. A
+ * first launch holds none. */
+constexpr std::string_view CHIPS_NAME = "chips";
+constexpr std::uint32_t MAXIMUM_CHIPS = MAXIMUM_KOPECKS;
+
 /** @brief What separates the items of the locker in the settings file, and the
  * value of a locker that holds none. */
 constexpr char LOCKER_ITEM_SEPARATOR = ',';

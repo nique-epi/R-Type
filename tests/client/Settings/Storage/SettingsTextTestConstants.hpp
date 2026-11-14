@@ -40,7 +40,8 @@ constexpr const char* FIRST_LAUNCH_FILE =
     "ship_face=none\n"
     "ship_hull=none\n"
     "ship_locker=top_hat,cool_shades,mustache\n"
-    "kopecks=0\n";
+    "kopecks=0\n"
+    "chips=0\n";
 
 /** @brief The ship wearing the crown, the third item of the locker, and the
  * shades, the ninth: what a slot holds is the place of its item plus one. */
@@ -125,5 +126,14 @@ constexpr const char* A_BALANCE_LINE = "kopecks=1250\n";
 constexpr const char* WORDS_AS_A_BALANCE_FILE = "kopecks=abc\n";
 constexpr const char* NEGATIVE_BALANCE_FILE = "kopecks=-5\n";
 constexpr const char* BALANCE_PAST_THE_LARGEST_FILE = "kopecks=1000000\n";
+
+/** @brief A stack of chips, other than A_BALANCE so that a mix-up of the two
+ * lines shows, the line that writes it, and files whose chips are no whole
+ * number, are negative, or pass MAXIMUM_CHIPS (999999). */
+constexpr std::uint32_t A_STACK_OF_CHIPS = 300;
+constexpr const char* A_STACK_OF_CHIPS_LINE = "chips=300\n";
+constexpr const char* WORDS_AS_CHIPS_FILE = "chips=abc\n";
+constexpr const char* NEGATIVE_CHIPS_FILE = "chips=-5\n";
+constexpr const char* CHIPS_PAST_THE_LARGEST_FILE = "chips=1000000\n";
 
 }  // namespace rtype::client::testing
