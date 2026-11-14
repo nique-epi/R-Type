@@ -1,11 +1,13 @@
 #pragma once
 
 #include <filesystem>
+#include <optional>
 #include <span>
 #include <string_view>
 #include <vector>
 #include "CollisionBox.hpp"
 #include "DataFileTable.hpp"
+#include "MaskSheet.hpp"
 #include "SheetText.hpp"
 
 namespace rtype::game {
@@ -88,5 +90,20 @@ void checkSheetNames(std::span<const SheetText> texts);
  * other than HITBOX_KEYS in a hitbox of one box.
  */
 [[nodiscard]] CollisionBox hitboxOf(const engine::DataFileTable& gameplay);
+
+/**
+ * @returns The mask `[gameplay.mask]` of @p gameplay draws, row after row,
+ * and its erosion, 0 when left out; nothing for a sheet without mask. Both
+ * programs read a mask this way, so they agree on it; no system collides
+ * with it yet.
+ * @throws UnknownDataFileKeyException for a key other than MASK_KEYS; what
+ * engine::textsAt() throws for `rows`; InconsistentEntitySheetException, at
+ * the row, for a row of another width than the first or with a character
+ * other than DRAWN_MASK_PIXEL and CLEAR_MASK_PIXEL, and at `rows` for no row,
+ * a side above engine::MAXIMUM_MASK_SIDE or no drawn pixel; and
+ * DataFileValueOutOfRangeException for an erosion outside MASK_EROSION_RANGE.
+ */
+[[nodiscard]] std::optional<MaskSheet> maskOf(
+    const engine::DataFileTable& gameplay);
 
 }  // namespace rtype::game

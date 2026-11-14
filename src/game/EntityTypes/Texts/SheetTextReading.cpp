@@ -1,11 +1,15 @@
 #include "SheetTextReading.hpp"
 #include <algorithm>
+#include <cstddef>
 #include <filesystem>
+#include <memory>
+#include <optional>
 #include <set>
 #include <span>
 #include <string>
 #include <string_view>
 #include <system_error>
+#include <utility>
 #include <vector>
 #include "CollisionBox.hpp"
 #include "CollisionConstants.hpp"
@@ -13,10 +17,14 @@
 #include "ContentNameConstants.hpp"
 #include "DataFileReading.hpp"
 #include "DataFileTable.hpp"
+#include "DataFileText.hpp"
 #include "EntitySheetConstants.hpp"
 #include "EntityTypeConstants.hpp"
 #include "GameException.hpp"
+#include "MaskConstants.hpp"
+#include "MaskSheet.hpp"
 #include "PathText.hpp"
+#include "PixelMask.hpp"
 #include "SheetText.hpp"
 #include "WholeNumberRange.hpp"
 
@@ -34,10 +42,7 @@ float unitsAt(const engine::DataFileTable& table, std::string_view key,
  * table leaves it out. */
 float unitsOrZeroAt(const engine::DataFileTable& table, std::string_view key,
                     engine::WholeNumberRange range) {
-  if (!table.table.get().contains(key)) {
-    return 0.0F;
-  }
-  return unitsAt(table, key, range);
+  return static_cast<float>(engine::wholeNumberOrZeroAt(table, key, range));
 }
 
 /** @returns The box @p table describes: its size, and its offset, 0 without
@@ -107,6 +112,69 @@ void refuseSharedNames(std::span<const SheetText> texts) {
 std::filesystem::path sheetFolderOf(
     const std::filesystem::path& contentFolder) {
   return contentFolder / ENTITY_SHEET_FOLDER_IN_ASSETS;
+}
+
+/** @throws InconsistentEntitySheetException, at the rows of @p mask, when
+ * @p rows hold no row, a first row of no pixel, or more rows or pixels than a
+ * mask may hold. */
+void checkMaskSides(const std::vector<engine::DataFileText>& rows,
+                    const engine::DataFileTable& mask) {
+  const bool fits =
+      !rows.empty() &&
+      std::cmp_less_equal(rows.size(), engine::MAXIMUM_MASK_SIDE) &&
+      !rows.front().text.empty() &&
+      std::cmp_less_equal(rows.front().text.size(), engine::MAXIMUM_MASK_SIDE);
+  if (!fits) {
+    throw InconsistentEntitySheetException(engine::placeOfKey(mask, ROWS_KEY),
+                                           MASK_SIDE_RULE);
+  }
+}
+
+/** @throws InconsistentEntitySheetException, at the row, when @p row is not
+ * as wide as @p first or holds another character than MASK_PIXELS. */
+void checkMaskRow(const engine::DataFileText& row,
+                  const engine::DataFileText& first) {
+  if (row.text.size() != first.text.size()) {
+    throw InconsistentEntitySheetException(row.place, MASK_ROW_WIDTH_RULE);
+  }
+  if (row.text.find_first_not_of(MASK_PIXELS) != std::string::npos) {
+    throw InconsistentEntitySheetException(row.place, MASK_PIXEL_RULE);
+  }
+}
+
+/** @throws InconsistentEntitySheetException when @p rows, the rows of
+ * @p mask, do not draw a mask: checkMaskSides(), checkMaskRow() for each row,
+ * then at least one drawn pixel. */
+void checkMaskRows(const std::vector<engine::DataFileText>& rows,
+                   const engine::DataFileTable& mask) {
+  checkMaskSides(rows, mask);
+  for (const engine::DataFileText& row : rows) {
+    checkMaskRow(row, rows.front());
+  }
+  const bool drawsNothing =
+      std::ranges::none_of(rows, [](const engine::DataFileText& row) noexcept {
+        return std::ranges::find(row.text, DRAWN_MASK_PIXEL) != row.text.end();
+      });
+  if (drawsNothing) {
+    throw InconsistentEntitySheetException(engine::placeOfKey(mask, ROWS_KEY),
+                                           MASK_DRAWN_RULE);
+  }
+}
+
+/** @returns The mask @p rows draw, rows checkMaskRows() accepted. */
+engine::PixelMask pixelsOf(const std::vector<engine::DataFileText>& rows) {
+  const std::size_t width = rows.front().text.size();
+  engine::PixelMask mask(static_cast<int>(width),
+                         static_cast<int>(rows.size()));
+  for (std::size_t line = 0; line < rows.size(); ++line) {
+    for (std::size_t column = 0; column < width; ++column) {
+      if (rows[line].text[column] == DRAWN_MASK_PIXEL) {
+        mask.markDrawn(
+            {.x = static_cast<int>(column), .y = static_cast<int>(line)});
+      }
+    }
+  }
+  return mask;
 }
 
 }  // namespace
@@ -190,6 +258,22 @@ CollisionBox hitboxOf(const engine::DataFileTable& gameplay) {
     return enclosingBoxOf(parts);
   }
   return boxAt(engine::tableAt(gameplay, HITBOX_KEY));
+}
+
+std::optional<MaskSheet> maskOf(const engine::DataFileTable& gameplay) {
+  const std::optional<engine::DataFileTable> mask =
+      engine::optionalTableAt(gameplay, MASK_KEY);
+  if (!mask.has_value()) {
+    return std::nullopt;
+  }
+  engine::refuseUnknownKeys(*mask, MASK_KEYS);
+  const std::vector<engine::DataFileText> rows =
+      engine::textsAt(*mask, ROWS_KEY);
+  checkMaskRows(rows, *mask);
+  return MaskSheet{
+      .pixels = std::make_shared<const engine::PixelMask>(pixelsOf(rows)),
+      .erosion = static_cast<int>(
+          engine::wholeNumberOrZeroAt(*mask, EROSION_KEY, MASK_EROSION_RANGE))};
 }
 
 }  // namespace rtype::game
