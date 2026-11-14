@@ -213,3 +213,11 @@ frame_ms = 120
 /** @brief The most frames an idle animation holds, as the sheet format of
  * the architecture page writes it. */
 constexpr std::size_t MOST_FRAMES_A_SHEET_HOLDS = 16;
+
+/** @brief A square of 3 by 3 drawn pixels, and what peeling its outline once
+ * leaves: its center, the one pixel whose four neighbours are drawn. */
+constexpr std::array<std::string_view, 3> FULL_SQUARE_OF_THREE{"###", "###",
+                                                               "###"};
+constexpr std::array<std::string_view, 3> CENTER_OF_A_SQUARE_OF_THREE{
+    "...", ".#.", "..."};
+constexpr int PEELED_ONCE = 1;

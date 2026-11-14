@@ -36,6 +36,19 @@ after_ms = 1500
 count = 4
 shard = "orb_shard"
 
+[gameplay.mask]
+rows = [
+  ".######..",
+  "########.",
+  "#########",
+  "#########",
+  "#########",
+  "#########",
+  "#########",
+  ".#######.",
+  "..#####..",
+]
+
 [appearance]
 sheet = "sprites/mobs/bydomancer.png"
 

@@ -34,6 +34,19 @@ after_ms = 1100
 count = 4
 shard = "tyrant_spore_shard"
 
+[gameplay.mask]
+rows = [
+  "...###...",
+  ".#######.",
+  ".#######.",
+  "#########",
+  "#########",
+  "#########",
+  ".#######.",
+  ".#######.",
+  "...###...",
+]
+
 [appearance]
 sheet = "sprites/mobs/bydo_tyrant.png"
 

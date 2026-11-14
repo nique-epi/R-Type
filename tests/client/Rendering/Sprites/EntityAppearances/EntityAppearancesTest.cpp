@@ -483,3 +483,36 @@ TEST(EntityAppearances, AFrameHoldsAHitboxAwayFromTheCenter) {
 TEST(EntityAppearances, TheBydoTyrantIsHitAwayFromTheCenter) {
   EXPECT_TRUE(hitsAnOffsetBox(shippedEntitySheets().named(BYDO_TYRANT_SHEET)));
 }
+
+/**
+ * Given the shipped sheets that give a mask, read by the server for their
+ * gameplay and by the client for their look
+ * When the frames of their idle animations are read in the PNG, peeled by the
+ * erosion of the mask and cut to the hitbox
+ * Then the mask the server touches is exactly what the sprite draws
+ */
+TEST(EntityAppearances, EveryShippedMaskIsWhatItsSpriteDraws) {
+  const EntityAppearances appearances = shippedAppearances();
+  for (const EntitySheet& sheet : shippedEntitySheets().all()) {
+    if (!sheet.mask.has_value()) {
+      continue;
+    }
+    SCOPED_TRACE(sheet.name);
+    const EntityAppearance* const look = appearances.named(sheet.name);
+    ASSERT_NE(look, nullptr);
+
+    EXPECT_EQ(rowsOf(*sheet.mask->pixels),
+              expectedMaskRows(*look, sheet.mask->erosion, sheet.hitbox));
+  }
+}
+
+/**
+ * Given a square of 3 by 3 drawn pixels
+ * When its outline is peeled once, as the mask of a sheet of erosion 1 is
+ * Then its center alone stays drawn: the only pixel whose four neighbours are
+ * drawn
+ */
+TEST(EntityAppearances, PeelingASquareOfThreeLeavesItsCenter) {
+  EXPECT_EQ(peeled(rowsFrom(FULL_SQUARE_OF_THREE), PEELED_ONCE),
+            rowsFrom(CENTER_OF_A_SQUARE_OF_THREE));
+}
