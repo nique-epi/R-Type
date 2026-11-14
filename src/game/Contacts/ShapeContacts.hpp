@@ -3,6 +3,7 @@
 #include "Bounds.hpp"
 #include "ContactShape.hpp"
 #include "MaskArea.hpp"
+#include "MaskPixel.hpp"
 #include "PixelMask.hpp"
 #include "PlacedMask.hpp"
 #include "Position.hpp"
@@ -34,5 +35,10 @@ namespace rtype::game {
  */
 [[nodiscard]] bool shapesTouch(const ContactShape& first,
                                const ContactShape& second);
+
+/** @returns The square of SPRITE_PIXEL_UNITS by SPRITE_PIXEL_UNITS units the
+ * pixel @p pixel of @p placed covers, on the grid of the sprite pixels. */
+[[nodiscard]] engine::Bounds cellBoundsOf(const engine::PlacedMask& placed,
+                                          engine::MaskPixel pixel);
 
 }  // namespace rtype::game

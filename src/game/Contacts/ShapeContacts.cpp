@@ -6,6 +6,7 @@
 #include "ContactShape.hpp"
 #include "MaskArea.hpp"
 #include "MaskOverlap.hpp"
+#include "MaskPixel.hpp"
 #include "Overlaps.hpp"
 #include "PixelMask.hpp"
 #include "PlacedMask.hpp"
@@ -70,6 +71,17 @@ bool shapesTouch(const ContactShape& first, const ContactShape& second) {
     return engine::maskOverlapsArea(*second.mask, areaOf(first.bounds));
   }
   return true;
+}
+
+engine::Bounds cellBoundsOf(const engine::PlacedMask& placed,
+                            engine::MaskPixel pixel) {
+  return engine::Bounds{
+      .centerX = (static_cast<float>(placed.left + pixel.x) + engine::HALF) *
+                 SPRITE_PIXEL_UNITS,
+      .centerY = (static_cast<float>(placed.top + pixel.y) + engine::HALF) *
+                 SPRITE_PIXEL_UNITS,
+      .width = SPRITE_PIXEL_UNITS,
+      .height = SPRITE_PIXEL_UNITS};
 }
 
 }  // namespace rtype::game
