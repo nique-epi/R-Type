@@ -5,7 +5,6 @@
 #include <cstddef>
 #include <functional>
 #include <optional>
-#include <vector>
 #include "Button.hpp"
 #include "HelpWalkthroughConstants.hpp"
 #include "HelpWalkthroughParts.hpp"

@@ -16,7 +16,6 @@
 #include "HelpScene.hpp"
 #include "HelpStep.hpp"
 #include "InterfaceColorConstants.hpp"
-#include "InterfaceConstants.hpp"
 #include "ProfessorSpriteConstants.hpp"
 #include "StatusBandConstants.hpp"
 #include "TextStyle.hpp"

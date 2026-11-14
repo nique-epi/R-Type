@@ -9,12 +9,10 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
-#include <ranges>
 #include <span>
 #include <string>
 #include <string_view>
 #include <utility>
-#include <vector>
 #include "Animation.hpp"
 #include "BarState.hpp"
 #include "BoundAction.hpp"
@@ -56,8 +54,6 @@
 #include "TimeConstants.hpp"
 #include "WidgetColors.hpp"
 #include "WidgetConstants.hpp"
-#include "WidgetStyles.hpp"
-#include "WidgetText.hpp"
 
 namespace rtype::client {
 
