@@ -1363,7 +1363,7 @@ The ping is the smoothed one at the end of the period; the other figures are cou
 | Change how often sky events appear, or how many at once | `SHORTEST_SKY_EVENT_GAP`, `LONGEST_SKY_EVENT_GAP`, `MAXIMUM_SKY_EVENTS` in `src/client/Rendering/Background/SkyEvents/SkyEventConstants.hpp` |
 | Add a kind of sky event | A class implementing `ISkyEvent` in `src/client/Rendering/Background/SkyEvents/`, a value of `SkyEventKind`, a weight in `SKY_EVENT_WEIGHTS`, a case in `SkyEventScheduler::createEvent` |
 | Change the halo | `HALO_STANDARD_DEVIATION` in `BackgroundConstants.hpp`, `HALO_TINT` in `BackgroundColorConstants.hpp`, the blur shader in `HaloShader.hpp`, `GaussianBlur/` |
-| Change how the sky and the entities are enlarged | `PixelCanvas::show` in `src/client/Rendering/PixelCanvas/`, `IntegerScale/` in `src/client/Rendering/Background/` |
+| Change how the sky and the entities are enlarged | `EnlargedPicture/` and `IntegerScale/` in `src/client/Rendering/Background/` |
 | Change the keys of a first launch, or which keys can be bound | `DEFAULT_KEYS` and `KEY_NAMES` in `src/client/Input/Keys/InputConstants.hpp` |
 | Add a bound action | `BoundAction` and `BOUND_ACTIONS` (`src/client/Input/Keys/BoundAction.hpp`), `DEFAULT_KEYS`, `KeyBindings::playerActionOf()` when it is a `PlayerAction` with its bit in the protocol, `BOUND_ACTION_KEY_NAMES` in `SettingsConstants.hpp`, `BOUND_ACTION_LABELS` in `OptionsScreenConstants.hpp` |
 | Change the window, its display modes, or when the background moves and is drawn | `src/client/Window/`, `src/client/Platform/BorderlessScreen*.cpp`, `FrameLoop` in `src/client/Window/Loop/`, `ClientWindowModule` in `src/client/Window/`, `ClientScreens::draw()` in `src/client/Screens/` |
