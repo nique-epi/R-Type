@@ -45,8 +45,9 @@
 #include "PlayfieldMapping.hpp"
 #include "ProfessorSpriteConstants.hpp"
 #include "SoundConstants.hpp"
-#include "SpeechWord.hpp"
-#include "SpeechWordLook.hpp"
+#include "SpeechKeyName.hpp"
+#include "SpeechLines.hpp"
+#include "SpeechLinesConstants.hpp"
 #include "SpriteFrame.hpp"
 #include "StatusBand.hpp"
 #include "StatusBandConstants.hpp"
@@ -62,108 +63,29 @@ namespace rtype::client {
 
 namespace {
 
-/** @returns The names of the keys bound to every action, in the order of
+/** @returns The keycap names of the help: each token of HELP_KEY_TOKENS
+ * with the name of the key bound to its action, in the order of
  * BOUND_ACTIONS. */
-std::array<std::string, BOUND_ACTION_COUNT> keyNamesOf(
+std::array<SpeechKeyName, BOUND_ACTION_COUNT> keyNamesOf(
     const KeyBindings& keys, const KeyNaming& keyName) {
-  std::array<std::string, BOUND_ACTION_COUNT> names;
+  std::array<SpeechKeyName, BOUND_ACTION_COUNT> names;
   for (std::size_t action = 0; action < names.size(); ++action) {
-    names.at(action) = keyName(keys.keyOf(BOUND_ACTIONS.at(action)));
+    names.at(action) = {.token = HELP_KEY_TOKENS.at(action),
+                        .name = keyName(keys.keyOf(BOUND_ACTIONS.at(action)))};
   }
   return names;
 }
 
-/** @returns Whether a word is wrapped in the two marks. */
-bool isWrapped(std::string_view word, char opening, char closing) {
-  return word.size() > 1 && word.front() == opening && word.back() == closing;
-}
-
-/** @returns A word wrapped in marks, without them. */
-std::string_view insideOf(std::string_view wrapped) {
-  return wrapped.substr(1, wrapped.size() - 2);
-}
-
-/** @returns The name a keycap shows: the key bound to the action a token of
- * HELP_KEY_TOKENS names, or the word itself. */
-std::string keyCapNameOf(std::string_view word,
-                         std::span<const std::string> keyNames) {
-  for (std::size_t action = 0; action < HELP_KEY_TOKENS.size(); ++action) {
-    if (HELP_KEY_TOKENS.at(action) == word) {
-      return keyNames[action];
-    }
-  }
-  return std::string(word);
-}
-
-/** @returns A word of a sentence as the bubble writes it, the punctuation
- * that ends it apart. */
-SpeechWord wordOf(std::string_view token,
-                  std::span<const std::string> keyNames) {
-  const std::size_t coreLength = token.find_last_not_of(HELP_PUNCTUATION) + 1;
-  const std::string_view core = token.substr(0, coreLength);
-  std::string suffix(token.substr(coreLength));
-  if (isWrapped(core, KEY_CAP_OPENING, KEY_CAP_CLOSING)) {
-    return {.text = keyCapNameOf(insideOf(core), keyNames),
-            .look = SpeechWordLook::KeyCap,
-            .suffix = std::move(suffix)};
-  }
-  if (isWrapped(core, INTERFACE_WORD_MARK, INTERFACE_WORD_MARK)) {
-    return {.text = std::string(insideOf(core)),
-            .look = SpeechWordLook::Highlighted,
-            .suffix = std::move(suffix)};
-  }
-  return {
-      .text = std::string(token), .look = SpeechWordLook::Plain, .suffix = {}};
-}
-
-/** @returns The words of a sentence, split on WORD_SEPARATOR. */
-std::vector<SpeechWord> wordsOf(std::string_view text,
-                                std::span<const std::string> keyNames) {
-  std::vector<SpeechWord> words;
-  for (const auto token : std::views::split(text, WORD_SEPARATOR)) {
-    if (!token.empty()) {
-      words.push_back(
-          wordOf(std::string_view(token.begin(), token.end()), keyNames));
-    }
-  }
-  return words;
-}
-
-/** @returns How wide a word is written: its text or its keycap, then its
- * punctuation. */
-int widthOf(const SpeechWord& word) {
-  const int text = word.look == SpeechWordLook::KeyCap
-                       ? KeyCap(word.text, KeyCap::Edge::Plain).width()
-                       : regularTextWidth(word.text);
-  return text + regularTextWidth(word.suffix);
-}
-
-/** @returns The words in lines no wider than HELP_TEXT_WIDTH; a word wider
- * than a line has a line of its own. */
-std::vector<std::vector<SpeechWord>> linesOf(std::vector<SpeechWord> words) {
-  std::vector<std::vector<SpeechWord>> lines;
-  int used = 0;
-  for (SpeechWord& word : words) {
-    const int width = widthOf(word);
-    if (lines.empty() || used + HELP_WORD_GAP + width > HELP_TEXT_WIDTH) {
-      lines.emplace_back();
-      used = -HELP_WORD_GAP;
-    }
-    used += HELP_WORD_GAP + width;
-    lines.back().push_back(std::move(word));
-  }
-  return lines;
-}
-
 /** @returns The lines of every step, the keys named as the player bound
  * them: built once, since the keys do not change while the help lives. */
-std::array<std::vector<std::vector<SpeechWord>>, HELP_STEPS.size()> stepLinesOf(
+std::array<SpeechLines, HELP_STEPS.size()> stepLinesOf(
     const KeyBindings& keys, const KeyNaming& keyName) {
-  const std::array<std::string, BOUND_ACTION_COUNT> keyNames =
+  const std::array<SpeechKeyName, BOUND_ACTION_COUNT> keyNames =
       keyNamesOf(keys, keyName);
-  std::array<std::vector<std::vector<SpeechWord>>, HELP_STEPS.size()> lines;
+  std::array<SpeechLines, HELP_STEPS.size()> lines;
   for (std::size_t step = 0; step < lines.size(); ++step) {
-    lines.at(step) = linesOf(wordsOf(HELP_STEPS.at(step).text, keyNames));
+    lines.at(step) =
+        speechLinesOf(HELP_STEPS.at(step).text, keyNames, HELP_TEXT_WIDTH);
   }
   return lines;
 }
@@ -172,7 +94,7 @@ std::array<std::vector<std::vector<SpeechWord>>, HELP_STEPS.size()> stepLinesOf(
  * then its footer. */
 int bubbleHeightOf(std::size_t lineCount) {
   return (SIDES_PER_AXIS * HELP_BUBBLE_PADDING) +
-         (static_cast<int>(lineCount) * HELP_LINE_HEIGHT) + HELP_FOOTER_GAP +
+         (static_cast<int>(lineCount) * SPEECH_LINE_HEIGHT) + HELP_FOOTER_GAP +
          CONTROL_HEIGHT;
 }
 
@@ -333,44 +255,6 @@ void paintSpotlight(IInterfaceCanvas& canvas, std::optional<sf::IntRect> part,
       canvas,
       insidePicture(grownBy(*part, HELP_SPOTLIGHT_GAP + breathAt(time))),
       HELP_CORNER_COLOR);
-}
-
-/** @brief Writes a word at its place on a line, then its punctuation.
- * @returns How wide it was written. */
-int paintWord(IInterfaceCanvas& canvas, const SpeechWord& word,
-              sf::Vector2i topLeft) {
-  int width = 0;
-  if (word.look == SpeechWordLook::KeyCap) {
-    const KeyCap keyCap(word.text, KeyCap::Edge::Plain);
-    keyCap.paint(canvas, topLeft - sf::Vector2i(0, CONTROL_TEXT_TOP));
-    width = keyCap.width();
-  } else {
-    canvas.write(word.text, topLeft,
-                 word.look == SpeechWordLook::Highlighted
-                     ? DIALOG_HEADING_STYLE
-                     : DIALOG_MESSAGE_STYLE);
-    width = regularTextWidth(word.text);
-  }
-  if (!word.suffix.empty()) {
-    canvas.write(word.suffix, topLeft + sf::Vector2i(width, 0),
-                 DIALOG_MESSAGE_STYLE);
-  }
-  return width + regularTextWidth(word.suffix);
-}
-
-/** @brief Writes the lines of the bubble, HELP_BUBBLE_PADDING in from its
- * top-left corner. */
-void paintLines(IInterfaceCanvas& canvas, sf::IntRect bubble,
-                const std::vector<std::vector<SpeechWord>>& lines) {
-  sf::Vector2i lineTopLeft =
-      bubble.position + sf::Vector2i(HELP_BUBBLE_PADDING, HELP_BUBBLE_PADDING);
-  for (const std::vector<SpeechWord>& line : lines) {
-    sf::Vector2i wordTopLeft = lineTopLeft;
-    for (const SpeechWord& word : line) {
-      wordTopLeft.x += paintWord(canvas, word, wordTopLeft) + HELP_WORD_GAP;
-    }
-    lineTopLeft.y += HELP_LINE_HEIGHT;
-  }
 }
 
 sf::Color pipColorOf(std::size_t pip, std::size_t step) {
@@ -593,7 +477,7 @@ void HelpWalkthrough::paintStep(IInterfaceCanvas& canvas,
   const HelpStep& shown = HELP_STEPS.at(step);
   const std::optional<sf::IntRect> part =
       partAreaOf(shown.part, room, chipArea_);
-  const std::vector<std::vector<SpeechWord>>& lines = stepLines_.at(step);
+  const SpeechLines& lines = stepLines_.at(step);
   const sf::IntRect bubble =
       bubbleAreaOf(shown.scene, part, bubbleHeightOf(lines.size()));
   const sf::Vector2i professor = professorTopLeftOf(bubble, part);
@@ -601,7 +485,10 @@ void HelpWalkthrough::paintStep(IInterfaceCanvas& canvas,
   CutCornerBox(bubble,
                {.border = PANEL_BORDER_COLOR, .inside = PANEL_INSIDE_COLOR})
       .paint(canvas);
-  paintLines(canvas, bubble, lines);
+  paintSpeech(canvas, lines,
+              {.topLeft = bubble.position + sf::Vector2i(HELP_BUBBLE_PADDING,
+                                                         HELP_BUBBLE_PADDING),
+               .letters = speechLetterCountOf(lines)});
   paintFooter(canvas, bubble, step);
   paintFrame(canvas,
              {.assetId = PROFESSOR_SHEET_ID,

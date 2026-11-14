@@ -45,15 +45,6 @@ constexpr std::array HELP_PREVIOUS_KEYS{sf::Keyboard::Key::Left,
 constexpr std::array<std::string_view, BOUND_ACTION_COUNT> HELP_KEY_TOKENS{
     "UP", "DOWN", "LEFT", "RIGHT", "SHOOT", "READY", "CHAT"};
 
-/** @brief Marks of a sentence: a keycap between braces, a word of the
- * interface between stars, the punctuation written plain after either, and
- * the separator of the words. */
-constexpr char KEY_CAP_OPENING = '{';
-constexpr char KEY_CAP_CLOSING = '}';
-constexpr char INTERFACE_WORD_MARK = '*';
-constexpr std::string_view HELP_PUNCTUATION = ".,:!?";
-constexpr char WORD_SEPARATOR = ' ';
-
 /** @brief The steps of the help, in order: the parts of the waiting room, a
  * moment of a game, then the HELP chip again. */
 constexpr std::array HELP_STEPS{
@@ -113,14 +104,11 @@ constexpr std::array HELP_STEPS{
 
 /**
  * @brief The bubble: HELP_BUBBLE_WIDTH wide and centered, its text
- * HELP_BUBBLE_PADDING in, a line every HELP_LINE_HEIGHT pixels so a keycap
- * fits, HELP_WORD_GAP between two words; its footer, a keycap tall,
- * HELP_FOOTER_GAP under the text.
+ * HELP_BUBBLE_PADDING in, a line every SPEECH_LINE_HEIGHT pixels; its
+ * footer, a keycap tall, HELP_FOOTER_GAP under the text.
  */
 constexpr int HELP_BUBBLE_WIDTH = 304;
 constexpr int HELP_BUBBLE_PADDING = 8;
-constexpr int HELP_LINE_HEIGHT = 13;
-constexpr int HELP_WORD_GAP = REGULAR_FONT_ADVANCE;
 constexpr int HELP_FOOTER_GAP = 6;
 constexpr int HELP_TEXT_WIDTH =
     HELP_BUBBLE_WIDTH - (SIDES_PER_AXIS * HELP_BUBBLE_PADDING);
