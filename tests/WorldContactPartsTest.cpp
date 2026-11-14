@@ -3,6 +3,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include "CollisionMask.hpp"
 #include "CurrentAction.hpp"
 #include "EntitySheet.hpp"
 #include "EntitySheetConstants.hpp"
@@ -11,6 +12,7 @@
 #include "Fragile.hpp"
 #include "HitboxParts.hpp"
 #include "HurtZone.hpp"
+#include "MaskSheet.hpp"
 #include "Position.hpp"
 #include "ShippedEntitySheets.hpp"
 #include "Shootable.hpp"
@@ -21,12 +23,14 @@
 #include "WorldFixtures.hpp"
 #include "WorldTestConstants.hpp"
 
+using rtype::game::CollisionMask;
 using rtype::game::CurrentAction;
 using rtype::game::EntitySheet;
 using rtype::game::EntityType;
 using rtype::game::Fragile;
 using rtype::game::HitboxParts;
 using rtype::game::HurtZone;
+using rtype::game::MaskSheet;
 using rtype::game::Position;
 using rtype::game::Shootable;
 using rtype::game::SHOOTABLE_MISSILE_SHEETS;
@@ -36,6 +40,7 @@ using rtype::game::testing::componentOf;
 using rtype::game::testing::DRIFTER_SHEET;
 using rtype::game::testing::drifterWith;
 using rtype::game::testing::ENEMY_MISSILE_SHEET;
+using rtype::game::testing::LOOK_CHEF_TOQUE_SHEET;
 using rtype::game::testing::SHIP_SHEET;
 using rtype::game::testing::shippedEntitySheets;
 using rtype::game::testing::SOME_X;
@@ -232,4 +237,39 @@ TEST(WorldContactParts, EveryShootableNameIsAShippedMissileOfAnEnemy) {
     EXPECT_EQ(shippedEntitySheets().named(name).side, EntityType::EnemyMissile)
         << name;
   }
+}
+
+/**
+ * Given the shipped sheet of the ship, which names a collision mask
+ * When an entity of that sheet is spawned
+ * Then it carries the mask of its sheet, shared with the sheet
+ */
+TEST(WorldContactParts, TheMaskOfTheSheetIsOnTheEntity) {
+  World world;
+  const EntitySheet& sheet = shippedEntitySheets().named(SHIP_SHEET);
+  ASSERT_TRUE(sheet.mask.has_value());
+
+  const std::uint32_t entityId =
+      world.spawn(sheet, Position{.x = SOME_X, .y = SOME_Y});
+
+  const std::optional<CollisionMask> mask =
+      componentOf<CollisionMask>(world, entityId);
+  ASSERT_TRUE(mask.has_value());
+  EXPECT_EQ(mask.value_or(CollisionMask{}).pixels,
+            sheet.mask.value_or(MaskSheet{}).pixels);
+}
+
+/**
+ * Given the shipped sheet of a look item, which names no collision mask
+ * When an entity of that sheet is spawned
+ * Then it has no CollisionMask: it is touched anywhere in its box
+ */
+TEST(WorldContactParts, ABodyWithoutAMaskHasNoCollisionMask) {
+  World world;
+
+  const std::uint32_t entityId =
+      world.spawn(shippedEntitySheets().named(LOOK_CHEF_TOQUE_SHEET),
+                  Position{.x = SOME_X, .y = SOME_Y});
+
+  EXPECT_FALSE(componentOf<CollisionMask>(world, entityId).has_value());
 }

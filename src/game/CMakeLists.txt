@@ -1,5 +1,6 @@
 add_subdirectory(Behaviours)
 add_subdirectory(Components)
+add_subdirectory(Contacts)
 add_subdirectory(EnemyActions)
 add_subdirectory(EntityTypes)
 add_subdirectory(Events)

@@ -8,6 +8,7 @@
 #include "Boss.hpp"
 #include "CollisionBox.hpp"
 #include "CollisionFilter.hpp"
+#include "CollisionMask.hpp"
 #include "ComponentRegistry.hpp"
 #include "CurrentAction.hpp"
 #include "Entity.hpp"
@@ -58,9 +59,9 @@ struct BodyStart {
 };
 
 /** @brief Gives @p start what every entity of a sheet has: where it is, its
- * side, its box, the boxes its sheet lists, its collision filter, the number of
- * its sheet, the names of its effects and looks, the look it shows, its own
- * idle loop at first, and an Intent that wants nothing. */
+ * side, its box, the boxes or the collision mask its sheet gives, its collision
+ * filter, the number of its sheet, the names of its effects and looks, the look
+ * it shows, its own idle loop at first, and an Intent that wants nothing. */
 void addPlace(engine::ComponentRegistry& components, const BodyStart& start) {
   const EntitySheet& sheet = start.sheet.get();
   components.add(start.body, start.position);
@@ -68,6 +69,9 @@ void addPlace(engine::ComponentRegistry& components, const BodyStart& start) {
   components.add(start.body, sheet.hitbox);
   if (!sheet.hitboxParts.empty()) {
     components.add(start.body, HitboxParts{.boxes = sheet.hitboxParts});
+  }
+  if (sheet.mask.has_value()) {
+    components.add(start.body, CollisionMask{.pixels = sheet.mask->pixels});
   }
   components.add(start.body, sheet.collision.filter);
   components.add(start.body, EntityTypeNumber{.number = sheet.number});
