@@ -5,7 +5,7 @@
 --
 -- The first two stages cross open space, with the stars alone; the second
 -- ends on a mini-boss, the Bydo Tyrant with 40 % of its health. The third
--- stage enters the Pit, whose maps slide in from the right, and the last
+-- stage enters the Pit through its cave, and the last
 -- ends on the Bydo Tyrant at full health. In the Pit, the Bydos keep to the
 -- rows the maps leave free, from 192 to 848 logical units. The positions are
 -- written here until the level places its enemies in its LDtk project.

@@ -237,7 +237,7 @@ The repository ships two levels:
 
 | Level | Resource | What it plays |
 |---|---|---|
-| `campaign` | `resources/campaign/` | five stages, each one after the first at a checkpoint: two in open space, the second ending on the Bydo Tyrant with 40 % of its health as a mini-boss, then two in the Pit, whose maps slide in from the right, and a last stage on the Bydo Tyrant at full health. The positions of its Bydos are written in the script until a level places them in its LDtk project. |
+| `campaign` | `resources/campaign/` | five stages, each one after the first at a checkpoint: two in open space, the second ending on the Bydo Tyrant with 40 % of its health as a mini-boss, then two in the Pit, entered through its cave, and a last stage on the Bydo Tyrant at full health. The positions of its Bydos are written in the script until a level places them in its LDtk project. |
 | `training_run` | `resources/training-run/` | two stages, a pause of the scroll until a Reaper is destroyed, a checkpoint, the stars and then the biome `fosse` |
 
 Play one with `ensure campaign` and `set level campaign` in `server.cfg`, or `ensure training-run` and `set level training_run`.
