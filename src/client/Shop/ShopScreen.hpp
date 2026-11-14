@@ -21,6 +21,7 @@
 #include "ShopScreenParts.hpp"
 #include "ShopSelection.hpp"
 #include "ShopWares.hpp"
+#include "ShopkeeperSpeech.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -39,8 +40,11 @@ namespace rtype::client {
  * below.
  *
  * The shopkeeper breathes, blinks and glances around behind his counter,
- * unless the player asked for less motion. The radio shows the frame of a
- * choice under the pointer.
+ * unless the player asked for less motion, and talks in a bubble over his
+ * head (see ShopkeeperSpeech): he greets the player, says a line for each
+ * purchase and refusal, for a click on his bottles (SHOP_BOTTLES_AREA) and
+ * for the radio tuned. The radio shows the frame of a choice under the
+ * pointer.
  *
  * The music of the shop plays while it shows, the theme paused. A click on
  * the radio of the counter, or SHOP_RADIO_KEY once per hold, changes it for
@@ -82,6 +86,8 @@ class ShopScreen final : public IScreen {
   AmbienceScope music_;
   SettingsService* settings_;
   MotionPreference motion_;
+  /** @brief What the shopkeeper says over his head. */
+  ShopkeeperSpeech speech_;
   /** @brief How long the shop was shown: where the shopkeeper is in his
    * breath and in the cycle of his eye. */
   engine::Duration elapsed_{};

@@ -47,6 +47,11 @@ constexpr int SHOPKEEPER_FRAME_PITCH = 95;
  * under the pointer. */
 constexpr sf::IntRect SHOP_RADIO_AREA{{280, 161}, {42, 21}};
 
+/** @brief The bottles of the shopkeeper and his two glasses, on the shelf
+ * under his flag, as the picture of the booth draws them: a click on them
+ * makes him say they are not for the player. */
+constexpr sf::IntRect SHOP_BOTTLES_AREA{{368, 164}, {78, 27}};
+
 /** @brief The balance of the player, ending in the top-right corner of the
  * shop, and the status line, centred at the bottom, both outlined in ink
  * over the picture. */

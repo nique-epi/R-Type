@@ -1,5 +1,6 @@
 add_subdirectory(Shelves)
 add_subdirectory(Painting)
+add_subdirectory(Speech)
 
 add_library(rtype_client_shop_module STATIC
   ClientShopModule.cpp
@@ -20,6 +21,7 @@ target_link_libraries(rtype_client_shop_module
     rtype_client_screens_module
     rtype_client_settings_module
     rtype_client_shop_shelves
+    rtype_client_shop_speech
     rtype_engine_modules
   PRIVATE
     rtype_client_constants

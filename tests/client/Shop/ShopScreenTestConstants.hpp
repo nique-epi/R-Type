@@ -63,4 +63,24 @@ constexpr sf::Vector2i FAR_FROM_THE_RADIO{400, 40};
 
 constexpr std::string_view SHOP_SCENE_SHEET = "sprites/shop_scene.png";
 
+/** @brief Pixels of the interface: the middle of the bottles of the
+ * shopkeeper, which the picture draws from (368, 164) over 78 x 27 pixels,
+ * and one on the wood just left of them. */
+constexpr sf::Vector2i BOTTLES_MIDDLE{407, 177};
+constexpr sf::Vector2i BESIDE_THE_BOTTLES{367, 177};
+
+/** @brief A word of each line the shopkeeper says, found in no other line
+ * of these tests: the party hat bought; the first two lines on a ware too
+ * expensive; a ware owned; where the radio is; his first two lines on his
+ * bottles; the radio tuned to Papers, Please, then back. */
+constexpr std::string_view PARTY_HAT_LINE_WORD = "VODKA.";
+constexpr std::string_view FIRST_TOO_EXPENSIVE_WORD = "NYET.";
+constexpr std::string_view SECOND_TOO_EXPENSIVE_WORD = "CHARITY,";
+constexpr std::string_view ALREADY_YOURS_WORD = "HATS,";
+constexpr std::string_view RADIO_HINT_WORD = "QUIET?";
+constexpr std::string_view FIRST_BOTTLES_WORD = "HANDS";
+constexpr std::string_view SECOND_BOTTLES_WORD = "MEDICINE.";
+constexpr std::string_view BORDER_RADIO_WORD = "ARSTOTZKA!";
+constexpr std::string_view SHOP_MUSIC_WORD = "MOSCOW.";
+
 }  // namespace rtype::client::testing

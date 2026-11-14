@@ -13,16 +13,20 @@ using rtype::client::PURCHASE_SOUND_ID;
 using rtype::client::testing::A_FORTUNE;
 using rtype::client::testing::A_FORTUNE_LESS_THE_PARTY_HAT;
 using rtype::client::testing::ALREADY_YOURS_LINE;
+using rtype::client::testing::ALREADY_YOURS_WORD;
 using rtype::client::testing::BOUGHT_PARTY_HAT_LINE;
 using rtype::client::testing::CHEAPEST_HULL_ITEM;
 using rtype::client::testing::CROWN_ITEM;
 using rtype::client::testing::FIRST_STALL_MIDDLE_OF_THE_SHOP;
+using rtype::client::testing::FIRST_TOO_EXPENSIVE_WORD;
 using rtype::client::testing::ONE_KOPECK_MISSING_LINE;
 using rtype::client::testing::ONE_KOPECK_UNDER_THE_PARTY_HAT;
 using rtype::client::testing::OWNED_PARTY_HAT_LINE;
 using rtype::client::testing::PARTY_HAT_FOR_SALE_LINE;
 using rtype::client::testing::PARTY_HAT_ITEM;
+using rtype::client::testing::PARTY_HAT_LINE_WORD;
 using rtype::client::testing::SECOND_CELL_MIDDLE;
+using rtype::client::testing::SECOND_TOO_EXPENSIVE_WORD;
 using rtype::client::testing::SHOP_SCENE_SHEET;
 using rtype::client::testing::ShopScreenFixture;
 using ::testing::Contains;
@@ -209,4 +213,48 @@ TEST_F(ShopScreenFixture, EscapeClosesTheShop) {
   EXPECT_THAT(navigator().calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::Pop,
                                         .screen = std::nullopt}));
+}
+
+/**
+ * Given a rich player, the party hat chosen, in a shop that shows lines
+ * whole
+ * When Enter is pressed
+ * Then the shopkeeper says the line of the party hat
+ */
+TEST_F(ShopScreenFixture, ThePurchaseOfALookHasItsLine) {
+  give(A_FORTUNE);
+
+  press(Key::Enter);
+
+  EXPECT_NE(writingOf(painting(), PARTY_HAT_LINE_WORD), nullptr);
+}
+
+/**
+ * Given a player one kopeck short of the party hat
+ * When Enter is pressed, released, then pressed again
+ * Then the shopkeeper refuses with his first line on a poor player, then
+ * with his second
+ */
+TEST_F(ShopScreenFixture, ThePoorPlayerHearsTheRefusalsInTurn) {
+  give(ONE_KOPECK_UNDER_THE_PARTY_HAT);
+
+  press(Key::Enter);
+  EXPECT_NE(writingOf(painting(), FIRST_TOO_EXPENSIVE_WORD), nullptr);
+
+  press(Key::Enter);
+  EXPECT_NE(writingOf(painting(), SECOND_TOO_EXPENSIVE_WORD), nullptr);
+}
+
+/**
+ * Given a player who just bought the party hat
+ * When Enter is pressed again on it
+ * Then the shopkeeper says it is already theirs
+ */
+TEST_F(ShopScreenFixture, AnOwnedLookHasTheShopkeeperRefuseIt) {
+  give(A_FORTUNE);
+  press(Key::Enter);
+
+  press(Key::Enter);
+
+  EXPECT_NE(writingOf(painting(), ALREADY_YOURS_WORD), nullptr);
 }
