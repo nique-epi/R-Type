@@ -14,6 +14,7 @@ target_link_libraries(rtype_client_hangar_locker
     rtype_client_row_window
     rtype_client_settings_values
   PRIVATE
+    rtype_client_dither
     rtype_client_entity_sprites
     rtype_client_outline
     rtype_client_scroll_mark

@@ -11,47 +11,36 @@ using ::testing::ElementsAre;
 using ::testing::IsEmpty;
 
 /**
- * Given a biome that just began
- * When its maps are placed
- * Then none shows yet: the first one waits at the right edge of the sky
+ * Given a first map that starts on the right edge of the sky
+ * When the maps are placed
+ * Then none shows yet
  */
-TEST(MapColumns, ShowsNothingWhenTheBiomeBegins) {
-  EXPECT_THAT(mapColumns(NOT_ENTERED, ONE_MAP_OF_THE_PIT), IsEmpty());
+TEST(MapColumns, ShowsNothingFromTheRightEdge) {
+  EXPECT_THAT(mapColumns(ON_THE_RIGHT_EDGE, ONE_MAP_OF_THE_PIT), IsEmpty());
 }
 
 /**
- * Given a biome that entered the sky by 100 pixels
- * When its maps are placed
- * Then the first map starts 100 pixels left of the right edge of the sky
+ * Given a first map that starts 100 pixels left of the right edge of the sky
+ * When the maps are placed
+ * Then it shows from there
  */
-TEST(MapColumns, SlidesTheFirstMapInFromTheRight) {
-  EXPECT_THAT(mapColumns(ENTERED_A_HUNDRED_PIXELS, ONE_MAP_OF_THE_PIT),
+TEST(MapColumns, PlacesTheFirstMapWhereItStarts) {
+  EXPECT_THAT(mapColumns(A_HUNDRED_PIXELS_INTO_THE_SKY, ONE_MAP_OF_THE_PIT),
               ElementsAre(MapColumn{
                   .map = FIRST_MAP,
                   .column = A_HUNDRED_PIXELS_LEFT_OF_THE_RIGHT_EDGE}));
 }
 
 /**
- * Given a biome that entered the sky by a little more than 100 pixels
- * When its maps are placed
- * Then the first map lands on the whole pixel of 100 pixels
- */
-TEST(MapColumns, PlacesTheMapsOnWholePixels) {
-  EXPECT_THAT(mapColumns(ENTERED_A_HUNDRED_PIXELS_AND_MORE, ONE_MAP_OF_THE_PIT),
-              ElementsAre(MapColumn{
-                  .map = FIRST_MAP,
-                  .column = A_HUNDRED_PIXELS_LEFT_OF_THE_RIGHT_EDGE}));
-}
-
-/**
- * Given two maps of 300 pixels, entered by the sky and 250 pixels more
+ * Given two maps of 300 pixels, the first one starting 250 pixels left of the
+ * left edge of the sky
  * When they are placed
  * Then the first map leaves the sky by 250 pixels, the second follows it at
  * the seam, and the first comes back after the second
  */
 TEST(MapColumns, LaysTheMapsEndToEndAndComesBackToTheFirst) {
   EXPECT_THAT(
-      mapColumns(ENTERED_THE_SKY_AND_TWO_HUNDRED_FIFTY, TWO_SHORT_MAPS),
+      mapColumns(TWO_HUNDRED_FIFTY_LEFT_OF_THE_SKY_EDGE, TWO_SHORT_MAPS),
       ElementsAre(
           MapColumn{.map = FIRST_MAP,
                     .column = TWO_HUNDRED_FIFTY_LEFT_OF_THE_SKY},
@@ -61,13 +50,14 @@ TEST(MapColumns, LaysTheMapsEndToEndAndComesBackToTheFirst) {
 }
 
 /**
- * Given two maps of 300 pixels, entered by the sky and both maps
+ * Given two maps of 300 pixels, the first one starting both maps left of the
+ * left edge of the sky
  * When they are placed
  * Then the first map starts again at the left edge of the sky
  */
 TEST(MapColumns, StartsAgainOnceEveryMapScrolledWhole) {
   EXPECT_THAT(
-      mapColumns(ENTERED_THE_SKY_AND_BOTH_SHORT_MAPS, TWO_SHORT_MAPS),
+      mapColumns(BOTH_SHORT_MAPS_LEFT_OF_THE_SKY, TWO_SHORT_MAPS),
       ElementsAre(
           MapColumn{.map = FIRST_MAP, .column = LEFT_EDGE_OF_THE_SKY},
           MapColumn{.map = SECOND_MAP, .column = ONE_SHORT_MAP_INTO_THE_SKY}));
@@ -79,7 +69,7 @@ TEST(MapColumns, StartsAgainOnceEveryMapScrolledWhole) {
  * Then none is
  */
 TEST(MapColumns, PlacesNothingWithoutMaps) {
-  EXPECT_THAT(mapColumns(ENTERED_A_HUNDRED_PIXELS, std::span<const int>{}),
+  EXPECT_THAT(mapColumns(A_HUNDRED_PIXELS_INTO_THE_SKY, std::span<const int>{}),
               IsEmpty());
 }
 
@@ -89,6 +79,6 @@ TEST(MapColumns, PlacesNothingWithoutMaps) {
  * Then none is
  */
 TEST(MapColumns, PlacesNothingOfMapsWithoutWidth) {
-  EXPECT_THAT(mapColumns(ENTERED_A_HUNDRED_PIXELS, A_MAP_WITHOUT_WIDTH),
+  EXPECT_THAT(mapColumns(A_HUNDRED_PIXELS_INTO_THE_SKY, A_MAP_WITHOUT_WIDTH),
               IsEmpty());
 }

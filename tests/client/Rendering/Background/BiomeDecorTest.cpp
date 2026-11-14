@@ -2,6 +2,7 @@
 #include <gtest/gtest.h>
 #include <cstddef>
 #include <string>
+#include "BackgroundTestConstants.hpp"
 #include "BiomeDecor.hpp"
 #include "BiomeDecorFixtures.hpp"
 #include "BiomeDecorTestConstants.hpp"
@@ -99,4 +100,112 @@ TEST(BiomeDecor, DoesNotMoveBackwards) {
   decor.advance(ONE_SECOND_BACKWARDS_OF_DECOR);
 
   EXPECT_FLOAT_EQ(decor.scrollPosition(), SHOWN_SCROLL_POSITION);
+}
+
+/**
+ * Given a decor shown a level of the Pit scrolled 102 units since the Pit
+ * began
+ * When the shifts of its far and middle planes are asked for
+ * Then each lies left of its whole pixels by what it entered past them:
+ * 0.375 and 0.75 of a pixel
+ */
+TEST(BiomeDecor, ShiftsASlowPlaneByWhatItEnteredPastItsPixels) {
+  BiomeDecor decor{noTexture(), filesNowhere()};
+  decor.show(SkyLevel{.biome = std::string{KNOWN_BIOME},
+                      .scrollPosition = SCROLL_OFF_THE_GRID,
+                      .scrollSpeed = PAUSED_SCROLL,
+                      .biomeSince = BIOME_BEGAN_AT_THE_START});
+
+  EXPECT_FLOAT_EQ(decor.layerShift(FAR_PLANE), FAR_PLANE_SHIFT_OFF_THE_GRID);
+  EXPECT_FLOAT_EQ(decor.layerShift(MIDDLE_PLANE),
+                  MIDDLE_PLANE_SHIFT_OFF_THE_GRID);
+}
+
+/**
+ * Given a decor shown a level of the Pit whose near plane entered 25.5 pixels
+ * When the shift of that plane is asked for
+ * Then it is none: the near plane keeps the grid of the playfield
+ */
+TEST(BiomeDecor, KeepsTheNearPlaneOnTheGridOfThePlayfield) {
+  BiomeDecor decor{noTexture(), filesNowhere()};
+  decor.show(SkyLevel{.biome = std::string{KNOWN_BIOME},
+                      .scrollPosition = SCROLL_OFF_THE_GRID,
+                      .scrollSpeed = PAUSED_SCROLL,
+                      .biomeSince = BIOME_BEGAN_AT_THE_START});
+
+  EXPECT_FLOAT_EQ(decor.layerShift(NEAR_PLANE), 0.0F);
+}
+
+/**
+ * Given a decor shown a level of a biome it has no decor for
+ * When the shift of a plane is asked for
+ * Then it is none
+ */
+TEST(BiomeDecor, ShiftsNoPlaneOfAnUnknownBiome) {
+  BiomeDecor decor{noTexture(), filesNowhere()};
+  decor.show(SkyLevel{.biome = std::string{UNKNOWN_BIOME},
+                      .scrollPosition = SCROLL_OFF_THE_GRID,
+                      .scrollSpeed = PAUSED_SCROLL});
+
+  EXPECT_FLOAT_EQ(decor.layerShift(FAR_PLANE), 0.0F);
+}
+
+/**
+ * Given a decor of the assets shown a level of the Pit that just began
+ * When its seam is asked for
+ * Then it lies where the first near tile of the Pit enters: column 592
+ */
+TEST(BiomeDecor, PlacesTheSeamWhereTheEntranceBegins) {
+  BiomeDecor decor{noTexture(), filesOfTheAssets()};
+  decor.show(SkyLevel{.biome = std::string{KNOWN_BIOME},
+                      .scrollPosition = SCROLL_AT_THE_START_OF_THE_PIT,
+                      .scrollSpeed = PAUSED_SCROLL,
+                      .biomeSince = BIOME_BEGAN_AT_THE_START});
+
+  EXPECT_THAT(decor.seamColumn(), Optional(SEAM_AT_THE_START_OF_THE_PIT));
+}
+
+/**
+ * Given a decor of the assets shown a level of the Pit whose near plane
+ * entered 100 pixels
+ * When its seam is asked for
+ * Then it moved 100 columns left with the near plane
+ */
+TEST(BiomeDecor, MovesTheSeamWithTheNearPlane) {
+  BiomeDecor decor{noTexture(), filesOfTheAssets()};
+  decor.show(SkyLevel{.biome = std::string{KNOWN_BIOME},
+                      .scrollPosition = SCROLL_OF_A_HUNDRED_NEAR_PIXELS,
+                      .scrollSpeed = PAUSED_SCROLL,
+                      .biomeSince = BIOME_BEGAN_AT_THE_START});
+
+  EXPECT_THAT(decor.seamColumn(), Optional(SEAM_A_HUNDRED_PIXELS_IN));
+}
+
+/**
+ * Given a decor of the assets shown a level of the Pit whose near plane
+ * entered 100.5 pixels
+ * When its seam is asked for
+ * Then it lies on the whole column of 100 pixels in, as the near plane does
+ */
+TEST(BiomeDecor, PlacesTheSeamOnAWholeColumn) {
+  BiomeDecor decor{noTexture(), filesOfTheAssets()};
+  decor.show(
+      SkyLevel{.biome = std::string{KNOWN_BIOME},
+               .scrollPosition = SCROLL_OF_A_HUNDRED_AND_A_HALF_NEAR_PIXELS,
+               .scrollSpeed = PAUSED_SCROLL,
+               .biomeSince = BIOME_BEGAN_AT_THE_START});
+
+  EXPECT_THAT(decor.seamColumn(), Optional(SEAM_A_HUNDRED_PIXELS_IN));
+}
+
+/**
+ * Given a decor without the project of the Pit, shown a level of the Pit
+ * When its seam is asked for
+ * Then there is none
+ */
+TEST(BiomeDecor, HasNoSeamWithoutMaps) {
+  BiomeDecor decor{noTexture(), filesNowhere()};
+  decor.show(SkyLevel{.biome = std::string{KNOWN_BIOME}});
+
+  EXPECT_FALSE(decor.seamColumn().has_value());
 }

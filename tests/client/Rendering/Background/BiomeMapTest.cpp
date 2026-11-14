@@ -2,6 +2,7 @@
 #include <gtest/gtest.h>
 #include <SFML/Graphics/VertexArray.hpp>
 #include <filesystem>
+#include "BackgroundTestConstants.hpp"
 #include "BiomeConstants.hpp"
 #include "BiomeDecorFixtures.hpp"
 #include "BiomeDecorTestConstants.hpp"
@@ -41,10 +42,10 @@ TEST(BiomeMap, BuildsEveryTileOfALayer) {
 }
 
 /**
- * Given the project of the Pit, whose first near tile lies at (0, 0) with its
- * picture at (0, 0)
+ * Given the project of the Pit, whose first near tile lies at (112, 0), where
+ * the entrance of the cave begins, with its picture at (0, 0)
  * When its maps are read
- * Then that tile starts at the corner of the map and of the tileset
+ * Then that tile starts there in the map, and at the corner of the tileset
  */
 TEST(BiomeMap, PlacesATileWhereTheProjectHasIt) {
   const BiomeMap map{filesOfTheAssets()(FOSSE_PROJECT_ID), FOSSE_LAYERS};
@@ -52,8 +53,8 @@ TEST(BiomeMap, PlacesATileWhereTheProjectHasIt) {
   const sf::VertexArray& tiles =
       map.plane(NEAR_PLANE).tilesOf(FIRST_MAP_OF_THE_PIT);
 
-  EXPECT_EQ(tiles[FIRST_TILE_CORNER].position, CORNER_OF_THE_MAP);
-  EXPECT_EQ(tiles[FIRST_TILE_CORNER].texCoords, CORNER_OF_THE_MAP);
+  EXPECT_EQ(tiles[FIRST_TILE_CORNER].position, WHERE_THE_ENTRANCE_BEGINS);
+  EXPECT_EQ(tiles[FIRST_TILE_CORNER].texCoords, CORNER_OF_THE_TILESET);
 }
 
 /**
@@ -76,4 +77,17 @@ TEST(BiomeMap, RefusesALayerTheMapsLack) {
   EXPECT_THROW(const BiomeMap map(filesOfTheAssets()(FOSSE_PROJECT_ID),
                                   LAYERS_THE_PIT_LACKS),
                BiomeMapException);
+}
+
+/**
+ * Given the project of the Pit, whose first near tile lies on column 112,
+ * where the entrance of the cave begins
+ * When its maps are read
+ * Then the first map of the near plane begins its tiles there
+ */
+TEST(BiomeMap, FindsWhereTheEntranceBegins) {
+  const BiomeMap map{filesOfTheAssets()(FOSSE_PROJECT_ID), FOSSE_LAYERS};
+
+  EXPECT_EQ(map.plane(NEAR_PLANE).firstTileColumnOf(FIRST_MAP_OF_THE_PIT),
+            static_cast<int>(WHERE_THE_ENTRANCE_BEGINS.x));
 }

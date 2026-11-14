@@ -12,6 +12,7 @@ rtype_add_test(NAME client_ramp_and_circle_tests SOURCES ColorRampTest.cpp Pixel
 target_include_directories(client_ramp_and_circle_tests PRIVATE ${RTYPE_TEST_SOURCE_DIR}/client/Rendering)
 
 add_subdirectory(Background)
+add_subdirectory(Dither)
 add_subdirectory(Drawing)
 add_subdirectory(Effects)
 add_subdirectory(Interface)

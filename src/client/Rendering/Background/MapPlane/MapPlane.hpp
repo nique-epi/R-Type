@@ -11,8 +11,8 @@ namespace rtype::client {
 
 /**
  * @brief One plane of the maps of a biome: the tiles of that plane for every
- * map, built once, and the width of each map, drawn end to end as the biome
- * scrolls in (see mapColumns()).
+ * map, built once, and the width of each map, drawn end to end (see
+ * mapColumns()).
  */
 class MapPlane {
  public:
@@ -26,14 +26,19 @@ class MapPlane {
   /** @returns The tiles of the map @p map, which must have been added. */
   [[nodiscard]] const sf::VertexArray& tilesOf(std::size_t map) const;
 
-  /** @brief Draws the maps that show once the plane entered by
-   * @p enteredPixels, textured by @p tileset. */
+  /** @returns The column of the leftmost tile of the map @p map, which must
+   * have been added: where its tiles begin. Its width when it has none. */
+  [[nodiscard]] int firstTileColumnOf(std::size_t map) const;
+
+  /** @brief Draws the maps that show when the first one starts on the
+   * column @p firstColumn, textured by @p tileset. */
   void draw(sf::RenderTarget& canvas, const sf::Texture& tileset,
-            float enteredPixels) const;
+            int firstColumn) const;
 
  private:
   std::vector<sf::VertexArray> maps_;
   std::vector<int> widths_;
+  std::vector<int> firstTileColumns_;
 };
 
 }  // namespace rtype::client
