@@ -729,3 +729,23 @@ TEST_F(LargestLobbyFixture, SelectingBackScrollsTheRoomToIt) {
 
   EXPECT_THAT(writingsOffScreen(canvas()), Not(Contains(BACK_LABEL)));
 }
+
+/**
+ * Given the waiting room at the largest text size, its help open
+ * When Enter walks through every step of the help
+ * Then no line of a step runs past a side of the screen
+ */
+TEST_F(LargestLobbyFixture, NoLineOfTheHelpRunsPastASide) {
+  listFourLongestPilots();
+  tap(sf::Keyboard::Key::H, sf::Keyboard::Scan::H);
+  std::vector<std::string> outSideways;
+
+  for (std::size_t step = 0; step < HELP_STEPS.size(); ++step) {
+    screen().update(ONE_FRAME);
+    const std::vector<std::string> now = writingsOutSideways(canvas());
+    outSideways.insert(outSideways.end(), now.begin(), now.end());
+    tap(sf::Keyboard::Key::Enter, sf::Keyboard::Scan::Enter);
+  }
+
+  EXPECT_THAT(outSideways, IsEmpty());
+}

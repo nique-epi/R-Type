@@ -50,6 +50,9 @@
 #include "SpriteFrame.hpp"
 #include "StatusBand.hpp"
 #include "StatusBandConstants.hpp"
+#include "StatusBandLook.hpp"
+#include "TextMeasures.hpp"
+#include "TextMetrics.hpp"
 #include "TextStyle.hpp"
 #include "TextureArea.hpp"
 #include "TimeConstants.hpp"
@@ -137,42 +140,59 @@ int widthOf(const HelpWord& word, TextMetrics metrics) {
   return text + regularTextWidth(metrics, word.suffix);
 }
 
-/** @returns The words in lines no wider than HELP_TEXT_WIDTH; a word wider
- * than a line has a line of its own. */
-std::vector<std::vector<HelpWord>> linesOf(std::vector<HelpWord> words) {
+/** @returns How wide the bubble is at the text size of @p metrics:
+ * HELP_BUBBLE_WIDTH as drawn, HELP_LARGE_BUBBLE_WIDTH above. */
+int bubbleWidthOf(TextMetrics metrics) {
+  return metrics == TextMetrics{} ? HELP_BUBBLE_WIDTH : HELP_LARGE_BUBBLE_WIDTH;
+}
+
+/** @returns From one line of the bubble to the next at the text size of
+ * @p metrics: a keycap tall, as HELP_LINE_HEIGHT is for the fonts as drawn. */
+int lineHeightIn(TextMetrics metrics) {
+  return HELP_LINE_HEIGHT - TEXT_LINE_HEIGHT + lineHeightOf(metrics);
+}
+
+/** @returns The words in lines no wider than the text of the bubble at the
+ * text size of @p metrics; a word wider than a line has a line of its own. */
+std::vector<std::vector<HelpWord>> linesOf(const std::vector<HelpWord>& words,
+                                           TextMetrics metrics) {
+  const int textWidth =
+      bubbleWidthOf(metrics) - (SIDES_PER_AXIS * HELP_BUBBLE_PADDING);
   std::vector<std::vector<HelpWord>> lines;
   int used = 0;
-  for (HelpWord& word : words) {
-    const int width = widthOf(word, TextMetrics{});
-    if (lines.empty() || used + HELP_WORD_GAP + width > HELP_TEXT_WIDTH) {
+  for (const HelpWord& word : words) {
+    const int width = widthOf(word, metrics);
+    if (lines.empty() || used + HELP_WORD_GAP + width > textWidth) {
       lines.emplace_back();
       used = -HELP_WORD_GAP;
     }
     used += HELP_WORD_GAP + width;
-    lines.back().push_back(std::move(word));
+    lines.back().push_back(word);
   }
   return lines;
 }
 
-/** @returns The lines of every step, the keys named as the player bound
- * them: built once, since the keys do not change while the help lives. */
-std::array<std::vector<std::vector<HelpWord>>, HELP_STEPS.size()> stepLinesOf(
+/** @returns The words of every step, the keys named as the player bound
+ * them: built once, since the keys do not change while the help lives; they
+ * are cut into lines at the text size each painting has. */
+std::array<std::vector<HelpWord>, HELP_STEPS.size()> stepWordsOf(
     const KeyBindings& keys, const KeyNaming& keyName) {
   const std::array<std::string, BOUND_ACTION_COUNT> keyNames =
       keyNamesOf(keys, keyName);
-  std::array<std::vector<std::vector<HelpWord>>, HELP_STEPS.size()> lines;
-  for (std::size_t step = 0; step < lines.size(); ++step) {
-    lines.at(step) = linesOf(wordsOf(HELP_STEPS.at(step).text, keyNames));
+  std::array<std::vector<HelpWord>, HELP_STEPS.size()> words;
+  for (std::size_t step = 0; step < words.size(); ++step) {
+    words.at(step) = wordsOf(HELP_STEPS.at(step).text, keyNames);
   }
-  return lines;
+  return words;
 }
 
-/** @returns How tall a bubble of that many lines is: its padding, its lines,
- * then its footer. */
-int bubbleHeightOf(std::size_t lineCount) {
-  return (SIDES_PER_AXIS * HELP_BUBBLE_PADDING) +
-         (static_cast<int>(lineCount) * HELP_LINE_HEIGHT) + HELP_FOOTER_GAP +
-         CONTROL_HEIGHT;
+/** @returns How large a bubble of that many lines is at the text size of
+ * @p metrics: its width, then its padding, its lines and its footer. */
+sf::Vector2i bubbleSizeOf(std::size_t lineCount, TextMetrics metrics) {
+  return {bubbleWidthOf(metrics),
+          (SIDES_PER_AXIS * HELP_BUBBLE_PADDING) +
+              (static_cast<int>(lineCount) * lineHeightIn(metrics)) +
+              HELP_FOOTER_GAP + textBoxHeight(CONTROL_HEIGHT, metrics)};
 }
 
 /** @returns The area grown by a margin on each side. */
@@ -229,9 +249,9 @@ std::optional<sf::IntRect> partAreaOf(HelpPart part, const LobbyPartAreas& room,
  * then high unless the part lies under the high bubble too; in the middle
  * for no part. */
 sf::IntRect bubbleAreaOf(HelpScene scene, std::optional<sf::IntRect> part,
-                         int height) {
-  const int left = (INTERFACE_AREA.size.x - HELP_BUBBLE_WIDTH) / SIDES_PER_AXIS;
-  const sf::Vector2i size(HELP_BUBBLE_WIDTH, height);
+                         sf::Vector2i size) {
+  const int left = (INTERFACE_AREA.size.x - size.x) / SIDES_PER_AXIS;
+  const int height = size.y;
   if (!part.has_value()) {
     return {{left, ((INTERFACE_AREA.size.y - height) / SIDES_PER_AXIS) +
                        HELP_MIDDLE_DROP},
@@ -367,7 +387,7 @@ void paintLines(IInterfaceCanvas& canvas, sf::IntRect bubble,
     for (const HelpWord& word : line) {
       wordTopLeft.x += paintWord(canvas, word, wordTopLeft) + HELP_WORD_GAP;
     }
-    lineTopLeft.y += HELP_LINE_HEIGHT;
+    lineTopLeft.y += lineHeightIn(canvas.textMetrics());
   }
 }
 
@@ -416,8 +436,8 @@ int paintKeyHint(IInterfaceCanvas& canvas, sf::Vector2i topRight,
  * NEXT, or ENTER CLOSE on the last step, and ESC SKIP before it otherwise. */
 void paintFooter(IInterfaceCanvas& canvas, sf::IntRect bubble,
                  std::size_t step) {
-  const int top =
-      bubble.position.y + bubble.size.y - HELP_BUBBLE_PADDING - CONTROL_HEIGHT;
+  const int top = bubble.position.y + bubble.size.y - HELP_BUBBLE_PADDING -
+                  textBoxHeight(CONTROL_HEIGHT, canvas.textMetrics());
   const int left = bubble.position.x + HELP_BUBBLE_PADDING;
   const int right = bubble.position.x + bubble.size.x - HELP_BUBBLE_PADDING;
   canvas.fill({{left, top - HELP_RULE_DROP}, {right - left, BORDER_THICKNESS}},
@@ -525,11 +545,13 @@ bool endsAnInput(const sf::Event& event) {
 
 HelpWalkthrough::HelpWalkthrough(const HelpWalkthroughParts& parts)
     : sounds_(&parts.sounds.get()),
-      stepLines_(stepLinesOf(parts.keys.get(), parts.keyName)),
+      stepWords_(stepWordsOf(parts.keys.get(), parts.keyName)),
       palette_(parts.palette),
       motion_(parts.motion),
       chipArea_(parts.chipArea),
-      chip_(Button::Text{.label = HELP_LABEL, .keyName = HELP_KEY_NAME},
+      chip_(Button::Text{.label = HELP_LABEL,
+                         .keyName = HELP_KEY_NAME,
+                         .size = parts.metrics},
             parts.chipArea, nullptr, std::nullopt) {}
 
 bool HelpWalkthrough::handleEvent(const sf::Event& event,
@@ -592,9 +614,10 @@ void HelpWalkthrough::paintStep(IInterfaceCanvas& canvas,
   const HelpStep& shown = HELP_STEPS.at(step);
   const std::optional<sf::IntRect> part =
       partAreaOf(shown.part, room, chipArea_);
-  const std::vector<std::vector<HelpWord>>& lines = stepLines_.at(step);
-  const sf::IntRect bubble =
-      bubbleAreaOf(shown.scene, part, bubbleHeightOf(lines.size()));
+  const std::vector<std::vector<HelpWord>> lines =
+      linesOf(stepWords_.at(step), canvas.textMetrics());
+  const sf::IntRect bubble = bubbleAreaOf(
+      shown.scene, part, bubbleSizeOf(lines.size(), canvas.textMetrics()));
   const sf::Vector2i professor = professorTopLeftOf(bubble, part);
   paintSpotlight(canvas, part, shownTime());
   CutCornerBox(bubble,
