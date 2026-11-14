@@ -321,7 +321,7 @@ A type is named by the sheet it is read from (`assets/entities/drifter.toml` is 
 
 ### Content pack
 
-The content of a server is what a client needs to draw the games it runs: every sheet of the `entities` folder of its assets, and every sprite sheet their `[appearance]` names (`sheet`), each kept once however many sheets name it. The server hands it over as one file, the content pack, named by its fingerprint. `ConnectionAccepted` announces the pack of the game in three fields:
+The content of a server is what a client needs to draw the games it runs: every sheet of the `entities` folder of its assets, with its mask file of `entities/masks/` when it has one, and every sprite sheet their `[appearance]` names (`sheet`), each kept once however many sheets name it. The server hands it over as one file, the content pack, named by its fingerprint. `ConnectionAccepted` announces the pack of the game in three fields:
 
 | Field | Holds |
 |---|---|
