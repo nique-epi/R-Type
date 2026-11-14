@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <optional>
 #include "IInterfaceCanvas.hpp"
+#include "PictureScroll.hpp"
 #include "PlayfieldMapping.hpp"
 #include "RowScroll.hpp"
 
@@ -14,6 +15,11 @@ namespace rtype::client {
  * pointing up when @p towards is 1, its rows going down, and pointing down
  * when it is -1. */
 void paintScrollArrow(IInterfaceCanvas& canvas, sf::Vector2i tip, int towards);
+
+/** @brief Paints, against the right side of the interface picture, a mark at
+ * its top while a picture taller than it is scrolled down, and one at its
+ * bottom while more of it lies under. */
+void paintPictureScrollMarks(IInterfaceCanvas& canvas, PictureScroll scroll);
 
 /** @returns How far the shown rows of @p scroll move up from their place, as
  * an offset to paint them with: none when the first row shows. */

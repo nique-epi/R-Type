@@ -1,12 +1,10 @@
 #include "LargestEndScreenFixture.hpp"
-#include <SFML/Graphics/Rect.hpp>
 #include <algorithm>
 #include <string>
 #include <vector>
 #include "EndScreenFixture.hpp"
 #include "EndScreenTestConstants.hpp"
 #include "GameEnded.hpp"
-#include "InterfaceConstants.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "ScreenTestConstants.hpp"
 #include "TimeConstants.hpp"
@@ -22,14 +20,8 @@ std::vector<std::string> LargestEndScreenFixture::writingsOutSidewaysFor(
     const rtype::engine::Duration step = std::min(duration, ONE_FRAME);
     advance(step);
     duration -= step;
-    for (const RecordedWriting& writing : canvas().writings) {
-      const sf::IntRect box = writtenBoxOf(canvas(), writing);
-      if (!writing.text.empty() &&
-          (box.position.x < 0 || box.position.x + box.size.x >
-                                     rtype::client::INTERFACE_AREA.size.x)) {
-        off.push_back(writing.text);
-      }
-    }
+    const std::vector<std::string> now = writingsOutSideways(canvas());
+    off.insert(off.end(), now.begin(), now.end());
   }
   return off;
 }

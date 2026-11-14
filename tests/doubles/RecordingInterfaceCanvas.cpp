@@ -137,6 +137,20 @@ std::vector<std::string> writingsOffScreen(
   return off;
 }
 
+std::vector<std::string> writingsOutSideways(
+    const InterfaceCanvasRecord& record) {
+  std::vector<std::string> out;
+  for (const RecordedWriting& writing : record.writings) {
+    const sf::IntRect box = writtenBoxOf(record, writing);
+    if (!writing.text.empty() &&
+        (box.position.x < 0 ||
+         box.position.x + box.size.x > rtype::client::INTERFACE_AREA.size.x)) {
+      out.push_back(writing.text);
+    }
+  }
+  return out;
+}
+
 std::set<std::pair<int, int>> litPixelsOf(const InterfaceCanvasRecord& record) {
   std::set<std::pair<int, int>> pixels;
   for (const RecordedFill& fill : record.fills) {

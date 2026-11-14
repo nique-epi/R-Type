@@ -3,6 +3,7 @@ target_sources(client_screen_tests PRIVATE
   NewGameDialogFixture.cpp
   NewGameDialogTest.cpp
   ServerMapScreenFixture.cpp
+  LargestServerMapFixture.cpp
   ServerMapScreenFixtures.cpp
   ServerMapScreenTest.cpp
   SessionEndWatchTest.cpp

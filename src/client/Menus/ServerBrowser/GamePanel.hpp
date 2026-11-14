@@ -5,8 +5,10 @@
 #include <optional>
 #include <string>
 #include "GameListSnapshot.hpp"
+#include "GamePanelLayout.hpp"
 #include "GameRow.hpp"
 #include "IInterfaceCanvas.hpp"
+#include "TextMetrics.hpp"
 
 namespace rtype::client {
 
@@ -21,6 +23,11 @@ namespace rtype::client {
  */
 class GamePanel {
  public:
+  /** @param metrics The text size the panel is laid out at, which lays a game
+   * on two lines and shows fewer of them above the size the fonts are drawn
+   * at. */
+  explicit GamePanel(TextMetrics metrics = {});
+
   /** @brief Shows @p games, those of the server named @p serverName. */
   void show(const GameListSnapshot& games, std::string serverName);
   /** @brief Chooses the row @p step rows down, or up when negative, within
@@ -47,6 +54,7 @@ class GamePanel {
    * shown; nothing for + NEW GAME or past the last row. */
   [[nodiscard]] const GameRow* gameAt(std::size_t entry) const;
 
+  GamePanelLayout layout_;
   GameListSnapshot games_;
   std::string serverName_;
   std::size_t chosen_{};

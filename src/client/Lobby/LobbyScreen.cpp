@@ -44,6 +44,7 @@
 #include "Menu.hpp"
 #include "MenuBuilder.hpp"
 #include "MenuScreenIdConstants.hpp"
+#include "PictureScroll.hpp"
 #include "PilotColor.hpp"
 #include "PlayerLooks.hpp"
 #include "PlayfieldMapping.hpp"
@@ -232,18 +233,12 @@ sf::IntRect hangarChipArea(const RoomLayout& room, TextMetrics metrics) {
                 leaderboard.position.y);
 }
 
-/** @brief How far the room is scrolled down, and how far it may be. */
-struct RoomScrolling {
-  int scroll{};
-  int last{};
-};
-
 /** @returns How far the room is scrolled after @p event: moved by
  * ROOM_SCROLL_STEP a notch of the wheel, never past either end; at its
  * bottom once a key that moves the selection selects BACK, at its top once
  * it selects READY; unchanged by any other event. */
 int roomScrollAfter(const sf::Event& event, const Menu& menu,
-                    RoomScrolling room) {
+                    PictureScroll room) {
   if (const auto* wheel = event.getIf<sf::Event::MouseWheelScrolled>();
       wheel != nullptr && wheel->wheel == sf::Mouse::Wheel::Vertical) {
     const auto notches = static_cast<int>(std::lround(wheel->delta));
@@ -255,20 +250,6 @@ int roomScrollAfter(const sf::Event& event, const Menu& menu,
     return room.scroll;
   }
   return menu.selectedButton() == ROOM_BACK_BUTTON ? room.last : 0;
-}
-
-/** @brief Paints, against the right side of the picture, a mark at its top
- * while the room is scrolled down, and one at its bottom while more of it
- * lies under. */
-void paintRoomScrollMarks(IInterfaceCanvas& canvas, RoomScrolling room) {
-  const int column = INTERFACE_AREA.size.x - ROOM_SCROLL_MARK_INSET;
-  if (room.scroll > 0) {
-    paintScrollArrow(canvas, {column, ROOM_SCROLL_MARK_INSET}, 1);
-  }
-  if (room.scroll < room.last) {
-    paintScrollArrow(
-        canvas, {column, INTERFACE_AREA.size.y - ROOM_SCROLL_MARK_INSET}, -1);
-  }
 }
 
 /** @returns Whether @p event presses the left button inside @p area, read on
@@ -518,8 +499,8 @@ void LobbyScreen::repaint() {
     }
     leaderboardChip_.paint(room);
     hangarChip_.paint(room);
-    paintRoomScrollMarks(*canvas_,
-                         {.scroll = scroll_, .last = lastScrollOf(room_)});
+    paintPictureScrollMarks(*canvas_,
+                            {.scroll = scroll_, .last = lastScrollOf(room_)});
   }
   help_.paint(room, parts);
   chat_.paint(*canvas_, palette_.get(), LOBBY_CHAT_BOTTOM);

@@ -6,7 +6,9 @@
 #include "BackgroundConstants.hpp"
 #include "ColoredPixel.hpp"
 #include "IInterfaceCanvas.hpp"
+#include "InterfaceConstants.hpp"
 #include "InterfacePixel.hpp"
+#include "PictureScroll.hpp"
 #include "PlayfieldMapping.hpp"
 #include "RowScroll.hpp"
 #include "RowWindow.hpp"
@@ -39,6 +41,18 @@ void paintScrollArrow(IInterfaceCanvas& canvas, sf::Vector2i tip, int towards) {
     }
   }
   canvas.plot(pixels);
+}
+
+void paintPictureScrollMarks(IInterfaceCanvas& canvas, PictureScroll scroll) {
+  const int column = INTERFACE_AREA.size.x - PICTURE_SCROLL_MARK_INSET;
+  if (scroll.scroll > 0) {
+    paintScrollArrow(canvas, {column, PICTURE_SCROLL_MARK_INSET}, 1);
+  }
+  if (scroll.scroll < scroll.last) {
+    paintScrollArrow(
+        canvas, {column, INTERFACE_AREA.size.y - PICTURE_SCROLL_MARK_INSET},
+        -1);
+  }
 }
 
 sf::Vector2i rowOffsetOf(const RowScroll& scroll) {

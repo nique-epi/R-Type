@@ -331,5 +331,8 @@ constexpr int SPACE_ABOVE_ROOM_BARS = 12;
 /** @brief Above the size the fonts are drawn at, the lines a room keeps for
  * its status line, which names a pilot of the longest nickname. */
 constexpr int ROOM_STATUS_LINES = 2;
+/** @brief How far in from the corners of the picture the marks of a picture
+ * that scrolls lie. */
+constexpr int PICTURE_SCROLL_MARK_INSET = SAFE_MARGIN / SIDES_PER_AXIS;
 
 }  // namespace rtype::client

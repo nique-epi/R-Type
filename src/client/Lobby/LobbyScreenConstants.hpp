@@ -32,14 +32,12 @@ constexpr std::size_t READY_BUTTON = 0;
 constexpr std::size_t ROOM_BACK_BUTTON = 1;
 
 /**
- * @brief How far a notch of the wheel scrolls the room, the keys of the menu
- * that move its selection and scroll the room to it, and how far in from the
- * corners of the picture the marks of the scroll lie.
+ * @brief How far a notch of the wheel scrolls the room, and the keys of the
+ * menu that move its selection and scroll the room to it.
  */
 constexpr int ROOM_SCROLL_STEP = 16;
 constexpr std::array ROOM_SELECTION_KEYS{
     sf::Keyboard::Key::Up, sf::Keyboard::Key::Down, sf::Keyboard::Key::Tab};
-constexpr int ROOM_SCROLL_MARK_INSET = SAFE_MARGIN / SIDES_PER_AXIS;
 
 /** @brief One bay per player number, side by side under the rule, as wide as
  * it. */

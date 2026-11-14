@@ -127,6 +127,14 @@ class RecordingInterfaceCanvas : public rtype::client::IInterfaceCanvas {
 [[nodiscard]] std::vector<std::string> writingsOffScreen(
     const InterfaceCanvasRecord& record);
 
+/** @returns The text of every line of @p record that runs past the left or
+ * the right side of the interface picture, as writtenBoxOf() rebuilds its
+ * box, in the order written; a line with no letter writes nothing and is
+ * left out. A line above or under the picture, carried there by a motion or
+ * a scroll, is not counted. */
+[[nodiscard]] std::vector<std::string> writingsOutSideways(
+    const InterfaceCanvasRecord& record);
+
 /** @returns Every pixel the fills of a record light, as (column, row). */
 [[nodiscard]] std::set<std::pair<int, int>> litPixelsOf(
     const InterfaceCanvasRecord& record);

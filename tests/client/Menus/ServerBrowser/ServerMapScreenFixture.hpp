@@ -14,6 +14,7 @@
 #include "ServerChoice.hpp"
 #include "ServerListSnapshot.hpp"
 #include "ServerMapScreen.hpp"
+#include "TextMetrics.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client::testing {
@@ -22,6 +23,9 @@ namespace rtype::client::testing {
  * the tests set the lists, press keys and read what the map asked. */
 class ServerMapScreenFixture : public ::testing::Test {
  protected:
+  /** @param metrics The text size of the canvas the map paints on. */
+  explicit ServerMapScreenFixture(TextMetrics metrics = {});
+
   /** @brief Builds the map over @p list, as the catalog shows it, and runs a
    * frame. */
   void openOn(const ServerListSnapshot& list);
