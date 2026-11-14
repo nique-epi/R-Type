@@ -2,6 +2,7 @@
 #include <gtest/gtest.h>
 #include <SFML/Graphics/VertexArray.hpp>
 #include <filesystem>
+#include "BackgroundTestConstants.hpp"
 #include "BiomeConstants.hpp"
 #include "BiomeDecorFixtures.hpp"
 #include "BiomeDecorTestConstants.hpp"
@@ -76,4 +77,17 @@ TEST(BiomeMap, RefusesALayerTheMapsLack) {
   EXPECT_THROW(const BiomeMap map(filesOfTheAssets()(FOSSE_PROJECT_ID),
                                   LAYERS_THE_PIT_LACKS),
                BiomeMapException);
+}
+
+/**
+ * Given the project of the Pit, whose first near tile lies on column 112,
+ * where the entrance of the cave begins
+ * When its maps are read
+ * Then the first map of the near plane begins its tiles there
+ */
+TEST(BiomeMap, FindsWhereTheEntranceBegins) {
+  const BiomeMap map{filesOfTheAssets()(FOSSE_PROJECT_ID), FOSSE_LAYERS};
+
+  EXPECT_EQ(map.plane(NEAR_PLANE).firstTileColumnOf(FIRST_MAP_OF_THE_PIT),
+            static_cast<int>(WHERE_THE_ENTRANCE_BEGINS.x));
 }

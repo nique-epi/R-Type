@@ -6,9 +6,6 @@
 #include "BiomeLayer.hpp"
 #include "MapTileVerticesTestConstants.hpp"
 
-/** @brief The rank of the near plane among the layers of the Pit. */
-constexpr std::size_t NEAR_PLANE = 2;
-
 /** @brief The project of the Pit holds six maps of three screens of 480
  * pixels: 1440 pixels each. */
 constexpr std::array WIDTHS_OF_THE_MAPS_OF_THE_PIT{1440, 1440, 1440,

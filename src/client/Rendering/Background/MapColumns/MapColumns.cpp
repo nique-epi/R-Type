@@ -1,5 +1,4 @@
 #include "MapColumns.hpp"
-#include <cmath>
 #include <cstddef>
 #include <span>
 #include <vector>
@@ -34,7 +33,7 @@ MapColumn firstShown(int passedLeftEdge, std::span<const int> widths,
 
 }  // namespace
 
-std::vector<MapColumn> mapColumns(float enteredPixels,
+std::vector<MapColumn> mapColumns(int firstColumn,
                                   std::span<const int> widths) {
   std::vector<MapColumn> columns;
   const int totalWidth = totalWidthOf(widths);
@@ -42,9 +41,7 @@ std::vector<MapColumn> mapColumns(float enteredPixels,
     return columns;
   }
   const int skyWidth = static_cast<int>(BACKGROUND_WIDTH);
-  MapColumn next =
-      firstShown(static_cast<int>(std::floor(enteredPixels)) - skyWidth, widths,
-                 totalWidth);
+  MapColumn next = firstShown(-firstColumn, widths, totalWidth);
   while (next.column < skyWidth) {
     columns.push_back(next);
     next.column += widths[next.map];

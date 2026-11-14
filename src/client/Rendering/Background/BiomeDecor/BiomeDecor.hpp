@@ -7,9 +7,9 @@
 #include <vector>
 #include "AssetFileLookup.hpp"
 #include "Biome.hpp"
-#include "BiomeLayer.hpp"
 #include "BiomeMap.hpp"
 #include "Logger.hpp"
+#include "SeamCover.hpp"
 #include "SkyLevel.hpp"
 #include "TextureLookup.hpp"
 #include "TimeConstants.hpp"
@@ -21,9 +21,10 @@ namespace rtype::client {
 [[nodiscard]] std::optional<std::size_t> biomeIndexOf(std::string_view name);
 
 /**
- * @brief The decor of the biome a level shows: the planes of its maps, drawn
- * over the stars from the farthest to the nearest, each moving by its share
- * of the scroll of the level since the biome began.
+ * @brief The decor of the biome a level shows: the planes of its maps, from
+ * the farthest to the nearest, each moving by its share of the scroll of the
+ * level since the biome began, and each drawn apart, so a slow plane can
+ * move by less than a pixel.
  *
  * The maps of every biome of BIOMES are read once, when the decor is built; a
  * project that cannot be read is logged and its biome shows the stars alone.
@@ -47,9 +48,35 @@ class BiomeDecor {
    * moves nothing. */
   void advance(engine::Duration elapsed);
 
-  /** @brief Draws the planes on @p canvas, whose pixels are those of the
-   * background. */
-  void draw(sf::RenderTarget& canvas) const;
+  /**
+   * @brief Draws the plane @p layer of the biome shown on @p canvas, whose
+   * view shows pixels of the background.
+   *
+   * The nearest plane slides in from the right edge of the sky. The planes
+   * behind it cover the whole sky from the start, but only show right of
+   * seamColumn(), fading in there (see SeamCover): the sky shows one seam,
+   * which moves with the nearest plane. A plane is drawn on whole pixels,
+   * layerShift() right of where it lies.
+   *
+   * @returns Whether it drew anything: not when the biome has no such plane,
+   * its maps or its tileset are missing, or the seam hides the whole plane.
+   */
+  [[nodiscard]] bool drawLayer(std::size_t layer,
+                               sf::RenderTarget& canvas) const;
+
+  /**
+   * @returns How far right of the pixels drawLayer() uses the plane @p layer
+   * lies, from -1 excluded to 0 included; 0 for the nearest plane, which
+   * keeps the grid of the playfield, and for a plane the biome lacks.
+   */
+  [[nodiscard]] float layerShift(std::size_t layer) const;
+
+  /**
+   * @returns The column of the sky where the planes behind the nearest begin
+   * to show: the first tile of the first map of the nearest plane, where the
+   * entrance of the biome begins. None when the biome shown has no maps.
+   */
+  [[nodiscard]] std::optional<int> seamColumn() const;
 
   /** @returns How far the level scrolled as the decor shows it, in logical
    * units. */
@@ -61,12 +88,12 @@ class BiomeDecor {
  private:
   [[nodiscard]] std::optional<BiomeMap> readMaps(
       const Biome& biome, const AssetFileLookup& fileOf) const;
-  [[nodiscard]] float enteredPixels(const BiomeLayer& layer) const;
 
   TextureLookup textureOf_;
   logging::Logger logger_;
   std::vector<std::optional<BiomeMap>> maps_;
   SkyLevel level_;
+  SeamCover seamCover_;
 };
 
 }  // namespace rtype::client

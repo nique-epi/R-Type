@@ -1,6 +1,8 @@
 #pragma once
 
+#include <algorithm>
 #include <array>
+#include <cstddef>
 #include <string_view>
 #include "Biome.hpp"
 #include "BiomeLayer.hpp"
@@ -12,6 +14,10 @@ namespace rtype::client {
 constexpr float FAR_LAYER_SCROLL_FACTOR = 0.25F;
 constexpr float MIDDLE_LAYER_SCROLL_FACTOR = 0.5F;
 constexpr float NEAR_LAYER_SCROLL_FACTOR = 1.0F;
+
+/** @brief The planes behind the nearest show from the mouth of the first map
+ * of the nearest plane, fading in over SEAM_EDGE_WIDTH columns of dither. */
+constexpr int SEAM_EDGE_WIDTH = 16;
 
 /** @brief The LDtk project of the Pit, written by generator/procedural/, and
  * the tilesets of its three planes. */
@@ -48,5 +54,11 @@ constexpr std::string_view FOSSE_BIOME_NAME = "fosse";
 constexpr std::array BIOMES{Biome{.name = FOSSE_BIOME_NAME,
                                   .project = FOSSE_PROJECT_ID,
                                   .layers = FOSSE_LAYERS}};
+
+/** @brief The most planes a biome of BIOMES draws. */
+constexpr std::size_t MOST_BIOME_LAYERS =
+    std::ranges::max(BIOMES, {}, [](const Biome& biome) {
+      return biome.layers.size();
+    }).layers.size();
 
 }  // namespace rtype::client
