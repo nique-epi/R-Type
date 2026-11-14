@@ -129,6 +129,9 @@ void SpokenLine::voiceWordsUpTo(std::size_t letters) {
 }
 
 std::size_t SpokenLine::lettersShown() const {
+  if (!lines_.has_value()) {
+    return 0;
+  }
   const std::size_t letters = speechLetterCountOf(*lines_);
   if (motion_ == MotionPreference::Reduced) {
     return letters;
@@ -137,6 +140,9 @@ std::size_t SpokenLine::lettersShown() const {
 }
 
 engine::Duration SpokenLine::shownTime() const {
+  if (!lines_.has_value()) {
+    return {};
+  }
   const engine::Duration writing =
       motion_ == MotionPreference::Full
           ? typingTimeOf(SPOKEN_LETTER_TIME, speechLetterCountOf(*lines_))

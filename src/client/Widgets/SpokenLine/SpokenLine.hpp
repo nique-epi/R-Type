@@ -53,10 +53,10 @@ class SpokenLine {
   /** @brief Plays a sound for each word whose first letter is among the
    * first @p letters. */
   void voiceWordsUpTo(std::size_t letters);
-  /** @returns How many letters of the line show now. */
+  /** @returns How many letters of the line show now; none while silent. */
   [[nodiscard]] std::size_t lettersShown() const;
   /** @returns How long the line shows in all: its writing, then its
-   * lingering. */
+   * lingering; no time while silent. */
   [[nodiscard]] engine::Duration shownTime() const;
 
   ISoundPlayer* sounds_;
