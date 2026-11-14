@@ -10,7 +10,6 @@
 #include "Endpoint.hpp"
 #include "GameRequest.hpp"
 #include "GameRules.hpp"
-#include "HangarScreenIdConstants.hpp"
 #include "MenuScreenIdConstants.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
@@ -19,23 +18,17 @@
 #include "ServerMapScreenFixture.hpp"
 #include "ServerMapScreenFixtures.hpp"
 #include "ServerMapScreenTestConstants.hpp"
-#include "ShopScreenIdConstants.hpp"
 
 using rtype::client::Ambience;
 using rtype::client::CONNECTION_SCREEN;
 using rtype::client::CONNECTION_TO_MAP_SERVER_SCREEN;
 using rtype::client::GameRequest;
-using rtype::client::HANGAR_SCREEN;
 using rtype::client::LEADERBOARD_SCREEN;
 using rtype::client::NEW_GAME_SCREEN;
 using rtype::client::ServerListPhase;
 using rtype::client::ServerListSnapshot;
-using rtype::client::SHOP_SCREEN;
 using rtype::client::testing::COLUMN_HEADINGS_ON_THE_PANEL;
-using rtype::client::testing::HANGAR_HOUSE_ON_THE_MAP;
 using rtype::client::testing::HANGAR_HOUSE_SOURCE;
-using rtype::client::testing::HANGAR_STAR_HINT_LINE;
-using rtype::client::testing::HANGAR_STAR_ON_THE_MAP;
 using rtype::client::testing::listWithLyonHolding;
 using rtype::client::testing::listWithNoSeatOfThisVersion;
 using rtype::client::testing::LYON_SERVER_ADDRESS;
@@ -55,11 +48,7 @@ using rtype::client::testing::REFRESH_INTERVAL;
 using rtype::client::testing::SERVER_GAME_PORT;
 using rtype::client::testing::SERVER_SEATS;
 using rtype::client::testing::ServerMapScreenFixture;
-using rtype::client::testing::SHOP_DETAIL_LINE;
-using rtype::client::testing::SHOP_HINT_LINE;
-using rtype::client::testing::SHOP_KIOSK_ON_THE_MAP;
 using rtype::client::testing::SHOP_KIOSK_SOURCE;
-using rtype::client::testing::SHOP_ON_THE_MAP;
 using rtype::client::testing::SHORT_OF_THE_REFRESH;
 using rtype::client::testing::showsTheMiniMap;
 using rtype::client::testing::UNREACHABLE_MASTER;
@@ -593,168 +582,33 @@ TEST_F(ServerMapScreenFixture, EnterWithoutAServerDoesNothing) {
 }
 
 /**
- * Given a master that did not answer, so no server stands on the map
- * When the hangar star is clicked
- * Then the hangar opens over the map: it needs no server
- */
-TEST_F(ServerMapScreenFixture, ClickingTheHangarStarOpensTheHangar) {
-  openOn(ServerListSnapshot{.phase = ServerListPhase::MasterUnreachable,
-                            .servers = {}});
-
-  pointAt(HANGAR_STAR_ON_THE_MAP, true);
-
-  EXPECT_THAT(navigator().calls(),
-              ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
-                                        .screen = HANGAR_SCREEN}));
-}
-
-/**
  * Given the map
- * When G is pressed and released
- * Then the hangar opens over it
+ * When S, then G, is pressed and released
+ * Then nothing opens: the shop and the hangar are reached from the
+ * destination screen now
  */
-TEST_F(ServerMapScreenFixture, GOpensTheHangar) {
-  openOn(readyList());
-
-  press(sf::Keyboard::Key::G);
-
-  EXPECT_THAT(navigator().calls(),
-              ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
-                                        .screen = HANGAR_SCREEN}));
-}
-
-/**
- * Given the map
- * When the pointer moves over the hangar star
- * Then its bubble tells how to open it
- */
-TEST_F(ServerMapScreenFixture, TheHangarStarShowsItsBubbleUnderThePointer) {
-  openOn(readyList());
-
-  pointAt(HANGAR_STAR_ON_THE_MAP, false);
-
-  EXPECT_NE(writingOf(painting(), HANGAR_STAR_HINT_LINE), nullptr);
-}
-
-/**
- * Given the map, the pointer over the hangar star
- * When an arrow chooses a server
- * Then the bubble of the hangar goes: only the chosen server shows one
- */
-TEST_F(ServerMapScreenFixture, AnArrowHidesTheBubbleOfTheHangar) {
-  openOn(readyList());
-  pointAt(HANGAR_STAR_ON_THE_MAP, false);
-
-  press(sf::Keyboard::Key::Right);
-
-  EXPECT_EQ(writingOf(painting(), HANGAR_STAR_HINT_LINE), nullptr);
-}
-
-/**
- * Given the map
- * When it is painted
- * Then the hangar star is the golden house of the sheet of the map, centered
- * where the star stands
- */
-TEST_F(ServerMapScreenFixture, TheHangarStarIsDrawnAsAHouse) {
-  openOn(readyList());
-
-  EXPECT_TRUE(
-      std::ranges::any_of(painting().images, [](const RecordedImage& image) {
-        return image.assetId == MAP_SHEET &&
-               image.source == HANGAR_HOUSE_SOURCE &&
-               image.topLeft == HANGAR_HOUSE_ON_THE_MAP;
-      }));
-}
-
-/**
- * Given a master that did not answer, so no server stands on the map
- * When the kiosk of the shop is clicked
- * Then the shop opens over the map: it needs no server
- */
-TEST_F(ServerMapScreenFixture, ClickingTheKioskOpensTheShop) {
-  openOn(ServerListSnapshot{.phase = ServerListPhase::MasterUnreachable,
-                            .servers = {}});
-
-  pointAt(SHOP_ON_THE_MAP, true);
-
-  EXPECT_THAT(navigator().calls(),
-              ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
-                                        .screen = SHOP_SCREEN}));
-}
-
-/**
- * Given the map
- * When S is pressed and released
- * Then the shop opens over it
- */
-TEST_F(ServerMapScreenFixture, SOpensTheShop) {
+TEST_F(ServerMapScreenFixture, SAndGOpenNothingOnTheMap) {
   openOn(readyList());
 
   press(sf::Keyboard::Key::S);
+  press(sf::Keyboard::Key::G);
 
-  EXPECT_THAT(navigator().calls(),
-              ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
-                                        .screen = SHOP_SCREEN}));
-}
-
-/**
- * Given the map
- * When the pointer moves over the kiosk of the shop
- * Then its bubble says what the shop sells and how to open it
- */
-TEST_F(ServerMapScreenFixture, TheKioskShowsItsBubbleUnderThePointer) {
-  openOn(readyList());
-
-  pointAt(SHOP_ON_THE_MAP, false);
-
-  EXPECT_NE(writingOf(painting(), SHOP_DETAIL_LINE), nullptr);
-  EXPECT_NE(writingOf(painting(), SHOP_HINT_LINE), nullptr);
-}
-
-/**
- * Given the map, the pointer over the hangar star, whose bubble shows
- * When the pointer moves over the kiosk of the shop
- * Then the bubble of the hangar goes: one place shows its bubble at a time
- */
-TEST_F(ServerMapScreenFixture, TheKioskTakesTheBubbleOfTheHangar) {
-  openOn(readyList());
-  pointAt(HANGAR_STAR_ON_THE_MAP, false);
-
-  pointAt(SHOP_ON_THE_MAP, false);
-
-  EXPECT_EQ(writingOf(painting(), HANGAR_STAR_HINT_LINE), nullptr);
-  EXPECT_NE(writingOf(painting(), SHOP_HINT_LINE), nullptr);
-}
-
-/**
- * Given the map, the pointer over the kiosk of the shop
- * When an arrow chooses a server
- * Then the bubble of the shop goes: only the chosen server shows one
- */
-TEST_F(ServerMapScreenFixture, AnArrowHidesTheBubbleOfTheShop) {
-  openOn(readyList());
-  pointAt(SHOP_ON_THE_MAP, false);
-
-  press(sf::Keyboard::Key::Right);
-
-  EXPECT_EQ(writingOf(painting(), SHOP_HINT_LINE), nullptr);
+  EXPECT_TRUE(navigator().calls().empty());
 }
 
 /**
  * Given the map
  * When it is painted
- * Then the shop is the kiosk of the sheet of the map, centered where the
- * shop stands
+ * Then neither the house of the hangar nor the kiosk of the shop is drawn
  */
-TEST_F(ServerMapScreenFixture, TheShopIsDrawnAsAKiosk) {
+TEST_F(ServerMapScreenFixture, TheMapDrawsNeitherTheHangarNorTheShop) {
   openOn(readyList());
 
-  EXPECT_TRUE(
-      std::ranges::any_of(painting().images, [](const RecordedImage& image) {
+  EXPECT_TRUE(std::ranges::none_of(
+      painting().images, [](const RecordedImage& image) noexcept {
         return image.assetId == MAP_SHEET &&
-               image.source == SHOP_KIOSK_SOURCE &&
-               image.topLeft == SHOP_KIOSK_ON_THE_MAP;
+               (image.source == HANGAR_HOUSE_SOURCE ||
+                image.source == SHOP_KIOSK_SOURCE);
       }));
 }
 
