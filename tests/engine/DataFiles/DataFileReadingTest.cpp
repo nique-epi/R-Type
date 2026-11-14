@@ -39,6 +39,7 @@ using rtype::engine::UnknownDataFileChoiceException;
 using rtype::engine::UnknownDataFileKeyException;
 using rtype::engine::UnreadableDataFileException;
 using rtype::engine::wholeNumberAt;
+using rtype::engine::wholeNumberOrZeroAt;
 using ::testing::HasSubstr;
 using ::testing::StartsWith;
 using ::testing::StrEq;
@@ -302,6 +303,22 @@ TEST(DataFileReading, AWholeNumberIsReadAtBothBounds) {
 
   EXPECT_EQ(wholeNumberAt(gameplay, LOWEST_KEY, HEALTH_RANGE), LOWEST_HEALTH);
   EXPECT_EQ(wholeNumberAt(gameplay, HIGHEST_KEY, HEALTH_RANGE), HIGHEST_HEALTH);
+}
+
+/**
+ * Given a table that holds the health 1 and leaves the key health out
+ * When each key is read as a key the file may omit
+ * Then the health written is read as it is, and the key left out reads 0
+ */
+TEST(DataFileReading, AWholeNumberLeftOutReadsZero) {
+  const toml::table root =
+      parseDataFile(BOTH_BOUNDS_OF_HEALTH, SHEET_FILE_NAME);
+  const DataFileTable gameplay =
+      tableAt(rootOf(root, SHEET_FILE_NAME), GAMEPLAY_TABLE);
+
+  EXPECT_EQ(wholeNumberOrZeroAt(gameplay, LOWEST_KEY, HEALTH_RANGE),
+            LOWEST_HEALTH);
+  EXPECT_EQ(wholeNumberOrZeroAt(gameplay, HEALTH_KEY, HEALTH_RANGE), 0);
 }
 
 /**

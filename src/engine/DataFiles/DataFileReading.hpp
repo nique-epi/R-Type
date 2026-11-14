@@ -120,6 +120,15 @@ void refuseUnknownKeys(const DataFileTable& table,
                                          WholeNumberRange range);
 
 /**
+ * @returns The integer @p key of @p table holds, 0 when the table leaves the
+ * key out: a key a file may omit.
+ * @throws What wholeNumberAt() throws for a key the table holds.
+ */
+[[nodiscard]] std::int64_t wholeNumberOrZeroAt(const DataFileTable& table,
+                                               std::string_view key,
+                                               WholeNumberRange range);
+
+/**
  * @returns The duration @p key of @p table holds, a whole number of
  * milliseconds within @p range (the key says it in its name, `_ms`).
  * @throws What wholeNumberAt() throws.
