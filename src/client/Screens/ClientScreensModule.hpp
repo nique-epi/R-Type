@@ -72,7 +72,7 @@ class ClientScreensModule final : public engine::IModule,
    * @param launch The server and the nickname the connection screen starts
    * with, unless the configuration sets others, and the game every attempt
    * asks for.
-   * @param playStart Where PLAY leads from the title.
+   * @param playStart Where SERVER of the destination screen leads.
    */
   ClientScreensModule(ServerChoice launch, PlayStart playStart);
 
