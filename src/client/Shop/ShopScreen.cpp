@@ -151,6 +151,7 @@ void ShopScreen::pointed(sf::Vector2i position, bool clicked) {
   }
   if (SHOP_BOTTLES_AREA.contains(pixel)) {
     if (clicked) {
+      sounds_->play(BOTTLES_CLINK_SOUND_ID);
       speech_.bottlesTouched();
     }
     return;

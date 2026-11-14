@@ -42,9 +42,9 @@ namespace rtype::client {
  * The shopkeeper breathes, blinks and glances around behind his counter,
  * unless the player asked for less motion, and talks in a bubble over his
  * head (see ShopkeeperSpeech): he greets the player, says a line for each
- * purchase and refusal, for a click on his bottles (SHOP_BOTTLES_AREA) and
- * for the radio tuned. The radio shows the frame of a choice under the
- * pointer.
+ * purchase and refusal, for a click on his bottles (SHOP_BOTTLES_AREA), which
+ * clink, and for the radio tuned. The radio shows the frame of a choice under
+ * the pointer.
  *
  * The music of the shop plays while it shows, the theme paused. A click on
  * the radio of the counter, or SHOP_RADIO_KEY once per hold, changes it for

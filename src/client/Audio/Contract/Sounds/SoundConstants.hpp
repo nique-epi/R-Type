@@ -39,6 +39,11 @@ constexpr const char* BYDO_VOICE_FIRST_SOUND_ID =
     "sounds/epidemic/bydo_voice_1.mp3";
 constexpr const char* BYDO_VOICE_SECOND_SOUND_ID =
     "sounds/epidemic/bydo_voice_2.mp3";
+/** @brief The bottles of the shopkeeper clinking under a click (see
+ * assets/README.md). */
+constexpr const char* BOTTLES_CLINK_SOUND_ID =
+    "sounds/epidemic/bottles_clink.mp3";
+
 constexpr std::array BYDO_VOICE_SOUND_IDS{BYDO_VOICE_FIRST_SOUND_ID,
                                           BYDO_VOICE_SECOND_SOUND_ID};
 
@@ -62,6 +67,7 @@ constexpr std::array ALL_SOUND_IDS{BYDO_GROWL_SOUND_ID,
                                    BOSS_ALARM_SOUND_ID,
                                    ROBOT_ARM_SOUND_ID,
                                    BYDO_VOICE_FIRST_SOUND_ID,
-                                   BYDO_VOICE_SECOND_SOUND_ID};
+                                   BYDO_VOICE_SECOND_SOUND_ID,
+                                   BOTTLES_CLINK_SOUND_ID};
 
 }  // namespace rtype::client

@@ -11,6 +11,7 @@
 #include "TimeConstants.hpp"
 
 using rtype::client::Ambience;
+using rtype::client::BOTTLES_CLINK_SOUND_ID;
 using rtype::client::BYDO_VOICE_FIRST_SOUND_ID;
 using rtype::client::SPOKEN_LINGER_TIME;
 using rtype::client::testing::A_QUARTER_OF_HIS_BREATH;
@@ -273,4 +274,16 @@ TEST_F(ShopBoothFixture, TheRadioTunedHasTheShopkeeperSpeakOfIt) {
   press(Key::R);
   wait(Duration::zero());
   EXPECT_NE(writingOf(painting(), SHOP_MUSIC_WORD), nullptr);
+}
+
+/**
+ * Given a shop
+ * When the bottles are clicked, then the wood just left of them
+ * Then the bottles clink once, for the click on them only
+ */
+TEST_F(ShopBoothFixture, AClickOnTheBottlesMakesThemClink) {
+  click(BOTTLES_MIDDLE);
+  click(BESIDE_THE_BOTTLES);
+
+  EXPECT_EQ(std::ranges::count(played(), BOTTLES_CLINK_SOUND_ID), 1);
 }
