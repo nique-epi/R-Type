@@ -93,4 +93,31 @@ constexpr std::string_view LEVEL_SHIP_SHEET = "ship";
 constexpr game::Position WHERE_THE_ENEMY_IS{.x = 900.0F, .y = 300.0F};
 constexpr game::Position WHERE_THE_SHIP_IS{.x = 200.0F, .y = 500.0F};
 
+/** @brief A level whose stage brings the Bydo Tyrant in. Tick 1 announces
+ * it, the next BOSS_ARRIVAL_WARNING_TICKS ticks count its warning down, and
+ * it enters on the tick after them: TICKS_TO_THE_BOSS, as the boss of the
+ * waves. */
+constexpr std::string_view LEVEL_WITH_A_BOSS = R"(
+level.register("directed", { function()
+  level.boss("bydo_tyrant")
+end })
+)";
+
+/** @brief A level whose second stage, from its checkpoint at tick 4, brings
+ * the Bydo Tyrant in at tick 5. Restarted at the end of tick 5, the stage
+ * announces it again at tick 6: TICKS_UNTIL_THE_BOSS_ENTERS after the
+ * restart, the first boss would enter, and the second has one tick of its
+ * warning left. */
+constexpr std::string_view LEVEL_WITH_A_BOSS_AFTER_A_CHECKPOINT = R"(
+level.register("directed", {
+  function()
+    level.wait(50)
+  end,
+  function()
+    level.boss("bydo_tyrant")
+  end,
+})
+)";
+constexpr std::size_t TICKS_UNTIL_THE_SECOND_STAGE_ANNOUNCES = 5;
+
 }  // namespace rtype::server::testing

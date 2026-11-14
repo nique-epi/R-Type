@@ -12,6 +12,7 @@ target_link_libraries(rtype_game_scripting_level
     rtype_game_level
   PRIVATE
     rtype_engine_exceptions
+    rtype_game_components
     rtype_game_spawning
     rtype_identifiers
 )

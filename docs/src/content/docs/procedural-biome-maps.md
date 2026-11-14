@@ -3,7 +3,7 @@ title: Generating the maps of a biome
 description: How the procedural generator builds the background maps of a biome, how to run it, and how to create a biome of your own.
 ---
 
-`generator/procedural/` is a Python tool that draws the background maps of a biome and exports them as an LDtk project. A map is a chain of screens of 480 × 272 pixels, each one a zone template written by hand; the tool draws the terrain, the decor and the light, then keeps the map only if it passes its level design checks. It is a tool of the repository, never shipped with the game, and it ships without any biome: a biome is a folder of data kept outside the repository, and maps are generated locally. The client does not draw these maps yet (see [Decor of a biome](/R-Type/client/#decor-of-a-biome-biomedecor)).
+`generator/procedural/` is a Python tool that draws the background maps of a biome and exports them as an LDtk project. A map is a chain of screens of 480 × 272 pixels, each one a zone template written by hand; the tool draws the terrain, the decor and the light, then keeps the map only if it passes its level design checks. It is a tool of the repository, never shipped with the game, and it ships without any biome: a biome is a folder of data kept outside the repository, and maps are generated locally. The client draws the project of the Pit (see [Decor of a biome](/R-Type/client/#decor-of-a-biome-biomedecor)).
 
 This page tells you how to run it, how a map is built, and how to write a biome of your own.
 
@@ -17,8 +17,8 @@ This page tells you how to run it, how a map is built, and how to write a biome 
 | Starting biome | Available | `generator/procedural/tools/new_biome.py` |
 | Biomes | Kept outside the repository, in the folder `--biomes` names | none |
 | Palette from pictures, sprite import, preview | Available | `generator/procedural/tools/` |
-| LDtk project generated for the Pit: six maps of three screens | Available | `design/fosse-generated-ldtk/` |
-| Drawing the maps in the game | Not yet written | none |
+| LDtk project generated for the Pit: six maps of three screens, the first opening on the cave entrance `cave_mouth` | Available, drawn by the client | `assets/biomes/fosse/` |
+| Drawing the maps in the game | Available, its tile layers only | `src/client/Rendering/Background/BiomeMap/` |
 
 ## Running it
 
@@ -160,7 +160,7 @@ python3 tools/new_biome.py --biomes ../../../my_biomes hive --layout corridor
 2. **Take the colors from pictures.** `make_palette.py` finds the color ramps of the pictures and fills the standard letters in `biome.json`, so the rest of the starting biome still works.
 
 ```bash
-python3 tools/make_palette.py --biomes ../../../my_biomes --biome hive ../../assets/backgrounds/ember_reach_near.png ../../assets/backgrounds/ember_reach_middle.png
+python3 tools/make_palette.py --biomes ../../../my_biomes --biome hive ../../assets/biomes/fosse/fosse_near.png ../../assets/biomes/fosse/fosse_mid.png
 ```
 
 It prints the ramps it found and the role each one got (`stone`, `rock`, `plant`, `liquid`, `stem`, `accent`); `--assign stone=1,liquid=0` overrules the choice. The second plane is each color halfway to the backdrop. The tints of the old palette are kept.
@@ -185,7 +185,7 @@ python3 tools/import_sprites.py --biomes ../../../my_biomes --biome hive sheet.p
 
 The tool crops each sprite and moves each pixel to the nearest color of the palette. Name a file `<family>.<size>.<name>[.glow][.hang][.hero].png` and the sprite needs no line of `decor`: `size` is `large`, `medium` or `small`; `glow` makes it a light; `hang` keeps it under ceilings; `hero` keeps it for the hero of a zone.
 
-5. **Write the templates.** In a corridor, each one names a material, two connectors, the four profiles as `[x, y]` steps, a hero at x = 160 or x = 320, and the families of its clusters; a template with `"sky": true` has no ceiling. In a field, each one names its hero body and the places of its groups of bodies.
+5. **Write the templates.** In a corridor, each one names a material, two connectors, the four profiles as `[x, y]` steps, a hero at x = 160 or x = 320, and the families of its clusters; a template with `"sky": true` has no ceiling, and one with `"entrance": {"mouth": x}` opens the first map of a biome as the entrance of a cave: left of `x` the play plane is cut along a ragged rock edge and draws nothing, so the game shows open space there, and the client shows the far and second planes only right of the mouth. An entrance only opens a chain `--sequence` forces. In a field, each one names its hero body and the places of its groups of bodies.
 
 6. **Generate, look, export.**
 
@@ -212,7 +212,7 @@ The checker validates the project against the official schema (download it from 
 ## What is not supported
 
 - A map that mixes `field` and `corridor` zones; in a `field` zone, water, waterfalls, columns, hanging lamps and bodies across the play corridor.
-- Looping parallax layers such as the ones in `assets/backgrounds/`: this tool makes fixed maps.
+- Looping parallax layers: this tool makes fixed maps, which the client lays end to end.
 - A drawn sky: under `"sky": true` the backdrop is one flat color.
 - Platforms across the play corridor, and more than two planes of terrain.
 

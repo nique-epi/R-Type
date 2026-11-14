@@ -1,37 +1,24 @@
 #pragma once
 
-#include <cstddef>
-#include <optional>
-#include "BossHealthScaling.hpp"
 #include "BossStageParts.hpp"
 #include "EntitySheet.hpp"
-#include "EntitySpawnSender.hpp"
-#include "EventBus.hpp"
+#include "LevelBosses.hpp"
 #include "Logger.hpp"
-#include "PlayerRoster.hpp"
 #include "World.hpp"
 
 namespace rtype::server {
-
-/** @returns The points of the sheet of @p scaling scaled for its players
- * (at least one counts) and its health percent: each player past the first
- * adds BOSS_HEALTH_PER_EXTRA_PLAYER percent, then the whole is taken at the
- * health percent, rounded down, never under 1. */
-[[nodiscard]] int scaledBossHealth(const BossHealthScaling& scaling);
 
 /**
  * @brief The end of a level: the boss of the difficulty, once its last wave
  * is over.
  *
  * Without a boss, the level is cleared on the tick the last wave is found
- * over. With one, that tick publishes a game::BossArrival on the bus and logs
- * it; BOSS_ARRIVAL_WARNING_TICKS ticks later, the boss appears at
- * BOSS_ENTRY_POSITION (see game::World::spawn) and every connected player is
- * sent its EntitySpawned. The level is cleared on the first tick after that
- * which finds no enemy in the world, the boss and the Bydos of its volleys
+ * over. With one, that tick announces it, and it enters
+ * BOSS_ARRIVAL_WARNING_TICKS ticks later, on the next tick, as the boss of a
+ * level does (see LevelBosses). The level is cleared on the first tick after
+ * that which finds no enemy in the world, the boss and the Bydos of its volleys
  * included: a boss is never removed by leaving, so it is gone only once
- * killed. When every network id was given, no boss appears and a warning is
- * logged. Not thread-safe: use it from the simulation thread only.
+ * killed. Not thread-safe: use it from the simulation thread only.
  */
 class BossStage {
  public:
@@ -51,23 +38,11 @@ class BossStage {
   [[nodiscard]] bool hasBoss() const;
 
  private:
-  void announceArrival();
-  void bringTheBossIn();
-
-  /** @brief Scales the health of the boss just brought in, and the points
-   * it enrages below, by the players connected and the health percent of
-   * the difficulty (see scaledBossHealth()). */
-  void strengthen() const;
-
   game::World* world_;
-  PlayerRoster* roster_;
-  engine::EventBus* events_;
   const game::EntitySheet* boss_;
-  int healthPercent_;
-  SendDatagram send_;
+  LevelBosses bosses_;
   logging::Logger logger_;
-  std::optional<std::size_t> ticksToArrival_{std::nullopt};
-  bool arrived_{false};
+  bool announced_{false};
   bool cleared_{false};
 };
 

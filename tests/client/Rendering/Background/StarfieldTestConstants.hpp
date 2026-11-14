@@ -29,6 +29,15 @@ constexpr rtype::engine::Duration HALF_TWINKLE_STEP = ONE_TWINKLE_STEP / 2;
 constexpr rtype::engine::Duration LONGER_THAN_A_PLANET_CROSSING =
     std::chrono::seconds(260);
 
+/** @brief A tenth of a second: the far stars move by less than half a pixel,
+ * and the planet by a fifth of one. */
+constexpr rtype::engine::Duration A_TENTH_OF_A_SECOND =
+    std::chrono::milliseconds(100);
+
+/** @brief How far a painted plane may be from where it lies: the stars and
+ * their plane each add up their moves in float. */
+constexpr float SUB_PIXEL_TOLERANCE = 0.01F;
+
 /** @brief How far a star may be from where it must be: positions are
  * computed in float. */
 constexpr float POSITION_TOLERANCE = 1e-3F;

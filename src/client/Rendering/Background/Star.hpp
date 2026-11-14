@@ -1,6 +1,5 @@
 #pragma once
 
-#include <SFML/System/Vector2.hpp>
 #include <cstddef>
 #include <cstdint>
 
@@ -14,8 +13,11 @@ enum class StarDepth : std::uint8_t { Far, Middle, Near };
 
 /** @brief One star of the background. */
 struct Star {
-  /** Position in background pixels; x decreases as the sky scrolls. */
-  sf::Vector2f position;
+  /** Column of the pixel the star is painted on, before the shift of its
+   * layer; it decreases as the sky scrolls. */
+  int column{};
+  /** Height in background pixels. */
+  float height{};
   StarDepth depth{};
   /** Step of the twinkle cycle at which the star twinkles. */
   std::int64_t twinklePhase{};

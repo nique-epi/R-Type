@@ -12,6 +12,7 @@
         "openssl"
       ]
     },
+    "ldtkloader",
     "libhydrogen",
     "luau",
     "nlohmann-json",

@@ -2,10 +2,11 @@
 -- The level training_run: two stages a team plays one after the other, with
 -- the enemies the game ships. A server plays it with `set level training_run`.
 --
--- The first stage crosses the biome drift_fields: two groups of Bydos come as
--- the level scrolls, then the scroll stops until a Reaper is destroyed. The
--- second stage starts at a checkpoint, in the biome ember_reach: a team that
--- loses every life there starts that stage again. The level is cleared once
+-- The first stage crosses open space, with the stars alone: two groups of
+-- Bydos come as the level scrolls, then the scroll stops until a Reaper is
+-- destroyed. The second stage starts at a checkpoint, in the biome fosse,
+-- entered through its cave: a team that loses every life there
+-- starts that stage again. The level is cleared once
 -- its last stage is over and no enemy is left. The functions of `level` are
 -- described on the page "Scripting enemies in Luau" of the docs.
 
@@ -28,7 +29,6 @@ end
 
 level.register("training_run", {
 	function()
-		level.biome("drift_fields")
 		level.wait_scroll(240)
 		send("drifter", { 300, MIDDLE_ROW, 780 })
 		level.wait_scroll(720)
@@ -41,7 +41,7 @@ level.register("training_run", {
 		level.wait_scroll(1440)
 	end,
 	function()
-		level.biome("ember_reach")
+		level.biome("fosse")
 		level.wait_scroll(1680)
 		send("drifter", { 240, 420, 660, 840 })
 		level.wait_scroll(2160)

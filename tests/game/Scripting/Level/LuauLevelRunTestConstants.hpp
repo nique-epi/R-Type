@@ -124,6 +124,38 @@ constexpr rtype::engine::Duration SCROLL_AT_THE_CHECKPOINT =
     3 * rtype::engine::SIMULATION_TICK_DURATION;
 constexpr float SPEED_OF_A_MOVING_LEVEL = 120.0F;
 
+/** @brief A level whose stage names a biome, waits until it scrolled 120
+ * logical units and names it again: it still began at the start of the
+ * scroll. The second biome of WAITS_FOR_A_SECOND_OF_SCROLL is named at the
+ * step of tick 62, after 61 ticks of 2 units: 122 units. */
+constexpr std::string_view NAMES_A_BIOME_AGAIN = R"(
+level.register("test_level", { function()
+  level.biome("near")
+  level.wait_scroll(120)
+  level.biome("near")
+end })
+)";
+constexpr float WHERE_THE_FIRST_BIOME_BEGAN = 0.0F;
+constexpr float WHERE_THE_BIOME_AFTER_THE_SCROLL_BEGAN = 122.0F;
+
+/** @brief A level of two stages whose first names its biome after a wait of
+ * 50 ms, at the step of tick 4, after 3 ticks of 2 units: 6 units. The
+ * second names another at tick 5, 8 units in, and pauses the scroll. */
+constexpr std::string_view TWO_STAGES_WITH_A_LATE_BIOME = R"(
+level.register("test_level", {
+  function()
+    level.wait(50)
+    level.biome("first")
+  end,
+  function()
+    level.biome("second")
+    level.pause_scroll()
+    level.wait(50)
+  end,
+})
+)";
+constexpr float WHERE_THE_LATE_FIRST_BIOME_BEGAN = 6.0F;
+
 /** @brief A level whose stage fails, and what its error says. */
 constexpr std::string_view FAILS = R"(
 level.register("test_level", { function()
@@ -152,5 +184,47 @@ level.register("test_level", { function()
   level.biome("before")
   level.wait(50)
   error("the stage broke")
+end })
+)";
+
+/** @brief The sheet the bosses of these tests know as a boss. */
+constexpr std::string_view BOSS_OF_THE_TESTS = "tyrant";
+
+/** @brief A level whose stage names a biome, brings the boss in with 40 % of
+ * the health of its sheet, then names another biome once the boss entered. */
+constexpr std::string_view BRINGS_A_BOSS_IN = R"(
+level.register("test_level", { function()
+  level.biome("before")
+  level.boss("tyrant", { health_percent = 40 })
+  level.biome("after")
+end })
+)";
+constexpr int HEALTH_PERCENT_OF_THE_BOSS = 40;
+constexpr std::size_t TICKS_THE_BOSS_IS_AWAITED = 10;
+
+/** @brief A level whose stage brings the boss in without options: it has
+ * the whole health of its sheet. */
+constexpr std::string_view BRINGS_A_WHOLE_BOSS_IN = R"(
+level.register("test_level", { function()
+  level.boss("tyrant")
+end })
+)";
+constexpr int WHOLE_HEALTH_PERCENT = 100;
+
+/** @brief Levels whose stage brings in a sheet that is no boss, a boss
+ * without health, and a boss with more than the health of its sheet. */
+constexpr std::string_view BRINGS_IN_A_SHEET_THAT_IS_NO_BOSS = R"(
+level.register("test_level", { function()
+  level.boss("drifter")
+end })
+)";
+constexpr std::string_view BRINGS_IN_A_BOSS_WITHOUT_HEALTH = R"(
+level.register("test_level", { function()
+  level.boss("tyrant", { health_percent = 0 })
+end })
+)";
+constexpr std::string_view BRINGS_IN_A_BOSS_ABOVE_ITS_HEALTH = R"(
+level.register("test_level", { function()
+  level.boss("tyrant", { health_percent = 101 })
 end })
 )";

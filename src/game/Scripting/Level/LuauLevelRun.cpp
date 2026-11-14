@@ -51,7 +51,8 @@ void pushStage(void* context) {
 }  // namespace
 
 LuauLevelRun::LuauLevelRun(LuauLevelRunParts parts) : parts_(std::move(parts)) {
-  parts_.levels.get().attach(parts_.progress.get(), parts_.components.get());
+  parts_.levels.get().attach(parts_.progress.get(), parts_.components.get(),
+                             parts_.bosses.get());
 }
 
 LuauLevelRun::~LuauLevelRun() {
@@ -83,6 +84,7 @@ bool LuauLevelRun::restartFromCheckpoint() {
   progress.scroll.returnTo(checkpoint.travelled);
   progress.scroll.resume();
   progress.biome = checkpoint.biome;
+  progress.biomeSince = checkpoint.biomeSince;
   return true;
 }
 
@@ -99,6 +101,9 @@ bool LuauLevelRun::waitIsOver() {
     return false;
   }
   if (parts_.progress.get().scroll.position() < wait_->untilScrollPosition) {
+    return false;
+  }
+  if (wait_->untilBossesEntered && parts_.bosses.get().pending() > 0) {
     return false;
   }
   wait_.reset();
@@ -141,7 +146,8 @@ void LuauLevelRun::endStage() {
   progress.checkpoint =
       LevelCheckpoint{.stage = stage_,
                       .travelled = progress.scroll.travelled(),
-                      .biome = progress.biome};
+                      .biome = progress.biome,
+                      .biomeSince = progress.biomeSince};
 }
 
 void LuauLevelRun::fail(const std::string& reason) {

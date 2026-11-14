@@ -102,7 +102,7 @@ constexpr std::string_view WARNING_WORD_ON_SCREEN = "WARNING";
 
 /** @brief The level the server tells: its biome, how far it scrolled and
  * how fast it scrolls. */
-constexpr std::string_view TOLD_BIOME = "drift_fields";
+constexpr std::string_view TOLD_BIOME = "fosse";
 constexpr float TOLD_SCROLL_POSITION = 240.0F;
 constexpr float TOLD_SCROLL_SPEED = 120.0F;
 

@@ -53,6 +53,25 @@ TEST(LuauLevels, ReadsTheLevelTheRepositoryShips) {
 }
 
 /**
+ * Given the scripts of the resource campaign the repository ships
+ * When they run
+ * Then the level campaign is registered, with its five stages
+ */
+TEST(LuauLevels, ReadsTheCampaignTheRepositoryShips) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+  const std::array folders{
+      std::filesystem::path{RTYPE_SOURCE_RESOURCES_FOLDER} / CAMPAIGN_RESOURCE};
+
+  scripts.run(rtype::game::scriptSourcesIn(folders));
+
+  const std::vector<int>* const stages =
+      scripts.levels().stagesOf(CAMPAIGN_LEVEL);
+  ASSERT_NE(stages, nullptr);
+  EXPECT_EQ(stages->size(), STAGES_OF_THE_CAMPAIGN);
+}
+
+/**
  * Given a script that registers two levels
  * When the names of the levels are asked for
  * Then both are listed, in alphabetical order

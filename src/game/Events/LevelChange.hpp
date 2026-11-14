@@ -9,12 +9,14 @@ namespace rtype::game {
  * biome, or its scroll starting, stopping or jumping back to a checkpoint.
  * It holds the whole of it: the biome, empty before the level names one, how
  * far the level scrolled, in logical units, and the speed of the scroll, in
- * logical units per second, 0 while paused.
+ * logical units per second, 0 while paused, and how far the level had
+ * scrolled when the biome began.
  */
 struct LevelChange {
   std::string biome;
   float scrollPosition{};
   float scrollSpeed{};
+  float biomeSince{};
 
   bool operator==(const LevelChange&) const = default;
 };
