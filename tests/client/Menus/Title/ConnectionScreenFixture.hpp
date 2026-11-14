@@ -12,6 +12,7 @@
 #include "RecordingServerConnection.hpp"
 #include "RecordingSoundPlayer.hpp"
 #include "ServerChoice.hpp"
+#include "TextMetrics.hpp"
 
 /** @brief A connection screen alone, with a recording navigator, connection
  * and canvas, its fields started with the launch values. */
@@ -19,7 +20,8 @@ class ConnectionScreenFixture : public ::testing::Test {
  protected:
   explicit ConnectionScreenFixture(
       rtype::client::ConnectionGoal goal =
-          rtype::client::ConnectionGoal::WaitingRoom);
+          rtype::client::ConnectionGoal::WaitingRoom,
+      rtype::client::TextMetrics metrics = {});
 
   [[nodiscard]] const RecordingNavigator& navigator() const;
   RecordingServerConnection& connection();

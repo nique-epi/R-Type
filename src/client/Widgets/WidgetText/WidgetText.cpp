@@ -26,6 +26,18 @@ int centeredTextTop(sf::IntRect box, TextMetrics metrics) {
          ((box.size.y - lineHeightOf(metrics)) / SIDES_PER_AXIS);
 }
 
+sf::IntRect fieldBoxOf(sf::IntRect area, TextMetrics metrics) {
+  const int lineHeight = lineHeightOf(metrics);
+  if (metrics == TextMetrics{}) {
+    const int labelHeight = lineHeight + FIELD_LABEL_GAP;
+    return {{area.position.x, area.position.y + labelHeight},
+            {area.size.x, area.size.y - labelHeight}};
+  }
+  const int column = (FIELD_LABEL_LETTERS * lineHeight) + FIELD_LABEL_SIDE_GAP;
+  return {{area.position.x + column, area.position.y},
+          {area.size.x - column, area.size.y}};
+}
+
 int textBoxHeight(int nativeHeight, TextMetrics metrics) {
   return nativeHeight - TEXT_LINE_HEIGHT + lineHeightOf(metrics);
 }

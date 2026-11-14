@@ -8,6 +8,7 @@
 #include "ConnectionStatus.hpp"
 #include "RecordingServerConnection.hpp"
 #include "ServerConnectionRequest.hpp"
+#include "TextMetrics.hpp"
 
 namespace rtype::client::testing {
 
@@ -24,6 +25,9 @@ constexpr std::uint16_t MAP_PORT = 4300;
 constexpr std::string_view NEXT_MAP_ADDRESS = "203.0.113.10";
 constexpr std::uint16_t NEXT_MAP_PORT = 4301;
 constexpr std::string_view LAUNCH_NICKNAME = "ACE";
+
+/** @brief The largest text size. */
+constexpr TextMetrics LARGEST_FORM_TEXT{.halfPixelsPerFontPixel = 4};
 
 /** @brief The game the launch options asked for: game 2 of the server. */
 constexpr network::GameChoice LAUNCH_GAME{

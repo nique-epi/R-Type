@@ -101,6 +101,15 @@ constexpr int SPACE_AROUND_FORM_BUTTONS = 10;
 constexpr sf::Vector2i FORM_BUTTON_SIZE(BUTTON_SIZE.x / SIDES_PER_AXIS,
                                         BUTTON_SIZE.y);
 constexpr int FORM_BUTTON_GAP = BUTTON_GAP;
+/** @brief Above the size the fonts are drawn at, the lines a form keeps for
+ * the line about its selected bar and for its status line; and, its fields
+ * one box tall, the room left of each box for its label: the letters of the
+ * longest label, ADDRESS, in the regular font, which is never narrower than
+ * the small one, and a gap. At the largest size the box keeps 288 pixels,
+ * 17 letters, more than the 16 of the longest nickname. */
+constexpr int FORM_TEXT_LINES = 2;
+constexpr int FIELD_LABEL_LETTERS = 7;
+constexpr int FIELD_LABEL_SIDE_GAP = 8;
 
 /** @brief Shortest time a button looks pressed before its action runs, so
  * even a quick click is seen. */

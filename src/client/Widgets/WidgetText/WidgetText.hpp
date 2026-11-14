@@ -21,6 +21,13 @@ namespace rtype::client {
  * middle row, in pixels. */
 [[nodiscard]] int centeredTextTop(sf::IntRect box, TextMetrics metrics);
 
+/** @returns Where the box of a field of @p area lies at the text size of
+ * @p metrics: under its label, as drawn at the size the fonts are drawn at;
+ * above it, the whole height of the area, right of a column of
+ * FIELD_LABEL_LETTERS letters and FIELD_LABEL_SIDE_GAP where its label
+ * stands. */
+[[nodiscard]] sf::IntRect fieldBoxOf(sf::IntRect area, TextMetrics metrics);
+
 /** @returns How tall a box made around one line of the fonts as drawn,
  * @p nativeHeight tall, is at @p metrics: it grows as its line does. */
 [[nodiscard]] int textBoxHeight(int nativeHeight, TextMetrics metrics);

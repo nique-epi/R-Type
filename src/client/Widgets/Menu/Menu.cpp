@@ -150,8 +150,11 @@ void paintDescription(const Menu::Content& content, IInterfaceCanvas& canvas,
   }
   const int pitch = lineHeightOf(canvas.textMetrics()) + DESCRIPTION_LINE_GAP;
   sf::Vector2i anchor = *content.descriptionAnchor;
-  for (const std::string& line : wrappedLinesOf(
-           description, {.width = *content.descriptionWidth}, canvas)) {
+  for (const std::string& line :
+       wrappedLinesOf(description,
+                      {.width = *content.descriptionWidth,
+                       .font = content.descriptionStyle.font},
+                      canvas)) {
     canvas.write(line, anchor, content.descriptionStyle);
     anchor.y += pitch;
   }

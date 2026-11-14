@@ -12,12 +12,10 @@
 #include "FieldText.hpp"
 #include "FieldTextPainting.hpp"
 #include "IInterfaceCanvas.hpp"
-#include "InterfaceConstants.hpp"
 #include "KeyCap.hpp"
 #include "RowControl.hpp"
 #include "SunkBox.hpp"
 #include "TextField.hpp"
-#include "TextMeasures.hpp"
 #include "TextStyle.hpp"
 #include "WidgetColors.hpp"
 #include "WidgetConstants.hpp"
@@ -137,11 +135,12 @@ void Button::paintRow(IInterfaceCanvas& canvas, BarState state) const {
 void Button::paintField(IInterfaceCanvas& canvas, BarState state,
                         const TextField& field) const {
   const FieldLook look = fieldLookOf(state);
-  canvas.write(text_.label, area_.position,
+  const sf::IntRect box = fieldBoxOf(area_, canvas.textMetrics());
+  canvas.write(text_.label,
+               box.position.x == area_.position.x
+                   ? area_.position
+                   : area_.position + sf::Vector2i(0, FIELD_TEXT_PADDING),
                {.font = TextFont::Small, .color = look.label});
-  const int labelHeight = lineHeightOf(canvas.textMetrics()) + FIELD_LABEL_GAP;
-  const sf::IntRect box({area_.position.x, area_.position.y + labelHeight},
-                        {area_.size.x, area_.size.y - labelHeight});
   SunkBox(box, look.sides).paint(canvas);
   paintFieldText(canvas, FieldText{.box = box,
                                    .text = field.text(),

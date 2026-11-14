@@ -84,6 +84,8 @@ struct PageEnd {
 struct FormLayout {
   sf::Vector2i panelTopLeft;
   sf::Vector2i panelSize;
+  sf::Vector2i fieldSize = FIELD_SIZE;
+  sf::Vector2i buttonSize = FORM_BUTTON_SIZE;
   int fieldsTop{};
   int buttonsTop{};
   int descriptionTop{};
@@ -175,12 +177,18 @@ int placePageBars(Menu::Content& content, std::vector<PendingButton>& bars,
   return placeBarsInTwoColumns(content, bars, grid);
 }
 
-/** @returns Where the parts of a form holding these bars lie. */
-FormLayout formLayoutOf(const std::vector<PendingButton>& bars) {
-  const int fieldCount = static_cast<int>(
+/** @returns How many of @p bars are text fields. */
+int fieldCountOf(const std::vector<PendingButton>& bars) {
+  return static_cast<int>(
       std::ranges::count_if(bars, [](const PendingButton& pending) noexcept {
         return pending.field.has_value();
       }));
+}
+
+/** @returns Where the parts of a form holding these bars lie, as the forms
+ * were drawn at the size the fonts are drawn at. */
+FormLayout formLayoutOf(const std::vector<PendingButton>& bars) {
+  const int fieldCount = fieldCountOf(bars);
   const int fieldsTop =
       FORM_HEADING_OFFSET.y + TEXT_LINE_HEIGHT + SPACE_BELOW_FORM_HEADING;
   const int buttonsTop = fieldsTop + (fieldCount * FIELD_SIZE.y) +
@@ -214,13 +222,13 @@ void placeFormBars(Menu::Content& content, std::vector<PendingButton>& bars,
   for (PendingButton& pending : bars) {
     sf::IntRect area;
     if (pending.field.has_value()) {
-      area =
-          sf::IntRect({panel.x + FORM_HEADING_OFFSET.x, fieldTop}, FIELD_SIZE);
-      fieldTop += FIELD_SIZE.y + SPACE_BETWEEN_FIELDS;
+      area = sf::IntRect({panel.x + FORM_HEADING_OFFSET.x, fieldTop},
+                         layout.fieldSize);
+      fieldTop += layout.fieldSize.y + SPACE_BETWEEN_FIELDS;
     } else {
       area = sf::IntRect({buttonLeft, panel.y + layout.buttonsTop},
-                         FORM_BUTTON_SIZE);
-      buttonLeft += FORM_BUTTON_SIZE.x + FORM_BUTTON_GAP;
+                         layout.buttonSize);
+      buttonLeft += layout.buttonSize.x + FORM_BUTTON_GAP;
     }
     content.buttons.emplace_back(std::move(pending.text), area,
                                  std::move(pending.action),
@@ -327,6 +335,45 @@ int barWidthFor(const std::vector<PendingButton>& bars, int narrowest,
     }
   }
   return width;
+}
+
+/**
+ * @returns Where the parts of a form holding these bars lie above the size the
+ * fonts are drawn at: as wide as the safe margin, each field one box tall, its
+ * label beside it, the buttons as wide as their labels need, then the line
+ * about the selected bar and the status line, FORM_TEXT_LINES lines each.
+ */
+FormLayout largeFormLayoutOf(const std::vector<PendingButton>& bars,
+                             TextMetrics metrics) {
+  const int fieldCount = fieldCountOf(bars);
+  const int lineHeight = lineHeightOf(metrics);
+  const int width = INTERFACE_AREA.size.x - (SIDES_PER_AXIS * SAFE_MARGIN);
+  const sf::Vector2i fieldSize(
+      width - (SIDES_PER_AXIS * FORM_HEADING_OFFSET.x),
+      lineHeight + (SIDES_PER_AXIS * FIELD_TEXT_PADDING));
+  const sf::Vector2i buttonSize(barWidthFor(bars, FORM_BUTTON_SIZE.x, metrics),
+                                textBoxHeight(FORM_BUTTON_SIZE.y, metrics));
+  const int fieldsTop =
+      FORM_HEADING_OFFSET.y + lineHeight + SPACE_BELOW_FORM_HEADING;
+  const int buttonsTop = fieldsTop + (fieldCount * fieldSize.y) +
+                         ((fieldCount - 1) * SPACE_BETWEEN_FIELDS) +
+                         SPACE_AROUND_FORM_BUTTONS;
+  const int textHeight = FORM_TEXT_LINES * (lineHeight + DESCRIPTION_LINE_GAP);
+  const int descriptionTop =
+      buttonsTop + buttonSize.y + SPACE_AROUND_FORM_BUTTONS;
+  const int statusTop = descriptionTop + textHeight + SPACE_BELOW_DESCRIPTION;
+  const sf::Vector2i panelSize(width,
+                               statusTop + textHeight + FORM_HEADING_OFFSET.y);
+  return FormLayout{
+      .panelTopLeft = (INTERFACE_AREA.size - panelSize) / SIDES_PER_AXIS,
+      .panelSize = panelSize,
+      .fieldSize = fieldSize,
+      .buttonSize = buttonSize,
+      .fieldsTop = fieldsTop,
+      .buttonsTop = buttonsTop,
+      .descriptionTop = descriptionTop,
+      .statusTop = statusTop,
+      .buttonCount = static_cast<int>(bars.size()) - fieldCount};
 }
 
 /** @returns Where the description of the selected row is written: beside the
@@ -587,7 +634,9 @@ void MenuBuilder::placeDialog(Menu::Content& content) {
 }
 
 void MenuBuilder::placeForm(Menu::Content& content) {
-  const FormLayout layout = formLayoutOf(buttons_);
+  const FormLayout layout = metrics_ == TextMetrics{}
+                                ? formLayoutOf(buttons_)
+                                : largeFormLayoutOf(buttons_, metrics_);
   const sf::Vector2i panel = layout.panelTopLeft;
   content.panel = sf::IntRect(panel, layout.panelSize);
   if (heading_.has_value()) {
@@ -602,6 +651,12 @@ void MenuBuilder::placeForm(Menu::Content& content) {
   content.descriptionStyle = FORM_DESCRIPTION_STYLE;
   content.selectsOnHover = false;
   content.statusAnchor = sf::Vector2i(left, panel.y + layout.statusTop);
+  if (metrics_ != TextMetrics{}) {
+    const int textWidth =
+        layout.panelSize.x - (SIDES_PER_AXIS * FORM_HEADING_OFFSET.x);
+    content.descriptionWidth = textWidth;
+    content.statusWidth = textWidth;
+  }
 }
 
 void MenuBuilder::placeTabbedPanel(Menu::Content& content) {
