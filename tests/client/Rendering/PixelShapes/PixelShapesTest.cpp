@@ -8,13 +8,11 @@
 using rtype::client::addDisc;
 using rtype::client::addDither;
 using rtype::client::addSegment;
-using rtype::client::bayerThresholdAt;
 using rtype::client::ColoredPixel;
 using rtype::client::testing::distinctPlacesOf;
 using rtype::client::testing::FOUR_BY_FOUR;
 using rtype::client::testing::FOUR_BY_FOUR_PIXELS;
 using rtype::client::testing::FOUR_RIGHT;
-using rtype::client::testing::LOWEST_THRESHOLD;
 using rtype::client::testing::NO_RADIUS;
 using rtype::client::testing::ORIGIN;
 using rtype::client::testing::PIXELS_FROM_ORIGIN_TO_FOUR_RIGHT;
@@ -137,13 +135,4 @@ TEST(PixelShapes, ADitherOfAllLightsEveryPixel) {
                      .bottomShare = 1.0F});
 
   EXPECT_EQ(pixels.size(), FOUR_BY_FOUR_PIXELS);
-}
-
-/**
- * Given the pixel at the origin, where the matrix holds its lowest level
- * When its threshold is read
- * Then it is half a level out of sixteen
- */
-TEST(PixelShapes, TheOriginHasTheLowestThreshold) {
-  EXPECT_DOUBLE_EQ(bayerThresholdAt(ORIGIN), LOWEST_THRESHOLD);
 }

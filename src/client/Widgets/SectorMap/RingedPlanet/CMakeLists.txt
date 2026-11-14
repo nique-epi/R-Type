@@ -8,7 +8,7 @@ target_link_libraries(rtype_client_ringed_planet
     rtype_client_sector_map_interfaces
     rtype_engine_time
   PRIVATE
-    rtype_client_pixel_shapes
+    rtype_client_dither
     rtype_client_rendering_interfaces
 )
 
