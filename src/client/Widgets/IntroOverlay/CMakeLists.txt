@@ -8,6 +8,8 @@ target_link_libraries(rtype_client_intro_overlay
   PRIVATE
     rtype_client_easing
     rtype_client_intro_timeline
+    rtype_client_text_measures
+    rtype_client_widget_text
 )
 
 rtype_enable_warnings(rtype_client_intro_overlay)

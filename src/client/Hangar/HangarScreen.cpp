@@ -37,6 +37,7 @@
 #include "ShipLookNumbers.hpp"
 #include "ShipLooks.hpp"
 #include "SoundConstants.hpp"
+#include "TextMetrics.hpp"
 #include "TimeConstants.hpp"
 #include "WidgetConstants.hpp"
 
@@ -54,8 +55,9 @@ std::optional<std::size_t> itemUnder(sf::Vector2i position,
   return lockerItemAt(interfacePixelAt(playfieldPointAt(position)), firstRow);
 }
 
-Button::Text backText() {
-  return {.label = BACK_LABEL, .keyName = CANCEL_KEY_NAME};
+/** @returns What BACK says, at the text size of @p metrics. */
+Button::Text backText(TextMetrics metrics) {
+  return {.label = BACK_LABEL, .keyName = CANCEL_KEY_NAME, .size = metrics};
 }
 
 /** @returns The status line: how to get @p item when the locker does not
@@ -86,11 +88,12 @@ HangarScreen::HangarScreen(HangarScreenParts parts,
       palette_(parts.palette),
       shipColor_(parts.shipColor),
       motion_(parts.motion),
-      backChip_(KeyChipParts{.text = backText(),
-                             .area = MenuBuilder::chipArea(backText()),
-                             .key = MENU_CANCEL_KEY,
-                             .action = [this] { navigator_->pop(); },
-                             .sounds = parts.sounds}),
+      backChip_(KeyChipParts{
+          .text = backText(canvas_->textMetrics()),
+          .area = MenuBuilder::chipArea(backText(canvas_->textMetrics())),
+          .key = MENU_CANCEL_KEY,
+          .action = [this] { navigator_->pop(); },
+          .sounds = parts.sounds}),
       rows_(LOCKER_ROWS_AT_OPENING) {
   repaint();
 }
