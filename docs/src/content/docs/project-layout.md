@@ -244,7 +244,7 @@ src/client/
 │       ├── Screen/      the options screen and its dialogs
 │       └── Tabs/        the tabs and their rows
 ├── Lobby/               the waiting room
-├── Economy/             the kopecks: what a score pays, the price of each item, a purchase
+├── Economy/             the kopecks: what a score pays, the price of each item, a purchase, the exchange with chips
 ├── Shop/                the shop: the wares, the chosen one, and their painting
 │   ├── Shelves/         what is for sale, where each ware lies, the choice
 │   └── Painting/        the price tags, the cells of the locker, the glass case
