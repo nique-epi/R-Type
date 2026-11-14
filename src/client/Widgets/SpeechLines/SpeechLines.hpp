@@ -34,6 +34,11 @@ struct SpeechWriting {
 /** @returns How many letters @p lines hold, as SpeechWriting counts them. */
 [[nodiscard]] std::size_t speechLetterCountOf(const SpeechLines& lines);
 
+/** @returns The letter each word of @p lines starts at, in order, as
+ * SpeechWriting counts letters: the first word at 0. */
+[[nodiscard]] std::vector<std::size_t> speechWordStartsOf(
+    const SpeechLines& lines);
+
 /** @brief Writes the first letters of @p lines, as many as @p writing says,
  * one line every SPEECH_LINE_HEIGHT pixels; a keycap shows once reached. */
 void paintSpeech(IInterfaceCanvas& canvas, const SpeechLines& lines,

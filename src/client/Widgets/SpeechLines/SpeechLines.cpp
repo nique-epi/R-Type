@@ -177,6 +177,18 @@ std::size_t speechLetterCountOf(const SpeechLines& lines) {
   return letters;
 }
 
+std::vector<std::size_t> speechWordStartsOf(const SpeechLines& lines) {
+  std::vector<std::size_t> starts;
+  std::size_t letters = 0;
+  for (const std::vector<SpeechWord>& line : lines) {
+    for (const SpeechWord& word : line) {
+      starts.push_back(letters);
+      letters += lettersOf(word);
+    }
+  }
+  return starts;
+}
+
 void paintSpeech(IInterfaceCanvas& canvas, const SpeechLines& lines,
                  SpeechWriting writing) {
   std::size_t left = writing.letters;
