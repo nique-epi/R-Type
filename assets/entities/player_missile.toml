@@ -27,14 +27,7 @@ top_speed = 960
 heading = 1
 
 [gameplay.mask]
-rows = [
-  "................",
-  "....##########..",
-  ".##############.",
-  ".##############.",
-  "....##########..",
-  "................",
-]
+file = "masks/player_missile.txt"
 
 [appearance]
 sheet = "sprites/entities.png"

@@ -35,17 +35,7 @@ count = 4
 shard = "tyrant_spore_shard"
 
 [gameplay.mask]
-rows = [
-  "...###...",
-  ".#######.",
-  ".#######.",
-  "#########",
-  "#########",
-  "#########",
-  ".#######.",
-  ".#######.",
-  "...###...",
-]
+file = "masks/tyrant_spore.txt"
 
 [appearance]
 sheet = "sprites/mobs/bydo_tyrant.png"

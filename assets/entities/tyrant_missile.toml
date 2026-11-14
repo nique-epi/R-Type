@@ -25,16 +25,7 @@ kind = "steady"
 top_speed = 420
 
 [gameplay.mask]
-rows = [
-  "..####..",
-  ".######.",
-  "########",
-  "########",
-  "########",
-  "########",
-  ".######.",
-  "..####..",
-]
+file = "masks/tyrant_missile.txt"
 
 [appearance]
 sheet = "sprites/entities.png"

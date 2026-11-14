@@ -91,11 +91,21 @@ constexpr std::string_view BOX_KEY = "box";
 constexpr std::array HITBOX_TABLE_KEYS{WIDTH_KEY, HEIGHT_KEY, OFFSET_X_KEY,
                                        OFFSET_Y_KEY, BOX_KEY};
 
-/** @brief The keys of `[gameplay.mask]`: its rows, from the top, and how many
- * pixels of outline the tool that wrote them peeled off, 0 without it. */
-constexpr std::string_view ROWS_KEY = "rows";
+/** @brief The keys of `[gameplay.mask]`: the file that draws the mask, and how
+ * many pixels of outline the tool that wrote it peeled off, 0 without it. */
+constexpr std::string_view FILE_KEY = "file";
 constexpr std::string_view EROSION_KEY = "erosion";
-constexpr std::array MASK_KEYS{ROWS_KEY, EROSION_KEY};
+constexpr std::array MASK_KEYS{FILE_KEY, EROSION_KEY};
+
+/** @brief Where the mask of a sheet is: the file MASK_FOLDER_OF_SHEETS/<the
+ * name of the sheet>MASK_FILE_EXTENSION, next to the sheet, which names it
+ * under FILE_KEY. One line of the file is one row of pixels, from the top. */
+constexpr std::string_view MASK_FOLDER_OF_SHEETS = "masks";
+constexpr std::string_view MASK_FILE_EXTENSION = ".txt";
+
+/** @brief The line and the column an error about a mask file counts from. */
+constexpr std::size_t FIRST_LINE_OF_A_MASK = 1;
+constexpr std::size_t FIRST_COLUMN_OF_A_MASK = 1;
 
 /** @brief How a row of a mask writes a pixel: drawn, where the entity is
  * touched, or clear. */
@@ -302,6 +312,8 @@ constexpr std::string_view HITBOX_BOXES_RULE =
     "a hitbox that lists its boxes holds at least one";
 constexpr std::string_view HITBOX_PARTS_SIDE_RULE =
     "only a body of side enemy collides with several boxes";
+constexpr std::string_view MASK_FILE_RULE =
+    "a mask is the file masks/<the name of the sheet>.txt next to the sheet";
 constexpr std::string_view MASK_SIDE_RULE =
     "a mask holds 1 to 256 rows of 1 to 256 pixels";
 constexpr std::string_view MASK_ROW_WIDTH_RULE =

@@ -1,14 +1,21 @@
-"""Writes the [gameplay.mask] table of every entity sheet from its sprite.
+"""Writes the collision mask of every entity sheet from its sprite.
 
 Usage: python3 write_masks.py <content folder>
 
 The content folder is the assets folder or a resource: the one that holds
-entities/ and the sprite sheets those sheets name. A pixel of a mask is drawn
-when it is drawn (alpha above 0) in at least one frame of [appearance.idle] or
-[appearance.enraged_idle], kept after peeling `erosion` pixels of outline (the
-erosion the sheet already gives, 0 without one), and inside [gameplay.hitbox].
-The test EntityAppearances.EveryShippedMaskIsWhatItsSpriteDraws checks the
-same rule on the assets. Needs Pillow: pip install pillow.
+entities/ and the sprite sheets those sheets name. For each sheet, the mask is
+written to entities/masks/<name of the sheet>.txt, one line of # (drawn) and .
+(clear) per row of pixels, and the sheet names it in its [gameplay.mask] table.
+A pixel of a mask is drawn when it is drawn (alpha above 0) in at least one
+frame of [appearance.idle] or [appearance.enraged_idle], kept after peeling
+`erosion` pixels of outline (the erosion the sheet already gives, 0 without
+one), and inside [gameplay.hitbox].
+
+A look item, which only makes a pilot's ship look different, takes no mask: it
+keeps its hitbox, and the tool removes any mask it had. A mask file whose sheet
+takes no mask is removed. The test
+EntityAppearances.EveryShippedMaskIsWhatItsSpriteDraws checks the same rule on
+the assets. Needs Pillow: pip install pillow.
 """
 import pathlib
 import re
@@ -21,6 +28,9 @@ PIXEL_UNITS = 4
 NEIGHBOURS = ((1, 0), (-1, 0), (0, 1), (0, -1))
 MASK_BLOCK = re.compile(r"^\[gameplay\.mask\]\n(?:(?!\[).*\n)*", re.MULTILINE)
 APPEARANCE_HEADER = "\n[appearance]\n"
+MASK_FOLDER = "masks"
+MASK_EXTENSION = ".txt"
+LOOK_ITEM_SIDE = "look_item"
 
 
 def frames_of(animation):
@@ -64,47 +74,67 @@ def hitbox_pixels(hitbox, width, height):
     return edges
 
 
-def mask_block(sheet, root):
+def mask_rows(sheet, root, erosion):
     gameplay, appearance = sheet["gameplay"], sheet["appearance"]
     if "box" in gameplay["hitbox"]:
         raise SystemExit("a sheet with several hitbox boxes takes no mask")
-    erosion = gameplay.get("mask", {}).get("erosion", 0)
     image = Image.open(root / appearance["sheet"]).convert("RGBA")
     mask = peeled(drawn_union(image, appearance), erosion)
     (left, right), (top, bottom) = hitbox_pixels(
         gameplay["hitbox"], len(mask[0]), len(mask))
-    rows = ["".join("#" if mask[y][x] and left <= x < right
+    return ["".join("#" if mask[y][x] and left <= x < right
                     and top <= y < bottom else "."
                     for x in range(len(mask[0])))
             for y in range(len(mask))]
-    lines = ["[gameplay.mask]"]
+
+
+def mask_block(name, erosion):
+    lines = ["[gameplay.mask]",
+             f'file = "{MASK_FOLDER}/{name}{MASK_EXTENSION}"']
     lines += [f"erosion = {erosion}"] if erosion else []
-    lines += ["rows = ["] + [f'  "{row}",' for row in rows] + ["]", ""]
-    return "\n".join(lines)
+    return "\n".join(lines + [""])
+
+
+def with_block(text, block):
+    if MASK_BLOCK.search(text):
+        return MASK_BLOCK.sub(lambda _: block + ("\n" if block else ""),
+                              text, count=1)
+    if not block:
+        return text
+    if text.count(APPEARANCE_HEADER) != 1:
+        raise SystemExit("no single [appearance] header")
+    return text.replace(APPEARANCE_HEADER, "\n" + block + APPEARANCE_HEADER, 1)
 
 
 def rewrite(path, root):
+    """Writes the mask of the sheet at path; returns its file, or None."""
     text = path.read_text(encoding="utf-8")
+    sheet = tomllib.loads(text)
     try:
-        block = mask_block(tomllib.loads(text), root)
+        if sheet["gameplay"].get("side") == LOOK_ITEM_SIDE:
+            path.write_text(with_block(text, ""), encoding="utf-8")
+            return None
+        erosion = sheet["gameplay"].get("mask", {}).get("erosion", 0)
+        rows = mask_rows(sheet, root, erosion)
+        text = with_block(text, mask_block(path.stem, erosion))
     except SystemExit as stop:
         raise SystemExit(f"{path.name}: {stop}") from None
-    if MASK_BLOCK.search(text):
-        text = MASK_BLOCK.sub(lambda _: block + "\n", text, count=1)
-    elif text.count(APPEARANCE_HEADER) == 1:
-        text = text.replace(APPEARANCE_HEADER,
-                            "\n" + block + APPEARANCE_HEADER, 1)
-    else:
-        raise SystemExit(f"{path.name}: no single [appearance] header")
+    mask_file = path.parent / MASK_FOLDER / (path.stem + MASK_EXTENSION)
+    mask_file.parent.mkdir(exist_ok=True)
+    mask_file.write_text("\n".join(rows) + "\n", encoding="utf-8")
     path.write_text(text, encoding="utf-8")
+    return mask_file
 
 
 def main():
     if len(sys.argv) != 2:
         raise SystemExit("usage: python3 write_masks.py <content folder>")
-    root = pathlib.Path(sys.argv[1])
-    for path in sorted((root / "entities").glob("*.toml")):
-        rewrite(path, root)
+    sheets = pathlib.Path(sys.argv[1]) / "entities"
+    written = {rewrite(path, sheets.parent)
+               for path in sorted(sheets.glob("*.toml"))}
+    for mask_file in (sheets / MASK_FOLDER).glob("*" + MASK_EXTENSION):
+        if mask_file not in written:
+            mask_file.unlink()
 
 
 if __name__ == "__main__":

@@ -15,6 +15,7 @@
 #include "CollisionConstants.hpp"
 #include "ContentName.hpp"
 #include "ContentNameConstants.hpp"
+#include "DataFilePlace.hpp"
 #include "DataFileReading.hpp"
 #include "DataFileTable.hpp"
 #include "DataFileText.hpp"
@@ -25,6 +26,7 @@
 #include "MaskSheet.hpp"
 #include "PathText.hpp"
 #include "PixelMask.hpp"
+#include "SheetMaskText.hpp"
 #include "SheetText.hpp"
 #include "WholeNumberRange.hpp"
 
@@ -87,13 +89,28 @@ CollisionBox enclosingBoxOf(std::span<const CollisionBox> parts) {
                       .offsetY = (top + bottom) * engine::HALF};
 }
 
-/** @brief Reads the sheets @p files, adding them to @p texts. */
+/** @returns The mask file next to the sheet @p file, when there is one.
+ * @throws engine::UnreadableDataFileException when it cannot be read. */
+std::optional<SheetMaskText> maskTextNextTo(const std::filesystem::path& file) {
+  const std::filesystem::path mask =
+      file.parent_path() / maskPathOf(logging::genericText(file.stem()));
+  std::error_code error;
+  if (!std::filesystem::is_regular_file(mask, error)) {
+    return std::nullopt;
+  }
+  return SheetMaskText{.source = engine::shownPath(mask),
+                       .text = engine::dataFileContent(mask)};
+}
+
+/** @brief Reads the sheets @p files, with their mask files, adding them to
+ * @p texts. */
 void addSheetTexts(std::span<const std::filesystem::path> files,
                    std::vector<SheetText>& texts) {
   for (const std::filesystem::path& file : files) {
     texts.push_back(SheetText{.name = logging::genericText(file.stem()),
                               .source = engine::shownPath(file),
-                              .text = engine::dataFileContent(file)});
+                              .text = engine::dataFileContent(file),
+                              .mask = maskTextNextTo(file)});
   }
 }
 
@@ -114,19 +131,18 @@ std::filesystem::path sheetFolderOf(
   return contentFolder / ENTITY_SHEET_FOLDER_IN_ASSETS;
 }
 
-/** @throws InconsistentEntitySheetException, at the rows of @p mask, when
- * @p rows hold no row, a first row of no pixel, or more rows or pixels than a
- * mask may hold. */
+/** @throws InconsistentEntitySheetException, at @p file, the first line of
+ * the mask file, when @p rows hold no row, a first row of no pixel, or more
+ * rows or pixels than a mask may hold. */
 void checkMaskSides(const std::vector<engine::DataFileText>& rows,
-                    const engine::DataFileTable& mask) {
+                    const engine::DataFilePlace& file) {
   const bool fits =
       !rows.empty() &&
       std::cmp_less_equal(rows.size(), engine::MAXIMUM_MASK_SIDE) &&
       !rows.front().text.empty() &&
       std::cmp_less_equal(rows.front().text.size(), engine::MAXIMUM_MASK_SIDE);
   if (!fits) {
-    throw InconsistentEntitySheetException(engine::placeOfKey(mask, ROWS_KEY),
-                                           MASK_SIDE_RULE);
+    throw InconsistentEntitySheetException(file, MASK_SIDE_RULE);
   }
 }
 
@@ -142,12 +158,13 @@ void checkMaskRow(const engine::DataFileText& row,
   }
 }
 
-/** @throws InconsistentEntitySheetException when @p rows, the rows of
- * @p mask, do not draw a mask: checkMaskSides(), checkMaskRow() for each row,
- * then at least one drawn pixel. */
+/** @throws InconsistentEntitySheetException when @p rows, the rows of the
+ * mask file whose first line is @p file, do not draw a mask:
+ * checkMaskSides(), checkMaskRow() for each row, then at least one drawn
+ * pixel. */
 void checkMaskRows(const std::vector<engine::DataFileText>& rows,
-                   const engine::DataFileTable& mask) {
-  checkMaskSides(rows, mask);
+                   const engine::DataFilePlace& file) {
+  checkMaskSides(rows, file);
   for (const engine::DataFileText& row : rows) {
     checkMaskRow(row, rows.front());
   }
@@ -156,9 +173,52 @@ void checkMaskRows(const std::vector<engine::DataFileText>& rows,
         return std::ranges::find(row.text, DRAWN_MASK_PIXEL) != row.text.end();
       });
   if (drawsNothing) {
-    throw InconsistentEntitySheetException(engine::placeOfKey(mask, ROWS_KEY),
-                                           MASK_DRAWN_RULE);
+    throw InconsistentEntitySheetException(file, MASK_DRAWN_RULE);
   }
+}
+
+/** @returns The rows of @p mask, one per line, each placed at its line of the
+ * file under @p key for an error about it; a carriage return ending a line is
+ * no part of its row. */
+std::vector<engine::DataFileText> rowsOf(const SheetMaskText& mask,
+                                         const std::string& key) {
+  std::vector<engine::DataFileText> rows;
+  std::size_t start = 0;
+  while (start < mask.text.size()) {
+    const std::size_t end =
+        std::min(mask.text.find('\n', start), mask.text.size());
+    std::string row = mask.text.substr(start, end - start);
+    if (!row.empty() && row.back() == '\r') {
+      row.pop_back();
+    }
+    rows.push_back(engine::DataFileText{
+        .text = std::move(row),
+        .place =
+            engine::DataFilePlace{.file = mask.source,
+                                  .line = FIRST_LINE_OF_A_MASK + rows.size(),
+                                  .column = FIRST_COLUMN_OF_A_MASK,
+                                  .key = key}});
+    start = end + 1;
+  }
+  return rows;
+}
+
+/**
+ * @returns The mask file of @p sheet, which @p mask names under FILE_KEY.
+ * @throws InconsistentEntitySheetException, at FILE_KEY, when it names
+ * another file than maskPathOf() the sheet, or the sheet has no mask file.
+ */
+const SheetMaskText& namedMaskOf(const engine::DataFileTable& mask,
+                                 const SheetText& sheet) {
+  if (engine::textAt(mask, FILE_KEY) != maskPathOf(sheet.name)) {
+    throw InconsistentEntitySheetException(engine::placeOfKey(mask, FILE_KEY),
+                                           MASK_FILE_RULE);
+  }
+  if (!sheet.mask.has_value()) {
+    throw InconsistentEntitySheetException(engine::placeOfKey(mask, FILE_KEY),
+                                           MASK_FILE_RULE);
+  }
+  return *sheet.mask;
 }
 
 /** @returns The mask @p rows draw, rows checkMaskRows() accepted. */
@@ -260,16 +320,26 @@ CollisionBox hitboxOf(const engine::DataFileTable& gameplay) {
   return boxAt(engine::tableAt(gameplay, HITBOX_KEY));
 }
 
-std::optional<MaskSheet> maskOf(const engine::DataFileTable& gameplay) {
+std::string maskPathOf(std::string_view sheetName) {
+  return std::string{MASK_FOLDER_OF_SHEETS} + ASSET_PATH_SEPARATOR +
+         std::string{sheetName} + std::string{MASK_FILE_EXTENSION};
+}
+
+std::optional<MaskSheet> maskOf(const engine::DataFileTable& gameplay,
+                                const SheetText& sheet) {
   const std::optional<engine::DataFileTable> mask =
       engine::optionalTableAt(gameplay, MASK_KEY);
   if (!mask.has_value()) {
     return std::nullopt;
   }
   engine::refuseUnknownKeys(*mask, MASK_KEYS);
-  const std::vector<engine::DataFileText> rows =
-      engine::textsAt(*mask, ROWS_KEY);
-  checkMaskRows(rows, *mask);
+  const SheetMaskText& file = namedMaskOf(*mask, sheet);
+  const std::string key = engine::placeOfKey(*mask, FILE_KEY).key;
+  const std::vector<engine::DataFileText> rows = rowsOf(file, key);
+  checkMaskRows(rows, engine::DataFilePlace{.file = file.source,
+                                            .line = FIRST_LINE_OF_A_MASK,
+                                            .column = FIRST_COLUMN_OF_A_MASK,
+                                            .key = key});
   return MaskSheet{
       .pixels = std::make_shared<const engine::PixelMask>(pixelsOf(rows)),
       .erosion = static_cast<int>(
