@@ -10,6 +10,7 @@
 #include "FlightLogColorConstants.hpp"
 #include "FlightLogLayoutConstants.hpp"
 #include "FlightLogLook.hpp"
+#include "FlightLogPages.hpp"
 #include "FlightLogSheetConstants.hpp"
 #include "FlightLogTextConstants.hpp"
 #include "FlightLogTimeline.hpp"
@@ -25,6 +26,7 @@
 #include "PilotColor.hpp"
 #include "PilotName.hpp"
 #include "PlayerShading.hpp"
+#include "RankingLayout.hpp"
 #include "ShadeSwap.hpp"
 #include "TextStyle.hpp"
 #include "TextureArea.hpp"
@@ -40,6 +42,7 @@ namespace {
  * whether things may move, where its dotted leader starts, and the shades its
  * marker swaps for those of the palette. */
 struct RowPlace {
+  RankingLayout layout;
   sf::Vector2i topLeft;
   engine::Duration intoRow{};
   MotionPreference motion{};
@@ -58,7 +61,8 @@ int leaderLeftOf(const IInterfaceCanvas& canvas, const FinalPilot& pilot) {
   if (!pilot.isLocalPlayer) {
     return LEADER_LEFT;
   }
-  return YOU_TAG_OFFSET.x + youTagWidthOf(canvas) + LEADER_AFTER_TAG;
+  return rankingLayoutOf(canvas.textMetrics()).youTagOffset.x +
+         youTagWidthOf(canvas) + LEADER_AFTER_TAG;
 }
 
 void paintHeading(IInterfaceCanvas& canvas, engine::Duration sinceOpen,
@@ -73,16 +77,18 @@ void paintHeading(IInterfaceCanvas& canvas, engine::Duration sinceOpen,
       RANKING_DELAY + typingTimeOf(RANKING_LETTER_TIME, RANKING_TEXT.size());
   const float drawn =
       easeOutCubic(progressBetween(sinceOpen, ruleStart, RULE_DRAW_TIME));
-  canvas.fill(sf::IntRect(page + RANKING_RULE_TOP_LEFT,
-                          {pixelsOf(RANKING_LINE_WIDTH, drawn), 1}),
+  const RankingLayout layout = rankingLayoutOf(canvas.textMetrics());
+  canvas.fill(sf::IntRect(page + layout.ruleTopLeft,
+                          {pixelsOf(layout.lineWidth, drawn), 1}),
               PAPER_LABEL_COLOR);
 }
 
-/** @brief YOU on ink, in the row whose top-left corner is @p rowTopLeft. */
-void paintYouTag(IInterfaceCanvas& canvas, sf::Vector2i rowTopLeft) {
-  paintInkTag(canvas, InkTag{.word = LOCAL_PLAYER_TAG,
-                             .topLeft = rowTopLeft + YOU_TAG_OFFSET,
-                             .wordColor = YOU_TAG_TEXT_COLOR});
+/** @brief YOU on ink, in the row of @p place. */
+void paintYouTag(IInterfaceCanvas& canvas, const RowPlace& place) {
+  paintInkTag(canvas,
+              InkTag{.word = LOCAL_PLAYER_TAG,
+                     .topLeft = place.topLeft + place.layout.youTagOffset,
+                     .wordColor = YOU_TAG_TEXT_COLOR});
 }
 
 /** @brief The rank, slamming in at one scale more for DIGIT_SLAM_TIME, the
@@ -108,11 +114,11 @@ void paintRowName(IInterfaceCanvas& canvas, const FinalPilot& pilot,
           .assetId = HUD_SHEET_ID,
           .rectangle = rectangleOf(MARKER_FRAMES.at(static_cast<std::size_t>(
               pilotColorOfPlayerNumber(pilot.playerNumber))))},
-      ImagePlacement{.topLeft = place.topLeft + PILOT_MARKER_OFFSET,
+      ImagePlacement{.topLeft = place.topLeft + place.layout.markerOffset,
                      .recolor = place.markerRecolor},
       INTERFACE_AREA);
   if (pilot.isLocalPlayer) {
-    paintYouTag(canvas, place.topLeft);
+    paintYouTag(canvas, place);
   }
 }
 
@@ -122,25 +128,27 @@ void paintRowScore(IInterfaceCanvas& canvas, const FinalPilot& pilot,
                    const RowPlace& place) {
   const float leader =
       progressBetween(place.intoRow, LEADER_DELAY, LEADER_TIME);
-  const int leaderWidth = pixelsOf(LEADER_RIGHT - place.leaderLeft, leader);
+  const RankingLayout& layout = place.layout;
+  const int leaderWidth =
+      pixelsOf(layout.leaderRight - place.leaderLeft, leader);
   if (leaderWidth > 0) {
-    Outline(
-        sf::IntRect(place.topLeft + sf::Vector2i(place.leaderLeft, LEADER_ROW),
-                    {leaderWidth, 1}),
-        Outline::Line::Dashed)
+    Outline(sf::IntRect(place.topLeft +
+                            sf::Vector2i(place.leaderLeft, layout.leaderRow),
+                        {leaderWidth, 1}),
+            Outline::Line::Dashed)
         .paint(canvas, PAPER_FAINT_COLOR);
   }
   if (place.intoRow >= LEADER_DELAY) {
     const float counted = easeOutCubic(
         progressBetween(place.intoRow, LEADER_DELAY, ROW_COUNT_TIME));
     paintPaddedScore(canvas, {.value = countedScore(pilot.score, counted),
-                              .end = place.topLeft + ROW_SCORE_END,
+                              .end = place.topLeft + layout.scoreEnd,
                               .digitColor = PAPER_INK,
                               .zeroColor = PAPER_FAINT_COLOR});
   }
-  Outline(sf::IntRect(place.topLeft + sf::Vector2i(RANKING_RULE_TOP_LEFT.x,
-                                                   ROW_SEPARATOR_ROW),
-                      {RANKING_LINE_WIDTH, 1}),
+  Outline(sf::IntRect(place.topLeft + sf::Vector2i(layout.ruleTopLeft.x,
+                                                   layout.separatorRow),
+                      {layout.lineWidth, 1}),
           Outline::Line::Dashed)
       .paint(canvas, PAPER_FAINT_COLOR);
 }
@@ -153,11 +161,12 @@ void paintMedal(IInterfaceCanvas& canvas, const RowPlace& place) {
           ? 1.0F
           : easeOutBack(progressBetween(place.intoRow, ROW_TIME, MEDAL_TIME));
   const int drop = pixelsOf(MEDAL_DROP, 1.0F - landed);
-  canvas.drawImage(TextureArea{.assetId = FLIGHT_LOG_SHEET_ID,
-                               .rectangle = rectangleOf(MEDAL_FRAME)},
-                   ImagePlacement{.topLeft = place.topLeft + MEDAL_OFFSET -
-                                             sf::Vector2i(0, drop)},
-                   INTERFACE_AREA);
+  canvas.drawImage(
+      TextureArea{.assetId = FLIGHT_LOG_SHEET_ID,
+                  .rectangle = rectangleOf(MEDAL_FRAME)},
+      ImagePlacement{.topLeft = place.topLeft + place.layout.medalOffset -
+                                sf::Vector2i(0, drop)},
+      INTERFACE_AREA);
 }
 
 /** @brief Writes a row: its name, its score, and the medal of a first pilot
@@ -181,13 +190,16 @@ std::size_t rowsStartedOf(const FlightLogLook& look) {
   return rows;
 }
 
-/** @returns Where the row @p row of @p page is written, and how long ago it
- * started; its leader starts at LEADER_LEFT. */
-RowPlace rowPlaceOf(const FlightLogLook& look, sf::Vector2i page,
+/** @returns Where the row @p row of the page of @p layout, whose top-left
+ * corner is @p page, is written, and how long ago it started; its leader
+ * starts at LEADER_LEFT. */
+RowPlace rowPlaceOf(const FlightLogLook& look, const RowPlace& page,
                     std::size_t row) {
   return RowPlace{
-      .topLeft = page + sf::Vector2i(0, FIRST_ROW_TOP + (static_cast<int>(row) *
-                                                         RANKING_ROW_PITCH)),
+      .layout = page.layout,
+      .topLeft = page.topLeft + sf::Vector2i(0, page.layout.firstRowTop +
+                                                    (static_cast<int>(row) *
+                                                     page.layout.rowPitch)),
       .intoRow = look.sinceStart - rowStartOf(look.schedule, row),
       .motion = look.motion};
 }
@@ -198,9 +210,11 @@ void paintRankingPage(IInterfaceCanvas& canvas, const FlightLogLook& look,
                       sf::Vector2i page) {
   paintHeading(canvas, look.sinceStart - look.schedule.opened, page);
   const std::size_t rows = rowsStartedOf(look);
+  const RowPlace pagePlace{.layout = rankingLayoutOf(canvas.textMetrics()),
+                           .topLeft = page};
   for (std::size_t row = 0; row < rows; ++row) {
     const FinalPilot& pilot = look.pilots[row];
-    RowPlace place = rowPlaceOf(look, page, row);
+    RowPlace place = rowPlaceOf(look, pagePlace, row);
     place.leaderLeft = leaderLeftOf(canvas, pilot);
     place.markerRecolor =
         shadingOf(look.palette,

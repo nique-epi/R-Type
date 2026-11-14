@@ -12,6 +12,7 @@ target_link_libraries(rtype_client_flight_log_interfaces
 )
 
 add_subdirectory(FlightLogTimeline)
+add_subdirectory(FlightLogPages)
 add_subdirectory(Taunts)
 add_subdirectory(BookMotion)
 add_subdirectory(BookPainting)

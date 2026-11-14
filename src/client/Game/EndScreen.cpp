@@ -93,7 +93,7 @@ EndScreen::EndScreen(EndScreenParts parts,
       outcome_(parts.result.get().outcome),
       kopecksGained_(parts.result.get().kopecksGained) {
   taunt_ = tauntLinesOf(coverTauntOf(parts, pilots_), pilots_);
-  schedule_ = flightLogScheduleOf(pilots_, taunt_);
+  schedule_ = flightLogScheduleOf(pilots_, taunt_, canvas_->textMetrics());
   if (motion_ == MotionPreference::Reduced) {
     sinceStart_ = schedule_.ready;
   }
@@ -117,10 +117,12 @@ void EndScreen::handleEvent(const sf::Event& event) {
 
 void EndScreen::handlePointer(const sf::Event& event) {
   if (const auto* moved = event.getIf<sf::Event::MouseMoved>()) {
-    hovered_ = choiceAt(interfacePixelAt(playfieldPointAt_(moved->position)));
+    hovered_ = choiceAt(interfacePixelAt(playfieldPointAt_(moved->position)),
+                        canvas_->textMetrics());
   } else if (const auto* clicked = event.getIf<sf::Event::MouseButtonPressed>();
              clicked != nullptr && clicked->button == sf::Mouse::Button::Left) {
-    respond(choiceAt(interfacePixelAt(playfieldPointAt_(clicked->position))));
+    respond(choiceAt(interfacePixelAt(playfieldPointAt_(clicked->position)),
+                     canvas_->textMetrics()));
   }
 }
 

@@ -107,6 +107,21 @@ constexpr int MEDAL_DROP = 8;
 /** @brief The rank whose rows get the medal: every pilot tied first. */
 constexpr int MEDAL_RANK = 1;
 
+/**
+ * @brief Above the size the fonts are drawn at, the open book shows one wide
+ * page over both of its pages: the mission log, then the ranking. The gap
+ * under a line before the line that belongs with it, and between two parts;
+ * the space left under a row of the ranking; the space between the dotted
+ * leader and the score; and how far down its line of 8 rows the leader runs,
+ * as the row was drawn.
+ */
+constexpr int WIDE_PAGE_WIDTH = SIDES_PER_AXIS * (PAGE_SIZE.x + PAGE_INSET.x);
+constexpr int WIDE_PAGE_LINE_GAP = 2;
+constexpr int WIDE_PAGE_PART_GAP = 6;
+constexpr int WIDE_RANKING_ROW_GAP = 3;
+constexpr int LEADER_SCORE_GAP = 4;
+constexpr int LEADER_ROW_IN_LINE = LEADER_ROW - ROW_SCORE_END.y;
+
 /** @brief The ribbon hanging under the open book, from its hinge and top:
  * a strip, its shaded column, its forked end and the notch between the two
  * tails of the fork. */
@@ -156,6 +171,19 @@ constexpr sf::IntRect QUIT_BUTTON({OPEN_HINGE + BOOK_HALF_SIZE.x - QUIT_SIZE.x,
                                   QUIT_SIZE);
 constexpr sf::Vector2i QUIT_CROSS_OFFSET(5, 3);
 constexpr sf::Vector2i QUIT_LABEL_OFFSET(16, 3);
+/** @brief The space QUIT leaves after its label, as the button was drawn;
+ * and, above the size the fonts are drawn at, the rows between the bottom
+ * of QUIT and the call to play again. */
+constexpr int QUIT_SPACE_AFTER_LABEL =
+    QUIT_SIZE.x - QUIT_LABEL_OFFSET.x -
+    (static_cast<int>(QUIT_TEXT.size()) * REGULAR_FONT_ADVANCE);
+constexpr int PROMPT_SPACE_UNDER_QUIT = 2;
+
+/** @brief Above the size the fonts are drawn at, the taunt is written in
+ * small print on a paper label as tall as its lines need, LABEL_TEXT_MARGIN
+ * inside its edges, the lines LABEL_LINE_GAP apart. */
+constexpr int LABEL_TEXT_MARGIN = 6;
+constexpr int LABEL_LINE_GAP = 2;
 
 /** @brief What the game earned the player, written with the choices: under
  * the bottom-left corner of the open book, on the row of the label of QUIT. */

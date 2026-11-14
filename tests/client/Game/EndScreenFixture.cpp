@@ -10,6 +10,7 @@
 #include "EndScreenTestConstants.hpp"
 #include "FinalPilot.hpp"
 #include "FlashPreference.hpp"
+#include "GameEnded.hpp"
 #include "InterfaceColorConstants.hpp"
 #include "MotionPreference.hpp"
 #include "PointerEvents.hpp"
@@ -18,6 +19,7 @@
 #include "RecordingServerConnection.hpp"
 #include "RecordingSoundPlayer.hpp"
 #include "ScreenInputs.hpp"
+#include "TextMetrics.hpp"
 #include "TimeConstants.hpp"
 
 using rtype::client::EndScreen;
@@ -44,7 +46,8 @@ EndScreenFixture::EndScreenFixture()
 EndScreenVictoryFixture::EndScreenVictoryFixture()
     : EndScreenFixture(rtype::network::WireGameOutcome::Victory) {}
 
-EndScreenFixture::EndScreenFixture(rtype::network::WireGameOutcome outcome)
+EndScreenFixture::EndScreenFixture(rtype::network::WireGameOutcome outcome,
+                                   rtype::client::TextMetrics metrics)
     : result_{.pilots = {FinalPilot{.playerNumber = STARDUST_NUMBER,
                                     .nickname = std::string{STARDUST_NICKNAME},
                                     .score = STARDUST_SCORE,
@@ -61,6 +64,7 @@ EndScreenFixture::EndScreenFixture(rtype::network::WireGameOutcome outcome)
                                     .isLocalPlayer = false,
                                     .rank = NOVA_RANK}},
               .outcome = outcome} {
+  canvas_.metrics = metrics;
   rebuildWith(MotionPreference::Full);
 }
 

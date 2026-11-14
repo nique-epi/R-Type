@@ -9,8 +9,11 @@ target_link_libraries(rtype_client_taunt_label
     rtype_client_easing
     rtype_client_entity_sprites
     rtype_client_flight_log_timeline
+    rtype_client_outline
+    rtype_client_text_measures
     rtype_client_typing
     rtype_client_widget_text
+    rtype_client_wrapped_lines
 )
 
 rtype_enable_warnings(rtype_client_taunt_label)
