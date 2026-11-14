@@ -118,6 +118,10 @@ constexpr TextStyle DESTINATION_DESCRIPTION_STYLE{
 /** @brief The chip that opens the card in the middle, beside BACK. */
 constexpr const char* GO_LABEL = "GO";
 
+/** @brief The top of the row of GO and BACK: lower than the safe margin
+ * would put it, so the chips stand clear of the description above them. */
+constexpr int DESTINATION_CHIPS_TOP = 240;
+
 /** @brief The cards, from the left as the screen opens: SERVER in the
  * middle. SERVER leads where PLAY led, so it is built with the start of the
  * client (see serverCardOf()). */

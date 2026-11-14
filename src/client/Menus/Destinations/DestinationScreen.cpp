@@ -11,6 +11,7 @@
 #include <optional>
 #include <utility>
 #include "BarState.hpp"
+#include "Button.hpp"
 #include "CutCornerBox.hpp"
 #include "DestinationCard.hpp"
 #include "DestinationScreenConstants.hpp"
@@ -52,15 +53,23 @@ DestinationCard serverCardOf(PlayStart playStart) {
                                        : SERVER_MAP_SCREEN};
 }
 
+/** @returns Where a chip with @p text lies: as MenuBuilder lays it, ending
+ * at @p right, on the row of the chips of the destination screen. */
+sf::IntRect chipAreaEndingAt(const Button::Text& text,
+                             std::optional<int> right) {
+  sf::IntRect area = MenuBuilder::chipArea(text, right);
+  area.position.y = DESTINATION_CHIPS_TOP;
+  return area;
+}
+
 sf::IntRect goChipArea() {
-  return MenuBuilder::chipArea(
-      {.label = GO_LABEL, .keyName = CONFIRM_KEY_NAME});
+  return chipAreaEndingAt({.label = GO_LABEL, .keyName = CONFIRM_KEY_NAME},
+                          std::nullopt);
 }
 
 sf::IntRect backChipArea() {
-  return MenuBuilder::chipArea(
-      {.label = BACK_LABEL, .keyName = CANCEL_KEY_NAME},
-      goChipArea().position.x - BUTTON_GAP);
+  return chipAreaEndingAt({.label = BACK_LABEL, .keyName = CANCEL_KEY_NAME},
+                          goChipArea().position.x - BUTTON_GAP);
 }
 
 /** @returns The index in the cards of the card standing in @p slot while
