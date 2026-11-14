@@ -1,15 +1,15 @@
 #pragma once
 
 #include <string>
-#include "HelpWordLook.hpp"
+#include "SpeechWordLook.hpp"
 
 namespace rtype::client {
 
-/** @brief A word of the bubble, its key already named: its text, how it is
+/** @brief A word of a speech bubble, its key already named: its text, how it is
  * written, and the punctuation written plain right after it. */
-struct HelpWord {
+struct SpeechWord {
   std::string text;
-  HelpWordLook look{};
+  SpeechWordLook look{};
   std::string suffix;
 };
 
