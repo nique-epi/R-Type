@@ -33,14 +33,35 @@ constexpr const char* CLICK_SOUND_ID = "sounds/kenney/click.ogg";
 constexpr const char* BOSS_ALARM_SOUND_ID = "sounds/boss_alarm.mp3";
 constexpr const char* ROBOT_ARM_SOUND_ID = "sounds/robot_arm.flac";
 
+/** @brief The voice of the Bydo of the shop, two grunts of a throat played
+ * in turn as each word of what he says starts (see assets/README.md). */
+constexpr const char* BYDO_VOICE_FIRST_SOUND_ID =
+    "sounds/epidemic/bydo_voice_1.mp3";
+constexpr const char* BYDO_VOICE_SECOND_SOUND_ID =
+    "sounds/epidemic/bydo_voice_2.mp3";
+constexpr std::array BYDO_VOICE_SOUND_IDS{BYDO_VOICE_FIRST_SOUND_ID,
+                                          BYDO_VOICE_SECOND_SOUND_ID};
+
 /** @brief Every sound of the client, loaded at launch with the interface
  * assets. */
-constexpr std::array ALL_SOUND_IDS{
-    BYDO_GROWL_SOUND_ID,    ENEMY_SHOT_SOUND_ID,      FLYBY_SOUND_ID,
-    PLAYER_SHOT_SOUND_ID,   SMALL_EXPLOSION_SOUND_ID, HEAVY_IMPACT_SOUND_ID,
-    ENTRY_WHOOSH_SOUND_ID,  CHARGE_SOUND_ID,          BEAM_SOUND_ID,
-    BIG_EXPLOSION_SOUND_ID, BOOST_SOUND_ID,           LOGO_IMPACT_SOUND_ID,
-    HIT_SOUND_ID,           PLAYER_HIT_SOUND_ID,      CLICK_SOUND_ID,
-    BOSS_ALARM_SOUND_ID,    ROBOT_ARM_SOUND_ID};
+constexpr std::array ALL_SOUND_IDS{BYDO_GROWL_SOUND_ID,
+                                   ENEMY_SHOT_SOUND_ID,
+                                   FLYBY_SOUND_ID,
+                                   PLAYER_SHOT_SOUND_ID,
+                                   SMALL_EXPLOSION_SOUND_ID,
+                                   HEAVY_IMPACT_SOUND_ID,
+                                   ENTRY_WHOOSH_SOUND_ID,
+                                   CHARGE_SOUND_ID,
+                                   BEAM_SOUND_ID,
+                                   BIG_EXPLOSION_SOUND_ID,
+                                   BOOST_SOUND_ID,
+                                   LOGO_IMPACT_SOUND_ID,
+                                   HIT_SOUND_ID,
+                                   PLAYER_HIT_SOUND_ID,
+                                   CLICK_SOUND_ID,
+                                   BOSS_ALARM_SOUND_ID,
+                                   ROBOT_ARM_SOUND_ID,
+                                   BYDO_VOICE_FIRST_SOUND_ID,
+                                   BYDO_VOICE_SECOND_SOUND_ID};
 
 }  // namespace rtype::client
