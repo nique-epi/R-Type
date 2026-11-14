@@ -18,6 +18,7 @@ using rtype::game::testing::pilotKeeping;
 using rtype::game::testing::RecordingBehaviourState;
 using rtype::game::testing::TICKS_GONE_AFTER;
 using rtype::game::testing::TICKS_GONE_BEFORE;
+using rtype::game::testing::WHERE_A_MISSILE_GRAZES_ITS_TOP;
 using rtype::game::testing::WHERE_ITS_LOWER_BOX_IS;
 using rtype::game::testing::WHERE_THE_ENEMY_WENT;
 using rtype::game::testing::WHERE_THE_PLAYER_SAW_THE_ENEMY;
@@ -233,4 +234,47 @@ TEST_F(LagCompensatedHitSystemFixture, AHitTheTargetCancelsIsNotPublished) {
   runTick();
 
   EXPECT_TRUE(hits().empty());
+}
+
+/**
+ * Given a hollow enemy that stood at a place for one tick, then went 200 units
+ * higher for four ticks
+ * When a missile crosses the clear middle of where its player saw it, its
+ * player five ticks behind
+ * Then it hits nothing: the box overlaps, the mask laid there is clear
+ */
+TEST_F(LagCompensatedHitSystemFixture,
+       AMissileThroughTheHollowOfAnEnemyWhereThePlayerSawItMisses) {
+  const Entity enemy = hollowEnemyAt(WHERE_THE_PLAYER_SAW_THE_ENEMY);
+  runTick();
+  move(enemy, WHERE_THE_ENEMY_WENT);
+  runTicks(FIVE_TICKS_BEHIND - 1);
+  static_cast<void>(
+      missileAt(WHERE_THE_PLAYER_SAW_THE_ENEMY, FIVE_TICKS_BEHIND));
+
+  runTick();
+
+  EXPECT_TRUE(hits().empty());
+}
+
+/**
+ * Given a hollow enemy that stood at a place for one tick, then went 200 units
+ * higher for four ticks
+ * When a missile crosses the drawn top of where its player saw it, its player
+ * five ticks behind
+ * Then it hits the enemy
+ */
+TEST_F(LagCompensatedHitSystemFixture,
+       AMissileOnTheDrawnTopOfAnEnemyWhereThePlayerSawItHits) {
+  const Entity enemy = hollowEnemyAt(WHERE_THE_PLAYER_SAW_THE_ENEMY);
+  runTick();
+  move(enemy, WHERE_THE_ENEMY_WENT);
+  runTicks(FIVE_TICKS_BEHIND - 1);
+  static_cast<void>(
+      missileAt(WHERE_A_MISSILE_GRAZES_ITS_TOP, FIVE_TICKS_BEHIND));
+
+  runTick();
+
+  ASSERT_EQ(hits().size(), 1U);
+  EXPECT_EQ(hits().front().target, enemy);
 }
