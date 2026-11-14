@@ -43,24 +43,22 @@ using rtype::client::testing::SECOND_GREETING_WORD;
 TEST(ShopkeeperSpeechTest, EveryLineFitsHisBubble) {
   const int textWidth =
       SHOPKEEPER_BUBBLE_WIDTH - (SIDES_PER_AXIS * SPOKEN_BUBBLE_PADDING);
-  const std::array<std::span<const std::string_view>, 5> lists{
-      SHOPKEEPER_GREETINGS, SHOPKEEPER_BOUGHT_LINES,
-      SHOPKEEPER_TOO_EXPENSIVE_LINES, SHOPKEEPER_BOTTLES_LINES,
-      SHOPKEEPER_BORDER_RADIO_LINES};
-  const std::array<std::string_view, 4> singles{
-      SHOPKEEPER_RADIO_HINT, SHOPKEEPER_ALREADY_YOURS_LINE,
-      SHOPKEEPER_NOT_FOR_SALE_LINE, SHOPKEEPER_SHOP_MUSIC_LINE};
+  const std::array<std::span<const std::string_view>, 9> lists{
+      SHOPKEEPER_GREETINGS,
+      SHOPKEEPER_BOUGHT_LINES,
+      SHOPKEEPER_TOO_EXPENSIVE_LINES,
+      SHOPKEEPER_BOTTLES_LINES,
+      SHOPKEEPER_BORDER_RADIO_LINES,
+      std::span(&SHOPKEEPER_RADIO_HINT, 1),
+      std::span(&SHOPKEEPER_ALREADY_YOURS_LINE, 1),
+      std::span(&SHOPKEEPER_NOT_FOR_SALE_LINE, 1),
+      std::span(&SHOPKEEPER_SHOP_MUSIC_LINE, 1)};
   for (const std::span<const std::string_view> list : lists) {
     for (const std::string_view line : list) {
       EXPECT_LE(speechLinesOf(line, {}, textWidth).size(),
                 static_cast<std::size_t>(SHOPKEEPER_MAX_LINES))
           << line;
     }
-  }
-  for (const std::string_view line : singles) {
-    EXPECT_LE(speechLinesOf(line, {}, textWidth).size(),
-              static_cast<std::size_t>(SHOPKEEPER_MAX_LINES))
-        << line;
   }
 }
 

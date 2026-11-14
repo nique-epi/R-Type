@@ -2,12 +2,16 @@
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <cstddef>
+#include <optional>
 #include <string>
 #include <string_view>
+#include <utility>
+#include <vector>
 #include "CutCornerBox.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "InterfaceConstants.hpp"
 #include "MotionPreference.hpp"
+#include "SaidLine.hpp"
 #include "SpeechLines.hpp"
 #include "SpeechLinesConstants.hpp"
 #include "SpokenLineConstants.hpp"
@@ -45,6 +49,41 @@ void paintTail(IInterfaceCanvas& canvas, sf::Vector2i top) {
   }
 }
 
+/** @returns The line @p text, cut to @p width, nothing of it said yet; under
+ * less motion only its first word is voiced, since it shows whole at once. */
+SaidLine saidLineOf(std::string_view text, int width, MotionPreference motion) {
+  SpeechLines lines = speechLinesOf(text, {}, width);
+  std::vector<std::size_t> wordStarts = speechWordStartsOf(lines);
+  if (motion == MotionPreference::Reduced && wordStarts.size() > 1) {
+    wordStarts.resize(1);
+  }
+  const std::size_t letters = speechLetterCountOf(lines);
+  return {.lines = std::move(lines),
+          .letters = letters,
+          .wordStarts = std::move(wordStarts),
+          .voicedWords = 0,
+          .saidFor = {}};
+}
+
+/** @returns How many letters of @p said show now: all of them under less
+ * motion. */
+std::size_t lettersShownOf(const SaidLine& said, MotionPreference motion) {
+  if (motion == MotionPreference::Reduced) {
+    return said.letters;
+  }
+  return lettersTypedAt(said.saidFor, SPOKEN_LETTER_TIME, said.letters);
+}
+
+/** @returns How long @p said shows in all: its writing, none under less
+ * motion, then its lingering. */
+engine::Duration shownTimeOf(const SaidLine& said, MotionPreference motion) {
+  const engine::Duration writing =
+      motion == MotionPreference::Full
+          ? typingTimeOf(SPOKEN_LETTER_TIME, said.letters)
+          : engine::Duration{};
+  return writing + SPOKEN_LINGER_TIME;
+}
+
 }  // namespace
 
 SpokenLine::SpokenLine(const SpokenLineParts& parts)
@@ -55,15 +94,14 @@ SpokenLine::SpokenLine(const SpokenLineParts& parts)
       motion_(parts.motion) {}
 
 void SpokenLine::say(std::string_view text) {
-  start(text);
-  voiceWordsUpTo(motion_ == MotionPreference::Full ? lettersShown() : 1);
-  if (motion_ == MotionPreference::Reduced) {
-    voicedWords_ = wordStarts_.size();
-  }
+  next_.reset();
+  said_ = saidLineOf(text, width_ - (SIDES_PER_AXIS * SPOKEN_BUBBLE_PADDING),
+                     motion_);
+  voiceWordsShown(*said_);
 }
 
 void SpokenLine::sayNext(std::string_view text) {
-  if (lines_.has_value()) {
+  if (said_.has_value()) {
     next_ = std::string(text);
   } else {
     say(text);
@@ -71,83 +109,51 @@ void SpokenLine::sayNext(std::string_view text) {
 }
 
 void SpokenLine::advance(engine::Duration elapsed) {
-  if (!lines_.has_value()) {
+  if (!said_.has_value()) {
     return;
   }
-  saidFor_ += elapsed;
-  voiceWordsUpTo(lettersShown());
-  if (saidFor_ < shownTime()) {
+  SaidLine& said = *said_;
+  said.saidFor += elapsed;
+  voiceWordsShown(said);
+  if (said.saidFor < shownTimeOf(said, motion_)) {
     return;
   }
-  lines_.reset();
-  if (next_.has_value()) {
-    const std::string next = *next_;
-    say(next);
+  said_.reset();
+  if (std::optional<std::string> next = std::exchange(next_, std::nullopt)) {
+    say(*next);
   }
 }
 
-bool SpokenLine::isSpeaking() const { return lines_.has_value(); }
+bool SpokenLine::isSpeaking() const { return said_.has_value(); }
 
 void SpokenLine::paint(IInterfaceCanvas& canvas,
                        sf::Vector2i bottomLeft) const {
-  if (!lines_.has_value()) {
+  if (!said_.has_value()) {
     return;
   }
-  const int height = bubbleHeightOf(lines_->size());
+  const int height = bubbleHeightOf(said_->lines.size());
   const sf::IntRect bubble({bottomLeft.x, bottomLeft.y - height},
                            {width_, height});
   CutCornerBox(bubble,
                {.border = PANEL_BORDER_COLOR, .inside = PANEL_INSIDE_COLOR})
       .paint(canvas);
-  if (tail_.has_value()) {
-    paintTail(canvas, {bottomLeft.x + *tail_, bottomLeft.y});
-  }
-  paintSpeech(canvas, *lines_,
+  paintTail(canvas, {bottomLeft.x + tail_, bottomLeft.y});
+  paintSpeech(canvas, said_->lines,
               {.topLeft = bubble.position + sf::Vector2i(SPOKEN_BUBBLE_PADDING,
                                                          SPOKEN_BUBBLE_PADDING),
-               .letters = lettersShown()});
+               .letters = lettersShownOf(*said_, motion_)});
 }
 
-void SpokenLine::start(std::string_view text) {
-  lines_ = speechLinesOf(text, {},
-                         width_ - (SIDES_PER_AXIS * SPOKEN_BUBBLE_PADDING));
-  wordStarts_ = speechWordStartsOf(*lines_);
-  next_.reset();
-  voicedWords_ = 0;
-  saidFor_ = {};
-}
-
-void SpokenLine::voiceWordsUpTo(std::size_t letters) {
-  while (voicedWords_ < wordStarts_.size() &&
-         wordStarts_.at(voicedWords_) < letters) {
+void SpokenLine::voiceWordsShown(SaidLine& said) {
+  const std::size_t letters = lettersShownOf(said, motion_);
+  while (said.voicedWords < said.wordStarts.size() &&
+         said.wordStarts.at(said.voicedWords) < letters) {
     if (!voice_.empty()) {
       sounds_->play(voice_[soundsPlayed_ % voice_.size()]);
       ++soundsPlayed_;
     }
-    ++voicedWords_;
+    ++said.voicedWords;
   }
-}
-
-std::size_t SpokenLine::lettersShown() const {
-  if (!lines_.has_value()) {
-    return 0;
-  }
-  const std::size_t letters = speechLetterCountOf(*lines_);
-  if (motion_ == MotionPreference::Reduced) {
-    return letters;
-  }
-  return lettersTypedAt(saidFor_, SPOKEN_LETTER_TIME, letters);
-}
-
-engine::Duration SpokenLine::shownTime() const {
-  if (!lines_.has_value()) {
-    return {};
-  }
-  const engine::Duration writing =
-      motion_ == MotionPreference::Full
-          ? typingTimeOf(SPOKEN_LETTER_TIME, speechLetterCountOf(*lines_))
-          : engine::Duration{};
-  return writing + SPOKEN_LINGER_TIME;
 }
 
 }  // namespace rtype::client

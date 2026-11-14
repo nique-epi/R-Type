@@ -483,8 +483,7 @@ void HelpWalkthrough::paintStep(IInterfaceCanvas& canvas,
       .paint(canvas);
   paintSpeech(canvas, lines,
               {.topLeft = bubble.position + sf::Vector2i(HELP_BUBBLE_PADDING,
-                                                         HELP_BUBBLE_PADDING),
-               .letters = speechLetterCountOf(lines)});
+                                                         HELP_BUBBLE_PADDING)});
   paintFooter(canvas, bubble, step);
   paintFrame(canvas,
              {.assetId = PROFESSOR_SHEET_ID,

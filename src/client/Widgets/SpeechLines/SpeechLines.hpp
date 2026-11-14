@@ -2,6 +2,7 @@
 
 #include <SFML/System/Vector2.hpp>
 #include <cstddef>
+#include <limits>
 #include <span>
 #include <string_view>
 #include <vector>
@@ -15,10 +16,11 @@ namespace rtype::client {
 using SpeechLines = std::vector<std::vector<SpeechWord>>;
 
 /** @brief Where a sentence is written, its first line at topLeft, and how
- * many of its letters show, a keycap counting as one letter. */
+ * many of its letters show, a keycap counting as one letter: all of them
+ * unless told otherwise. */
 struct SpeechWriting {
   sf::Vector2i topLeft;
-  std::size_t letters{};
+  std::size_t letters = std::numeric_limits<std::size_t>::max();
 };
 
 /**

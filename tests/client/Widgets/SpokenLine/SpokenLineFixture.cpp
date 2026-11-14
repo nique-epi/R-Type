@@ -35,6 +35,7 @@ std::vector<std::string> SpokenLineFixture::written() {
   RecordingInterfaceCanvas canvas(painting_);
   line_->paint(canvas, TEST_BUBBLE_BOTTOM_LEFT);
   std::vector<std::string> texts;
+  texts.reserve(painting_.writings.size());
   for (const RecordedWriting& writing : painting_.writings) {
     texts.push_back(writing.text);
   }

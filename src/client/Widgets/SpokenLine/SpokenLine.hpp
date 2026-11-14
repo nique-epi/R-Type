@@ -6,11 +6,10 @@
 #include <span>
 #include <string>
 #include <string_view>
-#include <vector>
 #include "IInterfaceCanvas.hpp"
 #include "ISoundPlayer.hpp"
 #include "MotionPreference.hpp"
-#include "SpeechLines.hpp"
+#include "SaidLine.hpp"
 #include "SpokenLineParts.hpp"
 #include "TimeConstants.hpp"
 
@@ -47,33 +46,20 @@ class SpokenLine {
   void paint(IInterfaceCanvas& canvas, sf::Vector2i bottomLeft) const;
 
  private:
-  /** @brief Takes @p text as the line said from now on, nothing said of it
-   * yet, and forgets the line next. */
-  void start(std::string_view text);
-  /** @brief Plays a sound for each word whose first letter is among the
-   * first @p letters. */
-  void voiceWordsUpTo(std::size_t letters);
-  /** @returns How many letters of the line show now; none while silent. */
-  [[nodiscard]] std::size_t lettersShown() const;
-  /** @returns How long the line shows in all: its writing, then its
-   * lingering; no time while silent. */
-  [[nodiscard]] engine::Duration shownTime() const;
+  /** @brief Plays a sound for each word of @p said whose first letter now
+   * shows. */
+  void voiceWordsShown(SaidLine& said);
 
   ISoundPlayer* sounds_;
   std::span<const char* const> voice_;
   int width_;
-  std::optional<int> tail_;
+  int tail_;
   MotionPreference motion_;
-  std::optional<SpeechLines> lines_;
+  /** @brief The line said now; empty while silent. */
+  std::optional<SaidLine> said_;
   std::optional<std::string> next_;
-  /** @brief The letter each word of the line starts at, in order. */
-  std::vector<std::size_t> wordStarts_;
-  /** @brief How many words of the line were given their sound. */
-  std::size_t voicedWords_{};
   /** @brief How many sounds the voice played, which picks the next one. */
   std::size_t soundsPlayed_{};
-  /** @brief How long the line has been said. */
-  engine::Duration saidFor_{};
 };
 
 }  // namespace rtype::client

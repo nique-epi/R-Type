@@ -22,6 +22,9 @@ using rtype::client::SpeechWordLook;
 using rtype::client::testing::GREETING;
 using rtype::client::testing::GREETING_FIRST_WORD;
 using rtype::client::testing::GREETING_FIRST_WORD_LETTERS;
+using rtype::client::testing::GREETING_SECOND_WORD;
+using rtype::client::testing::PRESS_KEY_SENTENCE;
+using rtype::client::testing::PRESS_KEY_SENTENCE_LETTERS;
 using rtype::client::testing::RADIO_KEY;
 using rtype::client::testing::RADIO_SENTENCE;
 using rtype::client::testing::RADIO_WORD;
@@ -71,8 +74,9 @@ TEST(SpeechLinesTest, AStarredWordIsHighlightedAndAnUnnamedKeyShowsItself) {
  * Then it takes one line, then two
  */
 TEST(SpeechLinesTest, AWordThatPassesTheWidthGoesToTheNextLine) {
-  const int bothWords =
-      regularTextWidth("PRIVET") + SPEECH_WORD_GAP + regularTextWidth("PILOT");
+  const int bothWords = regularTextWidth(GREETING_FIRST_WORD) +
+                        SPEECH_WORD_GAP +
+                        regularTextWidth(GREETING_SECOND_WORD);
   EXPECT_EQ(speechLinesOf(GREETING, {}, bothWords).size(), 1U);
   EXPECT_EQ(speechLinesOf(GREETING, {}, bothWords - 1).size(), 2U);
 }
@@ -161,13 +165,18 @@ TEST(SpeechLinesTest, TheNextLineIsALineLower) {
  * Then the keycap is written only the second time
  */
 TEST(SpeechLinesTest, AKeyCapShowsOnceReached) {
-  const SpeechLines lines = speechLinesOf("PRESS {R}", {}, WIDE_BUBBLE_TEXT);
+  const SpeechLines lines =
+      speechLinesOf(PRESS_KEY_SENTENCE, {}, WIDE_BUBBLE_TEXT);
   InterfaceCanvasRecord before;
   RecordingInterfaceCanvas beforeCanvas(before);
-  paintSpeech(beforeCanvas, lines, {.topLeft = SPEECH_TOP_LEFT, .letters = 5});
+  paintSpeech(
+      beforeCanvas, lines,
+      {.topLeft = SPEECH_TOP_LEFT, .letters = PRESS_KEY_SENTENCE_LETTERS - 1});
   InterfaceCanvasRecord after;
   RecordingInterfaceCanvas afterCanvas(after);
-  paintSpeech(afterCanvas, lines, {.topLeft = SPEECH_TOP_LEFT, .letters = 6});
+  paintSpeech(
+      afterCanvas, lines,
+      {.topLeft = SPEECH_TOP_LEFT, .letters = PRESS_KEY_SENTENCE_LETTERS});
   ASSERT_EQ(before.writings.size(), 1U);
   ASSERT_EQ(after.writings.size(), 2U);
   EXPECT_EQ(after.writings.back().text, RADIO_KEY);

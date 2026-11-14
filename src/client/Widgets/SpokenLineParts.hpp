@@ -1,7 +1,6 @@
 #pragma once
 
 #include <functional>
-#include <optional>
 #include <span>
 #include "ISoundPlayer.hpp"
 #include "MotionPreference.hpp"
@@ -24,9 +23,8 @@ struct SpokenLineParts {
   std::span<const char* const> voice;
   /** @brief How wide the bubble is, its border included. */
   int width{};
-  /** @brief How far from the left of the bubble its tail points down; no
-   * tail when empty. */
-  std::optional<int> tail = std::nullopt;
+  /** @brief How far from the left of the bubble its tail points down. */
+  int tail{};
   /** @brief Whether the line is written letter by letter, or the player
    * asked for less motion and it shows whole at once. */
   MotionPreference motion{};
