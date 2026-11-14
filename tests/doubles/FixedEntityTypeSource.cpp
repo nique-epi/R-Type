@@ -1,5 +1,6 @@
 #include "FixedEntityTypeSource.hpp"
 #include <cstdint>
+#include <memory>
 #include <optional>
 #include <span>
 #include "Animation.hpp"
@@ -9,6 +10,8 @@
 #include "EntityType.hpp"
 #include "EntityTypeLook.hpp"
 #include "FixedEntityTypeSourceConstants.hpp"
+#include "MaskPixel.hpp"
+#include "PixelMask.hpp"
 #include "ShipGun.hpp"
 
 using rtype::client::Animation;
@@ -40,6 +43,7 @@ std::optional<EntityType> sideNumbered(std::uint8_t number) {
     case rtype::client::testing::DRIFTER_TYPE_NUMBER:
     case rtype::client::testing::WEAVER_TYPE_NUMBER:
     case rtype::client::testing::TWO_BOX_ENEMY_TYPE_NUMBER:
+    case rtype::client::testing::HOLLOW_ENEMY_TYPE_NUMBER:
       return EntityType::Enemy;
     case rtype::client::testing::ENEMY_MISSILE_TYPE_NUMBER:
       return EntityType::EnemyMissile;
@@ -79,6 +83,34 @@ std::span<const rtype::game::CollisionBox> partsNumbered(std::uint8_t number) {
   return {};
 }
 
+/** @returns The mask of the hollow enemy: HOLLOW_ENEMY_SIDE pixels a side,
+ * its HOLLOW_ENEMY_DRAWN_ROWS top rows alone drawn. */
+std::shared_ptr<const rtype::engine::PixelMask> hollowEnemyMask() {
+  auto mask = std::make_shared<rtype::engine::PixelMask>(
+      rtype::client::testing::HOLLOW_ENEMY_SIDE,
+      rtype::client::testing::HOLLOW_ENEMY_SIDE);
+  for (int row = 0; row < rtype::client::testing::HOLLOW_ENEMY_DRAWN_ROWS;
+       ++row) {
+    for (int column = 0; column < rtype::client::testing::HOLLOW_ENEMY_SIDE;
+         ++column) {
+      mask->markDrawn(rtype::engine::MaskPixel{.x = column, .y = row});
+    }
+  }
+  return mask;
+}
+
+/** @returns The mask the double gives the type numbered @p number: the one of
+ * the hollow enemy, shared by every look of it, none for any other type. */
+std::shared_ptr<const rtype::engine::PixelMask> maskNumbered(
+    std::uint8_t number) {
+  static const std::shared_ptr<const rtype::engine::PixelMask> hollow =
+      hollowEnemyMask();
+  if (number == rtype::client::testing::HOLLOW_ENEMY_TYPE_NUMBER) {
+    return hollow;
+  }
+  return nullptr;
+}
+
 }  // namespace
 
 const EntityAppearance& appearanceOfSide(EntityType side) {
@@ -113,7 +145,8 @@ std::optional<EntityTypeLook> FixedEntityTypeSource::lookOf(
   return EntityTypeLook{.side = *side,
                         .appearance = appearanceOfSide(*side),
                         .hitbox = boxOfSide(*side),
-                        .hitboxParts = partsNumbered(number)};
+                        .hitboxParts = partsNumbered(number),
+                        .mask = maskNumbered(number)};
 }
 
 rtype::game::ShipGun FixedEntityTypeSource::shipGun() const {

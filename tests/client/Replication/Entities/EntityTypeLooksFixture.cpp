@@ -34,11 +34,13 @@ LocalContent twoEnemies() {
                         game::CollisionBox{.width = LOOKED_UP_BOX_WIDTH,
                                            .height = LOOKED_UP_BOX_HEIGHT},
                     .hitboxParts = {LOOKED_UP_BOXES.begin(),
-                                    LOOKED_UP_BOXES.end()}},
+                                    LOOKED_UP_BOXES.end()},
+                    .mask = nullptr},
                 game::NumberedEntityType{
                     .name = std::string{TYPE_WITHOUT_APPEARANCE_NAME},
                     .side = game::EntityType::Enemy,
-                    .hitboxParts = {}}},
+                    .hitboxParts = {},
+                    .mask = nullptr}},
       .gun = LOOKED_UP_SHIP_GUN};
 }
 
