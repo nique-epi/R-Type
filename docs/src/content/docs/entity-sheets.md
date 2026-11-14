@@ -7,7 +7,7 @@ sidebar:
 
 An entity sheet, `assets/entities/<name>.toml`, describes one type of entity: the ship of a player, a Bydo, a boss, a missile. This page is for whoever adds or tunes a type: it gives the keys, what each one gives an entity, the rules between keys and between sheets, and how to read the error a program prints, without opening the C++. Why the types are data and not code is told in [Architecture](/R-Type/architecture/#entity-types).
 
-Both programs read the folder `entities` (`ENTITY_SHEET_FOLDER_IN_ASSETS`) of the `assets/` folder next to their executable, or one level above it, once, when they start; the folder they are started from plays no part. On the server, each game process reads the table `[gameplay]` of each sheet (`EntitySheets`, `src/game/EntityTypes/`) when its games module starts, so when the first player who needs that game connects; the supervisor reads no sheet, before the waves file, which names its enemies among the sheets. The client reads the table `[appearance]` (`EntityAppearances`, `src/client/Rendering/Sprites/EntityAppearances/`) when its assets module is installed, before it opens its window. Each checks that the root of a sheet holds exactly these two tables, and only the keys of its own: the client never reads `[gameplay]`, and the server reads of `[appearance]` only the names of its effects and looks (see [Named effects and looks](#named-effects-and-looks)), so a script asks for one the client draws.
+Both programs read the folder `entities` (`ENTITY_SHEET_FOLDER_IN_ASSETS`) of the `assets/` folder next to their executable, or one level above it, once, when they start; the folder they are started from plays no part. On the server, each game process reads the table `[gameplay]` of each sheet (`EntitySheets`, `src/game/EntityTypes/`) when its games module starts, so when the first player who needs that game connects; the supervisor reads no sheet, before the waves file, which names its enemies among the sheets. The client reads the table `[appearance]` (`EntityAppearances`, `src/client/Rendering/Sprites/EntityAppearances/`) when its assets module is installed, before it opens its window. Each checks that the root of a sheet holds exactly these two tables, and only the keys of its own: the client reads of `[gameplay]` only the side and the hitbox of each type, to test its own missiles, and the server reads of `[appearance]` only the names of its effects and looks (see [Named effects and looks](#named-effects-and-looks)), so a script asks for one the client draws.
 
 ## The folder and the names
 
@@ -61,6 +61,8 @@ projectile = "enemy_missile"
 | `hitbox.width`, `hitbox.height` | logical units | 1 to 1024 | its `CollisionBox`, centered on its position |
 | `hitbox.offset_x`, `hitbox.offset_y` | logical units | -1024 to 1024; 0 when left out | where the center of its `CollisionBox` lies from its position, y growing downwards: the box of the Bydo Tyrant covers its body, 12 units right of and 4 below its center |
 | `hitbox.box` | | an array of tables, `[[gameplay.hitbox.box]]`, at least one, in place of the four keys above; enemies only | its `HitboxParts`: the rectangles it collides with, each with the four keys above (see [A hitbox of several boxes](#a-hitbox-of-several-boxes-hitboxbox)) |
+| `mask.rows` | pixels of the sprite | an array of 1 to 256 texts of `#` and `.`, all as wide as the first, 1 to 256 characters, with at least one `#`; never beside `hitbox.box` | the pixels it is drawn on, which its type shares (see [A collision mask](#a-collision-mask-mask)) |
+| `mask.erosion` | pixels | 0 to 4; 0 when left out | how many pixels of outline the tool that wrote the rows peeled off; only the test against the sprite reads it |
 | `motion.kind` | | `ship`, `steady` | how a direction moves it: the drift, roll and dash of a ship (`ShipMotion`), or its top speed times the direction (`SteadyMotion`) |
 | `motion.top_speed` | logical units per second | 1 to 4096; for `steady` only | its speed on each axis at a full direction |
 | `[gameplay.behaviour]` | | the settings its behaviour declares | the values its behaviour reads |
@@ -151,6 +153,27 @@ offset_y = 60
 - A sheet with `width` and `height` has no `HitboxParts`, and collides with its `CollisionBox` alone, as before.
 
 No shipped sheet lists boxes yet.
+
+## A collision mask: `mask`
+
+A sprite rarely fills its frame: the hitbox of the ship, 128 × 64, covers the 512 pixels of its frame, and 258 of them are transparent. A sheet may give the pixels its entity is drawn on, one text per row of pixels, `#` for a drawn pixel and `.` for a clear one:
+
+```toml
+[gameplay.mask]
+erosion = 1
+rows = [
+  "................................",
+  "..............#####.............",
+  # … one text per row, 16 for the ship
+]
+```
+
+- The mask is laid like the frame of the idle animation, centered on the position of the body: one character covers one pixel of the sprite sheet, so 4 × 4 logical units. Its rows and its sides follow the rules of the table above, `MAXIMUM_MASK_SIDE` (256) at most; a sheet that also lists `hitbox.box` is refused, since what it is touched on would be unclear.
+- Both programs read it with `maskOf()` (`src/game/EntityTypes/Texts/`), into one `PixelMask` the entities of the type share (`EntitySheet::mask`). **No system uses it yet**: contacts are still detected on the hitbox. The test of two masks against each other lives in the engine (see [Collisions](/R-Type/engine/#collisions-bounds-overlaps-and-collision)).
+- The mask is written by a tool, not by hand: `python3 tests/tools/collision-masks/write_masks.py assets` rewrites the table of every sheet of a content folder from its sprite, and needs Pillow. A pixel is drawn when it is drawn in a frame of `idle` or `enraged_idle`, since the server never knows which frame a client shows. `erosion` peels that many pixels of outline, so a bullet that grazes the edge of the ship passes, and the tool keeps the erosion a sheet already gives. Pixels outside the hitbox are cleared, so the aura drawn around the Voltjelly stays out of reach.
+- `EveryShippedMaskIsWhatItsSpriteDraws` (`client_rendering_tests`) reads each shipped sprite and fails when a mask no longer matches it: run the tool again after changing a sprite, a frame or a hitbox.
+
+The 38 shipped sheets have a mask. The ship's is peeled once (`erosion = 1`): 186 drawn pixels of the 254 its sprite draws.
 
 ## Collision layers: `layer` and `hits`
 
