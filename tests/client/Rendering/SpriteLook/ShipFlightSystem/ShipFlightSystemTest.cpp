@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <optional>
 #include "ComponentRegistry.hpp"
 #include "Entity.hpp"
 #include "EntityRegistry.hpp"
@@ -28,7 +29,7 @@ TEST(ShipFlightSystem, ARollAWorldStateStartsIsDrawnFromItsStart) {
   ComponentRegistry components{entities};
   const Entity ship = entities.create();
   components.add(ship, Position{});
-  components.add(ship, ShipFlight{.rolling = true});
+  components.add(ship, ShipFlight{.rolling = true, .rollShare = std::nullopt});
 
   ShipFlightSystem{}.update(components, SIMULATION_TICK_DURATION);
 

@@ -12,7 +12,6 @@
 #include "NumberedEntityType.hpp"
 #include "NumberedEntityTypes.hpp"
 #include "NumberedEntityTypesTestConstants.hpp"
-#include "PixelMask.hpp"
 #include "SheetText.hpp"
 #include "SheetTextFixtures.hpp"
 #include "SheetTextReading.hpp"

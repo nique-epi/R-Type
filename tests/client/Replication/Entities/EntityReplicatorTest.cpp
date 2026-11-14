@@ -22,7 +22,6 @@
 #include "LastListedTicksTestConstants.hpp"
 #include "NetworkIdentity.hpp"
 #include "PilotTestConstants.hpp"
-#include "PixelMask.hpp"
 #include "SoundConstants.hpp"
 #include "WorldState.hpp"
 #include "WorldStateFilterTestConstants.hpp"

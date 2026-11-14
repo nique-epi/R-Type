@@ -3,6 +3,7 @@
 #include "BarrelRoll.hpp"
 #include "MaskPixel.hpp"
 #include "PixelMask.hpp"
+#include "RollMoment.hpp"
 #include "RolledRows.hpp"
 #include "ShipControlConstants.hpp"
 
@@ -40,7 +41,8 @@ RolledMasks::RolledMasks(const engine::PixelMask& upright)
 }
 
 const engine::PixelMask& RolledMasks::shownAt(float share) const {
-  const RolledRows rolled = rolledRowsOf(height_, share);
+  const RolledRows rolled =
+      rolledRowsOf(RollMoment{.frameHeight = height_, .share = share});
   const auto index =
       static_cast<std::size_t>(rolled.count - ROLL_THINNEST_ROWS);
   return rolled.belly ? belly_.at(index) : back_.at(index);

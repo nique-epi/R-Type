@@ -3,12 +3,14 @@
 #include "BarrelRoll.hpp"
 #include "BarrelRollTestConstants.hpp"
 #include "ManeuverKind.hpp"
+#include "RollMoment.hpp"
 #include "RolledRows.hpp"
 #include "ShipMotion.hpp"
 
 using rtype::game::ManeuverKind;
 using rtype::game::RolledRows;
 using rtype::game::rolledRowsOf;
+using rtype::game::RollMoment;
 using rtype::game::rollShareOf;
 using rtype::game::ShipMotion;
 using rtype::game::sourceRowOf;
@@ -34,7 +36,8 @@ using rtype::game::testing::WHOLE_ROLL;
  * Then every row shows, on its back
  */
 TEST(BarrelRoll, AShipStartingItsRollShowsEveryRowOnItsBack) {
-  const RolledRows rolled = rolledRowsOf(SHIP_FRAME_ROWS, START_OF_A_ROLL);
+  const RolledRows rolled = rolledRowsOf(
+      RollMoment{.frameHeight = SHIP_FRAME_ROWS, .share = START_OF_A_ROLL});
 
   EXPECT_EQ(rolled.count, SHIP_FRAME_ROWS);
   EXPECT_FALSE(rolled.belly);
@@ -46,7 +49,9 @@ TEST(BarrelRoll, AShipStartingItsRollShowsEveryRowOnItsBack) {
  * Then it keeps the 2 rows a ship keeps at least
  */
 TEST(BarrelRoll, AShipSeenEdgeOnKeepsItsThinnestRows) {
-  EXPECT_EQ(rolledRowsOf(SHIP_FRAME_ROWS, QUARTER_TURN).count,
+  EXPECT_EQ(rolledRowsOf(RollMoment{.frameHeight = SHIP_FRAME_ROWS,
+                                    .share = QUARTER_TURN})
+                .count,
             THINNEST_ROWS_SEEN);
 }
 
@@ -56,7 +61,8 @@ TEST(BarrelRoll, AShipSeenEdgeOnKeepsItsThinnestRows) {
  * Then every row shows, on its belly
  */
 TEST(BarrelRoll, AShipHalfwayThroughItsRollShowsItsBelly) {
-  const RolledRows rolled = rolledRowsOf(SHIP_FRAME_ROWS, HALF_TURN);
+  const RolledRows rolled = rolledRowsOf(
+      RollMoment{.frameHeight = SHIP_FRAME_ROWS, .share = HALF_TURN});
 
   EXPECT_EQ(rolled.count, SHIP_FRAME_ROWS);
   EXPECT_TRUE(rolled.belly);

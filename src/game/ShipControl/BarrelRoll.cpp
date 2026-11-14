@@ -4,17 +4,18 @@
 #include <cmath>
 #include <optional>
 #include "ManeuverKind.hpp"
+#include "RollMoment.hpp"
 #include "RolledRows.hpp"
 #include "ShipControlConstants.hpp"
 #include "ShipMotion.hpp"
 
 namespace rtype::game {
 
-RolledRows rolledRowsOf(int height, float share) {
-  const float cosine = std::cos(ROLL_FULL_TURN * share);
+RolledRows rolledRowsOf(RollMoment moment) {
+  const float cosine = std::cos(ROLL_FULL_TURN * moment.share);
   const int count = static_cast<int>(
-      std::lround(static_cast<float>(height) * std::abs(cosine)));
-  return RolledRows{.height = height,
+      std::lround(static_cast<float>(moment.frameHeight) * std::abs(cosine)));
+  return RolledRows{.height = moment.frameHeight,
                     .count = std::max(ROLL_THINNEST_ROWS, count),
                     .belly = cosine < 0.0F};
 }

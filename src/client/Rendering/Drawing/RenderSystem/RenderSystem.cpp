@@ -21,6 +21,7 @@
 #include "Position.hpp"
 #include "RenderingConstants.hpp"
 #include "Reveal.hpp"
+#include "RollMoment.hpp"
 #include "RolledRows.hpp"
 #include "ShipFlight.hpp"
 #include "ShipFlightConstants.hpp"
@@ -375,8 +376,9 @@ void RenderSystem::collectAfterimages(engine::ComponentRegistry& components) {
 void RenderSystem::drawRolled(IDrawSurface& surface, const DrawCall& call,
                               game::Position center) {
   const game::SpriteFrame frame = call.sprite->frame;
-  const game::RolledRows rolled =
-      game::rolledRowsOf(frame.height, call.look.rollShare.value_or(0.0F));
+  const game::RolledRows rolled = game::rolledRowsOf(
+      game::RollMoment{.frameHeight = frame.height,
+                       .share = call.look.rollShare.value_or(0.0F)});
   for (int row = 0; row < rolled.count; ++row) {
     surface.draw(SpriteDrawing{
         .assetId = call.sprite->assetId,
