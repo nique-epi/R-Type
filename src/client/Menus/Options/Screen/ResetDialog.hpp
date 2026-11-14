@@ -8,6 +8,7 @@
 #include "ISoundPlayer.hpp"
 #include "Menu.hpp"
 #include "PlayfieldMapping.hpp"
+#include "TextMetrics.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -30,9 +31,10 @@ class ResetDialog {
   ResetDialog& operator=(ResetDialog&&) = delete;
   ~ResetDialog() = default;
 
-  /** @brief Opens the dialog on @p question; YES runs @p reset and closes it,
-   * NO closes it. */
-  void ask(const std::string& question, const std::function<void()>& reset);
+  /** @brief Opens the dialog on @p question, laid out at the text size of
+   * @p metrics; YES runs @p reset and closes it, NO closes it. */
+  void ask(const std::string& question, const std::function<void()>& reset,
+           TextMetrics metrics);
 
   [[nodiscard]] bool isOpen() const;
 

@@ -56,11 +56,12 @@ namespace rtype::client {
 
 namespace {
 
-/** @returns Where a chip with this text lies: as MenuBuilder lays it ending at
- * @p right, on the row of the chips of the leaderboard. */
-sf::IntRect chipAreaEndingAt(const Button::Text& text, int right, int top) {
-  sf::IntRect area = MenuBuilder::chipArea(text, right);
-  area.position.y = top;
+/** @returns Where a chip with this text lies: as MenuBuilder lays it, its
+ * top-right corner at @p topRight, on the row of the chips of the
+ * leaderboard. */
+sf::IntRect chipAreaEndingAt(const Button::Text& text, sf::Vector2i topRight) {
+  sf::IntRect area = MenuBuilder::chipArea(text, topRight.x);
+  area.position.y = topRight.y;
   return area;
 }
 
@@ -75,14 +76,14 @@ Button::Text filterChipText(const LeaderboardFrame& frame) {
 }
 
 sf::IntRect backChipArea(const LeaderboardFrame& frame) {
-  return chipAreaEndingAt(backChipText(frame), frame.chipsRight,
-                          frame.chipsTop);
+  return chipAreaEndingAt(backChipText(frame),
+                          {frame.chipsRight, frame.chipsTop});
 }
 
 sf::IntRect filterChipArea(const LeaderboardFrame& frame) {
-  return chipAreaEndingAt(filterChipText(frame),
-                          backChipArea(frame).position.x - BUTTON_GAP,
-                          frame.chipsTop);
+  return chipAreaEndingAt(
+      filterChipText(frame),
+      {backChipArea(frame).position.x - BUTTON_GAP, frame.chipsTop});
 }
 
 KeyChipParts backChipParts(std::function<void()> action, ISoundPlayer& sounds,
@@ -348,13 +349,16 @@ void LeaderboardScreen::openTab(std::size_t tab) {
 
 void LeaderboardScreen::openFilter() {
   handleEvent(sf::Event::FocusLost{});
-  filterDialog_.open(choice_, [this](LeaderboardFilterChoice picked) {
-    if (picked == choice_) {
-      return;
-    }
-    choice_ = picked;
-    ask();
-  });
+  filterDialog_.open(
+      choice_,
+      [this](LeaderboardFilterChoice picked) {
+        if (picked == choice_) {
+          return;
+        }
+        choice_ = picked;
+        ask();
+      },
+      frame_.metrics);
 }
 
 const LeaderboardPage& LeaderboardScreen::shownPage() const {
