@@ -3,7 +3,9 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <memory>
 #include <optional>
+#include <utility>
 #include "BodyPlacement.hpp"
 #include "Boss.hpp"
 #include "CollisionBox.hpp"
@@ -34,10 +36,13 @@
 #include "Pilot.hpp"
 #include "PilotSheet.hpp"
 #include "Position.hpp"
+#include "RolledMaskCatalog.hpp"
+#include "RolledMasks.hpp"
 #include "ScoreValue.hpp"
 #include "ShardBurst.hpp"
 #include "ShipMotion.hpp"
 #include "ShipPilot.hpp"
+#include "ShipRollMasks.hpp"
 #include "Shootable.hpp"
 #include "ShownLook.hpp"
 #include "SteadyMotion.hpp"
@@ -88,6 +93,21 @@ void addMotion(engine::ComponentRegistry& components, const BodyStart& start) {
     return;
   }
   components.add(start.body, SteadyMotion{.topSpeed = motion.topSpeed});
+}
+
+/** @brief Gives @p start, a ship whose sheet gives a collision mask, the
+ * masks it shows through its barrel roll, taken from @p catalog. */
+void addRollMasks(engine::ComponentRegistry& components, const BodyStart& start,
+                  RolledMaskCatalog& catalog) {
+  const EntitySheet& sheet = start.sheet.get();
+  if (sheet.motion.kind != MotionKind::Ship || !sheet.mask.has_value()) {
+    return;
+  }
+  std::shared_ptr<const RolledMasks> masks =
+      catalog.rolledOf(*sheet.mask->pixels);
+  if (masks != nullptr) {
+    components.add(start.body, ShipRollMasks{.masks = std::move(masks)});
+  }
 }
 
 /** @brief Gives @p start the Pilot of its behaviour, when one pilots it. */
@@ -216,6 +236,7 @@ std::uint32_t World::spawnFrom(const EntitySheet& sheet,
                         .origin = placement.origin};
   addPlace(components_, start);
   addMotion(components_, start);
+  addRollMasks(components_, start, rolledMasks_);
   addPilot(components_, start);
   addCombat(components_, start);
   addContactParts(components_, start);

@@ -20,6 +20,7 @@ target_link_libraries(rtype_game
   PUBLIC
     rtype_engine
     rtype_game_components
+    rtype_game_contacts
     rtype_game_entity_types
     rtype_game_events
     rtype_game_behaviours

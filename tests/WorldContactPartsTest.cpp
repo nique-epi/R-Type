@@ -14,6 +14,7 @@
 #include "HurtZone.hpp"
 #include "MaskSheet.hpp"
 #include "Position.hpp"
+#include "ShipRollMasks.hpp"
 #include "ShippedEntitySheets.hpp"
 #include "Shootable.hpp"
 #include "SurvivesContact.hpp"
@@ -32,6 +33,7 @@ using rtype::game::HitboxParts;
 using rtype::game::HurtZone;
 using rtype::game::MaskSheet;
 using rtype::game::Position;
+using rtype::game::ShipRollMasks;
 using rtype::game::Shootable;
 using rtype::game::SHOOTABLE_MISSILE_SHEETS;
 using rtype::game::SurvivesContact;
@@ -272,4 +274,38 @@ TEST(WorldContactParts, ABodyWithoutAMaskHasNoCollisionMask) {
                   Position{.x = SOME_X, .y = SOME_Y});
 
   EXPECT_FALSE(componentOf<CollisionMask>(world, entityId).has_value());
+}
+
+/**
+ * Given the shipped sheet of the ship, which names a collision mask
+ * When an entity of that sheet is spawned
+ * Then it carries the masks it shows through its barrel roll
+ */
+TEST(WorldContactParts, AShipCarriesTheMasksOfItsRoll) {
+  World world;
+
+  const std::uint32_t entityId =
+      world.spawn(shippedEntitySheets().named(SHIP_SHEET),
+                  Position{.x = SOME_X, .y = SOME_Y});
+
+  const std::optional<ShipRollMasks> rolled =
+      componentOf<ShipRollMasks>(world, entityId);
+  ASSERT_TRUE(rolled.has_value());
+  EXPECT_NE(rolled.value_or(ShipRollMasks{}).masks, nullptr);
+}
+
+/**
+ * Given the shipped sheet of a Drifter, which names a collision mask but is
+ * no ship
+ * When an entity of that sheet is spawned
+ * Then it carries no masks of a roll: only a ship rolls
+ */
+TEST(WorldContactParts, ABodyThatIsNoShipCarriesNoMasksOfARoll) {
+  World world;
+
+  const std::uint32_t entityId =
+      world.spawn(shippedEntitySheets().named(DRIFTER_SHEET),
+                  Position{.x = SOME_X, .y = SOME_Y});
+
+  EXPECT_FALSE(componentOf<ShipRollMasks>(world, entityId).has_value());
 }

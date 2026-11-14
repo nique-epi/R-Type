@@ -1,9 +1,11 @@
 #pragma once
 
 #include <array>
+#include <chrono>
 #include "CollisionBox.hpp"
 #include "CollisionTestConstants.hpp"
 #include "Position.hpp"
+#include "TimeConstants.hpp"
 
 /**
  * @brief The two square boxes of a body: 30 units left and 30 right of its
@@ -53,3 +55,15 @@ constexpr rtype::game::Position MISSILE_OVER_THE_CLEAR_CORNER{.x = 0.0F,
 /** @brief The missile of a Bydo on the middle of that ship, cells 12 to 19
  * and 4 to 11, where the hull is drawn. */
 constexpr rtype::game::Position MISSILE_ON_THE_HULL{.x = 64.0F, .y = 32.0F};
+
+/**
+ * @brief A square of SQUARE_SIDE (10 units) over the top fin of that ship,
+ * from 59 to 69 and 7 to 17: cells 14 to 17 of rows 1 to 4, where row 2 of
+ * masks/ship.txt draws the fin (columns 14 to 18). A quarter turn into its
+ * roll of 400 ms, the ship is seen edge on: 2 rows, laid on rows 7 and 8 of
+ * the grid (32 / 4 - 1), and the square crosses none of them.
+ */
+constexpr float SQUARE_OVER_THE_FIN_X = 64.0F;
+constexpr float SQUARE_OVER_THE_FIN_Y = 12.0F;
+constexpr rtype::engine::Duration EDGE_ON_INTO_A_ROLL =
+    std::chrono::milliseconds(100);
