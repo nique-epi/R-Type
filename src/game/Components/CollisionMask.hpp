@@ -12,7 +12,8 @@ namespace rtype::game {
  *
  * The mask is shared by every body of the sheet, and outlives the body. Its
  * CollisionBox stays the first test of a contact: the mask only decides
- * between the pairs whose boxes overlap. A body without this component is
+ * between the pairs whose boxes overlap. A body without this component, or
+ * whose mask a script emptied by resizing its box (forgetMaskOf()), is
  * touched anywhere in its box.
  */
 struct CollisionMask {

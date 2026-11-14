@@ -20,4 +20,16 @@ namespace rtype::game {
     engine::ComponentRegistry& components, engine::Entity body,
     const Position& position);
 
+/**
+ * @brief Empties the CollisionMask of @p body, when it has one: from then on
+ * it is touched anywhere in its CollisionBox, as a body of a sheet without a
+ * mask is.
+ *
+ * A script that resizes the box of a body calls it, since the mask was cut to
+ * the box of the sheet: the size a script asks for is the size the body is
+ * touched on. The component stays, so this is safe inside a query of the
+ * registry, which forbids removing a component.
+ */
+void forgetMaskOf(engine::ComponentRegistry& components, engine::Entity body);
+
 }  // namespace rtype::game

@@ -19,4 +19,11 @@ std::optional<engine::PlacedMask> bodyMaskAt(
   return placedMaskOf(position, *mask->pixels);
 }
 
+void forgetMaskOf(engine::ComponentRegistry& components, engine::Entity body) {
+  auto* const mask = components.get<CollisionMask>(body);
+  if (mask != nullptr) {
+    mask->pixels.reset();
+  }
+}
+
 }  // namespace rtype::game
