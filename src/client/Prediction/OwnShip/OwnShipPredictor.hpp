@@ -54,6 +54,10 @@ class OwnShipPredictor {
   /** @returns Where the prediction puts the ship. */
   [[nodiscard]] game::Position position() const;
 
+  /** @returns How far through its barrel roll the prediction puts the ship,
+   * from 0 to 1; nothing while it does not roll. */
+  [[nodiscard]] std::optional<float> rollShare() const;
+
  private:
   std::uint8_t playerNumber_;
   ShipPrediction prediction_;

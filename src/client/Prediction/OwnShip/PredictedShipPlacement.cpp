@@ -6,6 +6,7 @@
 #include "EntityReplicator.hpp"
 #include "OwnShipPredictor.hpp"
 #include "Position.hpp"
+#include "ShipFlight.hpp"
 
 namespace rtype::client {
 
@@ -23,6 +24,10 @@ void placePredictedShip(const OwnShipPredictor& predictor,
   }
   if (auto* const position = components.get<game::Position>(*ship)) {
     *position = predictor.position();
+  }
+  if (auto* const flight = components.get<ShipFlight>(*ship)) {
+    flight->predicted = true;
+    flight->rollShare = predictor.rollShare();
   }
 }
 

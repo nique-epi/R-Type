@@ -68,7 +68,9 @@ void ShipFlightSystem::update(engine::ComponentRegistry& components,
         flight.flame = flameAfter(flight, elapsed);
         flight.forwardTime = flight.forward ? flight.forwardTime + elapsed
                                             : engine::Duration::zero();
-        flight.rollShare = rollShareAfter(flight, elapsed);
+        if (!flight.predicted) {
+          flight.rollShare = rollShareAfter(flight, elapsed);
+        }
         flight.rolledBefore = flight.rolling;
         keepPosition(flight, position);
       });

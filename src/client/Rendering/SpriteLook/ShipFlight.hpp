@@ -35,6 +35,9 @@ struct ShipFlight {
   /** @brief How far the roll drawn has turned, 0 to 1 over
    * game::ROLL_DURATION; nothing while none is drawn. */
   std::optional<float> rollShare;
+  /** @brief The own ship of the player: its prediction writes rollShare at
+   * each frame (placePredictedShip()), so ShipFlightSystem leaves it. */
+  bool predicted{false};
   /** @brief Time since the ship got its ShipFlight: the flicker of its flame
    * and the scroll of its lines. */
   engine::Duration age{};
