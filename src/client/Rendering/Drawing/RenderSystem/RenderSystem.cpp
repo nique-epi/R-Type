@@ -141,15 +141,6 @@ game::Position centerOfRows(game::Position center, int height, RowSpan span) {
                                          BACKGROUND_PIXEL_SIZE)};
 }
 
-/** @returns How far through its roll @p flight draws the ship; nothing
- * without a ShipFlight or a roll. */
-std::optional<float> rollShareOf(const ShipFlight* flight) {
-  if (flight == nullptr) {
-    return std::nullopt;
-  }
-  return flight->rollShare;
-}
-
 /** @returns The draw call of an afterimage of @p sprite, the sprite of
  * @p entity, at @p position: the sprite lit one pixel in two. */
 DrawCall afterimageAt(engine::Entity entity, const game::Sprite& sprite,
@@ -301,6 +292,7 @@ SpriteAppearance RenderSystem::lookOf(engine::ComponentRegistry& components,
   const Invulnerability* invulnerability =
       components.get<Invulnerability>(entity);
   const Reveal* reveal = components.get<Reveal>(entity);
+  const ShipFlight* const flight = components.get<ShipFlight>(entity);
   return SpriteAppearance{
       .tone = toneOf(components.get<HitFlash>(entity), invulnerability),
       .outline = outlineOf(invulnerability),
@@ -308,7 +300,7 @@ SpriteAppearance RenderSystem::lookOf(engine::ComponentRegistry& components,
                 anchorOf(components.get<SpriteAnimation>(entity)),
       .shownRows = shownRowsOf(reveal, frameHeight),
       .leadingLine = reveal != nullptr && reveal->leadingLine,
-      .rollShare = rollShareOf(components.get<ShipFlight>(entity))};
+      .rollShare = flight == nullptr ? std::nullopt : flight->rollShare};
 }
 
 void RenderSystem::draw(IDrawSurface& surface, const DrawCall& call) {

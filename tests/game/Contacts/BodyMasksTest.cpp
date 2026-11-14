@@ -2,14 +2,11 @@
 #include <memory>
 #include <optional>
 #include "BodyMasks.hpp"
-#include "CollisionMask.hpp"
 #include "CollisionScene.hpp"
 #include "Entity.hpp"
-#include "EntityType.hpp"
 #include "ManeuverKind.hpp"
 #include "PixelMask.hpp"
 #include "PlacedMask.hpp"
-#include "RolledMasks.hpp"
 #include "RolledMasksFixtures.hpp"
 #include "RolledMasksTestConstants.hpp"
 #include "ShipMotion.hpp"
@@ -19,11 +16,8 @@ using rtype::engine::Entity;
 using rtype::engine::PixelMask;
 using rtype::engine::PlacedMask;
 using rtype::game::bodyMaskAt;
-using rtype::game::CollisionMask;
-using rtype::game::EntityType;
 using rtype::game::forgetMaskOf;
 using rtype::game::ManeuverKind;
-using rtype::game::RolledMasks;
 using rtype::game::ShipMotion;
 using rtype::game::ShipRollMasks;
 using rtype::game::testing::DIAGONAL_SIDE;
@@ -32,6 +26,7 @@ using rtype::game::testing::EDGE_ON_INTO_THE_ROLL;
 using rtype::game::testing::FIRST_GRID_ROW_EDGE_ON;
 using rtype::game::testing::ROWS_SEEN_EDGE_ON;
 using rtype::game::testing::SHIP_HALF_A_PIXEL_DOWN;
+using rtype::game::testing::shipRollingOn;
 
 /**
  * Given a ship with a mask of 16 rows and the masks of its roll, a quarter
@@ -44,11 +39,7 @@ TEST(BodyMasks, ARollingShipShowsTheMaskOfItsRollWhereTheClientDrawsIt) {
   CollisionScene scene;
   const auto upright =
       std::make_shared<const PixelMask>(diagonalMask(DIAGONAL_SIDE));
-  const Entity ship = scene.spawn(EntityType::Player, 0.0F, 0.0F);
-  scene.components.add(ship, CollisionMask{.pixels = upright});
-  scene.components.add(
-      ship,
-      ShipRollMasks{.masks = std::make_shared<const RolledMasks>(*upright)});
+  const Entity ship = shipRollingOn(scene, upright);
   scene.components.add(ship, ShipMotion{.maneuver = ManeuverKind::Roll,
                                         .maneuverTime = EDGE_ON_INTO_THE_ROLL});
 
@@ -71,11 +62,7 @@ TEST(BodyMasks, AShipThatDoesNotRollShowsItsUprightMask) {
   CollisionScene scene;
   const auto upright =
       std::make_shared<const PixelMask>(diagonalMask(DIAGONAL_SIDE));
-  const Entity ship = scene.spawn(EntityType::Player, 0.0F, 0.0F);
-  scene.components.add(ship, CollisionMask{.pixels = upright});
-  scene.components.add(
-      ship,
-      ShipRollMasks{.masks = std::make_shared<const RolledMasks>(*upright)});
+  const Entity ship = shipRollingOn(scene, upright);
   scene.components.add(ship, ShipMotion{});
 
   const std::optional<PlacedMask> placed =
@@ -94,11 +81,7 @@ TEST(BodyMasks, ForgettingTheMaskForgetsTheMasksOfTheRoll) {
   CollisionScene scene;
   const auto upright =
       std::make_shared<const PixelMask>(diagonalMask(DIAGONAL_SIDE));
-  const Entity ship = scene.spawn(EntityType::Player, 0.0F, 0.0F);
-  scene.components.add(ship, CollisionMask{.pixels = upright});
-  scene.components.add(
-      ship,
-      ShipRollMasks{.masks = std::make_shared<const RolledMasks>(*upright)});
+  const Entity ship = shipRollingOn(scene, upright);
 
   forgetMaskOf(scene.components, ship);
 

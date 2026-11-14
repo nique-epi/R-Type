@@ -26,7 +26,6 @@ void placePredictedShip(const OwnShipPredictor& predictor,
     *position = predictor.position();
   }
   if (auto* const flight = components.get<ShipFlight>(*ship)) {
-    flight->predicted = true;
     flight->rollShare = predictor.rollShare();
   }
 }
