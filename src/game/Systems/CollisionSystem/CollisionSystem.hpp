@@ -5,7 +5,7 @@
 #include "CandidatePair.hpp"
 #include "Collision.hpp"
 #include "CollisionSystemConstants.hpp"
-#include "EntityBounds.hpp"
+#include "EntityShape.hpp"
 #include "ISystem.hpp"
 #include "TimeConstants.hpp"
 #include "UniformGrid.hpp"
@@ -20,8 +20,9 @@ class EventBus;
 namespace rtype::game {
 
 /**
- * @brief Publishes an engine::Collision for every pair of entities whose
- * collision boxes overlap and one of which hits a layer the other lies in.
+ * @brief Publishes an engine::Collision for every pair of entities that touch
+ * (shapesTouch(): their collision boxes overlap, then their CollisionMask, when
+ * they have one, agrees) and one of which hits a layer the other lies in.
  *
  * Only entities with a Position, a CollisionBox and an
  * engine::CollisionFilter are considered, and an entity still Summoning is
@@ -33,7 +34,9 @@ namespace rtype::game {
  * it was built with, and only the pairs that share a cell are looked at: the
  * cost grows with the boxes that lie close to each other, not with the square
  * of every box. Of those, a pair engine::mayCollide() refuses is dropped
- * before its boxes are compared. The events are only queued: the loop must
+ * before its boxes are compared. A body with a CollisionMask has a single box
+ * (a sheet gives a mask or several boxes, never both), and its mask is laid
+ * once per update where the body is. The events are only queued: the loop must
  * call EventBus::dispatch() after the systems. The bus must outlive the
  * system.
  */
@@ -60,7 +63,7 @@ class CollisionSystem final : public engine::ISystem {
 
   engine::EventBus& events_;
   /** @brief One entry per box, the boxes of one entity next to each other. */
-  std::vector<EntityBounds> candidates_;
+  std::vector<EntityShape> candidates_;
   /** @brief The contacts published on this update for an entity of several
    * boxes, so a second box of it publishes none again. */
   std::vector<engine::Collision> contactsOfParts_;
