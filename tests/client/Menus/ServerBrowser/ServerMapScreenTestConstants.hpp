@@ -42,25 +42,12 @@ constexpr std::uint8_t TWO_PILOTS = 2;
  * own (15 s), and a time short of it. */
 constexpr std::chrono::milliseconds ONE_FRAME{16};
 
-/** @brief Where the hangar star stands on the whole map, close to the planet,
- * and the line of its bubble that tells how to open it. */
-constexpr sf::Vector2i HANGAR_STAR_ON_THE_MAP{84, 64};
-constexpr std::string_view HANGAR_STAR_HINT_LINE = "CLICK OR G: OPEN";
-
-/** @brief The house the hangar star is drawn as, 9 pixels at top 47 of the
- * sheet of the map, and where it lands: centered on (84, 64), from (80, 60). */
+/** @brief The sheet of the map, and two of its glyphs the map no longer
+ * draws: the house of the hangar, 9 pixels at top 47, and the kiosk of the
+ * shop, 9 pixels at top 58. */
 constexpr std::string_view MAP_SHEET = "sprites/sector_map.png";
 constexpr sf::IntRect HANGAR_HOUSE_SOURCE{{0, 47}, {9, 9}};
-constexpr sf::Vector2i HANGAR_HOUSE_ON_THE_MAP{80, 60};
-
-/** @brief Where the shop stands on the whole map, left of the hangar, the
- * lines of its bubble, and the kiosk it is drawn as: 9 pixels at top 58 of
- * the sheet, centered on (36, 62), so from (32, 58). */
-constexpr sf::Vector2i SHOP_ON_THE_MAP{36, 62};
-constexpr std::string_view SHOP_HINT_LINE = "CLICK OR S: OPEN";
-constexpr std::string_view SHOP_DETAIL_LINE = "HATS AND SHIPS";
 constexpr sf::IntRect SHOP_KIOSK_SOURCE{{0, 58}, {9, 9}};
-constexpr sf::Vector2i SHOP_KIOSK_ON_THE_MAP{32, 58};
 
 /** @brief One frame of the turn of a planet. */
 constexpr std::chrono::milliseconds ONE_PLANET_TURN_FRAME{150};

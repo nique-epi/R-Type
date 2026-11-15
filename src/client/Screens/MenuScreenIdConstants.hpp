@@ -65,8 +65,13 @@ constexpr ScreenId CONNECTION_AGAIN_SCREEN{"connection again"};
  * server map by + NEW GAME of the panel of the games of a server. */
 constexpr ScreenId NEW_GAME_SCREEN{"new game"};
 
+/** @brief Where PLAY leads, pushed over the title: SERVER, SHOP or HANGAR on
+ * a turning stand. */
+constexpr ScreenId DESTINATION_SCREEN{"destinations"};
+
 /** @brief The map of the servers the master lists, with their games, pushed
- * over the title by PLAY, or by RETRY under CONNECTION_AGAIN_SCREEN. */
+ * over the destination screen by SERVER, or by RETRY under
+ * CONNECTION_AGAIN_SCREEN. */
 constexpr ScreenId SERVER_MAP_SCREEN{"server map"};
 
 /** @brief The best scores of a server, pushed over the title or the waiting

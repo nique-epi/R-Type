@@ -65,7 +65,7 @@ struct ScreenServices {
   /** @brief The server, the nickname and the game the first connection
    * screen starts with. */
   ServerChoice choice;
-  /** @brief Where PLAY leads from the title. */
+  /** @brief Where SERVER of the destination screen leads. */
   PlayStart playStart{};
 };
 

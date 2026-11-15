@@ -6,7 +6,6 @@
 #include "ISoundPlayer.hpp"
 #include "IUpdateNotice.hpp"
 #include "MotionPreference.hpp"
-#include "PlayStart.hpp"
 #include "PlayfieldMapping.hpp"
 #include "SquadronStart.hpp"
 
@@ -41,9 +40,6 @@ struct TitleScreenParts {
   /** @brief SquadronStart::InPlace opens the title on its squadron in place,
    * as the intro leaves it. */
   SquadronStart squadronStart{};
-  /** @brief PlayStart::GivenServer makes PLAY join the server given at launch
-   * at once, instead of opening the server map. */
-  PlayStart playStart{};
   /** @brief The update module, or null when the build has none: the title
    * puts the update panel over itself once it says a release waits, or else
    * WHAT'S NEW once notes wait. It must outlive the screen. */

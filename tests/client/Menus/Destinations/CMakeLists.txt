@@ -1,0 +1,1 @@
+target_sources(client_screen_tests PRIVATE DestinationScreenTest.cpp DestinationScreenFixture.cpp)

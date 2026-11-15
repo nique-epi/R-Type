@@ -18,8 +18,8 @@ struct LaunchValues {
   /** @brief The server to join, the nickname of the player, UTF-8, and the
    * game it asks for. */
   ServerChoice choice;
-  /** @brief Where PLAY leads: PlayStart::GivenServer once `-h` named the
-   * server. */
+  /** @brief Where SERVER of the destination screen leads:
+   * PlayStart::GivenServer once `-h` named the server. */
   PlayStart playStart{PlayStart::ServerMap};
   /** @brief Whether the client makes sound. */
   AudioMode audioMode{AudioMode::Enabled};

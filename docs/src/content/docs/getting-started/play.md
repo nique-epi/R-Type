@@ -22,7 +22,7 @@ In another:
 ./r-type_client -h 127.0.0.1
 ```
 
-The server listens on UDP port 4242. Given `-h`, the client joins that server as soon as you press PLAY on the title. In the waiting room, press READY (R): the game starts once every connected pilot is ready.
+The server listens on UDP port 4242. Given `-h`, the client joins that server as soon as you press PLAY on the title, then SERVER. In the waiting room, press READY (R): the game starts once every connected pilot is ready.
 
 :::tip[Controls]
 The arrows move the ship and the space bar shoots. Escape opens the options during a game; SETTINGS > CONTROLS changes every key, and the choice is kept for the next launch.
@@ -53,7 +53,7 @@ Open the UDP port of the server to the players, and the TCP port of the same num
 
 ## Finding a server on the map
 
-Without `-h`, PLAY opens the server map: the servers the master lists, placed around your planet by the ping the client measures. Enter or a click joins one; Q (QUICK PLAY) joins a game of the server with the lowest ping that still has a free seat. The map needs the master, `https://master.rtype.app` unless `set master-url` names another: see [Master](/R-Type/master/) to run one, or [Deploying the master](/R-Type/deploy-master/) to host it.
+Without `-h`, PLAY then SERVER opens the server map: the servers the master lists, placed around your planet by the ping the client measures. Enter or a click joins one; Q (QUICK PLAY) joins a game of the server with the lowest ping that still has a free seat. The map needs the master, `https://master.rtype.app` unless `set master-url` names another: see [Master](/R-Type/master/) to run one, or [Deploying the master](/R-Type/deploy-master/) to host it.
 
 :::note[No master?]
 The map then shows `MASTER UNREACHABLE`. Press D (ADDRESS) to open the connection screen, type the address and the port of a server, and press CONNECT.

@@ -7,6 +7,8 @@
 #include "ConnectionScreen.hpp"
 #include "ConnectionScreenParts.hpp"
 #include "ConnectionStart.hpp"
+#include "DestinationScreen.hpp"
+#include "DestinationScreenParts.hpp"
 #include "DialogMenus.hpp"
 #include "GameListSnapshot.hpp"
 #include "IScreen.hpp"
@@ -74,8 +76,19 @@ std::unique_ptr<IScreen> buildTitleScreen(const ScreenContext& context,
                        .motion = motionPreference(),
                        .seed = std::random_device{}(),
                        .squadronStart = opening.squadronStart,
-                       .playStart = context.services.playStart,
                        .notice = opening.notice},
+      interfaceCanvasOf(context));
+}
+
+/** @returns Where PLAY leads; its SERVER card joins the server given at
+ * launch for a client launched with `-h`. */
+std::unique_ptr<IScreen> buildDestinationScreen(const ScreenContext& context) {
+  return std::make_unique<DestinationScreen>(
+      DestinationScreenParts{.navigator = context.navigator.get(),
+                             .sounds = soundsOf(context),
+                             .settings = context.services.settings.get(),
+                             .playfieldPointAt = playfieldMappingOf(context),
+                             .playStart = context.services.playStart},
       interfaceCanvasOf(context));
 }
 
@@ -244,6 +257,7 @@ void ClientMenusModule::install(engine::InstallContext& context) {
   registry.add(LEAVE_GAME_CONFIRMATION_SCREEN,
                buildLeaveGameConfirmationScreen);
   addConnectionScreens(registry);
+  registry.add(DESTINATION_SCREEN, buildDestinationScreen);
   registry.add(SERVER_MAP_SCREEN, buildServerMapScreen);
   registry.add(NEW_GAME_SCREEN, buildNewGameScreen);
   registry.add(LEADERBOARD_SCREEN, buildLeaderboardScreen);

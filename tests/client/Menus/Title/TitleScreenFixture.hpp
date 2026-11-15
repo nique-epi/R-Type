@@ -4,7 +4,6 @@
 #include <SFML/Window/Keyboard.hpp>
 #include <memory>
 #include "FakeUpdateNotice.hpp"
-#include "PlayStart.hpp"
 #include "PlayerSettings.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
@@ -22,10 +21,6 @@ class TitleScreenFixture : public ::testing::Test {
 
   /** @brief Presses and releases a key, then lets the press last. */
   void choose(sf::Keyboard::Key key);
-
-  /** @brief Builds a new title in place of the one shown, PLAY leading where
-   * @p playStart says. */
-  void reopenWith(rtype::client::PlayStart playStart);
 
   /** @brief Builds a new title in place of the one shown, asking notice(). */
   void reopenAskingTheNotice();
