@@ -359,13 +359,13 @@ std::optional<BossSheet> bossFrom(const engine::DataFileTable& gameplay) {
           *boss, ARRIVAL_ATTACK_KEY, ATTACK_NUMBER_RANGE))};
 }
 
-/** @returns Whether the sheet holds the marker table
- * `[gameplay.survives_contact]`. */
-bool survivesContactFrom(const engine::DataFileTable& gameplay) {
+/** @returns Whether the sheet holds the marker table @p key of `[gameplay]`,
+ * such as `[gameplay.survives_contact]`. */
+bool holdsMarker(const engine::DataFileTable& gameplay, std::string_view key) {
   const std::optional<engine::DataFileTable> marker =
-      engine::optionalTableAt(gameplay, SURVIVES_CONTACT_KEY);
+      engine::optionalTableAt(gameplay, key);
   if (marker.has_value()) {
-    engine::refuseUnknownKeys(*marker, SURVIVES_CONTACT_KEYS);
+    engine::refuseUnknownKeys(*marker, MARKER_KEYS);
   }
   return marker.has_value();
 }
@@ -430,6 +430,11 @@ void checkContactPartsBelongToAnEnemy(const EntitySheet& sheet,
   if (sheet.armoredIn.has_value()) {
     throw InconsistentEntitySheetException(
         engine::placeOfKey(gameplay, ARMORED_KEY), ARMORED_SIDE_RULE);
+  }
+  if (sheet.staysOutside) {
+    throw InconsistentEntitySheetException(
+        engine::placeOfKey(gameplay, STAYS_OUTSIDE_KEY),
+        STAYS_OUTSIDE_SIDE_RULE);
   }
   if (!sheet.volleys.empty()) {
     throw InconsistentEntitySheetException(
@@ -600,9 +605,10 @@ EntitySheet gameplayOf(const SheetText& sheet,
       .points = pointsIn<std::uint32_t>(gameplay, SCORE_KEY, SCORE_RANGE),
       .gun = gunFrom(gameplay),
       .hurtZone = hurtZoneFrom(gameplay),
-      .survivesContact = survivesContactFrom(gameplay),
+      .survivesContact = holdsMarker(gameplay, SURVIVES_CONTACT_KEY),
       .fragileIn = fragileFrom(gameplay),
       .armoredIn = armoredFrom(gameplay),
+      .staysOutside = holdsMarker(gameplay, STAYS_OUTSIDE_KEY),
       .burst = burstFrom(gameplay),
       .volleys = volleysFrom(gameplay),
       .boss = bossFrom(gameplay),

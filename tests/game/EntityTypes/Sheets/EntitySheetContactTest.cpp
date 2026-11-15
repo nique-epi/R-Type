@@ -69,6 +69,8 @@ using rtype::game::testing::SECOND_WIDTH_DOTTED_KEY;
 using rtype::game::testing::SHIP_GAMEPLAY;
 using rtype::game::testing::SHIP_HITBOX;
 using rtype::game::testing::SHIP_MOTION;
+using rtype::game::testing::STAYS_OUTSIDE_MARKER;
+using rtype::game::testing::STAYS_OUTSIDE_SIDE_RULE_TEXT;
 using rtype::game::testing::STEADY_MOTION;
 using rtype::game::testing::SURVIVES_CONTACT_MARKER;
 using rtype::game::testing::SURVIVES_CONTACT_SIDE_RULE_TEXT;
@@ -185,6 +187,44 @@ TEST_F(EntitySheetReaderFixture, ReadsTheMarkerOfAnEnemyThatSurvivesContact) {
             SURVIVES_CONTACT_MARKER, APPEARANCE});
 
   EXPECT_TRUE(sheet.survivesContact);
+}
+
+/**
+ * Given the sheet of an enemy with the table stays_outside
+ * When its gameplay is read
+ * Then the enemy stays outside the playfield
+ */
+TEST_F(EntitySheetReaderFixture, ReadsTheMarkerOfAnEnemyThatStaysOutside) {
+  const EntitySheet sheet =
+      read({ENEMY_GAMEPLAY, BYDO_HITBOX, STEADY_MOTION, LEFT_HEADING_TABLE,
+            STAYS_OUTSIDE_MARKER, APPEARANCE});
+
+  EXPECT_TRUE(sheet.staysOutside);
+}
+
+/**
+ * Given the sheet of an enemy without the table stays_outside
+ * When its gameplay is read
+ * Then leaving the playfield removes the enemy
+ */
+TEST_F(EntitySheetReaderFixture, AnEnemyWithoutTheMarkerDoesNotStayOutside) {
+  const EntitySheet sheet = read({ENEMY_GAMEPLAY, BYDO_HITBOX, STEADY_MOTION,
+                                  LEFT_HEADING_TABLE, APPEARANCE});
+
+  EXPECT_FALSE(sheet.staysOutside);
+}
+
+/**
+ * Given the sheet of a missile of an enemy with the marker stays_outside
+ * When its gameplay is read
+ * Then the refusal says only an enemy stays outside the playfield
+ */
+TEST_F(EntitySheetReaderFixture, RefusesTheStaysOutsideMarkerOnAMissile) {
+  const std::string message =
+      refusalOf({ENEMY_MISSILE_GAMEPLAY, BYDO_HITBOX, STEADY_MOTION,
+                 LEFT_HEADING_TABLE, STAYS_OUTSIDE_MARKER, APPEARANCE});
+
+  EXPECT_THAT(message, HasSubstr(STAYS_OUTSIDE_SIDE_RULE_TEXT));
 }
 
 /**

@@ -40,6 +40,7 @@
 #include "ShipPilot.hpp"
 #include "Shootable.hpp"
 #include "ShownLook.hpp"
+#include "StaysOutside.hpp"
 #include "SteadyMotion.hpp"
 #include "SurvivesContact.hpp"
 #include "TimeConstants.hpp"
@@ -133,10 +134,10 @@ bool isShootable(const EntitySheet& sheet) {
 }
 
 /** @brief Gives @p start the parts that decide what its contact with a ship
- * or a missile does: the CurrentAction of an enemy, then the HurtZone and the
- * SurvivesContact, the Fragile and the Armored its sheet declares, the
- * Shootable of a
- * missile SHOOTABLE_MISSILE_SHEETS names, and the LookItem of a look item. */
+ * or a missile does, or what leaving the playfield does: the CurrentAction of
+ * an enemy, then the HurtZone, the SurvivesContact, the Fragile, the Armored
+ * and the StaysOutside its sheet declares, the Shootable of a missile
+ * SHOOTABLE_MISSILE_SHEETS names, and the LookItem of a look item. */
 void addContactParts(engine::ComponentRegistry& components,
                      const BodyStart& start) {
   const EntitySheet& sheet = start.sheet.get();
@@ -154,6 +155,9 @@ void addContactParts(engine::ComponentRegistry& components,
   }
   if (sheet.armoredIn.has_value()) {
     components.add(start.body, Armored{.attack = *sheet.armoredIn});
+  }
+  if (sheet.staysOutside) {
+    components.add(start.body, StaysOutside{});
   }
   if (isShootable(sheet)) {
     components.add(start.body, Shootable{});

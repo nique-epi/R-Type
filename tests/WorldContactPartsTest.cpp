@@ -16,6 +16,7 @@
 #include "Position.hpp"
 #include "ShippedEntitySheets.hpp"
 #include "Shootable.hpp"
+#include "StaysOutside.hpp"
 #include "SurvivesContact.hpp"
 #include "World.hpp"
 #include "WorldContactPartsFixtures.hpp"
@@ -34,6 +35,7 @@ using rtype::game::HurtZone;
 using rtype::game::Position;
 using rtype::game::Shootable;
 using rtype::game::SHOOTABLE_MISSILE_SHEETS;
+using rtype::game::StaysOutside;
 using rtype::game::SurvivesContact;
 using rtype::game::World;
 using rtype::game::testing::ARMORED_IN_ATTACK_THREE;
@@ -113,6 +115,22 @@ TEST(WorldContactParts, TheMarkerOfTheSheetIsOnTheEntity) {
 }
 
 /**
+ * Given a sheet whose enemy stays outside the playfield
+ * When an entity of that sheet is spawned
+ * Then it carries the StaysOutside marker
+ */
+TEST(WorldContactParts, TheStaysOutsideMarkerOfTheSheetIsOnTheEntity) {
+  World world;
+  EntitySheet sheet = drifterWith(std::nullopt, false);
+  sheet.staysOutside = true;
+
+  const std::uint32_t entityId =
+      world.spawn(sheet, Position{.x = SOME_X, .y = SOME_Y});
+
+  EXPECT_TRUE(componentOf<StaysOutside>(world, entityId).has_value());
+}
+
+/**
  * Given the shipped sheet of a Drifter, which declares no contact part
  * When an entity of that sheet is spawned
  * Then it has neither a hurt zone nor the marker
@@ -126,6 +144,7 @@ TEST(WorldContactParts, ASheetThatDeclaresNothingGivesNoContactPart) {
 
   EXPECT_FALSE(componentOf<HurtZone>(world, entityId).has_value());
   EXPECT_FALSE(componentOf<SurvivesContact>(world, entityId).has_value());
+  EXPECT_FALSE(componentOf<StaysOutside>(world, entityId).has_value());
 }
 
 /**
@@ -275,4 +294,20 @@ TEST(WorldContactParts, TheShippedTyrantIsArmoredInItsArrival) {
   ASSERT_TRUE(armored.has_value());
   EXPECT_EQ(armored.value_or(Armored{}).attack,
             tyrant.boss.value_or(BossSheet{}).arrivalAttack);
+}
+
+/**
+ * Given the sheet of the Bydo Tyrant the game ships, whose charge takes it
+ * past the left edge
+ * When an entity of that sheet is spawned
+ * Then it carries the StaysOutside marker
+ */
+TEST(WorldContactParts, TheShippedTyrantStaysOutside) {
+  World world;
+
+  const std::uint32_t entityId =
+      world.spawn(shippedEntitySheets().named(BYDO_TYRANT_SHEET),
+                  Position{.x = SOME_X, .y = SOME_Y});
+
+  EXPECT_TRUE(componentOf<StaysOutside>(world, entityId).has_value());
 }
