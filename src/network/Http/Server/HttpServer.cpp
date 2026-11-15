@@ -1,7 +1,5 @@
 #include "HttpServer.hpp"
 #include <httplib.h>
-#include <algorithm>
-#include <cctype>
 #include <cstdint>
 #include <exception>
 #include <memory>
@@ -22,6 +20,7 @@
 #include "HttpServerConstants.hpp"
 #include "HttpStatusConstants.hpp"
 #include "ListeningLoss.hpp"
+#include "LowercaseText.hpp"
 #include "MasterHttpConstants.hpp"
 #include "NetworkConstants.hpp"
 #include "NetworkException.hpp"
@@ -91,15 +90,6 @@ void writeProblemDocument(httplib::Response& response) {
   }
 }
 
-/** @returns @p text in lowercase, as a header name or a scheme is compared. */
-std::string lowercaseOf(std::string_view text) {
-  std::string lowercase{text};
-  std::ranges::transform(lowercase, lowercase.begin(), [](char letter) {
-    return static_cast<char>(std::tolower(static_cast<unsigned char>(letter)));
-  });
-  return lowercase;
-}
-
 /**
  * @returns The token after BEARER_SCHEME and its separator in @p
  * authorization, the scheme read in any case, or nothing for another scheme or
@@ -141,16 +131,24 @@ std::unordered_map<std::string, std::string> headersOf(
   return headers;
 }
 
+/** @returns What @p request says of its client. */
+PeerAddresses peerAddressesOf(const httplib::Request& request) {
+  return PeerAddresses{
+      .peer = request.remote_addr,
+      .forwardedFor =
+          request.get_header_value(std::string{FORWARDED_FOR_HEADER}),
+      .forwardedProto =
+          request.get_header_value(std::string{FORWARDED_PROTO_HEADER})};
+}
+
 ApiRequest apiRequestOf(const httplib::Request& request,
                         ForwardedAddress forwarded) {
+  const PeerAddresses addresses = peerAddressesOf(request);
   return ApiRequest{.body = request.body,
                     .bearerToken = bearerTokenIn(request.get_header_value(
                         std::string{AUTHORIZATION_HEADER})),
-                    .remoteAddress = clientAddressOf(
-                        PeerAddresses{.peer = request.remote_addr,
-                                      .forwardedFor = request.get_header_value(
-                                          std::string{FORWARDED_FOR_HEADER})},
-                        forwarded),
+                    .remoteAddress = clientAddressOf(addresses, forwarded),
+                    .overHttps = reachedOverHttps(addresses, forwarded),
                     .headers = headersOf(request),
                     .pathParameters = request.path_params,
                     .queryParameters = queryParametersOf(request)};

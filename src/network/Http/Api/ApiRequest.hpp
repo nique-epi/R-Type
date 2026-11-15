@@ -21,6 +21,11 @@ struct ApiRequest {
    */
   std::string remoteAddress;
   /**
+   * @brief Whether the client reached the server over HTTPS, through the proxy
+   * on the machine, as reachedOverHttps() reads it.
+   */
+  bool overHttps{false};
+  /**
    * @brief The headers of the request, their names in lowercase, since a
    * header name is read in any case (RFC 9110, section 5.1); a header given
    * twice keeps one of its values. Whatever the client wrote: a route trusts
