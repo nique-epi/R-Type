@@ -249,10 +249,11 @@ src/client/
 ├── Shop/                the shop: the wares, the chosen one, and their painting
 │   ├── Shelves/         what is for sale, where each ware lies, the choice
 │   └── Painting/        the price tags, the cells of the locker, the glass case
-├── Casino/              the casino: the chips the table moves, its entrance and its cashier
-│   ├── Painting/        the gold panels, the balances, the bars
+├── Casino/              the casino: the chips the table moves, its entrance, its cashier and its roulette
+│   ├── Painting/        the gold panels, the balances, the bars, the chip selector
 │   ├── Entrance/        the doors, the butler and the hall
-│   └── Cashier/         the amount, the selector and the exchange
+│   ├── Cashier/         the amount and the exchange
+│   └── Roulette/        the cloth, the bets, the wheel and the table screen
 ├── Hangar/              the hangar: the ship, what it wears, and the items won
 │   ├── Locker/          the locker of the items and its metal
 │   └── Dock/            the bay, the arms and the fitting of an item
