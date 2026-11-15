@@ -694,9 +694,10 @@ TEST_F(ServerMapScreenFixture, WithLessMotionThePlanetsStandStill) {
 
   update(ONE_PLANET_TURN_FRAME);
 
-  ASSERT_TRUE(std::ranges::any_of(
-      painting().images,
-      [](const RecordedImage& image) { return image.assetId == MAP_SHEET; }));
+  ASSERT_TRUE(std::ranges::any_of(painting().images,
+                                  [](const RecordedImage& image) noexcept {
+                                    return image.assetId == MAP_SHEET;
+                                  }));
   for (const RecordedImage& image : painting().images) {
     if (image.assetId == MAP_SHEET) {
       EXPECT_EQ(image.source.position.x, 0);
