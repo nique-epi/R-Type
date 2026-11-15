@@ -167,12 +167,59 @@ ALTER TABLE heartbeat_samples ADD COLUMN total_memory_bytes REAL;
 )sql";
 
 /**
+ * @brief The sixth version: the accounts of the players, their sessions, and
+ * the sign-ins that failed, which the master counts per address.
+ *
+ * A nickname is unique, compared with NOCASE as a game server compares
+ * nicknames, so `ACE` and `ace` are one account. The password is kept as the
+ * 128 bytes of hydro_pwhash_create() (network::passwordHashOf()), encrypted
+ * with the key given at launch, which the file never holds. The role is text
+ * with no CHECK, as the status of a server: a later role needs no rebuild of
+ * the table; the master writes only network::ACCOUNT_ROLE_TEXTS.
+ *
+ * A session is keyed by the fingerprint of its token, never the token, so a
+ * copy of the file opens no session; the table has no rowid, as
+ * heartbeat_samples. A failed sign-in is one row per address and second,
+ * forgotten once it no longer counts.
+ */
+constexpr std::string_view ACCOUNTS_MIGRATION = R"sql(
+CREATE TABLE accounts (
+  id                 INTEGER PRIMARY KEY,
+  nickname           TEXT    NOT NULL UNIQUE COLLATE NOCASE,
+  password_hash      BLOB    NOT NULL,
+  role               TEXT    NOT NULL,
+  created_by_address TEXT    NOT NULL,
+  created_at         INTEGER NOT NULL
+) STRICT;
+
+CREATE INDEX accounts_by_creator ON accounts (created_by_address, created_at);
+
+CREATE TABLE sessions (
+  token_fingerprint TEXT    PRIMARY KEY,
+  account_id        INTEGER NOT NULL REFERENCES accounts (id),
+  address           TEXT    NOT NULL,
+  created_at        INTEGER NOT NULL,
+  expires_at        INTEGER NOT NULL
+) STRICT, WITHOUT ROWID;
+
+CREATE INDEX sessions_by_expiry ON sessions (expires_at);
+
+CREATE TABLE sign_in_failures (
+  address   TEXT    NOT NULL,
+  failed_at INTEGER NOT NULL
+) STRICT;
+
+CREATE INDEX sign_in_failures_by_address ON sign_in_failures (address, failed_at);
+CREATE INDEX sign_in_failures_by_date ON sign_in_failures (failed_at);
+)sql";
+
+/**
  * @brief The migrations of the database of the master, in order:
  * MASTER_MIGRATIONS[0] is version 1. A change adds a migration at the end and
  * never edits one a master already applied.
  */
-constexpr std::array<std::string_view, 5> MASTER_MIGRATIONS{
-    SERVERS_MIGRATION, STATUSES_MIGRATION, PROBES_MIGRATION, RESULTS_MIGRATION,
-    MACHINE_LOAD_MIGRATION};
+constexpr std::array<std::string_view, 6> MASTER_MIGRATIONS{
+    SERVERS_MIGRATION, STATUSES_MIGRATION,     PROBES_MIGRATION,
+    RESULTS_MIGRATION, MACHINE_LOAD_MIGRATION, ACCOUNTS_MIGRATION};
 
 }  // namespace rtype::master

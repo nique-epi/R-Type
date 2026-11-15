@@ -25,8 +25,9 @@ class MasterHttpServer {
 
   /**
    * @brief Answers the method of @p route on network::MASTER_API_PREFIX and
-   * its path with @p handler. Call it before open(): the threads open() starts
-   * read the routes.
+   * its path with @p handler; a route marked httpsOnly answers 403 instead to
+   * a request that did not come over HTTPS. Call it before open(): the threads
+   * open() starts read the routes.
    */
   void add(network::MasterRoute route, network::ApiHandler handler);
 
