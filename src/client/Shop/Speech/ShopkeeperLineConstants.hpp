@@ -99,9 +99,10 @@ constexpr std::array<std::string_view, 4> SHOPKEEPER_BORDER_RADIO_LINES{
     "AH, BORDER MUSIC. CAUSE NO TROUBLE IN MY SHOP.",
     "YOUR PAPERS ARE IN ORDER. YOUR WALLET, WE WILL SEE.",
     "ENTRY DENIED... JOKE! COME IN, BUY HAT."};
-/** @brief The radio tuned to Kavorka, a music to dance to. */
+/** @brief The radio tuned to Kavorka, a happy acoustic music, busy and
+ * frantic. */
 constexpr std::string_view SHOPKEEPER_DANCE_RADIO_LINE =
-    "DISCO! MY TENTACLES DANCE ON THEIR OWN. BUY SOMETHING, QUICK.";
+    "SO HAPPY, SO FAST! MY TENTACLES CANNOT KEEP UP.";
 constexpr std::string_view SHOPKEEPER_SHOP_MUSIC_LINE =
     "AH, BACK TO MOSCOW. MUCH BETTER.";
 

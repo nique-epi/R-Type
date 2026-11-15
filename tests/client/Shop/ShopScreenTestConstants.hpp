@@ -90,7 +90,7 @@ constexpr std::string_view RADIO_HINT_WORD = "QUIET?";
 constexpr std::string_view FIRST_BOTTLES_WORD = "HANDS";
 constexpr std::string_view SECOND_BOTTLES_WORD = "MEDICINE.";
 constexpr std::string_view BORDER_RADIO_WORD = "ARSTOTZKA!";
-constexpr std::string_view DANCE_RADIO_WORD = "DISCO!";
+constexpr std::string_view DANCE_RADIO_WORD = "FAST!";
 /** @brief A word of each of his three lines on his abacus and his tea. */
 constexpr std::string_view FIRST_COUNTER_WORD = "ABACUS,";
 constexpr std::string_view SECOND_COUNTER_WORD = "AGAIN?";

@@ -282,7 +282,7 @@ TEST_F(ShopBoothFixture, ANewLineCutsTheRadioHint) {
 /**
  * Given a shop that shows lines whole
  * When R tunes the radio to Papers, Please, to Kavorka, then back
- * Then the shopkeeper speaks of Arstotzka, of disco, then of Moscow
+ * Then the shopkeeper speaks of Arstotzka, of a fast music, then of Moscow
  */
 TEST_F(ShopBoothFixture, TheRadioTunedHasTheShopkeeperSpeakOfIt) {
   reopenWithLessMotion();
