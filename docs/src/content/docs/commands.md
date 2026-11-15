@@ -72,7 +72,7 @@ Master settings (see [Master](/R-Type/master/#configuration-mastercfg)):
 
 | Setting | Value | Default | Effect |
 |---|---|---|---|
-| `port` | 1 to 65535 | 8080 | The TCP port the HTTP API listens on, on every interface. |
+| `port` | 0 to 65535 | 8080 | The TCP port the HTTP API listens on, on every interface; 0 lets the system choose a free one, which the journal names. |
 | `database` | a path | empty | The SQLite file of the master; empty for `r-type_master.db` next to the executable. |
 
 ### `module`

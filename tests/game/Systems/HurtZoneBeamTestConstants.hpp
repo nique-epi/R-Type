@@ -5,6 +5,7 @@
 #include "EnemyPhase.hpp"
 #include "HurtBeam.hpp"
 #include "HurtWindow.hpp"
+#include "Position.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::game::testing {
@@ -61,5 +62,16 @@ constexpr engine::Duration HALFWAY_THROUGH_THE_SWEEP =
 constexpr engine::Duration EARLY_IN_THE_SWEEP = std::chrono::milliseconds(100);
 constexpr float SHIP_HALFWAY_DOWN_THE_SWEEP_X = -141.42F;
 constexpr float SHIP_HALFWAY_DOWN_THE_SWEEP_Y = 141.42F;
+
+/**
+ * @brief The ship of the shipped sheet under the straight beam, which covers
+ * y -10 to 10. Centered at y 36, its box (4 to 68) and its mask (row 1 of the
+ * grid, 36 / 4 - 8 = 1) start at 4 units: the beam crosses rows 0 and 1 of
+ * masks/ship.txt, which are clear. Centered at y 28, its mask starts on row
+ * -1 (28 / 4 - 8): the beam crosses rows 2 and 3, where its top fin is drawn
+ * (columns 14 to 18, from x -208 to -188 for a ship centered at x -200).
+ */
+constexpr Position SHIP_GRAZED_ON_ITS_CLEAR_TOP{.x = -200.0F, .y = 36.0F};
+constexpr Position SHIP_GRAZED_ON_ITS_FIN{.x = -200.0F, .y = 28.0F};
 
 }  // namespace rtype::game::testing

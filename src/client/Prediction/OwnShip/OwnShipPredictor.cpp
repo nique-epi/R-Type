@@ -102,4 +102,8 @@ game::Position OwnShipPredictor::position() const {
   return prediction_.position();
 }
 
+std::optional<float> OwnShipPredictor::rollShare() const {
+  return prediction_.rollShare();
+}
+
 }  // namespace rtype::client

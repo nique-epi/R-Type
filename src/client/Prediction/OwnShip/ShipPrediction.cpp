@@ -2,7 +2,9 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <span>
+#include "BarrelRoll.hpp"
 #include "Bounds.hpp"
 #include "ObstacleBlocking.hpp"
 #include "Position.hpp"
@@ -89,6 +91,10 @@ void ShipPrediction::seeObstacles(std::span<const engine::Bounds> obstacles) {
 bool ShipPrediction::isStarted() const { return started_; }
 
 game::Position ShipPrediction::position() const { return current_.position; }
+
+std::optional<float> ShipPrediction::rollShare() const {
+  return game::rollShareOf(current_.motion);
+}
 
 void ShipPrediction::dropBefore(std::uint32_t inputNumber) {
   while (!pending_.empty() && pending_.front().inputNumber < inputNumber) {

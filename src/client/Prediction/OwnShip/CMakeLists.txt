@@ -12,6 +12,7 @@ target_link_libraries(rtype_client_prediction_own_ship
   PUBLIC
     rtype_client_connection_module
     rtype_client_entities
+    rtype_client_sprite_look
     rtype_engine
     rtype_engine_time
     rtype_game_components

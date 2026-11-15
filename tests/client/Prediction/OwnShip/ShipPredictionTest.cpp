@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <array>
 #include <cstdint>
+#include <optional>
 #include "PredictionFixtures.hpp"
 #include "PredictionTestConstants.hpp"
 #include "ShipControl.hpp"
@@ -18,6 +19,7 @@ using rtype::client::testing::HOLDING_NOTHING;
 using rtype::client::testing::HOLDING_RIGHT;
 using rtype::client::testing::INSIDE_THE_TOLERANCE;
 using rtype::client::testing::OLDER_THAN_ANY_KEPT_COMMAND;
+using rtype::client::testing::ONE_TICK_INTO_A_ROLL;
 using rtype::client::testing::SECOND_COMMAND;
 using rtype::client::testing::shiftedRight;
 using rtype::client::testing::shipAfterCommands;
@@ -266,4 +268,36 @@ TEST(ShipPrediction, CommandsPlayedAgainStopAgainstTheWall) {
   prediction.restart(START, OLDER_THAN_ANY_KEPT_COMMAND);
 
   EXPECT_FLOAT_EQ(prediction.position().x, AGAINST_THE_WALL_ON_THE_RIGHT_X);
+}
+
+/**
+ * Given a prediction that presses down, releases, and presses down again
+ * within the double tap window
+ * When the third command is predicted
+ * Then the predicted ship is one tick into its roll, as the server counts it
+ */
+TEST(ShipPrediction, APredictedRollTellsHowFarItWent) {
+  ShipPrediction rolled;
+  rolled.restart(START, OLDER_THAN_ANY_KEPT_COMMAND);
+  rolled.predict(HOLDING_DOWN, FIRST_COMMAND);
+  rolled.predict(HOLDING_NOTHING, SECOND_COMMAND);
+  rolled.predict(HOLDING_DOWN, THIRD_COMMAND);
+
+  const std::optional<float> share = rolled.rollShare();
+
+  ASSERT_TRUE(share.has_value());
+  EXPECT_FLOAT_EQ(share.value_or(0.0F), ONE_TICK_INTO_A_ROLL);
+}
+
+/**
+ * Given a prediction that only holds down
+ * When it is predicted
+ * Then the predicted ship does not roll
+ */
+TEST(ShipPrediction, AShipThatDoesNotRollHasNoShareOfARoll) {
+  ShipPrediction held;
+  held.restart(START, OLDER_THAN_ANY_KEPT_COMMAND);
+  held.predict(HOLDING_DOWN, FIRST_COMMAND);
+
+  EXPECT_FALSE(held.rollShare().has_value());
 }

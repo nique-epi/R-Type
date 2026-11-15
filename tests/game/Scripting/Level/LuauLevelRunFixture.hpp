@@ -4,10 +4,12 @@
 #include <cstddef>
 #include <memory>
 #include <string_view>
+#include <vector>
 #include "BehaviourScripts.hpp"
 #include "BehaviourScriptsFixtures.hpp"
 #include "ComponentRegistry.hpp"
 #include "EntityRegistry.hpp"
+#include "LdtkPlacement.hpp"
 #include "LevelProgress.hpp"
 #include "LuauLevelRun.hpp"
 
@@ -17,8 +19,11 @@ class LuauLevelRunFixture : public ::testing::Test {
  protected:
   LuauLevelRunFixture();
 
+  /** @brief Gives the level played next the enemies @p placements; call it
+   * before play(). */
+  void placeEnemies(std::vector<rtype::game::LdtkPlacement> placements);
   /** @brief Runs @p script and starts the run of the level TEST_LEVEL it
-   * registers. */
+   * registers, with the enemies placeEnemies() gave it. */
   void play(std::string_view script);
   /** @brief Lets @p count ticks pass. */
   void tick(std::size_t count);
@@ -35,5 +40,6 @@ class LuauLevelRunFixture : public ::testing::Test {
   rtype::engine::EntityRegistry entities_;
   rtype::engine::ComponentRegistry components_;
   rtype::game::LevelProgress progress_;
+  std::vector<rtype::game::LdtkPlacement> placements_;
   std::unique_ptr<rtype::game::LuauLevelRun> run_;
 };

@@ -1,7 +1,7 @@
 target_sources(server_module_tests PRIVATE ServerModuleFixture.cpp GameProcessModulesFixture.cpp GameProcessModulesTest.cpp SupervisorModulesFixture.cpp SupervisorModulesTest.cpp GameLineRuleTest.cpp GameAssetPathsTest.cpp GameAssetPathsFixtures.cpp ServerRolesFixture.cpp ServerRolesTest.cpp ${RTYPE_TEST_SOURCE_DIR}/doubles/StartRefusedException.cpp)
 target_compile_definitions(server_module_tests PRIVATE RTYPE_SOURCE_SERVER_CONFIGURATION_EXAMPLE="${PROJECT_SOURCE_DIR}/server.cfg.example")
 
-target_sources(server_module_tests PRIVATE SupervisorWithMasterFixture.cpp ${RTYPE_TEST_SOURCE_DIR}/master/RunningMaster.cpp ${RTYPE_TEST_SOURCE_DIR}/master/MasterDatabaseFile.cpp ${RTYPE_TEST_SOURCE_DIR}/doubles/HttpPortProbe.cpp)
+target_sources(server_module_tests PRIVATE SupervisorWithMasterFixture.cpp ${RTYPE_TEST_SOURCE_DIR}/master/RunningMaster.cpp ${RTYPE_TEST_SOURCE_DIR}/master/MasterDatabaseFile.cpp ${RTYPE_TEST_SOURCE_DIR}/doubles/HttpPortProbe.cpp ${RTYPE_TEST_SOURCE_DIR}/doubles/HttpPortRecordingModule.cpp)
 target_include_directories(server_module_tests PRIVATE ${RTYPE_TEST_SOURCE_DIR}/master)
 
 target_sources(server_module_tests PRIVATE ${RTYPE_TEST_SOURCE_DIR}/server/Storage/Database/ResultsFileFixtures.cpp)

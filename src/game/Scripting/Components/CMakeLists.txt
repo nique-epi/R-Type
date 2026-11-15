@@ -13,6 +13,7 @@ target_link_libraries(rtype_game_scripting_components
     rtype_engine_scripting
   PRIVATE
     rtype_game_components
+    rtype_game_contacts
     rtype_game_scripting_constants
 )
 

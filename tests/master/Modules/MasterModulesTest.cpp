@@ -8,7 +8,6 @@
 #include <utility>
 #include <vector>
 #include "EngineException.hpp"
-#include "HttpPortProbe.hpp"
 #include "IModule.hpp"
 #include "MasterModulesFixture.hpp"
 #include "MasterModulesTestConstants.hpp"
@@ -56,8 +55,8 @@ TEST_F(MasterModulesFixture, TheMasterCreatesItsDatabaseWhereTheSettingSays) {
 /**
  * Given the `database` setting naming a file in a folder that does not exist
  * When the master starts
- * Then the start fails, and the port of the API was never opened: the
- * storage starts before the API
+ * Then the start fails, and the API never listened: the storage starts before
+ * the API
  */
 TEST_F(MasterModulesFixture, ADatabaseItCannotOpenStopsTheMasterBeforeItsPort) {
   const auto application = masterApplication(
@@ -65,7 +64,7 @@ TEST_F(MasterModulesFixture, ADatabaseItCannotOpenStopsTheMasterBeforeItsPort) {
 
   EXPECT_THROW(application->start(), ModuleStartFailedException);
 
-  EXPECT_TRUE(httpPortIsFree(port()));
+  EXPECT_TRUE(journalLinesHolding(HTTP_LISTENING_LINE).empty());
 }
 
 /**

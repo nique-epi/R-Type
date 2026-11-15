@@ -7,7 +7,6 @@
 #include "Endpoint.hpp"
 #include "MasterHttpServer.hpp"
 #include "NetworkConstants.hpp"
-#include "NetworkException.hpp"
 
 namespace {
 
@@ -30,17 +29,6 @@ std::uint16_t freeHttpPort() {
       probe.open(everyInterfaceOn(rtype::network::ANY_PORT));
   probe.close();
   return port;
-}
-
-bool httpPortIsFree(std::uint16_t port) {
-  rtype::master::MasterHttpServer probe = quietHttpServer();
-  try {
-    static_cast<void>(probe.open(everyInterfaceOn(port)));
-  } catch (const rtype::network::HttpPortUnavailableException&) {
-    return false;
-  }
-  probe.close();
-  return true;
 }
 
 // NOLINTBEGIN(clang-analyzer-cplusplus.NewDeleteLeaks,clang-analyzer-unix.BlockInCriticalSection)

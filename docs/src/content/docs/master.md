@@ -49,7 +49,7 @@ The master reads `master.cfg`, in the folder it is started from, between the ins
 
 | Setting | Value | Default | Effect |
 |---|---|---|---|
-| `port` | 1 to 65535 | 8080 | The TCP port the HTTP API listens on, on every interface. |
+| `port` | 0 to 65535 | 8080 | The TCP port the HTTP API listens on, on every interface; 0 lets the system choose a free one, which the journal names. |
 | `database` | a path | empty | The SQLite file of the master; empty for `r-type_master.db` next to the executable. |
 | `site-key` | a text | empty | The secret the web site names itself by when it creates a server for a visitor (see [Creating a game server](#creating-a-game-server-post-apiservers)); empty, the master reads nothing the site says of its visitor. Set it in `master.cfg`, never on the command line, which every user of the machine can read. |
 

@@ -8,6 +8,7 @@
 #include "EntitySheetsTestConstants.hpp"
 #include "EntityType.hpp"
 #include "GameException.hpp"
+#include "MaskSheet.hpp"
 #include "NumberedEntityType.hpp"
 #include "NumberedEntityTypes.hpp"
 #include "NumberedEntityTypesTestConstants.hpp"
@@ -20,6 +21,7 @@
 using rtype::engine::MissingDataFileKeyException;
 using rtype::game::EntitySheet;
 using rtype::game::EntityType;
+using rtype::game::MaskSheet;
 using rtype::game::NumberedEntityType;
 using rtype::game::numberedEntityTypesOf;
 using rtype::game::ObstacleContact;
@@ -202,4 +204,28 @@ TEST(NumberedEntityTypes, AnEnemyNamesNoContact) {
 
   ASSERT_EQ(types.size(), ONE_TYPE);
   EXPECT_FALSE(types[0].obstacle.has_value());
+}
+
+/**
+ * Given the sheets the game ships with
+ * When a client numbers their types
+ * Then each type of a sheet that names a collision mask carries a mask as
+ * large as the one the server reads, and every other type carries none
+ */
+TEST(NumberedEntityTypes, ReadsTheMaskOfEverySheetThatNamesOne) {
+  const std::vector<NumberedEntityType> types =
+      numberedEntityTypesOf(sheetTextsIn(shippedSheetFolder()));
+
+  const std::span<const EntitySheet> sheets = shippedEntitySheets().all();
+  ASSERT_EQ(types.size(), sheets.size());
+  for (std::size_t index = 0; index < sheets.size(); ++index) {
+    SCOPED_TRACE(sheets[index].name);
+    ASSERT_EQ(types[index].mask != nullptr, sheets[index].mask.has_value());
+    if (types[index].mask != nullptr) {
+      const MaskSheet read = sheets[index].mask.value_or(MaskSheet{});
+      ASSERT_NE(read.pixels, nullptr);
+      EXPECT_EQ(types[index].mask->width(), read.pixels->width());
+      EXPECT_EQ(types[index].mask->height(), read.pixels->height());
+    }
+  }
 }

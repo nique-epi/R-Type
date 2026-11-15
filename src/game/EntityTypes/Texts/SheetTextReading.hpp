@@ -3,10 +3,12 @@
 #include <filesystem>
 #include <optional>
 #include <span>
+#include <string>
 #include <string_view>
 #include <vector>
 #include "CollisionBox.hpp"
 #include "DataFileTable.hpp"
+#include "MaskSheet.hpp"
 #include "ObstacleContact.hpp"
 #include "SheetText.hpp"
 
@@ -103,5 +105,26 @@ void checkSheetNames(std::span<const SheetText> texts);
  */
 [[nodiscard]] std::optional<ObstacleContact> obstacleContactOf(
     const engine::DataFileTable& gameplay);
+
+/** @returns The path of the mask file of the sheet @p sheetName, from the
+ * folder of the sheet: MASK_FOLDER_OF_SHEETS/<name>MASK_FILE_EXTENSION. */
+[[nodiscard]] std::string maskPathOf(std::string_view sheetName);
+
+/**
+ * @returns The mask `[gameplay.mask]` of @p gameplay names: the pixels the
+ * mask file of @p sheet draws, one line per row from the top, and its
+ * erosion, 0 when left out; nothing for a sheet without mask. Both programs
+ * read a mask this way, so they agree on it.
+ * @throws UnknownDataFileKeyException for a key other than MASK_KEYS; what
+ * engine::textAt() throws for FILE_KEY; InconsistentEntitySheetException, at
+ * FILE_KEY, when it names another file than maskPathOf() the sheet or the
+ * sheet has no mask file; at a line of the mask file for a row of another
+ * width than the first or with a character other than DRAWN_MASK_PIXEL and
+ * CLEAR_MASK_PIXEL; at its first line for no row, a side above
+ * engine::MAXIMUM_MASK_SIDE or no drawn pixel; and
+ * DataFileValueOutOfRangeException for an erosion outside MASK_EROSION_RANGE.
+ */
+[[nodiscard]] std::optional<MaskSheet> maskOf(
+    const engine::DataFileTable& gameplay, const SheetText& sheet);
 
 }  // namespace rtype::game

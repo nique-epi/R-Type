@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <vector>
 #include "BackgroundColorConstants.hpp"
+#include "BayerThreshold.hpp"
 #include "ColoredPixel.hpp"
 #include "DitherPatch.hpp"
 #include "EntitySprites.hpp"

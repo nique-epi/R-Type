@@ -11,6 +11,7 @@
 #include "NetworkEntityTable.hpp"
 #include "NetworkIdAllocator.hpp"
 #include "Position.hpp"
+#include "RolledMaskCatalog.hpp"
 #include "ShipMotion.hpp"
 
 namespace rtype::game {
@@ -124,6 +125,9 @@ class World {
   engine::ComponentRegistry components_{registry_};
   engine::NetworkIdAllocator networkIds_;
   engine::NetworkEntityTable shipByNetworkId_;
+  /** @brief The masks the ships of this world show through a barrel roll,
+   * one set per sheet. */
+  RolledMaskCatalog rolledMasks_;
 };
 
 }  // namespace rtype::game

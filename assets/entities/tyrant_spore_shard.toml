@@ -24,6 +24,9 @@ height = 32
 kind = "steady"
 top_speed = 300
 
+[gameplay.mask]
+file = "masks/tyrant_spore_shard.txt"
+
 [appearance]
 sheet = "sprites/entities.png"
 

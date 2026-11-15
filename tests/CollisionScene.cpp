@@ -3,8 +3,10 @@
 #include "Collision.hpp"
 #include "CollisionBox.hpp"
 #include "CollisionFilter.hpp"
+#include "CollisionMask.hpp"
 #include "CollisionTestConstants.hpp"
 #include "Entity.hpp"
+#include "EntitySheet.hpp"
 #include "EntityType.hpp"
 #include "HitboxParts.hpp"
 #include "Position.hpp"
@@ -44,6 +46,20 @@ Entity CollisionScene::spawnInParts(EntityType type,
   const Entity entity = spawn(type, 0.0F, 0.0F);
   components.add(
       entity, rtype::game::HitboxParts{.boxes = {parts.begin(), parts.end()}});
+  return entity;
+}
+
+Entity CollisionScene::spawnFromSheet(const rtype::game::EntitySheet& sheet,
+                                      Position position) {
+  const Entity entity = entities.create();
+  components.add(entity, position);
+  components.add(entity, sheet.side);
+  components.add(entity, sheet.hitbox);
+  components.add(entity, sheet.collision.filter);
+  if (sheet.mask.has_value()) {
+    components.add(entity,
+                   rtype::game::CollisionMask{.pixels = sheet.mask->pixels});
+  }
   return entity;
 }
 

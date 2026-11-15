@@ -605,6 +605,16 @@ void checkOnHitBelongsToABody(const EntitySheet& sheet,
   }
 }
 
+/** @throws InconsistentEntitySheetException when @p sheet gives a mask and
+ * lists several hitbox boxes: which one it is touched on would be unclear. */
+void checkMaskStandsAlone(const EntitySheet& sheet,
+                          const engine::DataFileTable& gameplay) {
+  if (sheet.mask.has_value() && !sheet.hitboxParts.empty()) {
+    throw InconsistentEntitySheetException(
+        engine::placeOfKey(gameplay, MASK_KEY), MASK_AND_PARTS_RULE);
+  }
+}
+
 /** @throws InconsistentEntitySheetException when the values of @p sheet, each
  * valid, do not hold together. */
 void checkSheetHoldsTogether(const EntitySheet& sheet,
@@ -612,6 +622,7 @@ void checkSheetHoldsTogether(const EntitySheet& sheet,
   checkPilotMatchesSide(sheet, gameplay);
   checkShipMotion(sheet, gameplay);
   checkHitboxPartsBelongToAnEnemy(sheet, gameplay);
+  checkMaskStandsAlone(sheet, gameplay);
   checkWhatItFires(sheet, gameplay);
   checkMissileFliesTowardsItsEdge(sheet, gameplay);
   checkContactPartsBelongToAnEnemy(sheet, gameplay);
@@ -638,6 +649,7 @@ EntitySheet gameplayOf(const SheetText& sheet,
       .collision = collisionFrom(gameplay),
       .hitbox = hitboxOf(gameplay),
       .hitboxParts = hitboxPartsOf(gameplay),
+      .mask = maskOf(gameplay, sheet),
       .motion = motionFrom(gameplay),
       .pilot = pilotFrom(gameplay, behaviours),
       .health = pointsIn<int>(gameplay, HEALTH_KEY, HEALTH_RANGE),

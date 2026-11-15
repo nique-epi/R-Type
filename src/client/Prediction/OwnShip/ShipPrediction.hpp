@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <deque>
+#include <optional>
 #include <span>
 #include "Bounds.hpp"
 #include "Position.hpp"
@@ -61,6 +62,11 @@ class ShipPrediction {
 
   [[nodiscard]] bool isStarted() const;
   [[nodiscard]] game::Position position() const;
+
+  /** @returns How far through its barrel roll the predicted ship is, from 0
+   * to 1, as the server counts it (game::rollShareOf()); nothing while it
+   * does not roll. */
+  [[nodiscard]] std::optional<float> rollShare() const;
 
  private:
   void dropBefore(std::uint32_t inputNumber);

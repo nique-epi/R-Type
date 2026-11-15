@@ -12,12 +12,6 @@
 /** @returns A TCP port nothing listened on a moment ago, on every interface. */
 [[nodiscard]] std::uint16_t freeHttpPort();
 
-/**
- * @returns Whether an HTTP server of the master can listen on @p port of every
- * interface now.
- */
-[[nodiscard]] bool httpPortIsFree(std::uint16_t port);
-
 /** @returns The answer of the server on the loopback and @p port to GET @p
  * path. */
 [[nodiscard]] httplib::Result httpGet(std::uint16_t port,

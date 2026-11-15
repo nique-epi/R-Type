@@ -28,6 +28,7 @@ std::optional<EntityTypeLook> EntityTypeLooks::lookOf(
                         .appearance = *appearance,
                         .hitbox = entry->hitbox,
                         .hitboxParts = entry->hitboxParts,
+                        .mask = entry->mask,
                         .obstacle = entry->obstacle};
 }
 
