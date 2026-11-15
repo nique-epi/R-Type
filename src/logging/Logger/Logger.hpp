@@ -49,6 +49,7 @@
 #include <string_view>
 #include <utility>
 #include "ILogJournal.hpp"
+#include "LogEvent.hpp"
 #include "LogFormat.hpp"
 #include "LogLevel.hpp"
 #include "LogRecord.hpp"
@@ -141,6 +142,14 @@ class Logger {
       emit(LogLevel::Error, std::forward<Args>(args)...);
     }
   }
+
+  /**
+   * @brief Writes @p event as one line when its level is written: the
+   * message as text, and in the JSON of the file a member "event" with its
+   * name and one member per field, so a tool filters on the name and reads
+   * the values.
+   */
+  void event(const LogEvent& event) const;
 
   class ScopedTimer {
    public:

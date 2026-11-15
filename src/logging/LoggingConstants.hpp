@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstddef>
 #include <string_view>
 
@@ -72,6 +73,23 @@ constexpr std::string_view TIME_KEY = "time";
 constexpr std::string_view LEVEL_KEY = "level";
 constexpr std::string_view LOGGER_KEY = "logger";
 constexpr std::string_view MESSAGE_KEY = "message";
+
+/** @brief The member that names the event of a line, after the four above. */
+constexpr std::string_view EVENT_KEY = "event";
+
+/** @brief The names no field of an event may take, since every line, or every
+ * event, already has a member of that name. */
+constexpr std::array RESERVED_KEYS{TIME_KEY, LEVEL_KEY, LOGGER_KEY, MESSAGE_KEY,
+                                   EVENT_KEY};
+
+/** @brief What ends the size of the message in a line queued for the thread
+ * of the journal: "L5:hello{...}". */
+constexpr char MESSAGE_SIZE_END = ':';
+
+/** @brief The digits of the size of a queued message at most, so reading it
+ * never overflows: a size_t of 64 bits holds 19 of them. */
+constexpr std::size_t MESSAGE_SIZE_MAXIMUM_DIGITS = 18;
+constexpr std::size_t DECIMAL_BASE = 10;
 
 constexpr std::string_view TRACE_LABEL = "TRACE";
 constexpr std::string_view DEBUG_LABEL = "DEBUG";

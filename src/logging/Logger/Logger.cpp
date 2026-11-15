@@ -11,6 +11,7 @@
 #include <atomic>
 #include <cctype>
 #include <chrono>
+#include <cstddef>
 #include <cstdint>
 #include <cstdlib>
 #include <ctime>
@@ -28,6 +29,7 @@
 #include "JournalLine.hpp"
 #include "JournalLineParts.hpp"
 #include "JournalWriter.hpp"
+#include "LogEvent.hpp"
 #include "LogFormat.hpp"
 #include "LogLevel.hpp"
 #include "LogRecord.hpp"
@@ -212,22 +214,27 @@ std::string standardErrorText(const Sinks& destination, LogLevel level,
   return std::string{ansiForLevel(level)} + text + std::string{ANSI_RESET};
 }
 
-/** @brief Writes a line of the journal to the file, flushed, and to standard
- * error; the caller holds the lock of @p destination. */
-void writeJournalLine(Sinks& destination, const QueuedLine& line,
-                      std::string_view body) {
-  const std::string time = formatTimestamp(line.time);
+/**
+ * @brief Writes @p record, called at @p time, to the file, flushed, and to
+ * standard error; the caller holds the lock of @p destination. The text of a
+ * line holds its message only; the JSON of the file adds the fields of an
+ * event.
+ */
+void writeJournalLine(Sinks& destination, const LogRecord& record,
+                      std::chrono::system_clock::time_point time) {
+  const std::string timeText = formatTimestamp(time);
   std::ostringstream stream;
-  stream << '[' << time << "] [" << labelForLevel(line.level) << "] ["
-         << line.loggerName << "] - " << body;
+  stream << '[' << timeText << "] [" << labelForLevel(record.level) << "] ["
+         << record.loggerName << "] - " << record.body;
   const std::string text = stream.str();
   if (destination.file.is_open()) {
     if (destination.fileFormat == LogFormat::Json) {
       destination.file << jsonLineOf(
-          JournalLineParts{.time = time,
-                           .level = levelNameOf(line.level),
-                           .logger = line.loggerName,
-                           .message = body});
+          JournalLineParts{.time = timeText,
+                           .level = levelNameOf(record.level),
+                           .logger = record.loggerName,
+                           .message = record.body,
+                           .fields = record.fields});
     } else {
       destination.file << text;
     }
@@ -236,7 +243,7 @@ void writeJournalLine(Sinks& destination, const QueuedLine& line,
   }
   if (destination.toStderr) {
     writeToStandardError(destination,
-                         standardErrorText(destination, line.level, text));
+                         standardErrorText(destination, record.level, text));
   }
 }
 
@@ -246,12 +253,54 @@ void writeLostLines(Sinks& destination, const QueuedLine& line) {
   const std::string body =
       std::to_string(line.lostBefore) + std::string{LOST_LINES_TEXT};
   writeJournalLine(destination,
-                   QueuedLine{.level = LogLevel::Warn,
-                              .loggerName = LOGGING_LOGGER_NAME,
-                              .text = body,
-                              .time = line.time,
-                              .lostBefore = 0},
-                   body);
+                   LogRecord{.level = LogLevel::Warn,
+                             .loggerName = LOGGING_LOGGER_NAME,
+                             .body = body,
+                             .fields = {}},
+                   line.time);
+}
+
+/** @returns The size @p digits writes in decimal; nothing when it is empty,
+ * holds another character, or is longer than any size emitLine() writes. */
+std::optional<std::size_t> sizeIn(std::string_view digits) {
+  if (digits.empty() || digits.size() > MESSAGE_SIZE_MAXIMUM_DIGITS) {
+    return std::nullopt;
+  }
+  std::size_t size = 0;
+  for (const char digit : digits) {
+    if (digit < '0' || digit > '9') {
+      return std::nullopt;
+    }
+    size = (size * DECIMAL_BASE) + static_cast<std::size_t>(digit - '0');
+  }
+  return size;
+}
+
+/**
+ * @returns The record @p line carries after its kind: the size of the message,
+ * MESSAGE_SIZE_END, the message, then the fields of an event. A text that does
+ * not read so, which emitLine() never queues, is taken as a message alone.
+ */
+LogRecord recordOf(const QueuedLine& line) {
+  const std::string_view text = line.text.substr(1);
+  const LogRecord messageAlone{.level = line.level,
+                               .loggerName = line.loggerName,
+                               .body = text,
+                               .fields = {}};
+  const std::size_t sizeEnd = text.find(MESSAGE_SIZE_END);
+  if (sizeEnd == std::string_view::npos) {
+    return messageAlone;
+  }
+  const std::optional<std::size_t> messageSize =
+      sizeIn(text.substr(0, sizeEnd));
+  if (!messageSize.has_value() || *messageSize > text.size() - sizeEnd - 1) {
+    return messageAlone;
+  }
+  const std::string_view rest = text.substr(sizeEnd + 1);
+  return LogRecord{.level = line.level,
+                   .loggerName = line.loggerName,
+                   .body = rest.substr(0, *messageSize),
+                   .fields = rest.substr(*messageSize)};
 }
 
 /**
@@ -270,12 +319,11 @@ void writeQueuedLine(const QueuedLine& line) {
     if (line.text.empty()) {
       return;
     }
-    const std::string_view body = line.text.substr(1);
     if (line.text.front() == STANDARD_ERROR_LINE_KIND) {
-      writeToStandardError(destination, body);
+      writeToStandardError(destination, line.text.substr(1));
       return;
     }
-    writeJournalLine(destination, line, body);
+    writeJournalLine(destination, recordOf(line), line.time);
   } catch (...) {  // NOLINT(bugprone-empty-catch)
   }
 }
@@ -288,13 +336,29 @@ JournalWriter& writer() {
   return instance;
 }
 
-/** @brief Queues @p record for the thread that writes the journal. */
+/** @brief Queues @p record for the thread that writes the journal, as
+ * recordOf() reads it back. */
 void emitLine(const LogRecord& record) {
+  const std::string messageSize = std::to_string(record.body.size());
   std::string text;
-  text.reserve(record.body.size() + 1);
+  text.reserve(messageSize.size() + record.body.size() + record.fields.size() +
+               2);
   text += JOURNAL_LINE_KIND;
+  text += messageSize;
+  text += MESSAGE_SIZE_END;
   text += record.body;
+  text += record.fields;
   writer().queue(record.level, record.loggerName, text);
+}
+
+/** @brief Writes @p record through @p journal, or to the sinks of this copy of
+ * the library when there is none. */
+void writeThrough(const ILogJournal* journal, const LogRecord& record) {
+  if (journal != nullptr) {
+    journal->write(record);
+    return;
+  }
+  emitLine(record);
 }
 
 }  // namespace
@@ -379,12 +443,23 @@ void closeJournal() { writer().close(); }
 bool isStandardErrorColored() { return colorEnabled(); }
 
 void Logger::writeLine(LogLevel candidate, std::string_view body) const {
-  if (journal_ != nullptr) {
-    journal_->write(
-        LogRecord{.level = candidate, .loggerName = name_, .body = body});
+  writeThrough(
+      journal_,
+      LogRecord{
+          .level = candidate, .loggerName = name_, .body = body, .fields = {}});
+}
+
+void Logger::event(const LogEvent& event) const {
+  if (!isCompiledIn(event.level) ||
+      (journal_ == nullptr ? !shouldLog(event.level)
+                           : !journal_->accepts(event.level))) {
     return;
   }
-  emitLine(LogRecord{.level = candidate, .loggerName = name_, .body = body});
+  const std::string fields = eventFieldsText(event);
+  writeThrough(journal_, LogRecord{.level = event.level,
+                                   .loggerName = name_,
+                                   .body = event.message,
+                                   .fields = fields});
 }
 
 Logger::ScopedTimer Logger::scope(std::string label, LogLevel level) const {
@@ -424,7 +499,8 @@ Logger::ScopedTimer::~ScopedTimer() {
     out << label_ << " took " << std::fixed
         << std::setprecision(DURATION_DECIMALS) << milliseconds << " ms";
     const std::string body = out.str();
-    emitLine(LogRecord{.level = level_, .loggerName = name_, .body = body});
+    emitLine(LogRecord{
+        .level = level_, .loggerName = name_, .body = body, .fields = {}});
   } catch (...) {  // NOLINT(bugprone-empty-catch)
   }
 }

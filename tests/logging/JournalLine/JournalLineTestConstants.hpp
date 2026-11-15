@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <string_view>
 
 /** @brief The parts of the line the tests build. */
@@ -19,3 +20,14 @@ constexpr std::string_view FORGED_MESSAGE = R"(ace","event":"forged)";
  * that byte is replaced by U+FFFD. */
 constexpr std::string_view INVALID_UTF8_MESSAGE = "ace\xff";
 constexpr std::string_view REPLACED_UTF8_MESSAGE = "ace\xef\xbf\xbd";
+
+/** @brief The event the tests write, the values of its fields, and the JSON
+ * object eventFieldsText() makes of them. */
+constexpr std::string_view EVENT_NAME = "player.left";
+constexpr std::int64_t EVENT_PLAYER = 3;
+constexpr std::string_view EVENT_ADDRESS = "10.0.0.7";
+constexpr std::string_view EVENT_FIELDS_TEXT =
+    R"({"event":"player.left","player":3,"address":"10.0.0.7","away":false})";
+
+/** @brief A value given to a field named like a member every line has. */
+constexpr std::string_view CLASHING_VALUE = "forged";
