@@ -49,6 +49,7 @@
 #include <string_view>
 #include <utility>
 #include "ILogJournal.hpp"
+#include "LogFormat.hpp"
 #include "LogLevel.hpp"
 #include "LogRecord.hpp"
 
@@ -65,6 +66,9 @@ struct LogOutput {
    * `--log-color`, which the supervisor gives a game whose standard error it
    * relays. */
   bool forceColor{false};
+  /** @brief How the file writes a line: text, or JSON Lines for a tool, with
+   * `--log-format json`. Standard error always shows the text. */
+  LogFormat fileFormat{LogFormat::Text};
 };
 
 class Logger {

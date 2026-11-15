@@ -16,6 +16,7 @@ constexpr std::string_view NO_FILE_OPTION = "--no-log-file";
 constexpr std::string_view STDERR_OPTION = "--log-stderr";
 constexpr std::string_view NO_STDERR_OPTION = "--no-log-stderr";
 constexpr std::string_view COLOR_OPTION = "--log-color";
+constexpr std::string_view FORMAT_OPTION = "--log-format";
 constexpr std::string_view LOG_OPTION_PREFIX = "--log-";
 constexpr std::string_view NO_LOG_OPTION_PREFIX = "--no-log-";
 
@@ -59,6 +60,18 @@ constexpr std::string_view ERROR_NAME = "error";
 constexpr std::string_view SILENT_NAME = "silent";
 constexpr std::string_view OFF_NAME = "off";
 constexpr std::string_view NONE_NAME = "none";
+
+/** @brief The values of FORMAT_OPTION: the journal file as text, or as JSON
+ * Lines. */
+constexpr std::string_view TEXT_FORMAT_NAME = "text";
+constexpr std::string_view JSON_FORMAT_NAME = "json";
+
+/** @brief The names of the members every JSON line of the journal starts with,
+ * in this order. */
+constexpr std::string_view TIME_KEY = "time";
+constexpr std::string_view LEVEL_KEY = "level";
+constexpr std::string_view LOGGER_KEY = "logger";
+constexpr std::string_view MESSAGE_KEY = "message";
 
 constexpr std::string_view TRACE_LABEL = "TRACE";
 constexpr std::string_view DEBUG_LABEL = "DEBUG";

@@ -17,6 +17,16 @@ constexpr std::string_view INFO_LEVEL_ARGUMENT = "info";
 constexpr std::string_view ERROR_LEVEL_ARGUMENT = "error";
 constexpr std::string_view NOT_A_LEVEL_ARGUMENT = "verbose";
 
+/** @brief The values the tests give after `--log-format`, and a word that
+ * names no format. */
+constexpr std::string_view JSON_FORMAT_ARGUMENT = "json";
+constexpr std::string_view TEXT_FORMAT_ARGUMENT = "text";
+constexpr std::string_view NOT_A_FORMAT_ARGUMENT = "xml";
+
+/** @brief How the line of a warning of LAUNCH_LOGGER_NAME ends on standard
+ * error, after its time, in text. */
+constexpr std::string_view SHOWN_TEXT_LINE_END = "[WARN ] [Launch] - shown";
+
 /** @brief A logging option that does not exist, under the `--no-log-` prefix.
  */
 constexpr std::string_view NO_LEVEL_OPTION = "--no-log-level";

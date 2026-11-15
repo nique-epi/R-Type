@@ -1,0 +1,1 @@
+target_sources(logging_tests PRIVATE JournalLineTest.cpp)

@@ -24,6 +24,7 @@ target_link_libraries(rtype_logging_logger
     Threads::Threads
     rtype_logging_exceptions
     rtype_logging_path_text
+    rtype_logging_journal_line
     rtype_logging_journal_writer
     rtype_logging_records
 )

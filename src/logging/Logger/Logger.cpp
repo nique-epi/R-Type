@@ -25,7 +25,10 @@
 #include <string_view>
 #include <utility>
 #include "ILogJournal.hpp"
+#include "JournalLine.hpp"
+#include "JournalLineParts.hpp"
 #include "JournalWriter.hpp"
+#include "LogFormat.hpp"
 #include "LogLevel.hpp"
 #include "LogRecord.hpp"
 #include "LoggingConstants.hpp"
@@ -42,6 +45,7 @@ struct Sinks {
   std::ofstream file;
   bool toStderr{true};
   bool forceColor{false};
+  LogFormat fileFormat{LogFormat::Text};
   std::function<void(std::string_view)> standardError;
 };
 
@@ -212,13 +216,22 @@ std::string standardErrorText(const Sinks& destination, LogLevel level,
  * error; the caller holds the lock of @p destination. */
 void writeJournalLine(Sinks& destination, const QueuedLine& line,
                       std::string_view body) {
+  const std::string time = formatTimestamp(line.time);
   std::ostringstream stream;
-  stream << '[' << formatTimestamp(line.time) << "] ["
-         << labelForLevel(line.level) << "] [" << line.loggerName << "] - "
-         << body;
+  stream << '[' << time << "] [" << labelForLevel(line.level) << "] ["
+         << line.loggerName << "] - " << body;
   const std::string text = stream.str();
   if (destination.file.is_open()) {
-    destination.file << text << '\n';
+    if (destination.fileFormat == LogFormat::Json) {
+      destination.file << jsonLineOf(
+          JournalLineParts{.time = time,
+                           .level = levelNameOf(line.level),
+                           .logger = line.loggerName,
+                           .message = body});
+    } else {
+      destination.file << text;
+    }
+    destination.file << '\n';
     destination.file.flush();
   }
   if (destination.toStderr) {
@@ -338,6 +351,7 @@ void Logger::setOutput(const LogOutput& output) {
   destination.file = std::move(file);
   destination.toStderr = output.toStderr;
   destination.forceColor = output.forceColor;
+  destination.fileFormat = output.fileFormat;
 }
 
 void writeLogLine(const LogRecord& record) { emitLine(record); }
