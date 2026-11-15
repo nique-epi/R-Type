@@ -18,6 +18,7 @@
 #include "MissileHit.hpp"
 #include "MissileOwner.hpp"
 #include "NetworkIdentity.hpp"
+#include "Rage.hpp"
 #include "ScoreValue.hpp"
 #include "Shootable.hpp"
 
@@ -149,7 +150,7 @@ void DamageRules::announceBossHealth(engine::Entity target,
       .networkId = networkId,
       .points = static_cast<std::uint16_t>(std::max(health.points, 0)),
       .full = static_cast<std::uint16_t>(health.full),
-      .enraged = boss->enraged});
+      .enraged = components_.has<Rage>(target)});
 }
 
 }  // namespace rtype::game

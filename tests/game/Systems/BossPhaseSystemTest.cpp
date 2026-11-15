@@ -69,7 +69,7 @@ TEST_F(BossPhaseSystemFixture, EnragesABossBelowItsThreshold) {
 
   run();
 
-  EXPECT_TRUE(boss().enraged);
+  EXPECT_TRUE(enraged());
 }
 
 /**
@@ -135,7 +135,7 @@ TEST_F(BossPhaseSystemFixture, NeverEnragesDuringTheArrival) {
 
   run();
 
-  EXPECT_FALSE(boss().enraged);
+  EXPECT_FALSE(enraged());
   EXPECT_FALSE(boss().fighting);
   EXPECT_TRUE(healths().empty());
   EXPECT_TRUE(startedActions().empty());
@@ -153,6 +153,6 @@ TEST_F(BossPhaseSystemFixture, LeavesABossAboveItsThresholdCalm) {
 
   run();
 
-  EXPECT_FALSE(boss().enraged);
+  EXPECT_FALSE(enraged());
   EXPECT_TRUE(startedActions().empty());
 }

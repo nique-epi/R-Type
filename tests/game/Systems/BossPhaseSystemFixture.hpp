@@ -32,6 +32,9 @@ class BossPhaseSystemFixture : public ::testing::Test {
   /** @returns The Boss of the boss; a calm one when it has none. */
   [[nodiscard]] Boss boss();
 
+  /** @returns Whether the boss has its Rage. */
+  [[nodiscard]] bool enraged();
+
   [[nodiscard]] const std::vector<BossHealthChanged>& healths() const;
   [[nodiscard]] const std::vector<EnemyActionStarted>& startedActions() const;
 

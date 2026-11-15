@@ -2,7 +2,6 @@
 
 #include <cstddef>
 #include <cstdint>
-#include "Boss.hpp"
 #include "CollisionBox.hpp"
 #include "Health.hpp"
 #include "Position.hpp"
@@ -50,12 +49,7 @@ constexpr CollisionBox STARTING_BOX{
 constexpr CollisionBox ASKED_BOX{.width = 200.0F, .height = 100.0F};
 constexpr float STARTING_TOP_SPEED = 240.0F;
 constexpr float ASKED_TOP_SPEED = 480.0F;
-/** @brief A boss that enraged, and how many actions an enemy has ended. */
-constexpr Boss ENRAGED_BOSS{.rageBelowPoints = 120,
-                            .rageAttack = 9,
-                            .arrivalAttack = 0,
-                            .fighting = true,
-                            .enraged = true};
+/** @brief How many actions an enemy has ended. */
 constexpr std::uint32_t THREE_ENDED_ACTIONS = 3;
 
 }  // namespace rtype::game::testing

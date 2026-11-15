@@ -7,6 +7,7 @@
 #include "EnemyActionStarted.hpp"
 #include "Health.hpp"
 #include "NetworkIdentity.hpp"
+#include "Rage.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::game::testing {
@@ -39,6 +40,8 @@ Boss BossPhaseSystemFixture::boss() {
   const Boss* const found = components_.get<Boss>(boss_);
   return found == nullptr ? Boss{} : *found;
 }
+
+bool BossPhaseSystemFixture::enraged() { return components_.has<Rage>(boss_); }
 
 const std::vector<BossHealthChanged>& BossPhaseSystemFixture::healths() const {
   return healths_;

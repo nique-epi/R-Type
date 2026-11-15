@@ -10,9 +10,9 @@ namespace rtype::game {
  *
  * DamageRules takes nothing from it while it is in any phase of its arrival,
  * and announces its health after every hit; BossPhaseSystem announces its
- * fight once its arrival is over, and enrages it, once, when its health falls
- * below rageBelowPoints; PlayfieldExitSystem never removes it; the boss stage
- * of the server ends the level once it is gone.
+ * fight once its arrival is over, and gives it its Rage, once, when its
+ * health falls below rageBelowPoints; PlayfieldExitSystem never removes it; the
+ * boss stage of the server ends the level once it is gone.
  */
 struct Boss {
   /** @brief Its full health times the percentage of its sheet, rounded down. */
@@ -21,8 +21,6 @@ struct Boss {
   std::uint8_t arrivalAttack{0};
   /** @brief Whether its fight was announced; set once by BossPhaseSystem. */
   bool fighting{false};
-  /** @brief Whether it enraged; set once by BossPhaseSystem, never cleared. */
-  bool enraged{false};
 };
 
 /** @returns The points a boss of @p fullHealth enrages below, for the

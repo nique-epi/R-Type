@@ -14,6 +14,7 @@
 #include "PilotSystemFixture.hpp"
 #include "PilotSystemTestConstants.hpp"
 #include "Position.hpp"
+#include "Rage.hpp"
 #include "SteadyMotion.hpp"
 #include "TimeConstants.hpp"
 #include "ViewRecordingBehaviour.hpp"
@@ -27,6 +28,7 @@ using rtype::game::CurrentAction;
 using rtype::game::Intent;
 using rtype::game::Pilot;
 using rtype::game::Position;
+using rtype::game::Rage;
 using rtype::game::SteadyMotion;
 using rtype::game::STRAIGHT_BEHAVIOUR_NAME;
 using rtype::game::waveEntryPosition;
@@ -36,7 +38,6 @@ using rtype::game::testing::ASKED_BOX;
 using rtype::game::testing::ASKED_TOP_SPEED;
 using rtype::game::testing::BODY_START_X;
 using rtype::game::testing::DRIFTER_X_AFTER_A_SECOND;
-using rtype::game::testing::ENRAGED_BOSS;
 using rtype::game::testing::FAR_SHIP;
 using rtype::game::testing::HALF_PERIOD;
 using rtype::game::testing::HEIGHT_TOLERANCE_UNITS;
@@ -321,15 +322,15 @@ TEST_F(PilotSystemFixture, ABodyTakesTheTopSpeedItsBehaviourAsks) {
 }
 
 /**
- * Given an enemy that is a boss that enraged
+ * Given an enemy that has its Rage
  * When the pilots run once
  * Then its behaviour sees it enraged
  */
-TEST_F(PilotSystemFixture, HandsAnEnragedBossItsRage) {
+TEST_F(PilotSystemFixture, HandsAnEnragedEnemyItsRage) {
   std::optional<BehaviourView> seen;
   const ViewRecordingBehaviour behaviour{seen};
   const Entity enemy = addEnemy(behaviour, WATCHING_ENEMY_NETWORK_ID);
-  components().add(enemy, ENRAGED_BOSS);
+  components().add(enemy, Rage{});
 
   run(SIMULATION_TICK_DURATION);
 
