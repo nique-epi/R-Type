@@ -14,6 +14,9 @@
 #include <string_view>
 #include <utility>
 #include <vector>
+#include "Account.hpp"
+#include "AccountCredentials.hpp"
+#include "AccountRole.hpp"
 #include "CreatedServer.hpp"
 #include "DatedStatus.hpp"
 #include "EndpointText.hpp"
@@ -32,6 +35,7 @@
 #include "MasterRouteConstants.hpp"
 #include "NetworkConstants.hpp"
 #include "NetworkException.hpp"
+#include "OpenedSession.hpp"
 #include "ProtocolConstants.hpp"
 #include "SampleListing.hpp"
 #include "ServerCreation.hpp"
@@ -165,6 +169,25 @@ std::string boundedTextOf(const JsonField& field, std::size_t maximumSize) {
     refuse(field);
   }
   return text;
+}
+
+/** @returns The password @p field holds: MINIMUM_PASSWORD_SIZE to
+ * MAXIMUM_PASSWORD_SIZE bytes of printable UTF-8. */
+std::string passwordOf(const JsonField& field) {
+  std::string password = stringOf(field);
+  if (password.size() < MINIMUM_PASSWORD_SIZE ||
+      password.size() > MAXIMUM_PASSWORD_SIZE || !isPrintableUtf8(password)) {
+    refuse(field);
+  }
+  return password;
+}
+
+nlohmann::json accountDocument(const Account& account) {
+  nlohmann::json document;
+  document[ID_MEMBER] = account.id;
+  document[NICKNAME_MEMBER] = account.nickname;
+  document[ROLE_MEMBER] = accountRoleText(account.role);
+  return document;
 }
 
 /** @returns The nickname, or the difficulty, @p field holds. */
@@ -877,6 +900,48 @@ std::string sampleListingText(const SampleListing& listing) {
 
 std::string statusListingText(const StatusListing& listing) {
   return listingText(STATUSES_MEMBER, listing.statuses, statusChangeDocument);
+}
+
+std::string credentialsText(const AccountCredentials& credentials) {
+  nlohmann::json document;
+  document[NICKNAME_MEMBER] = credentials.nickname;
+  document[PASSWORD_MEMBER] = credentials.password;
+  return textOf(document);
+}
+
+AccountCredentials credentialsFromText(std::string_view text) {
+  const nlohmann::json document = parsedObject(text);
+  const JsonField credentials = wholeMessage(document);
+  return AccountCredentials{
+      .nickname = nicknameOf(memberOf(credentials, NICKNAME_MEMBER)),
+      .password = passwordOf(memberOf(credentials, PASSWORD_MEMBER))};
+}
+
+std::string_view accountRoleText(AccountRole role) {
+  return ACCOUNT_ROLE_TEXTS.at(static_cast<std::size_t>(role));
+}
+
+std::optional<AccountRole> accountRoleOf(std::string_view text) {
+  return valueOfText<AccountRole>(ACCOUNT_ROLE_TEXTS, text);
+}
+
+std::string accountText(const Account& account) {
+  return textOf(accountDocument(account));
+}
+
+std::string openedSessionText(const OpenedSession& session) {
+  nlohmann::json document;
+  document[TOKEN_MEMBER] = session.token;
+  document[EXPIRES_AT_MEMBER] = session.expiresAt.time_since_epoch().count();
+  document[ACCOUNT_MEMBER] = accountDocument(session.account);
+  return textOf(document);
+}
+
+bool isWellFormedSessionToken(std::string_view text) {
+  return text.size() == SESSION_TOKEN_SIZE &&
+         text.starts_with(SESSION_TOKEN_PREFIX) &&
+         isMadeOf(text.substr(SESSION_TOKEN_PREFIX.size()),
+                  LOWERCASE_HEX_DIGITS);
 }
 
 std::string problemDetailOf(std::string_view text) {

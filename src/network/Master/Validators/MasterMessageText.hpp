@@ -3,10 +3,14 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include "Account.hpp"
+#include "AccountCredentials.hpp"
+#include "AccountRole.hpp"
 #include "CreatedServer.hpp"
 #include "FinishedGame.hpp"
 #include "GameListing.hpp"
 #include "GlobalLeaderboard.hpp"
+#include "OpenedSession.hpp"
 #include "SampleListing.hpp"
 #include "ServerCreation.hpp"
 #include "ServerHeartbeat.hpp"
@@ -175,6 +179,41 @@ namespace rtype::network {
  */
 [[nodiscard]] GlobalLeaderboard globalLeaderboardFromText(
     std::string_view text);
+
+/** @returns @p credentials as the JSON body of `POST /api/users` and of
+ * `POST /api/sessions`. */
+[[nodiscard]] std::string credentialsText(
+    const AccountCredentials& credentials);
+
+/**
+ * @returns The credentials a player sent as @p text; a member it does not know
+ * is ignored.
+ * @throws InvalidMasterMessageException naming `/nickname` when it is no
+ * nickname of the protocol (isValidNickname()), or `/password` when it is not
+ * MINIMUM_PASSWORD_SIZE to MAXIMUM_PASSWORD_SIZE bytes of printable UTF-8.
+ */
+[[nodiscard]] AccountCredentials credentialsFromText(std::string_view text);
+
+/** @returns How @p role is written: one of ACCOUNT_ROLE_TEXTS. */
+[[nodiscard]] std::string_view accountRoleText(AccountRole role);
+
+/** @returns The role @p text writes, or nothing for a text not in
+ * ACCOUNT_ROLE_TEXTS. */
+[[nodiscard]] std::optional<AccountRole> accountRoleOf(std::string_view text);
+
+/** @returns @p account as the JSON answer of `POST /api/users` and of
+ * `GET /api/users/me`. */
+[[nodiscard]] std::string accountText(const Account& account);
+
+/** @returns @p session as the JSON answer of `POST /api/sessions`. */
+[[nodiscard]] std::string openedSessionText(const OpenedSession& session);
+
+/**
+ * @returns Whether @p text has the shape of a token of a session:
+ * SESSION_TOKEN_PREFIX, then lowercase hexadecimal digits, SESSION_TOKEN_SIZE
+ * in all. Anything else is refused before the master looks it up.
+ */
+[[nodiscard]] bool isWellFormedSessionToken(std::string_view text);
 
 /**
  * @returns The `detail` of the problem document (RFC 9457) @p text holds, or
