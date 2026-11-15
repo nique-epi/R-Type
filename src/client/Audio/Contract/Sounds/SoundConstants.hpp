@@ -47,6 +47,12 @@ constexpr const char* BOTTLES_CLINK_SOUND_ID =
 constexpr std::array BYDO_VOICE_SOUND_IDS{BYDO_VOICE_FIRST_SOUND_ID,
                                           BYDO_VOICE_SECOND_SOUND_ID};
 
+/** @brief The sounds that are the voice of a character who speaks, played
+ * at the VOICES volume of the player; every other sound is an effect, at
+ * the EFFECTS volume. */
+constexpr std::array VOICE_SOUND_IDS{BYDO_VOICE_FIRST_SOUND_ID,
+                                     BYDO_VOICE_SECOND_SOUND_ID};
+
 /** @brief Every sound of the client, loaded at launch with the interface
  * assets. */
 constexpr std::array ALL_SOUND_IDS{BYDO_GROWL_SOUND_ID,

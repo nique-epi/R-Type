@@ -27,6 +27,10 @@ constexpr Setting<int> EFFECTS_VOLUME_SETTING{
     .member = &PlayerSettings::effectsVolume,
     .id = SettingId::EffectsVolume,
     .range = VOLUME_SETTING_RANGE};
+constexpr Setting<int> VOICES_VOLUME_SETTING{
+    .member = &PlayerSettings::voicesVolume,
+    .id = SettingId::VoicesVolume,
+    .range = VOLUME_SETTING_RANGE};
 constexpr Setting<bool> MUTED_SETTING{.member = &PlayerSettings::muted,
                                       .id = SettingId::Muted,
                                       .range = std::nullopt};
@@ -129,6 +133,7 @@ constexpr Setting<std::uint32_t> KOPECKS_SETTING{
 constexpr std::array ALL_SETTING_IDS{
     SettingId::MusicVolume,
     SettingId::EffectsVolume,
+    SettingId::VoicesVolume,
     SettingId::Muted,
     SettingId::WindowSize,
     SettingId::DisplayMode,

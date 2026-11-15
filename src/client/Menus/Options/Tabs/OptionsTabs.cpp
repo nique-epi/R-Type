@@ -76,6 +76,8 @@ Menu soundTab(const OptionsTabsParts& parts) {
       .row({.label = MUSIC_LABEL}, volumeSlider(service, MUSIC_VOLUME_SETTING))
       .row({.label = EFFECTS_LABEL},
            volumeSlider(service, EFFECTS_VOLUME_SETTING))
+      .row({.label = VOICES_LABEL},
+           volumeSlider(service, VOICES_VOLUME_SETTING))
       .row({.label = MUTE_ALL_LABEL, .description = MUTE_ALL_DESCRIPTION},
            settingSwitch(service, MUTED_SETTING))
       .row({.label = DEFAULT_SOUND_LABEL,
@@ -214,6 +216,8 @@ void OptionsTabs::refreshDescriptions() {
                        volumeDescription(DEFAULT_MUSIC_VOLUME, settings.muted));
   sound.setDescription(
       EFFECTS_ROW, volumeDescription(DEFAULT_EFFECTS_VOLUME, settings.muted));
+  sound.setDescription(
+      VOICES_ROW, volumeDescription(DEFAULT_VOICES_VOLUME, settings.muted));
   for (std::size_t row = 0; row < BOUND_ACTION_COUNT; ++row) {
     const bool chatKey = row == OPEN_CHAT_ACTION;
     tabs_[chatKey ? CHAT_TAB : CONTROLS_TAB].setDescription(
