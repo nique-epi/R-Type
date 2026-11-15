@@ -3,7 +3,6 @@
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Keyboard.hpp>
-#include <array>
 #include <cstddef>
 #include <cstdint>
 #include "BarState.hpp"
@@ -13,20 +12,10 @@
 namespace rtype::client {
 
 /**
- * @brief The steps the amount moves by, one per chip of the selector, from
- * the left; the key that chooses each; the step the cashier opens on, 100,
- * and the amount, 500.
+ * @brief The amount moves by the value of the chip chosen in the selector,
+ * one of CHIP_VALUES: the cashier opens on the chip of 100, the fourth, and
+ * the amount 500.
  */
-constexpr std::size_t CASHIER_STEP_COUNT = 5;
-constexpr std::array<std::uint32_t, CASHIER_STEP_COUNT> CASHIER_STEPS{1, 5, 25,
-                                                                      100, 500};
-constexpr std::array CASHIER_STEP_KEYS{
-    sf::Keyboard::Key::Num1, sf::Keyboard::Key::Num2, sf::Keyboard::Key::Num3,
-    sf::Keyboard::Key::Num4, sf::Keyboard::Key::Num5};
-constexpr std::array<const char*, CASHIER_STEP_COUNT> CASHIER_STEP_KEY_NAMES{
-    "1", "2", "3", "4", "5"};
-static_assert(CASHIER_STEP_KEYS.size() == CASHIER_STEP_COUNT,
-              "every chip of the selector has its key");
 constexpr std::size_t CASHIER_FIRST_STEP = 3;
 constexpr std::uint32_t CASHIER_FIRST_AMOUNT = 500;
 
@@ -72,18 +61,9 @@ constexpr const char* CASHIER_RAISE_MARK = ">";
 constexpr sf::IntRect CASHIER_LOWER_MARK_AREA({192, 93}, {12, 16});
 constexpr sf::IntRect CASHIER_RAISE_MARK_AREA({276, 93}, {12, 16});
 
-/**
- * @brief The chips of the selector, CASHIER_CHIP_SPACING apart from
- * CASHIER_FIRST_CHIP: the chosen one CASHIER_CHOSEN_CHIP_LIFT higher and in
- * corners CASHIER_CHIP_CORNERS_MARGIN around it, each with the keycap of its
- * key CASHIER_KEY_CAP_DROP under its top, CASHIER_KEY_CAP_INSET in.
- */
+/** @brief Where the first chip of the selector lies at rest, its top-left
+ * corner. */
 constexpr sf::Vector2i CASHIER_FIRST_CHIP(168, 120);
-constexpr int CASHIER_CHIP_SPACING = 30;
-constexpr int CASHIER_CHOSEN_CHIP_LIFT = 2;
-constexpr int CASHIER_CHIP_CORNERS_MARGIN = 3;
-constexpr int CASHIER_KEY_CAP_DROP = 24;
-constexpr int CASHIER_KEY_CAP_INSET = 6;
 
 /**
  * @brief Under the lower rule: AFTER, the rate in the middle, then what both

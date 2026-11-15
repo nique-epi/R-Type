@@ -10,13 +10,14 @@
 #include <utility>
 #include "CashierAmount.hpp"
 #include "CashierConstants.hpp"
-#include "CashierLayout.hpp"
 #include "CashierPainting.hpp"
 #include "CashierRules.hpp"
 #include "CashierScreenParts.hpp"
 #include "CashierView.hpp"
 #include "CashierWay.hpp"
 #include "CasinoBarChip.hpp"
+#include "ChipRow.hpp"
+#include "ChipSelector.hpp"
 #include "Exchange.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "InterfacePixel.hpp"
@@ -26,20 +27,6 @@
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
-
-namespace {
-
-/** @returns The place of the step @p key chooses, if it chooses one. */
-std::optional<std::size_t> stepOfKey(sf::Keyboard::Key key) {
-  for (std::size_t place = 0; place < CASHIER_STEP_KEYS.size(); ++place) {
-    if (CASHIER_STEP_KEYS.at(place) == key) {
-      return place;
-    }
-  }
-  return std::nullopt;
-}
-
-}  // namespace
 
 CashierScreen::CashierScreen(CashierScreenParts parts,
                              std::unique_ptr<IInterfaceCanvas> canvas)
@@ -86,7 +73,7 @@ void CashierScreen::keyPressed(const sf::Event::KeyPressed& key) {
     amount_.lower();
   } else if (key.code == CASHIER_RAISE_KEY) {
     amount_.raise();
-  } else if (const std::optional<std::size_t> step = stepOfKey(key.code)) {
+  } else if (const std::optional<std::size_t> step = chipOfKey(key.code)) {
     amount_.chooseStep(*step);
   } else {
     return;
@@ -99,7 +86,10 @@ void CashierScreen::pointerPressed(sf::Vector2i pixel) {
     amount_.lower();
   } else if (CASHIER_RAISE_MARK_AREA.contains(pixel)) {
     amount_.raise();
-  } else if (const std::optional<std::size_t> chip = selectorChipAt(pixel)) {
+  } else if (const std::optional<std::size_t> chip =
+                 chipAt(ChipRow{.firstChip = CASHIER_FIRST_CHIP,
+                                .chosen = amount_.step()},
+                        pixel)) {
     amount_.chooseStep(*chip);
   } else {
     return;

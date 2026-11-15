@@ -1,6 +1,5 @@
 add_library(rtype_client_casino_cashier STATIC
   CashierAmount.cpp
-  CashierLayout.cpp
   CashierPainting.cpp
   CashierRules.cpp
   CashierScreen.cpp
@@ -23,9 +22,7 @@ target_link_libraries(rtype_client_casino_cashier
     rtype_client_window_display
     rtype_engine_time
   PRIVATE
-    rtype_client_box_corners
     rtype_client_interface_pixel
-    rtype_client_key_cap
 )
 
 rtype_enable_warnings(rtype_client_casino_cashier)

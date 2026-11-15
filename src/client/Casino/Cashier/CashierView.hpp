@@ -15,7 +15,7 @@ struct CashierView {
   CashierWay way{};
   Purse purse;
   std::uint32_t amount{};
-  /** @brief The place of the step in CASHIER_STEPS. */
+  /** @brief The place of the step in CHIP_VALUES. */
   std::size_t step{};
   /** @brief What changing the amount would give, or why it is refused. */
   Exchange tried;

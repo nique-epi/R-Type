@@ -6,24 +6,20 @@
 #include <cstdint>
 #include <string>
 #include "BackgroundColorConstants.hpp"
-#include "BoxCorners.hpp"
 #include "CashierConstants.hpp"
-#include "CashierLayout.hpp"
 #include "CashierRules.hpp"
 #include "CashierView.hpp"
 #include "CashierWay.hpp"
 #include "CasinoBalances.hpp"
 #include "CasinoPainting.hpp"
 #include "CasinoPaintingConstants.hpp"
-#include "CasinoSpriteConstants.hpp"
+#include "ChipRow.hpp"
+#include "ChipSelector.hpp"
+#include "ChipSelectorConstants.hpp"
 #include "IInterfaceCanvas.hpp"
-#include "ImagePlacement.hpp"
 #include "InterfaceColorConstants.hpp"
-#include "InterfaceConstants.hpp"
-#include "KeyCap.hpp"
 #include "Kopecks.hpp"
 #include "TextStyle.hpp"
-#include "TextureArea.hpp"
 #include "WidgetConstants.hpp"
 
 namespace rtype::client {
@@ -96,34 +92,9 @@ void paintAmount(IInterfaceCanvas& canvas, const CashierView& view) {
                regularStyle(STAR_GOLD, TextAlignment::Center));
   paintMark(canvas, CASHIER_LOWER_MARK, CASHIER_LOWER_MARK_AREA);
   paintMark(canvas, CASHIER_RAISE_MARK, CASHIER_RAISE_MARK_AREA);
-  canvas.write(
-      CASHIER_STEP_CAPTION + std::to_string(CASHIER_STEPS.at(view.step)),
-      {CASHIER_RIGHT, CASHIER_AMOUNT_TOP},
-      smallStyle(PALE_BLUE, TextAlignment::Right));
-}
-
-/** @brief Paints the chip of @p place of the selector, raised and in corners
- * when it is the step chosen, and the keycap of its key under it. */
-void paintSelectorChip(IInterfaceCanvas& canvas, std::size_t place,
-                       bool chosen) {
-  const sf::Vector2i topLeft = selectorChipTopLeft(place, chosen);
-  canvas.drawImage(
-      TextureArea{
-          .assetId = CHIP_SELECTOR_SHEET_ID,
-          .rectangle = {{static_cast<int>(place) * CHIP_SELECTOR_STRIDE, 0},
-                        CHIP_SELECTOR_FRAME_SIZE}},
-      ImagePlacement{.topLeft = topLeft}, INTERFACE_AREA);
-  if (chosen) {
-    const sf::Vector2i margin(CASHIER_CHIP_CORNERS_MARGIN,
-                              CASHIER_CHIP_CORNERS_MARGIN);
-    paintBoxCorners(canvas,
-                    {topLeft - margin,
-                     CHIP_SELECTOR_FRAME_SIZE + (margin * SIDES_PER_AXIS)},
-                    HUD_CYAN);
-  }
-  KeyCap(CASHIER_STEP_KEY_NAMES.at(place), KeyCap::Edge::Plain)
-      .paint(canvas, {topLeft.x + CASHIER_KEY_CAP_INSET,
-                      CASHIER_FIRST_CHIP.y + CASHIER_KEY_CAP_DROP});
+  canvas.write(CASHIER_STEP_CAPTION + std::to_string(CHIP_VALUES.at(view.step)),
+               {CASHIER_RIGHT, CASHIER_AMOUNT_TOP},
+               smallStyle(PALE_BLUE, TextAlignment::Right));
 }
 
 /** @brief Paints what follows the exchange under the lower rule: the rate,
@@ -166,9 +137,8 @@ void paintCashier(IInterfaceCanvas& canvas, const CashierView& view) {
       view.way == CashierWay::BuyChips ? BUY_CHIPS_TITLE : CASH_OUT_TITLE);
   paintExchangedBalances(canvas, view);
   paintAmount(canvas, view);
-  for (std::size_t place = 0; place < CASHIER_STEPS.size(); ++place) {
-    paintSelectorChip(canvas, place, place == view.step);
-  }
+  paintChipRow(canvas,
+               ChipRow{.firstChip = CASHIER_FIRST_CHIP, .chosen = view.step});
   paintAfter(canvas, view);
 }
 
