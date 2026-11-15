@@ -9,3 +9,10 @@ rtype::network::LobbyPlayer pilot(std::uint8_t number, const char* nickname,
                          : rtype::network::PilotPlace::NotReady,
           .nickname = nickname};
 }
+
+rtype::network::LobbyPlayer pilotAtTheCasino(std::uint8_t number,
+                                             const char* nickname) {
+  return {.playerNumber = number,
+          .place = rtype::network::PilotPlace::AtCasino,
+          .nickname = nickname};
+}

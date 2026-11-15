@@ -65,7 +65,10 @@ struct HangarBay;
  *
  * HANGAR, a chip beside RANKING, HANGAR_KEY, or a click on the bay of the
  * local player opens the hangar over the room the same way; the bay of the
- * local player shows what its ship wears.
+ * local player shows what its ship wears. CASINO, a bar beside READY, or
+ * CASINO_KEY opens the casino over the room the same way: the server shows
+ * a pilot at its table not ready, and the status line says it is at the
+ * casino when it is the only pilot not ready.
  * The chat of the session shows at the bottom left, and its key opens it over
  * the room (ChatWindow): while it is open it takes every key, so READY, HELP
  * and BACK wait until it closes.

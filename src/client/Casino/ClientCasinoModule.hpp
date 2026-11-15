@@ -10,9 +10,11 @@
 namespace rtype::client {
 
 /**
- * @brief The module of the casino: addWork() settles in the chips of the
- * player, each frame, what the rounds of the roulette table moved, whichever
- * screen shows. It opens nothing, so start() and stop() do nothing.
+ * @brief The module of the casino: install() adds CASINO_SCREEN, the
+ * entrance and the hall, to the ScreenRegistry, and addWork() settles in the
+ * chips of the player, each frame, what the rounds of the roulette table
+ * moved, whichever screen shows. It opens nothing, so start() and stop() do
+ * nothing.
  */
 class ClientCasinoModule final : public engine::IModule {
  public:
@@ -22,7 +24,9 @@ class ClientCasinoModule final : public engine::IModule {
    * table and the settings. */
   [[nodiscard]] std::vector<std::string> dependencies() const override;
   /** @throws MissingServiceException if no module provides the registry, the
-   * table or the settings. */
+   * table or the settings.
+   * @throws DuplicateScreenException if another module registered one of its
+   * screens. */
   void install(engine::InstallContext& context) override;
   void start() override;
   void stop() override;

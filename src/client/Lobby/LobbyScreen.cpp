@@ -85,7 +85,8 @@ BayReadiness readinessOf(const network::LobbyPlayer& player,
 }
 
 /** @returns The status line: none without players; who is not ready, by name
- * when a single pilot is not; or that every listed pilot is ready. */
+ * when a single pilot is not, and that it is at the casino when it is there;
+ * or that every listed pilot is ready. */
 std::string statusLine(std::span<const network::LobbyPlayer> players,
                        std::uint8_t ownNumber) {
   if (players.empty()) {
@@ -99,10 +100,12 @@ std::string statusLine(std::span<const network::LobbyPlayer> players,
     return std::to_string(notReady) + PILOTS_NOT_READY_STATUS;
   }
   const auto waiting = std::ranges::find(players, false, isReady);
+  const bool atCasino = waiting->place == network::PilotPlace::AtCasino;
   if (waiting->playerNumber == ownNumber) {
-    return YOU_NOT_READY_STATUS;
+    return atCasino ? YOU_AT_THE_CASINO_STATUS : YOU_NOT_READY_STATUS;
   }
-  return waiting->nickname + PILOT_NOT_READY_STATUS;
+  return waiting->nickname +
+         (atCasino ? PILOT_AT_THE_CASINO_STATUS : PILOT_NOT_READY_STATUS);
 }
 
 /** @returns Whether @p event presses (true) or releases (false) @p key;
@@ -216,6 +219,23 @@ std::optional<sf::IntRect> ownBayAreaIn(const Menu& menu,
       ownSlotOf(waitingRoom.lobbyPlayers(), connection.status().playerNumber));
 }
 
+/** @returns Where MenuBuilder lays READY, the only bar of the room: centered
+ * SPACE_ABOVE_ROOM_BARS under @p bays. Menu gives no area of a bar, so it is
+ * placed by the same arithmetic as MenuBuilder::placeRoom. */
+sf::IntRect readyBarArea(sf::IntRect bays) {
+  return {{(INTERFACE_AREA.size.x - BUTTON_SIZE.x) / SIDES_PER_AXIS,
+           bays.position.y + bays.size.y + SPACE_ABOVE_ROOM_BARS},
+          BUTTON_SIZE};
+}
+
+/** @returns Where CASINO starts in the room of @p menu: BUTTON_GAP right of
+ * READY, on its row. */
+sf::Vector2i casinoTopLeftIn(const Menu& menu) {
+  const sf::IntRect ready =
+      readyBarArea(menu.illustrationArea().value_or(sf::IntRect()));
+  return {ready.position.x + ready.size.x + BUTTON_GAP, ready.position.y};
+}
+
 /** @returns Where the room paints the parts its help explains, as
  * MenuBuilder lays a room: the bays, where the menu lays its illustration;
  * READY, its only bar, centered SPACE_ABOVE_ROOM_BARS under them; the status
@@ -224,10 +244,7 @@ std::optional<sf::IntRect> ownBayAreaIn(const Menu& menu,
  * MenuBuilder::placeRoom. */
 LobbyPartAreas partAreasOf(sf::IntRect bays, std::optional<int> ownSlot,
                            int statusWidth) {
-  const sf::IntRect ready(
-      {(INTERFACE_AREA.size.x - BUTTON_SIZE.x) / SIDES_PER_AXIS,
-       bays.position.y + bays.size.y + SPACE_ABOVE_ROOM_BARS},
-      BUTTON_SIZE);
+  const sf::IntRect ready = readyBarArea(bays);
   const int statusShown = std::max(statusWidth, BUTTON_SIZE.x);
   return {.bays = bays,
           .ownBay = ownBayArea(bays, ownSlot).value_or(bays),
@@ -274,7 +291,8 @@ LobbyScreen::LobbyScreen(LobbyScreenParts parts,
           .navigator = parts.navigator,
           .sounds = parts.sounds,
           .beforeOpening = [this] { handleEvent(sf::Event::FocusLost{}); },
-          .right = helpChipArea().position.x - BUTTON_GAP}),
+          .right = helpChipArea().position.x - BUTTON_GAP,
+          .casinoTopLeft = casinoTopLeftIn(menu_)}),
       look_(&parts.look.get()),
       chat_(parts.chat.get(), parts.settings.get()) {
   repaint();

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <SFML/System/Vector2.hpp>
 #include <functional>
 #include "IScreenNavigator.hpp"
 #include "ISoundPlayer.hpp"
@@ -24,8 +25,12 @@ struct RoomShortcutsParts {
   /** @brief Run before a shortcut pushes its screen: the room drops what it
    * held, since the events stop reaching it. */
   std::function<void()> beforeOpening;
-  /** @brief The column the row of the shortcuts ends at, on the right. */
+  /** @brief The column the row of RANKING and HANGAR ends at, on the
+   * right. */
   int right{};
+  /** @brief Where CASINO starts: the top-left corner of the bar, beside
+   * READY. */
+  sf::Vector2i casinoTopLeft;
 };
 
 }  // namespace rtype::client

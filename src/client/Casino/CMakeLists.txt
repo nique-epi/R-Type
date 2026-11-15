@@ -1,3 +1,6 @@
+add_subdirectory(Painting)
+add_subdirectory(Entrance)
+
 add_library(rtype_client_casino_module STATIC
   ChipSettlement.cpp
   ClientCasinoModule.cpp
@@ -11,7 +14,9 @@ target_link_libraries(rtype_client_casino_module
     rtype_client_settings_module
     rtype_engine_modules
   PRIVATE
+    rtype_client_casino_entrance
     rtype_client_constants
+    rtype_client_screens_module
 )
 
 rtype_enable_warnings(rtype_client_casino_module)

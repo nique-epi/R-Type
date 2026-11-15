@@ -72,14 +72,17 @@ constexpr TextStyle GAME_RULES_STYLE{.font = TextFont::Small,
 
 /**
  * @brief The status line under the main bar: every listed pilot ready; the
- * local player the only one not ready; another pilot the only one, after its
- * nickname; several pilots not ready, after their number. It never counts
- * places still open: a game starts with whoever is listed.
+ * local player the only one not ready, or at the casino; another pilot the
+ * only one, after its nickname, or at the casino; several pilots not ready,
+ * after their number. It never counts places still open: a game starts with
+ * whoever is listed.
  */
 constexpr const char* ALL_READY_STATUS = "ALL READY: LAUNCHING";
 constexpr const char* YOU_NOT_READY_STATUS = "YOU ARE NOT READY";
 constexpr const char* PILOT_NOT_READY_STATUS = " IS NOT READY";
 constexpr const char* PILOTS_NOT_READY_STATUS = " PILOTS NOT READY";
+constexpr const char* YOU_AT_THE_CASINO_STATUS = "YOU ARE AT THE CASINO";
+constexpr const char* PILOT_AT_THE_CASINO_STATUS = " IS AT THE CASINO";
 
 /** @brief The row the lines of the chat end on: the bottom of the HELP and
  * BACK chips, SAFE_MARGIN above the bottom of the picture. */

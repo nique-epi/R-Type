@@ -1,8 +1,10 @@
 #include "RoomShortcuts.hpp"
 #include <SFML/Graphics/Rect.hpp>
+#include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Event.hpp>
 #include <utility>
 #include "Button.hpp"
+#include "CasinoScreenIdConstants.hpp"
 #include "HangarScreenIdConstants.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "KeyChip.hpp"
@@ -28,6 +30,10 @@ Button::Text hangarText() {
   return {.label = HANGAR_LABEL, .keyName = HANGAR_KEY_NAME};
 }
 
+Button::Text casinoText() {
+  return {.label = CASINO_LABEL, .keyName = CASINO_KEY_NAME};
+}
+
 /** @returns Where RANKING lies, ending at @p right. */
 sf::IntRect leaderboardChipArea(int right) {
   return MenuBuilder::chipArea(leaderboardText(), right);
@@ -37,6 +43,12 @@ sf::IntRect leaderboardChipArea(int right) {
 sf::IntRect hangarChipArea(int right) {
   return MenuBuilder::chipArea(
       hangarText(), leaderboardChipArea(right).position.x - BUTTON_GAP);
+}
+
+/** @returns Where CASINO lies, from @p topLeft: as wide as a chip of its
+ * text, as tall as a bar of a page. */
+sf::IntRect casinoChipArea(sf::Vector2i topLeft) {
+  return {topLeft, {MenuBuilder::chipArea(casinoText()).size.x, BUTTON_SIZE.y}};
 }
 
 }  // namespace
@@ -54,17 +66,24 @@ RoomShortcuts::RoomShortcuts(RoomShortcutsParts parts)
                                .area = hangarChipArea(parts.right),
                                .key = HANGAR_KEY,
                                .action = [this] { open(HANGAR_SCREEN); },
+                               .sounds = parts.sounds}),
+      casinoChip_(KeyChipParts{.text = casinoText(),
+                               .area = casinoChipArea(parts.casinoTopLeft),
+                               .key = CASINO_KEY,
+                               .action = [this] { open(CASINO_SCREEN); },
                                .sounds = parts.sounds}) {}
 
 bool RoomShortcuts::handleEvent(const sf::Event& event,
                                 const PlayfieldMapping& playfieldPointAt) {
   return leaderboardChip_.handleEvent(event, playfieldPointAt) ||
-         hangarChip_.handleEvent(event, playfieldPointAt);
+         hangarChip_.handleEvent(event, playfieldPointAt) ||
+         casinoChip_.handleEvent(event, playfieldPointAt);
 }
 
 void RoomShortcuts::paint(IInterfaceCanvas& canvas) const {
   leaderboardChip_.paint(canvas);
   hangarChip_.paint(canvas);
+  casinoChip_.paint(canvas);
 }
 
 void RoomShortcuts::open(ScreenId screen) {

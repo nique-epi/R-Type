@@ -13,8 +13,10 @@ namespace rtype::client {
 
 /**
  * @brief The chips of the waiting room that open a screen over it, the room
- * staying below, in a row from the right, BUTTON_GAP apart: RANKING,
- * LEADERBOARD_KEY, pushes the leaderboard, and HANGAR, HANGAR_KEY, the hangar.
+ * staying below: RANKING, LEADERBOARD_KEY, pushes the leaderboard, and
+ * HANGAR, HANGAR_KEY, the hangar, in a row from the right, BUTTON_GAP apart;
+ * CASINO, CASINO_KEY, pushes the casino from beside READY, as tall as a bar
+ * of a page.
  *
  * Each acts once per hold of its key, on its release; before it pushes its
  * screen, the room drops what it held (RoomShortcutsParts::beforeOpening),
@@ -47,6 +49,7 @@ class RoomShortcuts {
   std::function<void()> beforeOpening_;
   KeyChip leaderboardChip_;
   KeyChip hangarChip_;
+  KeyChip casinoChip_;
 };
 
 }  // namespace rtype::client
