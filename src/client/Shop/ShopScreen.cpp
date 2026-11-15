@@ -21,6 +21,8 @@
 #include "MotionPreference.hpp"
 #include "PlayerSettings.hpp"
 #include "Purchase.hpp"
+#include "PurchaseRefusal.hpp"
+#include "PurchaseTicket.hpp"
 #include "Purse.hpp"
 #include "SettingDefinitionConstants.hpp"
 #include "ShelfSizes.hpp"
@@ -37,6 +39,7 @@
 #include "ShopkeeperMotionConstants.hpp"
 #include "ShopkeeperSpeech.hpp"
 #include "SoundConstants.hpp"
+#include "TicketAnswer.hpp"
 #include "TimeConstants.hpp"
 #include "WidgetConstants.hpp"
 
@@ -62,6 +65,19 @@ void tuneRadio(IAudioService& audio, ShopkeeperSpeech& speech) {
   speech.radioTuned(audio.ambience());
 }
 
+/** @returns The key held after @p event, @p held before it: the key it
+ * presses, none once a key is released or the window loses the focus. */
+std::optional<sf::Keyboard::Key> heldKeyAfter(
+    const sf::Event& event, std::optional<sf::Keyboard::Key> held) {
+  if (const auto* pressed = event.getIf<sf::Event::KeyPressed>()) {
+    return pressed->code;
+  }
+  if (event.is<sf::Event::KeyReleased>() || event.is<sf::Event::FocusLost>()) {
+    return std::nullopt;
+  }
+  return held;
+}
+
 static_assert(SHOP_RADIO_KEY == sf::Keyboard::Key::R,
               "SHOPKEEPER_RADIO_HINT shows the keycap of R");
 
@@ -85,12 +101,23 @@ ShopScreen::ShopScreen(ShopScreenParts parts,
                              .sounds = parts.sounds}),
       wares_(waresForSale()),
       selection_(ShelfSizes{.looks = wares_.looks.size(),
-                            .hulls = wares_.hulls.size()}) {
+                            .hulls = wares_.hulls.size()}),
+      ticket_(parts.sounds.get()) {
   speech_.greet(settings_->settings().shipLocker.items.count());
   repaint();
 }
 
 void ShopScreen::handleEvent(const sf::Event& event) {
+  if (ticket_.isOpen()) {
+    heldKey_ = heldKeyAfter(event, heldKey_);
+    const TicketAnswer answer = ticket_.handleEvent(event, playfieldPointAt_);
+    if (answer == TicketAnswer::Buy && buy()) {
+      ticket_.paid();
+    } else if (answer != TicketAnswer::None) {
+      ticket_.close();
+    }
+    return;
+  }
   if (backChip_.handleEvent(event, playfieldPointAt_)) {
     return;
   }
@@ -115,6 +142,7 @@ void ShopScreen::update(engine::Duration elapsed) {
   elapsed_ += elapsed;
   static_cast<void>(settings_->saveIfChanged());
   speech_.advance(elapsed);
+  ticket_.advance(elapsed);
   repaint();
 }
 
@@ -133,7 +161,7 @@ void ShopScreen::keyPressed(const sf::Event::KeyPressed& key) {
   }
   if (key.code == MENU_CONFIRM_KEY) {
     heldKey_ = key.code;
-    buy();
+    offer();
   } else if (key.code == SHOP_RADIO_KEY) {
     heldKey_ = key.code;
     tuneRadio(*audio_, speech_);
@@ -164,11 +192,22 @@ void ShopScreen::pointed(sf::Vector2i position, bool clicked) {
     message_.reset();
   }
   if (clicked) {
-    buy();
+    offer();
   }
 }
 
-void ShopScreen::buy() {
+void ShopScreen::offer() {
+  const std::size_t item = chosenItem();
+  const Purchase trial = buyLookItem(purseOf(settings_->settings()), item);
+  if (trial.refusal.has_value() &&
+      *trial.refusal != PurchaseRefusal::TooExpensive) {
+    static_cast<void>(buy());
+    return;
+  }
+  ticket_.open(item, heldKey_);
+}
+
+bool ShopScreen::buy() {
   const std::size_t item = chosenItem();
   const Purse purse = purseOf(settings_->settings());
   const Purchase bought = buyLookItem(purse, item);
@@ -177,13 +216,14 @@ void ShopScreen::buy() {
     message_ = refusalLineOf(*bought.refusal,
                              price > purse.kopecks ? price - purse.kopecks : 0);
     speech_.refused(*bought.refusal);
-    return;
+    return false;
   }
   static_cast<void>(settings_->apply(KOPECKS_SETTING, bought.purse.kopecks));
   static_cast<void>(settings_->apply(SHIP_LOCKER_SETTING, bought.purse.locker));
   sounds_->play(PURCHASE_SOUND_ID);
   message_ = boughtLineOf(item);
   speech_.bought(item);
+  return true;
 }
 
 void ShopScreen::repaint() {
@@ -204,6 +244,7 @@ void ShopScreen::repaint() {
                      .radioPointed = radioPointed_});
   speech_.paint(*canvas_);
   backChip_.paint(*canvas_);
+  ticket_.paint(*canvas_);
   canvas_->display();
 }
 

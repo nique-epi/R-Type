@@ -83,4 +83,19 @@ constexpr std::string_view SECOND_BOTTLES_WORD = "MEDICINE.";
 constexpr std::string_view BORDER_RADIO_WORD = "ARSTOTZKA!";
 constexpr std::string_view SHOP_MUSIC_WORD = "MOSCOW.";
 
+/** @brief The sales slip, 172 by 216 pixels, centred on the 480 by 270
+ * interface: its top-left corner at (154, 27). BUY lies at (80, 161) of it,
+ * 80 by 20, so its middle is at (274, 198); CANCEL at (12, 161), 66 by 20,
+ * its middle at (199, 198). The bottom-left corner of the shop is off it. */
+constexpr std::string_view TICKET_SHEET = "sprites/shop_ticket.png";
+constexpr sf::Vector2i BUY_BUTTON_MIDDLE{274, 198};
+constexpr sf::Vector2i CANCEL_BUTTON_MIDDLE{199, 198};
+constexpr sf::Vector2i OFF_THE_TICKET{20, 250};
+
+/** @brief A paid ticket shows its stamp 700 ms: 16 ms then 683 ms make
+ * 699 ms, short of it, and one more millisecond reaches it. */
+constexpr std::chrono::milliseconds THE_STAMP_TIME{700};
+constexpr std::chrono::milliseconds ALMOST_THE_STAMP_TIME{683};
+constexpr std::chrono::milliseconds THE_REST_OF_THE_STAMP_TIME{1};
+
 }  // namespace rtype::client::testing
