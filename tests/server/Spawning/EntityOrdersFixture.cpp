@@ -12,12 +12,14 @@
 #include "EntityDestruction.hpp"
 #include "EntityOrdersParts.hpp"
 #include "EntitySpawned.hpp"
+#include "Health.hpp"
 #include "NetworkIdentity.hpp"
 #include "OutgoingDatagram.hpp"
 #include "Position.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
 #include "ShippedEntitySheets.hpp"
+#include "SpawnOptions.hpp"
 
 namespace rtype::server::testing {
 
@@ -38,8 +40,9 @@ void EntityOrdersFixture::connectPlayers(std::size_t count) {
 }
 
 std::uint32_t EntityOrdersFixture::spawnByScript(std::string_view sheet,
-                                                 game::Position position) {
-  return bodies_.spawn(sheet, position);
+                                                 game::Position position,
+                                                 game::SpawnOptions options) {
+  return bodies_.spawn(sheet, position, options);
 }
 
 void EntityOrdersFixture::removeByScript(std::uint32_t networkId) {
@@ -65,6 +68,18 @@ std::optional<game::Position> EntityOrdersFixture::positionOf(
                           const game::Position& position) {
         if (identity.networkId == networkId) {
           found = position;
+        }
+      });
+  return found;
+}
+
+std::optional<int> EntityOrdersFixture::healthOf(std::uint32_t networkId) {
+  std::optional<int> found;
+  world_.components().forEach<game::NetworkIdentity, game::Health>(
+      [&found, networkId](engine::Entity, const game::NetworkIdentity& identity,
+                          const game::Health& health) {
+        if (identity.networkId == networkId) {
+          found = health.points;
         }
       });
   return found;

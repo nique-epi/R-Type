@@ -38,9 +38,11 @@ void PlacedEnemySpawner::spawnDue(float scrollPosition, IEntityOrders& orders) {
   while (next_ < placements_.size() &&
          entryScrollOf(placements_[next_]) <= scrollPosition) {
     const LdtkPlacement& placement = placements_[next_];
-    static_cast<void>(orders.spawn(
-        placement.sheet, Position{.x = placement.position.x - scrollPosition,
-                                  .y = placement.position.y}));
+    static_cast<void>(
+        orders.spawn(placement.sheet,
+                     Position{.x = placement.position.x - scrollPosition,
+                              .y = placement.position.y},
+                     SpawnOptions{}));
     ++next_;
   }
 }

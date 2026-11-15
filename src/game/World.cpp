@@ -31,6 +31,7 @@
 #include "MotionSheet.hpp"
 #include "NetworkEntityTable.hpp"
 #include "NetworkIdentity.hpp"
+#include "PercentConstants.hpp"
 #include "Pilot.hpp"
 #include "PilotSheet.hpp"
 #include "Position.hpp"
@@ -51,13 +52,21 @@ namespace rtype::game {
 namespace {
 
 /** @brief A body being made: the entity, the sheet of its type, where it
- * appears and the point its Pilot steers from. */
+ * appears, the point its Pilot steers from, and its health in percent of
+ * what its sheet gives. */
 struct BodyStart {
   engine::Entity body;
   std::reference_wrapper<const EntitySheet> sheet;
   Position position;
   Position origin;
+  int healthPercent;
 };
+
+/** @returns The health of @p start, which its sheet gives health: that
+ * health taken at the percent of @p start, rounded down, never under 1. */
+int healthOf(const BodyStart& start, int sheetHealth) {
+  return std::max(1, sheetHealth * start.healthPercent / WHOLE_PERCENT);
+}
 
 /** @brief Gives @p start what every entity of a sheet has: where it is, its
  * side, its box, the boxes its sheet lists, its collision filter, the number of
@@ -105,8 +114,8 @@ void addPilot(engine::ComponentRegistry& components, const BodyStart& start) {
 void addCombat(engine::ComponentRegistry& components, const BodyStart& start) {
   const EntitySheet& sheet = start.sheet.get();
   if (sheet.health.has_value()) {
-    components.add(start.body,
-                   Health{.points = *sheet.health, .full = *sheet.health});
+    const int health = healthOf(start, *sheet.health);
+    components.add(start.body, Health{.points = health, .full = health});
   }
   if (sheet.points.has_value()) {
     components.add(start.body, ScoreValue{.points = *sheet.points});
@@ -174,11 +183,11 @@ void addBoss(engine::ComponentRegistry& components, const BodyStart& start) {
   if (!sheet.boss.has_value() || !sheet.health.has_value()) {
     return;
   }
-  components.add(start.body,
-                 Boss{.rageBelowPoints = rageBelowPointsOf(
-                          *sheet.health, sheet.boss->rageBelowPercent),
-                      .rageAttack = sheet.boss->rageAttack,
-                      .arrivalAttack = sheet.boss->arrivalAttack});
+  components.add(start.body, Boss{.rageBelowPoints = rageBelowPointsOf(
+                                      healthOf(start, *sheet.health),
+                                      sheet.boss->rageBelowPercent),
+                                  .rageAttack = sheet.boss->rageAttack,
+                                  .arrivalAttack = sheet.boss->arrivalAttack});
 }
 
 /** @brief Gives the ship of a player its lives, no protection yet and, with
@@ -218,7 +227,8 @@ std::uint32_t World::spawnFrom(const EntitySheet& sheet,
   const BodyStart start{.body = registry_.create(),
                         .sheet = sheet,
                         .position = placement.position,
-                        .origin = placement.origin};
+                        .origin = placement.origin,
+                        .healthPercent = placement.healthPercent};
   addPlace(components_, start);
   addMotion(components_, start);
   addPilot(components_, start);

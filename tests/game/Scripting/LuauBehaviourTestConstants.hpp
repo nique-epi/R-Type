@@ -75,6 +75,50 @@ constexpr std::string_view BUILT_TYPE = "drifter";
 constexpr rtype::game::Position BUILT_AT{.x = 10.0F, .y = 20.0F};
 constexpr std::uint32_t GIVEN_NETWORK_ID = 42;
 
+/** @brief `weakener` creates a drifter with 40 percent of its health; the
+ * others ask for the bounds of the percent, 1 and 100, for one step past
+ * each, 0 and 101, and for a percent that is not whole. */
+constexpr std::string_view WEAKENER_SCRIPT = R"(
+behaviours.register("weakener", {}, function(view)
+  behaviours.spawn("drifter", { x = 10, y = 20 }, { health_percent = 40 })
+  return {}
+end)
+)";
+constexpr std::string_view LOWEST_PERCENT_SCRIPT = R"(
+behaviours.register("weakener", {}, function(view)
+  behaviours.spawn("drifter", { x = 10, y = 20 }, { health_percent = 1 })
+  return {}
+end)
+)";
+constexpr std::string_view HIGHEST_PERCENT_SCRIPT = R"(
+behaviours.register("weakener", {}, function(view)
+  behaviours.spawn("drifter", { x = 10, y = 20 }, { health_percent = 100 })
+  return {}
+end)
+)";
+constexpr std::string_view NO_PERCENT_SCRIPT = R"(
+behaviours.register("weakener", {}, function(view)
+  behaviours.spawn("drifter", { x = 10, y = 20 }, { health_percent = 0 })
+  return {}
+end)
+)";
+constexpr std::string_view PERCENT_PAST_THE_WHOLE_SCRIPT = R"(
+behaviours.register("weakener", {}, function(view)
+  behaviours.spawn("drifter", { x = 10, y = 20 }, { health_percent = 101 })
+  return {}
+end)
+)";
+constexpr std::string_view FRACTIONAL_PERCENT_SCRIPT = R"(
+behaviours.register("weakener", {}, function(view)
+  behaviours.spawn("drifter", { x = 10, y = 20 }, { health_percent = 40.5 })
+  return {}
+end)
+)";
+constexpr std::string_view WEAKENER_BEHAVIOUR = "weakener";
+constexpr int WEAKENED_HEALTH_PERCENT = 40;
+constexpr int LOWEST_HEALTH_PERCENT = 1;
+constexpr int WHOLE_HEALTH_PERCENT = 100;
+
 /** @brief `striker` starts the strike of its attack 1 and waits 50 ms. */
 constexpr std::string_view STRIKER_SCRIPT = R"(
 behaviours.register("striker", {}, function(view)
