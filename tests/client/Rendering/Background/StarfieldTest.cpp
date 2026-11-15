@@ -14,6 +14,7 @@
 #include "PlanetImage.hpp"
 #include "RecordingPixelSurface.hpp"
 #include "Star.hpp"
+#include "StarPlane.hpp"
 #include "Starfield.hpp"
 #include "StarfieldFixtures.hpp"
 #include "StarfieldTestConstants.hpp"
@@ -26,7 +27,6 @@ using rtype::client::BLUE;
 using rtype::client::ColoredPixel;
 using rtype::client::DEEP_BLUE;
 using rtype::client::MAXIMUM_BACKGROUND_STEP;
-using rtype::client::PALE_BLUE;
 using rtype::client::PLANET_REENTRY_MARGIN;
 using rtype::client::PLANET_SPEED;
 using rtype::client::PlanetImage;
@@ -38,6 +38,7 @@ using rtype::client::STAR_WRAP_MARGIN;
 using rtype::client::StarDepth;
 using rtype::client::Starfield;
 using rtype::client::StarLayer;
+using rtype::client::StarPlane;
 using rtype::engine::Duration;
 using rtype::engine::testing::ONE_SECOND;
 
@@ -63,10 +64,10 @@ TEST(Starfield, StarsStartInsideTheBackground) {
   const Starfield starfield(SEED);
 
   for (const Star& star : starfield.stars()) {
-    EXPECT_GE(star.position.x, 0.0F);
-    EXPECT_LE(star.position.x, BACKGROUND_WIDTH);
-    EXPECT_GE(star.position.y, 0.0F);
-    EXPECT_LE(star.position.y, BACKGROUND_HEIGHT);
+    EXPECT_GE(starfield.positionOf(star), 0.0F);
+    EXPECT_LE(starfield.positionOf(star), BACKGROUND_WIDTH);
+    EXPECT_GE(star.height, 0.0F);
+    EXPECT_LE(star.height, BACKGROUND_HEIGHT);
   }
 }
 
@@ -79,16 +80,17 @@ TEST(Starfield, StarsStartInsideTheBackground) {
 TEST(Starfield, StarsMoveLeftAtTheSpeedOfTheirLayer) {
   Starfield starfield(SEED);
   const std::vector<Star> before = starfield.stars();
+  const std::vector<float> positionsBefore = positionsOf(starfield);
 
   starfield.advance(SHORT_STEP);
 
   for (std::size_t i = 0; i < before.size(); ++i) {
     const Star& star = starfield.stars()[i];
     EXPECT_NEAR(
-        star.position.x,
-        before[i].position.x - (speedOf(star.depth) * seconds(SHORT_STEP)),
+        starfield.positionOf(star),
+        positionsBefore[i] - (speedOf(star.depth) * seconds(SHORT_STEP)),
         POSITION_TOLERANCE);
-    EXPECT_EQ(star.position.y, before[i].position.y);
+    EXPECT_EQ(star.height, before[i].height);
   }
 }
 
@@ -159,8 +161,8 @@ TEST(Starfield, NegativeTimeMovesNothing) {
 /**
  * Given a starfield
  * When a minute passes, frame by frame
- * Then no star ever leaves the band between the two wrap margins: stars
- * leaving on the left all come back
+ * Then no star is ever painted outside the band between the two wrap margins:
+ * stars leaving on the left all come back
  */
 TEST(Starfield, StarsNeverLeaveTheWrapBand) {
   Starfield starfield(SEED);
@@ -170,8 +172,9 @@ TEST(Starfield, StarsNeverLeaveTheWrapBand) {
        left -= MAXIMUM_BACKGROUND_STEP) {
     starfield.advance(MAXIMUM_BACKGROUND_STEP);
     for (const Star& star : starfield.stars()) {
-      if (star.position.x < -STAR_WRAP_MARGIN ||
-          star.position.x >= BACKGROUND_WIDTH + STAR_WRAP_MARGIN) {
+      if (star.column < -STAR_WRAP_MARGIN ||
+          star.column >=
+              static_cast<int>(BACKGROUND_WIDTH) + STAR_WRAP_MARGIN) {
         ++outsideTheBand;
       }
     }
@@ -192,12 +195,12 @@ TEST(Starfield, StarLeavingOnTheLeftComesBackOnTheRight) {
   ASSERT_EQ(starfield.stars()[nearStar].depth, StarDepth::Near);
   const float oneStep =
       speedOf(StarDepth::Near) * seconds(MAXIMUM_BACKGROUND_STEP);
-  float previous = starfield.stars()[nearStar].position.x;
+  float previous = starfield.positionOf(starfield.stars()[nearStar]);
 
   for (Duration left = ONE_MINUTE; left > Duration::zero();
        left -= MAXIMUM_BACKGROUND_STEP) {
     starfield.advance(MAXIMUM_BACKGROUND_STEP);
-    const float current = starfield.stars()[nearStar].position.x;
+    const float current = starfield.positionOf(starfield.stars()[nearStar]);
     if (current > previous) {
       EXPECT_GE(current, BACKGROUND_WIDTH + STAR_WRAP_MARGIN - oneStep);
       EXPECT_LT(current, BACKGROUND_WIDTH + STAR_WRAP_MARGIN);
@@ -247,29 +250,92 @@ TEST(Starfield, PlanetLeavingOnTheLeftComesBackOnTheRight) {
 
 /**
  * Given a new starfield
- * When it is painted
- * Then the far stars come first, the planet right after them, and the middle
- * stars after the planet
+ * When its far plane is painted
+ * Then it holds every far star and nothing else
  */
-TEST(Starfield, PlanetIsPaintedBetweenFarAndNearerStars) {
+TEST(Starfield, TheFarPlaneHoldsTheFarStars) {
+  const Starfield starfield(SEED);
+  RecordingPixelSurface surface;
+
+  starfield.paint(StarPlane::FarStars, surface);
+
+  EXPECT_EQ(surface.plots().size(), countAt(starfield, StarDepth::Far));
+  for (const ColoredPixel& plot : surface.plots()) {
+    EXPECT_TRUE(plot.color == DEEP_BLUE || plot.color == BLUE);
+  }
+}
+
+/**
+ * Given a new starfield
+ * When its planet plane is painted
+ * Then it holds the pixels of the planet image, and nothing else
+ */
+TEST(Starfield, ThePlanetPlaneHoldsThePlanet) {
   const Starfield starfield(SEED);
   const PlanetImage planet;
   RecordingPixelSurface surface;
 
-  starfield.paint(surface);
+  starfield.paint(StarPlane::Planet, surface);
 
-  const std::size_t farStars = countAt(starfield, StarDepth::Far);
-  const std::size_t planetEnd = farStars + planet.pixels().size();
-  ASSERT_GT(surface.plots().size(), planetEnd);
-  for (std::size_t i = 0; i < farStars; ++i) {
-    const sf::Color color = surface.plots()[i].color;
-    EXPECT_TRUE(color == DEEP_BLUE || color == BLUE);
+  ASSERT_EQ(surface.plots().size(), planet.pixels().size());
+  for (std::size_t i = 0; i < planet.pixels().size(); ++i) {
+    EXPECT_EQ(surface.plots()[i].color, planet.pixels()[i].color);
   }
-  for (std::size_t i = farStars; i < planetEnd; ++i) {
-    EXPECT_EQ(surface.plots()[i].color, planet.pixels()[i - farStars].color);
+}
+
+/**
+ * Given a starfield that moved for a tenth of a second
+ * When its far plane is painted
+ * Then each far star lies, to the hundredth of a pixel, the shift of the plane
+ * right of the pixel it is painted on
+ */
+TEST(Starfield, AFarStarLiesTheShiftOfItsPlaneRightOfItsPixel) {
+  Starfield starfield(SEED);
+  advanceBy(starfield, A_TENTH_OF_A_SECOND);
+  RecordingPixelSurface surface;
+
+  starfield.paint(StarPlane::FarStars, surface);
+
+  const float shift = starfield.shiftOf(StarPlane::FarStars);
+  ASSERT_EQ(surface.plots().size(), countAt(starfield, StarDepth::Far));
+  for (std::size_t i = 0; i < surface.plots().size(); ++i) {
+    EXPECT_NEAR(static_cast<float>(surface.plots()[i].position.x) + shift,
+                starfield.positionOf(starfield.stars()[i]),
+                SUB_PIXEL_TOLERANCE);
   }
-  const sf::Color firstMiddleStar = surface.plots()[planetEnd].color;
-  EXPECT_TRUE(firstMiddleStar == PALE_BLUE || firstMiddleStar == BLUE);
+}
+
+/**
+ * Given a starfield that moved for a tenth of a second
+ * When its planet plane is painted
+ * Then the planet lies, to the hundredth of a pixel, the shift of its plane
+ * right of the pixels it is painted on
+ */
+TEST(Starfield, ThePlanetLiesTheShiftOfItsPlaneRightOfItsPixels) {
+  Starfield starfield(SEED);
+  advanceBy(starfield, A_TENTH_OF_A_SECOND);
+  const PlanetImage planet;
+  RecordingPixelSurface surface;
+
+  starfield.paint(StarPlane::Planet, surface);
+
+  ASSERT_FALSE(surface.plots().empty());
+  const int left =
+      surface.plots().front().position.x - planet.pixels().front().position.x;
+  EXPECT_NEAR(static_cast<float>(left) + starfield.shiftOf(StarPlane::Planet),
+              starfield.planetLeft(), SUB_PIXEL_TOLERANCE);
+}
+
+/**
+ * Given a starfield that moved for a tenth of a second
+ * When the shift of its near plane is asked for
+ * Then it is none: the near stars keep the grid of the playfield
+ */
+TEST(Starfield, TheNearPlaneKeepsTheGridOfThePlayfield) {
+  Starfield starfield(SEED);
+  advanceBy(starfield, A_TENTH_OF_A_SECOND);
+
+  EXPECT_FLOAT_EQ(starfield.shiftOf(StarPlane::NearStars), 0.0F);
 }
 
 /**
@@ -285,7 +351,7 @@ TEST(Starfield, FarStarTwinklesOneStepInEight) {
 
   for (std::int64_t step = 0; step < STAR_TWINKLE_CYCLE_STEPS; ++step) {
     RecordingPixelSurface surface;
-    starfield.paint(surface);
+    starfield.paint(StarPlane::FarStars, surface);
     if (surface.plots().front().color == BLUE) {
       ++twinkles;
     }
@@ -305,19 +371,19 @@ TEST(Starfield, ASpeedFactorMovesTheStarsThatManyTimesFaster) {
   Starfield calm(SEED);
   Starfield fast(SEED);
   fast.setSpeedFactor(TOP_WARP_SPEED);
-  const std::vector<Star> before = calm.stars();
+  const std::vector<float> before = positionsOf(calm);
 
   calm.advance(MAXIMUM_BACKGROUND_STEP);
   fast.advance(MAXIMUM_BACKGROUND_STEP);
 
   for (std::size_t i = 0; i < before.size(); ++i) {
-    if (before[i].depth != StarDepth::Near ||
-        before[i].position.x < FAR_FROM_THE_LEFT_EDGE) {
+    if (calm.stars()[i].depth != StarDepth::Near ||
+        before[i] < FAR_FROM_THE_LEFT_EDGE) {
       continue;
     }
     SCOPED_TRACE(i);
-    const float calmStep = before[i].position.x - calm.stars()[i].position.x;
-    const float fastStep = before[i].position.x - fast.stars()[i].position.x;
+    const float calmStep = before[i] - calm.positionOf(calm.stars()[i]);
+    const float fastStep = before[i] - fast.positionOf(fast.stars()[i]);
     EXPECT_NEAR(fastStep, TOP_WARP_SPEED * calmStep, POSITION_TOLERANCE);
   }
 }
@@ -333,7 +399,7 @@ TEST(Starfield, AFastStarIsDrawnWithItsStreak) {
   starfield.setSpeedFactor(TOP_WARP_SPEED);
   RecordingPixelSurface surface;
 
-  starfield.paint(surface);
+  starfield.paint(StarPlane::NearStars, surface);
 
   const sf::Color streak =
       STAR_STREAK_COLORS[static_cast<std::size_t>(StarDepth::Near)];
@@ -342,9 +408,8 @@ TEST(Starfield, AFastStarIsDrawnWithItsStreak) {
       continue;
     }
     for (int column = 1; column <= NEAR_STREAK_AT_THE_TOP_WARP; ++column) {
-      const sf::Vector2i pixel(
-          static_cast<int>(std::lround(star.position.x)) + column,
-          static_cast<int>(std::lround(star.position.y)));
+      const sf::Vector2i pixel(star.column + column,
+                               static_cast<int>(std::lround(star.height)));
       EXPECT_TRUE(std::ranges::any_of(
           surface.plots(), [pixel, streak](const ColoredPixel& plot) {
             return plot.position == pixel && plot.color == streak;

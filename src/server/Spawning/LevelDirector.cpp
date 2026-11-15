@@ -100,7 +100,8 @@ void LevelDirector::announceChange() {
   parts_.entrance.events.get().publish(
       game::LevelChange{.biome = progress_.biome,
                         .scrollPosition = progress_.scroll.position(),
-                        .scrollSpeed = progress_.scroll.speed()});
+                        .scrollSpeed = progress_.scroll.speed(),
+                        .biomeSince = progress_.biomeSince});
 }
 
 void LevelDirector::removeEveryBodyButTheShips() const {

@@ -95,6 +95,10 @@ def instantiate(biome, name, mirrored, rng, water_y):
         x0, x1, y0, y1 = hero["ledge"]
         hero["ledge"] = (*sorted((flip(x0), flip(x1))), y0, y1)
     zone["hero"] = hero
+    if "entrance" in template:
+        if mirrored:
+            biome_file.stop(f"the template {name} is an entrance: it opens on its left and cannot be mirrored")
+        zone["mouth"] = template["entrance"]["mouth"]
     if "mid_exempt" in template:
         zone["mid_exempt"] = tuple(sorted((flip(template["mid_exempt"][0]), flip(template["mid_exempt"][1]))))
     zone["left"], zone["right"] = (template["right"], template["left"]) if mirrored else (template["left"], template["right"])
@@ -104,7 +108,7 @@ def instantiate(biome, name, mirrored, rng, water_y):
 def choose_sequence(biome, rng, count):
     """Chain of templates whose connectors match, closed on dry ground at both ends."""
     templates, wet = biome.templates, biome.wet_connectors
-    options = [(name, mirrored) for name in templates for mirrored in (False, True)]
+    options = [(name, mirrored) for name in templates if "entrance" not in templates[name] for mirrored in (False, True)]
 
     def ends(option):
         """Left and right connectors of a template, swapped when it is mirrored."""
@@ -162,6 +166,9 @@ class CaveMap:
         self.decor, self.columns, self.waterfalls, self.lights, self.beams, self.seam_covers = [], [], [], [], [], []
         self.extents, self.rhythm = {}, {}
         self.cluster_count = 0
+        for position, (name, _) in enumerate(sequence or []):
+            if position > 0 and "entrance" in biome.templates.get(name, {}):
+                biome_file.stop(f"the template {name} is an entrance: it can only open a map, not stand at zone {position + 1}")
         sequence = sequence or choose_sequence(biome, self.rng, zone_count)
         if not sequence:
             sys.exit(f"the templates of {biome.name} cannot be chained into {zone_count} zones: check their connectors")
@@ -705,6 +712,9 @@ class CaveMap:
                 if air[y, x]:
                     near[y, x] = np.array(biome.near[str(rng.choice(specks["keys"]))]) * specks["gain"]
                     near_on[y, x] = True
+        hidden = self.entrance_hidden()
+        near_on &= ~hidden
+        self.solid["near"] &= ~hidden
         self.layers = {}
         for name, plane, opaque in (("far", far, np.ones_like(near_on)), ("mid", mid, mid_on), ("near", near, near_on)):
             rgba = np.zeros((H, self.width, 4), np.uint8)
@@ -717,6 +727,16 @@ class CaveMap:
             opaque = self.layers[name][..., 3] > 0
             image[opaque] = self.layers[name][..., :3][opaque]
         return image
+
+    def entrance_hidden(self):
+        """Pixels of the play plane left of the mouth of an entrance zone, cut along a ragged rock edge: the game shows open space there."""
+        hidden = np.zeros((H, self.width), bool)
+        for zone in self.zones:
+            if "mouth" not in zone:
+                continue
+            edge = zone["x0"] + zone["mouth"] + stepped_noise(H, self.rng, (4, 12), [-6, -4, -2, 0, 2, 4, 6])
+            hidden |= np.arange(self.width)[None, :] < edge[:, None]
+        return hidden
 
     def light_field(self):
         """Dark ambience, then pools of light in quantized, dithered bands, one tint per source: a gain and a haze per pixel."""
