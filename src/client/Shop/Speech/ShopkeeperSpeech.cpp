@@ -70,9 +70,17 @@ void ShopkeeperSpeech::bottlesTouched() {
 }
 
 void ShopkeeperSpeech::radioTuned(Ambience playing) {
-  line_.say(playing == Ambience::ShopRadio
-                ? inTurn(SHOPKEEPER_BORDER_RADIO_LINES, borderRadioTurn_)
-                : SHOPKEEPER_SHOP_MUSIC_LINE);
+  switch (playing) {
+    case Ambience::ShopRadio:
+      line_.say(inTurn(SHOPKEEPER_BORDER_RADIO_LINES, borderRadioTurn_));
+      return;
+    case Ambience::ShopDance:
+      line_.say(SHOPKEEPER_DANCE_RADIO_LINE);
+      return;
+    default:
+      line_.say(SHOPKEEPER_SHOP_MUSIC_LINE);
+      return;
+  }
 }
 
 void ShopkeeperSpeech::advance(engine::Duration elapsed) {

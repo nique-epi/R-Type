@@ -19,6 +19,7 @@ using rtype::client::testing::BESIDE_THE_BOTTLES;
 using rtype::client::testing::BESIDE_THE_RADIO;
 using rtype::client::testing::BORDER_RADIO_WORD;
 using rtype::client::testing::BOTTLES_MIDDLE;
+using rtype::client::testing::DANCE_RADIO_WORD;
 using rtype::client::testing::FAR_FROM_THE_RADIO;
 using rtype::client::testing::FIRST_BOTTLES_WORD;
 using rtype::client::testing::KEEPER_AT_HIS_LOWEST;
@@ -91,11 +92,25 @@ TEST_F(ShopBoothFixture, RTunesTheRadio) {
 }
 
 /**
- * Given the radio playing its own music
+ * Given the radio playing the theme of Papers, Please
+ * When R is pressed and released again
+ * Then the radio plays Kavorka
+ */
+TEST_F(ShopBoothFixture, ASecondRTunesTheRadioToKavorka) {
+  press(Key::R);
+
+  press(Key::R);
+
+  EXPECT_EQ(ambience(), Ambience::ShopDance);
+}
+
+/**
+ * Given the radio playing Kavorka
  * When R is pressed and released again
  * Then the music of the shop comes back
  */
-TEST_F(ShopBoothFixture, ASecondRBringsTheMusicOfTheShopBack) {
+TEST_F(ShopBoothFixture, AThirdRBringsTheMusicOfTheShopBack) {
+  press(Key::R);
   press(Key::R);
 
   press(Key::R);
@@ -261,8 +276,8 @@ TEST_F(ShopBoothFixture, ANewLineCutsTheRadioHint) {
 
 /**
  * Given a shop that shows lines whole
- * When R tunes the radio to its music, then back
- * Then the shopkeeper speaks of Arstotzka, then of Moscow
+ * When R tunes the radio to Papers, Please, to Kavorka, then back
+ * Then the shopkeeper speaks of Arstotzka, of disco, then of Moscow
  */
 TEST_F(ShopBoothFixture, TheRadioTunedHasTheShopkeeperSpeakOfIt) {
   reopenWithLessMotion();
@@ -270,6 +285,10 @@ TEST_F(ShopBoothFixture, TheRadioTunedHasTheShopkeeperSpeakOfIt) {
   press(Key::R);
   wait(Duration::zero());
   EXPECT_NE(writingOf(painting(), BORDER_RADIO_WORD), nullptr);
+
+  press(Key::R);
+  wait(Duration::zero());
+  EXPECT_NE(writingOf(painting(), DANCE_RADIO_WORD), nullptr);
 
   press(Key::R);
   wait(Duration::zero());

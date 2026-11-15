@@ -45,9 +45,10 @@ class IAudioService {
   virtual void playBossMusic() = 0;
 
   /** @brief Plays @p ambience under the theme, and stops the one that
-   * played; Ambience::None leaves only the music. Ambience::Shop and
-   * Ambience::ShopRadio play from the start of their music and pause the
-   * theme, which plays on from where it was once another ambience is set. */
+   * played; Ambience::None leaves only the music. Ambience::Shop,
+   * Ambience::ShopRadio and Ambience::ShopDance play from the start of
+   * their music and pause the theme, which plays on from where it was once
+   * another ambience is set. */
   virtual void setAmbience(Ambience ambience) = 0;
 
   /** @returns The ambience that plays now. */

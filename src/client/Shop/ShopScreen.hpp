@@ -51,7 +51,8 @@ namespace rtype::client {
  *
  * The music of the shop plays while it shows, the theme paused. A click on
  * the radio of the counter, or SHOP_RADIO_KEY once per hold, changes it for
- * the music of the radio, and back.
+ * the next music of the radio: the theme of Papers, Please, then Kavorka,
+ * then the music of the shop again. Each loops until the radio is tuned.
  */
 class ShopScreen final : public IScreen {
  public:

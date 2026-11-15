@@ -56,12 +56,24 @@ Purse purseOf(const PlayerSettings& settings) {
   return Purse{.kopecks = settings.kopecks, .locker = settings.shipLocker};
 }
 
-/** @brief Changes what the shop plays: the music of the radio instead of
- * the music of the shop, or back; the shopkeeper says what he thinks of
- * it. */
+/** @returns The music the radio plays after @p playing: the theme of
+ * Papers, Please after the music of the shop, Kavorka after it, then the
+ * music of the shop again. */
+Ambience nextOnTheRadio(Ambience playing) {
+  switch (playing) {
+    case Ambience::Shop:
+      return Ambience::ShopRadio;
+    case Ambience::ShopRadio:
+      return Ambience::ShopDance;
+    default:
+      return Ambience::Shop;
+  }
+}
+
+/** @brief Changes what the shop plays for the next music of the radio;
+ * the shopkeeper says what he thinks of it. */
 void tuneRadio(IAudioService& audio, ShopkeeperSpeech& speech) {
-  audio.setAmbience(audio.ambience() == Ambience::Shop ? Ambience::ShopRadio
-                                                       : Ambience::Shop);
+  audio.setAmbience(nextOnTheRadio(audio.ambience()));
   speech.radioTuned(audio.ambience());
 }
 
