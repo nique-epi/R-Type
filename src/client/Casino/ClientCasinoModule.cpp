@@ -14,6 +14,11 @@
 #include "IScreen.hpp"
 #include "InstallContext.hpp"
 #include "ModuleConstants.hpp"
+#include "PlayerPreferences.hpp"
+#include "PlayerSettings.hpp"
+#include "RouletteMemory.hpp"
+#include "RouletteScreen.hpp"
+#include "RouletteScreenParts.hpp"
 #include "ScreenBuilding.hpp"
 #include "ScreenContext.hpp"
 #include "ScreenRegistry.hpp"
@@ -48,6 +53,25 @@ std::unique_ptr<IScreen> buildCashierScreen(const ScreenContext& context,
       interfaceCanvasOf(context));
 }
 
+/** @returns The roulette table, its bets kept in @p memory. */
+std::unique_ptr<IScreen> buildRouletteScreen(const ScreenContext& context,
+                                             ICasinoChannel& casino,
+                                             RouletteMemory& memory) {
+  const PlayerSettings& settings = context.services.settings.get();
+  return std::make_unique<RouletteScreen>(
+      RouletteScreenParts{.navigator = context.navigator.get(),
+                          .sounds = soundsOf(context),
+                          .casino = casino,
+                          .memory = memory,
+                          .settings = settings,
+                          .connection = context.services.connection.get(),
+                          .waitingRoom = context.services.waitingRoom.get(),
+                          .playfieldPointAt = playfieldMappingOf(context),
+                          .palette = playerPaletteOf(settings),
+                          .motion = motionPreference()},
+      interfaceCanvasOf(context));
+}
+
 }  // namespace
 
 std::string ClientCasinoModule::name() const {
@@ -74,10 +98,15 @@ void ClientCasinoModule::install(engine::InstallContext& context) {
       CASINO_CASH_OUT_SCREEN, [](const ScreenContext& screens) {
         return buildCashierScreen(screens, CashierWay::CashOut);
       });
-  context.addWork(UPDATE_STAGE,
-                  [this]([[maybe_unused]] engine::Duration elapsed) {
-                    settleChipMoves(*casino_, *settings_);
-                  });
+  context.require<ScreenRegistry>().add(
+      ROULETTE_SCREEN, [this](const ScreenContext& screens) {
+        return buildRouletteScreen(screens, *casino_, roulette_);
+      });
+  context.addWork(
+      UPDATE_STAGE, [this]([[maybe_unused]] engine::Duration elapsed) {
+        roulette_.follow(casino_->round(), settings_->settings().chips);
+        settleChipMoves(*casino_, *settings_);
+      });
 }
 
 void ClientCasinoModule::start() {}

@@ -11,14 +11,15 @@
 
 /**
  * @brief Casino channel double that writes down every place chosen and every
- * bet laid, in order, and whose round and chip moves the test sets: a real
- * channel changes them on its own, at any time between two updates.
+ * set of bets sent with its vote, in order, and whose round and chip moves the
+ * test sets: a real channel changes them on its own, at any time between two
+ * updates.
  */
 class RecordingCasinoChannel : public rtype::client::ICasinoChannel {
  public:
   /** @brief Writes the place down. */
   void chooseTable(rtype::network::TablePlace place) override;
-  /** @brief Writes the bets down; the vote of the spin is ignored. */
+  /** @brief Writes the bets and the vote of the spin down. */
   void placeBets(std::vector<rtype::network::RouletteBet> bets,
                  bool spinVote) override;
   [[nodiscard]] std::optional<rtype::network::RouletteRound> round()
@@ -34,10 +35,17 @@ class RecordingCasinoChannel : public rtype::client::ICasinoChannel {
       const;
   /** @returns How many times placeBets() was called. */
   [[nodiscard]] std::size_t betsLaid() const;
+  /** @returns The bets placeBets() was called with, in order. */
+  [[nodiscard]] const std::vector<std::vector<rtype::network::RouletteBet>>&
+  sentBets() const;
+  /** @returns The votes of the spin placeBets() was called with, in order. */
+  [[nodiscard]] const std::vector<bool>& spinVotes() const;
 
  private:
   std::optional<rtype::network::RouletteRound> round_;
   rtype::client::ChipMoves chipMoves_{};
   std::vector<rtype::network::TablePlace> chosenPlaces_;
   std::size_t betsLaid_{0};
+  std::vector<std::vector<rtype::network::RouletteBet>> sentBets_;
+  std::vector<bool> spinVotes_;
 };

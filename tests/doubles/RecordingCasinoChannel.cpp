@@ -13,9 +13,10 @@ void RecordingCasinoChannel::chooseTable(rtype::network::TablePlace place) {
 }
 
 void RecordingCasinoChannel::placeBets(
-    [[maybe_unused]] std::vector<rtype::network::RouletteBet> bets,
-    [[maybe_unused]] bool spinVote) {
+    std::vector<rtype::network::RouletteBet> bets, bool spinVote) {
   ++betsLaid_;
+  sentBets_.push_back(std::move(bets));
+  spinVotes_.push_back(spinVote);
 }
 
 std::optional<rtype::network::RouletteRound> RecordingCasinoChannel::round()
@@ -42,3 +43,12 @@ RecordingCasinoChannel::chosenPlaces() const {
 }
 
 std::size_t RecordingCasinoChannel::betsLaid() const { return betsLaid_; }
+
+const std::vector<std::vector<rtype::network::RouletteBet>>&
+RecordingCasinoChannel::sentBets() const {
+  return sentBets_;
+}
+
+const std::vector<bool>& RecordingCasinoChannel::spinVotes() const {
+  return spinVotes_;
+}

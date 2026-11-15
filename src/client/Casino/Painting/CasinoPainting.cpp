@@ -15,15 +15,6 @@ namespace rtype::client {
 
 namespace {
 
-/** @brief Paints the four edges of @p area, one pixel wide, in @p color. */
-void paintEdges(IInterfaceCanvas& canvas, sf::IntRect area, sf::Color color) {
-  const sf::Vector2i end = area.position + area.size - sf::Vector2i(1, 1);
-  canvas.fill({area.position, {area.size.x, 1}}, color);
-  canvas.fill({{area.position.x, end.y}, {area.size.x, 1}}, color);
-  canvas.fill({area.position, {1, area.size.y}}, color);
-  canvas.fill({{end.x, area.position.y}, {1, area.size.y}}, color);
-}
-
 /** @brief The corners of a gaming plaque: at each corner of an area, a
  * stroke of that many pixels along each side, in one color. */
 struct PlaqueCorners {
@@ -48,13 +39,20 @@ void paintCorners(IInterfaceCanvas& canvas, const PlaqueCorners& corners) {
   }
 }
 
-/** @returns @p area, @p inset pixels smaller on every side. */
+}  // namespace
+
+void paintEdges(IInterfaceCanvas& canvas, sf::IntRect area, sf::Color color) {
+  const sf::Vector2i end = area.position + area.size - sf::Vector2i(1, 1);
+  canvas.fill({area.position, {area.size.x, 1}}, color);
+  canvas.fill({{area.position.x, end.y}, {area.size.x, 1}}, color);
+  canvas.fill({area.position, {1, area.size.y}}, color);
+  canvas.fill({{end.x, area.position.y}, {1, area.size.y}}, color);
+}
+
 sf::IntRect insetOf(sf::IntRect area, int inset) {
   const sf::Vector2i margin(inset, inset);
   return {area.position + margin, area.size - (margin * SIDES_PER_AXIS)};
 }
-
-}  // namespace
 
 void paintGoldPanel(IInterfaceCanvas& canvas, sf::IntRect area) {
   canvas.fill(area, CASINO_PANEL_INSIDE_COLOR);

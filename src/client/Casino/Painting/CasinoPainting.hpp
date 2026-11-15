@@ -1,5 +1,6 @@
 #pragma once
 
+#include <SFML/Graphics/Color.hpp>
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <string_view>
@@ -8,6 +9,12 @@
 #include "IInterfaceCanvas.hpp"
 
 namespace rtype::client {
+
+/** @brief Paints the four edges of @p area, one pixel wide, in @p color. */
+void paintEdges(IInterfaceCanvas& canvas, sf::IntRect area, sf::Color color);
+
+/** @returns @p area, @p inset pixels smaller on every side. */
+[[nodiscard]] sf::IntRect insetOf(sf::IntRect area, int inset);
 
 /** @brief Paints a panel of the casino over @p area: the panel of the client,
  * edged twice in gold, its corners cut like a gaming plaque. */

@@ -5,17 +5,19 @@
 #include "ICasinoChannel.hpp"
 #include "IModule.hpp"
 #include "InstallContext.hpp"
+#include "RouletteMemory.hpp"
 #include "SettingsService.hpp"
 
 namespace rtype::client {
 
 /**
  * @brief The module of the casino: install() adds CASINO_SCREEN, the
- * entrance and the hall, and the two ways of the cashier,
- * CASINO_BUY_CHIPS_SCREEN and CASINO_CASH_OUT_SCREEN, to the ScreenRegistry,
- * and addWork() settles in the chips of the player, each frame, what the rounds
- * of the roulette table moved, whichever screen shows. It opens nothing, so
- * start() and stop() do nothing.
+ * entrance and the hall, the two ways of the cashier,
+ * CASINO_BUY_CHIPS_SCREEN and CASINO_CASH_OUT_SCREEN, and the roulette
+ * table, ROULETTE_SCREEN, to the ScreenRegistry, and addWork() follows the
+ * table in the memory the roulette screens share, then settles in the chips
+ * of the player what the rounds moved, each frame, whichever screen shows. It
+ * opens nothing, so start() and stop() do nothing.
  */
 class ClientCasinoModule final : public engine::IModule {
  public:
@@ -35,6 +37,9 @@ class ClientCasinoModule final : public engine::IModule {
  private:
   ICasinoChannel* casino_{nullptr};
   SettingsService* settings_{nullptr};
+  /** @brief The bets and the numbers drawn, kept while the table screen is
+   * closed. */
+  RouletteMemory roulette_;
 };
 
 }  // namespace rtype::client
