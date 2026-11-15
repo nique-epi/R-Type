@@ -58,6 +58,9 @@ struct ConnectedPlayer {
   /** @brief Whether the player declared itself ready to start; cleared when the
    * game waits for players again. */
   bool ready{false};
+  /** @brief Whether the player sits at the roulette table of the waiting room,
+   * where it is never ready; kept by the casino of the game. */
+  bool atCasino{false};
   /** @brief Whether the player told the game it shows the game screen, since
    * the game last started waiting for it; cleared when the game does. */
   bool loaded{false};

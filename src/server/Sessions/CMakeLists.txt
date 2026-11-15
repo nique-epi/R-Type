@@ -10,7 +10,6 @@ target_link_libraries(rtype_server_sessions
     rtype_engine_event_bus
     rtype_network_chat_line
     rtype_network_leaderboard_request
-    rtype_network_ship_look_choice
     rtype_network_message_dispatcher
     rtype_network_transport
     rtype_server_sessions_roster

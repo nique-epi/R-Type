@@ -11,6 +11,9 @@
 #if RTYPE_MODULE_CHAT
 #include "ChatModule.hpp"
 #endif
+#if RTYPE_MODULE_CASINO
+#include "CasinoModule.hpp"
+#endif
 
 namespace rtype::server {
 
@@ -23,6 +26,9 @@ std::vector<std::unique_ptr<IGameModule>> rtypeGameModules(
   modules.push_back(std::make_unique<LooksModule>());
 #if RTYPE_MODULE_CHAT
   modules.push_back(std::make_unique<ChatModule>());
+#endif
+#if RTYPE_MODULE_CASINO
+  modules.push_back(std::make_unique<CasinoModule>());
 #endif
   return modules;
 }

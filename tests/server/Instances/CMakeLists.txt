@@ -3,4 +3,7 @@ target_include_directories(server_game_instance_tests PRIVATE ${RTYPE_TEST_SOURC
 if(RTYPE_MODULE_CHAT)
   target_sources(server_game_instance_tests PRIVATE GameChatFixtures.cpp GameChatTest.cpp)
 endif()
+if(RTYPE_MODULE_CASINO)
+  target_sources(server_game_instance_tests PRIVATE GameCasinoFixtures.cpp GameCasinoTest.cpp)
+endif()
 target_sources(server_game_module_tests PRIVATE GameModulesTest.cpp GameModulesFixtures.cpp RtypeGameFixture.cpp GameModuleFixture.cpp)

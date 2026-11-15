@@ -5,6 +5,7 @@ add_library(rtype_server_sessions_tracking STATIC
   InputKeeper.cpp
   MessageDelivery.cpp
   ReadyKeeper.cpp
+  RoomChoices.cpp
 )
 
 target_include_directories(rtype_server_sessions_tracking PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
@@ -16,10 +17,14 @@ target_link_libraries(rtype_server_sessions_tracking
     rtype_game_events
     rtype_logging
     rtype_network_game_loaded
+    rtype_network_message_dispatcher
+    rtype_network_casino_place
     rtype_network_heartbeat
     rtype_network_player_input
     rtype_network_protocol
     rtype_network_ready_state
+    rtype_network_roulette_bets
+    rtype_network_ship_look_choice
     rtype_network_transport
     rtype_server_sessions_roster
   PRIVATE

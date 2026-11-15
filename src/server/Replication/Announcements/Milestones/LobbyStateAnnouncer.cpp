@@ -14,6 +14,15 @@ namespace rtype::server {
 
 namespace {
 
+/** @returns Where @p player is in the waiting room, as LobbyState says it. */
+network::PilotPlace placeOf(const ConnectedPlayer& player) {
+  if (player.atCasino) {
+    return network::PilotPlace::AtCasino;
+  }
+  return player.ready ? network::PilotPlace::Ready
+                      : network::PilotPlace::NotReady;
+}
+
 /**
  * @returns The room @p players make: each of them, in the order given, with
  * its number, its place and its nickname.
@@ -22,11 +31,10 @@ network::LobbyState roomOf(const ConnectedPlayers& players) {
   network::LobbyState room;
   room.players.reserve(players.size());
   for (const ConnectedPlayer* const player : players) {
-    room.players.push_back(network::LobbyPlayer{
-        .playerNumber = player->playerNumber,
-        .place = player->ready ? network::PilotPlace::Ready
-                               : network::PilotPlace::NotReady,
-        .nickname = player->nickname});
+    room.players.push_back(
+        network::LobbyPlayer{.playerNumber = player->playerNumber,
+                             .place = placeOf(*player),
+                             .nickname = player->nickname});
   }
   return room;
 }

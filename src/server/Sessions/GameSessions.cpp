@@ -27,7 +27,6 @@
 #include "PlayerRoster.hpp"
 #include "ReadyState.hpp"
 #include "SessionDatagram.hpp"
-#include "ShipLookChoice.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::server {
@@ -66,7 +65,7 @@ GameSessions::GameSessions(GameSessionsParts parts)
       departures_(roster_, parts.events, std::move(parts.onClosing)),
       onLeaderboardRequest_(std::move(parts.onLeaderboardRequest)),
       onChatLine_(std::move(parts.onChatLine)),
-      onShipLookChoice_(std::move(parts.onShipLookChoice)) {
+      roomChoices_(roster_, readyKeeper_, std::move(parts.roomChoices)) {
   registerSessionHandlers();
   registerRequestHandlers();
 }
@@ -116,14 +115,7 @@ void GameSessions::registerRequestHandlers() {
           onChatLine_(*player, line);
         }
       });
-  dispatcher_.registerHandler<network::ShipLookChoice>(
-      [this](const network::MessageOrigin& origin,
-             const network::ShipLookChoice& choice) {
-        ConnectedPlayer* const player = roster_.find(origin.sender);
-        if (player != nullptr && readyKeeper_.acceptsRoomChoices()) {
-          onShipLookChoice_(*player, choice);
-        }
-      });
+  roomChoices_.registerWith(dispatcher_);
 }
 
 PlayerRoster& GameSessions::roster() { return roster_; }

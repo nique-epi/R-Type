@@ -21,7 +21,7 @@ void ReadyKeeper::apply(const network::MessageOrigin& origin,
   if (!readyAccepted_() || player == nullptr) {
     return;
   }
-  player->ready = message.ready;
+  player->ready = message.ready && !player->atCasino;
 }
 
 void ReadyKeeper::apply(const network::MessageOrigin& origin,

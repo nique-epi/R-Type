@@ -8,7 +8,7 @@
 #include "LeaderboardRequest.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PlayerInput.hpp"
-#include "ShipLookChoice.hpp"
+#include "RoomChoiceHandlers.hpp"
 
 namespace rtype::server {
 
@@ -42,11 +42,10 @@ struct GameSessionsParts {
    * for whoever relays it (the chat of the game). Must not be empty. */
   std::function<void(const ConnectedPlayer&, const network::ChatLine&)>
       onChatLine;
-  /** @brief Called with the player and each ShipLookChoice it sends while the
-   * game takes the choices of the waiting room, copies included, for whoever
-   * shares the looks. Must not be empty. */
-  std::function<void(ConnectedPlayer&, const network::ShipLookChoice&)>
-      onShipLookChoice;
+  /** @brief What the choices a player makes in the waiting room go to while
+   * the game takes them: its look, its place at the roulette table, its bets.
+   */
+  RoomChoiceHandlers roomChoices;
 };
 
 }  // namespace rtype::server

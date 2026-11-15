@@ -20,6 +20,7 @@
 #cmakedefine01 RTYPE_MODULE_MASTER_LINK
 #cmakedefine01 RTYPE_MODULE_ADMIN_CONSOLE
 #cmakedefine01 RTYPE_MODULE_CHAT
+#cmakedefine01 RTYPE_MODULE_CASINO
 #cmakedefine01 RTYPE_MODULE_PLUGINS
 #cmakedefine01 RTYPE_MODULE_GAME_STATISTICS
 
@@ -42,6 +43,9 @@ constexpr bool MASTER_LINK_MODULE_BUILT = RTYPE_MODULE_MASTER_LINK == 1;
 constexpr bool ADMIN_CONSOLE_MODULE_BUILT = RTYPE_MODULE_ADMIN_CONSOLE == 1;
 /** @brief Whether each game holds its `chat` module. */
 constexpr bool CHAT_MODULE_BUILT = RTYPE_MODULE_CHAT == 1;
+/** @brief Whether each game holds its `casino` module, the roulette table of
+ * its waiting room. */
+constexpr bool CASINO_MODULE_BUILT = RTYPE_MODULE_CASINO == 1;
 /** @brief Whether an Application runs the `plugin` and `plugin-folder` lines
  * and loads the shared libraries they name. */
 constexpr bool PLUGINS_BUILT = RTYPE_MODULE_PLUGINS == 1;

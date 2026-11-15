@@ -2,10 +2,12 @@
 
 #include <functional>
 #include <vector>
+#include "CasinoPlace.hpp"
 #include "ChatLine.hpp"
 #include "ConnectedPlayer.hpp"
 #include "LeaderboardRequest.hpp"
 #include "PlayerInput.hpp"
+#include "RouletteBets.hpp"
 #include "ShipLookChoice.hpp"
 
 namespace rtype::server {
@@ -48,6 +50,16 @@ struct SessionHooks {
   std::vector<
       std::function<void(ConnectedPlayer&, const network::ShipLookChoice&)>>
       shipLookChosen;
+  /** @brief Called with a player and each CasinoPlace it sends in the waiting
+   * room, copies included, for a module to seat it at the roulette table. */
+  std::vector<
+      std::function<void(ConnectedPlayer&, const network::CasinoPlace&)>>
+      casinoPlaceChosen;
+  /** @brief Called with a player and each RouletteBets it sends in the waiting
+   * room, copies included, for a module to take its bets. */
+  std::vector<
+      std::function<void(const ConnectedPlayer&, const network::RouletteBets&)>>
+      rouletteBetsSent;
 };
 
 }  // namespace rtype::server
