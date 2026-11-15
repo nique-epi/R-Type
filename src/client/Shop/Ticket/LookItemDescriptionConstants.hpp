@@ -37,7 +37,7 @@ constexpr std::array<TicketDescription, identifiers::SHIP_LOOK_ITEM_COUNT>
         {"HO HO HO.", "THIS YEAR, THE BYDO", "GET COAL."},
         {"FOR THE PILOTS", "WHO NEVER LEAVE", "A WINGMAN BEHIND."},
         {"FOR THE PILOTS", "WHO SHOOT FIRST", "AND NEVER REGRET."},
-        {"BIG SHADE", "FOR WHEN A STAR", "GETS TOO CLOSE."},
+        {"ARRIBA, PILOT!", "THE BIGGEST HAT", "IN THE SECTOR."},
         {"STOLEN FROM", "A MOSCOW ROADWORK.", "DO NOT TELL."},
         {"IT IS A FEZ.", "FEZZES ARE COOL.", ""},
         {"TOP OF THE CLASS", "IN SHOOTING THINGS.", "WITH HONOURS."},
