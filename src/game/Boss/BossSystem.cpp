@@ -1,4 +1,4 @@
-#include "BossPhaseSystem.hpp"
+#include "BossSystem.hpp"
 #include <algorithm>
 #include <cstdint>
 #include <optional>
@@ -46,19 +46,17 @@ std::optional<BossHealthChanged> healthOf(engine::ComponentRegistry& components,
 
 }  // namespace
 
-BossPhaseSystem::BossPhaseSystem(engine::EventBus& events)
+BossSystem::BossSystem(engine::EventBus& events)
     : events_(events),
       destructions_(events.subscribe<EntityDestruction>(
           [this](const EntityDestruction& destruction) {
             onDestruction(destruction);
           })) {}
 
-BossPhaseSystem::~BossPhaseSystem() {
-  events_.get().unsubscribe(destructions_);
-}
+BossSystem::~BossSystem() { events_.get().unsubscribe(destructions_); }
 
-void BossPhaseSystem::update(engine::ComponentRegistry& components,
-                             [[maybe_unused]] engine::Duration elapsed) {
+void BossSystem::update(engine::ComponentRegistry& components,
+                        [[maybe_unused]] engine::Duration elapsed) {
   enraging_.clear();
   components.forEach<Boss, Health>([this, &components](engine::Entity body,
                                                        Boss& boss,
@@ -81,8 +79,8 @@ void BossPhaseSystem::update(engine::ComponentRegistry& components,
   tellChangedHealths(components);
 }
 
-void BossPhaseSystem::enrage(engine::ComponentRegistry& components,
-                             engine::Entity boss) {
+void BossSystem::enrage(engine::ComponentRegistry& components,
+                        engine::Entity boss) {
   const auto* const phases = components.get<Boss>(boss);
   if (phases == nullptr) {
     return;
@@ -95,8 +93,7 @@ void BossPhaseSystem::enrage(engine::ComponentRegistry& components,
                                            .phase = EnemyPhase::Enraged}});
 }
 
-void BossPhaseSystem::tellChangedHealths(
-    engine::ComponentRegistry& components) {
+void BossSystem::tellChangedHealths(engine::ComponentRegistry& components) {
   healths_.clear();
   components.forEach<Boss, Health>([this, &components](engine::Entity body,
                                                        const Boss& boss,
@@ -114,7 +111,7 @@ void BossPhaseSystem::tellChangedHealths(
   told_.swap(healths_);
 }
 
-void BossPhaseSystem::onDestruction(const EntityDestruction& destruction) {
+void BossSystem::onDestruction(const EntityDestruction& destruction) {
   const auto told = std::ranges::find(told_, destruction.networkId,
                                       &BossHealthChanged::networkId);
   if (told == told_.end()) {

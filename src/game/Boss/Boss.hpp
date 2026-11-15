@@ -8,7 +8,7 @@ namespace rtype::game {
 /**
  * @brief Component of a boss, given by `[gameplay.boss]`.
  *
- * BossPhaseSystem starts its fight once its arrival is over, gives it its
+ * BossSystem starts its fight once its arrival is over, gives it its
  * Rage, once, when its health falls below rageBelowPoints, and tells the
  * players its health; the boss stage of the server ends the level once it is
  * gone.
@@ -18,7 +18,7 @@ struct Boss {
   int rageBelowPoints{0};
   std::uint8_t rageAttack{0};
   std::uint8_t arrivalAttack{0};
-  /** @brief Whether its fight was announced; set once by BossPhaseSystem. */
+  /** @brief Whether its fight was announced; set once by BossSystem. */
   bool fighting{false};
 };
 

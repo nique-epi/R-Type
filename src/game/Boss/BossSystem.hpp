@@ -37,14 +37,14 @@ struct EntityDestruction;
  * destruction. Run it before PilotSystem, so the behaviour sees the rage at
  * the same tick. The bus must outlive the system.
  */
-class BossPhaseSystem final : public engine::ISystem {
+class BossSystem final : public engine::ISystem {
  public:
-  explicit BossPhaseSystem(engine::EventBus& events);
-  BossPhaseSystem(const BossPhaseSystem&) = delete;
-  BossPhaseSystem& operator=(const BossPhaseSystem&) = delete;
-  BossPhaseSystem(BossPhaseSystem&&) = delete;
-  BossPhaseSystem& operator=(BossPhaseSystem&&) = delete;
-  ~BossPhaseSystem() override;
+  explicit BossSystem(engine::EventBus& events);
+  BossSystem(const BossSystem&) = delete;
+  BossSystem& operator=(const BossSystem&) = delete;
+  BossSystem(BossSystem&&) = delete;
+  BossSystem& operator=(BossSystem&&) = delete;
+  ~BossSystem() override;
 
   void update(engine::ComponentRegistry& components,
               engine::Duration elapsed) override;

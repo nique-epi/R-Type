@@ -1,9 +1,9 @@
-#include "BossPhaseSystemFixture.hpp"
+#include "BossSystemFixture.hpp"
 #include <cstdint>
 #include <vector>
 #include "Boss.hpp"
 #include "BossHealthChanged.hpp"
-#include "BossPhaseSystemTestConstants.hpp"
+#include "BossSystemTestConstants.hpp"
 #include "CurrentAction.hpp"
 #include "EnemyActionStarted.hpp"
 #include "EntityDestruction.hpp"
@@ -14,7 +14,7 @@
 
 namespace rtype::game::testing {
 
-BossPhaseSystemFixture::BossPhaseSystemFixture() {
+BossSystemFixture::BossSystemFixture() {
   events_.subscribe<BossHealthChanged>(
       [this](const BossHealthChanged& health) { healths_.push_back(health); });
   events_.subscribe<EnemyActionStarted>(
@@ -23,8 +23,7 @@ BossPhaseSystemFixture::BossPhaseSystemFixture() {
       });
 }
 
-void BossPhaseSystemFixture::addBoss(Boss boss, int points,
-                                     CurrentAction current) {
+void BossSystemFixture::addBoss(Boss boss, int points, CurrentAction current) {
   boss_ = entities_.create();
   components_.add(boss_, boss);
   components_.add(boss_,
@@ -33,42 +32,42 @@ void BossPhaseSystemFixture::addBoss(Boss boss, int points,
   components_.add(boss_, NetworkIdentity{.networkId = PHASED_BOSS_ID});
 }
 
-void BossPhaseSystemFixture::run() {
+void BossSystemFixture::run() {
   system_.update(components_, engine::SIMULATION_TICK_DURATION);
   events_.dispatch();
 }
 
-void BossPhaseSystemFixture::leavePoints(int points) {
+void BossSystemFixture::leavePoints(int points) {
   if (auto* const health = components_.get<Health>(boss_)) {
     health->points = points;
   }
 }
 
-void BossPhaseSystemFixture::destroyBoss(DestructionCause cause) {
+void BossSystemFixture::destroyBoss(DestructionCause cause) {
   components_.destroy(boss_);
   events_.publish(
       EntityDestruction{.networkId = PHASED_BOSS_ID, .cause = cause});
   events_.dispatch();
 }
 
-void BossPhaseSystemFixture::announceKillOf(std::uint32_t networkId) {
+void BossSystemFixture::announceKillOf(std::uint32_t networkId) {
   events_.publish(EntityDestruction{.networkId = networkId,
                                     .cause = DestructionCause::Killed});
   events_.dispatch();
 }
 
-Boss BossPhaseSystemFixture::boss() {
+Boss BossSystemFixture::boss() {
   const Boss* const found = components_.get<Boss>(boss_);
   return found == nullptr ? Boss{} : *found;
 }
 
-bool BossPhaseSystemFixture::enraged() { return components_.has<Rage>(boss_); }
+bool BossSystemFixture::enraged() { return components_.has<Rage>(boss_); }
 
-const std::vector<BossHealthChanged>& BossPhaseSystemFixture::healths() const {
+const std::vector<BossHealthChanged>& BossSystemFixture::healths() const {
   return healths_;
 }
 
-const std::vector<EnemyActionStarted>& BossPhaseSystemFixture::startedActions()
+const std::vector<EnemyActionStarted>& BossSystemFixture::startedActions()
     const {
   return startedActions_;
 }

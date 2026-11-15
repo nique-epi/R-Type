@@ -5,7 +5,7 @@
 #include <vector>
 #include "Boss.hpp"
 #include "BossHealthChanged.hpp"
-#include "BossPhaseSystem.hpp"
+#include "BossSystem.hpp"
 #include "ComponentRegistry.hpp"
 #include "CurrentAction.hpp"
 #include "EnemyActionStarted.hpp"
@@ -17,12 +17,12 @@
 namespace rtype::game::testing {
 
 /**
- * @brief A boss moved through its phases by a BossPhaseSystem, recording the
+ * @brief A boss moved through its phases by a BossSystem, recording the
  * health and the actions it announces, once the bus delivered them.
  */
-class BossPhaseSystemFixture : public ::testing::Test {
+class BossSystemFixture : public ::testing::Test {
  protected:
-  BossPhaseSystemFixture();
+  BossSystemFixture();
 
   /** @brief Adds the boss PHASED_BOSS_ID: @p boss, with @p points of its
    * full health, in the action @p current. */
@@ -55,7 +55,7 @@ class BossPhaseSystemFixture : public ::testing::Test {
   engine::EntityRegistry entities_;
   engine::ComponentRegistry components_{entities_};
   engine::EventBus events_;
-  BossPhaseSystem system_{events_};
+  BossSystem system_{events_};
   engine::Entity boss_{};
   std::vector<BossHealthChanged> healths_;
   std::vector<EnemyActionStarted> startedActions_;

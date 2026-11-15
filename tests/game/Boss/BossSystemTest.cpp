@@ -2,8 +2,8 @@
 #include <optional>
 #include <vector>
 #include "BossHealthChanged.hpp"
-#include "BossPhaseSystemFixture.hpp"
-#include "BossPhaseSystemTestConstants.hpp"
+#include "BossSystemFixture.hpp"
+#include "BossSystemTestConstants.hpp"
 #include "CurrentAction.hpp"
 #include "EnemyActionStarted.hpp"
 #include "EnemyPhase.hpp"
@@ -16,7 +16,7 @@ using rtype::game::EnemyActionStarted;
 using rtype::game::EnemyPhase;
 using rtype::game::testing::ARRIVAL_ENDED;
 using rtype::game::testing::ARRIVING_BOSS;
-using rtype::game::testing::BossPhaseSystemFixture;
+using rtype::game::testing::BossSystemFixture;
 using rtype::game::testing::FIGHTING_BOSS;
 using rtype::game::testing::KILLED_BYDO_ID;
 using rtype::game::testing::PHASED_BOSS_AFTER_ONE_HIT;
@@ -29,10 +29,10 @@ using rtype::game::testing::PHASED_BOSS_SLIDE;
 
 /**
  * Given a boss whose arrival just ended, with its full health
- * When the boss phase system runs
+ * When the boss system runs
  * Then its fight is announced with its full health, calm
  */
-TEST_F(BossPhaseSystemFixture, AnnouncesTheFightOnceTheArrivalIsOver) {
+TEST_F(BossSystemFixture, AnnouncesTheFightOnceTheArrivalIsOver) {
   addBoss(ARRIVING_BOSS, PHASED_BOSS_FULL_HEALTH,
           CurrentAction{.key = std::nullopt, .ended = ARRIVAL_ENDED});
 
@@ -49,10 +49,10 @@ TEST_F(BossPhaseSystemFixture, AnnouncesTheFightOnceTheArrivalIsOver) {
 
 /**
  * Given a boss whose arrival just ended
- * When the boss phase system runs twice
+ * When the boss system runs twice
  * Then its fight is announced once
  */
-TEST_F(BossPhaseSystemFixture, AnnouncesTheFightOnlyOnce) {
+TEST_F(BossSystemFixture, AnnouncesTheFightOnlyOnce) {
   addBoss(ARRIVING_BOSS, PHASED_BOSS_FULL_HEALTH,
           CurrentAction{.key = std::nullopt, .ended = ARRIVAL_ENDED});
 
@@ -64,10 +64,10 @@ TEST_F(BossPhaseSystemFixture, AnnouncesTheFightOnlyOnce) {
 
 /**
  * Given a boss in its fight with 119 of its 240 points, below its 120
- * When the boss phase system runs
+ * When the boss system runs
  * Then it is enraged
  */
-TEST_F(BossPhaseSystemFixture, EnragesABossBelowItsThreshold) {
+TEST_F(BossSystemFixture, EnragesABossBelowItsThreshold) {
   addBoss(FIGHTING_BOSS, PHASED_BOSS_BELOW_ITS_RAGE,
           CurrentAction{.key = std::nullopt, .ended = ARRIVAL_ENDED});
 
@@ -78,10 +78,10 @@ TEST_F(BossPhaseSystemFixture, EnragesABossBelowItsThreshold) {
 
 /**
  * Given a boss in its fight below its rage threshold
- * When the boss phase system runs
+ * When the boss system runs
  * Then its rage attack 9 is announced, in the phase Enraged
  */
-TEST_F(BossPhaseSystemFixture, AnnouncesItsRageAttackInThePhaseEnraged) {
+TEST_F(BossSystemFixture, AnnouncesItsRageAttackInThePhaseEnraged) {
   addBoss(FIGHTING_BOSS, PHASED_BOSS_BELOW_ITS_RAGE,
           CurrentAction{.key = std::nullopt, .ended = ARRIVAL_ENDED});
 
@@ -96,10 +96,10 @@ TEST_F(BossPhaseSystemFixture, AnnouncesItsRageAttackInThePhaseEnraged) {
 
 /**
  * Given a boss in its fight with 119 of its 240 points
- * When the boss phase system runs
+ * When the boss system runs
  * Then its health is announced, enraged
  */
-TEST_F(BossPhaseSystemFixture, AnnouncesTheRageWithItsHealth) {
+TEST_F(BossSystemFixture, AnnouncesTheRageWithItsHealth) {
   addBoss(FIGHTING_BOSS, PHASED_BOSS_BELOW_ITS_RAGE,
           CurrentAction{.key = std::nullopt, .ended = ARRIVAL_ENDED});
 
@@ -115,10 +115,10 @@ TEST_F(BossPhaseSystemFixture, AnnouncesTheRageWithItsHealth) {
 
 /**
  * Given a boss in its fight below its rage threshold
- * When the boss phase system runs twice
+ * When the boss system runs twice
  * Then its rage attack is announced once
  */
-TEST_F(BossPhaseSystemFixture, EnragesItOnlyOnce) {
+TEST_F(BossSystemFixture, EnragesItOnlyOnce) {
   addBoss(FIGHTING_BOSS, PHASED_BOSS_BELOW_ITS_RAGE,
           CurrentAction{.key = std::nullopt, .ended = ARRIVAL_ENDED});
 
@@ -130,10 +130,10 @@ TEST_F(BossPhaseSystemFixture, EnragesItOnlyOnce) {
 
 /**
  * Given a boss in its fight, told with its 240 points
- * When a hit leaves it 239 points and the boss phase system runs
+ * When a hit leaves it 239 points and the boss system runs
  * Then its 239 points out of 240, calm, are told
  */
-TEST_F(BossPhaseSystemFixture, TellsTheHealthAHitLeft) {
+TEST_F(BossSystemFixture, TellsTheHealthAHitLeft) {
   addBoss(FIGHTING_BOSS, PHASED_BOSS_FULL_HEALTH,
           CurrentAction{.key = std::nullopt, .ended = ARRIVAL_ENDED});
   run();
@@ -154,7 +154,7 @@ TEST_F(BossPhaseSystemFixture, TellsTheHealthAHitLeft) {
  * When it is killed
  * Then no point left out of 240 is told
  */
-TEST_F(BossPhaseSystemFixture, TellsAKilledBossHasNoPointLeft) {
+TEST_F(BossSystemFixture, TellsAKilledBossHasNoPointLeft) {
   addBoss(FIGHTING_BOSS, PHASED_BOSS_FULL_HEALTH,
           CurrentAction{.key = std::nullopt, .ended = ARRIVAL_ENDED});
   run();
@@ -175,7 +175,7 @@ TEST_F(BossPhaseSystemFixture, TellsAKilledBossHasNoPointLeft) {
  * removes it
  * Then nothing more is told
  */
-TEST_F(BossPhaseSystemFixture, TellsNothingOfARemovedBoss) {
+TEST_F(BossSystemFixture, TellsNothingOfARemovedBoss) {
   addBoss(FIGHTING_BOSS, PHASED_BOSS_FULL_HEALTH,
           CurrentAction{.key = std::nullopt, .ended = ARRIVAL_ENDED});
   run();
@@ -190,7 +190,7 @@ TEST_F(BossPhaseSystemFixture, TellsNothingOfARemovedBoss) {
  * When a Bydo that is no boss is killed
  * Then nothing more is told
  */
-TEST_F(BossPhaseSystemFixture, TellsNothingWhenAnotherBodyIsKilled) {
+TEST_F(BossSystemFixture, TellsNothingWhenAnotherBodyIsKilled) {
   addBoss(FIGHTING_BOSS, PHASED_BOSS_FULL_HEALTH,
           CurrentAction{.key = std::nullopt, .ended = ARRIVAL_ENDED});
   run();
@@ -205,7 +205,7 @@ TEST_F(BossPhaseSystemFixture, TellsNothingWhenAnotherBodyIsKilled) {
  * When it is killed
  * Then nothing is told
  */
-TEST_F(BossPhaseSystemFixture, TellsNothingOfABossKilledBeforeItsFight) {
+TEST_F(BossSystemFixture, TellsNothingOfABossKilledBeforeItsFight) {
   addBoss(ARRIVING_BOSS, PHASED_BOSS_FULL_HEALTH,
           CurrentAction{.key = PHASED_BOSS_SLIDE});
   run();
@@ -217,10 +217,10 @@ TEST_F(BossPhaseSystemFixture, TellsNothingOfABossKilledBeforeItsFight) {
 
 /**
  * Given a boss still sliding in, below its rage threshold
- * When the boss phase system runs
+ * When the boss system runs
  * Then it is neither fighting nor enraged, and nothing is announced
  */
-TEST_F(BossPhaseSystemFixture, NeverEnragesDuringTheArrival) {
+TEST_F(BossSystemFixture, NeverEnragesDuringTheArrival) {
   addBoss(ARRIVING_BOSS, PHASED_BOSS_BELOW_ITS_RAGE,
           CurrentAction{.key = PHASED_BOSS_SLIDE});
 
@@ -235,10 +235,10 @@ TEST_F(BossPhaseSystemFixture, NeverEnragesDuringTheArrival) {
 /**
  * Given a boss in its fight with exactly 120 of its 240 points, its
  * threshold
- * When the boss phase system runs
+ * When the boss system runs
  * Then it stays calm: it enrages below its threshold, not at it
  */
-TEST_F(BossPhaseSystemFixture, LeavesABossAboveItsThresholdCalm) {
+TEST_F(BossSystemFixture, LeavesABossAboveItsThresholdCalm) {
   addBoss(FIGHTING_BOSS, PHASED_BOSS_AT_ITS_RAGE,
           CurrentAction{.key = std::nullopt, .ended = ARRIVAL_ENDED});
 
