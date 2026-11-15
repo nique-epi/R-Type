@@ -13,6 +13,8 @@
 
 namespace rtype::client {
 
+struct PlayerSettings;
+
 /**
  * @brief What a server map is built from, but the canvas it owns.
  *
@@ -25,7 +27,8 @@ namespace rtype::client {
 struct ServerMapScreenParts {
   /** @brief Screens it lives among, which must outlive it. */
   std::reference_wrapper<IScreenNavigator> navigator;
-  /** @brief Plays the click of the chips, which must outlive the screen. */
+  /** @brief Plays the click of the chips and of the tabs, which must
+   * outlive the screen. */
   std::reference_wrapper<ISoundPlayer> sounds;
   /** @brief Plays the space ambience under the theme while the map lives;
    * it must outlive the screen. */
@@ -41,6 +44,9 @@ struct ServerMapScreenParts {
    * games are read again once the player came back; it must outlive the
    * screen. */
   std::reference_wrapper<const IServerConnection> connection;
+  /** @brief The settings of the player, whose kopecks the map shows; they
+   * must outlive the screen. */
+  std::reference_wrapper<const PlayerSettings> settings;
   /** @brief Gives the point of the playfield under a pixel of the window. */
   PlayfieldMapping playfieldPointAt;
   /** @brief Whether the planet turns. */
