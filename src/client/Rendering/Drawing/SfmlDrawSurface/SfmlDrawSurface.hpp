@@ -5,15 +5,14 @@
 #include <SFML/Graphics/Shader.hpp>
 #include <SFML/Graphics/Sprite.hpp>
 #include <SFML/Graphics/Texture.hpp>
-#include <functional>
 #include <optional>
-#include <set>
-#include <string>
 #include <string_view>
 #include "IDrawSurface.hpp"
 #include "ITextureSource.hpp"
+#include "InterfaceLookSource.hpp"
 #include "Logger.hpp"
 #include "Position.hpp"
+#include "ReportingTextureSource.hpp"
 #include "SpriteDrawing.hpp"
 #include "SpriteTone.hpp"
 #include "TextStyle.hpp"
@@ -48,14 +47,14 @@ class SfmlDrawSurface : public IDrawSurface {
                   const TextWriter& writer);
 
   void draw(const SpriteDrawing& drawing) override;
+
+  /** @brief Gives the look the player chose, read at each line written: its
+   * text size, and the plate HIGH CONTRAST lays under an outlined line. */
+  void setLook(InterfaceLookSource look);
   void write(std::string_view text, game::Position center,
              TextStyle style) override;
 
  private:
-  /** @returns The texture of an id, or nullptr once the log says it is
-   * missing; a missing id is reported once. */
-  [[nodiscard]] const sf::Texture* foundTexture(std::string_view assetId);
-
   /** @returns The rectangle of the drawing as a sprite, its top-left corner
    * on the whole pixel nearest to where the center puts it. */
   [[nodiscard]] static sf::Sprite placedSprite(const sf::Texture& texture,
@@ -78,10 +77,10 @@ class SfmlDrawSurface : public IDrawSurface {
   void drawOutline(const sf::Sprite& sprite, sf::Color color);
 
   sf::RenderTarget& canvas_;
-  const ITextureSource& textures_;
+  ReportingTextureSource textures_;
   const TextWriter& writer_;
+  InterfaceLookSource look_;
   logging::Logger logger_;
-  std::set<std::string, std::less<>> reportedMissingIds_;
   std::optional<sf::Shader> flashShader_;
   std::optional<sf::Shader> ghostShader_;
 };

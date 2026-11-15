@@ -26,6 +26,11 @@ target_link_libraries(rtype_client_lobby_module
     rtype_client_interface_pixel
     rtype_client_menu_builder
     rtype_client_pilot_color
+    rtype_client_room_layouts
+    rtype_client_row_scrolling
+    rtype_client_shifted_canvas
+    rtype_client_text_measures
+    rtype_client_widget_text
     rtype_network_protocol
 )
 

@@ -9,6 +9,7 @@ target_link_libraries(rtype_client_text_writer
     SFML::Graphics
   PRIVATE
     rtype_client_asset_library
+    rtype_client_text_measures
     rtype_client_shaders
 )
 

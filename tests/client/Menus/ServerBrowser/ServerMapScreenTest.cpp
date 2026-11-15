@@ -1,5 +1,6 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <SFML/Graphics/Rect.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <algorithm>
 #include <optional>
@@ -11,6 +12,7 @@
 #include "GameRequest.hpp"
 #include "GameRules.hpp"
 #include "HangarScreenIdConstants.hpp"
+#include "LargestServerMapFixture.hpp"
 #include "MenuScreenIdConstants.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
@@ -36,6 +38,7 @@ using rtype::client::testing::HANGAR_HOUSE_ON_THE_MAP;
 using rtype::client::testing::HANGAR_HOUSE_SOURCE;
 using rtype::client::testing::HANGAR_STAR_HINT_LINE;
 using rtype::client::testing::HANGAR_STAR_ON_THE_MAP;
+using rtype::client::testing::LargestServerMapFixture;
 using rtype::client::testing::listWithLyonHolding;
 using rtype::client::testing::listWithNoSeatOfThisVersion;
 using rtype::client::testing::LYON_SERVER_ADDRESS;
@@ -46,12 +49,14 @@ using rtype::client::testing::NEW_GAME_ROW_ON_THE_PANEL;
 using rtype::client::testing::ONE_FRAME;
 using rtype::client::testing::ONE_PLANET_TURN_FRAME;
 using rtype::client::testing::ONE_SEAT_LEFT;
+using rtype::client::testing::PAGES_TO_THE_BOTTOM;
 using rtype::client::testing::PARIS_SERVER_ADDRESS;
 using rtype::client::testing::PARIS_SERVER_ID;
 using rtype::client::testing::parisOnTheWholeMap;
 using rtype::client::testing::PLAYING_GAME_ROW_ON_THE_PANEL;
 using rtype::client::testing::readyList;
 using rtype::client::testing::REFRESH_INTERVAL;
+using rtype::client::testing::SCROLLED_BACK_MIDDLE;
 using rtype::client::testing::SERVER_GAME_PORT;
 using rtype::client::testing::SERVER_SEATS;
 using rtype::client::testing::ServerMapScreenFixture;
@@ -63,15 +68,19 @@ using rtype::client::testing::SHOP_ON_THE_MAP;
 using rtype::client::testing::SHORT_OF_THE_REFRESH;
 using rtype::client::testing::showsTheMiniMap;
 using rtype::client::testing::UNREACHABLE_MASTER;
+using rtype::client::testing::WAITING_GAME_NAME;
 using rtype::client::testing::WAITING_GAME_NUMBER;
 using rtype::client::testing::WAITING_GAME_ROW_ON_THE_PANEL;
+using rtype::client::testing::WAITING_GAME_SEATS;
 using rtype::network::ANY_GAME_CHOICE;
 using rtype::network::defaultGameRules;
 using rtype::network::Endpoint;
 using rtype::network::GameChoice;
 using rtype::network::GameChoiceKind;
+using ::testing::Contains;
 using ::testing::ElementsAre;
 using ::testing::IsEmpty;
+using ::testing::Not;
 
 /**
  * Given a server map being built
@@ -392,6 +401,84 @@ TEST_F(ServerMapScreenFixture, EscapeOnTheWholeMapClosesIt) {
   openOn(readyList());
 
   press(sf::Keyboard::Key::Escape);
+
+  EXPECT_THAT(navigator().calls(),
+              ElementsAre(NavigatorCall{.request = NavigatorRequest::Pop,
+                                        .screen = std::nullopt}));
+}
+
+/**
+ * Given the whole map at the largest text size
+ * When it shows its top, then Page Down scrolls it to its bottom
+ * Then every text off screen at the top shows at the bottom
+ */
+TEST_F(LargestServerMapFixture, PageDownShowsEveryTextHiddenAtTheTop) {
+  openOn(readyList());
+  const std::vector<std::string> hiddenAtTheTop = writingsOffScreen(painting());
+
+  for (int page = 0; page < PAGES_TO_THE_BOTTOM; ++page) {
+    press(sf::Keyboard::Key::PageDown);
+  }
+
+  ASSERT_THAT(hiddenAtTheTop, Not(IsEmpty()));
+  const std::vector<std::string> hiddenAtTheBottom =
+      writingsOffScreen(painting());
+  for (const std::string& text : hiddenAtTheTop) {
+    EXPECT_THAT(hiddenAtTheBottom, Not(Contains(text))) << text;
+  }
+}
+
+/**
+ * Given the panel of the games of Lyon at the largest text size, its waiting
+ * game chosen
+ * When it is painted
+ * Then no line runs past a side of the screen
+ */
+TEST_F(LargestServerMapFixture, NoLineOfThePanelRunsPastASide) {
+  openOn(readyList());
+  games().show(lyonGames());
+  press(sf::Keyboard::Key::Enter);
+  press(sf::Keyboard::Key::Enter);
+
+  press(sf::Keyboard::Key::Down);
+
+  EXPECT_THAT(writingsOutSideways(painting()), IsEmpty());
+}
+
+/**
+ * Given the panel of the games of Lyon at the largest text size
+ * When it is painted
+ * Then the pilots of the waiting game stand under its name, on a line of
+ * their own
+ */
+TEST_F(LargestServerMapFixture, AGameWritesItsPilotsUnderItsName) {
+  openOn(readyList());
+  games().show(lyonGames());
+  press(sf::Keyboard::Key::Enter);
+
+  press(sf::Keyboard::Key::Enter);
+
+  const RecordedWriting* name = writingOf(painting(), WAITING_GAME_NAME);
+  const RecordedWriting* seats = writingOf(painting(), WAITING_GAME_SEATS);
+  ASSERT_NE(name, nullptr);
+  ASSERT_NE(seats, nullptr);
+  const sf::IntRect nameBox = writtenBoxOf(painting(), *name);
+  const sf::IntRect seatsBox = writtenBoxOf(painting(), *seats);
+  EXPECT_GE(seatsBox.position.y, nameBox.position.y + nameBox.size.y);
+}
+
+/**
+ * Given the whole map at the largest text size, scrolled to its bottom
+ * When the left button clicks the middle of BACK where it shows
+ * Then the map closes
+ */
+TEST_F(LargestServerMapFixture, AClickOnTheScrolledBackClosesTheMap) {
+  openOn(readyList());
+  for (int page = 0; page < PAGES_TO_THE_BOTTOM; ++page) {
+    press(sf::Keyboard::Key::PageDown);
+  }
+
+  pointAt(SCROLLED_BACK_MIDDLE, true);
 
   EXPECT_THAT(navigator().calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::Pop,

@@ -7,10 +7,12 @@
 #include "TabStripTestConstants.hpp"
 
 using rtype::client::testing::ACCESS;
+using rtype::client::testing::ACCESS_OF_FIVE;
 using rtype::client::testing::BETWEEN_THE_FIRST_OPTIONS_TABS;
 using rtype::client::testing::CONTROLS;
 using rtype::client::testing::IN_THE_SECOND_OPTIONS_TAB;
 using rtype::client::testing::IN_THE_SECOND_TAB;
+using rtype::client::testing::LARGEST_TEXT;
 using rtype::client::testing::LEFT_OF_THE_SECOND_TAB;
 using rtype::client::testing::ON_THE_NEXT_KEYCAP;
 using rtype::client::testing::ON_THE_PREVIOUS_KEYCAP;
@@ -120,4 +122,23 @@ TEST(TabStripTest, TheNextKeycapEndsTheStrip) {
  */
 TEST(TabStripTest, NothingOpensPastTheWidth) {
   EXPECT_EQ(narrowStrip().tabOpenedAt(RIGHT_OF_THE_STRIP), std::nullopt);
+}
+
+/**
+ * Given the five tabs of the options at the largest text size, ACCESS open
+ * When the strip is painted at that size
+ * Then the tabs up to ACCESS that fit show, CONTROLS to ACCESS, and SOUND
+ * and CHAT do not
+ */
+TEST(TabStripTest, AFullStripShowsTheTabsAroundTheOpenOne) {
+  InterfaceCanvasRecord record;
+  record.metrics = LARGEST_TEXT;
+  RecordingInterfaceCanvas canvas(record);
+
+  fiveOptionsTabsAtLargest(ACCESS_OF_FIVE).paint(canvas);
+
+  EXPECT_NE(writingOf(record, "CONTROLS"), nullptr);
+  EXPECT_NE(writingOf(record, "ACCESS"), nullptr);
+  EXPECT_EQ(writingOf(record, "SOUND"), nullptr);
+  EXPECT_EQ(writingOf(record, "CHAT"), nullptr);
 }

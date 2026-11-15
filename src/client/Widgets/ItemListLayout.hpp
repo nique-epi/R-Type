@@ -16,6 +16,9 @@ struct ItemListLayout {
   int rowPitch{};
   std::size_t rowCapacity{};
   std::span<const ItemListColumn> columns;
+  /** @brief How tall the rows may run above the size the fonts are drawn at,
+   * where each takes two lines; 0 for rowCapacity rows of rowPitch. */
+  int height{};
 };
 
 }  // namespace rtype::client

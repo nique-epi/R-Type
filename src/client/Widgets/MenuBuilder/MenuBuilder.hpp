@@ -17,6 +17,7 @@
 #include "RowControl.hpp"
 #include "TabStrip.hpp"
 #include "TextField.hpp"
+#include "TextMetrics.hpp"
 
 namespace rtype::client {
 
@@ -76,8 +77,11 @@ class MenuBuilder {
   };
 
   /** @param sounds Plays the click of the menu built, and must outlive it;
-   * a menu built without one is silent. */
-  explicit MenuBuilder(Frame frame, ISoundPlayer* sounds = nullptr);
+   * a menu built without one is silent.
+   * @param metrics The text size the menu is laid out at: every box that
+   * holds a line grows with it. */
+  explicit MenuBuilder(Frame frame, ISoundPlayer* sounds = nullptr,
+                       TextMetrics metrics = {});
 
   /** @brief Small line at the top of a page, such as the version of the
    * game. */
@@ -155,13 +159,15 @@ class MenuBuilder {
   [[nodiscard]] Menu build();
 
   /**
-   * @returns Where the chip of a room lies: as wide as its label and its keycap
-   * need, on the bottom row of the safe margin, ending at @p right; by default
-   * against the bottom-right corner, where the room lays its cancel chip. A
-   * room lays another chip beside one by ending it BUTTON_GAP to its left.
+   * @returns Where a chip lies: as wide and as tall as its label and its keycap
+   * need at the text size of @p text, its top-right corner at @p topRight; by
+   * default against the bottom-right corner of the safe margin, where a room
+   * lays its cancel chip. A screen lays another chip beside one by ending it
+   * BUTTON_GAP to its left.
    */
   [[nodiscard]] static sf::IntRect chipArea(
-      const Button::Text& text, std::optional<int> right = std::nullopt);
+      const Button::Text& text,
+      std::optional<sf::Vector2i> topRight = std::nullopt);
 
  private:
   void placeColumn(Menu::Content& content);
@@ -196,6 +202,7 @@ class MenuBuilder {
 
   Frame frame_;
   ISoundPlayer* sounds_;
+  TextMetrics metrics_;
   std::optional<std::string> version_;
   std::optional<Menu::Picture> logo_;
   std::optional<std::string> heading_;

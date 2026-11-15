@@ -20,6 +20,8 @@
 #include "PlayerColors.hpp"
 #include "PlayerPalette.hpp"
 #include "RenderingConstants.hpp"
+#include "TextMeasures.hpp"
+#include "TextMetrics.hpp"
 #include "TextStyle.hpp"
 #include "TextureArea.hpp"
 #include "WidgetConstants.hpp"
@@ -87,6 +89,14 @@ void paintBands(IInterfaceCanvas& canvas, float real) {
 }
 
 /** @brief Writes the credit during the first beat. */
+/** @returns The top of a line on the bottom band at the text size of
+ * @p metrics: centered on the band, as INTRO_BAND_TEXT_TOP is for the fonts
+ * as drawn. */
+int bandTextTopOf(TextMetrics metrics) {
+  return INTRO_BAND_TEXT_TOP +
+         ((TEXT_LINE_HEIGHT - lineHeightOf(metrics)) / SIDES_PER_AXIS);
+}
+
 void paintCredit(IInterfaceCanvas& canvas, float real) {
   const std::string_view shown =
       typedPart(INTRO_CREDIT, real,
@@ -95,7 +105,8 @@ void paintCredit(IInterfaceCanvas& canvas, float real) {
                        .eraseStart = INTRO_CREDIT_ERASE_START,
                        .eraseTime = INTRO_CREDIT_ERASE_TIME});
   if (real < INTRO_BEAT && !shown.empty()) {
-    canvas.write(shown, {SAFE_MARGIN, INTRO_BAND_TEXT_TOP}, INTRO_CREDIT_STYLE);
+    canvas.write(shown, {SAFE_MARGIN, bandTextTopOf(canvas.textMetrics())},
+                 INTRO_CREDIT_STYLE);
   }
 }
 
@@ -112,11 +123,14 @@ void paintNameCards(IInterfaceCanvas& canvas, float real,
         INTRO_PILOT_NAMES.at(pilot), real,
         Typing{.start = appear, .letterTime = INTRO_NAME_LETTER_TIME});
     const PlayerColors& colors = palette.at(pilot);
-    canvas.write(shown, {SAFE_MARGIN, INTRO_BAND_TEXT_TOP},
+    const TextMetrics metrics = canvas.textMetrics();
+    const int top = bandTextTopOf(metrics);
+    canvas.write(shown, {SAFE_MARGIN, top},
                  TextStyle{.font = TextFont::Regular, .color = colors.light});
     canvas.fill(
-        sf::IntRect({SAFE_MARGIN, INTRO_BAND_TEXT_TOP + INTRO_UNDERLINE_GAP},
-                    {static_cast<int>(shown.size()) * REGULAR_FONT_ADVANCE, 1}),
+        sf::IntRect({SAFE_MARGIN, top + INTRO_UNDERLINE_GAP - TEXT_LINE_HEIGHT +
+                                      lineHeightOf(metrics)},
+                    {regularWidthOf(metrics, shown), 1}),
         colors.ship);
   }
 }
@@ -187,7 +201,9 @@ void paintHint(IInterfaceCanvas& canvas, float real) {
   if (real < INTRO_HINT_START) {
     return;
   }
-  const int top = bandOpeningAt(real) < 1.0F ? INTRO_BAND_TEXT_TOP : FOOTER_TOP;
+  const int top = bandOpeningAt(real) < 1.0F
+                      ? bandTextTopOf(canvas.textMetrics())
+                      : FOOTER_TOP;
   canvas.write(INTRO_HINT, {INTERFACE_AREA.size.x - SAFE_MARGIN, top},
                INTRO_HINT_STYLE);
 }

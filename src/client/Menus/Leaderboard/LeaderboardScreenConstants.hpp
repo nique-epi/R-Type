@@ -111,12 +111,20 @@ constexpr int LEADERBOARD_TABS_WIDTH = LEADERBOARD_PANEL.size.x;
  * and the score ends at 240, so the longest nickname and YOU stop before a
  * score of 7 digits; the date ends with the row. */
 constexpr std::array LEADERBOARD_COLUMNS{
-    ItemListColumn{.anchor = 24, .alignment = TextAlignment::Right},
-    ItemListColumn{.anchor = 28},
-    ItemListColumn{.anchor = 240, .alignment = TextAlignment::Right},
+    ItemListColumn{.anchor = 24,
+                   .alignment = TextAlignment::Right,
+                   .stackedLine = 0,
+                   .stackedLetters = 2},
+    ItemListColumn{.anchor = 28, .stackedLine = 0, .stackedLetters = 3},
+    ItemListColumn{.anchor = 240,
+                   .alignment = TextAlignment::Right,
+                   .stackedLine = 1,
+                   .stackedLetters = 10},
     ItemListColumn{.anchor = 296,
                    .font = TextFont::Small,
-                   .alignment = TextAlignment::Right}};
+                   .alignment = TextAlignment::Right,
+                   .stackedLine = 1,
+                   .stackedLetters = 25}};
 
 /** @brief The list in the panel, its 13 pixels between two rows reading better
  * than the 10 of the first versions of the design. It holds every row an answer
@@ -186,6 +194,20 @@ constexpr sf::Vector2i ASKING_ANCHOR(
     ASKING_TOP);
 constexpr sf::Color MESSAGE_LINE_COLOR = STAR_WHITE;
 constexpr sf::Color MESSAGE_DETAIL_COLOR = PALE_BLUE;
+
+/** @brief Above the size the fonts are drawn at: the panel spans the room
+ * between the safe margins, the list stands LEADERBOARD_LARGE_LIST_INSET in
+ * from its sides and its top, and the summary of the filter sits on its own
+ * row over the chips, LEADERBOARD_LARGE_GAP from them and from the panel. */
+constexpr int LEADERBOARD_LARGE_LIST_INSET = 12;
+constexpr int LEADERBOARD_LARGE_LIST_TOP = 7;
+constexpr int LEADERBOARD_LARGE_GAP = 4;
+constexpr int LEADERBOARD_CHIPS_BOTTOM = 240;
+constexpr int ASKING_TEXT_LETTERS =
+    static_cast<int>(ASKING_TEXT.size()) + ASKING_DOT_STEPS - 1;
+/** @brief The keys that scroll the list when its rows do not all show. */
+constexpr sf::Keyboard::Key LIST_DOWN_KEY = sf::Keyboard::Key::Down;
+constexpr sf::Keyboard::Key LIST_UP_KEY = sf::Keyboard::Key::Up;
 
 /** @brief The bar under NOT_ON_SERVER_MESSAGE. */
 constexpr sf::IntRect JOIN_BAR({160, 160}, BUTTON_SIZE);

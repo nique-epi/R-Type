@@ -49,17 +49,18 @@ void paintMissionBanner(IInterfaceCanvas& canvas, MissionBannerLook look) {
   if (look.letters == 0) {
     return;
   }
-  const int top = centeredTextTop(MISSION_BANNER_AREA);
+  const int top = centeredTextTop(MISSION_BANNER_AREA, canvas.textMetrics());
   paintRule(canvas, top - MISSION_BANNER_RULE_GAP, look.ruleHalfWidth);
   paintRule(canvas, top + TEXT_LINE_HEIGHT + MISSION_BANNER_RULE_GAP - 1,
             look.ruleHalfWidth);
-  canvas.write(
-      MISSION_BANNER_TEXT.substr(0, look.letters),
-      {centeredTextLeft(MISSION_BANNER_AREA, MISSION_BANNER_TEXT), top},
-      TextStyle{.font = TextFont::Regular,
-                .color = HUD_CYAN,
-                .outlined = true,
-                .alignment = TextAlignment::Left});
+  canvas.write(MISSION_BANNER_TEXT.substr(0, look.letters),
+               {centeredTextLeft(MISSION_BANNER_AREA, MISSION_BANNER_TEXT,
+                                 canvas.textMetrics()),
+                top},
+               TextStyle{.font = TextFont::Regular,
+                         .color = HUD_CYAN,
+                         .outlined = true,
+                         .alignment = TextAlignment::Left});
 }
 
 }  // namespace rtype::client

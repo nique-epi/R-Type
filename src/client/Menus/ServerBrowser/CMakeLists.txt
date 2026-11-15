@@ -5,6 +5,7 @@ add_library(rtype_client_menus_server_browser STATIC
   NewGameDialog.cpp
   ServerMapChoice.cpp
   ServerMapPainting.cpp
+  ServerMapFrames.cpp
   ServerMapScreen.cpp
   SessionEndWatch.cpp
 )
@@ -40,10 +41,15 @@ target_link_libraries(rtype_client_menus_server_browser
     rtype_client_label_placement
     rtype_client_menu_builder
     rtype_client_ringed_planet
+    rtype_client_row_scrolling
     rtype_client_row_control
     rtype_client_sector_layout
     rtype_client_sector_map_painting
+    rtype_client_shifted_canvas
     rtype_client_switch
+    rtype_client_text_measures
+    rtype_client_widget_text
+    rtype_client_wrapped_lines
     rtype_identifiers
 )
 

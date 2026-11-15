@@ -120,7 +120,8 @@ Menu newGameMenu(NewGameMenuParts parts) {
       startingDraft(std::move(parts.difficulties));
   ServerChoice& choice = parts.choice.get();
   IScreenNavigator& navigator = parts.navigator.get();
-  return MenuBuilder(MenuBuilder::Frame::Dialog, &parts.sounds.get())
+  return MenuBuilder(MenuBuilder::Frame::Dialog, &parts.sounds.get(),
+                     parts.metrics)
       .heading(NEW_GAME_HEADING)
       .row({.label = DIFFICULTY_ROW_LABEL}, difficultySelector(draft))
       .row({.label = NEW_GAME_LIVES_LABEL}, livesSelector(draft))

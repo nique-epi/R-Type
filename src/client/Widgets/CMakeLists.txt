@@ -5,6 +5,7 @@ target_include_directories(rtype_client_widgets INTERFACE ${CMAKE_CURRENT_SOURCE
 target_link_libraries(rtype_client_widgets
   INTERFACE
     rtype_client_interface
+    rtype_client_row_window
     rtype_engine_time
     SFML::Graphics
     SFML::Window
@@ -23,6 +24,11 @@ target_link_libraries(rtype_client_window_size_chart
 rtype_enable_warnings(rtype_client_window_size_chart)
 
 add_subdirectory(RowWindow)
+add_subdirectory(RowScrolling)
+add_subdirectory(PanelLayouts)
+add_subdirectory(DialogLayouts)
+add_subdirectory(RoomLayouts)
+add_subdirectory(WrappedLines)
 add_subdirectory(ScrollMark)
 add_subdirectory(HangarBay)
 add_subdirectory(PaddedScore)

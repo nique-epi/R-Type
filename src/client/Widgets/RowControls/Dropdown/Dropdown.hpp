@@ -13,6 +13,7 @@
 #include "DropdownParts.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "RowControl.hpp"
+#include "TextMetrics.hpp"
 #include "ValueBinding.hpp"
 
 namespace rtype::client {
@@ -39,7 +40,7 @@ class Dropdown : public RowControl {
   /** @param parts What the list is built from. */
   explicit Dropdown(DropdownParts parts);
 
-  [[nodiscard]] int width() const override;
+  [[nodiscard]] int width(TextMetrics metrics) const override;
   void paint(IInterfaceCanvas& canvas, sf::IntRect area,
              BarState row) const override;
   void paintOverlay(IInterfaceCanvas& canvas, sf::IntRect area) const override;

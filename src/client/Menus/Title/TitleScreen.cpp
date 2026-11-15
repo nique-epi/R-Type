@@ -19,6 +19,7 @@
 #include "ScreenConstants.hpp"
 #include "ScreenId.hpp"
 #include "SquadronConstants.hpp"
+#include "TextMeasures.hpp"
 #include "TimeConstants.hpp"
 #include "TitleScreenParts.hpp"
 #include "UpdateScreenIdConstants.hpp"
@@ -43,9 +44,11 @@ TitleScreen::TitleScreen(TitleScreenParts parts,
       playfieldPointAt_(std::move(parts.playfieldPointAt)),
       settings_(&parts.settings.get()),
       navigator_(&parts.navigator.get()),
+      sounds_(&parts.sounds.get()),
+      playStart_(parts.playStart),
+      builtSize_(settings_->textSize),
       notice_(parts.notice),
-      menu_(buildMenu(parts.navigator.get(), parts.sounds.get(),
-                      parts.playStart)),
+      menu_(buildMenu()),
       squadron_(parts.motion, parts.seed, parts.squadronStart) {
   repaint();
 }
@@ -55,6 +58,7 @@ void TitleScreen::handleEvent(const sf::Event& event) {
 }
 
 void TitleScreen::update(engine::Duration elapsed) {
+  followTextSize();
   menu_.advance(elapsed);
   squadron_.advance(elapsed);
   askForNotice();
@@ -67,10 +71,19 @@ void TitleScreen::draw(sf::RenderTarget& target) const {
 
 bool TitleScreen::hidesScreensBelow() const { return true; }
 
-Menu TitleScreen::buildMenu(IScreenNavigator& navigator, ISoundPlayer& sounds,
-                            PlayStart playStart) {
-  const ScreenId playScreen = playScreenOf(playStart);
-  return MenuBuilder(MenuBuilder::Frame::Page, &sounds)
+void TitleScreen::followTextSize() {
+  if (settings_->textSize == builtSize_) {
+    return;
+  }
+  builtSize_ = settings_->textSize;
+  menu_ = buildMenu();
+}
+
+Menu TitleScreen::buildMenu() const {
+  const ScreenId playScreen = playScreenOf(playStart_);
+  IScreenNavigator& navigator = *navigator_;
+  return MenuBuilder(MenuBuilder::Frame::Page, sounds_,
+                     textMetricsOf(settings_->textSize))
       .version(GAME_VERSION_TEXT)
       .logo(LOGO_ID, LOGO_SIZE)
       .subtitle(TITLE_SUBTITLE)

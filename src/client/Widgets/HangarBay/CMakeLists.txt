@@ -14,7 +14,9 @@ target_link_libraries(rtype_client_hangar_bay
     rtype_client_ship_picture
     rtype_client_player_number_label
     rtype_client_sunk_box
+    rtype_client_text_measures
     rtype_client_widget_text
+    rtype_client_wrapped_lines
 )
 
 rtype_enable_warnings(rtype_client_hangar_bay)

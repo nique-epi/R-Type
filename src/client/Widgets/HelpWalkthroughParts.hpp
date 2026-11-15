@@ -7,6 +7,7 @@
 #include "KeyNames.hpp"
 #include "MotionPreference.hpp"
 #include "PlayerPalette.hpp"
+#include "TextMetrics.hpp"
 
 namespace rtype::client {
 
@@ -32,6 +33,8 @@ struct HelpWalkthroughParts {
   MotionPreference motion{};
   /** @brief Where its HELP chip lies, in pixels of the interface picture. */
   sf::IntRect chipArea;
+  /** @brief The text size the chip of HELP is laid out at. */
+  TextMetrics metrics{};
 };
 
 }  // namespace rtype::client

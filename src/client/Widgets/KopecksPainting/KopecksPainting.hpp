@@ -4,12 +4,14 @@
 #include <cstdint>
 #include "IInterfaceCanvas.hpp"
 #include "KopecksLabel.hpp"
+#include "TextMetrics.hpp"
 
 namespace rtype::client {
 
 /** @returns How wide @p label is: the coin, KOPECKS_COIN_GAP, its prefix and
  * its amount in the regular font. */
-[[nodiscard]] int kopecksLabelWidth(const KopecksLabel& label);
+[[nodiscard]] int kopecksLabelWidth(const KopecksLabel& label,
+                                    TextMetrics metrics);
 
 /** @brief Writes the amount of @p label in KOPECKS_COLOR, thousands apart,
  * ending at its top-right corner, and the coin left of it. */

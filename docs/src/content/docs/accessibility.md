@@ -32,7 +32,7 @@ The player finds the settings in the [options](/R-Type/client/#options-optionssc
 | Tell the missiles apart without their color | A missile of a player is 16 × 6 pixels of the sheet, one of an enemy 8 × 8 | MVP |
 | Play without flashes or shaking | [REDUCE FLASHES](/R-Type/client/#reduced-flashes-flashpreference): nothing flashes, shakes, recoils or vibrates, and an invulnerable ship is dithered all along and outlined. On a first launch it follows the "reduce motion" setting of the system | MVP |
 | Be protected from large flashes with the option off | [`FlashBudget`](/R-Type/client/#flash-budget-and-camera-shake-flashbudget-camerashake) keeps the white on screen under `FLASH_AREA_MAXIMUM` (3600 pixels, 2.8 % of the screen), the share WCAG 2.3.1 sets | MVP |
-| Read the interface with low vision | A larger interface text and a high contrast mode for the status band and the menus | V1 |
+| Read the interface with low vision | [TEXT SIZE and HIGH CONTRAST](/R-Type/client/#text-size-and-high-contrast-textmetrics-interfacelook): the text of the menus and the HUD half again as large or twice as large, every screen laid out again so no text is cut; and a palette whose texts reach 7:1 against their background, with a plate under the text drawn over the game. On a first launch HIGH CONTRAST follows the contrast setting of the system | MVP |
 | Read the documentation with a screen reader or a keyboard | Every diagram has a text alternative, and a table or code block that scrolls takes the keyboard focus. An axe-core audit of the 11 pages the site then held, in both themes, reported no violation; later pages were not audited | MVP |
 
 ## Mental and cognitive disabilities
@@ -53,6 +53,7 @@ These gaps exist in the client today.
 | The arrival of a wave has no cue | A player who cannot hear misses it; the client receives no message when a wave starts, so this needs a change of the protocol |
 | The four ships look the same during a game | The sheet holds four ship colors, but the game draws the first one for every pilot. Neither color nor shape tells the ships apart, and the color mode does not reach them |
 | Escape and `HELP_KEY` (H) cannot be remapped | In the waiting room the HELP chip replaces H; during a game, Escape is the way to the options, so a player who cannot reach it cannot open them |
+| At the larger text sizes, the waiting room and the server map are taller than the screen | Their bottom, READY, the status line and the chips, shows once the player scrolls: the wheel or the keys of the menu in the waiting room, Page Up and Page Down on the map |
 | Nothing is planned for players who cannot see the screen | The menus are not read aloud, and the game gives no audio equivalent of the position of what it shows |
 
 ## Games the solutions draw from
@@ -61,7 +62,7 @@ The subject asks to draw inspiration from features of actual games. Each game be
 
 | Game | Its feature | What it gave here |
 |---|---|---|
-| [The Last of Us Part II](https://www.playstation.com/en-cz/games/the-last-of-us-part-ii/accessibility/) | Remaps every command; a larger status display; a high contrast display; camera shake and flashing of the interface adjustable | Key remapping, the planned text size and high contrast, REDUCE FLASHES |
+| [The Last of Us Part II](https://www.playstation.com/en-cz/games/the-last-of-us-part-ii/accessibility/) | Remaps every command; a larger status display; a high contrast display; camera shake and flashing of the interface adjustable | Key remapping, TEXT SIZE and HIGH CONTRAST, REDUCE FLASHES |
 | [Operation STEEL](https://leanderish.itch.io/steel/devlog/612421/v144) | An accessibility option that fires with no button held | AUTO-FIRE |
 | [Overwatch](https://support.blizzard.com/de/article/31224) | A filter for protanopia, deuteranopia or tritanopia | COLOR MODE and its three forms, with one departure: [players criticized the filter](https://mein-mmo.de/en/overwatch-colorblind-mode,140594/) because it recolors the whole picture, so R-Type repaints the pilots only |
 | [Fortnite](https://www.gamespot.com/articles/how-to-use-visualize-audio-effects-in-fortnite/1100-6498314/) | Visualize Sound Effects: sounds shown as indicators on screen | SOUND CUES |

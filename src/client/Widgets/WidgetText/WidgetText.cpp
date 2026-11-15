@@ -1,27 +1,47 @@
 #include "WidgetText.hpp"
 #include <SFML/Graphics/Color.hpp>
 #include <SFML/Graphics/Rect.hpp>
-#include <SFML/System/Utf.hpp>
 #include <string_view>
 #include "BarState.hpp"
 #include "InterfaceConstants.hpp"
+#include "TextMeasures.hpp"
+#include "TextMetrics.hpp"
 #include "WidgetColors.hpp"
 #include "WidgetConstants.hpp"
 
 namespace rtype::client {
 
-int regularTextWidth(std::string_view text) {
-  return static_cast<int>(sf::Utf8::count(text.begin(), text.end())) *
-         REGULAR_FONT_ADVANCE;
-}
-
-int centeredTextLeft(sf::IntRect box, std::string_view text) {
+int centeredTextLeft(sf::IntRect box, std::string_view text,
+                     TextMetrics metrics) {
   return box.position.x +
-         ((box.size.x - regularTextWidth(text)) / SIDES_PER_AXIS);
+         ((box.size.x - regularWidthOf(metrics, text)) / SIDES_PER_AXIS);
 }
 
-int centeredTextTop(sf::IntRect box) {
-  return box.position.y + ((box.size.y - TEXT_LINE_HEIGHT) / SIDES_PER_AXIS);
+int centeredTextTop(sf::IntRect box, TextMetrics metrics) {
+  return box.position.y +
+         ((box.size.y - lineHeightOf(metrics)) / SIDES_PER_AXIS);
+}
+
+sf::IntRect fieldBoxOf(sf::IntRect area, TextMetrics metrics) {
+  const int lineHeight = lineHeightOf(metrics);
+  if (metrics == TextMetrics{}) {
+    const int labelHeight = lineHeight + FIELD_LABEL_GAP;
+    return {{area.position.x, area.position.y + labelHeight},
+            {area.size.x, area.size.y - labelHeight}};
+  }
+  const int column = (FIELD_LABEL_LETTERS * lineHeight) + FIELD_LABEL_SIDE_GAP;
+  return {{area.position.x + column, area.position.y},
+          {area.size.x - column, area.size.y}};
+}
+
+int textBoxHeight(int nativeHeight, TextMetrics metrics) {
+  return nativeHeight - TEXT_LINE_HEIGHT + lineHeightOf(metrics);
+}
+
+TextMetrics metricsOfControl(sf::IntRect area) {
+  const int lineHeight = area.size.y - (CONTROL_HEIGHT - TEXT_LINE_HEIGHT);
+  return TextMetrics{.halfPixelsPerFontPixel =
+                         lineHeight * HALF_PIXELS_PER_PIXEL / TEXT_LINE_HEIGHT};
 }
 
 sf::Color barTextColor(BarState state) {

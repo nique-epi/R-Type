@@ -17,6 +17,8 @@ enum class SettingId : std::uint8_t {
   SoundCues,
   AutoFire,
   PilotNames,
+  TextSize,
+  HighContrast,
   ChatShown,
   ChatLetters,
   ChatClosedLines,

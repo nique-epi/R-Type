@@ -5,6 +5,7 @@
 #include "AssetTextureSource.hpp"
 #include "ComponentRegistry.hpp"
 #include "IEntityLayer.hpp"
+#include "InterfaceLookSource.hpp"
 #include "PixelBatch.hpp"
 #include "PixelCanvas.hpp"
 #include "RenderSystem.hpp"
@@ -35,7 +36,10 @@ class EntityLayer : public IEntityLayer {
    * @throws AssetNotLoadedException when a font of the interface is not
    * loaded.
    */
-  explicit EntityLayer(const AssetLibrary& library);
+  /** @param look Gives the look the player chose, which the captions over
+   * the ships follow; none keeps the look of a first launch. */
+  explicit EntityLayer(const AssetLibrary& library,
+                       InterfaceLookSource look = {});
 
   EntityLayer(const EntityLayer&) = delete;
   EntityLayer& operator=(const EntityLayer&) = delete;

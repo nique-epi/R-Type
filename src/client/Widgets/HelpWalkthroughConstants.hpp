@@ -52,7 +52,6 @@ constexpr char KEY_CAP_OPENING = '{';
 constexpr char KEY_CAP_CLOSING = '}';
 constexpr char INTERFACE_WORD_MARK = '*';
 constexpr std::string_view HELP_PUNCTUATION = ".,:!?";
-constexpr char WORD_SEPARATOR = ' ';
 
 /** @brief The steps of the help, in order: the parts of the waiting room, a
  * moment of a game, then the HELP chip again. */
@@ -122,8 +121,10 @@ constexpr int HELP_BUBBLE_PADDING = 8;
 constexpr int HELP_LINE_HEIGHT = 13;
 constexpr int HELP_WORD_GAP = REGULAR_FONT_ADVANCE;
 constexpr int HELP_FOOTER_GAP = 6;
-constexpr int HELP_TEXT_WIDTH =
-    HELP_BUBBLE_WIDTH - (SIDES_PER_AXIS * HELP_BUBBLE_PADDING);
+/** @brief Above the size the fonts are drawn at, the bubble is as wide as the
+ * safe margin, so its taller lines stay few. */
+constexpr int HELP_LARGE_BUBBLE_WIDTH =
+    INTERFACE_AREA.size.x - (SIDES_PER_AXIS * SAFE_MARGIN);
 
 /**
  * @brief Where the bubble goes: low by default, SAFE_MARGIN above the bottom

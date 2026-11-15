@@ -24,6 +24,7 @@ using rtype::client::WEAK_SIGNAL_TOP_LEFT;
 using rtype::network::BossStage;
 using ::testing::Contains;
 using ::testing::Field;
+using ::testing::IsEmpty;
 
 /**
  * Given no boss in its fight yet
@@ -233,4 +234,17 @@ TEST(BossBar, TheBarNeverReachesTheSilenceWarning) {
   for (const auto& [column, row] : litPixelsOf(record)) {
     EXPECT_LT(column, WEAK_SIGNAL_TOP_LEFT.x - SILENCE_WARNING_GAP);
   }
+}
+
+/**
+ * Given a boss fighting, at the largest text size
+ * When its bar is painted
+ * Then its name stays on screen, above the gauges
+ */
+TEST(BossBar, AtTheLargestSizeTheNameStaysOnScreen) {
+  const BossFight fight = fightWith(BossStage::Fighting, BAR_FULL_HEALTH);
+  const InterfaceCanvasRecord painting = barPaintingOf(
+      bossBarAt(fight, BAR_FILLED, FlashPreference::Full), LARGEST_BAR_TEXT);
+
+  EXPECT_THAT(writingsOffScreen(painting), IsEmpty());
 }

@@ -48,6 +48,11 @@ constexpr engine::Duration RANKING_DELAY = std::chrono::milliseconds(1500);
 constexpr engine::Duration RANKING_LETTER_TIME = std::chrono::milliseconds(40);
 constexpr engine::Duration RULE_DRAW_TIME = std::chrono::milliseconds(250);
 constexpr engine::Duration ROWS_DELAY = std::chrono::milliseconds(2300);
+/** @brief Above the size the fonts are drawn at, the wide page holds the
+ * mission log until its team score is counted and MISSION_LOG_HOLD more,
+ * then turns to the ranking over PAGE_TURN_TIME. */
+constexpr engine::Duration MISSION_LOG_HOLD = std::chrono::milliseconds(600);
+constexpr engine::Duration PAGE_TURN_TIME = std::chrono::milliseconds(300);
 constexpr engine::Duration ROW_STEP = std::chrono::milliseconds(400);
 constexpr engine::Duration ROW_TIME = std::chrono::milliseconds(800);
 constexpr engine::Duration DIGIT_SLAM_TIME = std::chrono::milliseconds(50);

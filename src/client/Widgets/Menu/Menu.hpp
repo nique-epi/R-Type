@@ -17,6 +17,7 @@
 #include "IInterfaceCanvas.hpp"
 #include "Label.hpp"
 #include "PlayfieldMapping.hpp"
+#include "RowScroll.hpp"
 #include "TabStrip.hpp"
 #include "TextField.hpp"
 #include "TextStyle.hpp"
@@ -107,10 +108,16 @@ class Menu {
      * how: outlined on the sky of a page, in small print inside a form;
      * nowhere in a dialog or a room. */
     std::optional<sf::Vector2i> descriptionAnchor;
+    /** @brief How wide the description may run, on as many lines as it
+     * needs; none writes it on one line. */
+    std::optional<int> descriptionWidth;
     TextStyle descriptionStyle = PAGE_LINE_STYLE;
     /** @brief Where the status line is written: under the description of a
      * form, nowhere on a page or a dialog. */
     std::optional<sf::Vector2i> statusAnchor;
+    /** @brief How wide the status line may run, on as many lines as it needs;
+     * none writes it on one line. */
+    std::optional<int> statusWidth;
     /** @brief The area a screen paints its own picture in. */
     std::optional<sf::IntRect> illustration;
     /** @brief The keys that select the next and the previous button, besides
@@ -124,6 +131,9 @@ class Menu {
     /** @brief Opens a tab by its order, when a click on the tabs,
      * PREVIOUS_TAB_KEY or NEXT_TAB_KEY asks for one. */
     std::function<void(std::size_t)> openTab;
+    /** @brief The rows of a panel that holds more rows than it shows; none
+     * when every row shows. */
+    std::optional<RowScroll> rowScroll;
     /** @brief How the status line is written: in gold under a form; small,
      * outlined, at the end of the rule of a tabbed panel. */
     TextStyle statusStyle = STATUS_STYLE;

@@ -20,6 +20,7 @@ target_link_libraries(rtype_client_help_walkthrough
     rtype_client_pilot_color
     rtype_client_player_shading
     rtype_client_status_band
+    rtype_client_text_measures
     rtype_client_widget_text
 )
 

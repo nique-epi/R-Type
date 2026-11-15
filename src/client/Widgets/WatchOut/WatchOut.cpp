@@ -5,6 +5,8 @@
 #include <chrono>
 #include "FlashPreference.hpp"
 #include "IInterfaceCanvas.hpp"
+#include "InterfaceConstants.hpp"
+#include "TextMeasures.hpp"
 #include "TextStyle.hpp"
 #include "TimeConstants.hpp"
 #include "WarningBannerConstants.hpp"
@@ -60,8 +62,10 @@ void paintWatchOut(IInterfaceCanvas& canvas, const WatchOutLook& look) {
   }
   paintLane(canvas, look);
   if (look.lit) {
+    const int rise = WATCH_OUT_TEXT_RISE - TEXT_LINE_HEIGHT +
+                     lineHeightOf(canvas.textMetrics());
     canvas.write(WATCH_OUT_TEXT,
-                 {WATCH_OUT_TEXT_LEFT, look.row - WATCH_OUT_TEXT_RISE},
+                 {WATCH_OUT_TEXT_LEFT, std::max(0, look.row - rise)},
                  TextStyle{.font = TextFont::Small,
                            .color = WATCH_OUT_TEXT_COLOR,
                            .outlined = true,

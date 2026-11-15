@@ -6,9 +6,11 @@
 #include "KeyPress.hpp"
 #include "KeySlot.hpp"
 #include "RecordingInterfaceCanvas.hpp"
+#include "TextMetrics.hpp"
 
 using rtype::client::BarState;
 using rtype::client::KeySlot;
+using rtype::client::TextMetrics;
 using Key = sf::Keyboard::Key;
 using Scan = sf::Keyboard::Scan;
 
@@ -30,9 +32,10 @@ class KeySlotTest : public ::testing::Test {
   [[nodiscard]] bool paintingWrites(const std::string& text) const {
     InterfaceCanvasRecord record;
     RecordingInterfaceCanvas canvas(record);
-    slot_.paint(canvas,
-                {{0, 0}, {slot_.width(), CONTROL_HEIGHT_ON_THE_PICTURE}},
-                BarState::Idle);
+    slot_.paint(
+        canvas,
+        {{0, 0}, {slot_.width(TextMetrics{}), CONTROL_HEIGHT_ON_THE_PICTURE}},
+        BarState::Idle);
     return writingOf(record, text) != nullptr;
   }
 

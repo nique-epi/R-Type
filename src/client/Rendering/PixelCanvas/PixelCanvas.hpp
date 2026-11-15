@@ -2,6 +2,8 @@
 
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Graphics/RenderTexture.hpp>
+#include <SFML/Graphics/View.hpp>
+#include "BackgroundConstants.hpp"
 #include "EnlargedPicture.hpp"
 
 namespace rtype::client {
@@ -18,16 +20,23 @@ class PixelCanvas {
   /**
    * @brief Starts with a transparent picture, ready to be laid.
    *
+   * @param density How many pixels of the texture make one pixel of the
+   * picture on each axis: NATIVE_DENSITY, or CRISP_TEXT_DENSITY for a picture
+   * that writes text.
    * @throws RenderTextureNotCreatedException when the canvas cannot get its
    * render texture.
    */
-  PixelCanvas();
+  explicit PixelCanvas(unsigned int density = NATIVE_DENSITY);
 
   /**
-   * @brief Where the picture is painted, in pixels of the canvas: clear it,
-   * draw on it, then display it before show().
+   * @brief Where the picture is painted, through pixelView(), in pixels of the
+   * picture: clear it, draw on it, then display it before show().
    */
   [[nodiscard]] sf::RenderTexture& canvas();
+
+  /** @returns The view that shows the whole picture in its own pixels,
+   * BACKGROUND_SIZE of them, whatever its density. */
+  [[nodiscard]] static sf::View pixelView();
 
   /**
    * @brief Lays the picture over the whole playfield, as an EnlargedPicture.
@@ -48,6 +57,7 @@ class PixelCanvas {
   void show(sf::RenderTarget& target) const;
 
  private:
+  unsigned int density_;
   sf::RenderTexture canvas_;
   mutable EnlargedPicture enlargedPicture_;
 };

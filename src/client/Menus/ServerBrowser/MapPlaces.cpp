@@ -47,15 +47,17 @@ void paintMapPlace(IInterfaceCanvas& canvas, const MapPlace& place,
     return;
   }
   paintChosenStar(canvas, place.point);
-  paintServerTooltip(
-      canvas,
-      ServerTooltip{.topLeft = place.point + place.bubbleOffset,
-                    .width = BUBBLE_WIDTH,
-                    .title = place.label,
-                    .lines = {{.text = place.detail, .color = PAGE_TEXT_COLOR},
-                              {.text = std::string(MAP_PLACE_HINT_START) +
-                                       place.keyName + MAP_PLACE_HINT_END,
-                               .color = STATUS_TEXT_COLOR}}});
+  ServerTooltip bubble{
+      .topLeft = place.point + place.bubbleOffset,
+      .width = BUBBLE_WIDTH,
+      .title = place.label,
+      .lines = {{.text = place.detail, .color = PAGE_TEXT_COLOR},
+                {.text = std::string(MAP_PLACE_HINT_START) + place.keyName +
+                         MAP_PLACE_HINT_END,
+                 .color = STATUS_TEXT_COLOR}},
+      .metrics = canvas.textMetrics()};
+  bubble.width = tooltipWidthFor(canvas, bubble);
+  paintServerTooltip(canvas, bubble);
 }
 
 }  // namespace

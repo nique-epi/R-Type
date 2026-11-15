@@ -13,6 +13,7 @@
 #include "RowControl.hpp"
 #include "SunkBox.hpp"
 #include "TextField.hpp"
+#include "TextMetrics.hpp"
 
 namespace rtype::client {
 
@@ -53,6 +54,9 @@ class Button {
      * empty for none. */
     // NOLINTNEXTLINE(readability-redundant-member-init)
     std::string keyName{};
+    /** @brief The text size the bar was laid out at, which sizes the control
+     * of a row. */
+    TextMetrics size{};
   };
 
   /**

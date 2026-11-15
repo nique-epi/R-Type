@@ -10,6 +10,7 @@
 #include "SettingsConstants.hpp"
 #include "SettingsServiceFixture.hpp"
 #include "SettingsServiceTestConstants.hpp"
+#include "TextSize.hpp"
 
 using rtype::client::AUTO_FIRE_SETTING;
 using rtype::client::BoundAction;
@@ -24,6 +25,8 @@ using rtype::client::MUSIC_VOLUME_SETTING;
 using rtype::client::MUTED_SETTING;
 using rtype::client::PlayerSettings;
 using rtype::client::SettingId;
+using rtype::client::TEXT_SIZE_SETTING;
+using rtype::client::TextSize;
 using rtype::client::WINDOW_SIZE_SETTING;
 
 /**
@@ -113,6 +116,18 @@ TEST_F(SettingsServiceFixture, SwitchesAndColorModeAreApplied) {
   EXPECT_TRUE(colored);
   EXPECT_TRUE(service().settings().muted);
   EXPECT_EQ(service().settings().colorMode, ColorMode::Protanopia);
+}
+
+/**
+ * Given a service at the settings of a first launch
+ * When the largest text size is applied
+ * Then the settings hold it
+ */
+TEST_F(SettingsServiceFixture, TheTextSizeIsApplied) {
+  const bool applied = service().apply(TEXT_SIZE_SETTING, TextSize::Largest);
+
+  EXPECT_TRUE(applied);
+  EXPECT_EQ(service().settings().textSize, TextSize::Largest);
 }
 
 /**
@@ -221,6 +236,8 @@ TEST_F(SettingsServiceFixture, RestoringTakesTheSettingsAndTellsEveryOne) {
                                     SettingId::SoundCues,
                                     SettingId::AutoFire,
                                     SettingId::PilotNames,
+                                    SettingId::TextSize,
+                                    SettingId::HighContrast,
                                     SettingId::ChatShown,
                                     SettingId::ChatLetters,
                                     SettingId::ChatClosedLines,

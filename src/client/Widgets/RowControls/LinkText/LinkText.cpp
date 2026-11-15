@@ -6,6 +6,8 @@
 #include "BarState.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "RowControlConstants.hpp"
+#include "TextMeasures.hpp"
+#include "TextMetrics.hpp"
 #include "TextStyle.hpp"
 #include "WidgetConstants.hpp"
 #include "WidgetText.hpp"
@@ -15,7 +17,9 @@ namespace rtype::client {
 LinkText::LinkText(std::string text, std::function<void()> action)
     : text_(std::move(text) + LINK_SUFFIX), action_(std::move(action)) {}
 
-int LinkText::width() const { return regularTextWidth(text_); }
+int LinkText::width(TextMetrics metrics) const {
+  return regularWidthOf(metrics, text_);
+}
 
 void LinkText::paint(IInterfaceCanvas& canvas, sf::IntRect area,
                      BarState row) const {

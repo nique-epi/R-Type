@@ -7,14 +7,19 @@
 #include <vector>
 #include "FinalPilot.hpp"
 #include "FlightLogSchedule.hpp"
+#include "TextMetrics.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
 
 /** @returns The moments of a flight log with a row per pilot and the lines
- * of @p taunt typed on its cover. */
+ * of @p taunt typed on its cover, at the text size of @p metrics: above the
+ * size the fonts are drawn at, the rows start once the mission log of the
+ * wide page was counted and held, after TEAM_DELAY, TEAM_COUNT_TIME and
+ * MISSION_LOG_HOLD. */
 [[nodiscard]] FlightLogSchedule flightLogScheduleOf(
-    std::span<const FinalPilot> pilots, std::span<const std::string> taunt);
+    std::span<const FinalPilot> pilots, std::span<const std::string> taunt,
+    TextMetrics metrics = {});
 
 /** @returns When the row @p row (0 for the best) starts to be written. */
 [[nodiscard]] engine::Duration rowStartOf(const FlightLogSchedule& schedule,

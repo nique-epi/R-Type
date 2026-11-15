@@ -15,15 +15,38 @@ constexpr const char* MACOS_SHARED_WORKSPACE_SELECTOR = "sharedWorkspace";
 constexpr const char* MACOS_REDUCE_MOTION_SELECTOR =
     "accessibilityDisplayShouldReduceMotion";
 
+/** @brief Objective-C name of the macOS property that tells whether
+ * "Increase contrast" is on: accessibilityDisplayShouldIncreaseContrast of
+ * the shared NSWorkspace, from macOS 10.10. */
+constexpr const char* MACOS_INCREASE_CONTRAST_SELECTOR =
+    "accessibilityDisplayShouldIncreaseContrast";
+
 /**
  * @brief Command that prints the GNOME setting enable-animations, "true" or
- * "false", its errors thrown away; what it prints when animations are off;
- * and the longest answer read, in characters.
+ * "false", its errors thrown away; and what it prints when animations are
+ * off.
  */
 constexpr const char* GNOME_ANIMATIONS_COMMAND =
     "gsettings get org.gnome.desktop.interface enable-animations 2>/dev/null";
 constexpr std::string_view GNOME_ANIMATIONS_OFF = "false";
-constexpr std::size_t GNOME_ANSWER_LENGTH = 16;
+
+/**
+ * @brief Command that asks the freedesktop Settings portal for the contrast
+ * of org.freedesktop.appearance, its errors thrown away, and what its answer,
+ * "(<uint32 1>,)", holds when the system asks for a higher contrast. The
+ * portal gives 0 for no preference and 1 for a higher contrast, and any other
+ * value counts as 0.
+ */
+constexpr const char* PORTAL_CONTRAST_COMMAND =
+    "gdbus call --session --dest org.freedesktop.portal.Desktop "
+    "--object-path /org/freedesktop/portal/desktop "
+    "--method org.freedesktop.portal.Settings.ReadOne "
+    "org.freedesktop.appearance contrast 2>/dev/null";
+constexpr std::string_view PORTAL_HIGHER_CONTRAST = "<uint32 1>";
+
+/** @brief The longest first line read from what a command prints, in
+ * characters. */
+constexpr std::size_t COMMAND_ANSWER_LENGTH = 32;
 
 /** @brief Mode that opens a command to read what it prints. */
 constexpr const char* COMMAND_READ_MODE = "r";

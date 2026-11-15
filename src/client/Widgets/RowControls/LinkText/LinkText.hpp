@@ -6,6 +6,7 @@
 #include "BarState.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "RowControl.hpp"
+#include "TextMetrics.hpp"
 
 namespace rtype::client {
 
@@ -19,7 +20,7 @@ class LinkText : public RowControl {
  public:
   LinkText(std::string text, std::function<void()> action);
 
-  [[nodiscard]] int width() const override;
+  [[nodiscard]] int width(TextMetrics metrics) const override;
   void paint(IInterfaceCanvas& canvas, sf::IntRect area,
              BarState row) const override;
   [[nodiscard]] bool isActivatable() const override;

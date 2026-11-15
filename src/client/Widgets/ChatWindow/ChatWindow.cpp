@@ -44,7 +44,7 @@ std::optional<sf::Keyboard::Scancode> chatKeyPressedBy(
 
 /** @returns How far up the open chat may scroll: to its oldest line. */
 int mostScrollOf(const IChatChannel& channel, const PlayerSettings& settings) {
-  return std::max(0, chatLineCount(channel.entries(), settings.chatLetters) -
+  return std::max(0, chatLineCount(channel.entries(), chatLettersOf(settings)) -
                          settings.chatOpenLines);
 }
 

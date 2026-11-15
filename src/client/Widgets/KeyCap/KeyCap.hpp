@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <string>
 #include "IInterfaceCanvas.hpp"
+#include "TextMetrics.hpp"
 
 namespace rtype::client {
 
@@ -25,7 +26,7 @@ class KeyCap {
 
   /** @returns Its width: its name and KEY_CAP_PADDING on both sides, at
    * least KEY_CAP_MINIMUM_WIDTH. */
-  [[nodiscard]] int width() const;
+  [[nodiscard]] int width(TextMetrics metrics) const;
 
   void paint(IInterfaceCanvas& canvas, sf::Vector2i topLeft) const;
 

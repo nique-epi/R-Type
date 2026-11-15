@@ -1,5 +1,6 @@
 add_library(rtype_client_menus_leaderboard STATIC
   LeaderboardFilterDialog.cpp
+  LeaderboardFrames.cpp
   LeaderboardPresentation.cpp
   LeaderboardScreen.cpp
 )
@@ -39,6 +40,8 @@ target_link_libraries(rtype_client_menus_leaderboard
     rtype_client_menu_builder
     rtype_client_row_control
     rtype_client_screens_module
+    rtype_client_text_measures
+    rtype_client_widget_text
     rtype_game_components
     rtype_network_leaderboard_answer
 )

@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include "ClientConstants.hpp"
+#include "HighContrast.hpp"
 #include "InstallContext.hpp"
 #include "ModuleConstants.hpp"
 #include "PathText.hpp"
@@ -18,10 +19,11 @@ namespace rtype::client {
 namespace {
 
 /** @returns The settings of a first launch, flashes reduced when the system
- * asks for less motion. */
+ * asks for less motion, and high contrast on when it asks for more contrast. */
 PlayerSettings firstLaunchSettings() {
   PlayerSettings settings;
   settings.reduceFlashes = systemPrefersReducedMotion();
+  settings.highContrast = systemPrefersHighContrast();
   return settings;
 }
 

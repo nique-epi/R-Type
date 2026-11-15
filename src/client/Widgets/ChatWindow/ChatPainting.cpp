@@ -25,6 +25,8 @@
 #include "PlayerPalette.hpp"
 #include "PlayerSettings.hpp"
 #include "SunkBox.hpp"
+#include "TextMeasures.hpp"
+#include "TextMetrics.hpp"
 #include "TextStyle.hpp"
 #include "TimeConstants.hpp"
 #include "Typing.hpp"
@@ -105,8 +107,8 @@ void addRowsOf(const ChatEntry& entry, const ChatView& view,
   const sf::Color body =
       entry.playerNumber == CLIENT_WRITER ? CHAT_NOTICE_COLOR : CHAT_TEXT_COLOR;
   const std::size_t first = rows.size();
-  for (const std::string_view piece : wrapped(
-           line, static_cast<std::size_t>(view.settings.get().chatLetters))) {
+  for (const std::string_view piece :
+       wrapped(line, static_cast<std::size_t>(chatLettersOf(view.settings)))) {
     rows.push_back(ChatRow{.head = {},
                            .body = std::string{piece},
                            .headColor = name,
@@ -131,11 +133,22 @@ std::vector<ChatRow> rowsOf(const ChatView& view) {
   return rows;
 }
 
+/** @returns The text size the chat is written at, as @p settings choose it. */
+TextMetrics metricsOf(const PlayerSettings& settings) {
+  return textMetricsOf(settings.textSize);
+}
+
+/** @returns From one line of the chat to the next at the text size of
+ * @p metrics: a line and its outline, as CHAT_LINE_PITCH is as drawn. */
+int linePitchOf(TextMetrics metrics) {
+  return textBoxHeight(CHAT_LINE_PITCH, metrics);
+}
+
 /** @returns The top row of the line @p fromBottom lines above the last one,
- * whose outline ends on @p bottom. */
-int rowTop(int bottom, int fromBottom) {
-  return bottom - TEXT_LINE_HEIGHT - BORDER_THICKNESS -
-         (fromBottom * CHAT_LINE_PITCH);
+ * whose outline ends on @p bottom, at the text size of @p metrics. */
+int rowTop(int bottom, int fromBottom, TextMetrics metrics) {
+  return bottom - lineHeightOf(metrics) - BORDER_THICKNESS -
+         (fromBottom * linePitchOf(metrics));
 }
 
 /** @returns The alpha of a line @p age old: opaque, then fading to nothing
@@ -161,11 +174,13 @@ void paintRow(IInterfaceCanvas& canvas, const ChatRow& row, RowPlace place) {
                   .color = withAlpha(row.headColor, place.alpha),
                   .outlined = true});
   }
-  canvas.write(row.body,
-               place.topLeft + sf::Vector2i(regularTextWidth(row.head), 0),
-               {.font = TextFont::Regular,
-                .color = withAlpha(row.bodyColor, place.alpha),
-                .outlined = true});
+  canvas.write(
+      row.body,
+      place.topLeft +
+          sf::Vector2i(regularWidthOf(canvas.textMetrics(), row.head), 0),
+      {.font = TextFont::Regular,
+       .color = withAlpha(row.bodyColor, place.alpha),
+       .outlined = true});
 }
 
 void paintClosed(IInterfaceCanvas& canvas, const ChatView& view) {
@@ -176,7 +191,8 @@ void paintClosed(IInterfaceCanvas& canvas, const ChatView& view) {
   for (int fromBottom = 0; fromBottom < shown; ++fromBottom) {
     const ChatRow& row = rows[static_cast<std::size_t>(count - 1 - fromBottom)];
     paintRow(canvas, row,
-             {.topLeft = {CHAT_LEFT, rowTop(view.bottom, fromBottom)},
+             {.topLeft = {CHAT_LEFT, rowTop(view.bottom, fromBottom,
+                                            canvas.textMetrics())},
               .alpha = alphaOf(row.age, settings)});
   }
 }
@@ -187,20 +203,31 @@ std::string moreLinesText(int lines) {
          std::string{MORE_LINES_END};
 }
 
+/** @returns How many lines of the open chat show over @p bottom at the text
+ * size of @p metrics: chatOpenLines, or as many as fit under the safe margin
+ * with the line that says how many lie above. */
+int openLinesOf(const PlayerSettings& settings, int bottom,
+                TextMetrics metrics) {
+  const int fit = ((bottom - SAFE_MARGIN) / linePitchOf(metrics)) - 1;
+  return std::max(1, std::min(settings.chatOpenLines, fit));
+}
+
 /** @brief Paints the lines of the open chat over @p bottom, the last
- * chatOpenLines once scrolled, and how many lie above them. */
+ * chatOpenLines once scrolled, as many as fit, and how many lie above them. */
 void paintHistory(IInterfaceCanvas& canvas, const ChatView& view, int bottom) {
   const std::vector<ChatRow> rows = rowsOf(view);
+  const TextMetrics metrics = canvas.textMetrics();
   const int end = std::max(0, static_cast<int>(rows.size()) - view.scroll);
-  const int start = std::max(0, end - view.settings.get().chatOpenLines);
+  const int start =
+      std::max(0, end - openLinesOf(view.settings, bottom, metrics));
   for (int index = start; index < end; ++index) {
     paintRow(canvas, rows[static_cast<std::size_t>(index)],
-             {.topLeft = {CHAT_LEFT, rowTop(bottom, end - 1 - index)},
+             {.topLeft = {CHAT_LEFT, rowTop(bottom, end - 1 - index, metrics)},
               .alpha = OPAQUE_ALPHA});
   }
   if (start > 0) {
     canvas.write(
-        moreLinesText(start), {CHAT_LEFT, rowTop(bottom, end - start)},
+        moreLinesText(start), {CHAT_LEFT, rowTop(bottom, end - start, metrics)},
         {.font = TextFont::Small, .color = CHAT_HINT_COLOR, .outlined = true});
   }
 }
@@ -208,10 +235,11 @@ void paintHistory(IInterfaceCanvas& canvas, const ChatView& view, int bottom) {
 /** @returns The box of the field: chatLetters letters, its caret and its
  * padding wide, its bottom on the bottom of the view. */
 sf::IntRect fieldAreaOf(const ChatView& view) {
-  const int width = (view.settings.get().chatLetters * REGULAR_FONT_ADVANCE) +
+  const TextMetrics metrics = metricsOf(view.settings);
+  const int width = (chatLettersOf(view.settings) * lineHeightOf(metrics)) +
                     (SIDES_PER_AXIS * FIELD_TEXT_PADDING) + FIELD_CARET_SIZE.x;
-  return {{CHAT_LEFT, view.bottom - CHAT_FIELD_HEIGHT},
-          {width, CHAT_FIELD_HEIGHT}};
+  const int height = textBoxHeight(CHAT_FIELD_HEIGHT, metrics);
+  return {{CHAT_LEFT, view.bottom - height}, {width, height}};
 }
 
 /** @returns The last @p letters letters of @p text, all of it when shorter. */
@@ -229,8 +257,8 @@ void paintLabel(IInterfaceCanvas& canvas, sf::IntRect field, int top) {
       .font = TextFont::Regular, .color = CHAT_LABEL_COLOR, .outlined = true};
   canvas.write(CHAT_FIELD_LABEL, {CHAT_LEFT, top}, label);
   const int right = field.position.x + field.size.x;
-  if (CHAT_LEFT + regularTextWidth(CHAT_FIELD_LABEL) + CHAT_HINT_GAP +
-          canvas.textWidth(CHAT_FIELD_HINT, TextFont::Small) <=
+  if (CHAT_LEFT + regularWidthOf(canvas.textMetrics(), CHAT_FIELD_LABEL) +
+          CHAT_HINT_GAP + canvas.textWidth(CHAT_FIELD_HINT, TextFont::Small) <=
       right) {
     canvas.write(CHAT_FIELD_HINT, {right, top},
                  {.font = TextFont::Small,
@@ -253,15 +281,23 @@ void paintOpen(IInterfaceCanvas& canvas, const ChatView& view) {
       canvas,
       FieldText{.box = field,
                 .text = tailOf(draft, static_cast<std::size_t>(
-                                          view.settings.get().chatLetters)),
+                                          chatLettersOf(view.settings))),
                 .color = SELECTED_FIELD_TEXT_COLOR,
                 .caret = true});
-  const int labelTop = field.position.y - FIELD_LABEL_GAP - TEXT_LINE_HEIGHT;
+  const int labelTop =
+      field.position.y - FIELD_LABEL_GAP - lineHeightOf(canvas.textMetrics());
   paintLabel(canvas, field, labelTop);
   paintHistory(canvas, view, labelTop - FIELD_LABEL_GAP);
 }
 
 }  // namespace
+
+int chatLettersOf(const PlayerSettings& settings) {
+  const int room = INTERFACE_AREA.size.x - (SIDES_PER_AXIS * CHAT_LEFT) -
+                   (SIDES_PER_AXIS * FIELD_TEXT_PADDING) - FIELD_CARET_SIZE.x;
+  return std::min(settings.chatLetters,
+                  room / lineHeightOf(metricsOf(settings)));
+}
 
 void paintChat(IInterfaceCanvas& canvas, const ChatView& view) {
   if (!view.settings.get().chatShown) {

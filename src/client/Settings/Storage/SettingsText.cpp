@@ -26,6 +26,7 @@
 #include "ShipLookConstants.hpp"
 #include "ShipLookNumbers.hpp"
 #include "ShipLookSlot.hpp"
+#include "TextSize.hpp"
 #include "WindowConstants.hpp"
 
 namespace rtype::client {
@@ -211,6 +212,9 @@ std::optional<LineOutcome> applySwitch(PlayerSettings& settings,
   if (name == PILOT_NAMES_NAME) {
     return assign(switchOf(value), settings.pilotNames);
   }
+  if (name == HIGH_CONTRAST_NAME) {
+    return assign(switchOf(value), settings.highContrast);
+  }
   if (name == CHAT_SHOWN_NAME) {
     return assign(switchOf(value), settings.chatShown);
   }
@@ -367,6 +371,10 @@ std::optional<LineOutcome> applyValue(PlayerSettings& settings,
     return assign(valueNamed(value, COLOR_MODE_VALUES, COLOR_MODES),
                   settings.colorMode);
   }
+  if (name == TEXT_SIZE_NAME) {
+    return assign(valueNamed(value, TEXT_SIZE_VALUES, TEXT_SIZES),
+                  settings.textSize);
+  }
   return std::nullopt;
 }
 
@@ -473,6 +481,9 @@ std::string settingsText(const PlayerSettings& settings) {
   writeLine(text, SOUND_CUES_NAME, switchValue(settings.soundCues));
   writeLine(text, AUTO_FIRE_NAME, switchValue(settings.autoFire));
   writeLine(text, PILOT_NAMES_NAME, switchValue(settings.pilotNames));
+  writeLine(text, TEXT_SIZE_NAME,
+            TEXT_SIZE_VALUES[static_cast<std::size_t>(settings.textSize)]);
+  writeLine(text, HIGH_CONTRAST_NAME, switchValue(settings.highContrast));
   writeChatAndLagometer(text, settings);
   writeLine(text, SHIP_HEAD_NAME, lookItemValue(settings.shipLook.head));
   writeLine(text, SHIP_EYES_NAME, lookItemValue(settings.shipLook.eyes));

@@ -15,9 +15,14 @@
 #include "ServerMapScreen.hpp"
 #include "ServerMapScreenParts.hpp"
 #include "ServerMapScreenTestConstants.hpp"
+#include "TextMetrics.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client::testing {
+
+ServerMapScreenFixture::ServerMapScreenFixture(TextMetrics metrics) {
+  painting_.metrics = metrics;
+}
 
 void ServerMapScreenFixture::openOn(const ServerListSnapshot& list) {
   servers_.show(list);

@@ -9,9 +9,10 @@
 #include <vector>
 #include "BarState.hpp"
 #include "IInterfaceCanvas.hpp"
-#include "InterfaceConstants.hpp"
 #include "RowControlConstants.hpp"
 #include "SunkBox.hpp"
+#include "TextMeasures.hpp"
+#include "TextMetrics.hpp"
 #include "TextStyle.hpp"
 #include "ValueBinding.hpp"
 #include "WidgetColors.hpp"
@@ -24,8 +25,9 @@ ChoiceSelector::ChoiceSelector(std::vector<std::string> choices,
                                ValueBinding<std::size_t> value)
     : choices_(std::move(choices)), value_(std::move(value)) {}
 
-int ChoiceSelector::width() const {
-  return (SIDES_PER_AXIS * (REGULAR_FONT_ADVANCE + CONTROL_GAP)) + boxWidth();
+int ChoiceSelector::width(TextMetrics metrics) const {
+  return (SIDES_PER_AXIS * (lineHeightOf(metrics) + CONTROL_GAP)) +
+         boxWidth(metrics);
 }
 
 void ChoiceSelector::paint(IInterfaceCanvas& canvas, sf::IntRect area,
@@ -36,7 +38,9 @@ void ChoiceSelector::paint(IInterfaceCanvas& canvas, sf::IntRect area,
   SunkBox(box, SunkBox::Sides::Shaded).paint(canvas);
   const std::string& text = choices_[current];
   canvas.write(
-      text, {centeredTextLeft(box, text), box.position.y + CONTROL_TEXT_TOP},
+      text,
+      {centeredTextLeft(box, text, metricsOfControl(area)),
+       box.position.y + CONTROL_TEXT_TOP},
       {.font = TextFont::Regular,
        .color = selected ? SELECTED_BOXED_VALUE_COLOR : BOXED_VALUE_COLOR});
   if (!selected) {
@@ -90,18 +94,19 @@ bool ChoiceSelector::pointerPressed(sf::Vector2i pixel, sf::IntRect area) {
   return keyPressed(sf::Event::KeyPressed{.code = INCREASE_KEY});
 }
 
-int ChoiceSelector::boxWidth() const {
+int ChoiceSelector::boxWidth(TextMetrics metrics) const {
   int widest = 0;
   for (const std::string& choice : choices_) {
-    widest = std::max(widest, regularTextWidth(choice));
+    widest = std::max(widest, regularWidthOf(metrics, choice));
   }
   return widest + SELECTOR_BOX_PADDING;
 }
 
 sf::IntRect ChoiceSelector::boxArea(sf::IntRect area) const {
+  const TextMetrics metrics = metricsOfControl(area);
   return {
-      {area.position.x + REGULAR_FONT_ADVANCE + CONTROL_GAP, area.position.y},
-      {boxWidth(), CONTROL_HEIGHT}};
+      {area.position.x + lineHeightOf(metrics) + CONTROL_GAP, area.position.y},
+      {boxWidth(metrics), area.size.y}};
 }
 
 }  // namespace rtype::client

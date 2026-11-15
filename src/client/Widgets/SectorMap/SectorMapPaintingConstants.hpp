@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string_view>
+#include "InterfaceConstants.hpp"
 
 namespace rtype::client {
 
@@ -41,6 +42,11 @@ inline constexpr int TOOLTIP_TITLE_TOP = 5;
 inline constexpr int TOOLTIP_FIRST_LINE = 17;
 inline constexpr int TOOLTIP_LINE_PITCH = 10;
 inline constexpr int TOOLTIP_BOTTOM = 18;
+/** @brief Above the size the fonts are drawn at, the rows between the title
+ * of a bubble and its first line, as drawn, and between two lines. */
+inline constexpr int TOOLTIP_TITLE_GAP =
+    TOOLTIP_FIRST_LINE - TOOLTIP_TITLE_TOP - TEXT_LINE_HEIGHT;
+inline constexpr int TOOLTIP_LINE_GAP = 2;
 
 /** @brief The minimap: its planet at least
  * MINIMAP_SMALLEST_PLANET pixels in radius, its frame of the part shown at

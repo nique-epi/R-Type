@@ -5,6 +5,7 @@
 #include <SFML/Window/Event.hpp>
 #include "BarState.hpp"
 #include "IInterfaceCanvas.hpp"
+#include "TextMetrics.hpp"
 
 namespace rtype::client {
 
@@ -31,7 +32,7 @@ class RowControl {
   RowControl& operator=(RowControl&&) = delete;
 
   /** @returns The width of the control now, in pixels. */
-  [[nodiscard]] virtual int width() const = 0;
+  [[nodiscard]] virtual int width(TextMetrics metrics) const = 0;
 
   /** @brief Paints the control in its area, in the look of its row. */
   virtual void paint(IInterfaceCanvas& canvas, sf::IntRect area,

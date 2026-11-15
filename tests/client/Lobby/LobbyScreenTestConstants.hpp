@@ -6,8 +6,20 @@
 #include <cstdint>
 #include <string_view>
 #include "PointerEvents.hpp"
+#include "TextMetrics.hpp"
 
 namespace rtype::client::testing {
+
+/** @brief The largest text size, and the longest nickname the protocol
+ * carries. */
+constexpr TextMetrics LARGEST_TEXT{.halfPixelsPerFontPixel = 4};
+constexpr const char* LONGEST_NICKNAME = "CAPTAIN_STARDUST";
+
+/** @brief The column the first bay centers its lines on: the bays start at
+ * the safe margin, 24, and are 102 wide, so 24 + 51. Then a turn of the wheel
+ * far past the bottom of any room. */
+constexpr int FIRST_BAY_MIDDLE_COLUMN = 75;
+constexpr float WHEEL_PAST_THE_BOTTOM = -40.F;
 
 /** @brief The local player, and another one in the third bay. */
 constexpr std::uint8_t OWN_NUMBER = 1;

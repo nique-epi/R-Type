@@ -6,6 +6,7 @@ target_link_libraries(rtype_client_item_list
   PUBLIC
     rtype_client_widgets
   PRIVATE
+    rtype_client_text_measures
     rtype_client_ink_tag
     rtype_client_outline
 )

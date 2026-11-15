@@ -14,6 +14,7 @@
 #include "KeyNames.hpp"
 #include "LeaderboardFilterChoice.hpp"
 #include "LeaderboardFilterDialog.hpp"
+#include "LeaderboardFrame.hpp"
 #include "LeaderboardPage.hpp"
 #include "LeaderboardPhase.hpp"
 #include "LeaderboardScreenParts.hpp"
@@ -91,6 +92,7 @@ class LeaderboardScreen : public IScreen {
   PlayfieldMapping playfieldPointAt_;
   KeyNaming keyName_;
   MotionPreference motion_;
+  LeaderboardFrame frame_;
   LeaderboardFilterDialog filterDialog_;
   TabStrip tabStrip_;
   ItemList list_;

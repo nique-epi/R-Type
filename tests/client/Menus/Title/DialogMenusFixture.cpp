@@ -22,19 +22,20 @@ using rtype::client::quitConfirmationMenu;
 
 void DialogMenusFixture::openQuitConfirmation() {
   dialog_ = std::make_unique<DialogScreen>(
-      quitConfirmationMenu(navigator_, sounds_), samePlayfieldPoint,
-      std::make_unique<RecordingInterfaceCanvas>(canvas_));
+      quitConfirmationMenu({.navigator = navigator_, .sounds = sounds_}),
+      samePlayfieldPoint, std::make_unique<RecordingInterfaceCanvas>(canvas_));
 }
 
 void DialogMenusFixture::openConnectionLost(ConnectionPhase ending) {
   dialog_ = std::make_unique<DialogScreen>(
-      connectionLostMenu(navigator_, sounds_, ending), samePlayfieldPoint,
-      std::make_unique<RecordingInterfaceCanvas>(canvas_));
+      connectionLostMenu({.navigator = navigator_, .sounds = sounds_}, ending),
+      samePlayfieldPoint, std::make_unique<RecordingInterfaceCanvas>(canvas_));
 }
 
 void DialogMenusFixture::openLeaveGameConfirmation() {
   dialog_ = std::make_unique<DialogScreen>(
-      leaveGameConfirmationMenu(navigator_, sounds_, connection_),
+      leaveGameConfirmationMenu({.navigator = navigator_, .sounds = sounds_},
+                                connection_),
       samePlayfieldPoint, std::make_unique<RecordingInterfaceCanvas>(canvas_));
 }
 

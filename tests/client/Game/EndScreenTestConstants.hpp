@@ -4,6 +4,7 @@
 #include <chrono>
 #include <cstdint>
 #include <string_view>
+#include "TextMetrics.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client::testing {
@@ -39,6 +40,20 @@ constexpr rtype::engine::Duration WHEN_THE_TAUNT_IS_TYPED =
 constexpr sf::Vector2i PROMPT_MIDDLE_PIXEL(240, 248);
 constexpr sf::Vector2i QUIT_MIDDLE_PIXEL(421, 231);
 constexpr sf::Vector2i NOWHERE_PIXEL(10, 10);
+
+/**
+ * @brief The largest text size; long enough for the whole screen, from the
+ * drop of the book to its choices; then a pixel of QUIT and one of the call
+ * to play again at that size that lie off them as drawn. QUIT grows left of
+ * its right side at 448: 16 + 4 letters of 16 + 6 make it 86 wide, from 362,
+ * where it was drawn from 394; and 22 tall from 224. The call holds 21
+ * letters of 16, 336 wide from 72, on row 248 under QUIT, where it was drawn
+ * from 156.
+ */
+constexpr TextMetrics LARGEST_END_TEXT{.halfPixelsPerFontPixel = 4};
+constexpr rtype::engine::Duration WHOLE_END_SCREEN = std::chrono::seconds(20);
+constexpr sf::Vector2i LARGEST_QUIT_PIXEL(370, 235);
+constexpr sf::Vector2i LARGEST_CALL_PIXEL(90, 256);
 
 /** @brief The first sound of the book: its landing, 0.4 s after the screen
  * opened (card "A v2"). */

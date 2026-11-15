@@ -35,6 +35,7 @@
 #include "ShopkeeperMotion.hpp"
 #include "ShopkeeperMotionConstants.hpp"
 #include "SoundConstants.hpp"
+#include "TextMetrics.hpp"
 #include "TimeConstants.hpp"
 #include "WidgetConstants.hpp"
 
@@ -42,8 +43,9 @@ namespace rtype::client {
 
 namespace {
 
-Button::Text backText() {
-  return {.label = BACK_LABEL, .keyName = CANCEL_KEY_NAME};
+/** @returns What BACK says, at the text size of @p metrics. */
+Button::Text backText(TextMetrics metrics) {
+  return {.label = BACK_LABEL, .keyName = CANCEL_KEY_NAME, .size = metrics};
 }
 
 /** @returns What @p settings lets the player buy with and already holds. */
@@ -70,11 +72,12 @@ ShopScreen::ShopScreen(ShopScreenParts parts,
       motion_(parts.motion),
       canvas_(std::move(canvas)),
       playfieldPointAt_(std::move(parts.playfieldPointAt)),
-      backChip_(KeyChipParts{.text = backText(),
-                             .area = MenuBuilder::chipArea(backText()),
-                             .key = MENU_CANCEL_KEY,
-                             .action = [this] { navigator_->pop(); },
-                             .sounds = parts.sounds}),
+      backChip_(KeyChipParts{
+          .text = backText(canvas_->textMetrics()),
+          .area = MenuBuilder::chipArea(backText(canvas_->textMetrics())),
+          .key = MENU_CANCEL_KEY,
+          .action = [this] { navigator_->pop(); },
+          .sounds = parts.sounds}),
       wares_(waresForSale()),
       selection_(ShelfSizes{.looks = wares_.looks.size(),
                             .hulls = wares_.hulls.size()}) {

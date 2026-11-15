@@ -15,6 +15,7 @@
 #include "RecordingSoundPlayer.hpp"
 #include "RecordingWaitingRoom.hpp"
 #include "ShipLook.hpp"
+#include "TextMetrics.hpp"
 
 /** @brief A waiting room alone, the local player accepted as player 1, with
  * a recording navigator, connection and canvas, and the bindings of a first
@@ -22,7 +23,8 @@
 class LobbyScreenFixture : public ::testing::Test {
  protected:
   explicit LobbyScreenFixture(rtype::client::LobbyPlace place =
-                                  rtype::client::LobbyPlace::AfterConnection);
+                                  rtype::client::LobbyPlace::AfterConnection,
+                              rtype::client::TextMetrics metrics = {});
 
   /** @brief The server lists these players, and a frame goes by. */
   void list(std::vector<rtype::network::LobbyPlayer> players);

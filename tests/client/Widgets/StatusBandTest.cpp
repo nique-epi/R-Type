@@ -10,6 +10,8 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "BandMoment.hpp"
+#include "FlashPreference.hpp"
 #include "PilotStatus.hpp"
 #include "PlayerPaletteConstants.hpp"
 #include "PlayerPaletteTestConstants.hpp"
@@ -19,6 +21,7 @@
 #include "TextStyle.hpp"
 
 using rtype::client::DEUTERANOPIA_PLAYER_PALETTE;
+using rtype::client::FlashPreference;
 using rtype::client::PilotState;
 using rtype::client::PilotStatus;
 using rtype::client::TextAlignment;
@@ -43,20 +46,23 @@ using rtype::client::testing::FIRST_ZEROS_END;
 using rtype::client::testing::FIVE_LIVES;
 using rtype::client::testing::FOUR_LIVES;
 using rtype::client::testing::FOURTH_MARKER_SOURCE;
+using rtype::client::testing::LARGE_LINE_OF_THE_FIRST_BAY;
 using rtype::client::testing::LARGEST_SHOWN_SCORE_TEXT;
+using rtype::client::testing::LARGEST_TEXT;
 using rtype::client::testing::LAST_LIFE;
 using rtype::client::testing::LEADING_ZEROS;
 using rtype::client::testing::LIGHT_BLUISH_GREEN;
 using rtype::client::testing::LIVES_SHOWN_AT_MOST;
 using rtype::client::testing::LOCAL_FRAME;
 using rtype::client::testing::LONGEST_NICKNAME;
-using rtype::client::testing::LONGEST_NICKNAME_BESIDE_A_WORD;
-using rtype::client::testing::LONGEST_NICKNAME_CUT;
+using rtype::client::testing::LONGEST_NICKNAME_SECOND_TURN;
 using rtype::client::testing::LOST_LIFE_SOURCE;
 using rtype::client::testing::MIDDLE_ROW;
 using rtype::client::testing::NAME_AND_SCORE;
+using rtype::client::testing::NAME_ROOM;
+using rtype::client::testing::NAME_ROOM_BESIDE_RESPAWN;
 using rtype::client::testing::NICKNAME_WITH_ACCENTS;
-using rtype::client::testing::NICKNAME_WITH_ACCENTS_CUT;
+using rtype::client::testing::NICKNAME_WITH_ACCENTS_FIRST_TURN;
 using rtype::client::testing::NINE_DIGIT_SCORE;
 using rtype::client::testing::NO_LIFE;
 using rtype::client::testing::NO_PLAYER;
@@ -69,11 +75,13 @@ using rtype::client::testing::PLUG_ICON;
 using rtype::client::testing::RULE_COLUMNS;
 using rtype::client::testing::RULE_HEIGHT;
 using rtype::client::testing::RULE_TOP;
+using rtype::client::testing::SECOND_TURN;
 using rtype::client::testing::SHEET_GREEN;
 using rtype::client::testing::SHEET_GREEN_TO_BLUISH_GREEN;
 using rtype::client::testing::THIRD_CHIP;
 using rtype::client::testing::THIRD_LIFE_SOURCE;
 using rtype::client::testing::THIRD_MARKER_SOURCE;
+using rtype::client::testing::THIRD_TURN;
 using rtype::client::testing::THREE_LIVES;
 using rtype::client::testing::TWO_LIVES;
 using rtype::client::testing::WARNING;
@@ -149,45 +157,101 @@ TEST(StatusBand, TheNicknameTitlesTheBay) {
 /**
  * Given player 1 with a nickname of 16 characters and no word
  * When the band is painted
- * Then its first 11 characters are written
+ * Then the whole nickname is written, clipped to the 93 pixels of its room,
+ * through which it runs
  */
-TEST(StatusBand, ALongNicknameIsCutToTheBay) {
+TEST(StatusBand, ALongNicknameRunsThroughItsRoom) {
   PilotStatus pilot = flying(PLAYER_ONE, THREE_LIVES);
   pilot.nickname = LONGEST_NICKNAME;
 
   const InterfaceCanvasRecord record = bandPaintingOf({pilot});
 
-  EXPECT_NE(writingOf(record, LONGEST_NICKNAME_CUT), nullptr);
+  const RecordedWriting* name = writingOf(record, LONGEST_NICKNAME);
+  ASSERT_NE(name, nullptr);
+  EXPECT_EQ(name->style.clip.value_or(sf::IntRect()).size.x, NAME_ROOM);
 }
 
 /**
  * Given player 1 respawning, with a nickname of 16 characters
  * When the band is painted
- * Then RESPAWN ends the first row and the nickname keeps the room left
+ * Then RESPAWN ends the first row and the nickname runs in the room left
  */
-TEST(StatusBand, AWordShortensTheNickname) {
+TEST(StatusBand, AWordShortensTheRoomOfTheNickname) {
   PilotStatus pilot = flying(PLAYER_ONE, THREE_LIVES);
   pilot.nickname = LONGEST_NICKNAME;
   pilot.state = PilotState::Respawning;
 
   const InterfaceCanvasRecord record = bandPaintingOf({pilot});
 
-  EXPECT_NE(writingOf(record, LONGEST_NICKNAME_BESIDE_A_WORD), nullptr);
+  const RecordedWriting* name = writingOf(record, LONGEST_NICKNAME);
+  ASSERT_NE(name, nullptr);
+  EXPECT_EQ(name->style.clip.value_or(sf::IntRect()).size.x,
+            NAME_ROOM_BESIDE_RESPAWN);
   EXPECT_EQ(anchorOf(record, "RESPAWN"), FIRST_SMALL_WORD_END);
 }
 
 /**
- * Given player 1 whose nickname holds characters of two bytes
- * When the band is painted
- * Then it is cut after 11 whole characters, never inside one
+ * Given player 1 whose nickname holds characters of two bytes, flashes
+ * reduced
+ * When the band is painted at the start of the game
+ * Then its first 11 whole characters are written, never a part of one
  */
-TEST(StatusBand, ANicknameIsCutAtAWholeCharacter) {
+TEST(StatusBand, AReducedTurnKeepsWholeCharacters) {
   PilotStatus pilot = flying(PLAYER_ONE, THREE_LIVES);
   pilot.nickname = NICKNAME_WITH_ACCENTS;
 
-  const InterfaceCanvasRecord record = bandPaintingOf({pilot});
+  const InterfaceCanvasRecord record =
+      bandPaintingAt({pilot}, BandMoment{.flashes = FlashPreference::Reduced});
 
-  EXPECT_NE(writingOf(record, NICKNAME_WITH_ACCENTS_CUT), nullptr);
+  EXPECT_NE(writingOf(record, NICKNAME_WITH_ACCENTS_FIRST_TURN), nullptr);
+}
+
+/**
+ * Given player 1 with a nickname of 16 characters, flashes reduced
+ * When the band is painted two seconds into the game
+ * Then the second turn shows the five characters the first left out
+ */
+TEST(StatusBand, AReducedNicknameShowsTheRestOnTheNextTurn) {
+  PilotStatus pilot = flying(PLAYER_ONE, THREE_LIVES);
+  pilot.nickname = LONGEST_NICKNAME;
+
+  const InterfaceCanvasRecord record =
+      bandPaintingAt({pilot}, BandMoment{.sinceStart = SECOND_TURN,
+                                         .flashes = FlashPreference::Reduced});
+
+  EXPECT_NE(writingOf(record, LONGEST_NICKNAME_SECOND_TURN), nullptr);
+}
+
+/**
+ * Given player 1 respawning, at the largest text size
+ * When the band is painted at the start of the game
+ * Then its bay holds one line, its nickname, on the middle row of the band
+ */
+TEST(StatusBand, AtTheLargestSizeABayShowsItsNameFirst) {
+  PilotStatus pilot = flying(PLAYER_ONE, THREE_LIVES);
+  pilot.state = PilotState::Respawning;
+
+  const InterfaceCanvasRecord record =
+      bandPaintingAt({pilot}, BandMoment{.metrics = LARGEST_TEXT});
+
+  EXPECT_EQ(anchorOf(record, "ACE"), LARGE_LINE_OF_THE_FIRST_BAY);
+  EXPECT_EQ(writingOf(record, "RESPAWN"), nullptr);
+}
+
+/**
+ * Given the same pilot at the largest text size
+ * When the band is painted four seconds into the game
+ * Then the line shows its word, RESPAWN, where the name was
+ */
+TEST(StatusBand, AtTheLargestSizeTheWordComesThird) {
+  PilotStatus pilot = flying(PLAYER_ONE, THREE_LIVES);
+  pilot.state = PilotState::Respawning;
+
+  const InterfaceCanvasRecord record = bandPaintingAt(
+      {pilot}, BandMoment{.sinceStart = THIRD_TURN, .metrics = LARGEST_TEXT});
+
+  EXPECT_EQ(anchorOf(record, "RESPAWN"), LARGE_LINE_OF_THE_FIRST_BAY);
+  EXPECT_EQ(writingOf(record, "ACE"), nullptr);
 }
 
 /**

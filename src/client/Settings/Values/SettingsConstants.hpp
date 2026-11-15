@@ -5,6 +5,7 @@
 #include <string_view>
 #include "BoundAction.hpp"
 #include "ColorMode.hpp"
+#include "TextSize.hpp"
 #include "WindowConstants.hpp"
 
 namespace rtype::client {
@@ -95,6 +96,8 @@ constexpr std::string_view REDUCE_FLASHES_NAME = "reduce_flashes";
 constexpr std::string_view SOUND_CUES_NAME = "sound_cues";
 constexpr std::string_view AUTO_FIRE_NAME = "auto_fire";
 constexpr std::string_view PILOT_NAMES_NAME = "pilot_names";
+constexpr std::string_view TEXT_SIZE_NAME = "text_size";
+constexpr std::string_view HIGH_CONTRAST_NAME = "high_contrast";
 constexpr std::string_view CHAT_SHOWN_NAME = "chat_shown";
 constexpr std::string_view CHAT_LETTERS_NAME = "chat_letters";
 constexpr std::string_view CHAT_CLOSED_LINES_NAME = "chat_closed_lines";
@@ -133,7 +136,8 @@ constexpr std::array<std::string_view, BOUND_ACTION_COUNT>
                            "key_open_chat"};
 
 /** @brief Values of a switch; of the display modes, in the order of
- * DISPLAY_MODES; of the color modes, in the order of COLOR_MODES; and what
+ * DISPLAY_MODES; of the color modes, in the order of COLOR_MODES; of the text
+ * sizes, in the order of TEXT_SIZES; and what
  * joins the width and height of a window size. */
 constexpr std::string_view SWITCH_ON_VALUE = "on";
 constexpr std::string_view SWITCH_OFF_VALUE = "off";
@@ -141,6 +145,8 @@ constexpr std::array<std::string_view, DISPLAY_MODE_COUNT> DISPLAY_MODE_VALUES{
     "windowed", "borderless"};
 constexpr std::array<std::string_view, COLOR_MODE_COUNT> COLOR_MODE_VALUES{
     "off", "protanopia", "deuteranopia", "tritanopia"};
+constexpr std::array<std::string_view, TEXT_SIZE_COUNT> TEXT_SIZE_VALUES{
+    "normal", "large", "largest"};
 constexpr char WINDOW_SIZE_VALUE_SEPARATOR = 'x';
 
 /** @brief Why a line of the settings file was left out, after its number. */

@@ -118,6 +118,9 @@ constexpr sf::Color SELECTED_KEY_CAP_EDGE_COLOR = HUD_CYAN;
 constexpr sf::Color CONFLICT_KEY_CAP_EDGE_COLOR = STAR_GOLD;
 constexpr sf::Color CONFLICT_FLAG_COLOR = STAR_GOLD;
 
+/** @brief The marks of the rows a panel hides above or below. */
+constexpr sf::Color SCROLL_MARK_COLOR = HUD_CYAN;
+
 /** @brief Tabs: the border and label of the open tab, of the others. */
 constexpr sf::Color OPEN_TAB_BORDER_COLOR = HUD_CYAN;
 constexpr sf::Color OPEN_TAB_TEXT_COLOR = HUD_CYAN;

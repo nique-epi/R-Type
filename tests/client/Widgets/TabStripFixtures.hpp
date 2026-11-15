@@ -9,3 +9,8 @@
 /** @returns The two tabs of the leaderboard, the first open, NARROW_WIDTH
  * wide. */
 [[nodiscard]] rtype::client::TabStrip narrowStrip();
+
+/** @returns The five tabs of the options laid out at the largest text size,
+ * @p open open. */
+[[nodiscard]] rtype::client::TabStrip fiveOptionsTabsAtLargest(
+    std::size_t open);

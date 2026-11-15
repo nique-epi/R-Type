@@ -11,13 +11,15 @@
 #include "RecordingNavigator.hpp"
 #include "RecordingServerConnection.hpp"
 #include "RecordingSoundPlayer.hpp"
+#include "TextMetrics.hpp"
 
 /** @brief A leaderboard of a recording SERVER tab and a GLOBAL tab without a
  * source, opened on NORMAL and two pilots. */
 class LeaderboardScreenFixture : public ::testing::Test {
  protected:
   explicit LeaderboardScreenFixture(rtype::client::MotionPreference motion =
-                                        rtype::client::MotionPreference::Full);
+                                        rtype::client::MotionPreference::Full,
+                                    rtype::client::TextMetrics metrics = {});
 
   /** @brief Presses and releases a key. */
   void tap(sf::Keyboard::Key key);
@@ -47,4 +49,10 @@ class LeaderboardScreenFixture : public ::testing::Test {
 class StillLeaderboardFixture : public LeaderboardScreenFixture {
  protected:
   StillLeaderboardFixture();
+};
+
+/** @brief The same leaderboard, its canvas at the largest text size. */
+class LargestLeaderboardFixture : public LeaderboardScreenFixture {
+ protected:
+  LargestLeaderboardFixture();
 };

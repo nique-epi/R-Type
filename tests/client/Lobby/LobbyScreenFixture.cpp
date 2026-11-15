@@ -23,6 +23,7 @@
 #include "RecordingWaitingRoom.hpp"
 #include "ScreenTestConstants.hpp"
 #include "ShipLook.hpp"
+#include "TextMetrics.hpp"
 
 using rtype::client::ConnectionPhase;
 using rtype::client::LobbyPlace;
@@ -30,11 +31,17 @@ using rtype::client::LobbyScreen;
 using rtype::client::LobbyScreenParts;
 using rtype::client::MotionPreference;
 using rtype::client::PLAYER_COLORS;
+using rtype::client::TextMetrics;
 using rtype::client::testing::OWN_NUMBER;
 using rtype::network::LobbyPlayer;
 
-LobbyScreenFixture::LobbyScreenFixture(LobbyPlace place)
-    : screen_(LobbyScreenParts{.navigator = navigator_,
+LobbyScreenFixture::LobbyScreenFixture(LobbyPlace place, TextMetrics metrics)
+    : canvas_([metrics] {
+        InterfaceCanvasRecord record;
+        record.metrics = metrics;
+        return record;
+      }()),
+      screen_(LobbyScreenParts{.navigator = navigator_,
                                .sounds = sounds_,
                                .connection = connection_,
                                .waitingRoom = waitingRoom_,

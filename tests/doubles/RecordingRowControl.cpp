@@ -9,6 +9,7 @@
 #include <vector>
 #include "BarState.hpp"
 #include "IInterfaceCanvas.hpp"
+#include "TextMetrics.hpp"
 
 namespace {
 
@@ -24,7 +25,10 @@ RecordingRowControl::RecordingRowControl(
       usedKeys_(std::move(usedKeys)),
       activatable_(activatable) {}
 
-int RecordingRowControl::width() const { return RECORDING_CONTROL_WIDTH; }
+int RecordingRowControl::width(
+    [[maybe_unused]] rtype::client::TextMetrics metrics) const {
+  return RECORDING_CONTROL_WIDTH;
+}
 
 void RecordingRowControl::paint(
     rtype::client::IInterfaceCanvas& canvas, sf::IntRect area,

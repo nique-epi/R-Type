@@ -28,7 +28,7 @@ constexpr int GAME_CHAT_BOTTOM = STATUS_BAND_AREA.position.y - NOTICE_EDGE;
  * the departure in a column as wide as the door: the door for a pilot who
  * left, the plug of the status band (STATUS_ICON_SIZE) at the right of the
  * column for a lost signal; then, DEPARTURE_PIECE_GAP after the column, the
- * name of the pilot cut to DEPARTURE_NAME_LETTERS letters, in the light shade
+ * whole name of the pilot, in the light shade
  * of its color; then, DEPARTURE_WORD_GAP after it, LEFT THE GAME or SIGNAL
  * LOST in small print. The name and the words are written
  * DEPARTURE_TEXT_DROP under the top of the line, on the same row, so their
@@ -46,7 +46,9 @@ constexpr int DEPARTURE_TEXT_DROP = 2;
 constexpr sf::Vector2i DEPARTURE_PLUG_OFFSET(DEPARTURE_ICON_COLUMN -
                                                  STATUS_ICON_SIZE.x,
                                              DEPARTURE_TEXT_DROP);
-constexpr std::size_t DEPARTURE_NAME_LETTERS = 10;
+/** @brief The right end of a line of the feed, which its words never pass:
+ * they go under the name instead. */
+constexpr int DEPARTURE_FEED_RIGHT = INTERFACE_AREA.size.x - NOTICE_EDGE;
 constexpr int DEPARTURE_WORD_GAP = 6;
 constexpr const char* LEFT_THE_GAME_TEXT = "LEFT THE GAME";
 constexpr const char* WAS_EXPELLED_TEXT = "WAS EXPELLED";

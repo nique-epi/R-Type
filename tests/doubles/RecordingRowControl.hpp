@@ -8,6 +8,7 @@
 #include "BarState.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "RowControl.hpp"
+#include "TextMetrics.hpp"
 
 /** @brief What reached a recording row control, and whether it holds the
  * input, which a test may set. */
@@ -31,7 +32,7 @@ class RecordingRowControl : public rtype::client::RowControl {
                       std::vector<sf::Keyboard::Key> usedKeys,
                       bool activatable);
 
-  [[nodiscard]] int width() const override;
+  [[nodiscard]] int width(rtype::client::TextMetrics metrics) const override;
   void paint(rtype::client::IInterfaceCanvas& canvas, sf::IntRect area,
              rtype::client::BarState row) const override;
   [[nodiscard]] bool isActivatable() const override;

@@ -9,6 +9,7 @@
 #include "PlayerSettings.hpp"
 #include "SettingsText.hpp"
 #include "SettingsTextTestConstants.hpp"
+#include "TextSize.hpp"
 
 using rtype::client::BoundAction;
 using rtype::client::ColorMode;
@@ -16,6 +17,7 @@ using rtype::client::DisplayMode;
 using rtype::client::PlayerSettings;
 using rtype::client::readSettingsText;
 using rtype::client::settingsText;
+using rtype::client::TextSize;
 using rtype::client::testing::A_BALANCE;
 using rtype::client::testing::A_BALANCE_LINE;
 using rtype::client::testing::ANY_VOLUME;
@@ -38,6 +40,7 @@ using rtype::client::testing::CROWN_AS_A_HULL_FILE;
 using rtype::client::testing::CROWN_LINE;
 using rtype::client::testing::EARLIER_MASTER_LINE;
 using rtype::client::testing::EARLIER_PREDICTION_LINE;
+using rtype::client::testing::FILE_BEFORE_THE_TEXT_SIZE;
 using rtype::client::testing::FILE_WITHOUT_A_HULL;
 using rtype::client::testing::FIRST_LAUNCH_FILE;
 using rtype::client::testing::FIRST_LAUNCH_MUSIC_VOLUME;
@@ -53,6 +56,7 @@ using rtype::client::testing::NEGATIVE_BALANCE_FILE;
 using rtype::client::testing::SHADES_ON_THE_HEAD_FILE;
 using rtype::client::testing::SMALLER_WINDOW;
 using rtype::client::testing::UNKNOWN_FIRST_LINE;
+using rtype::client::testing::UNKNOWN_TEXT_SIZE_LINE;
 using rtype::client::testing::VOSTOK_AND_CHAPKA_LOCKER;
 using rtype::client::testing::VOSTOK_ITEM;
 using rtype::client::testing::WEARS_CROWN;
@@ -88,6 +92,8 @@ TEST(SettingsTextTest, EveryChangedSettingReadsBack) {
   settings.soundCues = true;
   settings.autoFire = true;
   settings.pilotNames = false;
+  settings.textSize = TextSize::Largest;
+  settings.highContrast = true;
   settings.keys.bind(BoundAction::OpenChat, Scan::Y);
   settings.chatShown = false;
   settings.chatLetters = CHANGED_CHAT_LETTERS;
@@ -268,6 +274,30 @@ TEST(SettingsTextTest, AnUnknownDisplayModeKeepsTheWindowWindowed) {
   const auto reading =
       readSettingsText("display_mode=fullscreen", PlayerSettings{});
   EXPECT_EQ(reading.settings.displayMode, DisplayMode::Windowed);
+  EXPECT_EQ(reading.ignoredLines, std::vector<std::string>{INVALID_FIRST_LINE});
+}
+
+/**
+ * Given a file written before the text size and the high contrast existed
+ * When it is read over the settings of a first launch
+ * Then the text keeps its normal size and the high contrast stays off
+ */
+TEST(SettingsTextTest, AFileBeforeTheTextSizeKeepsItsDefaults) {
+  const PlayerSettings settings =
+      readSettingsText(FILE_BEFORE_THE_TEXT_SIZE, PlayerSettings{}).settings;
+  EXPECT_EQ(settings.textSize, TextSize::Normal);
+  EXPECT_FALSE(settings.highContrast);
+}
+
+/**
+ * Given a text size line naming no size the options offer
+ * When it is read
+ * Then the text keeps its normal size and the line is listed as invalid
+ */
+TEST(SettingsTextTest, AnUnknownTextSizeKeepsTheNormalSize) {
+  const auto reading =
+      readSettingsText(UNKNOWN_TEXT_SIZE_LINE, PlayerSettings{});
+  EXPECT_EQ(reading.settings.textSize, TextSize::Normal);
   EXPECT_EQ(reading.ignoredLines, std::vector<std::string>{INVALID_FIRST_LINE});
 }
 

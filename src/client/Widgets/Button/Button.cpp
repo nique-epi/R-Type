@@ -12,7 +12,6 @@
 #include "FieldText.hpp"
 #include "FieldTextPainting.hpp"
 #include "IInterfaceCanvas.hpp"
-#include "InterfaceConstants.hpp"
 #include "KeyCap.hpp"
 #include "RowControl.hpp"
 #include "SunkBox.hpp"
@@ -68,10 +67,11 @@ sf::IntRect Button::controlArea() const {
   if (control_ == nullptr) {
     return {};
   }
-  const int width = control_->width();
+  const int width = control_->width(text_.size);
+  const int height = textBoxHeight(CONTROL_HEIGHT, text_.size);
   return {{area_.position.x + area_.size.x - ROW_PADDING - width,
-           area_.position.y + ROW_CONTROL_TOP},
-          {width, CONTROL_HEIGHT}};
+           area_.position.y + ((area_.size.y - height) / SIDES_PER_AXIS)},
+          {width, height}};
 }
 
 void Button::activate() {
@@ -95,7 +95,8 @@ void Button::paint(IInterfaceCanvas& canvas, BarState state) const {
   }
   const Look look = lookOf(state);
   CutCornerBox(area_, look.bar).paint(canvas);
-  const int textTop = centeredTextTop(area_) + look.textDrop;
+  const int textTop =
+      centeredTextTop(area_, canvas.textMetrics()) + look.textDrop;
   canvas.write(text_.label, {area_.position.x + BUTTON_TEXT_OFFSET.x, textTop},
                {.font = TextFont::Regular, .color = look.text});
   if (!text_.keyName.empty()) {
@@ -109,7 +110,7 @@ void Button::paintKeyCap(IInterfaceCanvas& canvas, BarState state,
   const KeyCap keyCap(text_.keyName,
                       lit ? KeyCap::Edge::Selected : KeyCap::Edge::Plain);
   keyCap.paint(canvas, {area_.position.x + area_.size.x - BAR_KEY_CAP_INSET -
-                            keyCap.width(),
+                            keyCap.width(canvas.textMetrics()),
                         textTop - CONTROL_TEXT_TOP});
 }
 
@@ -124,21 +125,22 @@ void Button::paintRow(IInterfaceCanvas& canvas, BarState state) const {
   if (state == BarState::Selected || state == BarState::Pressed) {
     CutCornerBox(area_, look.bar).paint(canvas);
   }
-  canvas.write(
-      text_.label,
-      area_.position + ROW_LABEL_OFFSET + sf::Vector2i(0, look.textDrop),
-      {.font = TextFont::Regular, .color = look.text});
+  canvas.write(text_.label,
+               {area_.position.x + ROW_LABEL_OFFSET.x,
+                centeredTextTop(area_, canvas.textMetrics()) + look.textDrop},
+               {.font = TextFont::Regular, .color = look.text});
   control_->paint(canvas, controlArea(), state);
 }
 
 void Button::paintField(IInterfaceCanvas& canvas, BarState state,
                         const TextField& field) const {
   const FieldLook look = fieldLookOf(state);
-  canvas.write(text_.label, area_.position,
+  const sf::IntRect box = fieldBoxOf(area_, canvas.textMetrics());
+  canvas.write(text_.label,
+               box.position.x == area_.position.x
+                   ? area_.position
+                   : area_.position + sf::Vector2i(0, FIELD_TEXT_PADDING),
                {.font = TextFont::Small, .color = look.label});
-  const int labelHeight = TEXT_LINE_HEIGHT + FIELD_LABEL_GAP;
-  const sf::IntRect box({area_.position.x, area_.position.y + labelHeight},
-                        {area_.size.x, area_.size.y - labelHeight});
   SunkBox(box, look.sides).paint(canvas);
   paintFieldText(canvas, FieldText{.box = box,
                                    .text = field.text(),

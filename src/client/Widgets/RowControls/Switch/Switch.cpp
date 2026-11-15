@@ -2,11 +2,14 @@
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Event.hpp>
+#include <algorithm>
 #include <utility>
 #include "BarState.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "RowControlConstants.hpp"
 #include "SunkBox.hpp"
+#include "TextMeasures.hpp"
+#include "TextMetrics.hpp"
 #include "TextStyle.hpp"
 #include "ValueBinding.hpp"
 #include "WidgetColors.hpp"
@@ -17,9 +20,11 @@ namespace rtype::client {
 
 Switch::Switch(ValueBinding<bool> value) : value_(std::move(value)) {}
 
-int Switch::width() const {
-  return (SIDES_PER_AXIS * SWITCH_CELL_SIZE.x) +
-         (SIDES_PER_AXIS * SWITCH_CELL_INSET);
+int Switch::width(TextMetrics metrics) const {
+  const int cell =
+      std::max(SWITCH_CELL_SIZE.x, regularWidthOf(metrics, SWITCH_OFF_TEXT) +
+                                       SWITCH_CELL_TEXT_PADDING);
+  return (SIDES_PER_AXIS * cell) + (SIDES_PER_AXIS * SWITCH_CELL_INSET);
 }
 
 void Switch::paint(IInterfaceCanvas& canvas, sf::IntRect area,
@@ -36,7 +41,8 @@ void Switch::paint(IInterfaceCanvas& canvas, sf::IntRect area,
     }
     canvas.write(
         word,
-        {centeredTextLeft(cell, word), cell.position.y + SWITCH_CELL_INSET},
+        {centeredTextLeft(cell, word, metricsOfControl(area)),
+         centeredTextTop(cell, metricsOfControl(area))},
         {.font = TextFont::Regular,
          .color = filled ? CURRENT_CELL_TEXT_COLOR : OTHER_CELL_TEXT_COLOR});
   }
@@ -65,9 +71,11 @@ bool Switch::pointerPressed(sf::Vector2i pixel, sf::IntRect area) {
 }
 
 sf::IntRect Switch::cellOf(bool onSide, sf::IntRect area) {
-  const int left =
-      area.position.x + SWITCH_CELL_INSET + (onSide ? SWITCH_CELL_SIZE.x : 0);
-  return {{left, area.position.y + SWITCH_CELL_INSET}, SWITCH_CELL_SIZE};
+  const sf::Vector2i cell(
+      (area.size.x - (SIDES_PER_AXIS * SWITCH_CELL_INSET)) / SIDES_PER_AXIS,
+      area.size.y - (SIDES_PER_AXIS * SWITCH_CELL_INSET));
+  const int left = area.position.x + SWITCH_CELL_INSET + (onSide ? cell.x : 0);
+  return {{left, area.position.y + SWITCH_CELL_INSET}, cell};
 }
 
 }  // namespace rtype::client

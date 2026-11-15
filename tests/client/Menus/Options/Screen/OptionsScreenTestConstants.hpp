@@ -48,8 +48,8 @@ constexpr int MUSIC_DEFAULT = 70;
 constexpr int MUSIC_ONE_STEP_UP = 75;
 constexpr int QUIET_MUSIC = 10;
 
-/** @brief The five tabs, the longest holding eight rows. */
-constexpr std::size_t ROWS_IN_THE_LONGEST_TAB = 8;
+/** @brief The five tabs, the longest, ACCESS, holding nine rows. */
+constexpr std::size_t ROWS_IN_THE_LONGEST_TAB = 9;
 constexpr int TABS = 5;
 
 /** @brief The tabs to move by from SOUND to reach CHAT, and two labels of

@@ -27,6 +27,8 @@ constexpr const char* FIRST_LAUNCH_FILE =
     "sound_cues=off\n"
     "auto_fire=off\n"
     "pilot_names=on\n"
+    "text_size=normal\n"
+    "high_contrast=off\n"
     "chat_shown=on\n"
     "chat_letters=33\n"
     "chat_closed_lines=3\n"
@@ -86,6 +88,12 @@ constexpr PixelSize SMALLER_WINDOW{.width = 1280, .height = 720};
 
 /** @brief The line an earlier version kept the master the player chose on. */
 constexpr const char* EARLIER_MASTER_LINE = "master=10.0.0.2:8080";
+
+/** @brief A file written before the text size and the high contrast: it
+ * names neither. */
+constexpr const char* FILE_BEFORE_THE_TEXT_SIZE = "pilot_names=off\n";
+/** @brief A text size line naming no size the options offer. */
+constexpr const char* UNKNOWN_TEXT_SIZE_LINE = "text_size=huge";
 
 /** @brief The line an earlier version kept the switch of the prediction on,
  * which the player can no longer turn off. */

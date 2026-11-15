@@ -8,6 +8,7 @@
 #include "MenuBuilder.hpp"
 #include "PlayfieldMapping.hpp"
 #include "ScreenConstants.hpp"
+#include "TextMetrics.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -15,8 +16,8 @@ namespace rtype::client {
 ResetDialog::ResetDialog(ISoundPlayer& sounds) : sounds_(&sounds) {}
 
 void ResetDialog::ask(const std::string& question,
-                      const std::function<void()>& reset) {
-  dialog_ = MenuBuilder(MenuBuilder::Frame::Dialog, sounds_)
+                      const std::function<void()>& reset, TextMetrics metrics) {
+  dialog_ = MenuBuilder(MenuBuilder::Frame::Dialog, sounds_, metrics)
                 .heading(CONFIRM_HEADING)
                 .message(question)
                 .cancelButton({.label = NO_LABEL}, [this] { answered_ = true; })

@@ -3,8 +3,13 @@
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <algorithm>
+#include <cstdint>
 #include <optional>
+#include <vector>
+#include "InterfaceConstants.hpp"
 #include "KeyPress.hpp"
+#include "LeaderboardAnswer.hpp"
+#include "LeaderboardFrames.hpp"
 #include "LeaderboardPhase.hpp"
 #include "LeaderboardPresentationFixtures.hpp"
 #include "LeaderboardRequest.hpp"
@@ -13,6 +18,7 @@
 #include "LeaderboardSpriteConstants.hpp"
 #include "MenuScreenIdConstants.hpp"
 #include "PointerEvents.hpp"
+#include "ProtocolConstants.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingServerConnection.hpp"
@@ -21,18 +27,24 @@
 #include "WidgetConstants.hpp"
 
 using rtype::client::CONNECTION_FOR_LEADERBOARD_SCREEN;
+using rtype::client::INTERFACE_AREA;
 using rtype::client::LEADERBOARD_SHEET_ID;
+using rtype::client::leaderboardFrameOf;
 using rtype::client::LeaderboardPhase;
 using rtype::client::PRESS_DURATION;
 using rtype::client::testing::BANNER_FRAME;
 using rtype::client::testing::CENTERED_ASKING_ANCHOR;
 using rtype::client::testing::FIRST_NAME;
+using rtype::client::testing::LARGEST_TEXT;
 using rtype::client::testing::LEFT_BANNER;
+using rtype::client::testing::LONGEST_NICKNAME;
 using rtype::client::testing::NEUTRAL_ASKING_TEXT;
 using rtype::client::testing::ON_THE_BACK_CHIP;
 using rtype::client::testing::ON_THE_SECOND_TAB;
 using rtype::client::testing::RIGHT_BANNER;
 using rtype::network::LeaderboardRequest;
+using rtype::network::LeaderboardRow;
+using rtype::network::MAXIMUM_LEADERBOARD_ROWS;
 using ::testing::ElementsAre;
 using ::testing::Field;
 using ::testing::IsEmpty;
@@ -489,4 +501,60 @@ TEST_F(StillLeaderboardFixture, TheBannersStayStill) {
   screen().update(BANNER_FRAME);
 
   EXPECT_EQ(canvas().images.front().source, first);
+}
+
+/**
+ * Given the leaderboard at the largest text size, ten pilots of the longest
+ * nickname and the player's own row
+ * When the screen shows them
+ * Then every text it writes lies on screen
+ */
+TEST_F(LargestLeaderboardFixture, AtTheLargestSizeEveryTextStaysOnScreen) {
+  std::vector<LeaderboardRow> rows;
+  for (std::uint32_t rank = 1; rank <= MAXIMUM_LEADERBOARD_ROWS; ++rank) {
+    rows.push_back(entryOf(rank, LONGEST_NICKNAME));
+  }
+  show(answeredPage(rows, entryOf(3, LONGEST_NICKNAME)));
+
+  for (const RecordedWriting& writing : canvas().writings) {
+    SCOPED_TRACE(writing.text);
+    const sf::IntRect box = writtenBoxOf(canvas(), writing);
+    EXPECT_EQ(box.findIntersection(INTERFACE_AREA), std::optional(box));
+  }
+}
+
+/**
+ * Given the same leaderboard
+ * When the screen shows the ten pilots
+ * Then each nickname it writes lies inside the panel
+ */
+TEST_F(LargestLeaderboardFixture, AtTheLargestSizeTheNamesStayInThePanel) {
+  show(
+      answeredPage({entryOf(1, LONGEST_NICKNAME), entryOf(2, LONGEST_NICKNAME),
+                    entryOf(3, LONGEST_NICKNAME), entryOf(4, LONGEST_NICKNAME)},
+                   entryOf(3, LONGEST_NICKNAME)));
+  const sf::IntRect panel = leaderboardFrameOf(LARGEST_TEXT).panel;
+
+  for (const RecordedWriting& writing : canvas().writings) {
+    if (writing.text == LONGEST_NICKNAME) {
+      const sf::IntRect box = writtenBoxOf(canvas(), writing);
+      EXPECT_EQ(box.findIntersection(panel), std::optional(box));
+    }
+  }
+}
+
+/**
+ * Given the leaderboard at the largest size, KIRA first of four pilots
+ * When Down is pressed
+ * Then the list scrolls by one: KIRA is no longer written
+ */
+TEST_F(LargestLeaderboardFixture, AtTheLargestSizeDownScrollsTheList) {
+  show(answeredPage({entryOf(1, "KIRA"), entryOf(2, "ACE"), entryOf(3, "ACE"),
+                     entryOf(4, "ACE")},
+                    std::nullopt));
+
+  tap(sf::Keyboard::Key::Down);
+  screen().update(ONE_FRAME);
+
+  EXPECT_EQ(writingOf(canvas(), "KIRA"), nullptr);
 }

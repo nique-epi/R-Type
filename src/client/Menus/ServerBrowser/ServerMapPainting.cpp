@@ -23,6 +23,8 @@
 #include "ServerCompatibility.hpp"
 #include "ServerListPhase.hpp"
 #include "ServerMapChoice.hpp"
+#include "ServerMapFrame.hpp"
+#include "ServerMapFrames.hpp"
 #include "ServerMapLook.hpp"
 #include "ServerMapScreenConstants.hpp"
 #include "ServerMapStage.hpp"
@@ -34,6 +36,7 @@
 #include "StarName.hpp"
 #include "TextStyle.hpp"
 #include "TooltipLine.hpp"
+#include "WrappedLines.hpp"
 
 namespace rtype::client {
 
@@ -56,21 +59,36 @@ std::string pingTextOf(const ServerRow& server) {
 }
 
 /** @returns @p bubble raised so its bottom stays inside the map, above the row
- * of the chips: a star low on the map would push it over them. */
+ * of the chips: a star low on the map would push it over them; and moved
+ * across, as little as it takes, so its sides stay inside the map, as a bubble
+ * grown with its text may not. */
 ServerTooltip keptInTheMap(ServerTooltip bubble) {
   const sf::IntRect area = tooltipAreaOf(bubble);
   const int lowestTop =
       SECTOR_MAP_AREA.position.y + SECTOR_MAP_AREA.size.y - area.size.y;
   bubble.topLeft.y = std::min(bubble.topLeft.y, lowestTop);
+  const int rightmostLeft =
+      SECTOR_MAP_AREA.position.x + SECTOR_MAP_AREA.size.x - area.size.x;
+  bubble.topLeft.x = std::max(SECTOR_MAP_AREA.position.x,
+                              std::min(bubble.topLeft.x, rightmostLeft));
   return bubble;
 }
 
-/** @returns The bubble of @p server standing at @p star: its pilots of the
+/** @brief Where a bubble stands: the star of its server, and the stage of the
+ * map, which says what ENTER does. */
+struct BubbleAt {
+  sf::Vector2i star;
+  ServerMapStage stage{};
+};
+
+/** @returns The bubble of @p server standing at the star of @p place, as wide
+ * as its lines need on @p canvas: its pilots of the
  * most it takes and its games, its ping
  * and version, a warning when it is slow or of another version, and what
  * ENTER does at @p stage. */
-ServerTooltip tooltipOf(const ServerRow& server, sf::Vector2i star,
-                        ServerMapStage stage) {
+ServerTooltip tooltipOf(const IInterfaceCanvas& canvas, const ServerRow& server,
+                        BubbleAt place) {
+  const sf::Vector2i star = place.star;
   std::vector<TooltipLine> lines{
       {.text = std::to_string(server.playerCount) + PILOTS_SEPARATOR +
                std::to_string(server.maximumPlayers) + PILOTS_AND_GAMES_JOIN +
@@ -83,17 +101,20 @@ ServerTooltip tooltipOf(const ServerRow& server, sf::Vector2i star,
   } else if (server.status == network::ServerStatus::Degraded) {
     lines.push_back({.text = SLOW_WARNING, .color = WARNING_ORANGE});
   }
-  lines.push_back({.text = stage == ServerMapStage::ZoomedOut ? ZOOM_IN_HINT
-                                                              : OPEN_GAMES_HINT,
+  lines.push_back({.text = place.stage == ServerMapStage::ZoomedOut
+                               ? ZOOM_IN_HINT
+                               : OPEN_GAMES_HINT,
                    .color = HUD_CYAN});
+  ServerTooltip bubble{.topLeft = {},
+                       .width = BUBBLE_WIDTH,
+                       .title = server.name,
+                       .lines = std::move(lines),
+                       .metrics = canvas.textMetrics()};
+  bubble.width = tooltipWidthFor(canvas, bubble);
   const bool onTheLeft = star.x > BUBBLE_FLIP_X;
-  const ServerTooltip bubble{
-      .topLeft = {onTheLeft ? star.x - BUBBLE_OFFSET.x - BUBBLE_WIDTH
-                            : star.x + BUBBLE_OFFSET.x,
-                  star.y + BUBBLE_OFFSET.y},
-      .width = BUBBLE_WIDTH,
-      .title = server.name,
-      .lines = std::move(lines)};
+  bubble.topLeft = {onTheLeft ? star.x - BUBBLE_OFFSET.x - bubble.width
+                              : star.x + BUBBLE_OFFSET.x,
+                    star.y + BUBBLE_OFFSET.y};
   return keptInTheMap(bubble);
 }
 
@@ -154,7 +175,8 @@ void paintNamesAndBubble(IInterfaceCanvas& canvas,
   std::optional<ServerTooltip> bubble;
   if (chosen.has_value() && chosenShown) {
     const sf::Vector2i star = placeOf(bearingOf(*chosen), choice.view());
-    bubble = tooltipOf(*chosen, star, choice.stage());
+    bubble = tooltipOf(canvas, *chosen,
+                       BubbleAt{.star = star, .stage = choice.stage()});
     keepOut.push_back(tooltipAreaOf(*bubble));
     paintChosenStar(canvas, star);
   }
@@ -198,12 +220,18 @@ void paintServerMapHeader(IInterfaceCanvas& canvas, std::size_t serverCount) {
       SERVER_MAP_TITLE, SERVER_MAP_TITLE_ANCHOR,
       TextStyle{
           .font = TextFont::Regular, .color = HUD_CYAN, .outlined = true});
-  canvas.write(
+  const std::string subtitle =
       (serverCount == 1 ? std::string{ONE_SERVER_TEXT}
                         : std::to_string(serverCount) + SERVER_COUNT_SUFFIX) +
-          SERVER_MAP_HINT,
-      SERVER_MAP_SUBTITLE_ANCHOR,
-      TextStyle{.font = TextFont::Small, .color = PALE_BLUE, .outlined = true});
+      SERVER_MAP_HINT;
+  const TextStyle style{
+      .font = TextFont::Small, .color = PALE_BLUE, .outlined = true};
+  const ServerMapFrame frame = serverMapFrameOf(canvas.textMetrics());
+  writeWrappedLines(
+      canvas, subtitle,
+      {.anchor = {SERVER_MAP_SUBTITLE_ANCHOR.x, frame.subtitleTop},
+       .width = frame.subtitleWidth,
+       .style = style});
 }
 
 void paintServerMapMessage(IInterfaceCanvas& canvas, ServerListPhase phase) {

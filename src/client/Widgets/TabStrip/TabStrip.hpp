@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 #include "IInterfaceCanvas.hpp"
+#include "TextMetrics.hpp"
 #include "WidgetConstants.hpp"
 
 namespace rtype::client {
@@ -41,6 +42,12 @@ class TabStrip {
    * narrower than the safe margin. */
   void setWidth(int width);
 
+  /** @brief Sets the text size the strip is laid out at, as the fonts are
+   * drawn until then: its tabs and keycaps grow with it, and when the tabs
+   * no longer fit side by side each is as wide as its label and the strip
+   * shows those up to the open one. */
+  void setTextSize(TextMetrics metrics);
+
   void paint(IInterfaceCanvas& canvas) const;
 
   /** @returns The tab a click at a pixel opens: the tab under it, the
@@ -54,7 +61,9 @@ class TabStrip {
   [[nodiscard]] std::size_t nextTab() const;
 
  private:
-  [[nodiscard]] sf::IntRect tabArea(std::size_t tab) const;
+  /** @returns Where a tab lies, or nothing when the strip does not show it.
+   */
+  [[nodiscard]] std::optional<sf::IntRect> tabArea(std::size_t tab) const;
   [[nodiscard]] sf::IntRect previousKeyArea() const;
   [[nodiscard]] sf::IntRect nextKeyArea() const;
   void paintTab(IInterfaceCanvas& canvas, std::size_t tab) const;
@@ -64,6 +73,7 @@ class TabStrip {
   KeyNames keys_;
   sf::Vector2i topLeft_;
   int width_ = TAB_STRIP_WIDTH;
+  TextMetrics metrics_{};
 };
 
 }  // namespace rtype::client

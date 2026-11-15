@@ -6,6 +6,7 @@
 #include "BarState.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "RowControl.hpp"
+#include "TextMetrics.hpp"
 #include "ValueBinding.hpp"
 
 namespace rtype::client {
@@ -19,7 +20,7 @@ class Switch : public RowControl {
  public:
   explicit Switch(ValueBinding<bool> value);
 
-  [[nodiscard]] int width() const override;
+  [[nodiscard]] int width(TextMetrics metrics) const override;
   void paint(IInterfaceCanvas& canvas, sf::IntRect area,
              BarState row) const override;
   bool keyPressed(const sf::Event::KeyPressed& key) override;

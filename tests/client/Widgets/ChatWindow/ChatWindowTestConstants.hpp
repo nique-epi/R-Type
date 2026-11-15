@@ -14,6 +14,11 @@ constexpr sf::Keyboard::Scancode CHAT_KEY = sf::Keyboard::Scan::T;
 constexpr char32_t CHAT_KEY_LETTER = U't';
 constexpr int CHAT_TEST_BOTTOM = 246;
 
+/** @brief The letters a line of the chat holds at the largest text size:
+ * 480 less two margins of 24, the padding of the field, 4 on each side, and
+ * its caret, 1, leaves 423 pixels, 26 letters of 16. */
+constexpr int LETTERS_AT_THE_LARGEST_SIZE = 26;
+
 /** @brief A pilot who writes, and what the tests make it write. */
 constexpr std::uint8_t NOVA_NUMBER = 2;
 constexpr std::string_view NOVA = "NOVA";

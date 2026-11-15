@@ -1,11 +1,14 @@
 #include "OptionsRows.hpp"
 #include <SFML/Window/Keyboard.hpp>
+#include <algorithm>
 #include <cstddef>
 #include <memory>
 #include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 #include "BoundAction.hpp"
+#include "ChoiceList.hpp"
 #include "ChoiceSelector.hpp"
 #include "ColorMode.hpp"
 #include "Dropdown.hpp"
@@ -24,6 +27,7 @@
 #include "Slider.hpp"
 #include "SliderLook.hpp"
 #include "Switch.hpp"
+#include "TextSize.hpp"
 #include "ValueBinding.hpp"
 #include "WindowConstants.hpp"
 #include "WindowLayout.hpp"
@@ -32,6 +36,27 @@
 namespace rtype::client {
 
 namespace {
+
+/** @returns A row that cycles through @p choices, showing the value of
+ * @p setting and changing it through @p service. */
+template <typename Value>
+std::unique_ptr<RowControl> choiceSelectorOf(SettingsService& service,
+                                             const Setting<Value>& setting,
+                                             ChoiceList<Value> choices) {
+  return std::make_unique<ChoiceSelector>(
+      std::move(choices.texts),
+      ValueBinding<std::size_t>{
+          .read =
+              [&service, setting, values = choices.values] {
+                const Value current = service.settings().*setting.member;
+                return static_cast<std::size_t>(
+                    std::ranges::find(values, current) - values.begin());
+              },
+          .write =
+              [&service, setting, values = choices.values](std::size_t index) {
+                service.apply(setting, values[index]);
+              }});
+}
 
 /** @returns The texts of the sizes of WINDOW_SIZES, in their order. */
 std::vector<std::string> windowSizeTexts() {
@@ -107,17 +132,17 @@ std::unique_ptr<RowControl> settingSlider(SettingsService& service,
 }
 
 std::unique_ptr<RowControl> colorModeSelector(SettingsService& service) {
-  return std::make_unique<ChoiceSelector>(
-      textsOf(COLOR_MODE_LABELS),
-      ValueBinding<std::size_t>{
-          .read =
-              [&service] {
-                return static_cast<std::size_t>(service.settings().colorMode);
-              },
-          .write =
-              [&service](std::size_t mode) {
-                service.apply(COLOR_MODE_SETTING, COLOR_MODES[mode]);
-              }});
+  return choiceSelectorOf(
+      service, COLOR_MODE_SETTING,
+      ChoiceList<ColorMode>{.values = COLOR_MODES,
+                            .texts = textsOf(COLOR_MODE_LABELS)});
+}
+
+std::unique_ptr<RowControl> textSizeSelector(SettingsService& service) {
+  return choiceSelectorOf(
+      service, TEXT_SIZE_SETTING,
+      ChoiceList<TextSize>{.values = TEXT_SIZES,
+                           .texts = textsOf(TEXT_SIZE_LABELS)});
 }
 
 std::unique_ptr<KeySlot> keySlot(SettingsService& service,

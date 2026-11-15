@@ -59,7 +59,8 @@ std::unique_ptr<IScreen> ConnectionLostInTheStackFixture::build(
     ScreenId screen) {
   if (screen == CONNECTION_LOST_SCREEN) {
     return std::make_unique<DialogScreen>(
-        connectionLostMenu(screens_, sounds_, ConnectionPhase::Lost),
+        connectionLostMenu({.navigator = screens_, .sounds = sounds_},
+                           ConnectionPhase::Lost),
         samePlayfieldPoint,
         std::make_unique<RecordingInterfaceCanvas>(dialogCanvas_));
   }

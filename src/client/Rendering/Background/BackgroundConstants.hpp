@@ -32,6 +32,15 @@ constexpr sf::Vector2u BACKGROUND_SIZE(
     static_cast<unsigned int>(BACKGROUND_HEIGHT));
 
 /**
+ * @brief How many pixels of its texture a PixelCanvas gives one of its own
+ * pixels on each axis: one as the background is drawn, CRISP_TEXT_DENSITY for
+ * the pictures that write text, so a font pixel drawn half again as large still
+ * lands on whole pixels of the texture.
+ */
+constexpr unsigned int NATIVE_DENSITY = 1;
+constexpr unsigned int CRISP_TEXT_DENSITY = 2;
+
+/**
  * @brief Columns a plane of the sky keeps beyond each side of the background,
  * so a plane shifted by less than a pixel either way still covers it.
  */

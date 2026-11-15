@@ -9,6 +9,7 @@
 #include "BarState.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "RowControl.hpp"
+#include "TextMetrics.hpp"
 #include "ValueBinding.hpp"
 
 namespace rtype::client {
@@ -29,7 +30,7 @@ class ChoiceSelector : public RowControl {
   ChoiceSelector(std::vector<std::string> choices,
                  ValueBinding<std::size_t> value);
 
-  [[nodiscard]] int width() const override;
+  [[nodiscard]] int width(TextMetrics metrics) const override;
   void paint(IInterfaceCanvas& canvas, sf::IntRect area,
              BarState row) const override;
   bool keyPressed(const sf::Event::KeyPressed& key) override;
@@ -38,7 +39,7 @@ class ChoiceSelector : public RowControl {
   bool pointerPressed(sf::Vector2i pixel, sf::IntRect area) override;
 
  private:
-  [[nodiscard]] int boxWidth() const;
+  [[nodiscard]] int boxWidth(TextMetrics metrics) const;
   [[nodiscard]] sf::IntRect boxArea(sf::IntRect area) const;
 
   std::vector<std::string> choices_;

@@ -15,6 +15,7 @@
 #include "MenuBuilder.hpp"
 #include "PlayfieldMapping.hpp"
 #include "RowControl.hpp"
+#include "TextMetrics.hpp"
 #include "TimeConstants.hpp"
 #include "ValueBinding.hpp"
 #include "WidgetConstants.hpp"
@@ -40,10 +41,11 @@ LeaderboardFilterDialog::LeaderboardFilterDialog(ISoundPlayer& sounds)
 
 void LeaderboardFilterDialog::open(
     LeaderboardFilterChoice choice,
-    const std::function<void(LeaderboardFilterChoice)>& apply) {
+    const std::function<void(LeaderboardFilterChoice)>& apply,
+    TextMetrics metrics) {
   draft_ = choice;
   dialog_ =
-      MenuBuilder(MenuBuilder::Frame::Dialog, sounds_)
+      MenuBuilder(MenuBuilder::Frame::Dialog, sounds_, metrics)
           .heading(FILTER_LABEL)
           .row({.label = DIFFICULTY_ROW_LABEL},
                selectorOver(LEADERBOARD_DIFFICULTY_LABELS, draft_.difficulty))

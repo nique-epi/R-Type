@@ -194,7 +194,8 @@ bool ConnectionScreen::hidesScreensBelow() const { return true; }
 Menu ConnectionScreen::buildMenu(ISoundPlayer& sounds,
                                  const network::Endpoint& shown) {
   const std::function<void()> connectAction = [this] { connect(); };
-  MenuBuilder builder(MenuBuilder::Frame::Form, &sounds);
+  MenuBuilder builder(MenuBuilder::Frame::Form, &sounds,
+                      canvas_->textMetrics());
   builder.heading(asksServer(start_) ? CONNECTION_HEADING
                                      : JOIN_SERVER_HEADING);
   if (asksServer(start_)) {

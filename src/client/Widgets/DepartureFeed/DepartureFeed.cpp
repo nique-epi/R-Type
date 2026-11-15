@@ -20,10 +20,10 @@
 #include "PilotStatus.hpp"
 #include "PlayerPalette.hpp"
 #include "StatusBandConstants.hpp"
+#include "TextMeasures.hpp"
 #include "TextStyle.hpp"
 #include "TextureArea.hpp"
 #include "TimeConstants.hpp"
-#include "Typing.hpp"
 
 namespace rtype::client {
 
@@ -67,25 +67,46 @@ void paintIcon(IInterfaceCanvas& canvas, PilotState state,
                          DEPARTURE_WORD_COLOR);
 }
 
-/** @brief Paints one line: the icon, the name, then the words. */
-void paintLine(IInterfaceCanvas& canvas, const DepartureLine& line,
-               const LinePlace& place) {
+/** @returns Where the words of a line go: after the name, or under it when
+ * they would pass DEPARTURE_FEED_RIGHT, as a whole name at a larger text size
+ * makes them. */
+sf::Vector2i wordsTopLeftOf(const IInterfaceCanvas& canvas,
+                            const DepartureLine& line,
+                            sf::Vector2i nameTopLeft) {
+  const sf::Vector2i after =
+      nameTopLeft +
+      sf::Vector2i(
+          canvas.textWidth(line.name, TextFont::Regular) + DEPARTURE_WORD_GAP,
+          0);
+  if (after.x +
+          canvas.textWidth(departureWordsOf(line.state), TextFont::Small) <=
+      DEPARTURE_FEED_RIGHT) {
+    return after;
+  }
+  return {nameTopLeft.x, nameTopLeft.y + lineHeightOf(canvas.textMetrics()) +
+                             DEPARTURE_LINE_GAP};
+}
+
+/** @brief Paints one line: the icon, the whole name, then the words.
+ * @returns How tall the line is: DEPARTURE_LINE_HEIGHT, or more when its
+ * text is taller or its words go under the name. */
+int paintLine(IInterfaceCanvas& canvas, const DepartureLine& line,
+              const LinePlace& place) {
   paintIcon(canvas, line.state, place.topLeft);
   const sf::Vector2i nameTopLeft =
       place.topLeft + sf::Vector2i(DEPARTURE_ICON_COLUMN + DEPARTURE_PIECE_GAP,
                                    DEPARTURE_TEXT_DROP);
-  const std::string_view name = typedPrefix(line.name, DEPARTURE_NAME_LETTERS);
   canvas.write(
-      name, nameTopLeft,
+      line.name, nameTopLeft,
       {.font = TextFont::Regular, .color = place.nameColor, .outlined = true});
-  canvas.write(
-      departureWordsOf(line.state),
-      nameTopLeft + sf::Vector2i(canvas.textWidth(name, TextFont::Regular) +
-                                     DEPARTURE_WORD_GAP,
-                                 0),
-      {.font = TextFont::Small,
-       .color = DEPARTURE_WORD_COLOR,
-       .outlined = true});
+  const sf::Vector2i wordsTopLeft = wordsTopLeftOf(canvas, line, nameTopLeft);
+  canvas.write(departureWordsOf(line.state), wordsTopLeft,
+               {.font = TextFont::Small,
+                .color = DEPARTURE_WORD_COLOR,
+                .outlined = true});
+  return std::max(
+      DEPARTURE_LINE_HEIGHT,
+      wordsTopLeft.y + lineHeightOf(canvas.textMetrics()) - place.topLeft.y);
 }
 
 }  // namespace
@@ -120,9 +141,10 @@ void DepartureFeed::paint(IInterfaceCanvas& canvas,
   for (const DepartureLine& line : lines_) {
     const auto color =
         static_cast<std::size_t>(pilotColorOfPlayerNumber(line.playerNumber));
-    paintLine(canvas, line,
-              {.topLeft = topLeft, .nameColor = palette.at(color).light});
-    topLeft.y += DEPARTURE_LINE_HEIGHT + DEPARTURE_LINE_GAP;
+    topLeft.y +=
+        paintLine(canvas, line,
+                  {.topLeft = topLeft, .nameColor = palette.at(color).light}) +
+        DEPARTURE_LINE_GAP;
   }
 }
 

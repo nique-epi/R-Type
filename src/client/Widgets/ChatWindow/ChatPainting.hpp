@@ -17,6 +17,11 @@ namespace rtype::client {
  */
 void paintChat(IInterfaceCanvas& canvas, const ChatView& view);
 
+/** @returns How many letters a line of the chat holds with @p settings: the
+ * letters the player chose, or fewer when that many would not fit between
+ * the margins at the text size of the settings. */
+[[nodiscard]] int chatLettersOf(const PlayerSettings& settings);
+
 /** @returns How many lines @p entries take at @p letters letters a line. */
 [[nodiscard]] int chatLineCount(std::span<const ChatEntry> entries,
                                 int letters);

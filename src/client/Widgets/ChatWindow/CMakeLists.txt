@@ -16,6 +16,7 @@ target_link_libraries(rtype_client_chat_window
     rtype_client_pilot_color
     rtype_client_pilot_name
     rtype_client_sunk_box
+    rtype_client_text_measures
     rtype_client_typing
     rtype_client_widget_text
     rtype_network_protocol

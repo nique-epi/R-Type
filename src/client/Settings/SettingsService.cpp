@@ -93,6 +93,8 @@ template bool SettingsService::apply<int>(const Setting<int>&, const int&);
 template bool SettingsService::apply<bool>(const Setting<bool>&, const bool&);
 template bool SettingsService::apply<ColorMode>(const Setting<ColorMode>&,
                                                 const ColorMode&);
+template bool SettingsService::apply<TextSize>(const Setting<TextSize>&,
+                                               const TextSize&);
 template bool SettingsService::apply<DisplayMode>(const Setting<DisplayMode>&,
                                                   const DisplayMode&);
 template bool SettingsService::apply<std::optional<PixelSize>>(

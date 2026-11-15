@@ -12,6 +12,7 @@ target_link_libraries(rtype_client_sector_map_painting
     rtype_client_outline
     rtype_client_ringed_planet
     rtype_client_sector_layout
+    rtype_client_text_measures
 )
 
 rtype_enable_warnings(rtype_client_sector_map_painting)

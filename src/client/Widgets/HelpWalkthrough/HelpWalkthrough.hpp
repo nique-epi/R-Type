@@ -86,9 +86,9 @@ class HelpWalkthrough {
   [[nodiscard]] engine::Duration shownTime() const;
 
   ISoundPlayer* sounds_{};
-  /** @brief The lines of every step, its keys named when the help was
-   * built. */
-  std::array<std::vector<std::vector<HelpWord>>, HELP_STEPS.size()> stepLines_;
+  /** @brief The words of every step, its keys named when the help was
+   * built; each painting cuts them into lines at its text size. */
+  std::array<std::vector<HelpWord>, HELP_STEPS.size()> stepWords_;
   std::reference_wrapper<const PlayerPalette> palette_;
   MotionPreference motion_{};
   sf::IntRect chipArea_;
