@@ -212,6 +212,8 @@ Settings of `bricks`: `cell` (size of a cell), `span` (cells per block), `bond` 
 
 A template with `"sky": true` has no ceiling: the ceiling of a neighboring zone ends in three steps, nothing hangs, piers become spires. The heroes `waterfall` and `light_well` need a ceiling; a `colonnade` under an open sky must give its `height`.
 
+A template with `"entrance": {"mouth": 120}` opens a map as the entrance of a cave: left of its mouth, at x = 120 here, the play plane is cut along a ragged rock edge and draws nothing, so the game shows the open space the team flies in from, and its walls end there too. The far and second planes keep their pixels: the client shows them only right of the mouth. An entrance is never drawn into a chain: it only opens a map whose chain `--sequence` forces, as its first template, never mirrored; anywhere else the command stops. The project of the Pit opens its first map with `cave_mouth`.
+
 ## Creating a biome
 
 1. Write a starting biome. It runs at once: a palette, one material that builds its own props by rule, two templates, no sprite. `--layout field` starts a biome of open space instead of a corridor.

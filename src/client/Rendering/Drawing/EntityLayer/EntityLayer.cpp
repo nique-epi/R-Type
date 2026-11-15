@@ -25,12 +25,12 @@ void EntityLayer::paint(engine::ComponentRegistry& components,
                         sf::Vector2i offset) {
   sf::RenderTexture& canvas = canvas_.canvas();
   canvas.clear(sf::Color::Transparent);
-  canvas.setView(shiftedBy(canvas_.pixelView(), offset));
+  canvas.setView(shiftedBy(PixelCanvas::pixelView(), offset));
   groundPixels_.clear();
   paintGroundEffects(components, groundPixels_);
   canvas.draw(groundPixels_);
   renderSystem_.render(components, surface_);
-  canvas.setView(canvas_.pixelView());
+  canvas.setView(PixelCanvas::pixelView());
   canvas.display();
 }
 

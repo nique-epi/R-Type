@@ -11,7 +11,7 @@ constexpr network::BossStatus ARRIVING_BOSS_STATUS{
 
 /** @brief The level a status of the server tells: its biome, how far it
  * scrolled and how fast it scrolls. */
-constexpr std::string_view STATUS_BIOME = "drift_fields";
+constexpr std::string_view STATUS_BIOME = "fosse";
 constexpr float STATUS_SCROLL_POSITION = 240.0F;
 constexpr float STATUS_SCROLL_SPEED = 120.0F;
 

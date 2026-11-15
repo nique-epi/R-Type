@@ -61,6 +61,11 @@ RenderTextureNotCreatedException::RenderTextureNotCreatedException(
     : ClientException("A render texture could not be created, size " +
                       std::to_string(width) + " x " + std::to_string(height)) {}
 
+BiomeMapException::BiomeMapException(std::string_view project,
+                                     std::string_view reason)
+    : ClientException("cannot read the maps of a biome in " +
+                      std::string(project) + ": " + std::string(reason)) {}
+
 DuplicateScreenException::DuplicateScreenException(std::string_view screenName)
     : ClientException("Two modules registered the screen \"" +
                       std::string(screenName) + "\"") {}

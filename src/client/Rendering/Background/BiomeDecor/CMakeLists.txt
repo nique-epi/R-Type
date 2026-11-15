@@ -5,6 +5,12 @@ target_include_directories(rtype_client_biome_decor PUBLIC ${CMAKE_CURRENT_SOURC
 target_link_libraries(rtype_client_biome_decor
   PUBLIC
     rtype_client_background
+    rtype_client_biome_map
+    rtype_client_seam_cover
+    rtype_logging
+  PRIVATE
+    rtype_client_exceptions
+    rtype_client_pixel_rounding
 )
 
 rtype_enable_warnings(rtype_client_biome_decor)

@@ -2,18 +2,22 @@
 #include <gtest/gtest.h>
 #include <array>
 #include <filesystem>
+#include <string>
 #include <vector>
 #include "BehaviourScriptFiles.hpp"
 #include "BehaviourScripts.hpp"
 #include "BehaviourScriptsFixtures.hpp"
 #include "EngineException.hpp"
 #include "LuauLevelConstants.hpp"
+#include "LuauLevelEntry.hpp"
 #include "LuauLevelsTestConstants.hpp"
 
 using rtype::engine::ScriptException;
 using rtype::game::BehaviourScripts;
+using rtype::game::LuauLevelEntry;
 using ::testing::ElementsAre;
 using ::testing::HasSubstr;
+using ::testing::IsEmpty;
 using ::testing::ThrowsMessage;
 
 /**
@@ -27,9 +31,9 @@ TEST(LuauLevels, KeepsTheStagesOfARegisteredLevel) {
 
   scripts.run(scriptsOf(REGISTERS_TWO_LEVELS));
 
-  const std::vector<int>* const stages = scripts.levels().stagesOf(CAVES_LEVEL);
-  ASSERT_NE(stages, nullptr);
-  EXPECT_EQ(stages->size(), STAGES_OF_CAVES);
+  const LuauLevelEntry* const entry = scripts.levels().entryOf(CAVES_LEVEL);
+  ASSERT_NE(entry, nullptr);
+  EXPECT_EQ(entry->stages.size(), STAGES_OF_CAVES);
 }
 
 /**
@@ -46,10 +50,9 @@ TEST(LuauLevels, ReadsTheLevelTheRepositoryShips) {
 
   scripts.run(rtype::game::scriptSourcesIn(folders));
 
-  const std::vector<int>* const stages =
-      scripts.levels().stagesOf(SHIPPED_LEVEL);
-  ASSERT_NE(stages, nullptr);
-  EXPECT_EQ(stages->size(), STAGES_OF_THE_SHIPPED_LEVEL);
+  const LuauLevelEntry* const entry = scripts.levels().entryOf(SHIPPED_LEVEL);
+  ASSERT_NE(entry, nullptr);
+  EXPECT_EQ(entry->stages.size(), STAGES_OF_THE_SHIPPED_LEVEL);
 }
 
 /**
@@ -76,7 +79,7 @@ TEST(LuauLevels, KnowsNoLevelNoScriptRegistered) {
   BehaviourScripts scripts{reportInto(log)};
   scripts.run(scriptsOf(REGISTERS_TWO_LEVELS));
 
-  EXPECT_EQ(scripts.levels().stagesOf(UNKNOWN_LEVEL), nullptr);
+  EXPECT_EQ(scripts.levels().entryOf(UNKNOWN_LEVEL), nullptr);
 }
 
 /**
@@ -174,6 +177,144 @@ TEST(LuauLevels, RefusesToCountTheEnemiesOutsideAGame) {
   BehaviourScripts scripts{reportInto(log)};
 
   EXPECT_THAT([&] { scripts.run(scriptsOf(COUNTS_THE_ENEMIES_WHILE_READ)); },
+              ThrowsMessage<ScriptException>(
+                  HasSubstr(rtype::game::NO_LEVEL_PLAYED_MESSAGE)));
+}
+
+/**
+ * Given a script that registers a level with the option ldtk
+ * When the entry of that level is asked for
+ * Then it names that file
+ */
+TEST(LuauLevels, KeepsTheLdtkFileOfALevel) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+
+  scripts.run(scriptsOf(REGISTERS_A_LEVEL_WITH_AN_LDTK_FILE));
+
+  const LuauLevelEntry* const entry = scripts.levels().entryOf(CAVES_LEVEL);
+  ASSERT_NE(entry, nullptr);
+  EXPECT_EQ(entry->ldtkFile.value_or(std::string{}), CAVES_LDTK_FILE);
+}
+
+/**
+ * Given a script that registers a level without options
+ * When the entry of that level is asked for
+ * Then it names no LDtk file and places no enemy
+ */
+TEST(LuauLevels, ALevelWithoutOptionsHasNoLdtkFile) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+
+  scripts.run(scriptsOf(REGISTERS_TWO_LEVELS));
+
+  const LuauLevelEntry* const entry = scripts.levels().entryOf(CAVES_LEVEL);
+  ASSERT_NE(entry, nullptr);
+  EXPECT_FALSE(entry->ldtkFile.has_value());
+  EXPECT_THAT(entry->placements, IsEmpty());
+}
+
+/**
+ * Given the scripts of the resource training-run the repository ships
+ * When they run
+ * Then the level training_run names its LDtk file
+ */
+TEST(LuauLevels, TheShippedLevelNamesItsLdtkFile) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+  const std::array folders{
+      std::filesystem::path{RTYPE_SOURCE_RESOURCES_FOLDER} /
+      SHIPPED_LEVEL_RESOURCE};
+
+  scripts.run(rtype::game::scriptSourcesIn(folders));
+
+  const LuauLevelEntry* const entry = scripts.levels().entryOf(SHIPPED_LEVEL);
+  ASSERT_NE(entry, nullptr);
+  EXPECT_EQ(entry->ldtkFile.value_or(std::string{}), SHIPPED_LEVEL_LDTK_FILE);
+}
+
+/**
+ * Given a script whose LDtk file leaves its content folder with `..`
+ * When it runs
+ * Then it fails, saying what the option is
+ */
+TEST(LuauLevels, RefusesAnLdtkFileThatLeavesTheContent) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+
+  EXPECT_THAT(
+      [&] { scripts.run(scriptsOf(REGISTERS_AN_LDTK_FILE_ABOVE_THE_CONTENT)); },
+      ThrowsMessage<ScriptException>(
+          HasSubstr(rtype::game::WRONG_LDTK_FILE_MESSAGE)));
+}
+
+/**
+ * Given a script whose LDtk file is an absolute path
+ * When it runs
+ * Then it fails, saying what the option is
+ */
+TEST(LuauLevels, RefusesAnAbsoluteLdtkFile) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+
+  EXPECT_THAT([&] { scripts.run(scriptsOf(REGISTERS_AN_ABSOLUTE_LDTK_FILE)); },
+              ThrowsMessage<ScriptException>(
+                  HasSubstr(rtype::game::WRONG_LDTK_FILE_MESSAGE)));
+}
+
+/**
+ * Given a script whose LDtk option is a number
+ * When it runs
+ * Then it fails, saying what the option is
+ */
+TEST(LuauLevels, RefusesAnLdtkFileThatIsNoText) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+
+  EXPECT_THAT(
+      [&] { scripts.run(scriptsOf(REGISTERS_AN_LDTK_FILE_THAT_IS_NO_TEXT)); },
+      ThrowsMessage<ScriptException>(
+          HasSubstr(rtype::game::WRONG_LDTK_FILE_MESSAGE)));
+}
+
+/**
+ * Given a script that registers a level with an option no level has
+ * When it runs
+ * Then it fails, saying which options a level has
+ */
+TEST(LuauLevels, RefusesAnUnknownOption) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+
+  EXPECT_THAT([&] { scripts.run(scriptsOf(REGISTERS_AN_UNKNOWN_OPTION)); },
+              ThrowsMessage<ScriptException>(
+                  HasSubstr(rtype::game::WRONG_LEVEL_OPTIONS_MESSAGE)));
+}
+
+/**
+ * Given a script that reads the placements while it is first read
+ * When it runs
+ * Then it fails, saying the level is only reached during a game
+ */
+TEST(LuauLevels, RefusesToReadThePlacementsOutsideAGame) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+
+  EXPECT_THAT([&] { scripts.run(scriptsOf(READS_THE_PLACEMENTS_WHILE_READ)); },
+              ThrowsMessage<ScriptException>(
+                  HasSubstr(rtype::game::NO_LEVEL_PLAYED_MESSAGE)));
+}
+
+/**
+ * Given a script that asks for the placed enemies while it is first read
+ * When it runs
+ * Then it fails, saying the level is only reached during a game
+ */
+TEST(LuauLevels, RefusesToSpawnThePlacedOutsideAGame) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+
+  EXPECT_THAT([&] { scripts.run(scriptsOf(SPAWNS_THE_PLACED_WHILE_READ)); },
               ThrowsMessage<ScriptException>(
                   HasSubstr(rtype::game::NO_LEVEL_PLAYED_MESSAGE)));
 }

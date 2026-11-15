@@ -7,6 +7,7 @@ target_link_libraries(rtype_client_pixel_shapes
     rtype_client_background
     SFML::Graphics
   PRIVATE
+    rtype_client_dither
     rtype_client_rendering_interfaces
 )
 

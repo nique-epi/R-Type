@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <random>
 #include <vector>
@@ -8,6 +9,7 @@
 #include "PlanetImage.hpp"
 #include "SkyEventScheduler.hpp"
 #include "Star.hpp"
+#include "StarPlane.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -21,7 +23,8 @@ namespace rtype::client {
  * height, so the sky never shows a seam.
  *
  * The stars move setSpeedFactor() times their own speed, 1 until set; above
- * STREAK_SPEED_FACTOR, each is drawn with its streak behind it.
+ * STREAK_SPEED_FACTOR, each is drawn with its streak behind it. Each plane
+ * of STAR_PLANES is painted apart, see paint().
  */
 class Starfield {
  public:
@@ -39,38 +42,52 @@ class Starfield {
   void setSpeedFactor(float factor);
 
   /**
-   * @brief Paints the sky back to front: far stars, the planet, middle and
-   * near stars, then sky events.
+   * @brief Paints one plane of the sky: the stars of its depth, or the planet;
+   * the near plane holds the sky events too.
+   *
+   * A slow plane is painted on whole pixels, shiftOf() left of where it lies,
+   * so it can be shown that much further right.
    */
-  void paint(IPixelSurface& surface) const;
+  void paint(StarPlane plane, IPixelSurface& surface) const;
+
+  /**
+   * @returns How far right of the pixels paint() uses the plane lies, from 0
+   * included to 1 excluded; 0 for the near plane, which keeps the grid of the
+   * playfield.
+   */
+  [[nodiscard]] float shiftOf(StarPlane plane) const;
 
   /**
    * @returns The stars: far ones first, then middle ones, then near ones.
-   * Moving never changes that order, which paint() relies on to slip the
-   * planet in after the far stars.
+   * Moving never changes that order, which paint() relies on to find the
+   * stars of a plane.
    */
   [[nodiscard]] const std::vector<Star>& stars() const;
+
+  /** @returns Where @p star lies, in background pixels: its column, and the
+   * shift of its layer right of it. */
+  [[nodiscard]] float positionOf(const Star& star) const;
 
   /** @returns Column of the left edge of the planet image. */
   [[nodiscard]] float planetLeft() const;
 
  private:
-  void moveStar(Star& star, float seconds);
+  /**
+   * @brief Moves the stars of @p layer @p distance pixels left: the shift of
+   * the layer moves, and each star by the whole columns it passed.
+   */
+  void moveLayer(const StarLayer& layer, float distance);
   void paintPlanet(IPixelSurface& surface) const;
-  static void paintStar(const Star& star, std::int64_t twinkleStep,
-                        IPixelSurface& surface);
 
-  /** @brief Paints a star, after its streak when it moves fast enough. */
-  void paintMovingStar(const Star& star, std::int64_t twinkleStep,
-                       IPixelSurface& surface) const;
-
-  /** @brief Paints, behind a star, the pixels it covers in one
-   * SIMULATION_TICK_DURATION at that speed factor. */
-  static void paintStreak(const Star& star, float speedFactor,
-                          IPixelSurface& surface);
+  /** @brief Paints the stars at @p depth on their columns, each after its
+   * streak when they move fast enough. */
+  void paintStarsAt(StarDepth depth, IPixelSurface& surface) const;
 
   std::mt19937 random_;
   std::vector<Star> stars_;
+  /** How far right of its column each star of a layer lies; the near stars
+   * are painted on their columns all the same, see shiftOf(). */
+  std::array<float, STAR_LAYERS.size()> layerShifts_{};
   PlanetImage planetImage_;
   float planetLeft_ = BACKGROUND_WIDTH * PLANET_START_SHARE_OF_WIDTH;
   engine::Duration elapsed_{};
