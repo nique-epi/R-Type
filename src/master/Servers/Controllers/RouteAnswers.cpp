@@ -22,11 +22,11 @@ network::ApiResponse refusal(int status, std::string_view detail) {
       .status = status, .body = {}, .detail = std::string{detail}};
 }
 
-network::ApiResponse unauthorizedResponse() {
+network::ApiResponse unauthorizedResponse(std::string_view detail) {
   return network::ApiResponse{
       .status = UNAUTHORIZED_STATUS,
       .body = {},
-      .detail = std::string{UNKNOWN_KEY_DETAIL},
+      .detail = std::string{detail},
       .header =
           network::HttpHeader{.name = std::string{WWW_AUTHENTICATE_HEADER},
                               .value = std::string{network::BEARER_SCHEME}}};
