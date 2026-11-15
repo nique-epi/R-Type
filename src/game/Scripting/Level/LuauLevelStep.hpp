@@ -1,6 +1,7 @@
 #pragma once
 
 #include <optional>
+#include "LuauLevelEntry.hpp"
 #include "LuauLevelWait.hpp"
 
 struct lua_State;
@@ -18,13 +19,14 @@ struct LevelProgress;
 
 /** @brief What the functions of `level` know of the game and of the step in
  * progress: the progress of the level the game plays, the components of its
- * world and the bosses it brings in, nullptr outside such a game, the thread
- * of the stage that steps, nullptr when none does, and the wait that stage
- * asked for. */
+ * world, the bosses it brings in and what the scripts registered as that
+ * level, nullptr outside such a game, the thread of the stage that steps,
+ * nullptr when none does, and the wait that stage asked for. */
 struct LuauLevelStep {
   LevelProgress* progress{nullptr};
   engine::ComponentRegistry* components{nullptr};
   ILevelBosses* bosses{nullptr};
+  const LuauLevelEntry* entry{nullptr};
   lua_State* resumedThread{nullptr};
   std::optional<LuauLevelWait> wait = std::nullopt;
 };

@@ -4,27 +4,33 @@
 #include <memory>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 #include "BehaviourScripts.hpp"
 #include "Boss.hpp"
 #include "BossEntranceParts.hpp"
 #include "Entity.hpp"
 #include "EntityDestruction.hpp"
+#include "LdtkPlacement.hpp"
+#include "LdtkPlacementFixtures.hpp"
+#include "LdtkPlacementTestConstants.hpp"
 #include "LevelChange.hpp"
 #include "LevelDirector.hpp"
 #include "LevelDirectorParts.hpp"
 #include "LevelDirectorTestConstants.hpp"
+#include "LuauLevelEntry.hpp"
 #include "NetworkIdentity.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PercentConstants.hpp"
 #include "Position.hpp"
+#include "RecordingEntityOrders.hpp"
 #include "ScriptSource.hpp"
 #include "ShippedEntitySheets.hpp"
 
 namespace rtype::server::testing {
 
 LevelDirectorFixture::LevelDirectorFixture()
-    : scripts_([](const std::string&) {}) {
+    : scripts_([](const std::string&) {}), orders_(PLACED_ENEMY_ID) {
   static_cast<void>(events_.subscribe<game::LevelChange>(
       [this](const game::LevelChange& change) { changes_.push_back(change); }));
   static_cast<void>(events_.subscribe<game::EntityDestruction>(
@@ -33,16 +39,31 @@ LevelDirectorFixture::LevelDirectorFixture()
       }));
 }
 
+void LevelDirectorFixture::placeEnemies(
+    std::vector<game::LdtkPlacement> placements) {
+  placements_ = std::move(placements);
+}
+
+void LevelDirectorFixture::placeTheDrifter() {
+  placeEnemies({placedEnemyOf(PLACED_DRIFTER_SHEET, WHERE_THE_DRIFTER_IS_PLACED,
+                              PLACED_ENEMY_WIDTH)});
+}
+
 void LevelDirectorFixture::direct(std::string_view script) {
   const std::vector<engine::ScriptSource> sources{engine::ScriptSource{
       .name = std::string{DIRECTED_LEVEL}, .text = std::string{script}}};
   scripts_.run(sources);
+  game::LuauLevelEntry* const entry = scripts_.levels().entryOf(DIRECTED_LEVEL);
+  if (entry != nullptr) {
+    entry->placements = placements_;
+  }
   director_ = std::make_unique<LevelDirector>(LevelDirectorParts{
       .entrance =
           BossEntranceParts{.world = world_,
                             .roster = roster_,
                             .send = [](const network::OutgoingDatagram&) {},
                             .events = events_},
+      .orders = orders_,
       .scripts = scripts_,
       .level = std::string{DIRECTED_LEVEL},
       .types = game::testing::shippedEntitySheets(),
@@ -81,6 +102,10 @@ std::size_t LevelDirectorFixture::bossCount() {
       [&count](engine::Entity, const game::Boss&,
                const game::NetworkIdentity&) { ++count; });
   return count;
+}
+
+const std::vector<RecordedSpawn>& LevelDirectorFixture::spawned() const {
+  return orders_.spawns();
 }
 
 }  // namespace rtype::server::testing

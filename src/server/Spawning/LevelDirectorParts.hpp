@@ -5,6 +5,7 @@
 #include "BehaviourScripts.hpp"
 #include "BossEntranceParts.hpp"
 #include "EntitySheets.hpp"
+#include "IEntityOrders.hpp"
 #include "PercentConstants.hpp"
 
 namespace rtype::server {
@@ -15,6 +16,9 @@ struct LevelDirectorParts {
    * bosses, and the bus its changes, the removals of a restart and the
    * arrivals of its bosses are published on; they must outlive the object. */
   BossEntranceParts entrance;
+  /** @brief What creates the enemies the level places, in that world; it
+   * must outlive the object. */
+  std::reference_wrapper<game::IEntityOrders> orders;
   /** @brief The scripts that registered the level; they must outlive the
    * object. */
   std::reference_wrapper<game::BehaviourScripts> scripts;
