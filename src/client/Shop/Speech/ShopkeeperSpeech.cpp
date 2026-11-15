@@ -1,4 +1,5 @@
 #include "ShopkeeperSpeech.hpp"
+#include <algorithm>
 #include <cstddef>
 #include <span>
 #include <string_view>
@@ -67,6 +68,12 @@ void ShopkeeperSpeech::refused(PurchaseRefusal refusal, std::size_t item) {
 
 void ShopkeeperSpeech::bottlesTouched() {
   line_.say(inTurn(SHOPKEEPER_BOTTLES_LINES, bottlesTurn_));
+}
+
+void ShopkeeperSpeech::counterTouched() {
+  line_.say(SHOPKEEPER_COUNTER_LINES.at(
+      std::min(counterTurn_, SHOPKEEPER_COUNTER_LINES.size() - 1)));
+  ++counterTurn_;
 }
 
 void ShopkeeperSpeech::radioTuned(Ambience playing) {

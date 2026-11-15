@@ -52,6 +52,12 @@ constexpr sf::IntRect SHOP_RADIO_AREA{{280, 161}, {42, 21}};
  * makes him say they are not for the player. */
 constexpr sf::IntRect SHOP_BOTTLES_AREA{{368, 164}, {78, 27}};
 
+/** @brief The abacus and the glass of tea on the counter, as the picture
+ * of the booth draws them: a click on either makes him say they are his,
+ * and that the radio is for the player. */
+constexpr sf::IntRect SHOP_ABACUS_AREA{{151, 168}, {31, 17}};
+constexpr sf::IntRect SHOP_TEA_AREA{{207, 169}, {15, 16}};
+
 /** @brief The balance of the player, ending in the top-right corner of the
  * shop, and the status line, centred at the bottom, both outlined in ink
  * over the picture. */

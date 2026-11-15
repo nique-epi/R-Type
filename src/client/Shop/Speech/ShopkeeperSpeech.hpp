@@ -35,6 +35,9 @@ class ShopkeeperSpeech {
   void refused(PurchaseRefusal refusal, std::size_t item);
   /** @brief Says the next of his lines on his bottles. */
   void bottlesTouched();
+  /** @brief Says the next of his lines on his abacus and his tea, the last
+   * one again once all were said. */
+  void counterTouched();
   /** @brief Says what he thinks of the music the radio now plays,
    * @p playing. */
   void radioTuned(Ambience playing);
@@ -46,6 +49,7 @@ class ShopkeeperSpeech {
   SpokenLine line_;
   std::size_t tooExpensiveTurn_{};
   std::size_t bottlesTurn_{};
+  std::size_t counterTurn_{};
   std::size_t borderRadioTurn_{};
 };
 

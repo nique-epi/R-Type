@@ -77,6 +77,14 @@ constexpr std::string_view SHOPKEEPER_ALREADY_YOURS_LINE =
 constexpr std::string_view SHOPKEEPER_NOT_FOR_SALE_LINE =
     "THIS? NOT FOR SALE. IS FOR DISPLAY. AND FOR ME.";
 
+/** @brief A click on his abacus or his tea, the abacus and the tea
+ * counted together: the first time, the second, then the third for every
+ * click after it, once he gave up. */
+constexpr std::array<std::string_view, 3> SHOPKEEPER_COUNTER_LINES{
+    "MY ABACUS, MY TEA. YOU CAN TUNE THE RADIO. IS ALREADY A LOT.",
+    "AGAIN? THE RADIO IS FOR YOU, TOVARISCH. NOT MY THINGS.",
+    "FINE. TOUCH EVERYTHING. I AM TOO OLD FOR THIS."};
+
 /** @brief A click on his bottles, in turn. */
 constexpr std::array<std::string_view, 4> SHOPKEEPER_BOTTLES_LINES{
     "HANDS OFF! IS NOT FOR PILOTS. IS FOR ME.",

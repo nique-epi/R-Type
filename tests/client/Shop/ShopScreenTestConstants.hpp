@@ -69,6 +69,12 @@ constexpr std::string_view SHOP_SCENE_SHEET = "sprites/shop_scene.png";
 constexpr sf::Vector2i BOTTLES_MIDDLE{407, 177};
 constexpr sf::Vector2i BESIDE_THE_BOTTLES{367, 177};
 
+/** @brief Pixels of the interface: the middle of the abacus of the counter,
+ * (151, 168) to (181, 184), and of the glass of tea, (207, 169) to
+ * (221, 184). */
+constexpr sf::Vector2i ABACUS_MIDDLE{166, 176};
+constexpr sf::Vector2i TEA_MIDDLE{214, 177};
+
 /** @brief A word of each line the shopkeeper says, found in no other line
  * of these tests: the party hat bought; the first two lines on a ware too
  * expensive; a ware owned; where the radio is; his first two lines on his
@@ -85,6 +91,10 @@ constexpr std::string_view FIRST_BOTTLES_WORD = "HANDS";
 constexpr std::string_view SECOND_BOTTLES_WORD = "MEDICINE.";
 constexpr std::string_view BORDER_RADIO_WORD = "ARSTOTZKA!";
 constexpr std::string_view DANCE_RADIO_WORD = "DISCO!";
+/** @brief A word of each of his three lines on his abacus and his tea. */
+constexpr std::string_view FIRST_COUNTER_WORD = "ABACUS,";
+constexpr std::string_view SECOND_COUNTER_WORD = "AGAIN?";
+constexpr std::string_view LAST_COUNTER_WORD = "OLD";
 constexpr std::string_view SHOP_MUSIC_WORD = "MOSCOW.";
 
 /** @brief The sales slip, 172 by 216 pixels, centred on the 480 by 270

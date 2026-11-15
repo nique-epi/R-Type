@@ -196,6 +196,12 @@ void ShopScreen::pointed(sf::Vector2i position, bool clicked) {
     }
     return;
   }
+  if (SHOP_ABACUS_AREA.contains(pixel) || SHOP_TEA_AREA.contains(pixel)) {
+    if (clicked) {
+      speech_.counterTouched();
+    }
+    return;
+  }
   const ShopSpot before = selection_.spot();
   if (!selection_.chooseAt(pixel)) {
     return;

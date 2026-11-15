@@ -15,6 +15,7 @@ using rtype::client::BOTTLES_CLINK_SOUND_ID;
 using rtype::client::BYDO_VOICE_FIRST_SOUND_ID;
 using rtype::client::SPOKEN_LINGER_TIME;
 using rtype::client::testing::A_QUARTER_OF_HIS_BREATH;
+using rtype::client::testing::ABACUS_MIDDLE;
 using rtype::client::testing::BESIDE_THE_BOTTLES;
 using rtype::client::testing::BESIDE_THE_RADIO;
 using rtype::client::testing::BORDER_RADIO_WORD;
@@ -22,16 +23,20 @@ using rtype::client::testing::BOTTLES_MIDDLE;
 using rtype::client::testing::DANCE_RADIO_WORD;
 using rtype::client::testing::FAR_FROM_THE_RADIO;
 using rtype::client::testing::FIRST_BOTTLES_WORD;
+using rtype::client::testing::FIRST_COUNTER_WORD;
 using rtype::client::testing::KEEPER_AT_HIS_LOWEST;
 using rtype::client::testing::KEEPER_AT_REST;
+using rtype::client::testing::LAST_COUNTER_WORD;
 using rtype::client::testing::RADIO_FRAME_CORNER;
 using rtype::client::testing::RADIO_HINT_LINE;
 using rtype::client::testing::RADIO_HINT_WORD;
 using rtype::client::testing::RADIO_MIDDLE;
 using rtype::client::testing::SECOND_BOTTLES_WORD;
+using rtype::client::testing::SECOND_COUNTER_WORD;
 using rtype::client::testing::SHOP_KEEPER_SHEET;
 using rtype::client::testing::SHOP_MUSIC_WORD;
 using rtype::client::testing::ShopBoothFixture;
+using rtype::client::testing::TEA_MIDDLE;
 using rtype::engine::Duration;
 using Key = sf::Keyboard::Key;
 
@@ -305,4 +310,30 @@ TEST_F(ShopBoothFixture, AClickOnTheBottlesMakesThemClink) {
   click(BESIDE_THE_BOTTLES);
 
   EXPECT_EQ(std::ranges::count(played(), BOTTLES_CLINK_SOUND_ID), 1);
+}
+
+/**
+ * Given a shop that shows lines whole
+ * When the abacus is clicked, then the tea, then the abacus twice more
+ * Then the shopkeeper says his first line on them, his second, then his
+ * last, and his last again: the abacus and the tea count together
+ */
+TEST_F(ShopBoothFixture, TheAbacusAndTheTeaHaveThreeLinesThenTheLast) {
+  reopenWithLessMotion();
+
+  click(ABACUS_MIDDLE);
+  wait(Duration::zero());
+  EXPECT_NE(writingOf(painting(), FIRST_COUNTER_WORD), nullptr);
+
+  click(TEA_MIDDLE);
+  wait(Duration::zero());
+  EXPECT_NE(writingOf(painting(), SECOND_COUNTER_WORD), nullptr);
+
+  click(ABACUS_MIDDLE);
+  wait(Duration::zero());
+  EXPECT_NE(writingOf(painting(), LAST_COUNTER_WORD), nullptr);
+
+  click(ABACUS_MIDDLE);
+  wait(Duration::zero());
+  EXPECT_NE(writingOf(painting(), LAST_COUNTER_WORD), nullptr);
 }
