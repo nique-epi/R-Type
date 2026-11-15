@@ -1,4 +1,5 @@
 #include "RouletteRules.hpp"
+#include <algorithm>
 #include <cstdint>
 #include "CasinoConstants.hpp"
 #include "ProtocolConstants.hpp"
@@ -39,12 +40,8 @@ constexpr std::uint64_t maskOf(Keep keep) {
 }
 
 constexpr std::uint64_t RED_MASK = maskOf([](unsigned int number) {
-  for (const std::uint8_t red : RED_ROULETTE_NUMBERS) {
-    if (red == number) {
-      return true;
-    }
-  }
-  return false;
+  return std::ranges::find(RED_ROULETTE_NUMBERS, number) !=
+         RED_ROULETTE_NUMBERS.end();
 });
 constexpr std::uint64_t EVEN_MASK =
     maskOf([](unsigned int number) { return number % 2 == 0; });

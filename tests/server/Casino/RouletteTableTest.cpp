@@ -146,7 +146,7 @@ TEST_F(RouletteTableFixture, PaysNothingOnAnotherNumber) {
   runTicks(1);
 
   ASSERT_TRUE(listedSeat(FIRST_TABLE_SEAT).has_value());
-  EXPECT_EQ(listedSeat(FIRST_TABLE_SEAT)->payout, 0U);
+  EXPECT_EQ(listedSeat(FIRST_TABLE_SEAT).value_or(RouletteSeat{}).payout, 0U);
 }
 
 /**
@@ -168,7 +168,8 @@ TEST_F(RouletteTableFixture, TakesBetsUpToTheCap) {
       false);
 
   ASSERT_TRUE(listedSeat(FIRST_TABLE_SEAT).has_value());
-  EXPECT_EQ(listedSeat(FIRST_TABLE_SEAT)->stake, MAXIMUM_ROUND_STAKE);
+  EXPECT_EQ(listedSeat(FIRST_TABLE_SEAT).value_or(RouletteSeat{}).stake,
+            MAXIMUM_ROUND_STAKE);
 }
 
 /**
@@ -195,7 +196,8 @@ TEST_F(RouletteTableFixture, RefusesBetsPastTheCapWhole) {
       false);
 
   ASSERT_TRUE(listedSeat(FIRST_TABLE_SEAT).has_value());
-  EXPECT_EQ(listedSeat(FIRST_TABLE_SEAT)->stake, HUNDRED_CHIPS);
+  EXPECT_EQ(listedSeat(FIRST_TABLE_SEAT).value_or(RouletteSeat{}).stake,
+            HUNDRED_CHIPS);
 }
 
 /**
@@ -217,7 +219,7 @@ TEST_F(RouletteTableFixture, RefusesBetsWithOneOffTheCloth) {
       false);
 
   ASSERT_TRUE(listedSeat(FIRST_TABLE_SEAT).has_value());
-  EXPECT_EQ(listedSeat(FIRST_TABLE_SEAT)->stake, 0U);
+  EXPECT_EQ(listedSeat(FIRST_TABLE_SEAT).value_or(RouletteSeat{}).stake, 0U);
 }
 
 /**
@@ -239,7 +241,7 @@ TEST_F(RouletteTableFixture, IgnoresBetsOfAnotherRound) {
                                .amount = HUNDRED_CHIPS}}});
 
   ASSERT_TRUE(listedSeat(FIRST_TABLE_SEAT).has_value());
-  EXPECT_EQ(listedSeat(FIRST_TABLE_SEAT)->stake, 0U);
+  EXPECT_EQ(listedSeat(FIRST_TABLE_SEAT).value_or(RouletteSeat{}).stake, 0U);
 }
 
 /**
@@ -258,7 +260,7 @@ TEST_F(RouletteTableFixture, IgnoresBetsOfAPlayerInTheRoom) {
   sit(FIRST_TABLE_SEAT);
 
   ASSERT_TRUE(listedSeat(FIRST_TABLE_SEAT).has_value());
-  EXPECT_EQ(listedSeat(FIRST_TABLE_SEAT)->stake, 0U);
+  EXPECT_EQ(listedSeat(FIRST_TABLE_SEAT).value_or(RouletteSeat{}).stake, 0U);
 }
 
 /**
@@ -283,7 +285,8 @@ TEST_F(RouletteTableFixture, IgnoresBetsOnceTheWheelTurns) {
       true);
 
   ASSERT_TRUE(listedSeat(FIRST_TABLE_SEAT).has_value());
-  EXPECT_EQ(listedSeat(FIRST_TABLE_SEAT)->stake, HUNDRED_CHIPS);
+  EXPECT_EQ(listedSeat(FIRST_TABLE_SEAT).value_or(RouletteSeat{}).stake,
+            HUNDRED_CHIPS);
 }
 
 /**
@@ -310,7 +313,7 @@ TEST_F(RouletteTableFixture, ShowsTheResultThenOpensTheNextRound) {
   EXPECT_EQ(table().round().phase, RoulettePhase::Betting);
   EXPECT_EQ(table().round().round, firstRound + 1);
   ASSERT_TRUE(listedSeat(FIRST_TABLE_SEAT).has_value());
-  EXPECT_EQ(listedSeat(FIRST_TABLE_SEAT)->stake, 0U);
+  EXPECT_EQ(listedSeat(FIRST_TABLE_SEAT).value_or(RouletteSeat{}).stake, 0U);
 }
 
 /**
@@ -330,7 +333,8 @@ TEST_F(RouletteTableFixture, ListsAPlayerWhoLeftUntilItsRoundEnds) {
 
   standUp(FIRST_TABLE_SEAT);
   ASSERT_TRUE(listedSeat(FIRST_TABLE_SEAT).has_value());
-  EXPECT_EQ(listedSeat(FIRST_TABLE_SEAT)->payout, STRAIGHT_RETURN_OF_A_HUNDRED);
+  EXPECT_EQ(listedSeat(FIRST_TABLE_SEAT).value_or(RouletteSeat{}).payout,
+            STRAIGHT_RETURN_OF_A_HUNDRED);
   runTicks(ROULETTE_SPINNING_TICKS + ROULETTE_RESULT_TICKS);
 
   EXPECT_FALSE(listedSeat(FIRST_TABLE_SEAT).has_value());

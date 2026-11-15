@@ -160,7 +160,7 @@ void RouletteTable::openNextRound() {
 
 bool RouletteTable::everySeatedPlayerVoted() const {
   return hasSeatedPlayer() &&
-         std::ranges::all_of(seats_, [](const TableSeat& seat) {
+         std::ranges::all_of(seats_, [](const TableSeat& seat) noexcept {
            return !seat.seated || seat.spinVote;
          });
 }
