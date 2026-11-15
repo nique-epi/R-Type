@@ -15,6 +15,10 @@
 class JournalFile {
  public:
   JournalFile();
+
+  /** @brief A journal named after the running test and @p suffix, so a test
+   * can hold two journals at once. */
+  explicit JournalFile(std::string_view suffix);
   ~JournalFile();
 
   JournalFile(const JournalFile&) = delete;

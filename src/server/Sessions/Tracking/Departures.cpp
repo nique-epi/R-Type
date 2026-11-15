@@ -1,9 +1,7 @@
 #include "Departures.hpp"
-#include <array>
 #include <cstdint>
 #include <functional>
 #include <optional>
-#include <span>
 #include <sstream>
 #include <string>
 #include <string_view>
@@ -18,6 +16,7 @@
 #include "LogLevel.hpp"
 #include "Logger.hpp"
 #include "PlayerDeparture.hpp"
+#include "PlayerEventFields.hpp"
 #include "PlayerRoster.hpp"
 #include "ProtocolConstants.hpp"
 #include "ServerConstants.hpp"
@@ -49,20 +48,14 @@ DepartureWording wordingOf(game::DepartureCause cause) {
           .verb = " timed out: nothing received from "};
 }
 
-/** @returns The field of the number of @p player. */
-logging::EventField playerField(const ConnectedPlayer& player) {
-  return {.name = PLAYER_FIELD, .value = std::int64_t{player.playerNumber}};
-}
-
-/** @returns The field of the address of @p player; it points into it. */
-logging::EventField addressField(const ConnectedPlayer& player) {
-  return {.name = ADDRESS_FIELD,
-          .value = std::string_view{player.endpoint.address}};
-}
-
-/** @returns The field of the port of @p player. */
-logging::EventField portField(const ConnectedPlayer& player) {
-  return {.name = PORT_FIELD, .value = std::int64_t{player.endpoint.port}};
+/** @returns The fields of @p player, then a field of @p seconds named
+ * @p name. */
+std::vector<logging::EventField> playerFieldsAnd(const ConnectedPlayer& player,
+                                                 logging::EventField seconds) {
+  const auto named = playerEventFields(player);
+  std::vector<logging::EventField> fields{named.begin(), named.end()};
+  fields.push_back(seconds);
+  return fields;
 }
 
 }  // namespace
@@ -134,14 +127,12 @@ void Departures::setAway(ConnectedPlayer& player) const {
           << network::SESSION_TIMEOUT.count() << " s, seat kept for "
           << network::RECONNECTION_GRACE.count() << " s";
   const std::string text = message.str();
-  const std::array fields{
-      playerField(player), addressField(player), portField(player),
-      logging::EventField{
-          .name = SILENT_SECONDS_FIELD,
-          .value = std::int64_t{network::SESSION_TIMEOUT.count()}},
-      logging::EventField{
-          .name = SEAT_KEPT_SECONDS_FIELD,
-          .value = std::int64_t{network::RECONNECTION_GRACE.count()}}};
+  std::vector<logging::EventField> fields = playerFieldsAnd(
+      player, {.name = SILENT_SECONDS_FIELD,
+               .value = std::int64_t{network::SESSION_TIMEOUT.count()}});
+  fields.push_back(
+      {.name = SEAT_KEPT_SECONDS_FIELD,
+       .value = std::int64_t{network::RECONNECTION_GRACE.count()}});
   logger_.event(logging::LogEvent{.level = logging::LogLevel::Info,
                                   .name = PLAYER_AWAY_EVENT,
                                   .message = text,
@@ -158,26 +149,23 @@ void Departures::announce(const ConnectedPlayer& player,
 void Departures::logDeparture(const ConnectedPlayer& player,
                               game::DepartureCause cause) const {
   const DepartureWording wording = wordingOf(cause);
-  const bool timedOut = cause == game::DepartureCause::TimedOut;
   std::ostringstream message;
   message << "player " << static_cast<unsigned int>(player.playerNumber)
           << wording.verb << player.endpoint.address << " port "
           << player.endpoint.port;
-  if (timedOut) {
+  const auto named = playerEventFields(player);
+  std::vector<logging::EventField> fields{named.begin(), named.end()};
+  if (cause == game::DepartureCause::TimedOut) {
     message << " for " << network::SESSION_SILENCE_LIMIT.count() << " s";
+    fields.push_back(
+        {.name = SILENT_SECONDS_FIELD,
+         .value = std::int64_t{network::SESSION_SILENCE_LIMIT.count()}});
   }
   const std::string text = message.str();
-  const std::array fields{
-      playerField(player), addressField(player), portField(player),
-      logging::EventField{
-          .name = SILENT_SECONDS_FIELD,
-          .value = std::int64_t{network::SESSION_SILENCE_LIMIT.count()}}};
-  logger_.event(logging::LogEvent{
-      .level = logging::LogLevel::Info,
-      .name = wording.event,
-      .message = text,
-      .fields = std::span{fields}.first(timedOut ? fields.size()
-                                                 : fields.size() - 1)});
+  logger_.event(logging::LogEvent{.level = logging::LogLevel::Info,
+                                  .name = wording.event,
+                                  .message = text,
+                                  .fields = fields});
 }
 
 }  // namespace rtype::server

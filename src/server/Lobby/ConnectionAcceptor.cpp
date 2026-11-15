@@ -1,5 +1,4 @@
 #include "ConnectionAcceptor.hpp"
-#include <array>
 #include <cstdint>
 #include <exception>
 #include <limits>
@@ -18,7 +17,6 @@
 #include "ConnectionRequest.hpp"
 #include "DatagramCodec.hpp"
 #include "Endpoint.hpp"
-#include "EventField.hpp"
 #include "IncomingDatagram.hpp"
 #include "LobbyConstants.hpp"
 #include "LogEvent.hpp"
@@ -26,10 +24,10 @@
 #include "Logger.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
+#include "PlayerEventFields.hpp"
 #include "PlayerRoster.hpp"
 #include "ProtocolConstants.hpp"
 #include "RequestReading.hpp"
-#include "ServerConstants.hpp"
 #include "SessionDatagram.hpp"
 #include "TimeConstants.hpp"
 
@@ -75,13 +73,7 @@ void writeJoined(const logging::Logger& logger, const ConnectedPlayer& player) {
           << " joined from " << player.endpoint.address << " port "
           << player.endpoint.port;
   const std::string text = message.str();
-  const std::array fields{
-      logging::EventField{.name = PLAYER_FIELD,
-                          .value = std::int64_t{player.playerNumber}},
-      logging::EventField{.name = ADDRESS_FIELD,
-                          .value = std::string_view{player.endpoint.address}},
-      logging::EventField{.name = PORT_FIELD,
-                          .value = std::int64_t{player.endpoint.port}}};
+  const auto fields = playerEventFields(player);
   logger.event(logging::LogEvent{.level = logging::LogLevel::Info,
                                  .name = PLAYER_JOINED_EVENT,
                                  .message = text,

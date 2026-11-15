@@ -10,12 +10,15 @@
 #include <utility>
 #include <vector>
 #include "Logger.hpp"
+#include "LoggingConstants.hpp"
 
-JournalFile::JournalFile() {
+JournalFile::JournalFile() : JournalFile(std::string_view{}) {}
+
+JournalFile::JournalFile(std::string_view suffix) {
   const auto* info = ::testing::UnitTest::GetInstance()->current_test_info();
   path_ = std::filesystem::temp_directory_path() /
           (std::string("rtype_") + info->test_suite_name() + "_" +
-           info->name() + ".log");
+           info->name() + std::string{suffix} + ".log");
   std::error_code ignored;
   std::filesystem::remove(path_, ignored);
 }
@@ -54,8 +57,8 @@ std::vector<nlohmann::json> JournalFile::events(std::string_view name) const {
   std::vector<nlohmann::json> found;
   for (const std::string& line : lines()) {
     nlohmann::json object = nlohmann::json::parse(line);
-    if (object.contains("event") &&
-        object.at("event").get<std::string>() == name) {
+    const std::string key{rtype::logging::EVENT_KEY};
+    if (object.contains(key) && object.at(key).get<std::string>() == name) {
       found.push_back(std::move(object));
     }
   }

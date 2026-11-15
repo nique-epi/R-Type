@@ -17,6 +17,3 @@ constexpr std::string_view TRICKY_MESSAGE = R"(12:34 {"event":"x"} gone)";
  * as a warning of EVENT_LOGGER_NAME would read. */
 constexpr std::string_view TRICKY_TEXT_LINE_END =
     R"([WARN ] [Sessions] - 12:34 {"event":"x"} gone)";
-
-/** @brief The value the tests give after `--log-format`. */
-constexpr std::string_view JSON_FORMAT_VALUE = "json";

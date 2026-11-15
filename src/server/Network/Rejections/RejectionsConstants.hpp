@@ -13,8 +13,7 @@ constexpr std::size_t REJECTION_CAUSE_COUNT =
 
 /**
  * @brief The name of each RejectionCause in the lines of the rejection report,
- * in the order the causes are declared; each is also the name of the field
- * of its count in the events of the report.
+ * in the order the causes are declared.
  */
 constexpr std::array<std::string_view, REJECTION_CAUSE_COUNT>
     REJECTION_CAUSE_NAMES{"shorter than the header",
@@ -30,6 +29,20 @@ constexpr std::array<std::string_view, REJECTION_CAUSE_COUNT>
                           "information queue full",
                           "probe queue full",
                           "refused connection"};
+
+/**
+ * @brief The key of each RejectionCause in the events of the rejection report,
+ * the field of its count, in the order the causes are declared: a tool reads
+ * them, so they stay apart from the words of the lines.
+ */
+constexpr std::array<std::string_view, REJECTION_CAUSE_COUNT>
+    REJECTION_CAUSE_KEYS{"shorter_than_header",    "foreign_header",
+                         "message_sizes",          "stranger",
+                         "wrong_session_token",    "over_rate_limit",
+                         "newly_banned",           "banned",
+                         "player_queue_full",      "request_queue_full",
+                         "information_queue_full", "probe_queue_full",
+                         "refused_connection"};
 
 /**
  * @brief How many senders the RejectionLedger keeps between two reports; a new

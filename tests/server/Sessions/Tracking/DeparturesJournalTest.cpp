@@ -5,9 +5,10 @@
 #include <nlohmann/json_fwd.hpp>
 #include <string>
 #include <vector>
+#include "DebugJournal.hpp"
 #include "DeparturesFixture.hpp"
 #include "Endpoint.hpp"
-#include "JsonJournal.hpp"
+#include "LogFormat.hpp"
 #include "PlayerDeparture.hpp"
 #include "ProtocolConstants.hpp"
 #include "SentDatagrams.hpp"
@@ -29,7 +30,7 @@ using testing::TIMED_OUT_EVENT_NAME;
  * Then one player.left event names its number, its address and its port
  */
 TEST_F(DeparturesFixture, WritesAPlayerWhoLeftAsAnEvent) {
-  const JsonJournal journal;
+  const DebugJournal journal{rtype::logging::LogFormat::Json};
   const std::uint8_t number = player().playerNumber;
 
   departures().close(player().endpoint, game::DepartureCause::Left);
@@ -50,7 +51,7 @@ TEST_F(DeparturesFixture, WritesAPlayerWhoLeftAsAnEvent) {
  * Then one player.expelled event names it, and no player.left event
  */
 TEST_F(DeparturesFixture, WritesAnExpelledPlayerAsAnEvent) {
-  const JsonJournal journal;
+  const DebugJournal journal{rtype::logging::LogFormat::Json};
   const std::uint8_t number = player().playerNumber;
 
   departures().close(player().endpoint, game::DepartureCause::Expelled);
@@ -73,7 +74,7 @@ TEST_F(DeparturesFixture, WritesAnExpelledPlayerAsAnEvent) {
  * its seat is kept, in seconds
  */
 TEST_F(DeparturesFixture, WritesAPlayerWhoGoesAwayAsAnEvent) {
-  const JsonJournal journal;
+  const DebugJournal journal{rtype::logging::LogFormat::Json};
   const std::uint8_t number = player().playerNumber;
 
   for (std::size_t tick = 0; tick < SESSION_TIMEOUT_TICKS; ++tick) {
@@ -101,7 +102,7 @@ TEST_F(DeparturesFixture, WritesAPlayerWhoGoesAwayAsAnEvent) {
  * Then one player.timed_out event names it and how long it was silent
  */
 TEST_F(DeparturesFixture, WritesAPlayerWhoTimedOutAsAnEvent) {
-  const JsonJournal journal;
+  const DebugJournal journal{rtype::logging::LogFormat::Json};
   const std::uint8_t number = player().playerNumber;
 
   for (std::size_t tick = 0; tick <= SESSION_CLOSING_TICKS; ++tick) {

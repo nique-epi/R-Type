@@ -51,6 +51,14 @@ struct Sinks {
   std::function<void(std::string_view)> standardError;
 };
 
+/** @returns Whether the journal file of this copy of the library is written as
+ * JSON, the only place the fields of an event are written: an event formats
+ * its fields only then, or when it goes through a journal. */
+std::atomic<bool>& fileWritesJson() {
+  static std::atomic<bool> json{false};
+  return json;
+}
+
 Sinks& sinks() {
   static Sinks instance;
   return instance;
@@ -214,6 +222,14 @@ std::string standardErrorText(const Sinks& destination, LogLevel level,
   return std::string{ansiForLevel(level)} + text + std::string{ANSI_RESET};
 }
 
+/** @returns The text line of @p record, called at @p timeText. */
+std::string textLineOf(const LogRecord& record, std::string_view timeText) {
+  std::ostringstream stream;
+  stream << '[' << timeText << "] [" << labelForLevel(record.level) << "] ["
+         << record.loggerName << "] - " << record.body;
+  return stream.str();
+}
+
 /**
  * @brief Writes @p record, called at @p time, to the file, flushed, and to
  * standard error; the caller holds the lock of @p destination. The text of a
@@ -223,22 +239,19 @@ std::string standardErrorText(const Sinks& destination, LogLevel level,
 void writeJournalLine(Sinks& destination, const LogRecord& record,
                       std::chrono::system_clock::time_point time) {
   const std::string timeText = formatTimestamp(time);
-  std::ostringstream stream;
-  stream << '[' << timeText << "] [" << labelForLevel(record.level) << "] ["
-         << record.loggerName << "] - " << record.body;
-  const std::string text = stream.str();
+  const bool jsonFile = destination.fileFormat == LogFormat::Json;
+  const std::string text = !jsonFile || destination.toStderr
+                               ? textLineOf(record, timeText)
+                               : std::string{};
   if (destination.file.is_open()) {
-    if (destination.fileFormat == LogFormat::Json) {
-      destination.file << jsonLineOf(
-          JournalLineParts{.time = timeText,
-                           .level = levelNameOf(record.level),
-                           .logger = record.loggerName,
-                           .message = record.body,
-                           .fields = record.fields});
-    } else {
-      destination.file << text;
-    }
-    destination.file << '\n';
+    destination.file << (jsonFile ? jsonLineOf(JournalLineParts{
+                                        .time = timeText,
+                                        .level = levelNameOf(record.level),
+                                        .logger = record.loggerName,
+                                        .message = record.body,
+                                        .fields = record.fields})
+                                  : text)
+                     << '\n';
     destination.file.flush();
   }
   if (destination.toStderr) {
@@ -339,12 +352,8 @@ JournalWriter& writer() {
 /** @brief Queues @p record for the thread that writes the journal, as
  * recordOf() reads it back. */
 void emitLine(const LogRecord& record) {
-  const std::string messageSize = std::to_string(record.body.size());
-  std::string text;
-  text.reserve(messageSize.size() + record.body.size() + record.fields.size() +
-               2);
-  text += JOURNAL_LINE_KIND;
-  text += messageSize;
+  std::string text{JOURNAL_LINE_KIND};
+  text += std::to_string(record.body.size());
   text += MESSAGE_SIZE_END;
   text += record.body;
   text += record.fields;
@@ -409,6 +418,8 @@ void Logger::setOutput(const LogOutput& output) {
     }
   }
   writer().flush();
+  fileWritesJson().store(file.is_open() && output.fileFormat == LogFormat::Json,
+                         std::memory_order_release);
   Sinks& destination = sinks();
   const std::lock_guard<std::mutex> lock(destination.mutex);
   destination.file.close();
@@ -429,9 +440,7 @@ void setStandardErrorWriter(
 }
 
 void writeStandardErrorLine(std::string_view line) {
-  std::string text;
-  text.reserve(line.size() + 1);
-  text += STANDARD_ERROR_LINE_KIND;
+  std::string text{STANDARD_ERROR_LINE_KIND};
   text += line;
   writer().queue(LogLevel::Info, {}, text);
 }
@@ -455,7 +464,9 @@ void Logger::event(const LogEvent& event) const {
                            : !journal_->accepts(event.level))) {
     return;
   }
-  const std::string fields = eventFieldsText(event);
+  const bool fieldsAreRead =
+      journal_ != nullptr || fileWritesJson().load(std::memory_order_acquire);
+  const std::string fields = fieldsAreRead ? eventFieldsText(event) : "";
   writeThrough(journal_, LogRecord{.level = event.level,
                                    .loggerName = name_,
                                    .body = event.message,

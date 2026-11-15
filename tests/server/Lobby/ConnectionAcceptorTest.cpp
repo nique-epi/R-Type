@@ -19,9 +19,10 @@
 #include "ConnectionRefused.hpp"
 #include "ConnectionRequest.hpp"
 #include "DatagramCodec.hpp"
+#include "DebugJournal.hpp"
 #include "Endpoint.hpp"
 #include "IncomingDatagram.hpp"
-#include "JsonJournal.hpp"
+#include "LogFormat.hpp"
 #include "MessageType.hpp"
 #include "NetworkConstants.hpp"
 #include "NetworkException.hpp"
@@ -94,7 +95,7 @@ TEST_F(ConnectionAcceptorFixture, ReportsNobodyForAChallengedSender) {
  * of the sender
  */
 TEST_F(ConnectionAcceptorFixture, WritesAJoinedPlayerAsAnEvent) {
-  const JsonJournal journal;
+  const DebugJournal journal{rtype::logging::LogFormat::Json};
 
   connect(playerEndpoint(0));
 

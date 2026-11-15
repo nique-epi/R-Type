@@ -103,13 +103,13 @@ TEST(RejectionEvents, NamesTheCountsOfTheReportAsFields) {
   EXPECT_EQ(fieldOf(events.at(0), "seconds"), REPORT_LENGTH_FIELD);
   EXPECT_EQ(fieldOf(events.at(0), "total"), CAUSES_TOTAL_FIELD);
   EXPECT_EQ(fieldOf(events.at(0), "stranger"), ONE_FIELD);
-  EXPECT_EQ(fieldOf(events.at(0), "wrong session token"), THREE_FIELD);
+  EXPECT_EQ(fieldOf(events.at(0), "wrong_session_token"), THREE_FIELD);
   EXPECT_EQ(fieldOf(events.at(0), "since_start"), SINCE_START_FIELD_VALUE);
   EXPECT_FALSE(fieldOf(events.at(0), "banned").has_value());
   EXPECT_EQ(events.at(1).name, SENDER_EVENT_NAME);
   EXPECT_EQ(fieldOf(events.at(1), "address"), SENDER_ADDRESS_FIELD);
   EXPECT_EQ(fieldOf(events.at(1), "port"), SENDER_PORT_FIELD);
-  EXPECT_EQ(fieldOf(events.at(1), "wrong session token"), THREE_FIELD);
+  EXPECT_EQ(fieldOf(events.at(1), "wrong_session_token"), THREE_FIELD);
 }
 
 /**

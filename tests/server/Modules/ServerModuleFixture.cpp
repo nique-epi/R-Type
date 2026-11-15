@@ -4,7 +4,6 @@
 #include "LogLaunchOptions.hpp"
 #include "LogLaunchOptionsFixtures.hpp"
 #include "LoggingConstants.hpp"
-#include "ServerModuleTestConstants.hpp"
 #include "UdpPortProbe.hpp"
 
 ServerModuleFixture::ServerModuleFixture()
@@ -18,7 +17,7 @@ rtype::logging::LogLaunchOptions ServerModuleFixture::journalOptions() const {
 
 void ServerModuleFixture::writeTheJournalAsJson() {
   arguments_.push_back(rtype::logging::FORMAT_OPTION);
-  arguments_.push_back(JSON_JOURNAL_FORMAT);
+  arguments_.push_back(rtype::logging::JSON_FORMAT_NAME);
 }
 
 std::uint16_t ServerModuleFixture::freeUdpPort() { return ::freeUdpPort(); }

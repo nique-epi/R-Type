@@ -19,6 +19,8 @@ namespace {
 
 static_assert(!REJECTION_CAUSE_NAMES.back().empty(),
               "every RejectionCause needs a name");
+static_assert(!REJECTION_CAUSE_KEYS.back().empty(),
+              "every RejectionCause needs a key");
 
 /**
  * @returns The count of each cause of @p counts that is not 0, in the order the
@@ -43,7 +45,7 @@ logging::EventField countField(std::string_view name, std::size_t count) {
 }
 
 /** @brief Adds to @p fields the length of a report, the total of @p counts,
- * then one field for each cause of @p counts that is not 0, named after it. */
+ * then one field for each cause of @p counts that is not 0, under its key. */
 void addCountFields(std::vector<logging::EventField>& fields,
                     const RejectionCounts& counts) {
   fields.push_back(countField(SECONDS_FIELD, REPORT_SECONDS));
@@ -51,7 +53,7 @@ void addCountFields(std::vector<logging::EventField>& fields,
   for (std::size_t cause = 0; cause < REJECTION_CAUSE_COUNT; ++cause) {
     if (counts.at(cause) != 0) {
       fields.push_back(
-          countField(REJECTION_CAUSE_NAMES.at(cause), counts.at(cause)));
+          countField(REJECTION_CAUSE_KEYS.at(cause), counts.at(cause)));
     }
   }
 }

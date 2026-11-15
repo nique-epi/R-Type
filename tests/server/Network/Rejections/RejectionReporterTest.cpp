@@ -3,7 +3,8 @@
 #include <nlohmann/json.hpp>
 #include <nlohmann/json_fwd.hpp>
 #include <vector>
-#include "JsonJournal.hpp"
+#include "DebugJournal.hpp"
+#include "LogFormat.hpp"
 #include "RejectionReporterFixture.hpp"
 #include "RejectionsFixtures.hpp"
 #include "RejectionsTestConstants.hpp"
@@ -55,7 +56,7 @@ TEST_F(RejectionReporterFixture, WaitsAWholeReportAgainAfterOne) {
  * one event of its sender, naming its port
  */
 TEST_F(RejectionReporterFixture, WritesTheReportAsEvents) {
-  const JsonJournal journal;
+  const DebugJournal journal{rtype::logging::LogFormat::Json};
 
   countTicks(TICKS_PER_REPORT);
 

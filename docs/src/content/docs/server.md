@@ -298,7 +298,7 @@ rejected datagrams from 2 more senders in the last 10 s, besides 1 forgotten to 
 - A queue only knows the sender of the datagram that made room: the one it discards is an older one, whose sender may be another. In a flood, the sender that pushes is almost always the one that floods.
 - The address and port are written as they are, so a tool that reads the journal, fail2ban for instance, can match the lines of one address.
 - The ledger is safe from any thread: the sorter records on the network thread and the reporter reads on the simulation thread, each under one lock, held to count one datagram or to copy the report.
-- Each line is an event: `datagrams.rejected`, `datagrams.rejected_from` and `datagrams.rejected_elsewhere`, whose fields count each cause by its name (see [Events of the journal](#events-of-the-journal)).
+- Each line is an event: `datagrams.rejected`, `datagrams.rejected_from` and `datagrams.rejected_elsewhere`, whose fields count each cause under its key, such as `wrong_session_token` (`REJECTION_CAUSE_KEYS`) (see [Events of the journal](#events-of-the-journal)).
 - Not counted: a datagram larger than `MAX_DATAGRAM_SIZE` (1200 bytes), which the socket drops before the sorter; a connection request the `ConnectionAcceptor` cannot read, or the supervisor refuses; a message of a player the game cannot read or has no handler for; a datagram whose sequence is not newer than the newest one read. Each of them keeps its own line at the `debug` level. The `network` command of the [administration console](#administration-console-serveradminconsolemodule) reads the count since the start with `rejectedSinceStart()`, which resets nothing.
 
 ### Flood protection
@@ -323,7 +323,7 @@ The server writes what happens to its players and its games as events (see [Logg
 | `player.away` | info | `player`, `address`, `port`, `silent_seconds`, `seat_kept_seconds` | a game, after `SESSION_TIMEOUT` (5 s) of silence (`Departures`) |
 | `player.left` / `player.expelled` | info | `player`, `address`, `port` | a game, when a player leaves or the host expels it |
 | `player.timed_out` | info | `player`, `address`, `port`, `silent_seconds` | a game, when the session closes after `SESSION_SILENCE_LIMIT` (20 s) |
-| `datagrams.rejected` | warn | `seconds`, `total`, one count per cause by its name, `since_start` | the rejection report, every 10 s, of the supervisor and of each game |
+| `datagrams.rejected` | warn | `seconds`, `total`, one count per cause under its key (`stranger`, `wrong_session_token`…), `since_start` | the rejection report, every 10 s, of the supervisor and of each game |
 | `datagrams.rejected_from` | warn | `address`, `port`, `seconds`, `total`, one count per cause | the same report, one per sender it names |
 | `datagrams.rejected_elsewhere` | warn | `seconds`, `senders`, `forgotten_senders` | the same report, for the senders it does not name |
 | `game.started` | info | `game`, `port` | the supervisor (`GameSpawner`) |

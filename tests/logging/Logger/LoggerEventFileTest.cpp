@@ -19,6 +19,7 @@
 
 using rtype::logging::EventField;
 using rtype::logging::FORMAT_OPTION;
+using rtype::logging::JSON_FORMAT_NAME;
 using rtype::logging::LogEvent;
 using rtype::logging::Logger;
 using rtype::logging::LogLevel;
@@ -32,7 +33,7 @@ using rtype::logging::LogLevel;
  */
 TEST_F(LogLaunchOptionsFixture, AnEventKeepsItsMessageAndItsFieldsApart) {
   const JournalFile journal;
-  logOptionsOf(std::vector<std::string_view>{FORMAT_OPTION, JSON_FORMAT_VALUE},
+  logOptionsOf(std::vector<std::string_view>{FORMAT_OPTION, JSON_FORMAT_NAME},
                journal.path())
       .apply();
   const std::array fields{

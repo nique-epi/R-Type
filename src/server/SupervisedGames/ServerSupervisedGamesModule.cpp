@@ -1,10 +1,8 @@
 #include "ServerSupervisedGamesModule.hpp"
-#include <array>
 #include <cstdint>
 #include <filesystem>
 #include <memory>
 #include <optional>
-#include <span>
 #include <sstream>
 #include <string>
 #include <utility>
@@ -84,18 +82,18 @@ void writeExit(const logging::Logger& logger, const ExitedGame& exited) {
     message << " ended";
   }
   const std::string text = message.str();
-  const std::array fields{
-      logging::EventField{.name = GAME_FIELD,
-                          .value = std::int64_t{exited.number}},
-      logging::EventField{.name = EXIT_CODE_FIELD,
-                          .value = std::int64_t{exited.exitCode}}};
+  std::vector<logging::EventField> fields{
+      {.name = GAME_FIELD, .value = std::int64_t{exited.number}}};
+  if (exited.crashed) {
+    fields.push_back(
+        {.name = EXIT_CODE_FIELD, .value = std::int64_t{exited.exitCode}});
+  }
   logger.event(logging::LogEvent{
       .level =
           exited.crashed ? logging::LogLevel::Error : logging::LogLevel::Info,
       .name = exited.crashed ? GAME_CRASHED_EVENT : GAME_ENDED_EVENT,
       .message = text,
-      .fields = std::span{fields}.first(exited.crashed ? fields.size()
-                                                       : fields.size() - 1)});
+      .fields = fields});
 }
 
 }  // namespace
