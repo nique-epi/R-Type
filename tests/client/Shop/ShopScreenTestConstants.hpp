@@ -84,8 +84,8 @@ constexpr std::string_view BORDER_RADIO_WORD = "ARSTOTZKA!";
 constexpr std::string_view SHOP_MUSIC_WORD = "MOSCOW.";
 
 /** @brief The sales slip, 172 by 216 pixels, centred on the 480 by 270
- * interface: its top-left corner at (154, 27). BUY lies at (80, 161) of it,
- * 80 by 20, so its middle is at (274, 198); CANCEL at (12, 161), 66 by 20,
+ * interface: its top-left corner at (154, 27). BUY lies at (80, 160) of it,
+ * 80 by 22, so its middle is at (274, 198); CANCEL at (12, 160), 66 by 22,
  * its middle at (199, 198). The bottom-left corner of the shop is off it. */
 constexpr std::string_view TICKET_SHEET = "sprites/shop_ticket.png";
 constexpr sf::Vector2i BUY_BUTTON_MIDDLE{274, 198};

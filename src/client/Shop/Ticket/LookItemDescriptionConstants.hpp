@@ -16,40 +16,41 @@ using TicketDescription =
 
 /**
  * @brief What the ticket of each ware says of it, in the order of
- * SHIP_LOOK_ITEM_NAMES: the accessories, then the hulls. Each line fits the
- * width of the ticket in the regular font, TICKET_TEXT_WIDTH.
+ * SHIP_LOOK_ITEM_NAMES: the accessories, then the hulls. Each line is a
+ * group of words that reads on its own, never a phrase cut in two, and fits
+ * the width of the ticket in the regular font, TICKET_TEXT_WIDTH.
  */
 constexpr std::array<TicketDescription, identifiers::SHIP_LOOK_ITEM_COUNT>
     LOOK_ITEM_DESCRIPTIONS{{
-        {"FOR THE GENTLEMAN", "WHO SHOOTS FIRST", "AND BOWS AFTER."},
-        {"EVERY BOSS FIGHT", "IS A PARTY IF YOU", "BRING THE HAT."},
-        {"REAL GOLD, MAYBE.", "RULE THE SECTOR", "FROM YOUR COCKPIT."},
-        {"EXTRA LIFT. ZERO", "AERODYNAMICS.", "PURE STYLE."},
-        {"THIS SECTOR AIN'T", "BIG ENOUGH FOR", "YOU AND THE BYDO."},
-        {"HORNS SOLD", "SEPARATELY. NO,", "THEY ARE INCLUDED."},
-        {"CASTS NO SPELLS.", "THE BYDO DO NOT", "KNOW THAT."},
-        {"COOKS THE BYDO TO", "PERFECTION. WELL", "DONE, ALWAYS."},
-        {"THE STARS ARE", "BRIGHT. YOUR", "FUTURE TOO."},
-        {"GROWN IN ZERO G.", "TWENTY YEARS OF", "HARD WORK."},
-        {"GENUINE MOSCOW FUR.", "WARM AT MINUS", "FORTY, COMRADE."},
-        {"ARR, PILOT. THE", "VOID IS JUST A", "VERY DRY SEA."},
-        {"HO HO HO. THE", "BYDO GET COAL", "THIS YEAR."},
-        {"FOR PILOTS WHO", "NEVER LEAVE A", "WINGMAN BEHIND."},
-        {"FOR PILOTS WHO", "LEAVE EVERY", "WINGMAN BEHIND."},
-        {"SHADE FOR WHEN", "THE SUN IS A", "LITTLE TOO CLOSE."},
-        {"STOLEN FROM A", "MOSCOW ROADWORK.", "DO NOT TELL."},
+        {"SHOOT FIRST,", "BOW AFTER.", "A TRUE GENTLEMAN."},
+        {"EVERY BOSS FIGHT", "IS A PARTY", "WITH THIS HAT."},
+        {"REAL GOLD. MAYBE.", "RULE THE SECTOR", "FROM YOUR COCKPIT."},
+        {"EXTRA LIFT.", "ZERO AERODYNAMICS.", "PURE STYLE."},
+        {"THIS SECTOR", "AIN'T BIG ENOUGH", "FOR TWO, PARTNER."},
+        {"HORNS INCLUDED.", "PILLAGING", "SOLD SEPARATELY."},
+        {"CASTS NO SPELLS.", "BUT THE BYDO", "DON'T KNOW THAT."},
+        {"COOKS EVERY BYDO", "TO PERFECTION.", "WELL DONE, ALWAYS."},
+        {"THE STARS", "ARE BRIGHT.", "SO IS YOUR FUTURE."},
+        {"GROWN IN ZERO G.", "TWENTY YEARS", "OF HARD WORK."},
+        {"GENUINE MOSCOW FUR.", "WARM DOWN TO -40.", "COMRADE-APPROVED."},
+        {"ARR, PILOT.", "THE VOID IS JUST", "A VERY DRY SEA."},
+        {"HO HO HO.", "THIS YEAR, THE BYDO", "GET COAL."},
+        {"FOR THE PILOTS", "WHO NEVER LEAVE", "A WINGMAN BEHIND."},
+        {"FOR THE PILOTS", "WHO SHOOT FIRST", "AND NEVER REGRET."},
+        {"BIG SHADE", "FOR WHEN A STAR", "GETS TOO CLOSE."},
+        {"STOLEN FROM", "A MOSCOW ROADWORK.", "DO NOT TELL."},
         {"IT IS A FEZ.", "FEZZES ARE COOL.", ""},
-        {"DIPLOMA IN", "SHOOTING THINGS.", "WITH HONOURS."},
-        {"PICKS UP RADIO", "MOSCOW AND THE", "BYDO GOSSIP."},
-        {"HONOUR, STEEL", "AND A VERY TALL", "CREST."},
-        {"PUNK IS NOT DEAD.", "IT FLIES A SHIP", "NOW."},
-        {"THE BYDO LOOK", "EVEN UGLIER IN", "THREE DIMENSIONS."},
-        {"ONE LENS, HALF", "THE PRICE OF", "GLASSES. SMART."},
-        {"WISDOM GROWS", "SLOWLY. THIS ONE", "GREW FOR AGES."},
-        {"TEETH PAINTED ON", "THE NOSE. THE", "BYDO HATE IT."},
-        {"A GAGARIN CLASSIC.", "STILL SMELLS OF", "ROCKET FUEL."},
-        {"A SHELL OF THE", "ENEMY. WEAR IT,", "CONFUSE THEM."},
-        {"PURE GOLD PLATING.", "HEAVY, SHINY,", "WORTH IT."},
+        {"TOP OF THE CLASS", "IN SHOOTING THINGS.", "WITH HONOURS."},
+        {"PICKS UP", "RADIO MOSCOW", "AND BYDO GOSSIP."},
+        {"HONOUR. STEEL.", "A VERY TALL CREST.", ""},
+        {"PUNK IS NOT DEAD.", "IT FLIES NOW.", ""},
+        {"THE BYDO LOOK", "EVEN UGLIER IN 3D.", ""},
+        {"ONE LENS.", "HALF THE PRICE.", "TWICE THE CLASS."},
+        {"WISDOM TAKES TIME.", "THIS ONE TOOK", "TWENTY WINTERS."},
+        {"TEETH PAINTED", "ON THE NOSE.", "THE BYDO HATE IT."},
+        {"A GAGARIN CLASSIC.", "STILL SMELLS", "OF ROCKET FUEL."},
+        {"AN ENEMY SHELL.", "WEAR IT.", "CONFUSE THEM."},
+        {"PURE GOLD PLATING.", "HEAVY. SHINY.", "WORTH IT."},
         {"THE RAREST HULL.", "EVEN THE BYDO", "BOW TO IT."},
     }};
 

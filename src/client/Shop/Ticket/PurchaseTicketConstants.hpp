@@ -63,11 +63,13 @@ constexpr int TICKET_PRICE_LABEL_LEFT = 104;
 constexpr sf::IntRect TICKET_WARE_AREA{{TICKET_MIDDLE - 36, 42}, {72, 40}};
 
 /** @brief The two buttons of the ticket, and the label and key of each: the
- * key centred under the label. */
-constexpr sf::IntRect TICKET_CANCEL_AREA{{12, 161}, {66, 20}};
-constexpr sf::IntRect TICKET_BUY_AREA{{80, 161}, {80, 20}};
+ * key centred under the label: the letters of the label on rows 4 to 10 of
+ * the face, those of the key on rows 14 to 18, two rows clear of the border
+ * on row 21. */
+constexpr sf::IntRect TICKET_CANCEL_AREA{{12, 160}, {66, 22}};
+constexpr sf::IntRect TICKET_BUY_AREA{{80, 160}, {80, 22}};
 constexpr int TICKET_BUTTON_LABEL_ROW = 3;
-constexpr int TICKET_BUTTON_KEY_ROW = 13;
+constexpr int TICKET_BUTTON_KEY_ROW = 12;
 /** @brief A chosen button sinks by one row, and shows the corners of the
  * choice TICKET_CORNER_GAP around it, each TICKET_CORNER_LENGTH long. */
 constexpr int TICKET_BUTTON_SINK = 1;

@@ -26,7 +26,7 @@ constexpr int CHAPKA_SCALE = 3;
 constexpr std::string_view CHAPKA_NAME = "CHAPKA";
 constexpr sf::Vector2i CHAPKA_NAME_ANCHOR{240, 115};
 constexpr std::array<std::string_view, 3> CHAPKA_DESCRIPTION{
-    "GENUINE MOSCOW FUR.", "WARM AT MINUS", "FORTY, COMRADE."};
+    "GENUINE MOSCOW FUR.", "WARM DOWN TO -40.", "COMRADE-APPROVED."};
 
 /** @brief The ink of the typed text, dark on the paper. */
 constexpr sf::Color TYPED_INK(43, 38, 64);
