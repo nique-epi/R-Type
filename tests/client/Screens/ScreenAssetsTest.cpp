@@ -5,8 +5,10 @@
 #include <algorithm>
 #include <filesystem>
 #include <string>
+#include <vector>
 #include "AssetLibrary.hpp"
 #include "AssetLoadingStep.hpp"
+#include "CasinoSpriteConstants.hpp"
 #include "DestinationSpriteConstants.hpp"
 #include "EffectConstants.hpp"
 #include "EntityAppearances.hpp"
@@ -27,6 +29,7 @@
 
 using rtype::client::AssetLibrary;
 using rtype::client::AssetLoadingStep;
+using rtype::client::CASINO_TEXTURES;
 using rtype::client::DESTINATION_SHEET_ID;
 using rtype::client::EFFECT_SHEET_ID;
 using rtype::client::ENTITY_SHEET_ID;
@@ -50,10 +53,12 @@ using rtype::client::SHOP_KEEPER_SHEET_ID;
 using rtype::client::SHOP_SCENE_ID;
 using rtype::client::SMALL_FONT_ID;
 using rtype::client::titleAssets;
+using rtype::client::WHEEL_ROTOR_TURN_ID;
 using rtype::client::withEntitySheets;
 using ::testing::Contains;
 using ::testing::IsSupersetOf;
-using ::testing::UnorderedElementsAre;
+using ::testing::Not;
+using ::testing::UnorderedElementsAreArray;
 
 /**
  * Given the assets folder of the repository
@@ -207,12 +212,37 @@ TEST(ScreenAssets, AGameKeepsEveryTextureOfTheTitle) {
  * of the servers, and the effect sheet of its explosions
  */
 TEST(ScreenAssets, TheIntroLoadsTheTitleAndTheEffectSheet) {
-  EXPECT_THAT(introAssets().textures,
-              UnorderedElementsAre(
-                  LOGO_ID, ENTITY_SHEET_ID, HUD_SHEET_ID, PROFESSOR_SHEET_ID,
-                  LEADERBOARD_SHEET_ID, SHIP_LOOK_SHEET_ID, SHIP_HULL_SHEET_ID,
-                  SECTOR_MAP_SHEET_ID, SHOP_SCENE_ID, SHOP_KEEPER_SHEET_ID,
-                  SHOP_FRONT_ID, DESTINATION_SHEET_ID, EFFECT_SHEET_ID));
+  std::vector<std::string> expected{LOGO_ID,
+                                    ENTITY_SHEET_ID,
+                                    HUD_SHEET_ID,
+                                    PROFESSOR_SHEET_ID,
+                                    LEADERBOARD_SHEET_ID,
+                                    SHIP_LOOK_SHEET_ID,
+                                    SHIP_HULL_SHEET_ID,
+                                    SECTOR_MAP_SHEET_ID,
+                                    SHOP_SCENE_ID,
+                                    SHOP_KEEPER_SHEET_ID,
+                                    SHOP_FRONT_ID,
+                                    DESTINATION_SHEET_ID,
+                                    EFFECT_SHEET_ID};
+  expected.insert(expected.end(), CASINO_TEXTURES.begin(),
+                  CASINO_TEXTURES.end());
+
+  EXPECT_THAT(introAssets().textures, UnorderedElementsAreArray(expected));
+}
+
+/**
+ * Given the assets of the title screen
+ * When their textures are listed
+ * Then they hold every picture of the casino, which opens over the waiting
+ * room without loading, but the turns of the rotor, too wide for some
+ * graphics cards
+ */
+TEST(ScreenAssets, TheTitleLoadsThePicturesOfTheCasino) {
+  const std::vector<std::string> textures = titleAssets().textures;
+
+  EXPECT_THAT(textures, IsSupersetOf(CASINO_TEXTURES));
+  EXPECT_THAT(textures, Not(Contains(WHEEL_ROTOR_TURN_ID)));
 }
 
 /**

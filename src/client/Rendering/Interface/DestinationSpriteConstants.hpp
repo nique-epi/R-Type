@@ -8,8 +8,9 @@ namespace rtype::client {
 /**
  * @brief Asset id of the sheet of the destination screen: the planet of
  * SERVER, from Pixel Planets by Master484 (CC0) with an ink ring added, then
- * the yellow basket of SHOP, from Pixel Mart by ghostpixxells (CC0), then the
- * round-roofed hangar of HANGAR, drawn for this project, SPRITE_SPACING apart.
+ * the yellow basket of SHOP, from Pixel Mart by ghostpixxells (CC0), the
+ * round-roofed hangar of HANGAR, then the roulette wheel of CASINO, both drawn
+ * for this project, SPRITE_SPACING apart.
  */
 constexpr const char* DESTINATION_SHEET_ID = "sprites/destinations.png";
 
@@ -26,5 +27,11 @@ constexpr game::SpriteFrame DESTINATION_HANGAR_FRAME{
     .top = 0,
     .width = 32,
     .height = 24};
+constexpr game::SpriteFrame DESTINATION_WHEEL_FRAME{
+    .left = DESTINATION_HANGAR_FRAME.left + DESTINATION_HANGAR_FRAME.width +
+            SPRITE_SPACING,
+    .top = 0,
+    .width = 30,
+    .height = 30};
 
 }  // namespace rtype::client
