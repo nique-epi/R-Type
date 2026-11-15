@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include "BossStageParts.hpp"
 #include "Logger.hpp"
 
@@ -35,8 +36,9 @@ class BossStage {
   [[nodiscard]] bool hasBoss() const;
 
  private:
-  /** @brief Orders the boss of the level, and says so in the journal. */
-  void orderTheBoss();
+  /** @brief Orders @p boss, the boss of the level, and says so in the
+   * journal. */
+  void orderTheBoss(const std::string& boss);
 
   BossStageParts parts_;
   logging::Logger logger_;

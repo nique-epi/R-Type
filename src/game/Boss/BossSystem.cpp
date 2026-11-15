@@ -23,6 +23,7 @@
 #include "EventBus.hpp"
 #include "Health.hpp"
 #include "NetworkIdentity.hpp"
+#include "PercentConstants.hpp"
 #include "Rage.hpp"
 #include "Summoning.hpp"
 #include "SummoningStart.hpp"
@@ -38,7 +39,6 @@ enum class BossChange : std::uint8_t {
   None,
   Warned,
   Woken,
-  Enraged,
 };
 
 /** @returns Whether the arrival of @p boss, the body @p body, is over: it
@@ -51,18 +51,22 @@ bool arrivalIsOver(engine::ComponentRegistry& components, engine::Entity body,
           current->key->attack != boss.arrivalAttack);
 }
 
-/** @brief Moves @p boss, the body @p body with @p health, on to the progress
- * it has reached, and @returns what that asks of the system. */
+/** @returns Whether @p health is below the share of its full points @p boss
+ * enrages below, the `rage_below_percent` of its sheet, rounded down. */
+bool isBelowItsRage(const Boss& boss, const Health& health) {
+  return health.points < health.full * boss.rageBelowPercent / WHOLE_PERCENT;
+}
+
+/** @brief Moves @p boss, the body @p body, on to the progress it has
+ * reached, and @returns what that asks of the system. */
 BossChange advance(engine::ComponentRegistry& components, engine::Entity body,
-                   Boss& boss, const Health& health) {
+                   Boss& boss) {
   if (boss.progress == BossProgress::Created) {
     boss.progress = BossProgress::Warned;
     return BossChange::Warned;
   }
-  if (boss.progress == BossProgress::Warned) {
-    if (components.has<Summoning>(body)) {
-      return BossChange::None;
-    }
+  if (boss.progress == BossProgress::Warned &&
+      !components.has<Summoning>(body)) {
     boss.progress = BossProgress::Arriving;
     return BossChange::Woken;
   }
@@ -70,26 +74,21 @@ BossChange advance(engine::ComponentRegistry& components, engine::Entity body,
       arrivalIsOver(components, body, boss)) {
     boss.progress = BossProgress::Fighting;
   }
-  const bool belowItsRage =
-      health.points < rageBelowPointsOf(health.full, boss.rageBelowPercent);
-  return boss.progress == BossProgress::Fighting && belowItsRage &&
-                 !components.has<Rage>(body)
-             ? BossChange::Enraged
-             : BossChange::None;
+  return BossChange::None;
 }
 
-/** @returns The health of the boss @p body to tell the players; nothing for
- * a body without a NetworkIdentity or without Health. */
-std::optional<BossHealthChanged> healthOf(engine::ComponentRegistry& components,
-                                          engine::Entity body) {
+/** @returns What to tell the players of the boss @p body, which has
+ * @p health; nothing for a body without a NetworkIdentity. */
+std::optional<BossHealthChanged> toldHealthOf(
+    engine::ComponentRegistry& components, engine::Entity body,
+    const Health& health) {
   const auto* const identity = components.get<NetworkIdentity>(body);
-  const auto* const health = components.get<Health>(body);
-  if (identity == nullptr || health == nullptr) {
+  if (identity == nullptr) {
     return std::nullopt;
   }
   return BossHealthChanged{.networkId = identity->networkId,
-                           .points = static_cast<std::uint16_t>(health->points),
-                           .full = static_cast<std::uint16_t>(health->full),
+                           .points = static_cast<std::uint16_t>(health.points),
+                           .full = static_cast<std::uint16_t>(health.full),
                            .enraged = components.has<Rage>(body)};
 }
 
@@ -107,25 +106,22 @@ BossSystem::~BossSystem() { parts_.events.get().unsubscribe(destructions_); }
 void BossSystem::update(engine::ComponentRegistry& components,
                         [[maybe_unused]] engine::Duration elapsed) {
   warned_.clear();
-  woken_.clear();
   enraging_.clear();
-  components.forEach<Boss, Health>([this, &components](engine::Entity body,
-                                                       Boss& boss,
-                                                       const Health& health) {
-    const BossChange change = advance(components, body, boss, health);
-    if (change == BossChange::Warned) {
-      warned_.push_back(body);
-    } else if (change == BossChange::Woken) {
-      woken_.push_back(body);
-    } else if (change == BossChange::Enraged) {
-      enraging_.push_back(body);
-    }
-  });
+  components.forEach<Boss, Health>(
+      [this, &components](engine::Entity body, Boss& boss, Health& health) {
+        const BossChange change = advance(components, body, boss);
+        if (change == BossChange::Warned) {
+          warned_.push_back(body);
+        } else if (change == BossChange::Woken) {
+          strengthen(health);
+        } else if (boss.progress == BossProgress::Fighting &&
+                   isBelowItsRage(boss, health) &&
+                   !components.has<Rage>(body)) {
+          enraging_.push_back(body);
+        }
+      });
   for (const engine::Entity boss : warned_) {
     warn(components, boss);
-  }
-  for (const engine::Entity boss : woken_) {
-    strengthen(components, boss);
   }
   for (const engine::Entity boss : enraging_) {
     enrage(components, boss);
@@ -134,7 +130,7 @@ void BossSystem::update(engine::ComponentRegistry& components,
 }
 
 void BossSystem::warn(engine::ComponentRegistry& components,
-                      engine::Entity boss) {
+                      engine::Entity boss) const {
   startSummoning(components, boss, BOSS_ARRIVAL_WARNING_TICKS);
   const auto* const type = components.get<EntityTypeNumber>(boss);
   parts_.events.get().publish(BossArrival{
@@ -142,21 +138,16 @@ void BossSystem::warn(engine::ComponentRegistry& components,
       .warningMilliseconds = BOSS_ARRIVAL_WARNING_MILLISECONDS});
 }
 
-void BossSystem::strengthen(engine::ComponentRegistry& components,
-                            engine::Entity boss) {
-  auto* const health = components.get<Health>(boss);
-  if (health == nullptr) {
-    return;
-  }
-  health->full = scaledBossHealth(
-      BossHealthScaling{.points = health->full,
+void BossSystem::strengthen(Health& health) const {
+  health.full = scaledBossHealth(
+      BossHealthScaling{.points = health.full,
                         .players = parts_.players(),
                         .healthPercent = parts_.healthPercent});
-  health->points = health->full;
+  health.points = health.full;
 }
 
 void BossSystem::enrage(engine::ComponentRegistry& components,
-                        engine::Entity boss) {
+                        engine::Entity boss) const {
   const auto* const phases = components.get<Boss>(boss);
   if (phases == nullptr) {
     return;
@@ -173,10 +164,14 @@ void BossSystem::tellChangedHealths(engine::ComponentRegistry& components) {
   healths_.clear();
   components.forEach<Boss, Health>([this, &components](engine::Entity body,
                                                        const Boss& boss,
-                                                       const Health&) {
-    const std::optional<BossHealthChanged> health = healthOf(components, body);
-    if (boss.progress == BossProgress::Fighting && health.has_value()) {
-      healths_.push_back(*health);
+                                                       const Health& health) {
+    if (boss.progress != BossProgress::Fighting) {
+      return;
+    }
+    const std::optional<BossHealthChanged> told =
+        toldHealthOf(components, body, health);
+    if (told.has_value()) {
+      healths_.push_back(*told);
     }
   });
   for (const BossHealthChanged& health : healths_) {

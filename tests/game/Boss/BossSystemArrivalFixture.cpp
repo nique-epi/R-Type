@@ -5,6 +5,7 @@
 #include <vector>
 #include "Boss.hpp"
 #include "BossArrival.hpp"
+#include "BossHealthScalingTestConstants.hpp"
 #include "BossProgress.hpp"
 #include "BossSystem.hpp"
 #include "BossSystemArrivalTestConstants.hpp"
@@ -40,8 +41,8 @@ void BossSystemArrivalFixture::connect(std::size_t players) {
 void BossSystemArrivalFixture::addNewBoss() {
   boss_ = entities_.create();
   components_.add(boss_, Boss{});
-  components_.add(boss_, Health{.points = ARRIVING_BOSS_HEALTH,
-                                .full = ARRIVING_BOSS_HEALTH});
+  components_.add(
+      boss_, Health{.points = SHEET_BOSS_HEALTH, .full = SHEET_BOSS_HEALTH});
   components_.add(boss_, CurrentAction{});
   components_.add(boss_, NetworkIdentity{.networkId = ARRIVING_BOSS_ID});
   components_.add(boss_,

@@ -1,10 +1,11 @@
 #pragma once
 
-#include <cstddef>
 #include <cstdint>
+#include <optional>
 #include "ActionKey.hpp"
 #include "Boss.hpp"
 #include "BossProgress.hpp"
+#include "CurrentAction.hpp"
 #include "EnemyPhase.hpp"
 
 namespace rtype::game::testing {
@@ -33,9 +34,8 @@ constexpr Boss FIGHTING_BOSS{.rageBelowPercent = PHASED_BOSS_RAGE_BELOW_PERCENT,
 constexpr ActionKey PHASED_BOSS_SLIDE{.attack = PHASED_BOSS_ARRIVAL_ATTACK,
                                       .phase = EnemyPhase::Signal};
 constexpr std::uint32_t ARRIVAL_ENDED = 1;
-
-/** @brief The players a boss of the phase tests is scaled for. */
-constexpr std::size_t ONE_CONNECTED_PILOT = 1;
+constexpr CurrentAction ACTION_AFTER_THE_ARRIVAL{.key = std::nullopt,
+                                                 .ended = ARRIVAL_ENDED};
 
 /** @brief The network id of a Bydo that is no boss. */
 constexpr std::uint32_t KILLED_BYDO_ID = 7;

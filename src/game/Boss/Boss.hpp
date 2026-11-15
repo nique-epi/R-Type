@@ -2,7 +2,6 @@
 
 #include <cstdint>
 #include "BossProgress.hpp"
-#include "PercentConstants.hpp"
 
 namespace rtype::game {
 
@@ -19,12 +18,5 @@ struct Boss {
   /** @brief How far it is; moved on by BossSystem only. */
   BossProgress progress{BossProgress::Created};
 };
-
-/** @returns The points a boss of @p fullHealth enrages below, for the
- * `rage_below_percent` @p rageBelowPercent of its sheet, rounded down. */
-[[nodiscard]] constexpr int rageBelowPointsOf(int fullHealth,
-                                              int rageBelowPercent) {
-  return fullHealth * rageBelowPercent / WHOLE_PERCENT;
-}
 
 }  // namespace rtype::game

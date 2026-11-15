@@ -3,6 +3,7 @@
 #include <vector>
 #include "Boss.hpp"
 #include "BossHealthChanged.hpp"
+#include "BossHealthScalingTestConstants.hpp"
 #include "BossSystemParts.hpp"
 #include "BossSystemTestConstants.hpp"
 #include "CurrentAction.hpp"
@@ -17,7 +18,7 @@ namespace rtype::game::testing {
 
 BossSystemFixture::BossSystemFixture()
     : system_(BossSystemParts{.events = events_,
-                              .players = [] { return ONE_CONNECTED_PILOT; }}) {
+                              .players = [] { return ONE_PLAYER; }}) {
   events_.subscribe<BossHealthChanged>(
       [this](const BossHealthChanged& health) { healths_.push_back(health); });
   events_.subscribe<EnemyActionStarted>(

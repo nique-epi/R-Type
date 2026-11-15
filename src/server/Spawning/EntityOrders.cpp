@@ -25,6 +25,7 @@
 #include "PlayerRoster.hpp"
 #include "Position.hpp"
 #include "ScriptMachine.hpp"
+#include "SpawnOptions.hpp"
 
 namespace rtype::server {
 
@@ -77,7 +78,7 @@ std::uint32_t EntityOrders::spawn(std::string_view type,
   orders_.push_back(EntityOrder{.sheet = *sheet,
                                 .position = position,
                                 .networkId = networkId,
-                                .healthPercent = options.healthPercent});
+                                .options = options});
   return networkId;
 }
 
@@ -114,7 +115,7 @@ void EntityOrders::appear(const EntityOrder& order) const {
       sheet, game::BodyPlacement{.position = order.position,
                                  .origin = order.position,
                                  .reservedNetworkId = order.networkId,
-                                 .healthPercent = order.healthPercent});
+                                 .healthPercent = order.options.healthPercent});
   const network::EntitySpawned spawned = entitySpawnedOf(
       order.networkId, game::EntityTypeNumber{.number = sheet.number},
       order.position);

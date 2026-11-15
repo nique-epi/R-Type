@@ -226,11 +226,11 @@ TEST_F(LuauBehaviourFixture, AsksTheGameForTheHealthPercentAScriptGives) {
 TEST_F(LuauBehaviourFixture, AcceptsTheLowestHealthPercent) {
   RecordingEntityOrders world{GIVEN_NETWORK_ID};
   attach(world);
-  load(LOWEST_PERCENT_SCRIPT);
+  load(WEAKENER_SCRIPT);
   SteeredBody body{.position = BODY_IN_THE_MIDDLE};
   beginTick();
 
-  static_cast<void>(steer(WEAKENER_BEHAVIOUR, body));
+  static_cast<void>(steer(LOWEST_PERCENT_BEHAVIOUR, body));
 
   ASSERT_EQ(world.spawns().size(), 1U);
   EXPECT_EQ(world.spawns().front().options.healthPercent,
@@ -246,11 +246,11 @@ TEST_F(LuauBehaviourFixture, AcceptsTheLowestHealthPercent) {
 TEST_F(LuauBehaviourFixture, AcceptsTheWholeHealthPercent) {
   RecordingEntityOrders world{GIVEN_NETWORK_ID};
   attach(world);
-  load(HIGHEST_PERCENT_SCRIPT);
+  load(WEAKENER_SCRIPT);
   SteeredBody body{.position = BODY_IN_THE_MIDDLE};
   beginTick();
 
-  static_cast<void>(steer(WEAKENER_BEHAVIOUR, body));
+  static_cast<void>(steer(WHOLE_PERCENT_BEHAVIOUR, body));
 
   ASSERT_EQ(world.spawns().size(), 1U);
   EXPECT_EQ(world.spawns().front().options.healthPercent, WHOLE_HEALTH_PERCENT);
@@ -264,11 +264,11 @@ TEST_F(LuauBehaviourFixture, AcceptsTheWholeHealthPercent) {
 TEST_F(LuauBehaviourFixture, RefusesAHealthPercentOfZero) {
   RecordingEntityOrders world{GIVEN_NETWORK_ID};
   attach(world);
-  load(NO_PERCENT_SCRIPT);
+  load(WEAKENER_SCRIPT);
   SteeredBody body{.position = BODY_IN_THE_MIDDLE};
   beginTick();
 
-  static_cast<void>(steer(WEAKENER_BEHAVIOUR, body));
+  static_cast<void>(steer(NO_PERCENT_BEHAVIOUR, body));
 
   EXPECT_TRUE(world.spawns().empty());
 }
@@ -281,11 +281,11 @@ TEST_F(LuauBehaviourFixture, RefusesAHealthPercentOfZero) {
 TEST_F(LuauBehaviourFixture, RefusesAHealthPercentPastTheWhole) {
   RecordingEntityOrders world{GIVEN_NETWORK_ID};
   attach(world);
-  load(PERCENT_PAST_THE_WHOLE_SCRIPT);
+  load(WEAKENER_SCRIPT);
   SteeredBody body{.position = BODY_IN_THE_MIDDLE};
   beginTick();
 
-  static_cast<void>(steer(WEAKENER_BEHAVIOUR, body));
+  static_cast<void>(steer(PAST_THE_WHOLE_BEHAVIOUR, body));
 
   EXPECT_TRUE(world.spawns().empty());
 }
@@ -298,11 +298,11 @@ TEST_F(LuauBehaviourFixture, RefusesAHealthPercentPastTheWhole) {
 TEST_F(LuauBehaviourFixture, RefusesAHealthPercentThatIsNotWhole) {
   RecordingEntityOrders world{GIVEN_NETWORK_ID};
   attach(world);
-  load(FRACTIONAL_PERCENT_SCRIPT);
+  load(WEAKENER_SCRIPT);
   SteeredBody body{.position = BODY_IN_THE_MIDDLE};
   beginTick();
 
-  static_cast<void>(steer(WEAKENER_BEHAVIOUR, body));
+  static_cast<void>(steer(FRACTIONAL_PERCENT_BEHAVIOUR, body));
 
   EXPECT_TRUE(world.spawns().empty());
 }

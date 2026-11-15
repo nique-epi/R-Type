@@ -1,5 +1,4 @@
 #include <gtest/gtest.h>
-#include <optional>
 #include <vector>
 #include "BossHealthChanged.hpp"
 #include "BossProgress.hpp"
@@ -16,7 +15,7 @@ using rtype::game::CurrentAction;
 using rtype::game::DestructionCause;
 using rtype::game::EnemyActionStarted;
 using rtype::game::EnemyPhase;
-using rtype::game::testing::ARRIVAL_ENDED;
+using rtype::game::testing::ACTION_AFTER_THE_ARRIVAL;
 using rtype::game::testing::ARRIVING_BOSS;
 using rtype::game::testing::BossSystemFixture;
 using rtype::game::testing::FIGHTING_BOSS;
@@ -35,8 +34,7 @@ using rtype::game::testing::PHASED_BOSS_SLIDE;
  * Then its fight is announced with its full health, calm
  */
 TEST_F(BossSystemFixture, AnnouncesTheFightOnceTheArrivalIsOver) {
-  addBoss(ARRIVING_BOSS, PHASED_BOSS_FULL_HEALTH,
-          CurrentAction{.key = std::nullopt, .ended = ARRIVAL_ENDED});
+  addBoss(ARRIVING_BOSS, PHASED_BOSS_FULL_HEALTH, ACTION_AFTER_THE_ARRIVAL);
 
   run();
 
@@ -55,8 +53,7 @@ TEST_F(BossSystemFixture, AnnouncesTheFightOnceTheArrivalIsOver) {
  * Then its fight is announced once
  */
 TEST_F(BossSystemFixture, AnnouncesTheFightOnlyOnce) {
-  addBoss(ARRIVING_BOSS, PHASED_BOSS_FULL_HEALTH,
-          CurrentAction{.key = std::nullopt, .ended = ARRIVAL_ENDED});
+  addBoss(ARRIVING_BOSS, PHASED_BOSS_FULL_HEALTH, ACTION_AFTER_THE_ARRIVAL);
 
   run();
   run();
@@ -70,8 +67,7 @@ TEST_F(BossSystemFixture, AnnouncesTheFightOnlyOnce) {
  * Then it is enraged
  */
 TEST_F(BossSystemFixture, EnragesABossBelowItsThreshold) {
-  addBoss(FIGHTING_BOSS, PHASED_BOSS_BELOW_ITS_RAGE,
-          CurrentAction{.key = std::nullopt, .ended = ARRIVAL_ENDED});
+  addBoss(FIGHTING_BOSS, PHASED_BOSS_BELOW_ITS_RAGE, ACTION_AFTER_THE_ARRIVAL);
 
   run();
 
@@ -84,8 +80,7 @@ TEST_F(BossSystemFixture, EnragesABossBelowItsThreshold) {
  * Then its rage attack 9 is announced, in the phase Enraged
  */
 TEST_F(BossSystemFixture, AnnouncesItsRageAttackInThePhaseEnraged) {
-  addBoss(FIGHTING_BOSS, PHASED_BOSS_BELOW_ITS_RAGE,
-          CurrentAction{.key = std::nullopt, .ended = ARRIVAL_ENDED});
+  addBoss(FIGHTING_BOSS, PHASED_BOSS_BELOW_ITS_RAGE, ACTION_AFTER_THE_ARRIVAL);
 
   run();
 
@@ -102,8 +97,7 @@ TEST_F(BossSystemFixture, AnnouncesItsRageAttackInThePhaseEnraged) {
  * Then its health is announced, enraged
  */
 TEST_F(BossSystemFixture, AnnouncesTheRageWithItsHealth) {
-  addBoss(FIGHTING_BOSS, PHASED_BOSS_BELOW_ITS_RAGE,
-          CurrentAction{.key = std::nullopt, .ended = ARRIVAL_ENDED});
+  addBoss(FIGHTING_BOSS, PHASED_BOSS_BELOW_ITS_RAGE, ACTION_AFTER_THE_ARRIVAL);
 
   run();
 
@@ -121,8 +115,7 @@ TEST_F(BossSystemFixture, AnnouncesTheRageWithItsHealth) {
  * Then its rage attack is announced once
  */
 TEST_F(BossSystemFixture, EnragesItOnlyOnce) {
-  addBoss(FIGHTING_BOSS, PHASED_BOSS_BELOW_ITS_RAGE,
-          CurrentAction{.key = std::nullopt, .ended = ARRIVAL_ENDED});
+  addBoss(FIGHTING_BOSS, PHASED_BOSS_BELOW_ITS_RAGE, ACTION_AFTER_THE_ARRIVAL);
 
   run();
   run();
@@ -136,8 +129,7 @@ TEST_F(BossSystemFixture, EnragesItOnlyOnce) {
  * Then its 239 points out of 240, calm, are told
  */
 TEST_F(BossSystemFixture, TellsTheHealthAHitLeft) {
-  addBoss(FIGHTING_BOSS, PHASED_BOSS_FULL_HEALTH,
-          CurrentAction{.key = std::nullopt, .ended = ARRIVAL_ENDED});
+  addBoss(FIGHTING_BOSS, PHASED_BOSS_FULL_HEALTH, ACTION_AFTER_THE_ARRIVAL);
   run();
 
   leavePoints(PHASED_BOSS_AFTER_ONE_HIT);
@@ -157,8 +149,7 @@ TEST_F(BossSystemFixture, TellsTheHealthAHitLeft) {
  * Then no point left out of 240 is told
  */
 TEST_F(BossSystemFixture, TellsAKilledBossHasNoPointLeft) {
-  addBoss(FIGHTING_BOSS, PHASED_BOSS_FULL_HEALTH,
-          CurrentAction{.key = std::nullopt, .ended = ARRIVAL_ENDED});
+  addBoss(FIGHTING_BOSS, PHASED_BOSS_FULL_HEALTH, ACTION_AFTER_THE_ARRIVAL);
   run();
 
   destroyBoss(DestructionCause::Killed);
@@ -178,8 +169,7 @@ TEST_F(BossSystemFixture, TellsAKilledBossHasNoPointLeft) {
  * Then nothing more is told
  */
 TEST_F(BossSystemFixture, TellsNothingOfARemovedBoss) {
-  addBoss(FIGHTING_BOSS, PHASED_BOSS_FULL_HEALTH,
-          CurrentAction{.key = std::nullopt, .ended = ARRIVAL_ENDED});
+  addBoss(FIGHTING_BOSS, PHASED_BOSS_FULL_HEALTH, ACTION_AFTER_THE_ARRIVAL);
   run();
 
   destroyBoss(DestructionCause::Removed);
@@ -193,8 +183,7 @@ TEST_F(BossSystemFixture, TellsNothingOfARemovedBoss) {
  * Then nothing more is told
  */
 TEST_F(BossSystemFixture, TellsNothingWhenAnotherBodyIsKilled) {
-  addBoss(FIGHTING_BOSS, PHASED_BOSS_FULL_HEALTH,
-          CurrentAction{.key = std::nullopt, .ended = ARRIVAL_ENDED});
+  addBoss(FIGHTING_BOSS, PHASED_BOSS_FULL_HEALTH, ACTION_AFTER_THE_ARRIVAL);
   run();
 
   announceKillOf(KILLED_BYDO_ID);
@@ -241,8 +230,7 @@ TEST_F(BossSystemFixture, NeverEnragesDuringTheArrival) {
  * Then it stays calm: it enrages below its threshold, not at it
  */
 TEST_F(BossSystemFixture, LeavesABossAboveItsThresholdCalm) {
-  addBoss(FIGHTING_BOSS, PHASED_BOSS_AT_ITS_RAGE,
-          CurrentAction{.key = std::nullopt, .ended = ARRIVAL_ENDED});
+  addBoss(FIGHTING_BOSS, PHASED_BOSS_AT_ITS_RAGE, ACTION_AFTER_THE_ARRIVAL);
 
   run();
 

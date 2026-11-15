@@ -8,6 +8,7 @@
 #include "LdtkPlacement.hpp"
 #include "PlayfieldConstants.hpp"
 #include "Position.hpp"
+#include "SpawnOptions.hpp"
 
 namespace rtype::game {
 

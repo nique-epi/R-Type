@@ -3,20 +3,21 @@
 #include <optional>
 #include <vector>
 #include "BossArrival.hpp"
+#include "BossHealthScalingTestConstants.hpp"
 #include "BossProgress.hpp"
 #include "BossSystemArrivalFixture.hpp"
 #include "BossSystemArrivalTestConstants.hpp"
 
 using rtype::game::BossArrival;
 using rtype::game::BossProgress;
-using rtype::game::testing::ARRIVING_BOSS_HEALTH;
-using rtype::game::testing::ARRIVING_BOSS_HEALTH_FOR_THREE;
-using rtype::game::testing::ARRIVING_BOSS_HEALTH_WHEN_HARD;
 using rtype::game::testing::ARRIVING_BOSS_SHEET_NUMBER;
+using rtype::game::testing::BOSS_HEALTH_FOR_THREE_PLAYERS;
 using rtype::game::testing::BossSystemArrivalFixture;
-using rtype::game::testing::HARD_DIFFICULTY_HEALTH_PERCENT;
+using rtype::game::testing::HARD_BOSS_HEALTH_FOR_ONE_PLAYER;
+using rtype::game::testing::HARD_HEALTH_PERCENT;
 using rtype::game::testing::MILLISECONDS_OF_A_BOSS_WARNING;
-using rtype::game::testing::THREE_CONNECTED_PILOTS;
+using rtype::game::testing::SHEET_BOSS_HEALTH;
+using rtype::game::testing::THREE_PLAYERS;
 using rtype::game::testing::TICKS_OF_A_BOSS_WARNING;
 
 /**
@@ -83,13 +84,13 @@ TEST_F(BossSystemArrivalFixture, WaitsWhileTheBossIsSummoned) {
  * Then the boss keeps the 240 points it appeared with
  */
 TEST_F(BossSystemArrivalFixture, LeavesTheHealthAloneDuringTheWarning) {
-  connect(THREE_CONNECTED_PILOTS);
+  connect(THREE_PLAYERS);
   addNewBoss();
   run();
 
   run();
 
-  EXPECT_EQ(health().full, ARRIVING_BOSS_HEALTH);
+  EXPECT_EQ(health().full, SHEET_BOSS_HEALTH);
 }
 
 /**
@@ -114,15 +115,15 @@ TEST_F(BossSystemArrivalFixture, LetsTheBossArriveOnceItsWarningIsOver) {
  * past the first
  */
 TEST_F(BossSystemArrivalFixture, ScalesTheHealthForThePlayersAfterTheWarning) {
-  connect(THREE_CONNECTED_PILOTS);
+  connect(THREE_PLAYERS);
   addNewBoss();
   run();
   endTheWarning();
 
   run();
 
-  EXPECT_EQ(health().full, ARRIVING_BOSS_HEALTH_FOR_THREE);
-  EXPECT_EQ(health().points, ARRIVING_BOSS_HEALTH_FOR_THREE);
+  EXPECT_EQ(health().full, BOSS_HEALTH_FOR_THREE_PLAYERS);
+  EXPECT_EQ(health().points, BOSS_HEALTH_FOR_THREE_PLAYERS);
 }
 
 /**
@@ -132,14 +133,14 @@ TEST_F(BossSystemArrivalFixture, ScalesTheHealthForThePlayersAfterTheWarning) {
  * Then the boss has 312 points
  */
 TEST_F(BossSystemArrivalFixture, ScalesTheHealthForTheDifficulty) {
-  useHealthPercent(HARD_DIFFICULTY_HEALTH_PERCENT);
+  useHealthPercent(HARD_HEALTH_PERCENT);
   addNewBoss();
   run();
   endTheWarning();
 
   run();
 
-  EXPECT_EQ(health().full, ARRIVING_BOSS_HEALTH_WHEN_HARD);
+  EXPECT_EQ(health().full, HARD_BOSS_HEALTH_FOR_ONE_PLAYER);
 }
 
 /**
@@ -148,7 +149,7 @@ TEST_F(BossSystemArrivalFixture, ScalesTheHealthForTheDifficulty) {
  * Then the boss still has 360 points: its health is scaled once
  */
 TEST_F(BossSystemArrivalFixture, ScalesTheHealthOnce) {
-  connect(THREE_CONNECTED_PILOTS);
+  connect(THREE_PLAYERS);
   addNewBoss();
   run();
   endTheWarning();
@@ -156,5 +157,5 @@ TEST_F(BossSystemArrivalFixture, ScalesTheHealthOnce) {
 
   run();
 
-  EXPECT_EQ(health().full, ARRIVING_BOSS_HEALTH_FOR_THREE);
+  EXPECT_EQ(health().full, BOSS_HEALTH_FOR_THREE_PLAYERS);
 }

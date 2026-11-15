@@ -5,9 +5,7 @@
 #include "BossStageParts.hpp"
 #include "EnemyCount.hpp"
 #include "EngineException.hpp"
-#include "IEntityOrders.hpp"
 #include "SpawnOptions.hpp"
-#include "World.hpp"
 
 namespace rtype::server {
 
@@ -24,7 +22,7 @@ void BossStage::onTick(bool lastWaveFinished) {
   }
   if (!ordered_) {
     ordered_ = true;
-    orderTheBoss();
+    orderTheBoss(*parts_.boss);
     return;
   }
   cleared_ = game::enemiesIn(parts_.world.get().components()) == 0;
@@ -34,8 +32,7 @@ bool BossStage::levelCleared() const { return cleared_; }
 
 bool BossStage::hasBoss() const { return parts_.boss.has_value(); }
 
-void BossStage::orderTheBoss() {
-  const std::string& boss = parts_.boss.value_or(std::string{});
+void BossStage::orderTheBoss(const std::string& boss) {
   logger_.info("the last wave is over: ", boss, " comes");
   try {
     static_cast<void>(parts_.orders.get().spawn(boss, BOSS_ENTRY_POSITION,

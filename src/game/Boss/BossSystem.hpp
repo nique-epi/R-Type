@@ -17,6 +17,7 @@ class ComponentRegistry;
 namespace rtype::game {
 
 struct EntityDestruction;
+struct Health;
 
 /**
  * @brief Everything that makes a boss more than an enemy: it moves every
@@ -60,15 +61,15 @@ class BossSystem final : public engine::ISystem {
  private:
   /** @brief Warns the players of @p boss and keeps it harmless for the
    * warning. Never called while the components are visited. */
-  void warn(engine::ComponentRegistry& components, engine::Entity boss);
+  void warn(engine::ComponentRegistry& components, engine::Entity boss) const;
 
-  /** @brief Scales the health of @p boss for the players and the
-   * difficulty. */
-  void strengthen(engine::ComponentRegistry& components, engine::Entity boss);
+  /** @brief Scales @p health, the health of a boss whose warning just ended,
+   * for the players and the difficulty. */
+  void strengthen(Health& health) const;
 
   /** @brief Gives @p boss its Rage and starts its rage attack. Never called
    * while the components are visited. */
-  void enrage(engine::ComponentRegistry& components, engine::Entity boss);
+  void enrage(engine::ComponentRegistry& components, engine::Entity boss) const;
 
   /** @brief Tells the players the health of every boss in its fight whose
    * health or rage changed since they were last told. */
@@ -81,7 +82,6 @@ class BossSystem final : public engine::ISystem {
   BossSystemParts parts_;
   engine::SubscriptionHandle destructions_;
   std::vector<engine::Entity> warned_;
-  std::vector<engine::Entity> woken_;
   std::vector<engine::Entity> enraging_;
   /** What the players were last told of each boss in its fight. */
   std::vector<BossHealthChanged> told_;

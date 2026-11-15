@@ -29,12 +29,7 @@ GameFlowBossLevelFixture::GameFlowBossLevelFixture()
     : GameFlowFixture(oneWaveLevelWithTheWarlord(), sheetsWithAWarlord()) {}
 
 std::size_t GameFlowBossLevelFixture::bossesInPlay() {
-  std::size_t bosses = 0;
-  flow().world().components().forEach<game::Boss, game::Position>(
-      [&bosses](engine::Entity, const game::Boss&, const game::Position&) {
-        ++bosses;
-      });
-  return bosses;
+  return bossProgress().size();
 }
 
 std::vector<game::BossProgress> GameFlowBossLevelFixture::bossProgress() {

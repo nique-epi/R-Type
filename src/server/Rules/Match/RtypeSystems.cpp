@@ -1,6 +1,4 @@
 #include "RtypeSystems.hpp"
-#include <cstddef>
-#include <iterator>
 #include <memory>
 #include "BossSystem.hpp"
 #include "BossSystemParts.hpp"
@@ -27,11 +25,7 @@ game::BossSystemParts bossSystemPartsOf(GameContext& game) {
   PlayerRoster* const roster = &game.roster.get();
   return game::BossSystemParts{
       .events = game.events,
-      .players =
-          [roster] {
-            return static_cast<std::size_t>(
-                std::ranges::distance(roster->connected()));
-          },
+      .players = [roster] { return roster->connected().size(); },
       .healthPercent = game.settings.waves.bossHealthPercent};
 }
 
