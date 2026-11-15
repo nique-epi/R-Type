@@ -237,7 +237,7 @@ src/client/
 │   ├── Common/          the screens every module may show
 │   └── Registry/        where modules add their screens
 ├── Menus/               the screens before a server
-│   ├── Destinations/    where PLAY leads: SERVER, SHOP or HANGAR
+│   ├── Destinations/    where PLAY leads: SERVER, SHOP, CASINO or HANGAR
 │   ├── ServerBrowser/   the server map, the games of a server and the new game dialog
 │   ├── Leaderboard/     the leaderboard of a server and its filter
 │   ├── Title/           intro, title, connection screen, dialogs
@@ -250,6 +250,9 @@ src/client/
 │   ├── Shelves/         what is for sale, where each ware lies, the choice
 │   └── Painting/        the price tags, the cells of the locker, the glass case
 ├── Casino/              the casino: the chips the table moves, its entrance and its cashier
+│   ├── Painting/        the gold panels, the balances, the bars
+│   ├── Entrance/        the doors, the butler and the hall
+│   └── Cashier/         the amount, the selector and the exchange
 ├── Hangar/              the hangar: the ship, what it wears, and the items won
 │   ├── Locker/          the locker of the items and its metal
 │   └── Dock/            the bay, the arms and the fitting of an item
