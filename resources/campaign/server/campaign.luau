@@ -16,6 +16,13 @@ local ENTRY_COLUMN = 1984
 -- The share of its health the Bydo Tyrant has as a mini-boss.
 local MINI_BOSS_HEALTH_PERCENT = 40
 
+-- Where the center of a boss appears: half its 512-unit frame past the right
+-- edge, on the middle row of the area of play.
+local BOSS_ENTRY = { x = 2176, y = 492 }
+
+-- How often a stage looks at the sky, in milliseconds.
+local SKY_CHECK_MS = 250
+
 type Wave = { at: number, sheet: string, rows: { number } }
 
 local function send(sheet: string, rows: { number })
@@ -33,13 +40,17 @@ end
 
 local function wait_for_a_clear_sky()
 	while level.enemies() > 0 do
-		level.wait(250)
+		level.wait(SKY_CHECK_MS)
 	end
 end
 
+-- A boss is a body like any other: the players are warned of it once it
+-- appeared, at the end of the tick, so the stage waits before it looks at the
+-- sky.
 local function fight(boss: string, options: { health_percent: number }?)
 	level.pause_scroll()
-	level.boss(boss, options)
+	behaviours.spawn(boss, BOSS_ENTRY, options)
+	level.wait(SKY_CHECK_MS)
 	wait_for_a_clear_sky()
 	level.resume_scroll()
 end

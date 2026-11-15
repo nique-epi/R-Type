@@ -70,6 +70,9 @@ GameFlowOneStageFixture::GameFlowOneStageFixture()
 GameFlowBrokenLevelFixture::GameFlowBrokenLevelFixture()
     : GameFlowLevelFixture(BROKEN_LEVEL_NAME) {}
 
+GameFlowFightingLevelFixture::GameFlowFightingLevelFixture()
+    : GameFlowLevelFixture(LEVEL_THAT_FIGHTS_A_BYDO_NAME) {}
+
 GameFlowSendingLevelFixture::GameFlowSendingLevelFixture()
     : GameFlowLevelFixture(LEVEL_THAT_SENDS_A_BYDO_NAME) {}
 
