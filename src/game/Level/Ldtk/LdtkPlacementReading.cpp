@@ -229,8 +229,8 @@ const nlohmann::json& mobsLayerOf(const nlohmann::json& level,
     refuse(source, LEVELS_SAVED_SEPARATELY_REASON, identifier);
   }
   for (const nlohmann::json& layer : layers) {
-    if (memberOf(layer, LAYER_TYPE_MEMBER, source) == ENTITIES_LAYER_TYPE &&
-        memberOf(layer, LAYER_IDENTIFIER_MEMBER, source) == MOBS_LAYER) {
+    if (textMemberOf(layer, LAYER_TYPE_MEMBER, source) == ENTITIES_LAYER_TYPE &&
+        textMemberOf(layer, LAYER_IDENTIFIER_MEMBER, source) == MOBS_LAYER) {
       return layer;
     }
   }
