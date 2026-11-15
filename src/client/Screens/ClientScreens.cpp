@@ -17,10 +17,14 @@ namespace rtype::client {
 ClientScreens::ClientScreens(const ScreenServices& parts,
                              const ScreenRegistry& registry)
     : connection_(&parts.connection.get()),
-      background_(std::random_device{}(),
-                  [assets = parts.assets](std::string_view assetId) {
-                    return assets.get().findTexture(assetId);
-                  }),
+      background_(
+          std::random_device{}(),
+          [assets = parts.assets](std::string_view assetId) {
+            return assets.get().findTexture(assetId);
+          },
+          [assets = parts.assets](std::string_view assetId) {
+            return assets.get().fileOf(assetId);
+          }),
       serverChoice_(parts.choice),
       screens_([this, &registry](ScreenId screen) {
         return registry.create(screen, context_);

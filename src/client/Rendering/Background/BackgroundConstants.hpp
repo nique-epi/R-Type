@@ -9,6 +9,7 @@
 #include <string_view>
 #include "PlayfieldConstants.hpp"
 #include "Star.hpp"
+#include "StarPlane.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -29,6 +30,23 @@ constexpr float BACKGROUND_HEIGHT =
 constexpr sf::Vector2u BACKGROUND_SIZE(
     static_cast<unsigned int>(BACKGROUND_WIDTH),
     static_cast<unsigned int>(BACKGROUND_HEIGHT));
+
+/**
+ * @brief Columns a plane of the sky keeps beyond each side of the background,
+ * so a plane shifted by less than a pixel either way still covers it.
+ */
+constexpr int PLANE_MARGIN = 1;
+constexpr sf::Vector2u PLANE_CANVAS_SIZE(
+    BACKGROUND_SIZE.x + (2U * static_cast<unsigned int>(PLANE_MARGIN)),
+    BACKGROUND_SIZE.y);
+
+/** @brief The share of the size of a view between its center and each of
+ * its edges. */
+constexpr float VIEW_HALF_SHARE = 0.5F;
+
+/** @brief The planes of the starfield, in the order they are drawn. */
+constexpr std::array STAR_PLANES{StarPlane::FarStars, StarPlane::Planet,
+                                 StarPlane::MiddleStars, StarPlane::NearStars};
 
 /**
  * @brief Longest time the background moves by in one frame.
@@ -65,12 +83,13 @@ constexpr std::array STAR_LAYERS{
 };
 
 /**
- * @brief A star that goes further left than this margin comes back as far
- * beyond the right edge, at a new height: it travels STAR_WRAP_DISTANCE.
+ * @brief A star whose column goes further left than this margin comes back
+ * as far beyond the right edge, at a new height: it travels
+ * STAR_WRAP_DISTANCE columns.
  */
-constexpr float STAR_WRAP_MARGIN = 4.0F;
-constexpr float STAR_WRAP_DISTANCE =
-    BACKGROUND_WIDTH + (2.0F * STAR_WRAP_MARGIN);
+constexpr int STAR_WRAP_MARGIN = 4;
+constexpr int STAR_WRAP_DISTANCE =
+    static_cast<int>(BACKGROUND_WIDTH) + (2 * STAR_WRAP_MARGIN);
 
 /** @brief Chance that a star is warm: a warm near star is drawn gold. */
 constexpr float WARM_STAR_CHANCE = 0.2F;

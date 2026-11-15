@@ -58,6 +58,14 @@ class RenderTextureNotCreatedException : public ClientException {
   RenderTextureNotCreatedException(unsigned int width, unsigned int height);
 };
 
+/** @brief The LDtk project of the maps of a biome cannot be read, or lacks a
+ * layer the biome draws. */
+class BiomeMapException : public ClientException {
+ public:
+  /** @param project The file, as UTF-8 text; @param reason What is wrong. */
+  BiomeMapException(std::string_view project, std::string_view reason);
+};
+
 /** @brief Two modules registered a screen under the same identifier. */
 class DuplicateScreenException : public ClientException {
  public:

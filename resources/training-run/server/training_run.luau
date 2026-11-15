@@ -3,14 +3,14 @@
 -- the enemies the game ships, placed in levels/training_run.ldtk. A server
 -- plays it with `set level training_run`.
 --
--- The first stage crosses the biome drift_fields: two groups of Bydos come in
--- as the level scrolls, then the scroll stops until the first Reaper is
--- destroyed. The second stage starts at a checkpoint, in the biome
--- ember_reach, and stops the scroll again on the last two Reapers: a team
--- that loses every life there starts that stage again, and only the enemies
--- placed after the checkpoint come back. The level is cleared once its last
--- stage is over and no enemy is left. The functions of `level` are described
--- on the page "Scripting enemies in Luau" of the docs.
+-- The first stage crosses open space, with the stars alone: two groups of
+-- Bydos come in as the level scrolls, then the scroll stops until the first
+-- Reaper is destroyed. The second stage starts at a checkpoint, in the biome
+-- fosse, entered through its cave, and stops the scroll again on the last two
+-- Reapers: a team that loses every life there starts that stage again, and
+-- only the enemies placed after the checkpoint come back. The level is cleared
+-- once its last stage is over and no enemy is left. The functions of `level`
+-- are described on the page "Scripting enemies in Luau" of the docs.
 
 -- The width of the playfield, in logical units: a placed enemy has come in
 -- once the scroll brings its x this far.
@@ -43,13 +43,12 @@ end
 
 level.register("training_run", {
 	function()
-		level.biome("drift_fields")
 		level.spawn_placed()
 		hold_the_scroll_at(reaper_arrivals()[1])
 		level.wait_scroll(1440)
 	end,
 	function()
-		level.biome("ember_reach")
+		level.biome("fosse")
 		hold_the_scroll_at(reaper_arrivals()[2])
 	end,
 }, { ldtk = "levels/training_run.ldtk" })

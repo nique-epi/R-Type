@@ -10,11 +10,11 @@
 #include <optional>
 #include <vector>
 #include "BackgroundColorConstants.hpp"
+#include "BayerThreshold.hpp"
 #include "ColoredPixel.hpp"
 #include "DitherConstants.hpp"
 #include "LandWave.hpp"
 #include "MotionPreference.hpp"
-#include "PixelShapes.hpp"
 #include "PlanetPose.hpp"
 #include "RingedPlanetConstants.hpp"
 #include "SectorMapConstants.hpp"

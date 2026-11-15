@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <vector>
 #include "Star.hpp"
 #include "Starfield.hpp"
 #include "TimeConstants.hpp"
@@ -21,10 +22,16 @@ std::size_t countAt(const rtype::client::Starfield& starfield,
                     rtype::client::StarDepth depth);
 
 /** @brief Expects every star of @p left at the column of the star of the same
- * index in @p right, within POSITION_TOLERANCE. */
+ * index in @p right, within POSITION_TOLERANCE along the band the stars wrap
+ * on: a star on the margin may have wrapped in one sky and not yet in the
+ * other. */
 void expectSameColumns(const rtype::client::Starfield& left,
                        const rtype::client::Starfield& right);
 
 /** @returns How many pixels a starfield of SEED paints at that speed
  * factor. */
 std::size_t plotCountAt(float speedFactor);
+
+/** @returns Where each star of @p starfield lies, in the order of its
+ * stars. */
+std::vector<float> positionsOf(const rtype::client::Starfield& starfield);

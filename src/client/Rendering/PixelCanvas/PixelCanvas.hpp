@@ -2,6 +2,7 @@
 
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Graphics/RenderTexture.hpp>
+#include "EnlargedPicture.hpp"
 
 namespace rtype::client {
 
@@ -9,10 +10,8 @@ namespace rtype::client {
  * @brief A picture of BACKGROUND_SIZE pixels, laid over the whole playfield
  * with square, equal and sharp pixels at every window size.
  *
- * One of its pixels covers BACKGROUND_PIXEL_SIZE logical units. To be shown,
- * the picture is enlarged without smoothing by the largest whole factor that
- * fits the playfield on screen, then smoothed over the small remainder only.
- * Where the picture is transparent, the target shows through.
+ * One of its pixels covers BACKGROUND_PIXEL_SIZE logical units. Where the
+ * picture is transparent, the target shows through.
  */
 class PixelCanvas {
  public:
@@ -31,15 +30,13 @@ class PixelCanvas {
   [[nodiscard]] sf::RenderTexture& canvas();
 
   /**
-   * @brief Lays the picture over the whole playfield.
+   * @brief Lays the picture over the whole playfield, as an EnlargedPicture.
    *
    * Painting with the default alpha blend on a canvas cleared to transparent
    * black stores colors already multiplied by their alpha, whether a pixel is
-   * opaque, transparent or translucent like the dimmed layer of a dialog,
-   * and so are the colors the smoothing mixes at its edges. It is therefore
-   * laid with the blend that expects such colors (one, one minus source alpha):
-   * the default alpha blend would multiply them a second time and darken the
-   * edges.
+   * opaque, transparent or translucent like the dimmed layer of a dialog, and
+   * so are the colors the smoothing mixes at its edges: the picture is laid
+   * with premultipliedAlphaBlend().
    *
    * It leaves the picture unchanged and only refreshes the enlarged copy it
    * keeps for the next frames, so a const draw may call it.
@@ -51,15 +48,8 @@ class PixelCanvas {
   void show(sf::RenderTarget& target) const;
 
  private:
-  /**
-   * @brief Gives the enlarged picture the size of the canvas times the factor,
-   * when it does not have it yet.
-   */
-  void matchEnlargedPicture(unsigned int factor) const;
-
   sf::RenderTexture canvas_;
-  mutable sf::RenderTexture enlargedPicture_;
-  mutable unsigned int enlargedPictureFactor_ = 0;
+  mutable EnlargedPicture enlargedPicture_;
 };
 
 }  // namespace rtype::client
