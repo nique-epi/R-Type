@@ -9,6 +9,7 @@
 #include "GameEnded.hpp"
 #include "GameLoaded.hpp"
 #include "GameStarted.hpp"
+#include "LobbyMessagesFixtures.hpp"
 #include "LobbyState.hpp"
 #include "MessagePayload.hpp"
 #include "NetworkException.hpp"
@@ -17,27 +18,17 @@
 #include "ReadyState.hpp"
 
 namespace rtype::network {
-namespace {
 
 using testing::ACCENTED_LETTER;
 using testing::byteSequence;
+using testing::fullLobby;
 using testing::LARGEST_LOBBY_DATAGRAM_SIZE;
 using testing::LAST_PLAYER_NUMBER;
+using testing::lobbyPlayer;
 using testing::ONE_BYTE_NICKNAME;
 using testing::PLAYER_NUMBER_ABOVE_THE_LAST;
 using testing::SIXTEEN_BYTE_NICKNAME;
 using testing::SOME_SCORE_OF_DISTINCT_BYTES;
-
-LobbyPlayer lobbyPlayer(std::uint8_t playerNumber) {
-  return LobbyPlayer{.playerNumber = playerNumber,
-                     .place = PilotPlace::NotReady,
-                     .nickname = std::string{SIXTEEN_BYTE_NICKNAME}};
-}
-
-LobbyState fullLobby() {
-  return LobbyState{.players = {lobbyPlayer(1), lobbyPlayer(2), lobbyPlayer(3),
-                                lobbyPlayer(4)}};
-}
 
 /**
  * Given a player who is ready
@@ -499,5 +490,4 @@ TEST(GameEnded, RefusesToWriteAnUnknownOutcome) {
   EXPECT_THROW((void)encodeMessage(ended), InvalidFieldValueException);
 }
 
-}  // namespace
 }  // namespace rtype::network
