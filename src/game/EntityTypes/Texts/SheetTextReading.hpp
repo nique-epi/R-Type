@@ -100,7 +100,7 @@ void checkSheetNames(std::span<const SheetText> texts);
  * @returns The mask `[gameplay.mask]` of @p gameplay names: the pixels the
  * mask file of @p sheet draws, one line per row from the top, and its
  * erosion, 0 when left out; nothing for a sheet without mask. Both programs
- * read a mask this way, so they agree on it; no system collides with it yet.
+ * read a mask this way, so they agree on it.
  * @throws UnknownDataFileKeyException for a key other than MASK_KEYS; what
  * engine::textAt() throws for FILE_KEY; InconsistentEntitySheetException, at
  * FILE_KEY, when it names another file than maskPathOf() the sheet or the

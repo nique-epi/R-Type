@@ -2,7 +2,7 @@
 
 #include <vector>
 #include "ActiveHurts.hpp"
-#include "EntityBounds.hpp"
+#include "EntityShape.hpp"
 #include "ISystem.hpp"
 #include "TimeConstants.hpp"
 
@@ -21,16 +21,17 @@ namespace rtype::game {
  *
  * A box is active when it has no `activeIn`, or when `activeIn` equals the
  * CurrentAction of the enemy; an enemy with no CurrentAction, or an idle one,
- * has only its boxes that hurt all the time. At most one ShipContact per ship
- * and enemy and update, however many boxes overlap. Only ships (EntityType
- * Player with a Position, a CollisionBox and an engine::CollisionFilter) are
- * hurt, and only by an enemy whose filter and theirs engine::mayCollide()
- * keeps: a zone hurts what its body touches. A ship that carries a ViewDelay
- * is left out: LagCompensatedHitSystem tests that one against the
- * boxes and beams its player saw. What the contact costs is not decided here:
- * LifeKeeper does. The events are only queued: the loop
- * must call EventBus::dispatch() after the systems. The bus must outlive the
- * system.
+ * has only its boxes that hurt all the time. A box or a beam hurts a ship it
+ * touches: the box of the ship, then its CollisionMask when it has one, so a
+ * part that only crosses the clear pixels of the ship spares it. At most one
+ * ShipContact per ship and enemy and update, however many boxes overlap. Only
+ * ships (EntityType Player with a Position, a CollisionBox and an
+ * engine::CollisionFilter) are hurt, and only by an enemy whose filter and
+ * theirs engine::mayCollide() keeps: a zone hurts what its body touches. A ship
+ * that carries a ViewDelay is left out: LagCompensatedHitSystem tests that one
+ * against the boxes and beams its player saw. What the contact costs is not
+ * decided here: LifeKeeper does. The events are only queued: the loop must call
+ * EventBus::dispatch() after the systems. The bus must outlive the system.
  */
 class HurtZoneSystem final : public engine::ISystem {
  public:
@@ -48,7 +49,7 @@ class HurtZoneSystem final : public engine::ISystem {
   void publishContacts(engine::ComponentRegistry& components);
 
   engine::EventBus& events_;
-  std::vector<EntityBounds> ships_;
+  std::vector<EntityShape> ships_;
   ActiveHurts hurts_;
 };
 

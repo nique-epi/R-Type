@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 #include "CollisionBox.hpp"
+#include "CollisionMask.hpp"
 #include "EntitySpawned.hpp"
 #include "EntityType.hpp"
 #include "HitboxParts.hpp"
@@ -126,6 +127,11 @@ DrawnEntity effectAt(game::SpriteFrame firstFrame, game::Position position);
 
 /** @returns The HitboxParts of the only entity of that type, nothing when it
  * has none or there is no such entity. */
+/** @returns The CollisionMask of the entity of side @p type, or nothing when
+ * it has none. */
+[[nodiscard]] std::optional<game::CollisionMask> maskOfThe(
+    engine::ComponentRegistry& components, game::EntityType type);
+
 [[nodiscard]] std::optional<game::HitboxParts> partsOfThe(
     engine::ComponentRegistry& components, game::EntityType type);
 

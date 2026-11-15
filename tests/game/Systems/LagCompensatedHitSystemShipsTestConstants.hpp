@@ -53,4 +53,15 @@ constexpr std::size_t SHIP_FIVE_TICKS_BEHIND = 5;
 constexpr std::size_t TICKS_AT_THE_FIRST_PLACE = 1;
 constexpr std::size_t TICKS_AT_THE_SECOND_PLACE = 5;
 
+/**
+ * @brief A missile of an enemy over the clear top-left corner of the ship of
+ * the shipped sheet at WHERE_THE_SHIP_IS. The mask of the ship lies on cells
+ * 84 to 115 and 67 to 82 (400 / 4 - 16, 300 / 4 - 8); the missile, its box
+ * from 320 to 352 and 252 to 284 overlapping the box of the ship, lays its
+ * mask on cells 80 to 87 and 63 to 70, over rows 0 to 3 and columns 0 to 3 of
+ * masks/ship.txt, which are clear.
+ */
+constexpr Position MISSILE_OVER_THE_CLEAR_CORNER_OF_THE_SHIP{.x = 336.0F,
+                                                             .y = 268.0F};
+
 }  // namespace rtype::game::testing

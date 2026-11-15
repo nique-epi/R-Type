@@ -38,6 +38,10 @@ constexpr std::uint32_t ACKNOWLEDGED_COMMAND = 5;
 
 constexpr engine::Duration HALF_A_TICK = engine::SIMULATION_TICK_DURATION / 2;
 
+/** @brief How far through its roll of 400 ms a ship is after the one tick of
+ * 16.67 ms of the command that starts it: 16.666666 / 400. */
+constexpr float ONE_TICK_INTO_A_ROLL = 0.041666666F;
+
 /** @brief Three ticks of commands, sent while the player had no ship. */
 constexpr engine::Duration THREE_TICKS = engine::SIMULATION_TICK_DURATION * 3;
 constexpr std::size_t TICKS_OF_A_STALL = 10;

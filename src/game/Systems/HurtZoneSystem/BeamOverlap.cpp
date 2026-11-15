@@ -5,7 +5,12 @@
 #include "BeamLine.hpp"
 #include "Bounds.hpp"
 #include "CollisionConstants.hpp"
+#include "ContactShape.hpp"
 #include "Direction.hpp"
+#include "MaskPixel.hpp"
+#include "PixelMask.hpp"
+#include "PlacedMask.hpp"
+#include "ShapeContacts.hpp"
 
 namespace rtype::game {
 
@@ -47,6 +52,25 @@ bool beamOverlaps(const BeamLine& beam, const engine::Bounds& box) {
   return std::ranges::none_of(axes, [&](const Direction& axis) noexcept {
     return separates(beam, box, axis);
   });
+}
+
+bool beamTouchesMask(const BeamLine& beam, const engine::PlacedMask& placed) {
+  const engine::PixelMask& mask = *placed.mask;
+  for (int row = 0; row < mask.height(); ++row) {
+    for (int column = 0; column < mask.width(); ++column) {
+      const engine::MaskPixel pixel{.x = column, .y = row};
+      if (mask.isDrawn(pixel) &&
+          beamOverlaps(beam, cellBoundsOf(placed, pixel))) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+bool beamTouchesShape(const BeamLine& beam, const ContactShape& shape) {
+  return beamOverlaps(beam, shape.bounds) &&
+         (!shape.mask.has_value() || beamTouchesMask(beam, *shape.mask));
 }
 
 }  // namespace rtype::game
