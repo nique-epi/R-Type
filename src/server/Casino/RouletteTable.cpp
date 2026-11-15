@@ -31,7 +31,7 @@ std::uint64_t stakeOf(const network::RouletteBets& bets) {
 /** @returns Whether @p bets may lie on the cloth for one round. */
 bool isTakeable(const network::RouletteBets& bets) {
   return std::ranges::all_of(bets.bets, isPlaceableBet) &&
-         stakeOf(bets) <= MAXIMUM_ROUND_STAKE;
+         stakeOf(bets) <= network::MAXIMUM_ROUND_STAKE;
 }
 
 /** @returns What the bets of @p seat return when @p drawn comes out. */

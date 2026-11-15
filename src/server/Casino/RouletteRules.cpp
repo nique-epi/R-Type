@@ -8,6 +8,11 @@ namespace rtype::server {
 
 namespace {
 
+using network::LAST_LOW_NUMBER;
+using network::LOWEST_CLOTH_NUMBER;
+using network::NUMBERS_PER_DOZEN;
+using network::NUMBERS_PER_STREET;
+using network::RED_ROULETTE_NUMBERS;
 using network::RouletteBetKind;
 
 /** @returns The mask holding @p count numbers from @p first on, one bit per
@@ -34,7 +39,7 @@ constexpr std::uint64_t maskOf(Keep keep) {
 }
 
 constexpr std::uint64_t RED_MASK = maskOf([](unsigned int number) {
-  for (const std::uint8_t red : RED_NUMBERS) {
+  for (const std::uint8_t red : RED_ROULETTE_NUMBERS) {
     if (red == number) {
       return true;
     }

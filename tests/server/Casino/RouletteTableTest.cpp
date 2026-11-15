@@ -4,6 +4,7 @@
 #include <vector>
 #include "CasinoConstants.hpp"
 #include "ConnectedPlayer.hpp"
+#include "ProtocolConstants.hpp"
 #include "RouletteBets.hpp"
 #include "RouletteRound.hpp"
 #include "RouletteTableFixture.hpp"
@@ -11,6 +12,7 @@
 
 namespace rtype::server::testing {
 
+using network::MAXIMUM_ROUND_STAKE;
 using network::RouletteBet;
 using network::RouletteBetKind;
 using network::RoulettePhase;

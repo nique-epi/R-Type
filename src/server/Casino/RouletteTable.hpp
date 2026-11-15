@@ -27,9 +27,10 @@ namespace rtype::server {
  *
  * Bets are taken only from a seated player, during the bets, for the round in
  * progress; a RouletteBets replaces the bets the player held, and one whose
- * bets are not all placeable or add up to more than MAXIMUM_ROUND_STAKE is
- * refused whole. What the table keeps is bounded by MAXIMUM_PLAYERS times
- * MAXIMUM_ROULETTE_BETS bets. A seat freed by a departure starts afresh.
+ * bets are not all placeable or add up to more than
+ * network::MAXIMUM_ROUND_STAKE is refused whole. What the table keeps is
+ * bounded by MAXIMUM_PLAYERS times MAXIMUM_ROULETTE_BETS bets. A seat freed by
+ * a departure starts afresh.
  *
  * Not thread-safe: use it from the simulation thread only.
  */

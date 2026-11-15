@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
@@ -558,6 +559,26 @@ constexpr std::uint8_t HIGHEST_ROULETTE_NUMBER = 36;
  * the cloth in one round.
  */
 constexpr std::size_t MAXIMUM_ROULETTE_BETS = 32;
+
+/**
+ * @brief The most chips one player may lay on the cloth in one round: the
+ * server refuses whole a RouletteBets whose bets add up to more.
+ */
+constexpr std::uint32_t MAXIMUM_ROUND_STAKE = 5000;
+
+/** @brief The lowest number of the cloth after the zero. */
+constexpr std::uint8_t LOWEST_CLOTH_NUMBER = 1;
+
+/** @brief The red numbers of the wheel; every other number but the zero is
+ * black. */
+constexpr auto RED_ROULETTE_NUMBERS = std::to_array<std::uint8_t>(
+    {1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36});
+
+/** @brief The numbers of a street, the row of three across the cloth, and of a
+ * dozen; the last number of the low half. */
+constexpr std::uint8_t NUMBERS_PER_STREET = 3;
+constexpr std::uint8_t NUMBERS_PER_DOZEN = 12;
+constexpr std::uint8_t LAST_LOW_NUMBER = 18;
 
 /**
  * @brief The size of one bet on the wire: kind, first number, then amount.
