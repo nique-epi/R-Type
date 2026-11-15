@@ -1,0 +1,695 @@
+{
+  "__header__": {
+    "fileType": "LDtk Project JSON",
+    "app": "LDtk",
+    "doc": "https://ldtk.io/json",
+    "schema": "https://ldtk.io/files/JSON_SCHEMA.json",
+    "appAuthor": "Sebastien 'deepnight' Benard",
+    "appVersion": "1.5.3",
+    "url": "https://ldtk.io"
+  },
+  "iid": "f1b571bd-0033-5952-9862-e4609cdca719",
+  "jsonVersion": "1.5.3",
+  "appBuildId": 473703,
+  "nextUid": 100,
+  "identifierStyle": "Capitalize",
+  "toc": [],
+  "worldLayout": "Free",
+  "worldGridWidth": 480,
+  "worldGridHeight": 270,
+  "defaultLevelWidth": 1200,
+  "defaultLevelHeight": 270,
+  "defaultPivotX": 0,
+  "defaultPivotY": 0,
+  "defaultGridSize": 16,
+  "defaultEntityWidth": 24,
+  "defaultEntityHeight": 24,
+  "bgColor": "#40465B",
+  "defaultLevelBgColor": "#1A1426",
+  "minifyJson": false,
+  "externalLevels": false,
+  "exportTiled": false,
+  "simplifiedExport": false,
+  "imageExportMode": "None",
+  "exportLevelBg": true,
+  "pngFilePattern": null,
+  "backupOnSave": false,
+  "backupLimit": 10,
+  "backupRelPath": null,
+  "levelNamePattern": "Level_%idx",
+  "tutorialDesc": null,
+  "customCommands": [],
+  "flags": [],
+  "dummyWorldIid": "f4146449-f04e-5f5b-972c-6be4ac9503ba",
+  "defs": {
+    "layers": [
+      {
+        "__type": "Entities",
+        "identifier": "Mobs",
+        "type": "Entities",
+        "uid": 6,
+        "doc": null,
+        "uiColor": null,
+        "gridSize": 16,
+        "guideGridWid": 0,
+        "guideGridHei": 0,
+        "displayOpacity": 1,
+        "inactiveOpacity": 1,
+        "hideInList": false,
+        "hideFieldsWhenInactive": false,
+        "canSelectWhenInactive": true,
+        "renderInWorldView": true,
+        "pxOffsetX": 0,
+        "pxOffsetY": 0,
+        "parallaxFactorX": 0,
+        "parallaxFactorY": 0,
+        "parallaxScaling": false,
+        "requiredTags": [],
+        "excludedTags": [],
+        "autoTilesKilledByOtherLayerUid": null,
+        "uiFilterTags": [],
+        "useAsyncRender": false,
+        "intGridValues": [],
+        "intGridValuesGroups": [],
+        "autoRuleGroups": [],
+        "autoSourceLayerDefUid": null,
+        "tilesetDefUid": null,
+        "tilePivotX": 0,
+        "tilePivotY": 0,
+        "biomeFieldUid": null
+      }
+    ],
+    "entities": [
+      {
+        "identifier": "Drifter",
+        "uid": 11,
+        "tags": [
+          "mob"
+        ],
+        "exportToToc": false,
+        "allowOutOfBounds": false,
+        "doc": null,
+        "width": 24,
+        "height": 24,
+        "resizableX": false,
+        "resizableY": false,
+        "minWidth": null,
+        "maxWidth": null,
+        "minHeight": null,
+        "maxHeight": null,
+        "keepAspectRatio": false,
+        "tileOpacity": 1,
+        "fillOpacity": 0.08,
+        "lineOpacity": 1,
+        "hollow": false,
+        "color": "#BE4A2F",
+        "renderMode": "Rectangle",
+        "showName": true,
+        "tilesetId": null,
+        "tileRenderMode": "FitInside",
+        "tileRect": null,
+        "uiTileRect": null,
+        "nineSliceBorders": [],
+        "maxCount": 0,
+        "limitScope": "PerLevel",
+        "limitBehavior": "MoveLastOne",
+        "pivotX": 0,
+        "pivotY": 0,
+        "fieldDefs": []
+      },
+      {
+        "identifier": "Weaver",
+        "uid": 12,
+        "tags": [
+          "mob"
+        ],
+        "exportToToc": false,
+        "allowOutOfBounds": false,
+        "doc": null,
+        "width": 24,
+        "height": 24,
+        "resizableX": false,
+        "resizableY": false,
+        "minWidth": null,
+        "maxWidth": null,
+        "minHeight": null,
+        "maxHeight": null,
+        "keepAspectRatio": false,
+        "tileOpacity": 1,
+        "fillOpacity": 0.08,
+        "lineOpacity": 1,
+        "hollow": false,
+        "color": "#3E8948",
+        "renderMode": "Rectangle",
+        "showName": true,
+        "tilesetId": null,
+        "tileRenderMode": "FitInside",
+        "tileRect": null,
+        "uiTileRect": null,
+        "nineSliceBorders": [],
+        "maxCount": 0,
+        "limitScope": "PerLevel",
+        "limitBehavior": "MoveLastOne",
+        "pivotX": 0,
+        "pivotY": 0,
+        "fieldDefs": []
+      },
+      {
+        "identifier": "Reaper",
+        "uid": 13,
+        "tags": [
+          "mob"
+        ],
+        "exportToToc": false,
+        "allowOutOfBounds": false,
+        "doc": null,
+        "width": 24,
+        "height": 24,
+        "resizableX": false,
+        "resizableY": false,
+        "minWidth": null,
+        "maxWidth": null,
+        "minHeight": null,
+        "maxHeight": null,
+        "keepAspectRatio": false,
+        "tileOpacity": 1,
+        "fillOpacity": 0.08,
+        "lineOpacity": 1,
+        "hollow": false,
+        "color": "#8A54C4",
+        "renderMode": "Rectangle",
+        "showName": true,
+        "tilesetId": null,
+        "tileRenderMode": "FitInside",
+        "tileRect": null,
+        "uiTileRect": null,
+        "nineSliceBorders": [],
+        "maxCount": 0,
+        "limitScope": "PerLevel",
+        "limitBehavior": "MoveLastOne",
+        "pivotX": 0,
+        "pivotY": 0,
+        "fieldDefs": []
+      },
+      {
+        "identifier": "Voltjelly",
+        "uid": 14,
+        "tags": [
+          "mob"
+        ],
+        "exportToToc": false,
+        "allowOutOfBounds": false,
+        "doc": null,
+        "width": 24,
+        "height": 24,
+        "resizableX": false,
+        "resizableY": false,
+        "minWidth": null,
+        "maxWidth": null,
+        "minHeight": null,
+        "maxHeight": null,
+        "keepAspectRatio": false,
+        "tileOpacity": 1,
+        "fillOpacity": 0.08,
+        "lineOpacity": 1,
+        "hollow": false,
+        "color": "#FEAE34",
+        "renderMode": "Rectangle",
+        "showName": true,
+        "tilesetId": null,
+        "tileRenderMode": "FitInside",
+        "tileRect": null,
+        "uiTileRect": null,
+        "nineSliceBorders": [],
+        "maxCount": 0,
+        "limitScope": "PerLevel",
+        "limitBehavior": "MoveLastOne",
+        "pivotX": 0,
+        "pivotY": 0,
+        "fieldDefs": []
+      }
+    ],
+    "tilesets": [],
+    "enums": [],
+    "externalEnums": [],
+    "levelFields": []
+  },
+  "levels": [
+    {
+      "identifier": "Training_run",
+      "iid": "3b4b7067-bfe9-5526-9871-df09588668cf",
+      "uid": 1,
+      "worldX": 0,
+      "worldY": 0,
+      "worldDepth": 0,
+      "pxWid": 1200,
+      "pxHei": 270,
+      "__bgColor": "#1A1426",
+      "bgColor": null,
+      "useAutoIdentifier": false,
+      "bgRelPath": null,
+      "bgPos": null,
+      "bgPivotX": 0.5,
+      "bgPivotY": 0.5,
+      "__smartColor": "#ADADB5",
+      "__bgPos": null,
+      "externalRelPath": null,
+      "fieldInstances": [],
+      "__neighbours": [],
+      "layerInstances": [
+        {
+          "__identifier": "Mobs",
+          "__type": "Entities",
+          "__cWid": 75,
+          "__cHei": 17,
+          "__gridSize": 16,
+          "__opacity": 1,
+          "__pxTotalOffsetX": 0,
+          "__pxTotalOffsetY": 0,
+          "__tilesetDefUid": null,
+          "__tilesetRelPath": null,
+          "iid": "44804058-56f5-56f2-9479-4f6ed8c38f56",
+          "levelId": 1,
+          "layerDefUid": 6,
+          "pxOffsetX": 0,
+          "pxOffsetY": 0,
+          "visible": true,
+          "optionalRules": [],
+          "intGridCsv": [],
+          "autoLayerTiles": [],
+          "seed": 1,
+          "overrideTilesetUid": null,
+          "gridTiles": [],
+          "entityInstances": [
+            {
+              "__identifier": "Drifter",
+              "__grid": [
+                34,
+                3
+              ],
+              "__pivot": [
+                0,
+                0
+              ],
+              "__tags": [
+                "mob"
+              ],
+              "__tile": null,
+              "__smartColor": "#BE4A2F",
+              "__worldX": 544,
+              "__worldY": 63,
+              "iid": "5790735b-9c03-5d1b-8b86-d034b4d36db1",
+              "width": 24,
+              "height": 24,
+              "defUid": 11,
+              "px": [
+                544,
+                63
+              ],
+              "fieldInstances": []
+            },
+            {
+              "__identifier": "Drifter",
+              "__grid": [
+                34,
+                7
+              ],
+              "__pivot": [
+                0,
+                0
+              ],
+              "__tags": [
+                "mob"
+              ],
+              "__tile": null,
+              "__smartColor": "#BE4A2F",
+              "__worldX": 544,
+              "__worldY": 123,
+              "iid": "f5b34307-3352-58f4-b1fe-4d27d6c6f7ea",
+              "width": 24,
+              "height": 24,
+              "defUid": 11,
+              "px": [
+                544,
+                123
+              ],
+              "fieldInstances": []
+            },
+            {
+              "__identifier": "Drifter",
+              "__grid": [
+                34,
+                11
+              ],
+              "__pivot": [
+                0,
+                0
+              ],
+              "__tags": [
+                "mob"
+              ],
+              "__tile": null,
+              "__smartColor": "#BE4A2F",
+              "__worldX": 544,
+              "__worldY": 183,
+              "iid": "8abc6aec-7e35-52a8-88fb-8d05407542f1",
+              "width": 24,
+              "height": 24,
+              "defUid": 11,
+              "px": [
+                544,
+                183
+              ],
+              "fieldInstances": []
+            },
+            {
+              "__identifier": "Weaver",
+              "__grid": [
+                41,
+                5
+              ],
+              "__pivot": [
+                0,
+                0
+              ],
+              "__tags": [
+                "mob"
+              ],
+              "__tile": null,
+              "__smartColor": "#3E8948",
+              "__worldX": 664,
+              "__worldY": 88,
+              "iid": "8eeab34d-07c3-596d-8f0c-3cd6e2153c6b",
+              "width": 24,
+              "height": 24,
+              "defUid": 12,
+              "px": [
+                664,
+                88
+              ],
+              "fieldInstances": []
+            },
+            {
+              "__identifier": "Weaver",
+              "__grid": [
+                41,
+                9
+              ],
+              "__pivot": [
+                0,
+                0
+              ],
+              "__tags": [
+                "mob"
+              ],
+              "__tile": null,
+              "__smartColor": "#3E8948",
+              "__worldX": 664,
+              "__worldY": 158,
+              "iid": "14213cf3-2f76-539d-9178-a0d04d76f6f8",
+              "width": 24,
+              "height": 24,
+              "defUid": 12,
+              "px": [
+                664,
+                158
+              ],
+              "fieldInstances": []
+            },
+            {
+              "__identifier": "Reaper",
+              "__grid": [
+                49,
+                7
+              ],
+              "__pivot": [
+                0,
+                0
+              ],
+              "__tags": [
+                "mob"
+              ],
+              "__tile": null,
+              "__smartColor": "#8A54C4",
+              "__worldX": 784,
+              "__worldY": 123,
+              "iid": "fe189496-3d36-54e7-ad17-a0b1311d17cf",
+              "width": 24,
+              "height": 24,
+              "defUid": 13,
+              "px": [
+                784,
+                123
+              ],
+              "fieldInstances": []
+            },
+            {
+              "__identifier": "Drifter",
+              "__grid": [
+                56,
+                3
+              ],
+              "__pivot": [
+                0,
+                0
+              ],
+              "__tags": [
+                "mob"
+              ],
+              "__tile": null,
+              "__smartColor": "#BE4A2F",
+              "__worldX": 904,
+              "__worldY": 48,
+              "iid": "a9cdec8b-a83e-52a8-ae92-b3866e9ba117",
+              "width": 24,
+              "height": 24,
+              "defUid": 11,
+              "px": [
+                904,
+                48
+              ],
+              "fieldInstances": []
+            },
+            {
+              "__identifier": "Drifter",
+              "__grid": [
+                56,
+                5
+              ],
+              "__pivot": [
+                0,
+                0
+              ],
+              "__tags": [
+                "mob"
+              ],
+              "__tile": null,
+              "__smartColor": "#BE4A2F",
+              "__worldX": 904,
+              "__worldY": 93,
+              "iid": "409bde76-5294-50cf-b090-bce3a8b2edd2",
+              "width": 24,
+              "height": 24,
+              "defUid": 11,
+              "px": [
+                904,
+                93
+              ],
+              "fieldInstances": []
+            },
+            {
+              "__identifier": "Drifter",
+              "__grid": [
+                56,
+                9
+              ],
+              "__pivot": [
+                0,
+                0
+              ],
+              "__tags": [
+                "mob"
+              ],
+              "__tile": null,
+              "__smartColor": "#BE4A2F",
+              "__worldX": 904,
+              "__worldY": 153,
+              "iid": "8eeb28db-44fa-5d40-a01d-cc0f5611504c",
+              "width": 24,
+              "height": 24,
+              "defUid": 11,
+              "px": [
+                904,
+                153
+              ],
+              "fieldInstances": []
+            },
+            {
+              "__identifier": "Drifter",
+              "__grid": [
+                56,
+                12
+              ],
+              "__pivot": [
+                0,
+                0
+              ],
+              "__tags": [
+                "mob"
+              ],
+              "__tile": null,
+              "__smartColor": "#BE4A2F",
+              "__worldX": 904,
+              "__worldY": 198,
+              "iid": "e5664043-c3e5-518c-af53-90a94494b8de",
+              "width": 24,
+              "height": 24,
+              "defUid": 11,
+              "px": [
+                904,
+                198
+              ],
+              "fieldInstances": []
+            },
+            {
+              "__identifier": "Voltjelly",
+              "__grid": [
+                64,
+                4
+              ],
+              "__pivot": [
+                0,
+                0
+              ],
+              "__tags": [
+                "mob"
+              ],
+              "__tile": null,
+              "__smartColor": "#FEAE34",
+              "__worldX": 1024,
+              "__worldY": 78,
+              "iid": "010e88ff-e559-5cb7-801e-9e58aa709b40",
+              "width": 24,
+              "height": 24,
+              "defUid": 14,
+              "px": [
+                1024,
+                78
+              ],
+              "fieldInstances": []
+            },
+            {
+              "__identifier": "Voltjelly",
+              "__grid": [
+                64,
+                10
+              ],
+              "__pivot": [
+                0,
+                0
+              ],
+              "__tags": [
+                "mob"
+              ],
+              "__tile": null,
+              "__smartColor": "#FEAE34",
+              "__worldX": 1024,
+              "__worldY": 168,
+              "iid": "da42188d-e15f-5fc6-8100-13d3b24745a1",
+              "width": 24,
+              "height": 24,
+              "defUid": 14,
+              "px": [
+                1024,
+                168
+              ],
+              "fieldInstances": []
+            },
+            {
+              "__identifier": "Weaver",
+              "__grid": [
+                64,
+                7
+              ],
+              "__pivot": [
+                0,
+                0
+              ],
+              "__tags": [
+                "mob"
+              ],
+              "__tile": null,
+              "__smartColor": "#3E8948",
+              "__worldX": 1024,
+              "__worldY": 123,
+              "iid": "d8a164a2-95aa-5c1c-876f-2bf5adde7804",
+              "width": 24,
+              "height": 24,
+              "defUid": 12,
+              "px": [
+                1024,
+                123
+              ],
+              "fieldInstances": []
+            },
+            {
+              "__identifier": "Reaper",
+              "__grid": [
+                71,
+                4
+              ],
+              "__pivot": [
+                0,
+                0
+              ],
+              "__tags": [
+                "mob"
+              ],
+              "__tile": null,
+              "__smartColor": "#8A54C4",
+              "__worldX": 1144,
+              "__worldY": 78,
+              "iid": "3c0280df-95cd-57a0-8ac4-569fe0368c46",
+              "width": 24,
+              "height": 24,
+              "defUid": 13,
+              "px": [
+                1144,
+                78
+              ],
+              "fieldInstances": []
+            },
+            {
+              "__identifier": "Reaper",
+              "__grid": [
+                71,
+                10
+              ],
+              "__pivot": [
+                0,
+                0
+              ],
+              "__tags": [
+                "mob"
+              ],
+              "__tile": null,
+              "__smartColor": "#8A54C4",
+              "__worldX": 1144,
+              "__worldY": 168,
+              "iid": "bc8ecf6c-e6b1-5aae-855d-a0c39db93abf",
+              "width": 24,
+              "height": 24,
+              "defUid": 13,
+              "px": [
+                1144,
+                168
+              ],
+              "fieldInstances": []
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "worlds": []
+}

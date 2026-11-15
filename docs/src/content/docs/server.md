@@ -156,7 +156,7 @@ To change one of them, see [Where to intervene](#where-to-intervene).
 | Score: the points of the sheet of each Bydo, credited to the player who fired the missile, sent in the world state | Available | `assets/entities/`, `src/game/Systems/DamageRules/`, `src/server/Rules/Players/` |
 | Waves of Bydos that grow, read from the waves file at launch, up to the last wave of the level | Available: each game plays the difficulty its creator chose, `normal` (8 waves) by default, then the Bydo Tyrant in `normal` and `hard` (see [Boss](#boss-bossstage-and-bossphasesystem)) | `src/game/Waves/`, `src/server/Spawning/`, `assets/waves/waves.toml` |
 | The boss after the last wave: its warning, its arrival, its fight, its rage and its volleys | Available: the Bydo Tyrant, in `normal` and `hard` (see [Boss](#boss-bossstage-and-bossphasesystem)) | `src/server/Spawning/`, `src/game/Systems/BossPhaseSystem/`, `src/game/Behaviours/Movements/Attacks/` |
-| A level a Luau script directs instead of the waves: its scroll, its pauses, its biomes and its checkpoints | Available: the setting `level`, empty by default; the shipped level is `training_run` (see [Level a script directs](#level-a-script-directs-leveldirector)) | `src/server/Spawning/`, `src/game/Level/`, `src/game/Scripting/Level/` |
+| A level a Luau script directs instead of the waves: its scroll, its pauses, its biomes, its checkpoints and the enemies its LDtk file places | Available: the setting `level`, empty by default; the shipped level is `training_run` (see [Level a script directs](#level-a-script-directs-leveldirector)) | `src/server/Spawning/`, `src/game/Level/`, `src/game/Scripting/Level/`, `src/game/Spawning/` |
 | Lives: a life lost when a ship touches a Bydo or a missile of a Bydo, a new ship 1 s later that cannot be hit for 2 s, a player with no life left watching | Available | `src/server/Rules/Players/` |
 
 ## The three roles: supervisor, game and master
@@ -689,7 +689,8 @@ A resource is content a host adds to the server without touching its assets or r
 | `entities/*.toml` | entity sheets, as in the assets | the games, and the content pack |
 | `sprites/…` | the sprite sheets its sheets name | the content pack |
 | `waves/waves.toml` | waves laid over those of the assets, key by key | the supervisor and the games |
-| `server/*.luau` | scripts that register behaviours (see [Scripting in Luau](/R-Type/scripting/)) | the games, never the client |
+| `server/*.luau` | scripts that register behaviours and levels (see [Scripting in Luau](/R-Type/scripting/)) | the games, never the client |
+| `levels/*.ldtk` | the LDtk projects whose `Mobs` layer places the enemies of a level (see [Placing the enemies in LDtk](/R-Type/scripting/#placing-the-enemies-in-ldtk)) | the games |
 
 `engine::ensuredResources()` (`src/engine/Resources/EnsureLines.hpp`) reads the names of the `ensure` lines, and `engine::contentFoldersOf()` (`ContentFolders.hpp`) lays them: the assets folder first, then each resource after the resources it depends on, each once; a resource without a manifest or a circle of dependencies is refused. The supervisor reads the lines it hands to its games (`supervisorModules()`), a game process the lines of its file (`runGame()` in `src/server/main.cpp`, which keeps them out of its interpreter with `ensureLineRule()`), both before they build their modules, so the supervisor serves the content its games play.
 
@@ -1075,13 +1076,14 @@ Between two attacks it drifts up or down, within `TYRANT_DRIFT_SPAN` (200 units)
 
 ## Level a script directs: `LevelDirector`
 
-A game whose setting `level` names a level plays it instead of the waves of its difficulty. A level is a list of stages a Luau script registered with `level.register` (see [Scripting in Luau](/R-Type/scripting/#directing-a-level)). `ServerGamesModule` refuses a name no script registered when it starts, with the levels it knows: `no script registers the level nowhere; registered: training_run`. Without the setting, a game plays its waves, the survival mode.
+A game whose setting `level` names a level plays it instead of the waves of its difficulty. A level is a list of stages a Luau script registered with `level.register` (see [Scripting in Luau](/R-Type/scripting/#directing-a-level)), with the enemies its LDtk file places (see [Placing the enemies in LDtk](/R-Type/scripting/#placing-the-enemies-in-ldtk)). `ServerGamesModule` refuses a name no script registered when it starts, with the levels it knows: `no script registers the level nowhere; registered: training_run`. It then reads the LDtk file of each level that names one (`readLevelPlacements()`, `src/game/Scripting/Level/`), after the entity sheets, and stops the game process on a missing or refused file, naming it and what is wrong; the journal counts the enemies of each level otherwise: `level training_run: 15 enemies placed by levels/training_run.ldtk`. Without the setting, a game plays its waves, the survival mode.
 
 `MatchSystems` builds a `LevelDirector` (`src/server/Spawning/`) with each world of such a game and ticks it before the systems of the world, so a stage never waits behind the scripted bodies for the budget of the tick. Such a game has neither a `WaveSpawner` nor a `BossStage`. Each tick:
 
 1. It steps the stage due (`game::LuauLevelRun`, `src/game/Scripting/Level/`): the stage starts, or goes on once its wait is over.
-2. It scrolls the level by one tick (`game::LevelScroll`, `src/game/Level/`), at `LEVEL_SCROLL_SPEED` (120) logical units per second, unless a script paused the scroll. The scroll starts at 0 with the level. `LevelDirector::progress()` gives the scroll, the biome and the last checkpoint to whatever follows the level.
-3. It publishes a `game::LevelChange` on the bus of the game at the first tick, then when the biome changes, when the scroll stops or starts again, and after a restart from a checkpoint. The players get it as a guaranteed `LevelStatus` (see [Protocol](/R-Type/protocol/#level-status)).
+2. Once a stage asked for them with `level.spawn_placed()`, it makes the placed enemies due appear (`game::PlacedEnemySpawner`, `src/game/Spawning/`): each one whose left edge the scroll brought to the right edge of the playfield, through the `EntityOrders` of the game, so it appears at the end of the tick as a scripted body does.
+3. It scrolls the level by one tick (`game::LevelScroll`, `src/game/Level/`), at `LEVEL_SCROLL_SPEED` (120) logical units per second, unless a script paused the scroll. The scroll starts at 0 with the level. `LevelDirector::progress()` gives the scroll, the biome and the last checkpoint to whatever follows the level.
+4. It publishes a `game::LevelChange` on the bus of the game at the first tick, then when the biome changes, when the scroll stops or starts again, and after a restart from a checkpoint. The players get it as a guaranteed `LevelStatus` (see [Protocol](/R-Type/protocol/#level-status)).
 
 | The level… | The game… |
 |---|---|
@@ -1090,7 +1092,7 @@ A game whose setting `level` names a level plays it instead of the waves of its 
 | reached a checkpoint, and no connected player has a life left | goes on from that checkpoint |
 | reached no checkpoint, and no connected player has a life left | is lost, as a game of waves is |
 
-Each stage after the first starts at a checkpoint: where the level had scrolled and the biome it showed when the stage before it returned. When no connected player has a life left, `GameFlow` asks `MatchSystems::restartFromCheckpoint()` before it ends the game. The level then goes back to that scroll and that biome, its scroll moving, and the stage runs again from its first line. Every body but the ships is removed, each with an `EntityDestruction` (`Removed`), and `LifeKeeper::reviveTheTeam()` gives every connected player the lives of the rules, and a new ship, invulnerable as a ship that comes back is, to each player without one. The scores are kept, and a team may restart from the same checkpoint any number of times.
+Each stage after the first starts at a checkpoint: where the level had scrolled and the biome it showed when the stage before it returned. When no connected player has a life left, `GameFlow` asks `MatchSystems::restartFromCheckpoint()` before it ends the game. The level then goes back to that scroll and that biome, its scroll moving, and the stage runs again from its first line. Every body but the ships is removed, each with an `EntityDestruction` (`Removed`), the placed enemies that come in after the checkpoint are due again and the earlier ones stay gone, and `LifeKeeper::reviveTheTeam()` gives every connected player the lives of the rules, and a new ship, invulnerable as a ship that comes back is, to each player without one. The scores are kept, and a team may restart from the same checkpoint any number of times.
 
 A game that plays a level is never vanilla (see [Vanilla games](#vanilla-games-vanillabreaches)).
 
@@ -1566,6 +1568,7 @@ The counters are read whatever modules are built; only the master module sends t
 | Change how much health a boss has for the players, or in a difficulty | `BOSS_HEALTH_PER_EXTRA_PLAYER` in `src/server/Spawning/BossStageConstants.hpp`, `scaledBossHealth()` in `src/server/Spawning/BossStage.cpp`; `boss_health_percent` in `assets/waves/waves.toml` |
 | Test the fight of a boss without the waves | `--boss`, or `set start-at-boss 1` |
 | Play a level a script directs instead of the waves | `set level <name>`, with the `ensure` line of the resource that registers it; the shipped one is `training_run` of `resources/training-run/` |
+| Move the enemies of a level | its LDtk file, `levels/<level>.ldtk` of its resource, the layer `Mobs` (see [Placing the enemies in LDtk](/R-Type/scripting/#placing-the-enemies-in-ldtk)) |
 | Change how fast a level scrolls | `LEVEL_SCROLL_SPEED` in `src/game/Level/LevelConstants.hpp` |
 | Change when a level is cleared, or what a restart from a checkpoint removes and gives back | `LevelDirector` in `src/server/Spawning/`, `MatchSystems::restartFromCheckpoint()` in `src/server/Rules/Match/`, `LifeKeeper::reviveTheTeam()` in `src/server/Rules/Players/` |
 | Change the attacks of the Bydo Tyrant, or their order | its settings in `assets/entities/bydo_tyrant.toml`; `TYRANT_CALM_ROTATION` and `TYRANT_ENRAGED_ROTATION` in `src/game/Behaviours/Movements/Attacks/BydoTyrantBehaviourConstants.hpp` |

@@ -13,6 +13,7 @@
 #include "GameContext.hpp"
 #include "GameInstanceConstants.hpp"
 #include "GameSettings.hpp"
+#include "IEntityOrders.hpp"
 #include "IHitArbitration.hpp"
 #include "LevelDirector.hpp"
 #include "LevelDirectorParts.hpp"
@@ -112,12 +113,14 @@ std::unique_ptr<EntityOrders> entityOrdersFor(GameContext& game,
                         .scripts = game.settings.scripts});
 }
 
-/** @returns What directs the level the game of @p game plays in @p world;
- * nullptr for a game that plays the waves of its difficulty.
+/** @returns What directs the level the game of @p game plays in @p world,
+ * its placed enemies created through @p orders; nullptr for a game that
+ * plays the waves of its difficulty.
  * @throws UnknownLevelException when no script registered that level, the
  * game having no scripts included. */
 std::unique_ptr<LevelDirector> levelDirectorFor(GameContext& game,
-                                                game::World& world) {
+                                                game::World& world,
+                                                game::IEntityOrders& orders) {
   const GameSettings& settings = game.settings;
   if (!settings.level.has_value()) {
     return nullptr;
@@ -128,6 +131,7 @@ std::unique_ptr<LevelDirector> levelDirectorFor(GameContext& game,
   return std::make_unique<LevelDirector>(
       LevelDirectorParts{.world = world,
                          .events = game.events.get(),
+                         .orders = orders,
                          .scripts = *settings.scripts,
                          .level = *settings.level});
 }
@@ -178,7 +182,7 @@ MatchSystems::MatchSystems(const MatchSystemsParts& parts)
       weaponSystem_(weaponSystemFor(game_, world_)),
       volleySystem_(volleySystemFor(game_, world_)),
       entityOrders_(entityOrdersFor(game_, world_)),
-      levelDirector_(levelDirectorFor(game_, world_)),
+      levelDirector_(levelDirectorFor(game_, world_, *entityOrders_)),
       bossStage_(bossStageFor(game_, world_)),
       lifeKeeper_(lifeKeeperFor(parts)),
       lookItemKeeper_(lookItemKeeperFor(game_, world_)) {}
