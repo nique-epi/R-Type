@@ -40,7 +40,8 @@ TEST(JournalLineTest, EscapesQuotesBackslashesAndEndsOfLine) {
   const std::string line = jsonLineOf(partsWithMessage(ESCAPED_MESSAGE));
 
   EXPECT_EQ(line.find('\n'), std::string::npos);
-  EXPECT_EQ(nlohmann::json::parse(line).at("message"), ESCAPED_MESSAGE);
+  EXPECT_EQ(nlohmann::json::parse(line).at("message").get<std::string>(),
+            ESCAPED_MESSAGE);
 }
 
 /**
@@ -53,7 +54,7 @@ TEST(JournalLineTest, AForgedMessageAddsNoMember) {
 
   const nlohmann::json object = nlohmann::json::parse(line);
   EXPECT_EQ(object.size(), 4U);
-  EXPECT_EQ(object.at("message"), FORGED_MESSAGE);
+  EXPECT_EQ(object.at("message").get<std::string>(), FORGED_MESSAGE);
 }
 
 /**
@@ -64,7 +65,8 @@ TEST(JournalLineTest, AForgedMessageAddsNoMember) {
 TEST(JournalLineTest, ReplacesAByteThatIsNotUtf8) {
   const std::string line = jsonLineOf(partsWithMessage(INVALID_UTF8_MESSAGE));
 
-  EXPECT_EQ(nlohmann::json::parse(line).at("message"), REPLACED_UTF8_MESSAGE);
+  EXPECT_EQ(nlohmann::json::parse(line).at("message").get<std::string>(),
+            REPLACED_UTF8_MESSAGE);
 }
 
 /**
