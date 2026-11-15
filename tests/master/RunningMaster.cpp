@@ -12,7 +12,8 @@
 #include "Application.hpp"
 #include "ConfigurationReader.hpp"
 #include "CreatedServer.hpp"
-#include "HttpPortProbe.hpp"
+#include "HttpPortRecordingModule.hpp"
+#include "IModule.hpp"
 #include "LogLaunchOptionsFixtures.hpp"
 #include "LoggingConstants.hpp"
 #include "LoopStages.hpp"
@@ -26,7 +27,7 @@
 #include "StorageConstants.hpp"
 
 RunningMaster::RunningMaster(std::vector<std::string> settingLines)
-    : port_(freeHttpPort()), settingLines_(std::move(settingLines)) {
+    : settingLines_(std::move(settingLines)) {
   databaseFile_.close();
   application_ = application();
   application_->start();
@@ -40,11 +41,14 @@ std::unique_ptr<rtype::engine::Application> RunningMaster::application() {
       rtype::engine::settingLine(rtype::master::PORT_SETTING_NAME,
                                  std::to_string(port_))};
   lines.insert(lines.end(), settingLines_.begin(), settingLines_.end());
-  return std::make_unique<rtype::engine::Application>(
-      rtype::engine::LoopStages(rtype::master::MASTER_LOOP_STAGES),
+  std::vector<std::unique_ptr<rtype::engine::IModule>> modules =
       rtype::master::masterModules(
           logOptionsOf(quiet, journal_.path()),
-          []([[maybe_unused]] const std::string& reason) {}),
+          []([[maybe_unused]] const std::string& reason) {});
+  modules.push_back(std::make_unique<HttpPortRecordingModule>(port_));
+  return std::make_unique<rtype::engine::Application>(
+      rtype::engine::LoopStages(rtype::master::MASTER_LOOP_STAGES),
+      std::move(modules),
       rtype::engine::configurationStep(
           databaseFile_.file().parent_path() /
               rtype::master::MASTER_CONFIGURATION_FILE_NAME,
