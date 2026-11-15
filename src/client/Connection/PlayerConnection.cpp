@@ -42,6 +42,7 @@ PlayerConnection::PlayerConnection(const network::NetworkConditions& conditions,
       roundTrips_(dispatcher_, clock_),
       leaderboard_(dispatcher_),
       chat_(dispatcher_, waitingRoom_),
+      casino_(dispatcher_, waitingRoom_),
       entityTypes_(localContentOf(places.assetFolder)),
       content_(ContentPackCache{places.cacheFolder}),
       session_(ServerSessionParts{
@@ -52,7 +53,8 @@ PlayerConnection::PlayerConnection(const network::NetworkConditions& conditions,
           .content = content_,
           .arrivals = arrivals_,
           .observers = {waitingRoom_, shipLooks_, entityMessages_, gameLoaded_,
-                        roundTrips_, leaderboard_, chat_, orderedInbox_}}),
+                        roundTrips_, leaderboard_, chat_, casino_,
+                        orderedInbox_}}),
       pings_(router_.addRoute(), clock_) {}
 
 void PlayerConnection::update(engine::Duration elapsed) {
@@ -75,6 +77,7 @@ void PlayerConnection::provideParts(engine::InstallContext& context) {
   context.provide(entityMessages_);
   context.provide(leaderboard_);
   context.provide(chat_);
+  context.provide<ICasinoChannel>(casino_);
   context.provide<IPlayerRoundTrips>(roundTrips_);
   context.provide<IServerTicks>(roundTrips_);
   context.provide<IOwnRoundTrip>(roundTrips_);

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ArrivalTally.hpp"
+#include "CasinoChannel.hpp"
 #include "ChatChannel.hpp"
 #include "ContentLoading.hpp"
 #include "ContentPlaces.hpp"
@@ -31,7 +32,8 @@ namespace rtype::client {
  * NetworkThread, a DatagramRouter in front of it, and the parts the screens
  * and the game use, the ServerSession (the attempt and the session), the
  * WaitingRoom, the EntityMessageQueue, the ServerLeaderboard, the
- * ChatChannel, the RoundTripWatch, which sends the heartbeats and measures the
+ * ChatChannel, the CasinoChannel, the RoundTripWatch, which sends the
+ * heartbeats and measures the
  * round trips, the SessionEntityTypes, the entity types of the content the
  * session plays with, the ContentLoading of the packs of servers, and the
  * ServerPingProbe of the list of servers, on a route of its own.
@@ -76,7 +78,8 @@ class PlayerConnection {
    * @brief Provides to the modules installed after the one installing it the
    * parts of this connection: the ServerSession, the WaitingRoom, the
    * ShipLookExchange, the EntityMessageQueue, the ServerLeaderboard, the
-   * ChatChannel, the RoundTripWatch as IPlayerRoundTrips, IServerTicks and
+   * ChatChannel, the CasinoChannel as ICasinoChannel, the RoundTripWatch as
+   * IPlayerRoundTrips, IServerTicks and
    * IOwnRoundTrip,
    * the ArrivalTally of the session as ISessionArrivals,
    * the IEntityTypeTable and the TrafficCounters of the socket. They must
@@ -116,6 +119,7 @@ class PlayerConnection {
   RoundTripWatch roundTrips_;
   ServerLeaderboard leaderboard_;
   ChatChannel chat_;
+  CasinoChannel casino_;
   SessionEntityTypes entityTypes_;
   ContentLoading content_;
   ArrivalTally arrivals_;
