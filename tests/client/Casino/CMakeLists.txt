@@ -3,3 +3,4 @@ target_include_directories(client_screen_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DI
 target_link_libraries(client_screen_tests PRIVATE rtype_client_casino_module)
 add_subdirectory(Entrance)
 add_subdirectory(Cashier)
+add_subdirectory(Roulette)

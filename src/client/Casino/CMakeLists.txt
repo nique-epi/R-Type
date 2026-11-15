@@ -1,6 +1,7 @@
 add_subdirectory(Painting)
 add_subdirectory(Entrance)
 add_subdirectory(Cashier)
+add_subdirectory(Roulette)
 
 add_library(rtype_client_casino_module STATIC
   ChipSettlement.cpp
