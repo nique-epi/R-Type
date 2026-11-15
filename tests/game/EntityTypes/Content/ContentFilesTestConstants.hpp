@@ -14,6 +14,12 @@ constexpr std::string_view SHEET_NAMING_THE_BYDOS =
     "[gameplay]\n[appearance]\nsheet = \"sprites/bydos.png\"\n";
 constexpr std::string_view BYDO_PIXELS = "\x89PNG\r\n\x1a\nbydos";
 
+/** @brief The mask file of the Weaver next to its sheet, its path in a pack,
+ * and the files of a sheet, its mask file and its sprite sheet. */
+constexpr std::string_view WEAVER_MASK_FILE = "entities/masks/weaver.txt";
+constexpr std::string_view WEAVER_MASK = "#.#\n###\n";
+constexpr std::size_t FILES_OF_A_SHEET_ITS_MASK_AND_ITS_IMAGE = 3;
+
 /** @brief A sprite sheet no sheet names, which a pack leaves out. */
 constexpr std::string_view UNNAMED_SPRITE_SHEET = "sprites/hud.png";
 constexpr std::string_view HUD_PIXELS = "\x89PNG\r\n\x1a\nhud";

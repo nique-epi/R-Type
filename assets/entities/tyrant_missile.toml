@@ -24,6 +24,9 @@ height = 32
 kind = "steady"
 top_speed = 420
 
+[gameplay.mask]
+file = "masks/tyrant_missile.txt"
+
 [appearance]
 sheet = "sprites/entities.png"
 

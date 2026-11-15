@@ -28,6 +28,18 @@ class EntitySheetReaderFixture : public ::testing::Test {
   [[nodiscard]] std::string refusalOf(
       std::initializer_list<std::string_view> parts) const;
 
+  /** @returns The gameplay of the sheet of @p parts, read with the mask file
+   * READ_MASK_SOURCE next to it, holding @p mask. */
+  [[nodiscard]] EntitySheet readWithMask(
+      std::initializer_list<std::string_view> parts,
+      std::string_view mask) const;
+
+  /** @returns The message of what readWithMask() throws for @p parts and
+   * @p mask, empty when it throws nothing. */
+  [[nodiscard]] std::string maskRefusalOf(
+      std::initializer_list<std::string_view> parts,
+      std::string_view mask) const;
+
  private:
   BehaviourRegistry behaviours_;
 };

@@ -7,7 +7,7 @@ sidebar:
 
 An entity sheet, `assets/entities/<name>.toml`, describes one type of entity: the ship of a player, a Bydo, a boss, a missile. This page is for whoever adds or tunes a type: it gives the keys, what each one gives an entity, the rules between keys and between sheets, and how to read the error a program prints, without opening the C++. Why the types are data and not code is told in [Architecture](/R-Type/architecture/#entity-types).
 
-Both programs read the folder `entities` (`ENTITY_SHEET_FOLDER_IN_ASSETS`) of the `assets/` folder next to their executable, or one level above it, once, when they start; the folder they are started from plays no part. On the server, each game process reads the table `[gameplay]` of each sheet (`EntitySheets`, `src/game/EntityTypes/`) when its games module starts, so when the first player who needs that game connects; the supervisor reads no sheet, before the waves file, which names its enemies among the sheets. The client reads the table `[appearance]` (`EntityAppearances`, `src/client/Rendering/Sprites/EntityAppearances/`) when its assets module is installed, before it opens its window. Each checks that the root of a sheet holds exactly these two tables, and only the keys of its own: the client never reads `[gameplay]`, and the server reads of `[appearance]` only the names of its effects and looks (see [Named effects and looks](#named-effects-and-looks)), so a script asks for one the client draws.
+Both programs read the folder `entities` (`ENTITY_SHEET_FOLDER_IN_ASSETS`) of the `assets/` folder next to their executable, or one level above it, once, when they start; the folder they are started from plays no part. On the server, each game process reads the table `[gameplay]` of each sheet (`EntitySheets`, `src/game/EntityTypes/`) when its games module starts, so when the first player who needs that game connects; the supervisor reads no sheet, before the waves file, which names its enemies among the sheets. The client reads the table `[appearance]` (`EntityAppearances`, `src/client/Rendering/Sprites/EntityAppearances/`) when its assets module is installed, before it opens its window. Each checks that the root of a sheet holds exactly these two tables, and only the keys of its own: the client reads of `[gameplay]` only the side and the hitbox of each type, to test its own missiles, and the server reads of `[appearance]` only the names of its effects and looks (see [Named effects and looks](#named-effects-and-looks)), so a script asks for one the client draws.
 
 ## The folder and the names
 
@@ -61,6 +61,8 @@ projectile = "enemy_missile"
 | `hitbox.width`, `hitbox.height` | logical units | 1 to 1024 | its `CollisionBox`, centered on its position |
 | `hitbox.offset_x`, `hitbox.offset_y` | logical units | -1024 to 1024; 0 when left out | where the center of its `CollisionBox` lies from its position, y growing downwards: the box of the Bydo Tyrant covers its body, 12 units right of and 4 below its center |
 | `hitbox.box` | | an array of tables, `[[gameplay.hitbox.box]]`, at least one, in place of the four keys above; enemies only | its `HitboxParts`: the rectangles it collides with, each with the four keys above (see [A hitbox of several boxes](#a-hitbox-of-several-boxes-hitboxbox)) |
+| `mask.file` | | `"masks/<the name of the sheet>.txt"`, a file next to the sheet; never beside `hitbox.box` | the file of the pixels it is drawn on, which its type shares (see [A collision mask](#a-collision-mask-mask)) |
+| `mask.erosion` | pixels | 0 to 4; 0 when left out | how many pixels of outline the tool that wrote the mask file peeled off; only the test against the sprite reads it |
 | `motion.kind` | | `ship`, `steady` | how a direction moves it: the drift, roll and dash of a ship (`ShipMotion`), or its top speed times the direction (`SteadyMotion`) |
 | `motion.top_speed` | logical units per second | 1 to 4096; for `steady` only | its speed on each axis at a full direction |
 | `[gameplay.behaviour]` | | the settings its behaviour declares | the values its behaviour reads |
@@ -151,6 +153,34 @@ offset_y = 60
 - A sheet with `width` and `height` has no `HitboxParts`, and collides with its `CollisionBox` alone, as before.
 
 No shipped sheet lists boxes yet.
+
+## A collision mask: `mask`
+
+A sprite rarely fills its frame: the hitbox of the ship, 128 × 64, covers the 512 pixels of its frame, and 258 of them are transparent. A sheet may give the pixels its entity is drawn on, in a mask file next to it, so the sheet itself stays short:
+
+```toml
+[gameplay.mask]
+file = "masks/ship.txt"
+erosion = 1
+```
+
+`assets/entities/masks/ship.txt` holds one line per row of pixels, from the top, `#` for a drawn pixel and `.` for a clear one:
+
+```text
+................................
+..............#####.............
+…                               (16 lines for the ship)
+```
+
+- The mask file of a sheet is always `masks/<the name of the sheet>.txt`, in the folder of the sheet: a sheet that names another file, or whose file is missing, is refused at `mask.file`. Its lines are all as wide as the first, 1 to `MAXIMUM_MASK_SIDE` (256) pixels each way, with at least one `#`; an error names the mask file and the line. A sheet that also lists `hitbox.box` is refused, since what it is touched on would be unclear.
+- The mask is laid like the frame of the idle animation, centered on the position of the body: one character covers one pixel of the sprite sheet, so 4 × 4 logical units.
+- Both programs read it with `maskOf()` (`src/game/EntityTypes/Texts/`), into one `PixelMask` the entities of the type share (`EntitySheet::mask`). **No system uses it yet**: contacts are still detected on the hitbox. The test of two masks against each other lives in the engine (see [Collisions](/R-Type/engine/#collisions-bounds-overlaps-and-collision)).
+- A mask file travels with its sheet: the content pack a server sends carries it, and the fingerprint of the sheets covers it, so a server whose mask files were changed no longer reads as one that plays the shipped sheets.
+- The mask is written by a tool, not by hand: `python3 tests/tools/collision-masks/write_masks.py assets` writes the mask file of every sheet of a content folder from its sprite, and the table that names it, and needs Pillow. A pixel is drawn when it is drawn in a frame of `idle` or `enraged_idle`, since the server never knows which frame a client shows. `erosion` peels that many pixels of outline, so a bullet that grazes the edge of the ship passes, and the tool keeps the erosion a sheet already gives. Pixels outside the hitbox are cleared, so the aura drawn around the Voltjelly stays out of reach.
+- A look item takes no mask: it only changes how a pilot's ship looks, so it keeps its hitbox, and the tool removes any mask it had. The ship has one mask whatever hull or accessory its pilot wears.
+- `EveryShippedMaskIsWhatItsSpriteDraws` (`client_rendering_tests`) reads each shipped sprite and fails when a mask no longer matches it: run the tool again after changing a sprite, a frame or a hitbox.
+
+16 shipped sheets have a mask, every one but the 22 look items. The ship's is peeled once (`erosion = 1`): 186 drawn pixels of the 254 its sprite draws.
 
 ## Collision layers: `layer` and `hits`
 
@@ -388,10 +418,10 @@ The top hat, the cool shades and the mustache are in the locker from the first l
 
 ## The shipped sheets and vanilla games
 
-A changed or added sheet makes the games of the server not vanilla, and the journal says `not vanilla: the entity sheets are not the ones the game ships`. The server recognizes the shipped sheets by their fingerprint: SipHash-2-4 of the name and the bytes of each sheet, in the order of their names (`entitySheetsFingerprint()`, `src/server/Games/`), so a comment or a line ending counts as a change (see [Vanilla games](/R-Type/server/#vanilla-games-vanillabreaches)). `.gitattributes` keeps the sheets in LF on every checkout, Windows included. When a shipped sheet itself changes, `OFFICIAL_ENTITY_SHEETS_FINGERPRINT` in `src/server/ServerConstants.hpp` changes with it: `EntitySheetsFingerprint.TheShippedSheetsHaveTheOfficialFingerprint` fails until it does, and its failure prints the fingerprint the sheets now have.
+A changed or added sheet makes the games of the server not vanilla, and the journal says `not vanilla: the entity sheets are not the ones the game ships`. The server recognizes the shipped sheets by their fingerprint: SipHash-2-4 of the name and the bytes of each sheet and of its mask file, in the order of their names (`entitySheetsFingerprint()`, `src/server/Games/`), so a comment or a line ending counts as a change (see [Vanilla games](/R-Type/server/#vanilla-games-vanillabreaches)). `.gitattributes` keeps the sheets and their mask files in LF on every checkout, Windows included. When a shipped sheet itself changes, `OFFICIAL_ENTITY_SHEETS_FINGERPRINT` in `src/server/ServerConstants.hpp` changes with it: `EntitySheetsFingerprint.TheShippedSheetsHaveTheOfficialFingerprint` fails until it does, and its failure prints the fingerprint the sheets now have.
 
 ## A client and a server with other sheets
 
-A client draws a server with the sheets that server plays. When it accepts a player, the server announces its content pack: its sheets and the sprite sheets they name, in one file, named by its fingerprint (see [Protocol](/R-Type/protocol/#content-pack)). A client whose own `assets/` make the same pack plays with its own sheets. Any other client takes the pack from its cache, or downloads it from the supervisor while its connection screen shows `LOADING CONTENT` and a percentage, then draws the game from the sheets and sprite sheets of the pack; its own are never used in that session (see [Client](/R-Type/client/#entity-types-of-the-server-sessionentitytypes)). Of a sheet, the client reads the `side` of `[gameplay]` and the `[appearance]`; the rest of the gameplay plays no part on the client, since only the server runs it. So the client predicts where its own missiles burst from the `side` of the bodies (`OwnMissiles`), an enemy, and not from the layers of the sheets.
+A client draws a server with the sheets that server plays. When it accepts a player, the server announces its content pack: its sheets, their mask files and the sprite sheets they name, in one file, named by its fingerprint (see [Protocol](/R-Type/protocol/#content-pack)). A client whose own `assets/` make the same pack plays with its own sheets. Any other client takes the pack from its cache, or downloads it from the supervisor while its connection screen shows `LOADING CONTENT` and a percentage, then draws the game from the sheets and sprite sheets of the pack; its own are never used in that session (see [Client](/R-Type/client/#entity-types-of-the-server-sessionentitytypes)). Of a sheet, the client reads the `side` of `[gameplay]` and the `[appearance]`; the rest of the gameplay plays no part on the client, since only the server runs it. So the client predicts where its own missiles burst from the `side` of the bodies (`OwnMissiles`), an enemy, and not from the layers of the sheets.
 
 So a sheet added to the server, with its sprite sheet, reaches every player without a change to the clients, as long as the host opens the TCP port of the same number as the UDP port of the supervisor (see [Tutorial: publish a mod](/R-Type/tutorial-publish-a-mod/)). The path a sheet gives in `sheet` goes into the pack as it is written: lowercase letters, digits, `_`, `.`, `-` and `/`, 64 characters at most, or the supervisor stops when it starts.

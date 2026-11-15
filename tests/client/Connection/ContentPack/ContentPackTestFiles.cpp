@@ -16,6 +16,14 @@ std::vector<identifiers::ContentFile> lancerFiles() {
                                    .bytes = std::string{LANCER_PIXELS}}};
 }
 
+std::vector<identifiers::ContentFile> lancerFilesWithAMask() {
+  std::vector<identifiers::ContentFile> files = lancerFiles();
+  files.insert(files.begin(),
+               identifiers::ContentFile{.path = std::string{LANCER_MASK_PATH},
+                                        .bytes = std::string{LANCER_MASK}});
+  return files;
+}
+
 std::vector<identifiers::ContentFile> lancerFilesNamingAFileOutside() {
   std::vector<identifiers::ContentFile> files = lancerFiles();
   files.front().bytes = std::string{SHEET_NAMING_A_FILE_OUTSIDE};
