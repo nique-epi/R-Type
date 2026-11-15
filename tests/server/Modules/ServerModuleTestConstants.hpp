@@ -116,3 +116,7 @@ constexpr std::string_view FULL_STATE_ENCODING_LINE = "set state-encoding full";
 
 /** @brief The only byte of the datagram a test queues for its client. */
 constexpr std::byte QUEUED_BYTE{0x2A};
+
+/** @brief The value a test gives after `--log-format` to read the events of
+ * the journal. */
+constexpr std::string_view JSON_JOURNAL_FORMAT = "json";

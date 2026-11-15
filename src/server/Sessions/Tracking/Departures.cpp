@@ -1,20 +1,71 @@
 #include "Departures.hpp"
+#include <array>
+#include <cstdint>
 #include <functional>
 #include <optional>
+#include <span>
+#include <sstream>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 #include "ConnectedPlayer.hpp"
 #include "ConnectedPlayers.hpp"
 #include "Endpoint.hpp"
 #include "EventBus.hpp"
+#include "EventField.hpp"
+#include "LogEvent.hpp"
+#include "LogLevel.hpp"
 #include "Logger.hpp"
 #include "PlayerDeparture.hpp"
 #include "PlayerRoster.hpp"
 #include "ProtocolConstants.hpp"
+#include "ServerConstants.hpp"
 #include "SessionConstants.hpp"
 
 namespace rtype::server {
+
+namespace {
+
+/** @brief How the line of a departure names it: its event, and the words
+ * between the number of the player and its address. */
+struct DepartureWording {
+  std::string_view event;
+  std::string_view verb;
+};
+
+/** @returns The wording of a departure for @p cause. */
+DepartureWording wordingOf(game::DepartureCause cause) {
+  switch (cause) {
+    case game::DepartureCause::Left:
+      return {.event = PLAYER_LEFT_EVENT, .verb = " left from "};
+    case game::DepartureCause::Expelled:
+      return {.event = PLAYER_EXPELLED_EVENT,
+              .verb = " expelled by the host from "};
+    case game::DepartureCause::TimedOut:
+      break;
+  }
+  return {.event = PLAYER_TIMED_OUT_EVENT,
+          .verb = " timed out: nothing received from "};
+}
+
+/** @returns The field of the number of @p player. */
+logging::EventField playerField(const ConnectedPlayer& player) {
+  return {.name = PLAYER_FIELD, .value = std::int64_t{player.playerNumber}};
+}
+
+/** @returns The field of the address of @p player; it points into it. */
+logging::EventField addressField(const ConnectedPlayer& player) {
+  return {.name = ADDRESS_FIELD,
+          .value = std::string_view{player.endpoint.address}};
+}
+
+/** @returns The field of the port of @p player. */
+logging::EventField portField(const ConnectedPlayer& player) {
+  return {.name = PORT_FIELD, .value = std::int64_t{player.endpoint.port}};
+}
+
+}  // namespace
 
 Departures::Departures(PlayerRoster& roster, engine::EventBus& events,
                        std::function<void(const ConnectedPlayer&)> onClosing)
@@ -76,11 +127,25 @@ void Departures::setAway(ConnectedPlayer& player) const {
   player.away = true;
   player.newestInputNumber.reset();
   player.appliedInput.reset();
-  logger_.info("player ", static_cast<unsigned int>(player.playerNumber),
-               " is away: nothing received from ", player.endpoint.address,
-               " port ", player.endpoint.port, " for ",
-               network::SESSION_TIMEOUT.count(), " s, seat kept for ",
-               network::RECONNECTION_GRACE.count(), " s");
+  std::ostringstream message;
+  message << "player " << static_cast<unsigned int>(player.playerNumber)
+          << " is away: nothing received from " << player.endpoint.address
+          << " port " << player.endpoint.port << " for "
+          << network::SESSION_TIMEOUT.count() << " s, seat kept for "
+          << network::RECONNECTION_GRACE.count() << " s";
+  const std::string text = message.str();
+  const std::array fields{
+      playerField(player), addressField(player), portField(player),
+      logging::EventField{
+          .name = SILENT_SECONDS_FIELD,
+          .value = std::int64_t{network::SESSION_TIMEOUT.count()}},
+      logging::EventField{
+          .name = SEAT_KEPT_SECONDS_FIELD,
+          .value = std::int64_t{network::RECONNECTION_GRACE.count()}}};
+  logger_.event(logging::LogEvent{.level = logging::LogLevel::Info,
+                                  .name = PLAYER_AWAY_EVENT,
+                                  .message = text,
+                                  .fields = fields});
 }
 
 void Departures::announce(const ConnectedPlayer& player,
@@ -92,22 +157,27 @@ void Departures::announce(const ConnectedPlayer& player,
 
 void Departures::logDeparture(const ConnectedPlayer& player,
                               game::DepartureCause cause) const {
-  const auto playerNumber = static_cast<unsigned int>(player.playerNumber);
-  switch (cause) {
-    case game::DepartureCause::Left:
-      logger_.info("player ", playerNumber, " left from ",
-                   player.endpoint.address, " port ", player.endpoint.port);
-      return;
-    case game::DepartureCause::Expelled:
-      logger_.info("player ", playerNumber, " expelled by the host from ",
-                   player.endpoint.address, " port ", player.endpoint.port);
-      return;
-    case game::DepartureCause::TimedOut:
-      break;
+  const DepartureWording wording = wordingOf(cause);
+  const bool timedOut = cause == game::DepartureCause::TimedOut;
+  std::ostringstream message;
+  message << "player " << static_cast<unsigned int>(player.playerNumber)
+          << wording.verb << player.endpoint.address << " port "
+          << player.endpoint.port;
+  if (timedOut) {
+    message << " for " << network::SESSION_SILENCE_LIMIT.count() << " s";
   }
-  logger_.info("player ", playerNumber, " timed out: nothing received from ",
-               player.endpoint.address, " port ", player.endpoint.port, " for ",
-               network::SESSION_SILENCE_LIMIT.count(), " s");
+  const std::string text = message.str();
+  const std::array fields{
+      playerField(player), addressField(player), portField(player),
+      logging::EventField{
+          .name = SILENT_SECONDS_FIELD,
+          .value = std::int64_t{network::SESSION_SILENCE_LIMIT.count()}}};
+  logger_.event(logging::LogEvent{
+      .level = logging::LogLevel::Info,
+      .name = wording.event,
+      .message = text,
+      .fields = std::span{fields}.first(timedOut ? fields.size()
+                                                 : fields.size() - 1)});
 }
 
 }  // namespace rtype::server

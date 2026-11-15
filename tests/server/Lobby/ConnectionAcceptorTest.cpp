@@ -2,6 +2,8 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <nlohmann/json.hpp>
+#include <nlohmann/json_fwd.hpp>
 #include <span>
 #include <string>
 #include <utility>
@@ -19,6 +21,7 @@
 #include "DatagramCodec.hpp"
 #include "Endpoint.hpp"
 #include "IncomingDatagram.hpp"
+#include "JsonJournal.hpp"
 #include "MessageType.hpp"
 #include "NetworkConstants.hpp"
 #include "NetworkException.hpp"
@@ -45,6 +48,7 @@ using testing::DROPPED_DATAGRAM_LINE_TEXT;
 using testing::DROPPED_TOGETHER_COUNT;
 using testing::emptyNicknameRequestDatagram;
 using testing::gameContent;
+using testing::JOINED_EVENT_NAME;
 using testing::JUST_AFTER_THE_REPEAT;
 using testing::JUST_BEFORE_THE_REPEAT;
 using testing::NEXT_ACCEPTANCE_REPEAT_TIME;
@@ -81,6 +85,28 @@ TEST_F(ConnectionAcceptorFixture, ReportsNobodyForAChallengedSender) {
   receive(playerEndpoint(0), requestDatagram(0));
 
   EXPECT_TRUE(joinedPlayers().empty());
+}
+
+/**
+ * Given a journal written as JSON Lines and an acceptor with nobody connected
+ * When a sender goes through the challenge
+ * Then one player.joined event names the first seat, the address and the port
+ * of the sender
+ */
+TEST_F(ConnectionAcceptorFixture, WritesAJoinedPlayerAsAnEvent) {
+  const JsonJournal journal;
+
+  connect(playerEndpoint(0));
+
+  const std::vector<nlohmann::json> events =
+      journal.file().events(JOINED_EVENT_NAME);
+  ASSERT_EQ(events.size(), 1U);
+  EXPECT_EQ(events.front().at("player").get<std::int64_t>(),
+            network::FIRST_PLAYER_NUMBER);
+  EXPECT_EQ(events.front().at("address").get<std::string>(),
+            playerEndpoint(0).address);
+  EXPECT_EQ(events.front().at("port").get<std::int64_t>(),
+            playerEndpoint(0).port);
 }
 
 /**

@@ -7,9 +7,9 @@ include(GoogleTest)
 set(RTYPE_TEST_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(RTYPE_TEST_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
-add_library(rtype_test_support STATIC CurrentDirectoryChange.cpp DebugJournal.cpp JournalFile.cpp TemporaryFolder.cpp)
+add_library(rtype_test_support STATIC CurrentDirectoryChange.cpp DebugJournal.cpp JournalFile.cpp JsonJournal.cpp TemporaryFolder.cpp)
 target_include_directories(rtype_test_support PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(rtype_test_support PUBLIC GTest::gtest rtype_logging)
+target_link_libraries(rtype_test_support PUBLIC GTest::gtest nlohmann_json::nlohmann_json rtype_logging)
 rtype_enable_warnings(rtype_test_support)
 
 set(RTYPE_THREAD_TEST_TIMEOUT_SECONDS 60)

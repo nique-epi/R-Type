@@ -25,6 +25,7 @@ target_link_libraries(rtype_server_sessions_tracking
   PRIVATE
     rtype_network_constants
     rtype_network_datagram_codec
+    rtype_server_constants
     rtype_network_exceptions
     rtype_network_round_trips
     rtype_network_statistics_round_trip

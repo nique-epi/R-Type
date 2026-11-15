@@ -1,6 +1,7 @@
 #pragma once
 
 #include <filesystem>
+#include <nlohmann/json_fwd.hpp>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -29,6 +30,10 @@ class JournalFile {
   /** @return the lines of the journal that hold @p text, oldest first. */
   [[nodiscard]] std::vector<std::string> linesHolding(
       std::string_view text) const;
+
+  /** @return the lines of a journal written as JSON Lines whose member
+   * "event" is @p name, each read as a JSON object, oldest first. */
+  [[nodiscard]] std::vector<nlohmann::json> events(std::string_view name) const;
 
  private:
   std::filesystem::path path_;

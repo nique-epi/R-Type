@@ -1,10 +1,12 @@
 #include "ConnectionAcceptor.hpp"
+#include <array>
 #include <cstdint>
 #include <exception>
 #include <limits>
 #include <optional>
 #include <random>
 #include <span>
+#include <sstream>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -16,13 +18,18 @@
 #include "ConnectionRequest.hpp"
 #include "DatagramCodec.hpp"
 #include "Endpoint.hpp"
+#include "EventField.hpp"
 #include "IncomingDatagram.hpp"
 #include "LobbyConstants.hpp"
+#include "LogEvent.hpp"
+#include "LogLevel.hpp"
+#include "Logger.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
 #include "PlayerRoster.hpp"
 #include "ProtocolConstants.hpp"
 #include "RequestReading.hpp"
+#include "ServerConstants.hpp"
 #include "SessionDatagram.hpp"
 #include "TimeConstants.hpp"
 
@@ -58,6 +65,27 @@ std::optional<network::RefusalReason> refusalOf(
 bool isAcceptanceDue(const ConnectedPlayer& player, engine::Duration now) {
   return !player.lastAcceptedAt.has_value() ||
          now - *player.lastAcceptedAt >= CONNECTION_ACCEPTANCE_REPEAT_INTERVAL;
+}
+
+/** @brief Writes the info event of @p player, just let in: its number, its
+ * address and its port. */
+void writeJoined(const logging::Logger& logger, const ConnectedPlayer& player) {
+  std::ostringstream message;
+  message << "player " << static_cast<unsigned int>(player.playerNumber)
+          << " joined from " << player.endpoint.address << " port "
+          << player.endpoint.port;
+  const std::string text = message.str();
+  const std::array fields{
+      logging::EventField{.name = PLAYER_FIELD,
+                          .value = std::int64_t{player.playerNumber}},
+      logging::EventField{.name = ADDRESS_FIELD,
+                          .value = std::string_view{player.endpoint.address}},
+      logging::EventField{.name = PORT_FIELD,
+                          .value = std::int64_t{player.endpoint.port}}};
+  logger.event(logging::LogEvent{.level = logging::LogLevel::Info,
+                                 .name = PLAYER_JOINED_EVENT,
+                                 .message = text,
+                                 .fields = fields});
 }
 
 }  // namespace
@@ -125,8 +153,7 @@ void ConnectionAcceptor::answer(const network::Endpoint& sender,
   }
   ConnectedPlayer* const joined =
       roster_->add(sender, request.nickname, drawSessionToken());
-  logger_.info("player ", static_cast<unsigned int>(joined->playerNumber),
-               " joined from ", sender.address, " port ", sender.port);
+  writeJoined(logger_, *joined);
   admit_(joined->endpoint, joined->sessionToken);
   accept(*joined, now);
   if (onPlayerJoined_) {

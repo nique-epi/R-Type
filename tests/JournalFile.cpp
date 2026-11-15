@@ -2,9 +2,12 @@
 #include <gtest/gtest.h>
 #include <filesystem>
 #include <fstream>
+#include <nlohmann/json.hpp>
+#include <nlohmann/json_fwd.hpp>
 #include <string>
 #include <string_view>
 #include <system_error>
+#include <utility>
 #include <vector>
 #include "Logger.hpp"
 
@@ -42,6 +45,18 @@ std::vector<std::string> JournalFile::linesHolding(
   for (const std::string& line : lines()) {
     if (line.find(text) != std::string::npos) {
       found.push_back(line);
+    }
+  }
+  return found;
+}
+
+std::vector<nlohmann::json> JournalFile::events(std::string_view name) const {
+  std::vector<nlohmann::json> found;
+  for (const std::string& line : lines()) {
+    nlohmann::json object = nlohmann::json::parse(line);
+    if (object.contains("event") &&
+        object.at("event").get<std::string>() == name) {
+      found.push_back(std::move(object));
     }
   }
   return found;

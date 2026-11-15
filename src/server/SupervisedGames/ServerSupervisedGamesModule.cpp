@@ -1,8 +1,11 @@
 #include "ServerSupervisedGamesModule.hpp"
+#include <array>
 #include <cstdint>
 #include <filesystem>
 #include <memory>
 #include <optional>
+#include <span>
+#include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
@@ -12,6 +15,7 @@
 #include "DifficultyNames.hpp"
 #include "Endpoint.hpp"
 #include "ErrorText.hpp"
+#include "EventField.hpp"
 #include "ExitedGame.hpp"
 #include "FreeUdpPort.hpp"
 #include "GameConfigurationFile.hpp"
@@ -28,6 +32,9 @@
 #include "IServerOccupancy.hpp"
 #include "IncomingDatagram.hpp"
 #include "InstallContext.hpp"
+#include "LogEvent.hpp"
+#include "LogLevel.hpp"
+#include "Logger.hpp"
 #include "ModuleConstants.hpp"
 #include "NetworkConstants.hpp"
 #include "OutgoingDatagram.hpp"
@@ -63,6 +70,32 @@ const engine::SettingValue& declareDatabase(
       .help = "SQLite file the leaderboard of the games of this server is "
               "kept in; empty for the file of its port next to the executable",
       .validate = {}});
+}
+
+/** @brief Writes the event of @p exited: an error with its exit code when it
+ * crashed, an info line when it ended by itself. */
+void writeExit(const logging::Logger& logger, const ExitedGame& exited) {
+  std::ostringstream message;
+  message << "game " << exited.number;
+  if (exited.crashed) {
+    message << " crashed while " << lifecycleText(exited.lifecycle)
+            << ", exit code " << exited.exitCode;
+  } else {
+    message << " ended";
+  }
+  const std::string text = message.str();
+  const std::array fields{
+      logging::EventField{.name = GAME_FIELD,
+                          .value = std::int64_t{exited.number}},
+      logging::EventField{.name = EXIT_CODE_FIELD,
+                          .value = std::int64_t{exited.exitCode}}};
+  logger.event(logging::LogEvent{
+      .level =
+          exited.crashed ? logging::LogLevel::Error : logging::LogLevel::Info,
+      .name = exited.crashed ? GAME_CRASHED_EVENT : GAME_ENDED_EVENT,
+      .message = text,
+      .fields = std::span{fields}.first(exited.crashed ? fields.size()
+                                                       : fields.size() - 1)});
 }
 
 }  // namespace
@@ -170,13 +203,7 @@ void ServerSupervisedGamesModule::reportExits(
     const std::vector<ExitedGame>& exits) {
   for (const ExitedGame& exited : exits) {
     admission_->forget(loopbackEndpoint(exited.port), exited.linkToken);
-    if (exited.crashed) {
-      logger_.error("game ", exited.number, " crashed while ",
-                    lifecycleText(exited.lifecycle), ", exit code ",
-                    exited.exitCode);
-    } else {
-      logger_.info("game ", exited.number, " ended");
-    }
+    writeExit(logger_, exited);
   }
 }
 
