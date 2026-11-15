@@ -9,7 +9,8 @@
 #include "LogLaunchOptions.hpp"
 
 /** @brief The base of the tests of the modules of the server: a journal file
- * the logging options point to, and a free UDP port. */
+ * the logging options point to, and the setting line that has the system
+ * choose the port of the server. */
 class ServerModuleFixture : public ::testing::Test {
  protected:
   ServerModuleFixture();
@@ -17,8 +18,10 @@ class ServerModuleFixture : public ::testing::Test {
   /** @returns Logging options that write to the journal of the test only. */
   [[nodiscard]] rtype::logging::LogLaunchOptions journalOptions() const;
 
-  /** @returns A UDP port nothing was bound to a moment ago. */
-  [[nodiscard]] static std::uint16_t freeUdpPort();
+  /** @returns @p lines followed by the line that sets the `port` of the
+   * server to ANY_PORT, so the system chooses a free one when it binds. */
+  [[nodiscard]] static std::vector<std::string> onAnyPort(
+      std::vector<std::string> lines);
 
   /** @returns Whether a UDP socket can be bound on @p port now. */
   [[nodiscard]] static bool portIsFree(std::uint16_t port);
