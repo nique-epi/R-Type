@@ -12,6 +12,7 @@ target_link_libraries(rtype_client_modules
     rtype_logging
   PRIVATE
     rtype_client_assets_module
+    rtype_client_casino_module
     rtype_client_connection_module
     rtype_client_game_module
     rtype_client_hangar_module
