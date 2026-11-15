@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <optional>
+#include "Armored.hpp"
 #include "Boss.hpp"
 #include "BossHealthChanged.hpp"
 #include "ComponentRegistry.hpp"
@@ -53,12 +54,13 @@ std::optional<std::uint8_t> shooterOf(engine::ComponentRegistry& components,
   return owner->playerNumber;
 }
 
-/** @returns Whether @p target is a boss in any phase of its arrival. */
+/** @returns Whether @p target is Armored and in any phase of the attack it
+ * is armored in. */
 bool isArmored(engine::ComponentRegistry& components, engine::Entity target) {
-  const auto* const boss = components.get<Boss>(target);
+  const auto* const armored = components.get<Armored>(target);
   const auto* const current = components.get<CurrentAction>(target);
-  return boss != nullptr && current != nullptr && current->key.has_value() &&
-         current->key->attack == boss->arrivalAttack;
+  return armored != nullptr && current != nullptr && current->key.has_value() &&
+         current->key->attack == armored->attack;
 }
 
 /** @returns What a hit takes from @p target, which has @p health: nothing

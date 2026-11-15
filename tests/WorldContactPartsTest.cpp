@@ -3,6 +3,8 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include "Armored.hpp"
+#include "BossSheet.hpp"
 #include "CurrentAction.hpp"
 #include "EntitySheet.hpp"
 #include "EntitySheetConstants.hpp"
@@ -21,6 +23,8 @@
 #include "WorldFixtures.hpp"
 #include "WorldTestConstants.hpp"
 
+using rtype::game::Armored;
+using rtype::game::BossSheet;
 using rtype::game::CurrentAction;
 using rtype::game::EntitySheet;
 using rtype::game::EntityType;
@@ -32,6 +36,8 @@ using rtype::game::Shootable;
 using rtype::game::SHOOTABLE_MISSILE_SHEETS;
 using rtype::game::SurvivesContact;
 using rtype::game::World;
+using rtype::game::testing::ARMORED_IN_ATTACK_THREE;
+using rtype::game::testing::BYDO_TYRANT_SHEET;
 using rtype::game::testing::componentOf;
 using rtype::game::testing::DRIFTER_SHEET;
 using rtype::game::testing::drifterWith;
@@ -141,6 +147,24 @@ TEST(WorldContactParts, TheFragileActionOfTheSheetIsOnTheEntity) {
 }
 
 /**
+ * Given a sheet whose enemy is armored in its attack 3
+ * When an entity of that sheet is spawned
+ * Then it carries an Armored naming that attack
+ */
+TEST(WorldContactParts, TheArmoredAttackOfTheSheetIsOnTheEntity) {
+  World world;
+  EntitySheet sheet = drifterWith(std::nullopt, false);
+  sheet.armoredIn = ARMORED_IN_ATTACK_THREE;
+
+  const std::uint32_t entityId =
+      world.spawn(sheet, Position{.x = SOME_X, .y = SOME_Y});
+
+  const std::optional<Armored> armored = componentOf<Armored>(world, entityId);
+  ASSERT_TRUE(armored.has_value());
+  EXPECT_EQ(armored.value_or(Armored{}).attack, ARMORED_IN_ATTACK_THREE);
+}
+
+/**
  * Given a sheet that lists two boxes
  * When an entity of that sheet is spawned
  * Then it carries those boxes as its HitboxParts
@@ -232,4 +256,23 @@ TEST(WorldContactParts, EveryShootableNameIsAShippedMissileOfAnEnemy) {
     EXPECT_EQ(shippedEntitySheets().named(name).side, EntityType::EnemyMissile)
         << name;
   }
+}
+
+/**
+ * Given the sheet of the Bydo Tyrant the game ships
+ * When an entity of that sheet is spawned
+ * Then it is armored in the attack its sheet gives its arrival
+ */
+TEST(WorldContactParts, TheShippedTyrantIsArmoredInItsArrival) {
+  World world;
+  const EntitySheet& tyrant = shippedEntitySheets().named(BYDO_TYRANT_SHEET);
+  ASSERT_TRUE(tyrant.boss.has_value());
+
+  const std::uint32_t entityId =
+      world.spawn(tyrant, Position{.x = SOME_X, .y = SOME_Y});
+
+  const std::optional<Armored> armored = componentOf<Armored>(world, entityId);
+  ASSERT_TRUE(armored.has_value());
+  EXPECT_EQ(armored.value_or(Armored{}).attack,
+            tyrant.boss.value_or(BossSheet{}).arrivalAttack);
 }

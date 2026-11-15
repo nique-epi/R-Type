@@ -82,6 +82,10 @@ rage_below_percent = 50
 rage_attack = 9
 arrival_attack = 0
 
+# No hit hurts it while it arrives: attack 0, in any of its phases.
+[gameplay.armored]
+attack = 0
+
 [gameplay.survives_contact]
 
 # Burst: 5 missiles fanned over 48 degrees from the mouth; enraged, 7.
