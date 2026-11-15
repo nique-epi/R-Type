@@ -1,8 +1,8 @@
 #pragma once
 
-#include <functional>
 #include <vector>
 #include "BossHealthChanged.hpp"
+#include "BossSystemParts.hpp"
 #include "Entity.hpp"
 #include "ISystem.hpp"
 #include "SubscriptionHandle.hpp"
@@ -11,7 +11,6 @@
 namespace rtype::engine {
 
 class ComponentRegistry;
-class EventBus;
 
 }  // namespace rtype::engine
 
@@ -20,26 +19,35 @@ namespace rtype::game {
 struct EntityDestruction;
 
 /**
- * @brief Moves every Boss from one phase of its fight to the next, each
- * once, and tells the players the health of a boss in its fight with a
- * BossHealthChanged, whenever what they were last told of it changed:
+ * @brief Everything that makes a boss more than an enemy: it moves every
+ * Boss on through its BossProgress, each step once, and tells the players
+ * about it. A boss is created as any body is; this system alone reads Boss.
  *
- * - its fight starts once its arrival is over (it ended an action and is no
- *   longer in its arrival attack): told with its full health;
- * - a hit took points from it: told at the tick after the hit;
- * - it enrages once its health is below its rage threshold: given its Rage,
- *   its rage attack started in the phase Enraged (startEnemyAction()
- *   interrupts whatever it was doing and announces it), then told enraged;
- * - it is killed: told with no point left, as its EntityDestruction Killed is
- *   delivered. A boss removed any other way is told of no more.
+ * - Created: the players are warned with a BossArrival, and the boss gets a
+ *   Summoning of BOSS_ARRIVAL_WARNING_TICKS ticks, which keeps it harmless
+ *   and unsteered, where it appeared, while the warning lasts;
+ * - Warned: once nothing summons it any more, its health is scaled for the
+ *   players and the difficulty (see scaledBossHealth()), and its behaviour
+ *   brings it in;
+ * - Arriving: its fight starts once its arrival is over (it ended an action
+ *   and is no longer in its arrival attack);
+ * - Fighting: it enrages once its health is below its rage threshold: given
+ *   its Rage, its rage attack started in the phase Enraged
+ *   (startEnemyAction() interrupts whatever it was doing and announces it).
+ *
+ * The players are told the health of a boss in its fight with a
+ * BossHealthChanged whenever what they were last told of it changed: as the
+ * fight starts, at the tick after a hit, as it enrages, and with no point
+ * left as its EntityDestruction Killed is delivered. A boss removed any other
+ * way is told of no more.
  *
  * Subscribes to EntityDestruction on construction and unsubscribes on
  * destruction. Run it before PilotSystem, so the behaviour sees the rage at
- * the same tick. The bus must outlive the system.
+ * the same tick and never steers a boss before its warning.
  */
 class BossSystem final : public engine::ISystem {
  public:
-  explicit BossSystem(engine::EventBus& events);
+  explicit BossSystem(BossSystemParts parts);
   BossSystem(const BossSystem&) = delete;
   BossSystem& operator=(const BossSystem&) = delete;
   BossSystem(BossSystem&&) = delete;
@@ -50,6 +58,14 @@ class BossSystem final : public engine::ISystem {
               engine::Duration elapsed) override;
 
  private:
+  /** @brief Warns the players of @p boss and keeps it harmless for the
+   * warning. Never called while the components are visited. */
+  void warn(engine::ComponentRegistry& components, engine::Entity boss);
+
+  /** @brief Scales the health of @p boss for the players and the
+   * difficulty. */
+  void strengthen(engine::ComponentRegistry& components, engine::Entity boss);
+
   /** @brief Gives @p boss its Rage and starts its rage attack. Never called
    * while the components are visited. */
   void enrage(engine::ComponentRegistry& components, engine::Entity boss);
@@ -62,8 +78,10 @@ class BossSystem final : public engine::ISystem {
    * point left, and forgets any boss that is gone. */
   void onDestruction(const EntityDestruction& destruction);
 
-  std::reference_wrapper<engine::EventBus> events_;
+  BossSystemParts parts_;
   engine::SubscriptionHandle destructions_;
+  std::vector<engine::Entity> warned_;
+  std::vector<engine::Entity> woken_;
   std::vector<engine::Entity> enraging_;
   /** What the players were last told of each boss in its fight. */
   std::vector<BossHealthChanged> told_;

@@ -1,7 +1,9 @@
 #include "GameFlowBossLevelFixture.hpp"
 #include <cstddef>
 #include <string>
+#include <vector>
 #include "Boss.hpp"
+#include "BossProgress.hpp"
 #include "Entity.hpp"
 #include "GameFlowFixture.hpp"
 #include "Position.hpp"
@@ -33,6 +35,16 @@ std::size_t GameFlowBossLevelFixture::bossesInPlay() {
         ++bosses;
       });
   return bosses;
+}
+
+std::vector<game::BossProgress> GameFlowBossLevelFixture::bossProgress() {
+  std::vector<game::BossProgress> progress;
+  flow().world().components().forEach<game::Boss, game::Position>(
+      [&progress](engine::Entity, const game::Boss& boss,
+                  const game::Position&) {
+        progress.push_back(boss.progress);
+      });
+  return progress;
 }
 
 }  // namespace rtype::server::testing

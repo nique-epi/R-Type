@@ -4,7 +4,6 @@ target_sources(game_scripting_tests PRIVATE
   LuauLevelRunFixture.cpp
   LuauLevelRunTest.cpp
   LuauLevelsTest.cpp
-  ${RTYPE_TEST_SOURCE_DIR}/doubles/RecordingLevelBosses.cpp
   ${RTYPE_TEST_SOURCE_DIR}/game/Level/Ldtk/LdtkPlacementFixtures.cpp
 )
 

@@ -16,7 +16,6 @@ target_link_libraries(rtype_game_scripting_level
   PRIVATE
     rtype_engine_data_files
     rtype_engine_exceptions
-    rtype_game_components
     rtype_engine_resources
     rtype_game_exceptions
     rtype_game_scripting_constants

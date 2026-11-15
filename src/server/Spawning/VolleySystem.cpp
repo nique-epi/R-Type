@@ -18,7 +18,6 @@
 #include "EntitySpawned.hpp"
 #include "EntityType.hpp"
 #include "EntityTypeNumber.hpp"
-#include "Gun.hpp"
 #include "Intent.hpp"
 #include "NetworkIdentity.hpp"
 #include "PercentConstants.hpp"
@@ -26,6 +25,7 @@
 #include "PlayfieldConstants.hpp"
 #include "Position.hpp"
 #include "Summoning.hpp"
+#include "SummoningStart.hpp"
 #include "VolleyPlacement.hpp"
 #include "VolleySheet.hpp"
 #include "VolleyShot.hpp"
@@ -78,10 +78,7 @@ void markSummoned(engine::ComponentRegistry& components,
   if (!summoned.has_value()) {
     return;
   }
-  components.add(*summoned, game::Summoning{.ticksLeft = SUMMONING_TICKS});
-  if (auto* const gun = components.get<game::Gun>(*summoned)) {
-    gun->ticksUntilReady += SUMMONING_TICKS;
-  }
+  game::startSummoning(components, *summoned, SUMMONING_TICKS);
 }
 
 }  // namespace

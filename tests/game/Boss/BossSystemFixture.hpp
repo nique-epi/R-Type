@@ -55,7 +55,7 @@ class BossSystemFixture : public ::testing::Test {
   engine::EntityRegistry entities_;
   engine::ComponentRegistry components_{entities_};
   engine::EventBus events_;
-  BossSystem system_{events_};
+  BossSystem system_;
   engine::Entity boss_{};
   std::vector<BossHealthChanged> healths_;
   std::vector<EnemyActionStarted> startedActions_;

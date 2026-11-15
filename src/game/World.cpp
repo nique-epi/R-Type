@@ -176,18 +176,16 @@ void addContactParts(engine::ComponentRegistry& components,
   }
 }
 
-/** @brief Gives @p start its Boss when its sheet makes it one: its rage
- * threshold is its full health times the percentage of the sheet. */
+/** @brief Gives @p start its Boss when its sheet makes it one. */
 void addBoss(engine::ComponentRegistry& components, const BodyStart& start) {
   const EntitySheet& sheet = start.sheet.get();
   if (!sheet.boss.has_value() || !sheet.health.has_value()) {
     return;
   }
-  components.add(start.body, Boss{.rageBelowPoints = rageBelowPointsOf(
-                                      healthOf(start, *sheet.health),
-                                      sheet.boss->rageBelowPercent),
-                                  .rageAttack = sheet.boss->rageAttack,
-                                  .arrivalAttack = sheet.boss->arrivalAttack});
+  components.add(start.body,
+                 Boss{.rageBelowPercent = sheet.boss->rageBelowPercent,
+                      .rageAttack = sheet.boss->rageAttack,
+                      .arrivalAttack = sheet.boss->arrivalAttack});
 }
 
 /** @brief Gives the ship of a player its lives, no protection yet and, with

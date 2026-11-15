@@ -1,25 +1,23 @@
 #pragma once
 
 #include <cstdint>
+#include "BossProgress.hpp"
 #include "PercentConstants.hpp"
 
 namespace rtype::game {
 
 /**
- * @brief Component of a boss, given by `[gameplay.boss]`.
- *
- * BossSystem starts its fight once its arrival is over, gives it its
- * Rage, once, when its health falls below rageBelowPoints, and tells the
- * players its health; the boss stage of the server ends the level once it is
- * gone.
+ * @brief Component of a boss, given by `[gameplay.boss]`. A boss is a body
+ * like any other: BossSystem alone reads this component, and moves the boss
+ * from its warning to its fight and its rage (see BossSystem).
  */
 struct Boss {
-  /** @brief Its full health times the percentage of its sheet, rounded down. */
-  int rageBelowPoints{0};
+  /** @brief The percentage of its full health it enrages below. */
+  int rageBelowPercent{0};
   std::uint8_t rageAttack{0};
   std::uint8_t arrivalAttack{0};
-  /** @brief Whether its fight was announced; set once by BossSystem. */
-  bool fighting{false};
+  /** @brief How far it is; moved on by BossSystem only. */
+  BossProgress progress{BossProgress::Created};
 };
 
 /** @returns The points a boss of @p fullHealth enrages below, for the

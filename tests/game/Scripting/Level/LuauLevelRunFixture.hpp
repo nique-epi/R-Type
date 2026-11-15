@@ -12,7 +12,6 @@
 #include "LdtkPlacement.hpp"
 #include "LevelProgress.hpp"
 #include "LuauLevelRun.hpp"
-#include "RecordingLevelBosses.hpp"
 
 /** @brief The level a test plays tick after tick as a game does: each tick
  * gives the scripts their budget, steps the level, then scrolls it. */
@@ -34,9 +33,6 @@ class LuauLevelRunFixture : public ::testing::Test {
   [[nodiscard]] rtype::game::LuauLevelRun& run();
   /** @returns The progress of the level played. */
   [[nodiscard]] rtype::game::LevelProgress& progress();
-  /** @returns The bosses the level played brings in, which know
-   * BOSS_OF_THE_TESTS as a boss. */
-  [[nodiscard]] rtype::game::testing::RecordingLevelBosses& bosses();
 
  private:
   FailureLog log_;
@@ -44,7 +40,6 @@ class LuauLevelRunFixture : public ::testing::Test {
   rtype::engine::EntityRegistry entities_;
   rtype::engine::ComponentRegistry components_;
   rtype::game::LevelProgress progress_;
-  rtype::game::testing::RecordingLevelBosses bosses_;
   std::vector<rtype::game::LdtkPlacement> placements_;
   std::unique_ptr<rtype::game::LuauLevelRun> run_;
 };

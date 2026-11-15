@@ -1,5 +1,7 @@
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <vector>
+#include "BossProgress.hpp"
 #include "GameEnded.hpp"
 #include "GameFlowBossLevelFixture.hpp"
 #include "GameFlowTestConstants.hpp"
@@ -7,6 +9,7 @@
 #include "Instances/GameInstanceTestConstants.hpp"
 #include "game/Waves/WaveTestConstants.hpp"
 
+using rtype::game::BossProgress;
 using rtype::game::testing::TICKS_TO_THE_WHOLE_FIRST_WAVE;
 using rtype::network::GameEnded;
 using rtype::network::WireGameOutcome;
@@ -15,7 +18,9 @@ using rtype::server::testing::A_SECOND_OF_TICKS;
 using rtype::server::testing::FIRST_PLAYER;
 using rtype::server::testing::GameFlowBossLevelFixture;
 using rtype::server::testing::TICKS_FROM_THE_CLEAR_SKY_TO_THE_BOSS;
+using rtype::server::testing::TICKS_FROM_THE_CLEAR_SKY_TO_THE_WARNING;
 using rtype::server::testing::TICKS_TO_FIND_THE_SKY_CLEAR;
+using ::testing::ElementsAre;
 
 /**
  * Given a game on a level of one wave then a boss, every Bydo of the wave
@@ -36,10 +41,10 @@ TEST_F(GameFlowBossLevelFixture, PlaysOnWhenABossFollowsTheLastWave) {
 /**
  * Given a game on a level of one wave then a boss, every Bydo of the wave
  * killed
- * When the ticks of the warning run, then the next one
+ * When the tick that finds the sky clear runs, then the next one
  * Then the boss is in the world
  */
-TEST_F(GameFlowBossLevelFixture, BringsTheBossInAfterTheWarning) {
+TEST_F(GameFlowBossLevelFixture, CreatesTheBossOnceTheLastWaveIsOver) {
   startGameWith({FIRST_PLAYER});
   runTicks(TICKS_TO_THE_WHOLE_FIRST_WAVE);
   clearTheBydos();
@@ -47,6 +52,23 @@ TEST_F(GameFlowBossLevelFixture, BringsTheBossInAfterTheWarning) {
   runTicks(TICKS_FROM_THE_CLEAR_SKY_TO_THE_BOSS);
 
   EXPECT_EQ(bossesInPlay(), 1U);
+}
+
+/**
+ * Given a game on a level of one wave then a boss, every Bydo of the wave
+ * killed
+ * When the boss appeared and one more tick ran
+ * Then the players were warned of it, as the systems of the game do for any
+ * boss
+ */
+TEST_F(GameFlowBossLevelFixture, WarnsThePlayersOfTheBossOfTheWaves) {
+  startGameWith({FIRST_PLAYER});
+  runTicks(TICKS_TO_THE_WHOLE_FIRST_WAVE);
+  clearTheBydos();
+
+  runTicks(TICKS_FROM_THE_CLEAR_SKY_TO_THE_WARNING);
+
+  EXPECT_THAT(bossProgress(), ElementsAre(BossProgress::Warned));
 }
 
 /**

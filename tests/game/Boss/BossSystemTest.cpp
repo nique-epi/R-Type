@@ -2,6 +2,7 @@
 #include <optional>
 #include <vector>
 #include "BossHealthChanged.hpp"
+#include "BossProgress.hpp"
 #include "BossSystemFixture.hpp"
 #include "BossSystemTestConstants.hpp"
 #include "CurrentAction.hpp"
@@ -10,6 +11,7 @@
 #include "EntityDestruction.hpp"
 
 using rtype::game::BossHealthChanged;
+using rtype::game::BossProgress;
 using rtype::game::CurrentAction;
 using rtype::game::DestructionCause;
 using rtype::game::EnemyActionStarted;
@@ -44,7 +46,7 @@ TEST_F(BossSystemFixture, AnnouncesTheFightOnceTheArrivalIsOver) {
        .full = PHASED_BOSS_FULL_HEALTH,
        .enraged = false}};
   EXPECT_EQ(healths(), expected);
-  EXPECT_TRUE(boss().fighting);
+  EXPECT_EQ(boss().progress, BossProgress::Fighting);
 }
 
 /**
@@ -227,7 +229,7 @@ TEST_F(BossSystemFixture, NeverEnragesDuringTheArrival) {
   run();
 
   EXPECT_FALSE(enraged());
-  EXPECT_FALSE(boss().fighting);
+  EXPECT_EQ(boss().progress, BossProgress::Arriving);
   EXPECT_TRUE(healths().empty());
   EXPECT_TRUE(startedActions().empty());
 }

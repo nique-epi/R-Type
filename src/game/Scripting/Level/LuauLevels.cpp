@@ -16,17 +16,14 @@
 #include "EnemyCount.hpp"
 #include "EngineException.hpp"
 #include "GameScriptingConstants.hpp"
-#include "ILevelBosses.hpp"
 #include "LdtkField.hpp"
 #include "LdtkFieldValue.hpp"
 #include "LdtkPlacement.hpp"
 #include "LevelProgress.hpp"
 #include "LuauLevelConstants.hpp"
 #include "LuauLevelEntry.hpp"
-#include "LuauLevelGame.hpp"
 #include "LuauLevelStep.hpp"
 #include "LuauLevelWait.hpp"
-#include "PercentConstants.hpp"
 #include "ScriptFunction.hpp"
 #include "ScriptMachine.hpp"
 #include "ScriptWait.hpp"
@@ -228,41 +225,6 @@ int showBiome(lua_State* state) {
   return 0;
 }
 
-/** @returns The health percent of the options at LEVEL_BOSS_OPTIONS_ARGUMENT,
- * the whole health without them.
- * @throws engine::ScriptException when it is not a whole number from 1 to
- * WHOLE_PERCENT. */
-int bossHealthPercentOf(lua_State* state) {
-  if (lua_isnoneornil(state, LEVEL_BOSS_OPTIONS_ARGUMENT)) {
-    return WHOLE_PERCENT;
-  }
-  luaL_checktype(state, LEVEL_BOSS_OPTIONS_ARGUMENT, LUA_TTABLE);
-  const int type = lua_rawgetfield(state, LEVEL_BOSS_OPTIONS_ARGUMENT,
-                                   BOSS_HEALTH_PERCENT_KEY);
-  const double percent =
-      type == LUA_TNIL ? double{WHOLE_PERCENT} : lua_tonumber(state, -1);
-  lua_pop(state, 1);
-  if ((type != LUA_TNIL && type != LUA_TNUMBER) ||
-      percent != std::floor(percent) || percent < MINIMUM_BOSS_HEALTH_PERCENT ||
-      percent > WHOLE_PERCENT) {
-    throw engine::ScriptException(WRONG_BOSS_HEALTH_PERCENT_MESSAGE);
-  }
-  return static_cast<int>(percent);
-}
-
-/** @brief `level.boss(name, options)`: warns the players that the boss
- * arrives, then stops the stage that steps until the boss entered. */
-int bringInBoss(lua_State* state) {
-  LuauLevelStep& step = stepOfStage(state);
-  const std::string_view name = luaL_checkstring(state, LEVEL_BOSS_ARGUMENT);
-  if (!step.bosses->isBoss(name)) {
-    throw engine::ScriptException(NOT_A_BOSS_MESSAGE);
-  }
-  step.bosses->announce(name, bossHealthPercentOf(state));
-  step.wait = LuauLevelWait{.untilBossesEntered = true};
-  return lua_yield(state, 0);
-}
-
 /** @brief `level.enemies()`: how many enemies the world holds. */
 int enemyCount(lua_State* state) {
   engine::ComponentRegistry* const components =
@@ -349,9 +311,7 @@ LuauLevels::LuauLevels(engine::ScriptMachine& machine) {
       engine::ScriptFunction{.name = LEVEL_PLACEMENTS_FUNCTION_NAME,
                              .function = placementsOfLevel},
       engine::ScriptFunction{.name = LEVEL_SPAWN_PLACED_FUNCTION_NAME,
-                             .function = spawnPlaced},
-      engine::ScriptFunction{.name = LEVEL_BOSS_FUNCTION_NAME,
-                             .function = bringInBoss}};
+                             .function = spawnPlaced}};
   machine.expose(LEVEL_TABLE, functions, this);
 }
 
@@ -378,18 +338,18 @@ std::vector<std::string> LuauLevels::names() const {
   return names;
 }
 
-void LuauLevels::attach(LuauLevelGame game) {
-  step_.progress = &game.progress.get();
-  step_.components = &game.components.get();
-  step_.bosses = &game.bosses.get();
-  step_.entry = &game.entry.get();
+void LuauLevels::attach(LevelProgress& progress,
+                        engine::ComponentRegistry& components,
+                        const LuauLevelEntry& entry) {
+  step_.progress = &progress;
+  step_.components = &components;
+  step_.entry = &entry;
 }
 
 void LuauLevels::detach(const LevelProgress& progress) noexcept {
   if (step_.progress == &progress) {
     step_.progress = nullptr;
     step_.components = nullptr;
-    step_.bosses = nullptr;
     step_.entry = nullptr;
   }
 }

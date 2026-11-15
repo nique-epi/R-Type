@@ -1,61 +1,48 @@
 #include "BossStage.hpp"
 #include <string>
 #include <utility>
-#include "BossEntranceParts.hpp"
 #include "BossStageConstants.hpp"
 #include "BossStageParts.hpp"
 #include "EnemyCount.hpp"
-#include "EntitySheet.hpp"
-#include "PercentConstants.hpp"
+#include "EngineException.hpp"
+#include "IEntityOrders.hpp"
+#include "SpawnOptions.hpp"
 #include "World.hpp"
 
 namespace rtype::server {
 
-namespace {
-
-/** @returns The sheet of the boss of @p parts; nullptr for none. */
-const game::EntitySheet* bossSheetOf(const BossStageParts& parts) {
-  if (!parts.boss.has_value()) {
-    return nullptr;
-  }
-  return &parts.types.get().named(*parts.boss);
-}
-
-}  // namespace
-
 BossStage::BossStage(BossStageParts parts)
-    : world_(&parts.world.get()),
-      boss_(bossSheetOf(parts)),
-      bosses_(BossEntranceParts{.world = parts.world,
-                                .roster = parts.roster,
-                                .send = std::move(parts.send),
-                                .events = parts.events},
-              parts.types.get(), parts.healthPercent),
-      logger_(std::string{BOSS_STAGE_LOGGER_NAME}) {}
+    : parts_(std::move(parts)), logger_(std::string{BOSS_STAGE_LOGGER_NAME}) {}
 
 void BossStage::onTick(bool lastWaveFinished) {
   if (!lastWaveFinished || cleared_) {
     return;
   }
-  if (boss_ == nullptr) {
+  if (!parts_.boss.has_value()) {
     cleared_ = true;
     return;
   }
-  if (!announced_) {
-    announced_ = true;
-    logger_.info("the last wave is over");
-    bosses_.announce(boss_->name, game::WHOLE_PERCENT);
+  if (!ordered_) {
+    ordered_ = true;
+    orderTheBoss();
     return;
   }
-  bosses_.onTick();
-  if (bosses_.pending() > 0) {
-    return;
-  }
-  cleared_ = game::enemiesIn(world_->components()) == 0;
+  cleared_ = game::enemiesIn(parts_.world.get().components()) == 0;
 }
 
 bool BossStage::levelCleared() const { return cleared_; }
 
-bool BossStage::hasBoss() const { return boss_ != nullptr; }
+bool BossStage::hasBoss() const { return parts_.boss.has_value(); }
+
+void BossStage::orderTheBoss() {
+  const std::string& boss = parts_.boss.value_or(std::string{});
+  logger_.info("the last wave is over: ", boss, " comes");
+  try {
+    static_cast<void>(parts_.orders.get().spawn(boss, BOSS_ENTRY_POSITION,
+                                                game::SpawnOptions{}));
+  } catch (const engine::EngineException& error) {
+    logger_.warn("no boss appears: ", error.what());
+  }
+}
 
 }  // namespace rtype::server

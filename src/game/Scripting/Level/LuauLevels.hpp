@@ -6,9 +6,14 @@
 #include <string_view>
 #include <vector>
 #include "LuauLevelEntry.hpp"
-#include "LuauLevelGame.hpp"
 #include "LuauLevelStep.hpp"
 #include "ScriptMachine.hpp"
+
+namespace rtype::engine {
+
+class ComponentRegistry;
+
+}  // namespace rtype::engine
 
 namespace rtype::game {
 
@@ -58,9 +63,11 @@ class LuauLevels {
   /** @returns The names of the levels registered, in alphabetical order. */
   [[nodiscard]] std::vector<std::string> names() const;
 
-  /** @brief Makes the level of @p game the level the scripts read and
-   * direct; what it names must outlive the game. */
-  void attach(LuauLevelGame game);
+  /** @brief Makes @p progress the level the scripts read and direct, in the
+   * world of @p components, @p entry being what they registered as that
+   * level; all three must outlive the game. */
+  void attach(LevelProgress& progress, engine::ComponentRegistry& components,
+              const LuauLevelEntry& entry);
 
   /** @brief Forgets the level of @p progress, unless another took its
    * place. */

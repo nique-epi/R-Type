@@ -7,9 +7,6 @@
 #include <utility>
 #include <vector>
 #include "BehaviourScripts.hpp"
-#include "Boss.hpp"
-#include "BossEntranceParts.hpp"
-#include "Entity.hpp"
 #include "EntityDestruction.hpp"
 #include "LdtkPlacement.hpp"
 #include "LdtkPlacementFixtures.hpp"
@@ -19,9 +16,6 @@
 #include "LevelDirectorParts.hpp"
 #include "LevelDirectorTestConstants.hpp"
 #include "LuauLevelEntry.hpp"
-#include "NetworkIdentity.hpp"
-#include "OutgoingDatagram.hpp"
-#include "PercentConstants.hpp"
 #include "Position.hpp"
 #include "RecordingEntityOrders.hpp"
 #include "ScriptSource.hpp"
@@ -57,17 +51,12 @@ void LevelDirectorFixture::direct(std::string_view script) {
   if (entry != nullptr) {
     entry->placements = placements_;
   }
-  director_ = std::make_unique<LevelDirector>(LevelDirectorParts{
-      .entrance =
-          BossEntranceParts{.world = world_,
-                            .roster = roster_,
-                            .send = [](const network::OutgoingDatagram&) {},
-                            .events = events_},
-      .orders = orders_,
-      .scripts = scripts_,
-      .level = std::string{DIRECTED_LEVEL},
-      .types = game::testing::shippedEntitySheets(),
-      .bossHealthPercent = rtype::game::WHOLE_PERCENT});
+  director_ = std::make_unique<LevelDirector>(
+      LevelDirectorParts{.world = world_,
+                         .events = events_,
+                         .orders = orders_,
+                         .scripts = scripts_,
+                         .level = std::string{DIRECTED_LEVEL}});
 }
 
 void LevelDirectorFixture::tick(std::size_t count) {
@@ -94,14 +83,6 @@ const std::vector<game::LevelChange>& LevelDirectorFixture::changes() const {
 
 const std::vector<std::uint32_t>& LevelDirectorFixture::removed() const {
   return removed_;
-}
-
-std::size_t LevelDirectorFixture::bossCount() {
-  std::size_t count = 0;
-  world_.components().forEach<game::Boss, game::NetworkIdentity>(
-      [&count](engine::Entity, const game::Boss&,
-               const game::NetworkIdentity&) { ++count; });
-  return count;
 }
 
 const std::vector<RecordedSpawn>& LevelDirectorFixture::spawned() const {

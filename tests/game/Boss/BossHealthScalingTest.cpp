@@ -1,24 +1,24 @@
 #include <gtest/gtest.h>
-#include "BossEntrance.hpp"
+#include "BossHealth.hpp"
 #include "BossHealthScaling.hpp"
 #include "BossHealthScalingTestConstants.hpp"
 
-using rtype::server::BossHealthScaling;
-using rtype::server::scaledBossHealth;
-using rtype::server::testing::BOSS_HEALTH_FOR_FOUR_PLAYERS;
-using rtype::server::testing::BOSS_HEALTH_FOR_ONE_PLAYER;
-using rtype::server::testing::BOSS_HEALTH_FOR_THREE_PLAYERS;
-using rtype::server::testing::BOSS_HEALTH_FOR_TWO_PLAYERS;
-using rtype::server::testing::FOUR_PLAYERS;
-using rtype::server::testing::HARD_BOSS_HEALTH_FOR_FOUR_PLAYERS;
-using rtype::server::testing::HARD_BOSS_HEALTH_FOR_ONE_PLAYER;
-using rtype::server::testing::HARD_HEALTH_PERCENT;
-using rtype::server::testing::NO_PLAYER;
-using rtype::server::testing::ONE_PLAYER;
-using rtype::server::testing::PLAIN_HEALTH_PERCENT;
-using rtype::server::testing::SHEET_BOSS_HEALTH;
-using rtype::server::testing::THREE_PLAYERS;
-using rtype::server::testing::TWO_PLAYERS;
+using rtype::game::BossHealthScaling;
+using rtype::game::scaledBossHealth;
+using rtype::game::testing::BOSS_HEALTH_FOR_FOUR_PLAYERS;
+using rtype::game::testing::BOSS_HEALTH_FOR_ONE_PLAYER;
+using rtype::game::testing::BOSS_HEALTH_FOR_THREE_PLAYERS;
+using rtype::game::testing::BOSS_HEALTH_FOR_TWO_PLAYERS;
+using rtype::game::testing::FOUR_PLAYERS;
+using rtype::game::testing::HARD_BOSS_HEALTH_FOR_FOUR_PLAYERS;
+using rtype::game::testing::HARD_BOSS_HEALTH_FOR_ONE_PLAYER;
+using rtype::game::testing::HARD_HEALTH_PERCENT;
+using rtype::game::testing::NO_PLAYER;
+using rtype::game::testing::ONE_PLAYER;
+using rtype::game::testing::PLAIN_HEALTH_PERCENT;
+using rtype::game::testing::SHEET_BOSS_HEALTH;
+using rtype::game::testing::THREE_PLAYERS;
+using rtype::game::testing::TWO_PLAYERS;
 
 /**
  * Given the 240 points of the sheet of the boss and a difficulty at 100 %
@@ -27,22 +27,22 @@ using rtype::server::testing::TWO_PLAYERS;
  */
 TEST(BossHealthScaling, EachPlayerPastTheFirstAddsAQuarter) {
   EXPECT_EQ(scaledBossHealth(
-                BossHealthScaling{.sheetPoints = SHEET_BOSS_HEALTH,
+                BossHealthScaling{.points = SHEET_BOSS_HEALTH,
                                   .players = ONE_PLAYER,
                                   .healthPercent = PLAIN_HEALTH_PERCENT}),
             BOSS_HEALTH_FOR_ONE_PLAYER);
   EXPECT_EQ(scaledBossHealth(
-                BossHealthScaling{.sheetPoints = SHEET_BOSS_HEALTH,
+                BossHealthScaling{.points = SHEET_BOSS_HEALTH,
                                   .players = TWO_PLAYERS,
                                   .healthPercent = PLAIN_HEALTH_PERCENT}),
             BOSS_HEALTH_FOR_TWO_PLAYERS);
   EXPECT_EQ(scaledBossHealth(
-                BossHealthScaling{.sheetPoints = SHEET_BOSS_HEALTH,
+                BossHealthScaling{.points = SHEET_BOSS_HEALTH,
                                   .players = THREE_PLAYERS,
                                   .healthPercent = PLAIN_HEALTH_PERCENT}),
             BOSS_HEALTH_FOR_THREE_PLAYERS);
   EXPECT_EQ(scaledBossHealth(
-                BossHealthScaling{.sheetPoints = SHEET_BOSS_HEALTH,
+                BossHealthScaling{.points = SHEET_BOSS_HEALTH,
                                   .players = FOUR_PLAYERS,
                                   .healthPercent = PLAIN_HEALTH_PERCENT}),
             BOSS_HEALTH_FOR_FOUR_PLAYERS);
@@ -56,12 +56,12 @@ TEST(BossHealthScaling, EachPlayerPastTheFirstAddsAQuarter) {
  */
 TEST(BossHealthScaling, TheDifficultyScalesTheHealthOfThePlayers) {
   EXPECT_EQ(
-      scaledBossHealth(BossHealthScaling{.sheetPoints = SHEET_BOSS_HEALTH,
+      scaledBossHealth(BossHealthScaling{.points = SHEET_BOSS_HEALTH,
                                          .players = ONE_PLAYER,
                                          .healthPercent = HARD_HEALTH_PERCENT}),
       HARD_BOSS_HEALTH_FOR_ONE_PLAYER);
   EXPECT_EQ(
-      scaledBossHealth(BossHealthScaling{.sheetPoints = SHEET_BOSS_HEALTH,
+      scaledBossHealth(BossHealthScaling{.points = SHEET_BOSS_HEALTH,
                                          .players = FOUR_PLAYERS,
                                          .healthPercent = HARD_HEALTH_PERCENT}),
       HARD_BOSS_HEALTH_FOR_FOUR_PLAYERS);
@@ -74,7 +74,7 @@ TEST(BossHealthScaling, TheDifficultyScalesTheHealthOfThePlayers) {
  */
 TEST(BossHealthScaling, NoPlayerCountsAsOne) {
   EXPECT_EQ(scaledBossHealth(
-                BossHealthScaling{.sheetPoints = SHEET_BOSS_HEALTH,
+                BossHealthScaling{.points = SHEET_BOSS_HEALTH,
                                   .players = NO_PLAYER,
                                   .healthPercent = PLAIN_HEALTH_PERCENT}),
             BOSS_HEALTH_FOR_ONE_PLAYER);
