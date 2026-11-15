@@ -1,10 +1,12 @@
 #include "BossPhaseSystemFixture.hpp"
+#include <cstdint>
 #include <vector>
 #include "Boss.hpp"
 #include "BossHealthChanged.hpp"
 #include "BossPhaseSystemTestConstants.hpp"
 #include "CurrentAction.hpp"
 #include "EnemyActionStarted.hpp"
+#include "EntityDestruction.hpp"
 #include "Health.hpp"
 #include "NetworkIdentity.hpp"
 #include "Rage.hpp"
@@ -33,6 +35,25 @@ void BossPhaseSystemFixture::addBoss(Boss boss, int points,
 
 void BossPhaseSystemFixture::run() {
   system_.update(components_, engine::SIMULATION_TICK_DURATION);
+  events_.dispatch();
+}
+
+void BossPhaseSystemFixture::leavePoints(int points) {
+  if (auto* const health = components_.get<Health>(boss_)) {
+    health->points = points;
+  }
+}
+
+void BossPhaseSystemFixture::destroyBoss(DestructionCause cause) {
+  components_.destroy(boss_);
+  events_.publish(
+      EntityDestruction{.networkId = PHASED_BOSS_ID, .cause = cause});
+  events_.dispatch();
+}
+
+void BossPhaseSystemFixture::announceKillOf(std::uint32_t networkId) {
+  events_.publish(EntityDestruction{.networkId = networkId,
+                                    .cause = DestructionCause::Killed});
   events_.dispatch();
 }
 

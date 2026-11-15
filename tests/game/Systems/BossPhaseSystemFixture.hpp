@@ -1,6 +1,7 @@
 #pragma once
 
 #include <gtest/gtest.h>
+#include <cstdint>
 #include <vector>
 #include "Boss.hpp"
 #include "BossHealthChanged.hpp"
@@ -9,6 +10,7 @@
 #include "CurrentAction.hpp"
 #include "EnemyActionStarted.hpp"
 #include "Entity.hpp"
+#include "EntityDestruction.hpp"
 #include "EntityRegistry.hpp"
 #include "EventBus.hpp"
 
@@ -28,6 +30,17 @@ class BossPhaseSystemFixture : public ::testing::Test {
 
   /** @brief Runs the system once, then delivers what it published. */
   void run();
+
+  /** @brief Leaves the boss @p points health points, as a hit does. */
+  void leavePoints(int points);
+
+  /** @brief Destroys the boss, then delivers its EntityDestruction with
+   * @p cause. */
+  void destroyBoss(DestructionCause cause);
+
+  /** @brief Delivers the EntityDestruction Killed of the body of network id
+   * @p networkId. */
+  void announceKillOf(std::uint32_t networkId);
 
   /** @returns The Boss of the boss; a calm one when it has none. */
   [[nodiscard]] Boss boss();

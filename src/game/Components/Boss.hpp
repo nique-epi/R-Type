@@ -8,11 +8,10 @@ namespace rtype::game {
 /**
  * @brief Component of a boss, given by `[gameplay.boss]`.
  *
- * DamageRules takes nothing from it while it is in any phase of its arrival,
- * and announces its health after every hit; BossPhaseSystem announces its
- * fight once its arrival is over, and gives it its Rage, once, when its
- * health falls below rageBelowPoints; PlayfieldExitSystem never removes it; the
- * boss stage of the server ends the level once it is gone.
+ * BossPhaseSystem starts its fight once its arrival is over, gives it its
+ * Rage, once, when its health falls below rageBelowPoints, and tells the
+ * players its health; the boss stage of the server ends the level once it is
+ * gone.
  */
 struct Boss {
   /** @brief Its full health times the percentage of its sheet, rounded down. */

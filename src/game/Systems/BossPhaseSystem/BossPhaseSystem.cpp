@@ -1,4 +1,5 @@
 #include "BossPhaseSystem.hpp"
+#include <algorithm>
 #include <cstdint>
 #include <optional>
 #include "ActionKey.hpp"
@@ -10,6 +11,7 @@
 #include "EnemyActions.hpp"
 #include "EnemyPhase.hpp"
 #include "Entity.hpp"
+#include "EntityDestruction.hpp"
 #include "EventBus.hpp"
 #include "Health.hpp"
 #include "NetworkIdentity.hpp"
@@ -27,8 +29,8 @@ bool arrivalIsOver(const Boss& boss, const CurrentAction& current) {
                                current.key->attack != boss.arrivalAttack);
 }
 
-/** @returns The health of the boss @p body to announce; nothing for a body
- * without the parts of a boss. */
+/** @returns The health of the boss @p body to tell the players; nothing for
+ * a body without a NetworkIdentity or without Health. */
 std::optional<BossHealthChanged> healthOf(engine::ComponentRegistry& components,
                                           engine::Entity body) {
   const auto* const identity = components.get<NetworkIdentity>(body);
@@ -42,19 +44,18 @@ std::optional<BossHealthChanged> healthOf(engine::ComponentRegistry& components,
                            .enraged = components.has<Rage>(body)};
 }
 
-/** @brief Publishes the health of the boss @p body on @p events. */
-void announceHealthOf(engine::EventBus& events,
-                      engine::ComponentRegistry& components,
-                      engine::Entity body) {
-  const std::optional<BossHealthChanged> health = healthOf(components, body);
-  if (health.has_value()) {
-    events.publish(*health);
-  }
-}
-
 }  // namespace
 
-BossPhaseSystem::BossPhaseSystem(engine::EventBus& events) : events_(events) {}
+BossPhaseSystem::BossPhaseSystem(engine::EventBus& events)
+    : events_(events),
+      destructions_(events.subscribe<EntityDestruction>(
+          [this](const EntityDestruction& destruction) {
+            onDestruction(destruction);
+          })) {}
+
+BossPhaseSystem::~BossPhaseSystem() {
+  events_.get().unsubscribe(destructions_);
+}
 
 void BossPhaseSystem::update(engine::ComponentRegistry& components,
                              [[maybe_unused]] engine::Duration elapsed) {
@@ -68,7 +69,6 @@ void BossPhaseSystem::update(engine::ComponentRegistry& components,
     }
     if (!boss.fighting && arrivalIsOver(boss, *current)) {
       boss.fighting = true;
-      announceHealthOf(events_.get(), components, body);
     }
     if (boss.fighting && !components.has<Rage>(body) &&
         health.points < boss.rageBelowPoints) {
@@ -78,6 +78,7 @@ void BossPhaseSystem::update(engine::ComponentRegistry& components,
   for (const engine::Entity boss : enraging_) {
     enrage(components, boss);
   }
+  tellChangedHealths(components);
 }
 
 void BossPhaseSystem::enrage(engine::ComponentRegistry& components,
@@ -92,7 +93,39 @@ void BossPhaseSystem::enrage(engine::ComponentRegistry& components,
       EnemyActionStart{.enemy = boss,
                        .action = ActionKey{.attack = phases->rageAttack,
                                            .phase = EnemyPhase::Enraged}});
-  announceHealthOf(events_.get(), components, boss);
+}
+
+void BossPhaseSystem::tellChangedHealths(
+    engine::ComponentRegistry& components) {
+  healths_.clear();
+  components.forEach<Boss, Health>([this, &components](engine::Entity body,
+                                                       const Boss& boss,
+                                                       const Health&) {
+    const std::optional<BossHealthChanged> health = healthOf(components, body);
+    if (boss.fighting && health.has_value()) {
+      healths_.push_back(*health);
+    }
+  });
+  for (const BossHealthChanged& health : healths_) {
+    if (std::ranges::find(told_, health) == told_.end()) {
+      events_.get().publish(health);
+    }
+  }
+  told_.swap(healths_);
+}
+
+void BossPhaseSystem::onDestruction(const EntityDestruction& destruction) {
+  const auto told = std::ranges::find(told_, destruction.networkId,
+                                      &BossHealthChanged::networkId);
+  if (told == told_.end()) {
+    return;
+  }
+  if (destruction.cause == DestructionCause::Killed) {
+    BossHealthChanged defeated = *told;
+    defeated.points = 0;
+    events_.get().publish(defeated);
+  }
+  told_.erase(told);
 }
 
 }  // namespace rtype::game

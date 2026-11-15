@@ -1,10 +1,7 @@
 #include "DamageRules.hpp"
-#include <algorithm>
 #include <cstdint>
 #include <optional>
 #include "Armored.hpp"
-#include "Boss.hpp"
-#include "BossHealthChanged.hpp"
 #include "ComponentRegistry.hpp"
 #include "CurrentAction.hpp"
 #include "DamageConstants.hpp"
@@ -18,7 +15,6 @@
 #include "MissileHit.hpp"
 #include "MissileOwner.hpp"
 #include "NetworkIdentity.hpp"
-#include "Rage.hpp"
 #include "ScoreValue.hpp"
 #include "Shootable.hpp"
 
@@ -112,7 +108,6 @@ void DamageRules::onMissileHit(const MissileHit& hit) {
     return;
   }
   health->points -= damage;
-  announceBossHealth(hit.target, ids->target, *health);
   if (health->points > 0) {
     events_.publish(EntityDamage{.networkId = ids->target});
     return;
@@ -137,20 +132,6 @@ void DamageRules::killTarget(engine::Entity target, std::uint32_t networkId,
   if (shooter.has_value() && points > 0) {
     events_.publish(EnemyKilled{.playerNumber = *shooter, .points = points});
   }
-}
-
-void DamageRules::announceBossHealth(engine::Entity target,
-                                     std::uint32_t networkId,
-                                     const Health& health) {
-  const auto* const boss = components_.get<Boss>(target);
-  if (boss == nullptr) {
-    return;
-  }
-  events_.publish(BossHealthChanged{
-      .networkId = networkId,
-      .points = static_cast<std::uint16_t>(std::max(health.points, 0)),
-      .full = static_cast<std::uint16_t>(health.full),
-      .enraged = components_.has<Rage>(target)});
 }
 
 }  // namespace rtype::game

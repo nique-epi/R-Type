@@ -2,8 +2,10 @@
 
 #include <functional>
 #include <vector>
+#include "BossHealthChanged.hpp"
 #include "Entity.hpp"
 #include "ISystem.hpp"
+#include "SubscriptionHandle.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::engine {
@@ -15,33 +17,57 @@ class EventBus;
 
 namespace rtype::game {
 
+struct EntityDestruction;
+
 /**
  * @brief Moves every Boss from one phase of its fight to the next, each
- * once, and tells the players with a BossHealthChanged:
+ * once, and tells the players the health of a boss in its fight with a
+ * BossHealthChanged, whenever what they were last told of it changed:
  *
  * - its fight starts once its arrival is over (it ended an action and is no
- *   longer in its arrival attack): announced with its full health;
+ *   longer in its arrival attack): told with its full health;
+ * - a hit took points from it: told at the tick after the hit;
  * - it enrages once its health is below its rage threshold: given its Rage,
  *   its rage attack started in the phase Enraged (startEnemyAction()
- *   interrupts whatever it was doing and announces it), then announced.
+ *   interrupts whatever it was doing and announces it), then told enraged;
+ * - it is killed: told with no point left, as its EntityDestruction Killed is
+ *   delivered. A boss removed any other way is told of no more.
  *
- * Run it before PilotSystem, so the behaviour sees the rage at the same tick.
- * The bus must outlive the system.
+ * Subscribes to EntityDestruction on construction and unsubscribes on
+ * destruction. Run it before PilotSystem, so the behaviour sees the rage at
+ * the same tick. The bus must outlive the system.
  */
 class BossPhaseSystem final : public engine::ISystem {
  public:
   explicit BossPhaseSystem(engine::EventBus& events);
+  BossPhaseSystem(const BossPhaseSystem&) = delete;
+  BossPhaseSystem& operator=(const BossPhaseSystem&) = delete;
+  BossPhaseSystem(BossPhaseSystem&&) = delete;
+  BossPhaseSystem& operator=(BossPhaseSystem&&) = delete;
+  ~BossPhaseSystem() override;
 
   void update(engine::ComponentRegistry& components,
               engine::Duration elapsed) override;
 
  private:
-  /** @brief Gives @p boss its Rage, starts its rage attack and announces its
-   * health. Never called while the components are visited. */
+  /** @brief Gives @p boss its Rage and starts its rage attack. Never called
+   * while the components are visited. */
   void enrage(engine::ComponentRegistry& components, engine::Entity boss);
 
+  /** @brief Tells the players the health of every boss in its fight whose
+   * health or rage changed since they were last told. */
+  void tellChangedHealths(engine::ComponentRegistry& components);
+
+  /** @brief Tells the players a boss in its fight that was killed has no
+   * point left, and forgets any boss that is gone. */
+  void onDestruction(const EntityDestruction& destruction);
+
   std::reference_wrapper<engine::EventBus> events_;
+  engine::SubscriptionHandle destructions_;
   std::vector<engine::Entity> enraging_;
+  /** What the players were last told of each boss in its fight. */
+  std::vector<BossHealthChanged> told_;
+  std::vector<BossHealthChanged> healths_;
 };
 
 }  // namespace rtype::game

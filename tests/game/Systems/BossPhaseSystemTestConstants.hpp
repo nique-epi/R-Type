@@ -14,6 +14,7 @@ constexpr int PHASED_BOSS_FULL_HEALTH = 240;
 constexpr int PHASED_BOSS_RAGE_BELOW = 120;
 constexpr int PHASED_BOSS_BELOW_ITS_RAGE = 119;
 constexpr int PHASED_BOSS_AT_ITS_RAGE = 120;
+constexpr int PHASED_BOSS_AFTER_ONE_HIT = 239;
 constexpr std::uint8_t PHASED_BOSS_RAGE_ATTACK = 9;
 constexpr std::uint8_t PHASED_BOSS_ARRIVAL_ATTACK = 0;
 constexpr Boss ARRIVING_BOSS{.rageBelowPoints = PHASED_BOSS_RAGE_BELOW,
@@ -29,5 +30,8 @@ constexpr Boss FIGHTING_BOSS{.rageBelowPoints = PHASED_BOSS_RAGE_BELOW,
 constexpr ActionKey PHASED_BOSS_SLIDE{.attack = PHASED_BOSS_ARRIVAL_ATTACK,
                                       .phase = EnemyPhase::Signal};
 constexpr std::uint32_t ARRIVAL_ENDED = 1;
+
+/** @brief The network id of a Bydo that is no boss. */
+constexpr std::uint32_t KILLED_BYDO_ID = 7;
 
 }  // namespace rtype::game::testing
