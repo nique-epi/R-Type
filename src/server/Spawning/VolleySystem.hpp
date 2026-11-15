@@ -4,7 +4,6 @@
 #include <random>
 #include <vector>
 #include "BodyPlacement.hpp"
-#include "Entity.hpp"
 #include "EntitySheet.hpp"
 #include "EntitySheets.hpp"
 #include "EntitySpawnSender.hpp"
