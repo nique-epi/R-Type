@@ -2,6 +2,7 @@
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Event.hpp>
+#include <SFML/Window/Keyboard.hpp>
 #include <SFML/Window/Mouse.hpp>
 #include <cstddef>
 #include <cstdint>
@@ -20,6 +21,8 @@
 #include "MotionPreference.hpp"
 #include "PlayerSettings.hpp"
 #include "Purchase.hpp"
+#include "PurchaseRefusal.hpp"
+#include "PurchaseTicket.hpp"
 #include "Purse.hpp"
 #include "SettingDefinitionConstants.hpp"
 #include "ShelfSizes.hpp"
@@ -34,7 +37,9 @@
 #include "ShopView.hpp"
 #include "ShopkeeperMotion.hpp"
 #include "ShopkeeperMotionConstants.hpp"
+#include "ShopkeeperSpeech.hpp"
 #include "SoundConstants.hpp"
+#include "TicketAnswer.hpp"
 #include "TimeConstants.hpp"
 #include "WidgetConstants.hpp"
 
@@ -51,12 +56,42 @@ Purse purseOf(const PlayerSettings& settings) {
   return Purse{.kopecks = settings.kopecks, .locker = settings.shipLocker};
 }
 
-/** @brief Changes what the shop plays: the music of the radio instead of
- * the music of the shop, or back. */
-void tuneRadio(IAudioService& audio) {
-  audio.setAmbience(audio.ambience() == Ambience::Shop ? Ambience::ShopRadio
-                                                       : Ambience::Shop);
+/** @returns The music the radio plays after @p playing: the theme of
+ * Papers, Please after the music of the shop, Kavorka after it, then the
+ * music of the shop again. */
+Ambience nextOnTheRadio(Ambience playing) {
+  switch (playing) {
+    case Ambience::Shop:
+      return Ambience::ShopRadio;
+    case Ambience::ShopRadio:
+      return Ambience::ShopDance;
+    default:
+      return Ambience::Shop;
+  }
 }
+
+/** @brief Changes what the shop plays for the next music of the radio;
+ * the shopkeeper says what he thinks of it. */
+void tuneRadio(IAudioService& audio, ShopkeeperSpeech& speech) {
+  audio.setAmbience(nextOnTheRadio(audio.ambience()));
+  speech.radioTuned(audio.ambience());
+}
+
+/** @returns The key held after @p event, @p held before it: the key it
+ * presses, none once a key is released or the window loses the focus. */
+std::optional<sf::Keyboard::Key> heldKeyAfter(
+    const sf::Event& event, std::optional<sf::Keyboard::Key> held) {
+  if (const auto* pressed = event.getIf<sf::Event::KeyPressed>()) {
+    return pressed->code;
+  }
+  if (event.is<sf::Event::KeyReleased>() || event.is<sf::Event::FocusLost>()) {
+    return std::nullopt;
+  }
+  return held;
+}
+
+static_assert(SHOP_RADIO_KEY == sf::Keyboard::Key::R,
+              "SHOPKEEPER_RADIO_HINT shows the keycap of R");
 
 }  // namespace
 
@@ -68,6 +103,7 @@ ShopScreen::ShopScreen(ShopScreenParts parts,
       music_(parts.audio.get(), Ambience::Shop),
       settings_(&parts.settings.get()),
       motion_(parts.motion),
+      speech_(parts.sounds.get(), parts.motion),
       canvas_(std::move(canvas)),
       playfieldPointAt_(std::move(parts.playfieldPointAt)),
       backChip_(KeyChipParts{.text = backText(),
@@ -77,11 +113,23 @@ ShopScreen::ShopScreen(ShopScreenParts parts,
                              .sounds = parts.sounds}),
       wares_(waresForSale()),
       selection_(ShelfSizes{.looks = wares_.looks.size(),
-                            .hulls = wares_.hulls.size()}) {
+                            .hulls = wares_.hulls.size()}),
+      ticket_(parts.sounds.get()) {
+  speech_.greet(settings_->settings().shipLocker.items.count());
   repaint();
 }
 
 void ShopScreen::handleEvent(const sf::Event& event) {
+  if (ticket_.isOpen()) {
+    heldKey_ = heldKeyAfter(event, heldKey_);
+    const TicketAnswer answer = ticket_.handleEvent(event, playfieldPointAt_);
+    if (answer == TicketAnswer::Buy && buy()) {
+      ticket_.paid();
+    } else if (answer != TicketAnswer::None) {
+      ticket_.close();
+    }
+    return;
+  }
   if (backChip_.handleEvent(event, playfieldPointAt_)) {
     return;
   }
@@ -105,6 +153,8 @@ void ShopScreen::handleEvent(const sf::Event& event) {
 void ShopScreen::update(engine::Duration elapsed) {
   elapsed_ += elapsed;
   static_cast<void>(settings_->saveIfChanged());
+  speech_.advance(elapsed);
+  ticket_.advance(elapsed);
   repaint();
 }
 
@@ -123,10 +173,10 @@ void ShopScreen::keyPressed(const sf::Event::KeyPressed& key) {
   }
   if (key.code == MENU_CONFIRM_KEY) {
     heldKey_ = key.code;
-    buy();
+    offer();
   } else if (key.code == SHOP_RADIO_KEY) {
     heldKey_ = key.code;
-    tuneRadio(*audio_);
+    tuneRadio(*audio_, speech_);
   }
 }
 
@@ -135,7 +185,20 @@ void ShopScreen::pointed(sf::Vector2i position, bool clicked) {
   radioPointed_ = SHOP_RADIO_AREA.contains(pixel);
   if (radioPointed_) {
     if (clicked) {
-      tuneRadio(*audio_);
+      tuneRadio(*audio_, speech_);
+    }
+    return;
+  }
+  if (SHOP_BOTTLES_AREA.contains(pixel)) {
+    if (clicked) {
+      sounds_->play(BOTTLES_CLINK_SOUND_ID);
+      speech_.bottlesTouched();
+    }
+    return;
+  }
+  if (SHOP_ABACUS_AREA.contains(pixel) || SHOP_TEA_AREA.contains(pixel)) {
+    if (clicked) {
+      speech_.counterTouched();
     }
     return;
   }
@@ -147,11 +210,22 @@ void ShopScreen::pointed(sf::Vector2i position, bool clicked) {
     message_.reset();
   }
   if (clicked) {
-    buy();
+    offer();
   }
 }
 
-void ShopScreen::buy() {
+void ShopScreen::offer() {
+  const std::size_t item = chosenItem();
+  const Purchase trial = buyLookItem(purseOf(settings_->settings()), item);
+  if (trial.refusal.has_value() &&
+      *trial.refusal != PurchaseRefusal::TooExpensive) {
+    static_cast<void>(buy());
+    return;
+  }
+  ticket_.open(item, heldKey_);
+}
+
+bool ShopScreen::buy() {
   const std::size_t item = chosenItem();
   const Purse purse = purseOf(settings_->settings());
   const Purchase bought = buyLookItem(purse, item);
@@ -159,12 +233,15 @@ void ShopScreen::buy() {
     const std::uint32_t price = lookItemPrice(item);
     message_ = refusalLineOf(*bought.refusal,
                              price > purse.kopecks ? price - purse.kopecks : 0);
-    return;
+    speech_.refused(*bought.refusal, item);
+    return false;
   }
   static_cast<void>(settings_->apply(KOPECKS_SETTING, bought.purse.kopecks));
   static_cast<void>(settings_->apply(SHIP_LOCKER_SETTING, bought.purse.locker));
   sounds_->play(PURCHASE_SOUND_ID);
   message_ = boughtLineOf(item);
+  speech_.bought(item);
+  return true;
 }
 
 void ShopScreen::repaint() {
@@ -183,7 +260,9 @@ void ShopScreen::repaint() {
                                    ? shopkeeperPoseAt(elapsed_)
                                    : SHOPKEEPER_AT_REST,
                      .radioPointed = radioPointed_});
+  speech_.paint(*canvas_);
   backChip_.paint(*canvas_);
+  ticket_.paint(*canvas_);
   canvas_->display();
 }
 

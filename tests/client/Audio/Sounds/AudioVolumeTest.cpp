@@ -8,6 +8,7 @@
 using rtype::client::BOSS_TRACK;
 using rtype::client::changesEffectsVolume;
 using rtype::client::changesMusicVolume;
+using rtype::client::changesVoicesVolume;
 using rtype::client::CROWD_AMBIENCE_TRACK;
 using rtype::client::effectsVolumeOf;
 using rtype::client::HANGAR_AMBIENCE_TRACK;
@@ -16,7 +17,9 @@ using rtype::client::PlayerSettings;
 using rtype::client::SettingId;
 using rtype::client::SPACE_AMBIENCE_TRACK;
 using rtype::client::THEME_TRACK;
+using rtype::client::voicesVolumeOf;
 using rtype::client::testing::A_MUSIC_VOLUME;
+using rtype::client::testing::A_VOICES_VOLUME;
 using rtype::client::testing::AN_EFFECTS_VOLUME;
 
 /**
@@ -41,6 +44,31 @@ TEST(AudioVolume, ASoundPlaysAtTheEffectsVolumeOfThePlayer) {
   settings.effectsVolume = AN_EFFECTS_VOLUME;
 
   EXPECT_FLOAT_EQ(effectsVolumeOf(settings), 55.0F);
+}
+
+/**
+ * Given a player whose EFFECTS volume is 55 % and VOICES volume 25 %
+ * When the volume of a voice is read
+ * Then the voice plays at 25 of 100, not at the volume of the effects
+ */
+TEST(AudioVolume, AVoicePlaysAtTheVoicesVolumeOfThePlayer) {
+  PlayerSettings settings;
+  settings.effectsVolume = AN_EFFECTS_VOLUME;
+  settings.voicesVolume = A_VOICES_VOLUME;
+
+  EXPECT_FLOAT_EQ(voicesVolumeOf(settings), 25.0F);
+}
+
+/**
+ * Given a player who turned MUTE ALL on
+ * When the volume of a voice is read
+ * Then the voice is silent
+ */
+TEST(AudioVolume, MuteAllSilencesTheVoices) {
+  PlayerSettings settings;
+  settings.muted = true;
+
+  EXPECT_FLOAT_EQ(voicesVolumeOf(settings), 0.0F);
 }
 
 /**
@@ -88,7 +116,20 @@ TEST(AudioVolume, OnlyTheEffectsVolumeAndMuteAllMoveTheSounds) {
   EXPECT_TRUE(changesEffectsVolume(SettingId::EffectsVolume));
   EXPECT_TRUE(changesEffectsVolume(SettingId::Muted));
   EXPECT_FALSE(changesEffectsVolume(SettingId::MusicVolume));
+  EXPECT_FALSE(changesEffectsVolume(SettingId::VoicesVolume));
   EXPECT_FALSE(changesEffectsVolume(SettingId::AutoFire));
+}
+
+/**
+ * Given the settings a listener can be told about
+ * When the voices ask which of them move their volume
+ * Then only the voices volume and MUTE ALL do
+ */
+TEST(AudioVolume, OnlyTheVoicesVolumeAndMuteAllMoveTheVoices) {
+  EXPECT_TRUE(changesVoicesVolume(SettingId::VoicesVolume));
+  EXPECT_TRUE(changesVoicesVolume(SettingId::Muted));
+  EXPECT_FALSE(changesVoicesVolume(SettingId::EffectsVolume));
+  EXPECT_FALSE(changesVoicesVolume(SettingId::MusicVolume));
 }
 
 /**

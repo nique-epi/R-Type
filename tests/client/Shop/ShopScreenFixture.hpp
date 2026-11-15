@@ -13,6 +13,7 @@
 #include "RecordingSoundPlayer.hpp"
 #include "SettingsService.hpp"
 #include "ShopScreen.hpp"
+#include "TimeConstants.hpp"
 
 namespace rtype::client::testing {
 
@@ -32,6 +33,11 @@ class ShopScreenFixture : public ::testing::Test {
    * presses and releases the left button there otherwise; then runs a
    * frame. */
   void pointAt(sf::Vector2i pixel, bool clicked);
+  /** @brief Presses Enter to show the ticket of the chosen ware, then Enter
+   * again to press its BUY, then runs a frame as long as its stamp shows. */
+  void buyChosen();
+  /** @brief Runs a frame @p elapsed long. */
+  void wait(engine::Duration elapsed);
   /** @brief Gives the player @p kopecks, then runs a frame. */
   void give(std::uint32_t kopecks);
 
@@ -51,5 +57,8 @@ class ShopScreenFixture : public ::testing::Test {
   InterfaceCanvasRecord painting_;
   std::unique_ptr<ShopScreen> screen_;
 };
+
+/** @returns Whether @p painting shows the sales slip of a ware. */
+[[nodiscard]] bool showsATicket(const InterfaceCanvasRecord& painting);
 
 }  // namespace rtype::client::testing

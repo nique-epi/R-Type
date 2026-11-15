@@ -17,10 +17,12 @@
 #include "KeyChip.hpp"
 #include "MotionPreference.hpp"
 #include "PlayfieldMapping.hpp"
+#include "PurchaseTicket.hpp"
 #include "SettingsService.hpp"
 #include "ShopScreenParts.hpp"
 #include "ShopSelection.hpp"
 #include "ShopWares.hpp"
+#include "ShopkeeperSpeech.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -32,19 +34,26 @@ namespace rtype::client {
  * The picture of the booth fills the screen. Its locker shows the looks for
  * sale, four rows at a time, and its glass case the hulls, each with its
  * price; the arrows, the wheel and the pointer choose a ware (see
- * ShopSelection). Enter, once per hold, or a click on a ware buys it: its
- * price leaves the kopecks, the ware joins the locker of the hangar, and the
- * settings are saved; a ware the player owns, or cannot pay, is refused on
+ * ShopSelection). Enter, once per hold, or a click on a ware shows its sales
+ * slip (see PurchaseTicket), which takes every event while it shows; its BUY
+ * buys the ware: its price leaves the kopecks, the ware joins the locker of
+ * the hangar, and the settings are saved. A ware the player owns is refused
+ * at once, and one the player cannot pay is refused once BUY is pressed, on
  * the status line. Escape or BACK closes the shop. It hides the screens
  * below.
  *
  * The shopkeeper breathes, blinks and glances around behind his counter,
- * unless the player asked for less motion. The radio shows the frame of a
+ * unless the player asked for less motion, and talks in a bubble over his
+ * head (see ShopkeeperSpeech): he greets the player, says a line for each
+ * purchase and refusal, for a click on his bottles (SHOP_BOTTLES_AREA), which
+ * clink, for a click on his abacus or his tea (SHOP_ABACUS_AREA,
+ * SHOP_TEA_AREA), and for the radio tuned. The radio shows the frame of a
  * choice under the pointer.
  *
  * The music of the shop plays while it shows, the theme paused. A click on
  * the radio of the counter, or SHOP_RADIO_KEY once per hold, changes it for
- * the music of the radio, and back.
+ * the next music of the radio: the theme of Papers, Please, then Kavorka,
+ * then the music of the shop again. Each loops until the radio is tuned.
  */
 class ShopScreen final : public IScreen {
  public:
@@ -68,8 +77,12 @@ class ShopScreen final : public IScreen {
   /** @brief Chooses the ware under @p position of the window, and buys it
    * when @p clicked. */
   void pointed(sf::Vector2i position, bool clicked);
-  /** @brief Buys the chosen ware, or says on the status line why not. */
-  void buy();
+  /** @brief Shows the sales slip of the chosen ware, or says at once why it
+   * cannot be bought when the player owns it or it is not for sale. */
+  void offer();
+  /** @brief Buys the chosen ware, or says on the status line why not.
+   * @returns Whether it was bought. */
+  bool buy();
   void repaint();
   /** @returns The chosen ware, a position in SHIP_LOOK_ITEM_NAMES. */
   [[nodiscard]] std::size_t chosenItem() const;
@@ -82,6 +95,8 @@ class ShopScreen final : public IScreen {
   AmbienceScope music_;
   SettingsService* settings_;
   MotionPreference motion_;
+  /** @brief What the shopkeeper says over his head. */
+  ShopkeeperSpeech speech_;
   /** @brief How long the shop was shown: where the shopkeeper is in his
    * breath and in the cycle of his eye. */
   engine::Duration elapsed_{};
@@ -95,6 +110,8 @@ class ShopScreen final : public IScreen {
   /** @brief What the last purchase said, until the choice moves. */
   std::optional<std::string> message_;
   std::optional<sf::Keyboard::Key> heldKey_;
+  /** @brief The sales slip of the ware offered, while it shows. */
+  PurchaseTicket ticket_;
 };
 
 }  // namespace rtype::client

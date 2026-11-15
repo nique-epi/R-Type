@@ -4,9 +4,9 @@
 
 namespace rtype::client {
 
-/** @brief How a word of the bubble is written: plain, in the cyan of the
+/** @brief How a word of a speech bubble is written: plain, in the cyan of the
  * words of the interface, or as a keycap. */
-enum class HelpWordLook : std::uint8_t {
+enum class SpeechWordLook : std::uint8_t {
   Plain,
   Highlighted,
   KeyCap,
