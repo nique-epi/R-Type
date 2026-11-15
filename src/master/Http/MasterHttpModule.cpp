@@ -54,9 +54,10 @@ void MasterHttpModule::install(engine::InstallContext& context) {
           engine::IntegerSettingDefinition{
               .name = std::string{PORT_SETTING_NAME},
               .defaultValue = network::DEFAULT_MASTER_PORT,
-              .lowest = network::LOWEST_PORT,
+              .lowest = network::ANY_PORT,
               .highest = network::HIGHEST_PORT,
-              .help = "TCP port the HTTP API listens on"});
+              .help = "TCP port the HTTP API listens on, 0 for one the "
+                      "system chooses"});
   server_.add(network::HEALTH_ROUTE, healthResponse);
   context.provide(server_);
 }

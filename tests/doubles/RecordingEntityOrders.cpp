@@ -4,14 +4,16 @@
 #include <string_view>
 #include <vector>
 #include "Position.hpp"
+#include "SpawnOptions.hpp"
 
 RecordingEntityOrders::RecordingEntityOrders(std::uint32_t givenId)
     : givenId_(givenId) {}
 
 std::uint32_t RecordingEntityOrders::spawn(std::string_view type,
-                                           rtype::game::Position position) {
-  spawns_.push_back(
-      RecordedSpawn{.type = std::string{type}, .position = position});
+                                           rtype::game::Position position,
+                                           rtype::game::SpawnOptions options) {
+  spawns_.push_back(RecordedSpawn{
+      .type = std::string{type}, .position = position, .options = options});
   return givenId_;
 }
 

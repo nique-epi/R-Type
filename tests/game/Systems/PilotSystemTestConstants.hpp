@@ -2,7 +2,6 @@
 
 #include <cstddef>
 #include <cstdint>
-#include "Boss.hpp"
 #include "CollisionBox.hpp"
 #include "Health.hpp"
 #include "Position.hpp"
@@ -48,14 +47,14 @@ constexpr Position JUMP_TARGET{.x = 640.0F, .y = 700.0F};
 constexpr CollisionBox STARTING_BOX{
     .width = 96.0F, .height = 96.0F, .offsetX = 12.0F, .offsetY = 4.0F};
 constexpr CollisionBox ASKED_BOX{.width = 200.0F, .height = 100.0F};
+
+/** @brief The side, in pixels, of the collision mask the tests give a body
+ * whose box they resize: any size will do, the test reads whether it is
+ * emptied. */
+constexpr int STARTING_BOX_PIXELS = 4;
 constexpr float STARTING_TOP_SPEED = 240.0F;
 constexpr float ASKED_TOP_SPEED = 480.0F;
-/** @brief A boss that enraged, and how many actions an enemy has ended. */
-constexpr Boss ENRAGED_BOSS{.rageBelowPoints = 120,
-                            .rageAttack = 9,
-                            .arrivalAttack = 0,
-                            .fighting = true,
-                            .enraged = true};
+/** @brief How many actions an enemy has ended. */
 constexpr std::uint32_t THREE_ENDED_ACTIONS = 3;
 
 }  // namespace rtype::game::testing

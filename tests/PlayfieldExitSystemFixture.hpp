@@ -37,8 +37,8 @@ class PlayfieldExitSystemFixture : public ::testing::Test {
   engine::Entity addSteeredMissile(Position position, Direction heading);
 
   /** @returns A new networked enemy at @p positionX, on the row the tests
-   * use, that is a boss. */
-  engine::Entity addBoss(float positionX);
+   * use, that StaysOutside. */
+  engine::Entity addEnemyThatStaysOutside(float positionX);
 
   /** @brief Runs the system for one tick, then delivers what it published. */
   void updateAndDispatch();

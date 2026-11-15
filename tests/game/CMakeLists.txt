@@ -1,4 +1,6 @@
 add_subdirectory(Behaviours)
+add_subdirectory(Boss)
+add_subdirectory(Contacts)
 add_subdirectory(EntityTypes)
 add_subdirectory(Level)
 add_subdirectory(Scripting)

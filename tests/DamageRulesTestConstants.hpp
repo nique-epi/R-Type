@@ -35,4 +35,12 @@ constexpr int FOUR_HEALTH_POINTS = 4;
 constexpr ActionKey STUNNED{.attack = 0, .phase = EnemyPhase::Recover};
 constexpr ActionKey CHARGING{.attack = 0, .phase = EnemyPhase::Strike};
 
+/** @brief A Bydo armored in its attack 2, and the signal and the strike of
+ * that attack. */
+constexpr std::uint8_t ARMORED_ATTACK = 2;
+constexpr ActionKey ARMORED_SIGNAL{.attack = ARMORED_ATTACK,
+                                   .phase = EnemyPhase::Signal};
+constexpr ActionKey ARMORED_STRIKE{.attack = ARMORED_ATTACK,
+                                   .phase = EnemyPhase::Strike};
+
 }  // namespace rtype::game::testing

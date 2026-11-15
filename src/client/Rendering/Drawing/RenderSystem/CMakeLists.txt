@@ -7,11 +7,11 @@ target_link_libraries(rtype_client_render_system
     rtype_engine
     rtype_client_drawing
   PRIVATE
-    rtype_client_easing
     rtype_client_interface
     rtype_client_ship_looks
     rtype_client_sprite_look
     rtype_client_sprites
+    rtype_game_ship_control
 )
 
 rtype_enable_warnings(rtype_client_render_system)

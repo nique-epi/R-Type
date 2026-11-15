@@ -3,11 +3,15 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <memory>
 #include <optional>
+#include <utility>
+#include "Armored.hpp"
 #include "BodyPlacement.hpp"
 #include "Boss.hpp"
 #include "CollisionBox.hpp"
 #include "CollisionFilter.hpp"
+#include "CollisionMask.hpp"
 #include "ComponentRegistry.hpp"
 #include "CurrentAction.hpp"
 #include "Entity.hpp"
@@ -30,15 +34,20 @@
 #include "MotionSheet.hpp"
 #include "NetworkEntityTable.hpp"
 #include "NetworkIdentity.hpp"
+#include "PercentConstants.hpp"
 #include "Pilot.hpp"
 #include "PilotSheet.hpp"
 #include "Position.hpp"
+#include "RolledMaskCatalog.hpp"
+#include "RolledMasks.hpp"
 #include "ScoreValue.hpp"
 #include "ShardBurst.hpp"
 #include "ShipMotion.hpp"
 #include "ShipPilot.hpp"
+#include "ShipRollMasks.hpp"
 #include "Shootable.hpp"
 #include "ShownLook.hpp"
+#include "StaysOutside.hpp"
 #include "SteadyMotion.hpp"
 #include "SurvivesContact.hpp"
 #include "TimeConstants.hpp"
@@ -49,18 +58,26 @@ namespace rtype::game {
 namespace {
 
 /** @brief A body being made: the entity, the sheet of its type, where it
- * appears and the point its Pilot steers from. */
+ * appears, the point its Pilot steers from, and its health in percent of
+ * what its sheet gives. */
 struct BodyStart {
   engine::Entity body;
   std::reference_wrapper<const EntitySheet> sheet;
   Position position;
   Position origin;
+  int healthPercent;
 };
 
+/** @returns The health of @p start, which its sheet gives health: that
+ * health taken at the percent of @p start, rounded down, never under 1. */
+int healthOf(const BodyStart& start, int sheetHealth) {
+  return std::max(1, sheetHealth * start.healthPercent / WHOLE_PERCENT);
+}
+
 /** @brief Gives @p start what every entity of a sheet has: where it is, its
- * side, its box, the boxes its sheet lists, its collision filter, the number of
- * its sheet, the names of its effects and looks, the look it shows, its own
- * idle loop at first, and an Intent that wants nothing. */
+ * side, its box, the boxes or the collision mask its sheet gives, its collision
+ * filter, the number of its sheet, the names of its effects and looks, the look
+ * it shows, its own idle loop at first, and an Intent that wants nothing. */
 void addPlace(engine::ComponentRegistry& components, const BodyStart& start) {
   const EntitySheet& sheet = start.sheet.get();
   components.add(start.body, start.position);
@@ -68,6 +85,9 @@ void addPlace(engine::ComponentRegistry& components, const BodyStart& start) {
   components.add(start.body, sheet.hitbox);
   if (!sheet.hitboxParts.empty()) {
     components.add(start.body, HitboxParts{.boxes = sheet.hitboxParts});
+  }
+  if (sheet.mask.has_value()) {
+    components.add(start.body, CollisionMask{.pixels = sheet.mask->pixels});
   }
   components.add(start.body, sheet.collision.filter);
   components.add(start.body, EntityTypeNumber{.number = sheet.number});
@@ -84,6 +104,21 @@ void addMotion(engine::ComponentRegistry& components, const BodyStart& start) {
     return;
   }
   components.add(start.body, SteadyMotion{.topSpeed = motion.topSpeed});
+}
+
+/** @brief Gives @p start, a ship whose sheet gives a collision mask, the
+ * masks it shows through its barrel roll, taken from @p catalog. */
+void addRollMasks(engine::ComponentRegistry& components, const BodyStart& start,
+                  RolledMaskCatalog& catalog) {
+  const EntitySheet& sheet = start.sheet.get();
+  if (sheet.motion.kind != MotionKind::Ship || !sheet.mask.has_value()) {
+    return;
+  }
+  std::shared_ptr<const RolledMasks> masks =
+      catalog.rolledOf(*sheet.mask->pixels);
+  if (masks != nullptr) {
+    components.add(start.body, ShipRollMasks{.masks = std::move(masks)});
+  }
 }
 
 /** @brief Gives @p start the Pilot of its behaviour, when one pilots it. */
@@ -103,8 +138,8 @@ void addPilot(engine::ComponentRegistry& components, const BodyStart& start) {
 void addCombat(engine::ComponentRegistry& components, const BodyStart& start) {
   const EntitySheet& sheet = start.sheet.get();
   if (sheet.health.has_value()) {
-    components.add(start.body,
-                   Health{.points = *sheet.health, .full = *sheet.health});
+    const int health = healthOf(start, *sheet.health);
+    components.add(start.body, Health{.points = health, .full = health});
   }
   if (sheet.points.has_value()) {
     components.add(start.body, ScoreValue{.points = *sheet.points});
@@ -132,9 +167,10 @@ bool isShootable(const EntitySheet& sheet) {
 }
 
 /** @brief Gives @p start the parts that decide what its contact with a ship
- * or a missile does: the CurrentAction of an enemy, then the HurtZone and the
- * SurvivesContact and the Fragile its sheet declares, the Shootable of a
- * missile SHOOTABLE_MISSILE_SHEETS names, and the LookItem of a look item. */
+ * or a missile does, or what leaving the playfield does: the CurrentAction of
+ * an enemy, then the HurtZone, the SurvivesContact, the Fragile, the Armored
+ * and the StaysOutside its sheet declares, the Shootable of a missile
+ * SHOOTABLE_MISSILE_SHEETS names, and the LookItem of a look item. */
 void addContactParts(engine::ComponentRegistry& components,
                      const BodyStart& start) {
   const EntitySheet& sheet = start.sheet.get();
@@ -150,6 +186,12 @@ void addContactParts(engine::ComponentRegistry& components,
   if (sheet.fragileIn.has_value()) {
     components.add(start.body, Fragile{.in = *sheet.fragileIn});
   }
+  if (sheet.armoredIn.has_value()) {
+    components.add(start.body, Armored{.attack = *sheet.armoredIn});
+  }
+  if (sheet.staysOutside) {
+    components.add(start.body, StaysOutside{});
+  }
   if (isShootable(sheet)) {
     components.add(start.body, Shootable{});
   }
@@ -158,16 +200,14 @@ void addContactParts(engine::ComponentRegistry& components,
   }
 }
 
-/** @brief Gives @p start its Boss when its sheet makes it one: its rage
- * threshold is its full health times the percentage of the sheet. */
+/** @brief Gives @p start its Boss when its sheet makes it one. */
 void addBoss(engine::ComponentRegistry& components, const BodyStart& start) {
   const EntitySheet& sheet = start.sheet.get();
   if (!sheet.boss.has_value() || !sheet.health.has_value()) {
     return;
   }
   components.add(start.body,
-                 Boss{.rageBelowPoints = rageBelowPointsOf(
-                          *sheet.health, sheet.boss->rageBelowPercent),
+                 Boss{.rageBelowPercent = sheet.boss->rageBelowPercent,
                       .rageAttack = sheet.boss->rageAttack,
                       .arrivalAttack = sheet.boss->arrivalAttack});
 }
@@ -209,9 +249,11 @@ std::uint32_t World::spawnFrom(const EntitySheet& sheet,
   const BodyStart start{.body = registry_.create(),
                         .sheet = sheet,
                         .position = placement.position,
-                        .origin = placement.origin};
+                        .origin = placement.origin,
+                        .healthPercent = placement.healthPercent};
   addPlace(components_, start);
   addMotion(components_, start);
+  addRollMasks(components_, start, rolledMasks_);
   addPilot(components_, start);
   addCombat(components_, start);
   addContactParts(components_, start);

@@ -17,11 +17,13 @@ using rtype::client::EntityAppearance;
 using rtype::client::ForeignSpriteSheetException;
 using rtype::client::PackContent;
 using rtype::client::packContentOf;
+using rtype::client::testing::LANCER_MASK_PATH;
 using rtype::client::testing::LANCER_PIXELS;
 using rtype::client::testing::LANCER_SPRITES_PATH;
 using rtype::client::testing::LANCER_TYPE;
 using rtype::client::testing::lancerFiles;
 using rtype::client::testing::lancerFilesNamingAFileOutside;
+using rtype::client::testing::lancerFilesWithAMask;
 using rtype::client::testing::ONE_TYPE;
 using rtype::game::EntityType;
 
@@ -61,6 +63,23 @@ TEST(PackContentReading, WritesTheSpriteSheetWhereTheAppearanceFindsIt) {
   ASSERT_NE(lancer, nullptr);
   EXPECT_EQ(lancer->sheet, written.generic_string());
   EXPECT_TRUE(std::filesystem::path{lancer->sheet}.is_absolute());
+}
+
+/**
+ * Given the pack of a Bydo, its sprite sheet and its mask file
+ * When it is read
+ * Then only its sprite sheet is written below the folder: a mask file is read
+ * with its sheet, and is no sprite sheet an appearance may name
+ */
+TEST(PackContentReading, WritesNoMaskFileAmongTheSpriteSheets) {
+  const TemporaryFolder folder;
+
+  const PackContent content =
+      packContentOf(lancerFilesWithAMask(), folder.path());
+
+  EXPECT_EQ(content.types.size(), ONE_TYPE);
+  EXPECT_TRUE(std::filesystem::exists(folder.path() / LANCER_SPRITES_PATH));
+  EXPECT_FALSE(std::filesystem::exists(folder.path() / LANCER_MASK_PATH));
 }
 
 /**

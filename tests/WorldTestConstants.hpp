@@ -18,6 +18,14 @@ constexpr float OTHER_Y = 40.0F;
 /** @brief The health a new Bydo has, as the world tests expect it. */
 constexpr int THREE_HEALTH_POINTS = 3;
 
+/** @brief A sheet that gives 200 health points placed at 40 percent of them
+ * has 80; a Bydo of three points placed at one percent keeps one point. */
+constexpr int TWO_HUNDRED_HEALTH_POINTS = 200;
+constexpr int FORTY_PERCENT = 40;
+constexpr int EIGHTY_HEALTH_POINTS = 80;
+constexpr int ONE_PERCENT = 1;
+constexpr int A_SINGLE_HEALTH_POINT = 1;
+
 /** @brief The player whose missile the world tests create. */
 constexpr std::uint8_t SECOND_PLAYER_NUMBER = 2;
 

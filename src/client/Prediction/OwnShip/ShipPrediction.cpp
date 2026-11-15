@@ -2,6 +2,8 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <optional>
+#include "BarrelRoll.hpp"
 #include "Position.hpp"
 #include "PredictionConstants.hpp"
 #include "ShipControl.hpp"
@@ -76,6 +78,10 @@ void ShipPrediction::reconcile(game::Position server,
 bool ShipPrediction::isStarted() const { return started_; }
 
 game::Position ShipPrediction::position() const { return current_.position; }
+
+std::optional<float> ShipPrediction::rollShare() const {
+  return game::rollShareOf(current_.motion);
+}
 
 void ShipPrediction::dropBefore(std::uint32_t inputNumber) {
   while (!pending_.empty() && pending_.front().inputNumber < inputNumber) {

@@ -359,13 +359,13 @@ std::optional<BossSheet> bossFrom(const engine::DataFileTable& gameplay) {
           *boss, ARRIVAL_ATTACK_KEY, ATTACK_NUMBER_RANGE))};
 }
 
-/** @returns Whether the sheet holds the marker table
- * `[gameplay.survives_contact]`. */
-bool survivesContactFrom(const engine::DataFileTable& gameplay) {
+/** @returns Whether the sheet holds the marker table @p key of `[gameplay]`,
+ * such as `[gameplay.survives_contact]`. */
+bool holdsMarker(const engine::DataFileTable& gameplay, std::string_view key) {
   const std::optional<engine::DataFileTable> marker =
-      engine::optionalTableAt(gameplay, SURVIVES_CONTACT_KEY);
+      engine::optionalTableAt(gameplay, key);
   if (marker.has_value()) {
-    engine::refuseUnknownKeys(*marker, SURVIVES_CONTACT_KEYS);
+    engine::refuseUnknownKeys(*marker, MARKER_KEYS);
   }
   return marker.has_value();
 }
@@ -379,6 +379,18 @@ std::optional<ActionKey> fragileFrom(const engine::DataFileTable& gameplay) {
   }
   engine::refuseUnknownKeys(*fragile, FRAGILE_KEYS);
   return actionKeyAt(*fragile);
+}
+
+/** @returns The attack `[gameplay.armored]` names; nothing without it. */
+std::optional<std::uint8_t> armoredFrom(const engine::DataFileTable& gameplay) {
+  const std::optional<engine::DataFileTable> armored =
+      engine::optionalTableAt(gameplay, ARMORED_KEY);
+  if (!armored.has_value()) {
+    return std::nullopt;
+  }
+  engine::refuseUnknownKeys(*armored, ARMORED_KEYS);
+  return static_cast<std::uint8_t>(
+      engine::wholeNumberAt(*armored, ATTACK_KEY, ATTACK_NUMBER_RANGE));
 }
 
 /** @returns The number of the item `look_item` names in the catalog of ship
@@ -414,6 +426,15 @@ void checkContactPartsBelongToAnEnemy(const EntitySheet& sheet,
   if (sheet.fragileIn.has_value()) {
     throw InconsistentEntitySheetException(
         engine::placeOfKey(gameplay, FRAGILE_KEY), FRAGILE_SIDE_RULE);
+  }
+  if (sheet.armoredIn.has_value()) {
+    throw InconsistentEntitySheetException(
+        engine::placeOfKey(gameplay, ARMORED_KEY), ARMORED_SIDE_RULE);
+  }
+  if (sheet.staysOutside) {
+    throw InconsistentEntitySheetException(
+        engine::placeOfKey(gameplay, STAYS_OUTSIDE_KEY),
+        STAYS_OUTSIDE_SIDE_RULE);
   }
   if (!sheet.volleys.empty()) {
     throw InconsistentEntitySheetException(
@@ -549,6 +570,16 @@ void checkLookItemFliesLeft(const EntitySheet& sheet,
   }
 }
 
+/** @throws InconsistentEntitySheetException when @p sheet gives a mask and
+ * lists several hitbox boxes: which one it is touched on would be unclear. */
+void checkMaskStandsAlone(const EntitySheet& sheet,
+                          const engine::DataFileTable& gameplay) {
+  if (sheet.mask.has_value() && !sheet.hitboxParts.empty()) {
+    throw InconsistentEntitySheetException(
+        engine::placeOfKey(gameplay, MASK_KEY), MASK_AND_PARTS_RULE);
+  }
+}
+
 /** @throws InconsistentEntitySheetException when the values of @p sheet, each
  * valid, do not hold together. */
 void checkSheetHoldsTogether(const EntitySheet& sheet,
@@ -556,6 +587,7 @@ void checkSheetHoldsTogether(const EntitySheet& sheet,
   checkPilotMatchesSide(sheet, gameplay);
   checkShipMotion(sheet, gameplay);
   checkHitboxPartsBelongToAnEnemy(sheet, gameplay);
+  checkMaskStandsAlone(sheet, gameplay);
   checkWhatItFires(sheet, gameplay);
   checkMissileFliesTowardsItsEdge(sheet, gameplay);
   checkContactPartsBelongToAnEnemy(sheet, gameplay);
@@ -578,14 +610,17 @@ EntitySheet gameplayOf(const SheetText& sheet,
       .collision = collisionFrom(gameplay),
       .hitbox = hitboxOf(gameplay),
       .hitboxParts = hitboxPartsOf(gameplay),
+      .mask = maskOf(gameplay, sheet),
       .motion = motionFrom(gameplay),
       .pilot = pilotFrom(gameplay, behaviours),
       .health = pointsIn<int>(gameplay, HEALTH_KEY, HEALTH_RANGE),
       .points = pointsIn<std::uint32_t>(gameplay, SCORE_KEY, SCORE_RANGE),
       .gun = gunFrom(gameplay),
       .hurtZone = hurtZoneFrom(gameplay),
-      .survivesContact = survivesContactFrom(gameplay),
+      .survivesContact = holdsMarker(gameplay, SURVIVES_CONTACT_KEY),
       .fragileIn = fragileFrom(gameplay),
+      .armoredIn = armoredFrom(gameplay),
+      .staysOutside = holdsMarker(gameplay, STAYS_OUTSIDE_KEY),
       .burst = burstFrom(gameplay),
       .volleys = volleysFrom(gameplay),
       .boss = bossFrom(gameplay),

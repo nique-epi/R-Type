@@ -30,6 +30,9 @@ constexpr CollisionBox LEGS_BOX{
 constexpr ActionKey STUNNED_IN_ATTACK_ZERO{.attack = 0,
                                            .phase = EnemyPhase::Recover};
 
+/** @brief The attack an armored sheet of the tests is armored in. */
+constexpr std::uint8_t ARMORED_IN_ATTACK_THREE = 3;
+
 /** @brief A name SHOOTABLE_MISSILE_SHEETS does not hold, given to a copy of
  * the sheet of a missile of an enemy. */
 constexpr std::string_view UNLISTED_MISSILE_SHEET = "unlisted_missile";

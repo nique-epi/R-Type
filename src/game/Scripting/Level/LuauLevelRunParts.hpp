@@ -2,7 +2,6 @@
 
 #include <functional>
 #include "ComponentRegistry.hpp"
-#include "ILevelBosses.hpp"
 #include "LevelProgress.hpp"
 #include "LuauLevelEntry.hpp"
 #include "LuauLevels.hpp"
@@ -25,8 +24,6 @@ struct LuauLevelRunParts {
   std::reference_wrapper<LevelProgress> progress;
   /** @brief The components of the world the level is played in. */
   std::reference_wrapper<engine::ComponentRegistry> components;
-  /** @brief The bosses the stages bring in. */
-  std::reference_wrapper<ILevelBosses> bosses;
 };
 
 }  // namespace rtype::game

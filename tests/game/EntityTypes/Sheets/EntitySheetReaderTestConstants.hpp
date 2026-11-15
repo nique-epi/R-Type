@@ -5,9 +5,11 @@
 
 namespace rtype::game::testing {
 
-/** @brief The name and the file of the sheet the reader tests read. */
+/** @brief The name and the file of the sheet the reader tests read, and the
+ * mask file next to it. */
 constexpr std::string_view READ_SHEET_NAME = "test_sheet";
 constexpr std::string_view READ_SHEET_SOURCE = "/sheets/test_sheet.toml";
+constexpr std::string_view READ_MASK_SOURCE = "/sheets/masks/test_sheet.txt";
 
 /** @brief Pieces of a sheet, put one after the other: a test leaves one out,
  * or puts a wrong one in, to see the reader refuse it. The tables of

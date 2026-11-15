@@ -19,7 +19,9 @@
 /**
  * @brief The table of the sheets FixedEntityTypeSourceConstants.hpp lists,
  * numbered as it numbers them, each looking as appearanceOfSide() gives its
- * side; the enemy of two boxes lists TWO_BOX_ENEMY_PARTS.
+ * side; the enemy of two boxes lists TWO_BOX_ENEMY_PARTS, and the hollow
+ * enemy has a collision mask of HOLLOW_ENEMY_SIDE pixels a side, its
+ * HOLLOW_ENEMY_DRAWN_ROWS top rows alone drawn.
  */
 class FixedEntityTypeSource final : public rtype::client::IEntityTypeSource {
  public:

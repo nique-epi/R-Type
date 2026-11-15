@@ -4,6 +4,7 @@
 #include <vector>
 #include "EngineException.hpp"
 #include "GameException.hpp"
+#include "SheetMaskText.hpp"
 #include "SheetText.hpp"
 #include "SheetTextReading.hpp"
 #include "SheetTextReadingTestConstants.hpp"
@@ -12,10 +13,13 @@
 using rtype::engine::UnreadableDataFileException;
 using rtype::game::InvalidEntityTypeNameException;
 using rtype::game::NoEntitySheetException;
+using rtype::game::SheetMaskText;
 using rtype::game::SheetText;
 using rtype::game::sheetTextsIn;
 using rtype::game::TooManyEntityTypesException;
 using rtype::game::testing::DRIFTER_FILE_NAME;
+using rtype::game::testing::DRIFTER_MASK;
+using rtype::game::testing::DRIFTER_MASK_FILE_NAME;
 using rtype::game::testing::FILES_ONE_TOO_MANY;
 using rtype::game::testing::FIRST_SHEET_NAME;
 using rtype::game::testing::GENERATED_FILE_PREFIX;
@@ -64,6 +68,29 @@ TEST(SheetTextReading, KeepsTheTextAndThePathOfEachFile) {
   ASSERT_EQ(texts.size(), 1U);
   EXPECT_EQ(texts.front().text, SOME_SHEET_TEXT);
   EXPECT_NE(texts.front().source.find(DRIFTER_FILE_NAME), std::string::npos);
+}
+
+/**
+ * Given a folder holding drifter.toml and its mask file masks/drifter.txt,
+ * and weaver.toml without one
+ * When its sheets are read
+ * Then the Drifter carries its mask file, the Weaver none, and the masks
+ * folder gives no sheet
+ */
+TEST(SheetTextReading, KeepsTheMaskFileNextToASheet) {
+  const TemporaryFolder folder;
+  folder.write(DRIFTER_FILE_NAME, SOME_SHEET_TEXT);
+  folder.write(DRIFTER_MASK_FILE_NAME, DRIFTER_MASK);
+  folder.write(WEAVER_FILE_NAME, OTHER_SHEET_TEXT);
+
+  const std::vector<SheetText> texts = sheetTextsIn(folder.path());
+
+  ASSERT_EQ(texts.size(), SHEETS_IN_THE_FOLDER);
+  ASSERT_TRUE(texts.front().mask.has_value());
+  const SheetMaskText mask = texts.front().mask.value_or(SheetMaskText{});
+  EXPECT_EQ(mask.text, DRIFTER_MASK);
+  EXPECT_NE(mask.source.find(DRIFTER_MASK_FILE_NAME), std::string::npos);
+  EXPECT_FALSE(texts.back().mask.has_value());
 }
 
 /**

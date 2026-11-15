@@ -118,6 +118,9 @@ attack = 1
 phase = "strike"
 from_ms = 160
 
+[gameplay.mask]
+file = "masks/bydomancer.txt"
+
 [appearance]
 sheet = "sprites/mobs/bydomancer.png"
 

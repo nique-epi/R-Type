@@ -62,7 +62,7 @@ GameFlowFixture::GameFlowFixture(GameSettings settings)
   static_cast<void>(events_.subscribe<GameStateChanged>(
       [this](const GameStateChanged& change) { changes_.push_back(change); }));
   flow_.begin();
-  addRtypeSystems(systems_, events_);
+  addRtypeSystems(context_);
 }
 
 ConnectedPlayer& GameFlowFixture::join(std::size_t index) {

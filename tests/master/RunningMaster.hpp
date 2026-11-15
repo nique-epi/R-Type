@@ -11,11 +11,12 @@
 #include "CreatedServer.hpp"
 #include "JournalFile.hpp"
 #include "MasterDatabaseFile.hpp"
+#include "NetworkConstants.hpp"
 
 /**
- * @brief The modules of the master, started on a free port and a database of
- * their own, writing to a journal of their own and nothing on stderr; it stops
- * when it is destroyed.
+ * @brief The modules of the master, started on a port the system chooses and a
+ * database of their own, writing to a journal of their own and nothing on
+ * stderr; it stops when it is destroyed.
  */
 class RunningMaster {
  public:
@@ -56,11 +57,12 @@ class RunningMaster {
  private:
   JournalFile journal_;
   MasterDatabaseFile databaseFile_;
-  std::uint16_t port_;
+  std::uint16_t port_{rtype::network::ANY_PORT};
   std::vector<std::string> settingLines_;
   rtype::engine::ConfigurationReport report_;
   std::unique_ptr<rtype::engine::Application> application_;
 
-  /** @returns The modules of the master on the port and the database. */
+  /** @returns The modules of the master on port_ and the database, then a
+   * HttpPortRecordingModule that writes the port bound into port_. */
   [[nodiscard]] std::unique_ptr<rtype::engine::Application> application();
 };

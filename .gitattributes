@@ -3,3 +3,4 @@
 # read as the shipped files.
 assets/waves/waves.toml text eol=lf
 assets/entities/*.toml text eol=lf
+assets/entities/masks/*.txt text eol=lf

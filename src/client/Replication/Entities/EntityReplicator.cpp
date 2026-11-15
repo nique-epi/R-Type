@@ -7,6 +7,7 @@
 #include "AnimatedSprite.hpp"
 #include "AppearanceReference.hpp"
 #include "AwaitedArrival.hpp"
+#include "CollisionMask.hpp"
 #include "ComponentRegistry.hpp"
 #include "EffectSpawner.hpp"
 #include "EffectTools.hpp"
@@ -275,6 +276,9 @@ std::optional<engine::Entity> EntityReplicator::create(
     components_->add(entity,
                      game::HitboxParts{.boxes = {look->hitboxParts.begin(),
                                                  look->hitboxParts.end()}});
+  }
+  if (look->mask != nullptr) {
+    components_->add(entity, game::CollisionMask{.pixels = look->mask});
   }
   components_->add(entity, AppearanceReference{&look->appearance.get()});
   entityByNetworkId_.bind(announced.entityId, entity);

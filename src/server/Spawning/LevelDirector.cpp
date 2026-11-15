@@ -34,20 +34,17 @@ const game::LuauLevelEntry& entryOfLevel(const game::LuauLevels& levels,
 LevelDirector::LevelDirector(LevelDirectorParts parts)
     : parts_(std::move(parts)),
       entry_(entryOfLevel(parts_.scripts.get().levels(), parts_.level)),
-      bosses_(parts_.entrance, parts_.types.get(), parts_.bossHealthPercent),
       run_(game::LuauLevelRunParts{
           .machine = parts_.scripts.get().machine(),
           .levels = parts_.scripts.get().levels(),
           .entry = entry_,
           .progress = progress_,
-          .components = parts_.entrance.world.get().components(),
-          .bosses = bosses_}),
+          .components = parts_.world.get().components()}),
       placer_(entry_.get().placements),
       logger_(std::string{LEVEL_DIRECTOR_LOGGER_NAME}) {}
 
 void LevelDirector::onTick() {
   const bool hadFailed = failed();
-  bosses_.onTick();
   run_.step();
   if (failed() && !hadFailed) {
     logger_.warn("the level ", parts_.level, " failed: ", run_.failure());
@@ -59,7 +56,7 @@ void LevelDirector::onTick() {
 
 bool LevelDirector::cleared() const {
   return run_.state() == game::LuauLevelRunState::Cleared &&
-         game::enemiesIn(parts_.entrance.world.get().components()) == 0;
+         game::enemiesIn(parts_.world.get().components()) == 0;
 }
 
 bool LevelDirector::failed() const {
@@ -70,7 +67,6 @@ bool LevelDirector::restartFromCheckpoint() {
   if (!run_.restartFromCheckpoint()) {
     return false;
   }
-  bosses_.forget();
   removeEveryBodyButTheShips();
   placer_.restartAt(progress_.scroll.position());
   announcedBiome_.reset();
@@ -97,7 +93,7 @@ void LevelDirector::announceChange() {
   }
   announcedBiome_ = progress_.biome;
   announcedMoving_ = moving;
-  parts_.entrance.events.get().publish(
+  parts_.events.get().publish(
       game::LevelChange{.biome = progress_.biome,
                         .scrollPosition = progress_.scroll.position(),
                         .scrollSpeed = progress_.scroll.speed(),
@@ -105,9 +101,8 @@ void LevelDirector::announceChange() {
 }
 
 void LevelDirector::removeEveryBodyButTheShips() const {
-  engine::ComponentRegistry& components =
-      parts_.entrance.world.get().components();
-  engine::EventBus& events = parts_.entrance.events.get();
+  engine::ComponentRegistry& components = parts_.world.get().components();
+  engine::EventBus& events = parts_.events.get();
   components.forEach<game::NetworkIdentity, game::EntityType>(
       [&components, &events](engine::Entity body,
                              const game::NetworkIdentity& identity,

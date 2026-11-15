@@ -1,5 +1,7 @@
 add_subdirectory(Behaviours)
+add_subdirectory(Boss)
 add_subdirectory(Components)
+add_subdirectory(Contacts)
 add_subdirectory(EnemyActions)
 add_subdirectory(EntityTypes)
 add_subdirectory(Events)
@@ -19,6 +21,7 @@ target_link_libraries(rtype_game
   PUBLIC
     rtype_engine
     rtype_game_components
+    rtype_game_contacts
     rtype_game_entity_types
     rtype_game_events
     rtype_game_behaviours
@@ -29,8 +32,9 @@ target_link_libraries(rtype_game
     rtype_game_collision_rules
     rtype_game_lag_compensated_hit_system
     rtype_game_hurt_zone_system
+    rtype_game_summoning_system
     rtype_game_damage_rules
-    rtype_game_boss_phase_system
+    rtype_game_boss
 )
 
 rtype_enable_warnings(rtype_game)

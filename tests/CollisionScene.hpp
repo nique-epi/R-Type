@@ -7,8 +7,10 @@
 #include "ComponentRegistry.hpp"
 #include "Entity.hpp"
 #include "EntityRegistry.hpp"
+#include "EntitySheet.hpp"
 #include "EntityType.hpp"
 #include "EventBus.hpp"
+#include "Position.hpp"
 
 /**
  * @brief An entity registry, its components and a bus, with a way to create
@@ -33,6 +35,12 @@ class CollisionScene {
   rtype::engine::Entity spawnInParts(
       rtype::game::EntityType type,
       std::span<const rtype::game::CollisionBox> parts);
+
+  /** @returns An entity at @p position with the side, the collision box, the
+   * collision filter and, when the sheet gives one, the CollisionMask of
+   * @p sheet, as World gives them. */
+  rtype::engine::Entity spawnFromSheet(const rtype::game::EntitySheet& sheet,
+                                       rtype::game::Position position);
 
   rtype::engine::EntityRegistry entities;
   rtype::engine::ComponentRegistry components;
