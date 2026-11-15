@@ -11,10 +11,11 @@ namespace rtype::client {
 
 /**
  * @brief The module of the casino: install() adds CASINO_SCREEN, the
- * entrance and the hall, to the ScreenRegistry, and addWork() settles in the
- * chips of the player, each frame, what the rounds of the roulette table
- * moved, whichever screen shows. It opens nothing, so start() and stop() do
- * nothing.
+ * entrance and the hall, and the two ways of the cashier,
+ * CASINO_BUY_CHIPS_SCREEN and CASINO_CASH_OUT_SCREEN, to the ScreenRegistry,
+ * and addWork() settles in the chips of the player, each frame, what the rounds
+ * of the roulette table moved, whichever screen shows. It opens nothing, so
+ * start() and stop() do nothing.
  */
 class ClientCasinoModule final : public engine::IModule {
  public:
