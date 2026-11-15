@@ -67,12 +67,13 @@ constexpr std::string_view BURST_KEY = "burst";
 constexpr std::string_view VOLLEY_KEY = "volley";
 constexpr std::string_view BOSS_KEY = "boss";
 constexpr std::string_view LOOK_ITEM_KEY = "look_item";
+constexpr std::string_view MASK_KEY = "mask";
 constexpr std::array GAMEPLAY_KEYS{
     SIDE_KEY,    PILOT_KEY,   LAYER_KEY,         HITS_KEY,
     HITBOX_KEY,  MOTION_KEY,  BEHAVIOUR_KEY,     HEALTH_KEY,
     SCORE_KEY,   GUN_KEY,     HURT_ZONE_KEY,     SURVIVES_CONTACT_KEY,
     FRAGILE_KEY, ARMORED_KEY, STAYS_OUTSIDE_KEY, BURST_KEY,
-    VOLLEY_KEY,  BOSS_KEY,    LOOK_ITEM_KEY};
+    VOLLEY_KEY,  BOSS_KEY,    LOOK_ITEM_KEY,     MASK_KEY};
 
 /** @brief The keys of one box of a hitbox, in logical units: its size, and
  * where its center is from the Position of the body, 0 without them. */
@@ -91,6 +92,31 @@ constexpr std::string_view BOX_KEY = "box";
  * array of its boxes, never both. */
 constexpr std::array HITBOX_TABLE_KEYS{WIDTH_KEY, HEIGHT_KEY, OFFSET_X_KEY,
                                        OFFSET_Y_KEY, BOX_KEY};
+
+/** @brief The keys of `[gameplay.mask]`: the file that draws the mask, and how
+ * many pixels of outline the tool that wrote it peeled off, 0 without it. */
+constexpr std::string_view FILE_KEY = "file";
+constexpr std::string_view EROSION_KEY = "erosion";
+constexpr std::array MASK_KEYS{FILE_KEY, EROSION_KEY};
+
+/** @brief Where the mask of a sheet is: the file MASK_FOLDER_OF_SHEETS/<the
+ * name of the sheet>MASK_FILE_EXTENSION, next to the sheet, which names it
+ * under FILE_KEY. One line of the file is one row of pixels, from the top. */
+constexpr std::string_view MASK_FOLDER_OF_SHEETS = "masks";
+constexpr std::string_view MASK_FILE_EXTENSION = ".txt";
+
+/** @brief The line and the column an error about a mask file counts from. */
+constexpr std::size_t FIRST_LINE_OF_A_MASK = 1;
+constexpr std::size_t FIRST_COLUMN_OF_A_MASK = 1;
+
+/** @brief How a row of a mask writes a pixel: drawn, where the entity is
+ * touched, or clear. */
+constexpr char DRAWN_MASK_PIXEL = '#';
+constexpr char CLEAR_MASK_PIXEL = '.';
+constexpr std::string_view MASK_PIXELS = "#.";
+static_assert(MASK_PIXELS.size() == 2 && MASK_PIXELS[0] == DRAWN_MASK_PIXEL &&
+                  MASK_PIXELS[1] == CLEAR_MASK_PIXEL,
+              "MASK_PIXELS lists the drawn and the clear pixel");
 
 /** @brief The keys of `[gameplay.motion]`: a ship has a kind only, a steady
  * body its top speed too. */
@@ -249,6 +275,8 @@ static_assert(MOTION_KIND_NAMES.size() == MOTION_KINDS.size(),
 /** @brief What each number of a sheet accepts. */
 constexpr engine::WholeNumberRange HITBOX_SIDE_RANGE{.lowest = 1,
                                                      .highest = 1024};
+constexpr engine::WholeNumberRange MASK_EROSION_RANGE{.lowest = 0,
+                                                      .highest = 4};
 constexpr engine::WholeNumberRange TOP_SPEED_RANGE{.lowest = 1,
                                                    .highest = 4096};
 constexpr engine::WholeNumberRange HEALTH_RANGE{.lowest = 1, .highest = 1000};
@@ -291,6 +319,17 @@ constexpr std::string_view HITBOX_BOXES_RULE =
     "a hitbox that lists its boxes holds at least one";
 constexpr std::string_view HITBOX_PARTS_SIDE_RULE =
     "only a body of side enemy collides with several boxes";
+constexpr std::string_view MASK_FILE_RULE =
+    "a mask is the file masks/<the name of the sheet>.txt next to the sheet";
+constexpr std::string_view MASK_SIDE_RULE =
+    "a mask holds 1 to 256 rows of 1 to 256 pixels";
+constexpr std::string_view MASK_ROW_WIDTH_RULE =
+    "every row of a mask is as wide as its first row";
+constexpr std::string_view MASK_PIXEL_RULE =
+    "a row of a mask holds only # and .";
+constexpr std::string_view MASK_DRAWN_RULE = "a mask draws at least one pixel";
+constexpr std::string_view MASK_AND_PARTS_RULE =
+    "a sheet gives a mask or several hitbox boxes, never both";
 constexpr std::string_view MISSILE_GUN_RULE = "a missile has no gun";
 constexpr std::string_view BURST_SIDE_RULE =
     "only a missile bursts into shards";

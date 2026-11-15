@@ -3,6 +3,7 @@
 #include <optional>
 #include <span>
 #include "BehaviourView.hpp"
+#include "BodyMasks.hpp"
 #include "CollisionBox.hpp"
 #include "ComponentRegistry.hpp"
 #include "CurrentAction.hpp"
@@ -79,8 +80,9 @@ float healthShareOf(const Health* health) {
 }
 
 /** @brief Applies to @p body what @p intent asks of its body: a jump to a
- * position, the size of its collision box (its offset stays), a top speed;
- * each only when asked and when the body has the component. */
+ * position, the size of its collision box (its offset stays, and its collision
+ * mask is emptied: it is touched on the box it asked for), a top speed; each
+ * only when asked and when the body has the component. */
 void reshapeAsAsked(engine::ComponentRegistry& components, engine::Entity body,
                     const Intent& intent) {
   auto* const position = components.get<Position>(body);
@@ -91,6 +93,7 @@ void reshapeAsAsked(engine::ComponentRegistry& components, engine::Entity body,
   if (intent.resizesTo.has_value() && box != nullptr) {
     box->width = intent.resizesTo->width;
     box->height = intent.resizesTo->height;
+    forgetMaskOf(components, body);
   }
   auto* const motion = components.get<SteadyMotion>(body);
   if (intent.topSpeedTo.has_value() && motion != nullptr) {

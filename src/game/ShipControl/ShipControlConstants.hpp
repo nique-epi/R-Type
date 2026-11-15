@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <cstdint>
+#include <numbers>
 #include "TimeConstants.hpp"
 
 namespace rtype::game {
@@ -49,6 +50,14 @@ constexpr float DRIFT_FALL_FLOOR = 720.0F;
 constexpr float ROLL_SIDESTEP = 112.0F;
 constexpr engine::Duration ROLL_DURATION = std::chrono::milliseconds(400);
 constexpr engine::Duration ROLL_COOLDOWN = std::chrono::milliseconds(500);
+
+/**
+ * @brief A barrel roll turns the ship one ROLL_FULL_TURN around its length
+ * over ROLL_DURATION; seen edge on, it keeps at least ROLL_THINNEST_ROWS rows
+ * of its frame (rolledRowsOf()).
+ */
+constexpr float ROLL_FULL_TURN = 2.0F * std::numbers::pi_v<float>;
+constexpr int ROLL_THINNEST_ROWS = 2;
 
 /**
  * @brief A dash carries the ship DASH_DISTANCE units forward, a backstep

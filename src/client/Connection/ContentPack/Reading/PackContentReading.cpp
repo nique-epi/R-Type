@@ -41,14 +41,20 @@ void write(const identifiers::ContentFile& file,
   }
 }
 
+/** @returns Whether @p path names a sprite sheet of a pack: any file but a
+ * sheet and the mask file of a sheet. */
+bool isSpriteSheetPath(const std::string& path) {
+  return !game::isSheetPath(path) && !game::isMaskPath(path);
+}
+
 /** @returns The whole path, below @p spriteFolder, of each file of @p files
- * that is no sheet: the sprite sheets an appearance of the pack may name. */
+ * that is a sprite sheet: those an appearance of the pack may name. */
 std::set<std::string> spriteSheetsOf(
     std::span<const identifiers::ContentFile> files,
     const std::filesystem::path& spriteFolder) {
   std::set<std::string> spriteSheets;
   for (const identifiers::ContentFile& file : files) {
-    if (!game::isSheetPath(file.path)) {
+    if (isSpriteSheetPath(file.path)) {
       spriteSheets.insert(logging::genericText(spriteFolder / file.path));
     }
   }
@@ -76,7 +82,7 @@ PackContent packContentOf(std::span<const identifiers::ContentFile> files,
       EntityAppearances::fromTexts(sheets, spriteFolder);
   requireOwnSpriteSheets(appearances, spriteSheetsOf(files, spriteFolder));
   for (const identifiers::ContentFile& file : files) {
-    if (!game::isSheetPath(file.path)) {
+    if (isSpriteSheetPath(file.path)) {
       write(file, spriteFolder);
     }
   }

@@ -22,11 +22,4 @@ constexpr float FLAME_MANEUVER_SHARE = 0.35F;
 constexpr std::array<std::size_t, 3> AFTERIMAGE_AGES{12, 8, 4};
 constexpr std::size_t AFTERIMAGE_TRAIL_LENGTH = AFTERIMAGE_AGES.front() + 1;
 
-/**
- * @brief A roll draws one whole turn of the ship around its length (FULL_TURN
- * of BackgroundConstants.hpp); the ship keeps at least ROLL_THINNEST_ROWS
- * rows of its frame when seen edge on.
- */
-constexpr int ROLL_THINNEST_ROWS = 2;
-
 }  // namespace rtype::client

@@ -6,6 +6,7 @@
 #include "FailureReport.hpp"
 #include "HttpServer.hpp"
 #include "MasterRoute.hpp"
+#include "NetworkConstants.hpp"
 
 namespace rtype::master {
 
@@ -44,8 +45,16 @@ class MasterHttpServer {
    */
   void close();
 
+  /**
+   * @returns The port it listens on since open(): the one the system chose
+   * when open() was given network::ANY_PORT; network::ANY_PORT while it is
+   * not open.
+   */
+  [[nodiscard]] std::uint16_t port() const;
+
  private:
   network::HttpServer server_;
+  std::uint16_t port_{network::ANY_PORT};
 };
 
 }  // namespace rtype::master

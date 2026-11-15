@@ -12,6 +12,7 @@
 using rtype::client::PLAYER_SHOT_SOUND_ID;
 using rtype::client::testing::ENEMY_WHOSE_LOWER_BOX_IS_AT_THE_MUZZLE;
 using rtype::client::testing::FIRING_INPUT;
+using rtype::client::testing::HOLLOW_ENEMY_WITH_ITS_TOP_AT_THE_MUZZLE;
 using rtype::client::testing::INPUT_STILL_WAITING_FOR_IT;
 using rtype::client::testing::INPUT_THAT_REFUSES_THE_FIRST_SHOT;
 using rtype::client::testing::MISSILE_AT_THE_MUZZLE;
@@ -284,4 +285,34 @@ TEST_F(OwnMissilesFixture, AMissileBetweenTheBoxesOfAnEnemyFliesOn) {
   ASSERT_EQ(drawnMissiles().size(), 1U);
   EXPECT_FLOAT_EQ(drawnMissiles().front().x, MISSILE_AT_THE_MUZZLE.x);
   EXPECT_FLOAT_EQ(drawnMissiles().front().y, MISSILE_AT_THE_MUZZLE.y);
+}
+
+/**
+ * Given a missile drawn on the Position of a hollow enemy, whose box overlaps
+ * it and whose mask is clear there
+ * When the missiles test what they touch
+ * Then the missile flies on: the enemy is touched on its drawn pixels only,
+ * as on the server
+ */
+TEST_F(OwnMissilesFixture, AMissileThroughTheHollowOfAnEnemyFliesOn) {
+  fireAt(FIRING_INPUT, SHIP_WHEN_IT_FIRES);
+  hollowEnemyAt(MISSILE_AT_THE_MUZZLE);
+
+  missiles().touchEnemies();
+
+  EXPECT_EQ(drawnMissiles().size(), 1U);
+}
+
+/**
+ * Given a missile drawn on the drawn top of a hollow enemy
+ * When the missiles test what they touch
+ * Then the missile is gone
+ */
+TEST_F(OwnMissilesFixture, AMissileOnTheDrawnTopOfAnEnemyIsGone) {
+  fireAt(FIRING_INPUT, SHIP_WHEN_IT_FIRES);
+  hollowEnemyAt(HOLLOW_ENEMY_WITH_ITS_TOP_AT_THE_MUZZLE);
+
+  missiles().touchEnemies();
+
+  EXPECT_THAT(drawnMissiles(), IsEmpty());
 }

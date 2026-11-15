@@ -9,6 +9,7 @@
 #include "MasterConstants.hpp"
 #include "MasterRoute.hpp"
 #include "MasterRoutePath.hpp"
+#include "NetworkConstants.hpp"
 
 namespace rtype::master {
 
@@ -22,9 +23,15 @@ void MasterHttpServer::add(network::MasterRoute route,
 }
 
 std::uint16_t MasterHttpServer::open(const network::Endpoint& endpoint) {
-  return server_.open(endpoint);
+  port_ = server_.open(endpoint);
+  return port_;
 }
 
-void MasterHttpServer::close() { server_.close(); }
+void MasterHttpServer::close() {
+  server_.close();
+  port_ = network::ANY_PORT;
+}
+
+std::uint16_t MasterHttpServer::port() const { return port_; }
 
 }  // namespace rtype::master

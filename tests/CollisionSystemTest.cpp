@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <memory>
 #include <vector>
 #include "Collision.hpp"
 #include "CollisionBox.hpp"
@@ -11,6 +12,13 @@
 #include "EngineException.hpp"
 #include "Entity.hpp"
 #include "EntityType.hpp"
+#include "EntityTypesTestConstants.hpp"
+#include "ManeuverKind.hpp"
+#include "MaskSheet.hpp"
+#include "RolledMasks.hpp"
+#include "ShipMotion.hpp"
+#include "ShipRollMasks.hpp"
+#include "ShippedEntitySheets.hpp"
 
 using rtype::engine::Collision;
 using rtype::engine::CollisionFilter;
@@ -19,6 +27,14 @@ using rtype::engine::InvalidGridLayoutException;
 using rtype::game::CollisionBox;
 using rtype::game::CollisionSystem;
 using rtype::game::EntityType;
+using rtype::game::ManeuverKind;
+using rtype::game::MaskSheet;
+using rtype::game::RolledMasks;
+using rtype::game::ShipMotion;
+using rtype::game::ShipRollMasks;
+using rtype::game::testing::ENEMY_MISSILE_SHEET;
+using rtype::game::testing::SHIP_SHEET;
+using rtype::game::testing::shippedEntitySheets;
 using rtype::game::testing::updateAndCollect;
 
 /**
@@ -373,6 +389,86 @@ TEST(CollisionSystem, NeverCollidesABodyWithItself) {
   CollisionScene scene;
   const Entity enemy = scene.spawnInParts(EntityType::Enemy, PARTS_ON_ONE_SPOT);
   *scene.components.get<CollisionFilter>(enemy) = ENEMY_HITTING_ENEMIES_FILTER;
+  CollisionSystem system(scene.events);
+
+  EXPECT_TRUE(updateAndCollect(scene, system).empty());
+}
+
+/**
+ * Given the ship and the missile of a Bydo of the shipped sheets, the missile
+ * over the clear top-left corner of the ship: their boxes overlap, no drawn
+ * pixel of their masks does
+ * When the collision system updates and the bus dispatches
+ * Then no Collision is delivered
+ */
+TEST(CollisionSystem, AMissileThroughTheClearCornerOfTheShipDoesNotCollide) {
+  CollisionScene scene;
+  scene.spawnFromSheet(shippedEntitySheets().named(SHIP_SHEET),
+                       SHIP_ON_CELL_ZERO);
+  scene.spawnFromSheet(shippedEntitySheets().named(ENEMY_MISSILE_SHEET),
+                       MISSILE_OVER_THE_CLEAR_CORNER);
+  CollisionSystem system(scene.events);
+
+  EXPECT_TRUE(updateAndCollect(scene, system).empty());
+}
+
+/**
+ * Given the ship and the missile of a Bydo of the shipped sheets, the missile
+ * on the hull of the ship
+ * When the collision system updates and the bus dispatches
+ * Then one Collision names that pair
+ */
+TEST(CollisionSystem, AMissileOnTheHullOfTheShipCollides) {
+  CollisionScene scene;
+  const Entity ship = scene.spawnFromSheet(
+      shippedEntitySheets().named(SHIP_SHEET), SHIP_ON_CELL_ZERO);
+  const Entity missile = scene.spawnFromSheet(
+      shippedEntitySheets().named(ENEMY_MISSILE_SHEET), MISSILE_ON_THE_HULL);
+  CollisionSystem system(scene.events);
+
+  const std::vector<Collision> received = updateAndCollect(scene, system);
+
+  ASSERT_EQ(received.size(), 1U);
+  EXPECT_TRUE(isPair(received.front(), ship, missile));
+}
+
+/**
+ * Given the ship of the shipped sheet, upright, and a square of a Bydo over
+ * its top fin
+ * When the collision system updates and the bus dispatches
+ * Then one Collision names that pair: the fin is drawn
+ */
+TEST(CollisionSystem, ASquareOverTheFinOfAnUprightShipCollides) {
+  CollisionScene scene;
+  scene.spawnFromSheet(shippedEntitySheets().named(SHIP_SHEET),
+                       SHIP_ON_CELL_ZERO);
+  scene.spawn(EntityType::EnemyMissile, SQUARE_OVER_THE_FIN_X,
+              SQUARE_OVER_THE_FIN_Y);
+  CollisionSystem system(scene.events);
+
+  EXPECT_EQ(updateAndCollect(scene, system).size(), 1U);
+}
+
+/**
+ * Given the same ship a quarter turn into its roll, seen edge on, and the
+ * same square over where its fin was
+ * When the collision system updates and the bus dispatches
+ * Then no Collision is delivered: the flattened ship is no longer drawn there
+ */
+TEST(CollisionSystem, ASquareWhereTheRollingShipIsNoLongerDrawnMisses) {
+  CollisionScene scene;
+  const MaskSheet mask =
+      shippedEntitySheets().named(SHIP_SHEET).mask.value_or(MaskSheet{});
+  ASSERT_NE(mask.pixels, nullptr);
+  const Entity ship = scene.spawnFromSheet(
+      shippedEntitySheets().named(SHIP_SHEET), SHIP_ON_CELL_ZERO);
+  scene.components.add(ship, ShipMotion{.maneuver = ManeuverKind::Roll,
+                                        .maneuverTime = EDGE_ON_INTO_A_ROLL});
+  scene.components.add(
+      ship, ShipRollMasks{
+                .masks = std::make_shared<const RolledMasks>(*mask.pixels)});
+  scene.spawn(EntityType::EnemyMissile, SQUARE_OVER_THE_FIN_X,
+              SQUARE_OVER_THE_FIN_Y);
   CollisionSystem system(scene.events);
 
   EXPECT_TRUE(updateAndCollect(scene, system).empty());

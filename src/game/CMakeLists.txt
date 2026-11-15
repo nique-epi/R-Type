@@ -1,6 +1,7 @@
 add_subdirectory(Behaviours)
 add_subdirectory(Boss)
 add_subdirectory(Components)
+add_subdirectory(Contacts)
 add_subdirectory(EnemyActions)
 add_subdirectory(EntityTypes)
 add_subdirectory(Events)
@@ -20,6 +21,7 @@ target_link_libraries(rtype_game
   PUBLIC
     rtype_engine
     rtype_game_components
+    rtype_game_contacts
     rtype_game_entity_types
     rtype_game_events
     rtype_game_behaviours

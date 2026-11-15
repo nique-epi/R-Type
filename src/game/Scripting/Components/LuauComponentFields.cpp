@@ -7,6 +7,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include "BodyMasks.hpp"
 #include "CollisionBox.hpp"
 #include "ComponentRegistry.hpp"
 #include "GameScriptingConstants.hpp"
@@ -132,6 +133,7 @@ void writeCollisionBox(lua_State* state, const LuauSteppedBody& body) {
   }
   box.width = (*size)[0];
   box.height = (*size)[1];
+  forgetMaskOf(*body.components, body.entity);
 }
 
 void writeTopSpeed(lua_State* state, const LuauSteppedBody& body) {

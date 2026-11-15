@@ -1,18 +1,21 @@
 #include <gtest/gtest.h>
 #include <cmath>
 #include <cstddef>
+#include <memory>
 #include <optional>
 #include "ActionRequestingBehaviour.hpp"
 #include "BehaviourConstants.hpp"
 #include "BehaviourTestConstants.hpp"
 #include "BehaviourView.hpp"
 #include "CollisionBox.hpp"
+#include "CollisionMask.hpp"
 #include "CurrentAction.hpp"
 #include "Entity.hpp"
 #include "Intent.hpp"
 #include "Pilot.hpp"
 #include "PilotSystemFixture.hpp"
 #include "PilotSystemTestConstants.hpp"
+#include "PixelMask.hpp"
 #include "Position.hpp"
 #include "Rage.hpp"
 #include "SteadyMotion.hpp"
@@ -53,6 +56,7 @@ using rtype::game::testing::RIGHTWARD_X_AFTER_A_SECOND;
 using rtype::game::testing::ROW_START;
 using rtype::game::testing::ROW_Y;
 using rtype::game::testing::STARTING_BOX;
+using rtype::game::testing::STARTING_BOX_PIXELS;
 using rtype::game::testing::STARTING_TOP_SPEED;
 using rtype::game::testing::THREE_ENDED_ACTIONS;
 using rtype::game::testing::TICKS_IN_QUARTER_PERIOD;
@@ -353,4 +357,27 @@ TEST_F(PilotSystemFixture, HandsTheBehaviourTheActionsItEnded) {
 
   ASSERT_TRUE(seen.has_value());
   EXPECT_EQ(seen.value_or(BehaviourView{}).actionsEnded, THREE_ENDED_ACTIONS);
+}
+
+/**
+ * Given an enemy with a collision box and a collision mask, whose behaviour
+ * asks for another box
+ * When the pilots run once
+ * Then its mask is emptied: it is touched anywhere in the box it asked for
+ */
+TEST_F(PilotSystemFixture, ABodyThatResizesItsBoxForgetsItsMask) {
+  const ActionRequestingBehaviour behaviour{
+      Intent{.steered = true, .resizesTo = ASKED_BOX}};
+  const Entity enemy = addEnemy(behaviour, WATCHING_ENEMY_NETWORK_ID);
+  components().add(enemy, STARTING_BOX);
+  components().add(enemy,
+                   rtype::game::CollisionMask{
+                       .pixels = std::make_shared<rtype::engine::PixelMask>(
+                           STARTING_BOX_PIXELS, STARTING_BOX_PIXELS)});
+
+  run(SIMULATION_TICK_DURATION);
+
+  const auto* const mask = components().get<rtype::game::CollisionMask>(enemy);
+  ASSERT_NE(mask, nullptr);
+  EXPECT_EQ(mask->pixels, nullptr);
 }
