@@ -669,6 +669,7 @@ TEST(ConnectionAcceptor, AnswersTheNextRequestAfterOneWhoseAnswerThrew) {
       .admit = [](const network::Endpoint&, std::uint64_t) {},
       .onPlayerJoined =
           [](ConnectedPlayer&) { throw network::InvalidCoordinateException(); },
+      .onRefused = {},
       .content = gameContent()}};
   const network::IncomingDatagram firstRequest{.sender = playerEndpoint(0),
                                                .payload = requestDatagram(0)};
@@ -803,6 +804,7 @@ TEST(ConnectionAcceptor, ChallengesWithNoMoreBytesWhateverTheTable) {
           },
       .admit = [](const network::Endpoint&, std::uint64_t) {},
       .onPlayerJoined = {},
+      .onRefused = {},
       .content = gameContent()}};
   const network::IncomingDatagram request{
       .sender = playerEndpoint(0),
@@ -815,6 +817,39 @@ TEST(ConnectionAcceptor, ChallengesWithNoMoreBytesWhateverTheTable) {
 
   ASSERT_EQ(answers.size(), 1U);
   EXPECT_LE(answers.front().payload.size(), request.payload.size());
+}
+
+/**
+ * Given an acceptor whose game is in progress
+ * When a sender asks to join, then another sender is let through the challenge
+ * of a game waiting for players
+ * Then the refused sender is handed to the callback of refusals once, and the
+ * challenged one never
+ */
+TEST(ConnectionAcceptor, HandsEachRefusedSenderToItsCallback) {
+  PlayerRoster roster;
+  std::vector<network::Endpoint> refused;
+  ConnectionAcceptor acceptor{ConnectionAcceptorParts{
+      .roster = roster,
+      .send = [](const network::OutgoingDatagram&) {},
+      .admit = [](const network::Endpoint&, std::uint64_t) {},
+      .onPlayerJoined = {},
+      .onRefused =
+          [&refused](const network::Endpoint& sender) {
+            refused.push_back(sender);
+          },
+      .content = gameContent()}};
+  const network::IncomingDatagram refusedRequest{.sender = playerEndpoint(0),
+                                                 .payload = requestDatagram(0)};
+  const network::IncomingDatagram challengedRequest{
+      .sender = playerEndpoint(1), .payload = requestDatagram(0)};
+
+  acceptor.setGameInProgress(true);
+  acceptor.receive(std::span{&refusedRequest, 1}, REQUEST_TIME);
+  acceptor.setGameInProgress(false);
+  acceptor.receive(std::span{&challengedRequest, 1}, REQUEST_TIME);
+
+  EXPECT_EQ(refused, std::vector<network::Endpoint>{playerEndpoint(0)});
 }
 
 }  // namespace rtype::server

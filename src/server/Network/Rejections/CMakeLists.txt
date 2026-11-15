@@ -1,7 +1,7 @@
 add_library(rtype_server_network_rejections STATIC
   RejectionCounts.cpp
   RejectionLedger.cpp
-  RejectionLines.cpp
+  RejectionEvents.cpp
   RejectionReporter.cpp
 )
 

@@ -95,6 +95,7 @@ ConnectionAcceptor::ConnectionAcceptor(ConnectionAcceptorParts parts)
       send_(std::move(parts.send)),
       admit_(std::move(parts.admit)),
       onPlayerJoined_(std::move(parts.onPlayerJoined)),
+      onRefused_(std::move(parts.onRefused)),
       content_(parts.content),
       logger_(std::string{LOBBY_LOGGER_NAME}) {}
 
@@ -183,6 +184,9 @@ void ConnectionAcceptor::refuse(const network::Endpoint& sender,
                                 network::RefusalReason reason) {
   logger_.debug("connection refused to ", sender.address, " port ", sender.port,
                 ", reason ", static_cast<unsigned int>(reason));
+  if (onRefused_) {
+    onRefused_(sender);
+  }
   send_(network::OutgoingDatagram{
       .destination = sender,
       .payload = network::DatagramCodec::encode(
