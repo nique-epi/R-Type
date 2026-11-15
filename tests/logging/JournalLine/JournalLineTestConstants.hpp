@@ -9,6 +9,11 @@ constexpr std::string_view LINE_LEVEL = "info";
 constexpr std::string_view LINE_LOGGER = "Lobby";
 constexpr std::string_view LINE_MESSAGE = "player 2 joined";
 
+/** @brief The JSON line of the parts above, members in their order. */
+constexpr std::string_view PLAIN_LINE =
+    R"({"time":"2026-11-15T14:02:03.123Z","level":"info","logger":"Lobby",)"
+    R"("message":"player 2 joined"})";
+
 /** @brief A message with a quote, a backslash and an end of line, which JSON
  * must escape. */
 constexpr std::string_view ESCAPED_MESSAGE = "said \"hi\\\" then\nleft";
@@ -28,6 +33,13 @@ constexpr std::int64_t EVENT_PLAYER = 3;
 constexpr std::string_view EVENT_ADDRESS = "10.0.0.7";
 constexpr std::string_view EVENT_FIELDS_TEXT =
     R"({"event":"player.left","player":3,"address":"10.0.0.7","away":false})";
+
+/** @brief The JSON line of the parts above with the fields of the event:
+ * the four members of every line, then the members of the event. */
+constexpr std::string_view EVENT_LINE =
+    R"({"time":"2026-11-15T14:02:03.123Z","level":"info","logger":"Lobby",)"
+    R"("message":"player 2 joined","event":"player.left","player":3,)"
+    R"("address":"10.0.0.7","away":false})";
 
 /** @brief A value given to a field named like a member every line has. */
 constexpr std::string_view CLASHING_VALUE = "forged";

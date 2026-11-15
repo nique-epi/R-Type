@@ -1,13 +1,12 @@
 #include <gtest/gtest.h>
 #include <array>
-#include <cstdint>
 #include <nlohmann/json.hpp>
 #include <nlohmann/json_fwd.hpp>
 #include <string>
 #include <string_view>
-#include <vector>
 #include "EventField.hpp"
 #include "JournalLine.hpp"
+#include "JournalLineFixtures.hpp"
 #include "JournalLineParts.hpp"
 #include "JournalLineTestConstants.hpp"
 #include "LogEvent.hpp"
@@ -20,28 +19,6 @@ using rtype::logging::jsonLineOf;
 using rtype::logging::LogEvent;
 using rtype::logging::LogLevel;
 
-namespace {
-
-/** @returns The parts of a line whose message is @p message. */
-JournalLineParts partsWithMessage(std::string_view message) {
-  return JournalLineParts{.time = LINE_TIME,
-                          .level = LINE_LEVEL,
-                          .logger = LINE_LOGGER,
-                          .message = message,
-                          .fields = {}};
-}
-
-/** @returns The names of the members of @p object, in order. */
-std::vector<std::string> keysOf(const nlohmann::ordered_json& object) {
-  std::vector<std::string> keys;
-  for (const auto& [key, value] : object.items()) {
-    keys.push_back(key);
-  }
-  return keys;
-}
-
-}  // namespace
-
 /**
  * Given the parts of a line
  * When it is written as JSON
@@ -51,13 +28,7 @@ std::vector<std::string> keysOf(const nlohmann::ordered_json& object) {
 TEST(JournalLineTest, WritesTheFourMembersInOrder) {
   const std::string line = jsonLineOf(partsWithMessage(LINE_MESSAGE));
 
-  const nlohmann::ordered_json object = nlohmann::ordered_json::parse(line);
-  EXPECT_EQ(keysOf(object),
-            (std::vector<std::string>{"time", "level", "logger", "message"}));
-  EXPECT_EQ(object.at("time"), LINE_TIME);
-  EXPECT_EQ(object.at("level"), LINE_LEVEL);
-  EXPECT_EQ(object.at("logger"), LINE_LOGGER);
-  EXPECT_EQ(object.at("message"), LINE_MESSAGE);
+  EXPECT_EQ(line, PLAIN_LINE);
 }
 
 /**
@@ -147,12 +118,7 @@ TEST(JournalLineTest, AddsTheMembersOfTheEventAfterTheMessage) {
   JournalLineParts parts = partsWithMessage(LINE_MESSAGE);
   parts.fields = EVENT_FIELDS_TEXT;
 
-  const nlohmann::ordered_json object =
-      nlohmann::ordered_json::parse(jsonLineOf(parts));
+  const std::string line = jsonLineOf(parts);
 
-  EXPECT_EQ(keysOf(object),
-            (std::vector<std::string>{"time", "level", "logger", "message",
-                                      "event", "player", "address", "away"}));
-  EXPECT_EQ(object.at("event").get<std::string>(), EVENT_NAME);
-  EXPECT_EQ(object.at("player").get<std::int64_t>(), EVENT_PLAYER);
+  EXPECT_EQ(line, EVENT_LINE);
 }

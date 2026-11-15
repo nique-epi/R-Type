@@ -1,1 +1,1 @@
-target_sources(logging_tests PRIVATE JournalLineTest.cpp)
+target_sources(logging_tests PRIVATE JournalLineTest.cpp JournalLineFixtures.cpp)

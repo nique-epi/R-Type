@@ -7,53 +7,13 @@
 #include <vector>
 #include "GatedJournalDestination.hpp"
 #include "JournalWriter.hpp"
+#include "JournalWriterFixtures.hpp"
 #include "JournalWriterTestConstants.hpp"
-#include "LogLevel.hpp"
 #include "LoggingConstants.hpp"
 #include "ReceivedJournalLine.hpp"
 
 using rtype::logging::JOURNAL_QUEUE_CAPACITY;
 using rtype::logging::JournalWriter;
-using rtype::logging::LogLevel;
-
-namespace {
-
-/** @brief Queues the line that reads @p number. */
-void queueNumber(JournalWriter& writer, std::size_t number) {
-  writer.queue(LogLevel::Info, WRITER_TEST_LOGGER_NAME, std::to_string(number));
-}
-
-/** @returns The texts of @p lines, in order. */
-std::vector<std::string> textsOf(
-    const std::vector<ReceivedJournalLine>& lines) {
-  std::vector<std::string> texts;
-  texts.reserve(lines.size());
-  for (const ReceivedJournalLine& line : lines) {
-    texts.push_back(line.text);
-  }
-  return texts;
-}
-
-/** @returns "0" to "count - 1", in order. */
-std::vector<std::string> numbersBelow(std::size_t count) {
-  std::vector<std::string> numbers;
-  numbers.reserve(count);
-  for (std::size_t number = 0; number < count; ++number) {
-    numbers.push_back(std::to_string(number));
-  }
-  return numbers;
-}
-
-/** @returns The sum of the lines lost before each of @p lines. */
-std::size_t lostLinesOf(const std::vector<ReceivedJournalLine>& lines) {
-  std::size_t lost = 0;
-  for (const ReceivedJournalLine& line : lines) {
-    lost += line.lostBefore;
-  }
-  return lost;
-}
-
-}  // namespace
 
 /**
  * Given a journal whose thread is stuck on its first line, as on a disk that
@@ -101,7 +61,7 @@ TEST(JournalWriterTest, AFullQueueKeepsTheFirstLinesAndCountsTheRest) {
   writer.flush();
 
   const std::vector<ReceivedJournalLine> lines = gate.lines();
-  EXPECT_EQ(textsOf(lines), numbersBelow(JOURNAL_QUEUE_CAPACITY + 1));
+  EXPECT_EQ(queuedTextsOf(lines), numbersBelow(JOURNAL_QUEUE_CAPACITY + 1));
   EXPECT_EQ(lostLinesOf(lines), LINES_PAST_THE_QUEUE);
 }
 
@@ -125,7 +85,7 @@ TEST(JournalWriterTest, FlushWaitsForTheLinesQueuedBeforeIt) {
 
   writer.flush();
 
-  EXPECT_EQ(textsOf(gate.lines()), numbersBelow(FEW_LINES));
+  EXPECT_EQ(queuedTextsOf(gate.lines()), numbersBelow(FEW_LINES));
   opener.join();
 }
 
@@ -173,13 +133,14 @@ TEST(JournalWriterTest, CloseWritesTheWaitingLinesAndALaterLineStartsAgain) {
   }};
 
   writer.close();
-  const std::vector<std::string> writtenWhenClosed = textsOf(gate.lines());
+  const std::vector<std::string> writtenWhenClosed =
+      queuedTextsOf(gate.lines());
   opener.join();
   queueNumber(writer, FEW_LINES);
   writer.flush();
 
   EXPECT_EQ(writtenWhenClosed, numbersBelow(FEW_LINES));
-  EXPECT_EQ(textsOf(gate.lines()), numbersBelow(FEW_LINES + 1));
+  EXPECT_EQ(queuedTextsOf(gate.lines()), numbersBelow(FEW_LINES + 1));
 }
 
 /**
