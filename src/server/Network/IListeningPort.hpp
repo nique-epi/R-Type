@@ -13,9 +13,10 @@ class IListeningPort {
   virtual ~IListeningPort() = default;
 
   /**
-   * @returns The port the configuration gives the server: final once the
-   * configuration was read, that is when the modules start. 0 when the system
-   * picks one.
+   * @returns The port the server listens on once the network module started,
+   * the one the system chose when the configuration gives 0; before that, the
+   * port the configuration gives. The modules listed after the network module
+   * read it from their start().
    */
   [[nodiscard]] virtual std::uint16_t listeningPort() const = 0;
 };

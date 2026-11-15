@@ -43,7 +43,7 @@ Server settings. Only the supervisor reads `server.cfg`: it runs the lines of it
 
 | Setting | Read by | Value | Default | Effect |
 |---|---|---|---|---|
-| `port` | the supervisor | 1 to 65535 | 4242 | The UDP port the server listens on. |
+| `port` | the supervisor | 0 to 65535 | 4242 | The UDP port the server listens on; 0 lets the system choose a free one, which the journal names. |
 | `seed` | the games | 0 to 4294967295, or `none` | `none` | The seed of each game; `none` draws one at random. |
 | `state-rate` | the games | 2 to 60 | 20 | The world states sent to each player per second. |
 | `state-encoding` | the games | `delta` or `full` | `delta` | How each world state is written: as the difference from the newest one the player acknowledged, or with every entity. `delta` also writes a state with every entity when the player acknowledged none, or when the newest it acknowledged is more than 60 ticks older (`MAXIMUM_REFERENCE_DISTANCE`). |
