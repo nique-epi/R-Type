@@ -2,7 +2,6 @@
 #include <SFML/Graphics/Color.hpp>
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
-#include <array>
 #include <string_view>
 #include "ButlerLine.hpp"
 #include "CasinoBalances.hpp"
@@ -25,18 +24,27 @@ void paintEdges(IInterfaceCanvas& canvas, sf::IntRect area, sf::Color color) {
   canvas.fill({{end.x, area.position.y}, {1, area.size.y}}, color);
 }
 
-/** @brief Paints a pixel of @p color at each corner of @p area, and, with
- * @p length above one, that many pixels along each side from it. */
-void paintCorners(IInterfaceCanvas& canvas, sf::IntRect area, int length,
-                  sf::Color color) {
+/** @brief The corners of a gaming plaque: at each corner of an area, a
+ * stroke of that many pixels along each side, in one color. */
+struct PlaqueCorners {
+  sf::IntRect area;
+  int length{};
+  sf::Color color;
+};
+
+/** @brief Paints @p corners: a pixel at each corner of their area, and, with
+ * a length above one, that many pixels along each side from it. */
+void paintCorners(IInterfaceCanvas& canvas, const PlaqueCorners& corners) {
+  const sf::IntRect area = corners.area;
+  const int length = corners.length;
   const sf::Vector2i end = area.position + area.size - sf::Vector2i(1, 1);
-  const std::array corners{area.position, sf::Vector2i(end.x, area.position.y),
-                           sf::Vector2i(area.position.x, end.y), end};
-  for (const sf::Vector2i corner : corners) {
+  for (const sf::Vector2i corner :
+       {area.position, sf::Vector2i(end.x, area.position.y),
+        sf::Vector2i(area.position.x, end.y), end}) {
     const int left = corner.x == end.x ? corner.x - length + 1 : corner.x;
     const int top = corner.y == end.y ? corner.y - length + 1 : corner.y;
-    canvas.fill({{left, corner.y}, {length, 1}}, color);
-    canvas.fill({{corner.x, top}, {1, length}}, color);
+    canvas.fill({{left, corner.y}, {length, 1}}, corners.color);
+    canvas.fill({{corner.x, top}, {1, length}}, corners.color);
   }
 }
 
@@ -53,8 +61,12 @@ void paintGoldPanel(IInterfaceCanvas& canvas, sf::IntRect area) {
   paintEdges(canvas, area, CASINO_GOLD);
   const sf::IntRect inner = insetOf(area, CASINO_PANEL_INNER_EDGE);
   paintEdges(canvas, inner, CASINO_DARK_GOLD);
-  paintCorners(canvas, area, CASINO_PANEL_OUTER_CORNER_LENGTH, CASINO_TAG_GOLD);
-  paintCorners(canvas, inner, CASINO_PANEL_CORNER_LENGTH, CASINO_LIGHT_GOLD);
+  paintCorners(canvas, PlaqueCorners{.area = area,
+                                     .length = CASINO_PANEL_OUTER_CORNER_LENGTH,
+                                     .color = CASINO_TAG_GOLD});
+  paintCorners(canvas, PlaqueCorners{.area = inner,
+                                     .length = CASINO_PANEL_CORNER_LENGTH,
+                                     .color = CASINO_LIGHT_GOLD});
 }
 
 void paintNameTag(IInterfaceCanvas& canvas, sf::Vector2i topLeft,

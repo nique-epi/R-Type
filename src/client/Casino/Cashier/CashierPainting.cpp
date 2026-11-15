@@ -44,13 +44,17 @@ const char* balanceWordOf(CashierWay way, bool source) {
   return (way == CashierWay::BuyChips) == source ? KOPECKS_WORD : CHIPS_WORD;
 }
 
-/** @brief Writes a balance: its name in small print over its amount, gold
- * for the kopecks, white for the chips, on the left or on the right side of
- * the panel as @p alignment says. */
-void paintBalance(IInterfaceCanvas& canvas, const char* word,
-                  std::uint32_t amount, TextAlignment alignment) {
-  const int column =
-      alignment == TextAlignment::Right ? CASHIER_RIGHT : CASHIER_LEFT;
+/** @brief Writes the balance @p view takes from, on the left, when
+ * @p source, or the one it gives to, on the right: its name in small print
+ * over its amount, gold for the kopecks, white for the chips. */
+void paintBalance(IInterfaceCanvas& canvas, const CashierView& view,
+                  bool source) {
+  const char* word = balanceWordOf(view.way, source);
+  const std::uint32_t amount = source ? sourceOf(view.purse, view.way)
+                                      : destinationOf(view.purse, view.way);
+  const TextAlignment alignment =
+      source ? TextAlignment::Left : TextAlignment::Right;
+  const int column = source ? CASHIER_LEFT : CASHIER_RIGHT;
   const sf::Color color =
       std::string(word) == KOPECKS_WORD ? STAR_GOLD : STAR_WHITE;
   canvas.write(word, {column, CASHIER_CAPTION_TOP},
@@ -62,12 +66,10 @@ void paintBalance(IInterfaceCanvas& canvas, const char* word,
 /** @brief Paints the two balances the cashier changes and the marks between
  * them, then the rule under them. */
 void paintExchangedBalances(IInterfaceCanvas& canvas, const CashierView& view) {
-  paintBalance(canvas, balanceWordOf(view.way, true),
-               sourceOf(view.purse, view.way), TextAlignment::Left);
+  paintBalance(canvas, view, true);
   canvas.write(CASHIER_TOWARDS_MARK, {CASHIER_MIDDLE, CASHIER_TOWARDS_MARK_TOP},
                regularStyle(HUD_CYAN, TextAlignment::Center));
-  paintBalance(canvas, balanceWordOf(view.way, false),
-               destinationOf(view.purse, view.way), TextAlignment::Right);
+  paintBalance(canvas, view, false);
   canvas.fill(CASHIER_UPPER_RULE, CASINO_DARK_GOLD);
 }
 

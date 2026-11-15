@@ -18,10 +18,12 @@
 #include "CashierWay.hpp"
 #include "CasinoBarChip.hpp"
 #include "Exchange.hpp"
+#include "IInterfaceCanvas.hpp"
 #include "InterfacePixel.hpp"
 #include "PlayerPurse.hpp"
 #include "SettingDefinitionConstants.hpp"
 #include "SoundConstants.hpp"
+#include "TimeConstants.hpp"
 
 namespace rtype::client {
 

@@ -5,7 +5,6 @@
 #include <SFML/System/Vector2.hpp>
 #include "BackgroundColorConstants.hpp"
 #include "InterfaceColorConstants.hpp"
-#include "InterfaceConstants.hpp"
 #include "TextStyle.hpp"
 
 namespace rtype::client {

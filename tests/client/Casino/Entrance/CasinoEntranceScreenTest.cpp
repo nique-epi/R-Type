@@ -2,6 +2,7 @@
 #include <gtest/gtest.h>
 #include <SFML/Window/Keyboard.hpp>
 #include <algorithm>
+#include <optional>
 #include "CasinoEntranceScreenFixture.hpp"
 #include "CasinoEntranceScreenTestConstants.hpp"
 #include "CasinoPlace.hpp"
@@ -75,7 +76,8 @@ TEST_F(CasinoEntranceScreenFixture, BackClosesTheCasinoWithoutSeating) {
   press(Key::Escape);
 
   EXPECT_THAT(navigator().calls(),
-              ElementsAre(NavigatorCall{.request = NavigatorRequest::Pop}));
+              ElementsAre(NavigatorCall{.request = NavigatorRequest::Pop,
+                                        .screen = std::nullopt}));
   EXPECT_THAT(casino().chosenPlaces(), IsEmpty());
 }
 
@@ -241,5 +243,6 @@ TEST_F(CasinoEntranceScreenFixture, LeaveTakesThePlayerBackToTheRoom) {
   EXPECT_THAT(casino().chosenPlaces(),
               ElementsAre(TablePlace::AtTable, TablePlace::InRoom));
   EXPECT_THAT(navigator().calls(),
-              ElementsAre(NavigatorCall{.request = NavigatorRequest::Pop}));
+              ElementsAre(NavigatorCall{.request = NavigatorRequest::Pop,
+                                        .screen = std::nullopt}));
 }

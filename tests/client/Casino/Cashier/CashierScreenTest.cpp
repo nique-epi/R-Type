@@ -1,6 +1,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <SFML/Window/Keyboard.hpp>
+#include <optional>
 #include "CashierScreenFixture.hpp"
 #include "CashierScreenTestConstants.hpp"
 #include "CashierWay.hpp"
@@ -116,7 +117,8 @@ TEST_F(CashierScreenFixture, EnterBuysTheChipsAndSaves) {
   ASSERT_EQ(storage().saves().size(), 1U);
   EXPECT_EQ(storage().saves().back().chips, CHIPS_AFTER_BUYING_500);
   EXPECT_THAT(navigator().calls(),
-              ElementsAre(NavigatorCall{.request = NavigatorRequest::Pop}));
+              ElementsAre(NavigatorCall{.request = NavigatorRequest::Pop,
+                                        .screen = std::nullopt}));
 }
 
 /**
@@ -189,5 +191,6 @@ TEST_F(CashierScreenFixture, BackClosesWithoutExchanging) {
 
   EXPECT_EQ(settings().kopecks, KOPECKS_HELD);
   EXPECT_THAT(navigator().calls(),
-              ElementsAre(NavigatorCall{.request = NavigatorRequest::Pop}));
+              ElementsAre(NavigatorCall{.request = NavigatorRequest::Pop,
+                                        .screen = std::nullopt}));
 }

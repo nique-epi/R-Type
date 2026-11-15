@@ -8,7 +8,6 @@
 #include <cstdint>
 #include "BarState.hpp"
 #include "CasinoBar.hpp"
-#include "TextStyle.hpp"
 #include "WidgetConstants.hpp"
 
 namespace rtype::client {
