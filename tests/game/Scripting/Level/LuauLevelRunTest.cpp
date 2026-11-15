@@ -1,12 +1,22 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <optional>
+#include <string>
+#include <vector>
+#include "LdtkField.hpp"
+#include "LdtkFieldValue.hpp"
+#include "LdtkPlacement.hpp"
+#include "LdtkPlacementFixtures.hpp"
+#include "LdtkPlacementTestConstants.hpp"
 #include "LevelCheckpoint.hpp"
 #include "LuauLevelConstants.hpp"
 #include "LuauLevelRunFixture.hpp"
 #include "LuauLevelRunState.hpp"
 #include "LuauLevelRunTestConstants.hpp"
 
+using rtype::game::LdtkField;
+using rtype::game::LdtkFieldValue;
+using rtype::game::LdtkPlacement;
 using rtype::game::LevelCheckpoint;
 using rtype::game::LuauLevelRunState;
 using ::testing::HasSubstr;
@@ -324,4 +334,70 @@ TEST_F(LuauLevelRunFixture, RefusesABiomeNameTheProtocolCannotCarry) {
   EXPECT_THAT(run().failure(),
               HasSubstr(rtype::game::WRONG_BIOME_NAME_MESSAGE));
   EXPECT_TRUE(progress().biome.empty());
+}
+
+/**
+ * Given a level that places a Drifter then a Weaver, whose stage names as
+ * its biome the sheet of the first placement
+ * When the stage runs
+ * Then the biome is drifter: the script read the placements
+ */
+TEST_F(LuauLevelRunFixture, AScriptReadsThePlacements) {
+  placeEnemies(
+      {placedEnemyOf(PLACED_DRIFTER_SHEET, WHERE_THE_DRIFTER_IS,
+                     PLACED_ENEMY_WIDTH),
+       placedEnemyOf(WEAVER_SHEET, WHERE_THE_WEAVER_IS, PLACED_ENEMY_WIDTH)});
+  play(NAMES_THE_FIRST_PLACED_SHEET);
+
+  tick(1);
+
+  EXPECT_EQ(progress().biome, PLACED_DRIFTER_SHEET);
+}
+
+/**
+ * Given a placed Drifter with a field count of 3, and a stage that names the
+ * biome three when it reads that value
+ * When the stage runs
+ * Then the biome is three: the script read the field
+ */
+TEST_F(LuauLevelRunFixture, AScriptReadsTheFieldsOfAPlacement) {
+  LdtkPlacement drifter = placedEnemyOf(
+      PLACED_DRIFTER_SHEET, WHERE_THE_DRIFTER_IS, PLACED_ENEMY_WIDTH);
+  drifter.fields.push_back(
+      LdtkField{.name = std::string{COUNT_FIELD_NAME},
+                .value = LdtkFieldValue{COUNT_FIELD_VALUE}});
+  placeEnemies({drifter});
+  play(READS_THE_COUNT_FIELD);
+
+  tick(1);
+
+  EXPECT_EQ(progress().biome, THREE_BIOME);
+}
+
+/**
+ * Given a level whose stage asks for the placed enemies
+ * When the stage runs
+ * Then the progress of the level says they were asked for
+ */
+TEST_F(LuauLevelRunFixture, AStageAsksForThePlacedEnemies) {
+  play(ASKS_FOR_THE_PLACED_ENEMIES);
+
+  tick(1);
+
+  EXPECT_TRUE(progress().placedEnemiesAsked);
+}
+
+/**
+ * Given a level whose first stage asked for the placed enemies and reached
+ * its checkpoint
+ * When the level restarts from that checkpoint
+ * Then the placed enemies are still asked for
+ */
+TEST_F(LuauLevelRunFixture, ARestartKeepsThePlacedEnemiesAsked) {
+  play(ASKS_THEN_REACHES_A_CHECKPOINT);
+  tick(TICKS_TO_THE_SECOND_STAGE);
+
+  static_cast<void>(run().restartFromCheckpoint());
+
+  EXPECT_TRUE(progress().placedEnemiesAsked);
 }

@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <string_view>
+#include "Position.hpp"
 #include "TimeConstants.hpp"
 
 /** @brief The name every level of these tests is registered under. */
@@ -154,3 +155,55 @@ level.register("test_level", { function()
   error("the stage broke")
 end })
 )";
+
+/** @brief The enemies the tests place: a Drifter then a Weaver, and a Drifter
+ * with a field `count` of 3. */
+constexpr std::string_view WEAVER_SHEET = "weaver";
+constexpr rtype::game::Position WHERE_THE_DRIFTER_IS{.x = 2224.0F, .y = 300.0F};
+constexpr rtype::game::Position WHERE_THE_WEAVER_IS{.x = 2704.0F, .y = 400.0F};
+constexpr std::string_view COUNT_FIELD_NAME = "count";
+constexpr double COUNT_FIELD_VALUE = 3.0;
+
+/** @brief A level whose stage names as its biome the sheet of the first
+ * placed enemy. */
+constexpr std::string_view NAMES_THE_FIRST_PLACED_SHEET = R"(
+level.register("test_level", { function()
+  level.biome(level.placements()[1].sheet)
+end })
+)";
+
+/** @brief A level whose stage names the biome `three` when the field count
+ * of the first placed enemy is 3, `other` otherwise. */
+constexpr std::string_view READS_THE_COUNT_FIELD = R"(
+level.register("test_level", { function()
+  if level.placements()[1].fields.count == 3 then
+    level.biome("three")
+  else
+    level.biome("other")
+  end
+end })
+)";
+constexpr std::string_view THREE_BIOME = "three";
+
+/** @brief A level whose stage asks for the placed enemies, then waits for a
+ * long time. */
+constexpr std::string_view ASKS_FOR_THE_PLACED_ENEMIES = R"(
+level.register("test_level", { function()
+  level.spawn_placed()
+  level.wait(60000)
+end })
+)";
+
+/** @brief A level of two stages: the first asks for the placed enemies and
+ * ends, so the checkpoint is at tick 2; the second waits for a long time. */
+constexpr std::string_view ASKS_THEN_REACHES_A_CHECKPOINT = R"(
+level.register("test_level", {
+  function()
+    level.spawn_placed()
+  end,
+  function()
+    level.wait(60000)
+  end,
+})
+)";
+constexpr std::size_t TICKS_TO_THE_SECOND_STAGE = 2;

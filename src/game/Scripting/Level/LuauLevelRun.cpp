@@ -2,7 +2,6 @@
 #include <functional>
 #include <optional>
 #include <string>
-#include <utility>
 #include "EngineException.hpp"
 #include "LevelCheckpoint.hpp"
 #include "LevelProgress.hpp"
@@ -50,8 +49,9 @@ void pushStage(void* context) {
 
 }  // namespace
 
-LuauLevelRun::LuauLevelRun(LuauLevelRunParts parts) : parts_(std::move(parts)) {
-  parts_.levels.get().attach(parts_.progress.get(), parts_.components.get());
+LuauLevelRun::LuauLevelRun(LuauLevelRunParts parts) : parts_(parts) {
+  parts_.levels.get().attach(parts_.progress.get(), parts_.components.get(),
+                             parts_.entry.get());
 }
 
 LuauLevelRun::~LuauLevelRun() {
@@ -107,11 +107,12 @@ bool LuauLevelRun::waitIsOver() {
 
 void LuauLevelRun::resumeStage() {
   engine::ScriptMachine& machine = parts_.machine.get();
-  StageStart start{.thread = thread_,
-                   .machine = machine.state(),
-                   .function = thread_.has_value()
-                                   ? std::nullopt
-                                   : std::optional{parts_.stages[stage_]}};
+  StageStart start{
+      .thread = thread_,
+      .machine = machine.state(),
+      .function = thread_.has_value()
+                      ? std::nullopt
+                      : std::optional{parts_.entry.get().stages[stage_]}};
   engine::runProtected(
       machine.state(),
       engine::LuauProtectedWork{.run = pushStage, .context = &start});
@@ -133,7 +134,7 @@ void LuauLevelRun::resumeStage() {
 
 void LuauLevelRun::endStage() {
   ++stage_;
-  if (stage_ >= parts_.stages.size()) {
+  if (stage_ >= parts_.entry.get().stages.size()) {
     state_ = LuauLevelRunState::Cleared;
     return;
   }
