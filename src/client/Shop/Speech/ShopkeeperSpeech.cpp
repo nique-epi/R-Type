@@ -7,6 +7,8 @@
 #include "ISoundPlayer.hpp"
 #include "MotionPreference.hpp"
 #include "PurchaseRefusal.hpp"
+#include "ShipLookConstants.hpp"
+#include "ShipLookNumbers.hpp"
 #include "ShopkeeperLineConstants.hpp"
 #include "ShopkeeperSpeechConstants.hpp"
 #include "SoundConstants.hpp"
@@ -45,7 +47,7 @@ void ShopkeeperSpeech::bought(std::size_t item) {
   line_.say(SHOPKEEPER_BOUGHT_LINES.at(item));
 }
 
-void ShopkeeperSpeech::refused(PurchaseRefusal refusal) {
+void ShopkeeperSpeech::refused(PurchaseRefusal refusal, std::size_t item) {
   switch (refusal) {
     case PurchaseRefusal::AlreadyOwned:
       line_.say(SHOPKEEPER_ALREADY_YOURS_LINE);
@@ -54,7 +56,11 @@ void ShopkeeperSpeech::refused(PurchaseRefusal refusal) {
       line_.say(SHOPKEEPER_NOT_FOR_SALE_LINE);
       return;
     case PurchaseRefusal::TooExpensive:
-      line_.say(inTurn(SHOPKEEPER_TOO_EXPENSIVE_LINES, tooExpensiveTurn_));
+      line_.say(
+          identifiers::isHullItem(item)
+              ? SHOPKEEPER_HULL_TOO_EXPENSIVE_LINES.at(
+                    item - identifiers::SHIP_LOOK_ACCESSORY_COUNT)
+              : inTurn(SHOPKEEPER_TOO_EXPENSIVE_LINES, tooExpensiveTurn_));
       return;
   }
 }

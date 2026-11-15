@@ -35,6 +35,7 @@ using rtype::client::testing::SHOP_SCENE_SHEET;
 using rtype::client::testing::ShopScreenFixture;
 using rtype::client::testing::showsATicket;
 using rtype::client::testing::THE_REST_OF_THE_STAMP_TIME;
+using rtype::client::testing::WAR_SHARK_TOO_EXPENSIVE_WORD;
 using ::testing::Contains;
 using ::testing::ElementsAre;
 using ::testing::Not;
@@ -375,4 +376,20 @@ TEST_F(ShopScreenFixture, AnOwnedLookShowsNoTicket) {
   press(Key::Enter);
 
   EXPECT_FALSE(showsATicket(painting()));
+}
+
+/**
+ * Given a player with no kopeck
+ * When the war shark, the first hull of the glass case, is clicked, then BUY
+ * on its ticket
+ * Then the shopkeeper refuses with the line of the war shark, not with a
+ * refusal of an accessory
+ */
+TEST_F(ShopScreenFixture, AHullTooDearHasItsOwnRefusal) {
+  pointAt(FIRST_STALL_MIDDLE_OF_THE_SHOP, true);
+
+  pointAt(BUY_BUTTON_MIDDLE, true);
+
+  EXPECT_NE(writingOf(painting(), WAR_SHARK_TOO_EXPENSIVE_WORD), nullptr);
+  EXPECT_EQ(writingOf(painting(), FIRST_TOO_EXPENSIVE_WORD), nullptr);
 }

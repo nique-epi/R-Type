@@ -76,6 +76,9 @@ constexpr sf::Vector2i BESIDE_THE_BOTTLES{367, 177};
 constexpr std::string_view PARTY_HAT_LINE_WORD = "VODKA.";
 constexpr std::string_view FIRST_TOO_EXPENSIVE_WORD = "NYET.";
 constexpr std::string_view SECOND_TOO_EXPENSIVE_WORD = "CHARITY,";
+/** @brief A word of the refusal of the war shark, the first hull, to a
+ * player who cannot pay it, which no refusal of an accessory says. */
+constexpr std::string_view WAR_SHARK_TOO_EXPENSIVE_WORD = "WALLETS,";
 constexpr std::string_view ALREADY_YOURS_WORD = "HATS,";
 constexpr std::string_view RADIO_HINT_WORD = "QUIET?";
 constexpr std::string_view FIRST_BOTTLES_WORD = "HANDS";

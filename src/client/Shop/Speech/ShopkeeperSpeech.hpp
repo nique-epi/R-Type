@@ -29,8 +29,10 @@ class ShopkeeperSpeech {
   void greet(std::size_t ownedCount);
   /** @brief Says the line of @p item, a position in SHIP_LOOK_ITEM_NAMES. */
   void bought(std::size_t item);
-  /** @brief Says why the shop refuses a ware. */
-  void refused(PurchaseRefusal refusal);
+  /** @brief Says why the shop refuses @p item, a position in
+   * SHIP_LOOK_ITEM_NAMES: a hull the player cannot pay has its own line,
+   * any other ware too dear the next of his refusals in turn. */
+  void refused(PurchaseRefusal refusal, std::size_t item);
   /** @brief Says the next of his lines on his bottles. */
   void bottlesTouched();
   /** @brief Says what he thinks of the music the radio now plays,

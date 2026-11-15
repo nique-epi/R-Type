@@ -215,7 +215,7 @@ bool ShopScreen::buy() {
     const std::uint32_t price = lookItemPrice(item);
     message_ = refusalLineOf(*bought.refusal,
                              price > purse.kopecks ? price - purse.kopecks : 0);
-    speech_.refused(*bought.refusal);
+    speech_.refused(*bought.refusal, item);
     return false;
   }
   static_cast<void>(settings_->apply(KOPECKS_SETTING, bought.purse.kopecks));

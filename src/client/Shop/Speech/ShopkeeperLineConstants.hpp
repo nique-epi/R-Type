@@ -62,6 +62,16 @@ constexpr std::array<std::string_view, identifiers::SHIP_LOOK_ITEM_COUNT>
 constexpr std::array<std::string_view, 3> SHOPKEEPER_TOO_EXPENSIVE_LINES{
     "NYET. NO KOPECKS, NO HAT.", "THIS IS SHOP, NOT CHARITY, TOVARISCH.",
     "SHOOT MORE BYDOS, THEN COME BACK. NOT ME, PLEASE."};
+/** @brief A hull of the glass case the player cannot pay, one line for
+ * each, in the order of the hulls of SHIP_LOOK_ITEM_NAMES: the war shark,
+ * the vostok, the Bydo husk, the golden ace, the golden Bydo. */
+constexpr std::array<std::string_view, identifiers::SHIP_HULL_COUNT>
+    SHOPKEEPER_HULL_TOO_EXPENSIVE_LINES{
+        "NO KOPECKS? THIS SHARK BITES WALLETS, NOT BYDOS.",
+        "GAGARIN FLEW THIS FOR THE MOTHERLAND. YOU CANNOT EVEN PAY FOR IT.",
+        "THIS IS MY COUSIN. HE IS NOT CHEAP. NEITHER AM I.",
+        "REAL GOLD, COMRADE. YOU HAVE ONLY PAPER. COME BACK RICH.",
+        "TEN THOUSAND KOPECKS. EVEN MY MOTHER CANNOT AFFORD THIS ONE."};
 constexpr std::string_view SHOPKEEPER_ALREADY_YOURS_LINE =
     "YOU HAVE THIS ALREADY. TWO HATS, ONE HEAD? NYET.";
 constexpr std::string_view SHOPKEEPER_NOT_FOR_SALE_LINE =

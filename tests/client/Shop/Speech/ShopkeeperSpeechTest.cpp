@@ -21,6 +21,7 @@ using rtype::client::SHOPKEEPER_BOTTLES_LINES;
 using rtype::client::SHOPKEEPER_BOUGHT_LINES;
 using rtype::client::SHOPKEEPER_BUBBLE_WIDTH;
 using rtype::client::SHOPKEEPER_GREETINGS;
+using rtype::client::SHOPKEEPER_HULL_TOO_EXPENSIVE_LINES;
 using rtype::client::SHOPKEEPER_MAX_LINES;
 using rtype::client::SHOPKEEPER_NOT_FOR_SALE_LINE;
 using rtype::client::SHOPKEEPER_RADIO_HINT;
@@ -43,10 +44,11 @@ using rtype::client::testing::SECOND_GREETING_WORD;
 TEST(ShopkeeperSpeechTest, EveryLineFitsHisBubble) {
   const int textWidth =
       SHOPKEEPER_BUBBLE_WIDTH - (SIDES_PER_AXIS * SPOKEN_BUBBLE_PADDING);
-  const std::array<std::span<const std::string_view>, 9> lists{
+  const std::array<std::span<const std::string_view>, 10> lists{
       SHOPKEEPER_GREETINGS,
       SHOPKEEPER_BOUGHT_LINES,
       SHOPKEEPER_TOO_EXPENSIVE_LINES,
+      SHOPKEEPER_HULL_TOO_EXPENSIVE_LINES,
       SHOPKEEPER_BOTTLES_LINES,
       SHOPKEEPER_BORDER_RADIO_LINES,
       std::span(&SHOPKEEPER_RADIO_HINT, 1),
