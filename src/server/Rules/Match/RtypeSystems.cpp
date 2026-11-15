@@ -13,6 +13,7 @@
 #include "PlayerRoster.hpp"
 #include "PlayfieldExitSystem.hpp"
 #include "RtypeSystemConstants.hpp"
+#include "SummoningSystem.hpp"
 #include "SystemScheduler.hpp"
 
 namespace rtype::server {
@@ -46,6 +47,7 @@ void addRtypeSystems(GameContext& game) {
               LAG_COMPENSATED_HIT_SYSTEM_NAME);
   systems.add(std::make_unique<game::HurtZoneSystem>(events),
               HURT_ZONE_SYSTEM_NAME);
+  systems.add(std::make_unique<game::SummoningSystem>(), SUMMONING_SYSTEM_NAME);
 }
 
 }  // namespace rtype::server

@@ -16,5 +16,6 @@ constexpr std::string_view COLLISION_SYSTEM_NAME = "CollisionSystem";
 constexpr std::string_view LAG_COMPENSATED_HIT_SYSTEM_NAME =
     "LagCompensatedHitSystem";
 constexpr std::string_view HURT_ZONE_SYSTEM_NAME = "HurtZoneSystem";
+constexpr std::string_view SUMMONING_SYSTEM_NAME = "SummoningSystem";
 
 }  // namespace rtype::server

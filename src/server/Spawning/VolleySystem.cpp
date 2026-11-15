@@ -24,7 +24,6 @@
 #include "PlayerRoster.hpp"
 #include "PlayfieldConstants.hpp"
 #include "Position.hpp"
-#include "Summoning.hpp"
 #include "SummoningStart.hpp"
 #include "VolleyPlacement.hpp"
 #include "VolleySheet.hpp"
@@ -92,7 +91,6 @@ VolleySystem::VolleySystem(VolleySystemParts parts)
       draws_(parts.seed) {}
 
 void VolleySystem::onTick() {
-  wakeSummoned();
   collectShots();
   for (const VolleyShot& shot : shots_) {
     fire(shot);
@@ -160,21 +158,6 @@ std::optional<network::EntitySpawned> VolleySystem::spawnAt(
   } catch (const engine::NetworkIdExhaustedException&) {
     logger_.warn("the rest of a volley is skipped: every network id was given");
     return std::nullopt;
-  }
-}
-
-void VolleySystem::wakeSummoned() {
-  awoken_.clear();
-  engine::ComponentRegistry& components = world_->components();
-  components.forEach<game::Summoning, game::Summoning>(
-      [this](engine::Entity body, game::Summoning& summoning,
-             game::Summoning&) {
-        if (--summoning.ticksLeft == 0) {
-          awoken_.push_back(body);
-        }
-      });
-  for (const engine::Entity body : awoken_) {
-    components.remove<game::Summoning>(body);
   }
 }
 

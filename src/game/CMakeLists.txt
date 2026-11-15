@@ -30,6 +30,7 @@ target_link_libraries(rtype_game
     rtype_game_collision_rules
     rtype_game_lag_compensated_hit_system
     rtype_game_hurt_zone_system
+    rtype_game_summoning_system
     rtype_game_damage_rules
     rtype_game_boss
 )

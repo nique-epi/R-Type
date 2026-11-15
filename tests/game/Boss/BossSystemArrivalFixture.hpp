@@ -38,7 +38,7 @@ class BossSystemArrivalFixture : public ::testing::Test {
   /** @brief Runs the system once, then delivers what it published. */
   void run();
 
-  /** @brief Ends the warning of the boss, as VolleySystem does once it
+  /** @brief Ends the warning of the boss, as SummoningSystem does once it
    * counted its Summoning down. */
   void endTheWarning();
 

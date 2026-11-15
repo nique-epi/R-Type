@@ -26,7 +26,8 @@ struct Health;
  *
  * - Created: the players are warned with a BossArrival, and the boss gets a
  *   Summoning of BOSS_ARRIVAL_WARNING_TICKS ticks, which keeps it harmless
- *   and unsteered, where it appeared, while the warning lasts;
+ *   and unsteered, where it appeared, while the warning lasts
+ *   (SummoningSystem counts it down);
  * - Warned: once nothing summons it any more, its health is scaled for the
  *   players and the difficulty (see scaledBossHealth()), and its behaviour
  *   brings it in;

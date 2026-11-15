@@ -117,7 +117,7 @@ src/game/
 ├── Level/            the scroll of a level, its biome and its last checkpoint; Ldtk/, the enemies an LDtk file places
 ├── Components/       Position, SteadyMotion, CollisionBox, Health...
 ├── EntityTypes/      the gameplay of the entity sheets, read and numbered
-├── Systems/          movement, collisions, damage, shooting, score
+├── Systems/          movement, collisions, damage, shooting, score, the bodies that do not take part yet
 ├── Spawning/         where ships, enemies, missiles and bonuses appear, the orders to create or remove bodies (IEntityOrders), and the placed enemies as the level scrolls
 ├── Waves/            when and which enemies appear
 └── Events/           entity destroyed, player left...
