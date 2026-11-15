@@ -2,9 +2,7 @@
 
 #include "ConnectionPhase.hpp"
 #include "DialogMaking.hpp"
-#include "IScreenNavigator.hpp"
 #include "IServerConnection.hpp"
-#include "ISoundPlayer.hpp"
 #include "Menu.hpp"
 
 namespace rtype::client {

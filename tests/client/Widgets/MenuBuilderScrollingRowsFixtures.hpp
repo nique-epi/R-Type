@@ -3,6 +3,7 @@
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Event.hpp>
 #include "Menu.hpp"
+#include "PlayfieldMapping.hpp"
 #include "RecordingRowControl.hpp"
 #include "TextMetrics.hpp"
 

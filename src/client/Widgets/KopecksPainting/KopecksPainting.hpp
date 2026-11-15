@@ -4,6 +4,7 @@
 #include <cstdint>
 #include "IInterfaceCanvas.hpp"
 #include "KopecksLabel.hpp"
+#include "TextMetrics.hpp"
 
 namespace rtype::client {
 

@@ -3,6 +3,7 @@
 #include <SFML/Graphics/Color.hpp>
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
+#include <chrono>
 #include <cstdint>
 #include "BackgroundColorConstants.hpp"
 #include "BackgroundConstants.hpp"
@@ -10,6 +11,7 @@
 #include "InterfaceColorConstants.hpp"
 #include "InterfaceConstants.hpp"
 #include "PlayfieldConstants.hpp"
+#include "TimeConstants.hpp"
 #include "WidgetConstants.hpp"
 
 namespace rtype::client {

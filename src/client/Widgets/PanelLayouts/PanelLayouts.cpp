@@ -3,7 +3,6 @@
 #include <SFML/System/Vector2.hpp>
 #include <algorithm>
 #include <cstddef>
-#include "InterfaceConstants.hpp"
 #include "TabbedPanelLayout.hpp"
 #include "TextMeasures.hpp"
 #include "TextMetrics.hpp"

@@ -8,6 +8,7 @@
 #include "BarState.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "RowControl.hpp"
+#include "TextMetrics.hpp"
 
 /** @brief What reached a recording row control, and whether it holds the
  * input, which a test may set. */

@@ -11,6 +11,7 @@
 #include "BarState.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "RowControl.hpp"
+#include "TextMetrics.hpp"
 #include "ValueBinding.hpp"
 
 namespace rtype::client {

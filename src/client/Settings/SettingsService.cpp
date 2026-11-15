@@ -15,7 +15,6 @@
 #include "SettingId.hpp"
 #include "SettingRange.hpp"
 #include "ShipLook.hpp"
-#include "TextSize.hpp"
 
 namespace rtype::client {
 

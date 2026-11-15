@@ -17,7 +17,6 @@
 #include "FragmentShader.hpp"
 #include "GhostShaderConstants.hpp"
 #include "ITextureSource.hpp"
-#include "InterfaceConstants.hpp"
 #include "InterfaceLook.hpp"
 #include "InterfaceLookSource.hpp"
 #include "PixelRounding.hpp"

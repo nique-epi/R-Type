@@ -17,6 +17,7 @@
 #include "RecordingServerConnection.hpp"
 #include "ScreenInputs.hpp"
 #include "ScreenTestConstants.hpp"
+#include "TextMetrics.hpp"
 
 using rtype::client::LeaderboardFilterChoice;
 using rtype::client::LeaderboardPage;

@@ -3,7 +3,6 @@
 #include "DialogMaking.hpp"
 #include "IScreenNavigator.hpp"
 #include "IServerConnection.hpp"
-#include "ISoundPlayer.hpp"
 #include "Menu.hpp"
 #include "MenuBuilder.hpp"
 #include "MenuScreenIdConstants.hpp"

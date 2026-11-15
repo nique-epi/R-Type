@@ -9,9 +9,9 @@
 #include <utility>
 #include <vector>
 #include "BandMoment.hpp"
+#include "InterfaceColorConstants.hpp"
 #include "PilotStatus.hpp"
 #include "PlayerPalette.hpp"
-#include "PlayerPaletteConstants.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "StatusBand.hpp"
 #include "StatusBandLook.hpp"

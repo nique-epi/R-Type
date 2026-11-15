@@ -9,6 +9,7 @@
 #include "SettingsConstants.hpp"
 #include "Slider.hpp"
 #include "SliderLook.hpp"
+#include "TextSize.hpp"
 #include "TimeConstants.hpp"
 #include "WindowConstants.hpp"
 

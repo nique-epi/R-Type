@@ -1,7 +1,7 @@
 #pragma once
 
+#include <SFML/Graphics/Color.hpp>
 #include <array>
-#include <cstdint>
 #include "BackgroundColorConstants.hpp"
 #include "HighContrastColorsFixtures.hpp"
 #include "InterfaceColorConstants.hpp"

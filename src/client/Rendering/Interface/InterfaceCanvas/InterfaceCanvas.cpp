@@ -126,15 +126,15 @@ void InterfaceCanvas::clear() {
   smoothImages_.clear();
 }
 
-void InterfaceCanvas::fill(sf::IntRect area, sf::Color shade) {
-  const sf::Color color = shownColorOf(lookOf(look_), shade);
+void InterfaceCanvas::fill(sf::IntRect area, sf::Color color) {
+  const sf::Color shown = shownColorOf(lookOf(look_), color);
   const sf::Vector2f topLeft(area.position);
   const sf::Vector2f bottomRight(area.position + area.size);
   const std::array corners{
-      sf::Vertex{.position = topLeft, .color = color},
-      sf::Vertex{.position = {bottomRight.x, topLeft.y}, .color = color},
-      sf::Vertex{.position = {topLeft.x, bottomRight.y}, .color = color},
-      sf::Vertex{.position = bottomRight, .color = color}};
+      sf::Vertex{.position = topLeft, .color = shown},
+      sf::Vertex{.position = {bottomRight.x, topLeft.y}, .color = shown},
+      sf::Vertex{.position = {topLeft.x, bottomRight.y}, .color = shown},
+      sf::Vertex{.position = bottomRight, .color = shown}};
   canvas_.canvas().draw(corners.data(), corners.size(),
                         sf::PrimitiveType::TriangleStrip);
 }

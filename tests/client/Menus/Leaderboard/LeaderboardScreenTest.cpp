@@ -3,9 +3,12 @@
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <algorithm>
+#include <cstdint>
 #include <optional>
+#include <vector>
 #include "InterfaceConstants.hpp"
 #include "KeyPress.hpp"
+#include "LeaderboardAnswer.hpp"
 #include "LeaderboardFrames.hpp"
 #include "LeaderboardPhase.hpp"
 #include "LeaderboardPresentationFixtures.hpp"
@@ -15,6 +18,7 @@
 #include "LeaderboardSpriteConstants.hpp"
 #include "MenuScreenIdConstants.hpp"
 #include "PointerEvents.hpp"
+#include "ProtocolConstants.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingServerConnection.hpp"
@@ -39,6 +43,8 @@ using rtype::client::testing::ON_THE_BACK_CHIP;
 using rtype::client::testing::ON_THE_SECOND_TAB;
 using rtype::client::testing::RIGHT_BANNER;
 using rtype::network::LeaderboardRequest;
+using rtype::network::LeaderboardRow;
+using rtype::network::MAXIMUM_LEADERBOARD_ROWS;
 using ::testing::ElementsAre;
 using ::testing::Field;
 using ::testing::IsEmpty;
@@ -504,13 +510,11 @@ TEST_F(StillLeaderboardFixture, TheBannersStayStill) {
  * Then every text it writes lies on screen
  */
 TEST_F(LargestLeaderboardFixture, AtTheLargestSizeEveryTextStaysOnScreen) {
-  show(answeredPage(
-      {entryOf(1, LONGEST_NICKNAME), entryOf(2, LONGEST_NICKNAME),
-       entryOf(3, LONGEST_NICKNAME), entryOf(4, LONGEST_NICKNAME),
-       entryOf(5, LONGEST_NICKNAME), entryOf(6, LONGEST_NICKNAME),
-       entryOf(7, LONGEST_NICKNAME), entryOf(8, LONGEST_NICKNAME),
-       entryOf(9, LONGEST_NICKNAME), entryOf(10, LONGEST_NICKNAME)},
-      entryOf(3, LONGEST_NICKNAME)));
+  std::vector<LeaderboardRow> rows;
+  for (std::uint32_t rank = 1; rank <= MAXIMUM_LEADERBOARD_ROWS; ++rank) {
+    rows.push_back(entryOf(rank, LONGEST_NICKNAME));
+  }
+  show(answeredPage(rows, entryOf(3, LONGEST_NICKNAME)));
 
   for (const RecordedWriting& writing : canvas().writings) {
     SCOPED_TRACE(writing.text);
