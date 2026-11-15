@@ -18,7 +18,7 @@
 #include "LookItemPurchase.hpp"
 #include "MenuBuilder.hpp"
 #include "MotionPreference.hpp"
-#include "PlayerSettings.hpp"
+#include "PlayerPurse.hpp"
 #include "Purchase.hpp"
 #include "Purse.hpp"
 #include "SettingDefinitionConstants.hpp"
@@ -44,13 +44,6 @@ namespace {
 
 Button::Text backText() {
   return {.label = BACK_LABEL, .keyName = CANCEL_KEY_NAME};
-}
-
-/** @returns What @p settings lets the player buy with and already holds. */
-Purse purseOf(const PlayerSettings& settings) {
-  return Purse{.kopecks = settings.kopecks,
-               .chips = settings.chips,
-               .locker = settings.shipLocker};
 }
 
 /** @brief Changes what the shop plays: the music of the radio instead of

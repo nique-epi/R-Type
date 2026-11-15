@@ -1,1 +1,1 @@
-rtype_add_test(NAME client_economy_tests SOURCES ChipsExchangeTest.cpp KopecksTest.cpp LookItemPurchaseTest.cpp LookItemPurchaseFixtures.cpp LIBS rtype_client_economy)
+rtype_add_test(NAME client_economy_tests SOURCES ChipsExchangeTest.cpp KopecksTest.cpp LookItemPurchaseTest.cpp LookItemPurchaseFixtures.cpp PlayerPurseTest.cpp LIBS rtype_client_economy)

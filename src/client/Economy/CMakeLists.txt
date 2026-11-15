@@ -2,6 +2,7 @@ add_library(rtype_client_economy STATIC
   ChipsExchange.cpp
   Kopecks.cpp
   LookItemPurchase.cpp
+  PlayerPurse.cpp
 )
 
 target_include_directories(rtype_client_economy PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
