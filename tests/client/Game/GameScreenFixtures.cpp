@@ -20,6 +20,7 @@ using rtype::client::testing::SHIP_TYPE_NUMBER;
 using rtype::client::testing::stateListingPlayers;
 using rtype::network::GameEnded;
 using rtype::network::LobbyPlayer;
+using rtype::network::PilotPlace;
 using rtype::network::PlayerState;
 using rtype::network::WorldState;
 
@@ -29,13 +30,13 @@ void seatThreePilots(RecordingServerConnection& connection,
       {.phase = ConnectionPhase::Accepted, .playerNumber = LOCAL_NUMBER});
   waitingRoom.setLobbyPlayers(
       {LobbyPlayer{.playerNumber = FIRST_PILOT,
-                   .ready = false,
+                   .place = PilotPlace::NotReady,
                    .nickname = std::string{FIRST_PILOT_NICKNAME}},
        LobbyPlayer{.playerNumber = SECOND_PILOT,
-                   .ready = false,
+                   .place = PilotPlace::NotReady,
                    .nickname = std::string{SECOND_PILOT_NICKNAME}},
        LobbyPlayer{.playerNumber = THIRD_PILOT,
-                   .ready = false,
+                   .place = PilotPlace::NotReady,
                    .nickname = std::string{THIRD_PILOT_NICKNAME}}});
 }
 

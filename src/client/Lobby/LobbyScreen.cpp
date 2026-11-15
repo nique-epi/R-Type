@@ -70,12 +70,17 @@ const network::LobbyPlayer* playerNumbered(
 
 /** @returns What the bay of a player shows: what the server lists, or what
  * the local player asked while the server lists another value. */
+/** @returns Whether @p player waits in the room, ready to start. */
+bool isReady(const network::LobbyPlayer& player) {
+  return player.place == network::PilotPlace::Ready;
+}
+
 BayReadiness readinessOf(const network::LobbyPlayer& player,
                          std::optional<bool> requested) {
-  if (requested.has_value() && *requested != player.ready) {
+  if (requested.has_value() && *requested != isReady(player)) {
     return *requested ? BayReadiness::ReadyAsked : BayReadiness::NotReadyAsked;
   }
-  return player.ready ? BayReadiness::Ready : BayReadiness::NotReady;
+  return isReady(player) ? BayReadiness::Ready : BayReadiness::NotReady;
 }
 
 /** @returns The status line: none without players; who is not ready, by name
@@ -85,16 +90,14 @@ std::string statusLine(std::span<const network::LobbyPlayer> players,
   if (players.empty()) {
     return {};
   }
-  const auto notReady =
-      std::ranges::count(players, false, &network::LobbyPlayer::ready);
+  const auto notReady = std::ranges::count(players, false, isReady);
   if (notReady == 0) {
     return ALL_READY_STATUS;
   }
   if (notReady > 1) {
     return std::to_string(notReady) + PILOTS_NOT_READY_STATUS;
   }
-  const auto waiting =
-      std::ranges::find(players, false, &network::LobbyPlayer::ready);
+  const auto waiting = std::ranges::find(players, false, isReady);
   if (waiting->playerNumber == ownNumber) {
     return YOU_NOT_READY_STATUS;
   }
@@ -385,7 +388,7 @@ bool LobbyScreen::wantsReady() const {
   }
   const network::LobbyPlayer* own = playerNumbered(
       waitingRoom_->lobbyPlayers(), connection_->status().playerNumber);
-  return own != nullptr && own->ready;
+  return own != nullptr && isReady(*own);
 }
 
 void LobbyScreen::repaint() {

@@ -548,7 +548,7 @@ std::optional<network::EntityState> entityOf(const network::WorldState& state,
 network::LobbyState roomOfTheFirstPlayerNotReady() {
   return network::LobbyState{.players = {network::LobbyPlayer{
                                  .playerNumber = network::FIRST_PLAYER_NUMBER,
-                                 .ready = false,
+                                 .place = network::PilotPlace::NotReady,
                                  .nickname = std::string{PLAYER_NICKNAME}}}};
 }
 

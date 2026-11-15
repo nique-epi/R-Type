@@ -30,7 +30,7 @@ using testing::SOME_SCORE_OF_DISTINCT_BYTES;
 
 LobbyPlayer lobbyPlayer(std::uint8_t playerNumber) {
   return LobbyPlayer{.playerNumber = playerNumber,
-                     .ready = false,
+                     .place = PilotPlace::NotReady,
                      .nickname = std::string{SIXTEEN_BYTE_NICKNAME}};
 }
 
@@ -105,10 +105,10 @@ TEST(ReadyState, RefusesBytesAfterTheReadyByte) {
 TEST(LobbyState, EncodesThePlayersInOrder) {
   const LobbyState lobby{
       .players = {{.playerNumber = 1,
-                   .ready = true,
+                   .place = network::PilotPlace::Ready,
                    .nickname = std::string{ONE_BYTE_NICKNAME}},
                   {.playerNumber = 2,
-                   .ready = false,
+                   .place = network::PilotPlace::NotReady,
                    .nickname = std::string{ACCENTED_LETTER}}}};
   const auto expected = byteSequence(
       {0x02, 0x01, 0x01, 0x01, 0x41, 0x02, 0x00, 0x02, 0xC3, 0xA9});
@@ -229,14 +229,42 @@ TEST(LobbyState, RefusesToReadAnEmptyNickname) {
 }
 
 /**
- * Given a payload whose ready byte is 2
+ * Given a payload whose place byte is 3, past AtCasino
  * When it is decoded
- * Then an InvalidBoolException is raised
+ * Then an InvalidFieldValueException is raised
  */
-TEST(LobbyState, RefusesToReadAReadyByteOtherThanZeroOrOne) {
-  const auto bytes = byteSequence({0x01, 0x01, 0x02, 0x01, 0x41});
+TEST(LobbyState, RefusesToReadAPlaceItDoesNotList) {
+  const auto bytes = byteSequence({0x01, 0x01, 0x03, 0x01, 0x41});
 
-  EXPECT_THROW((void)decodeMessage<LobbyState>(bytes), InvalidBoolException);
+  EXPECT_THROW((void)decodeMessage<LobbyState>(bytes),
+               InvalidFieldValueException);
+}
+
+/**
+ * Given a pilot at the casino
+ * When the LobbyState is encoded
+ * Then the place byte of that pilot is 2
+ */
+TEST(LobbyState, WritesAPilotAtTheCasinoAsTwo) {
+  const LobbyState lobby{
+      .players = {LobbyPlayer{.playerNumber = 1,
+                              .place = PilotPlace::AtCasino,
+                              .nickname = std::string{ONE_BYTE_NICKNAME}}}};
+
+  EXPECT_EQ(encodeMessage(lobby), byteSequence({0x01, 0x01, 0x02, 0x01, 0x41}));
+}
+
+/**
+ * Given pilots ready, not ready and at the casino
+ * When the LobbyState is encoded then decoded
+ * Then each pilot keeps its place
+ */
+TEST(LobbyState, DecodesEveryPlace) {
+  LobbyState lobby = fullLobby();
+  lobby.players[0].place = PilotPlace::Ready;
+  lobby.players[1].place = PilotPlace::AtCasino;
+
+  EXPECT_EQ(decodeMessage<LobbyState>(encodeMessage(lobby)), lobby);
 }
 
 /**

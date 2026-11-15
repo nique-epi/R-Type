@@ -22,7 +22,7 @@ void RoundTripWatchFixture::advanceClock(engine::Duration elapsed) {
 void RoundTripWatchFixture::openSession() {
   watch_.sessionOpened(
       network::LobbyPlayer{.playerNumber = OWN_PLAYER_NUMBER,
-                           .ready = false,
+                           .place = network::PilotPlace::NotReady,
                            .nickname = std::string{OWN_NICKNAME}},
       outbox_);
 }

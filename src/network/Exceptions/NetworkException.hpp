@@ -258,6 +258,15 @@ class TooManyLeaderboardRowsException : public MalformedMessageException {
 };
 
 /**
+ * @brief A RouletteBets lists more bets than the protocol allows, read from a
+ * payload or about to be written into one.
+ */
+class TooManyRouletteBetsException : public MalformedMessageException {
+ public:
+  TooManyRouletteBetsException(std::size_t betCount, std::size_t maximumCount);
+};
+
+/**
  * @brief A field holds a value the protocol page does not list for it, read
  * from a payload or about to be written into one. The field is named as on
  * the protocol page.

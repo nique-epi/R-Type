@@ -20,8 +20,10 @@ constexpr std::size_t INT16_WIRE_SIZE = sizeof(std::int16_t);
 constexpr std::uint32_t PROTOCOL_ID = 0x52545950;
 
 /**
- * @brief The version of the protocol this code speaks. Version 17 adds the
- * hull to a ship look, see the Version 17 section; version 16 adds the
+ * @brief The version of the protocol this code speaks. Version 18 adds the
+ * casino: CasinoPlace, RouletteBets, RouletteRound, and the place of each
+ * player in LobbyState, see the Version 18 section; version 17 adds the hull
+ * to a ship look, see the Version 17 section; version 16 adds the
  * look of each entity to WorldState and DeltaWorldState, and EffectPlayed,
  * see the Version 16 section; version 15 removes the ban: the reason Banned of
  * ConnectionRefused (9), Expulsion (2) and PlayerLeft (4) is invalid again, see
@@ -48,7 +50,7 @@ constexpr std::uint32_t PROTOCOL_ID = 0x52545950;
  * body of a datagram as a zstd frame, see the Compression section; version 3
  * adds the outcome of a game to GameEnded, see the Version 3 section.
  */
-constexpr std::uint8_t PROTOCOL_VERSION = 17;
+constexpr std::uint8_t PROTOCOL_VERSION = 18;
 
 /**
  * @brief The session token of a datagram sent before the connection is
@@ -546,6 +548,48 @@ static_assert(LARGEST_PLAYER_LOOKS_SIZE <= ORDERED_PAYLOAD_LIMIT,
               "a PlayerLooks always fits in an OrderedMessage");
 
 /**
+ * @brief The highest number of the roulette wheel: a single zero and 1 to 36,
+ * 37 pockets.
+ */
+constexpr std::uint8_t HIGHEST_ROULETTE_NUMBER = 36;
+
+/**
+ * @brief The bets a RouletteBets lists at most: the chips a player may lay on
+ * the cloth in one round.
+ */
+constexpr std::size_t MAXIMUM_ROULETTE_BETS = 32;
+
+/**
+ * @brief The size of one bet on the wire: kind, first number, then amount.
+ */
+constexpr std::size_t ROULETTE_BET_WIRE_SIZE =
+    UINT8_WIRE_SIZE + UINT8_WIRE_SIZE + UINT32_WIRE_SIZE;
+
+/**
+ * @brief The largest RouletteBets payload: round, vote, count, then
+ * MAXIMUM_ROULETTE_BETS bets, 2 + 1 + 1 + 32 x 6 = 196 bytes.
+ */
+constexpr std::size_t LARGEST_ROULETTE_BETS_SIZE =
+    UINT16_WIRE_SIZE + UINT8_WIRE_SIZE + UINT8_WIRE_SIZE +
+    (MAXIMUM_ROULETTE_BETS * ROULETTE_BET_WIRE_SIZE);
+
+static_assert(LARGEST_ROULETTE_BETS_SIZE <= MESSAGE_PAYLOAD_LIMIT,
+              "a RouletteBets always fits in one datagram");
+
+/**
+ * @brief The largest RouletteRound payload: round, phase, ticks left, winning
+ * number, count, then a player number, a stake and a payout for each of
+ * MAXIMUM_PLAYERS players, 2 + 1 + 2 + 1 + 1 + 4 x 9 = 43 bytes.
+ */
+constexpr std::size_t LARGEST_ROULETTE_ROUND_SIZE =
+    UINT16_WIRE_SIZE + UINT8_WIRE_SIZE + UINT16_WIRE_SIZE + UINT8_WIRE_SIZE +
+    UINT8_WIRE_SIZE +
+    (MAXIMUM_PLAYERS * (UINT8_WIRE_SIZE + UINT32_WIRE_SIZE + UINT32_WIRE_SIZE));
+
+static_assert(LARGEST_ROULETTE_ROUND_SIZE <= MESSAGE_PAYLOAD_LIMIT,
+              "a RouletteRound always fits in one datagram");
+
+/**
  * @brief The size of the largest datagram holding a ServerInformation: the
  * echo of the request (sentAt, heldFor), the protocol version, the longest
  * game version and server name, then the counts of players, games and free
@@ -638,6 +682,10 @@ constexpr std::string_view STAGE_FIELD = "stage";
 constexpr std::string_view BIOME_FIELD = "biome";
 constexpr std::string_view SCROLL_POSITION_FIELD = "scrollPosition";
 constexpr std::string_view SCROLL_SPEED_FIELD = "scrollSpeed";
+constexpr std::string_view PLACE_FIELD = "place";
+constexpr std::string_view FIRST_NUMBER_FIELD = "firstNumber";
+constexpr std::string_view AMOUNT_FIELD = "amount";
+constexpr std::string_view WINNING_NUMBER_FIELD = "winningNumber";
 
 /**
  * @brief Wire steps in one logical unit: a coordinate is sent in eighths of a

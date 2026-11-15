@@ -162,6 +162,12 @@ TooManyLeaderboardRowsException::TooManyLeaderboardRowsException(
                                 std::to_string(maximumCount) + " rows, not " +
                                 std::to_string(rowCount)) {}
 
+TooManyRouletteBetsException::TooManyRouletteBetsException(
+    std::size_t betCount, std::size_t maximumCount)
+    : MalformedMessageException(
+          "a player places at most " + std::to_string(maximumCount) +
+          " roulette bets, not " + std::to_string(betCount)) {}
+
 TooManyPlayersException::TooManyPlayersException(std::size_t playerCount,
                                                  std::size_t maximumCount)
     : MalformedMessageException(

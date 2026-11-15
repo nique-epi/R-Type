@@ -137,7 +137,7 @@ void HandshakeAnswers::openSession(const network::MessageOrigin& origin,
   parts_.inbound.get().open(origin.header);
   parts_.observers.get().opened(
       network::LobbyPlayer{.playerNumber = accepted.playerNumber,
-                           .ready = false,
+                           .place = network::PilotPlace::NotReady,
                            .nickname = parts_.attempt.get().nickname()},
       parts_.outbox.get());
   parts_.logger.get().info("accepted as player ",

@@ -52,7 +52,7 @@ TEST_F(WaitingRoomFixture, TheRoomHoldsThePlayerAloneOnceAccepted) {
   EXPECT_THAT(
       waitingRoom().lobbyPlayers(),
       ElementsAre(network::LobbyPlayer{.playerNumber = ACCEPTED_PLAYER_NUMBER,
-                                       .ready = false,
+                                       .place = network::PilotPlace::NotReady,
                                        .nickname = std::string{NICKNAME}}));
 }
 
@@ -126,7 +126,7 @@ TEST_F(WaitingRoomFixture, StopsSendingReadyStateOnceTheRoomShowsIt) {
   waitingRoom().setReady(true);
   deliverInSession(
       network::LobbyState{.players = {{.playerNumber = ACCEPTED_PLAYER_NUMBER,
-                                       .ready = true,
+                                       .place = network::PilotPlace::Ready,
                                        .nickname = std::string{NICKNAME}}}},
       FIRST_SEQUENCE);
   update();
@@ -145,10 +145,10 @@ TEST_F(WaitingRoomFixture, KeepsTheLobbyStateOfTheSession) {
   accept();
   const network::LobbyState lobby{
       .players = {{.playerNumber = OTHER_PLAYER_NUMBER,
-                   .ready = true,
+                   .place = network::PilotPlace::Ready,
                    .nickname = std::string{OTHER_NICKNAME}},
                   {.playerNumber = ACCEPTED_PLAYER_NUMBER,
-                   .ready = false,
+                   .place = network::PilotPlace::NotReady,
                    .nickname = std::string{NICKNAME}}}};
   deliverInSession(lobby, FIRST_SEQUENCE);
 
@@ -167,7 +167,7 @@ TEST_F(WaitingRoomFixture, IgnoresALobbyStateWithAnotherToken) {
   network::PacketHeader forged = sessionHeader(FIRST_SEQUENCE);
   forged.sessionToken = OTHER_SESSION_TOKEN;
   deliver(network::LobbyState{.players = {{.playerNumber = OTHER_PLAYER_NUMBER,
-                                           .ready = true,
+                                           .place = network::PilotPlace::Ready,
                                            .nickname =
                                                std::string{OTHER_NICKNAME}}}},
           server(), forged);
@@ -188,11 +188,11 @@ TEST_F(WaitingRoomFixture, IgnoresALateLobbyState) {
   accept();
   const network::LobbyState newer{
       .players = {{.playerNumber = ACCEPTED_PLAYER_NUMBER,
-                   .ready = true,
+                   .place = network::PilotPlace::Ready,
                    .nickname = std::string{NICKNAME}}}};
   const network::LobbyState older{
       .players = {{.playerNumber = ACCEPTED_PLAYER_NUMBER,
-                   .ready = false,
+                   .place = network::PilotPlace::NotReady,
                    .nickname = std::string{NICKNAME}}}};
   deliverInSession(newer, SECOND_SEQUENCE);
   deliverInSession(older, FIRST_SEQUENCE);
@@ -278,10 +278,10 @@ TEST_F(WaitingRoomFixture, ShowsNoRoomFromAServerThatComesBack) {
   deliverInSession(
       network::LobbyState{
           .players = {{.playerNumber = ACCEPTED_PLAYER_NUMBER,
-                       .ready = false,
+                       .place = network::PilotPlace::NotReady,
                        .nickname = std::string{NICKNAME}},
                       {.playerNumber = OTHER_PLAYER_NUMBER,
-                       .ready = false,
+                       .place = network::PilotPlace::NotReady,
                        .nickname = std::string{OTHER_NICKNAME}}}},
       FIRST_SEQUENCE);
   update();

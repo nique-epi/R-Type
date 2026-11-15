@@ -1150,7 +1150,7 @@ TEST_F(ServerSessionFixture, IgnoresAServerThatComesBackAfterTheLoss) {
   deliverInSession(network::Heartbeat{}, FIRST_SEQUENCE);
   deliverInSession(
       network::LobbyState{.players = {{.playerNumber = ACCEPTED_PLAYER_NUMBER,
-                                       .ready = false,
+                                       .place = network::PilotPlace::NotReady,
                                        .nickname = std::string{NICKNAME}}}},
       SECOND_SEQUENCE);
   update(PROTOCOL_HEARTBEAT_INTERVAL);

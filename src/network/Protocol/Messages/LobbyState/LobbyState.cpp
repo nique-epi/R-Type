@@ -5,22 +5,41 @@
 #include <type_traits>
 #include "ByteReader.hpp"
 #include "ByteWriter.hpp"
+#include "NetworkException.hpp"
+#include "ProtocolConstants.hpp"
 #include "WireTypes.hpp"
 
 namespace rtype::network {
 
 namespace {
 
+/**
+ * @throws InvalidFieldValueException when @p place is not one of PilotPlace.
+ */
+void requireListedPlace(PilotPlace place) {
+  switch (place) {
+    case PilotPlace::NotReady:
+    case PilotPlace::Ready:
+    case PilotPlace::AtCasino:
+      return;
+  }
+  throw InvalidFieldValueException(PLACE_FIELD,
+                                   static_cast<std::uint8_t>(place));
+}
+
 void validate(const LobbyState& message) {
   requireValidPlayers(std::span<const LobbyPlayer>{message.players});
   for (const LobbyPlayer& player : message.players) {
+    requireListedPlace(player.place);
     requireValidNickname(player.nickname);
   }
 }
 
 LobbyPlayer readPlayer(ByteReader& reader) {
-  return LobbyPlayer{.playerNumber = reader.readUint8(),
-                     .ready = readBool(reader),
+  const std::uint8_t playerNumber = reader.readUint8();
+  const auto place = static_cast<PilotPlace>(reader.readUint8());
+  return LobbyPlayer{.playerNumber = playerNumber,
+                     .place = place,
                      .nickname = reader.readString()};
 }
 
@@ -31,7 +50,7 @@ void encodePayload(ByteWriter& writer, const LobbyState& message) {
   writer.writeUint8(static_cast<std::uint8_t>(message.players.size()));
   for (const LobbyPlayer& player : message.players) {
     writer.writeUint8(player.playerNumber);
-    writeBool(writer, player.ready);
+    writer.writeUint8(static_cast<std::uint8_t>(player.place));
     writer.writeString(player.nickname);
   }
 }

@@ -16,16 +16,17 @@ namespace {
 
 /**
  * @returns The room @p players make: each of them, in the order given, with
- * its number, its ready state and its nickname.
+ * its number, its place and its nickname.
  */
 network::LobbyState roomOf(const ConnectedPlayers& players) {
   network::LobbyState room;
   room.players.reserve(players.size());
   for (const ConnectedPlayer* const player : players) {
-    room.players.push_back(
-        network::LobbyPlayer{.playerNumber = player->playerNumber,
-                             .ready = player->ready,
-                             .nickname = player->nickname});
+    room.players.push_back(network::LobbyPlayer{
+        .playerNumber = player->playerNumber,
+        .place = player->ready ? network::PilotPlace::Ready
+                               : network::PilotPlace::NotReady,
+        .nickname = player->nickname});
   }
   return room;
 }
