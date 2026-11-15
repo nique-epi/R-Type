@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <string_view>
 
 namespace rtype::logging {
@@ -19,6 +20,30 @@ constexpr std::string_view LOG_OPTION_PREFIX = "--log-";
 constexpr std::string_view NO_LOG_OPTION_PREFIX = "--no-log-";
 
 constexpr std::string_view LOGGING_LOGGER_NAME = "Logging";
+
+/**
+ * @brief How many lines wait for the thread of the journal at most: the places
+ * are reserved when it starts, and a line queued while they are all taken is
+ * dropped and counted. spdlog uses the same default.
+ */
+constexpr std::size_t JOURNAL_QUEUE_CAPACITY = 8192;
+
+/** @brief The threads that write the journal: one, so lines keep the order
+ * they were queued in. */
+constexpr std::size_t JOURNAL_THREAD_COUNT = 1;
+
+/**
+ * @brief The first character of a text queued for the thread of the journal:
+ * a line of the journal, or a line written to standard error as it is, such as
+ * a line a game process wrote.
+ */
+constexpr char JOURNAL_LINE_KIND = 'L';
+constexpr char STANDARD_ERROR_LINE_KIND = 'R';
+
+/** @brief What follows the count of the lines the full queue of the journal
+ * dropped: "3 lines were lost: the journal could not keep up". */
+constexpr std::string_view LOST_LINES_TEXT =
+    " lines were lost: the journal could not keep up";
 
 constexpr std::string_view SERVER_LOG_FILE_NAME = "r-type_server.log";
 constexpr std::string_view CLIENT_LOG_FILE_NAME = "r-type_client.log";

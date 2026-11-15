@@ -25,11 +25,13 @@
 #include <string_view>
 #include <utility>
 #include "ILogJournal.hpp"
+#include "JournalWriter.hpp"
 #include "LogLevel.hpp"
 #include "LogRecord.hpp"
 #include "LoggingConstants.hpp"
 #include "LoggingException.hpp"
 #include "PathText.hpp"
+#include "QueuedLine.hpp"
 
 namespace rtype::logging {
 
@@ -163,12 +165,11 @@ std::string_view labelForLevel(LogLevel level) {
   return UNKNOWN_LABEL;
 }
 
-std::string formatTimestamp() {
+std::string formatTimestamp(std::chrono::system_clock::time_point now) {
   using std::chrono::duration_cast;
   using std::chrono::milliseconds;
   using std::chrono::system_clock;
   using std::chrono::time_point_cast;
-  const auto now = system_clock::now();
   const auto seconds = time_point_cast<std::chrono::seconds>(now);
   const auto elapsedMilliseconds =
       duration_cast<milliseconds>(now - seconds).count();
@@ -207,21 +208,80 @@ std::string standardErrorText(const Sinks& destination, LogLevel level,
   return std::string{ansiForLevel(level)} + text + std::string{ANSI_RESET};
 }
 
-void emitLine(LogLevel level, std::string_view name, std::string_view body) {
-  Sinks& destination = sinks();
-  const std::lock_guard<std::mutex> lock(destination.mutex);
-  std::ostringstream line;
-  line << '[' << formatTimestamp() << "] [" << labelForLevel(level) << "] ["
-       << name << "] - " << body;
-  const std::string text = line.str();
+/** @brief Writes a line of the journal to the file, flushed, and to standard
+ * error; the caller holds the lock of @p destination. */
+void writeJournalLine(Sinks& destination, const QueuedLine& line,
+                      std::string_view body) {
+  std::ostringstream stream;
+  stream << '[' << formatTimestamp(line.time) << "] ["
+         << labelForLevel(line.level) << "] [" << line.loggerName << "] - "
+         << body;
+  const std::string text = stream.str();
   if (destination.file.is_open()) {
     destination.file << text << '\n';
     destination.file.flush();
   }
   if (destination.toStderr) {
     writeToStandardError(destination,
-                         standardErrorText(destination, level, text));
+                         standardErrorText(destination, line.level, text));
   }
+}
+
+/** @brief Writes, under LOGGING_LOGGER_NAME, how many lines the full queue
+ * dropped before @p line; the caller holds the lock of @p destination. */
+void writeLostLines(Sinks& destination, const QueuedLine& line) {
+  const std::string body =
+      std::to_string(line.lostBefore) + std::string{LOST_LINES_TEXT};
+  writeJournalLine(destination,
+                   QueuedLine{.level = LogLevel::Warn,
+                              .loggerName = LOGGING_LOGGER_NAME,
+                              .text = body,
+                              .time = line.time,
+                              .lostBefore = 0},
+                   body);
+}
+
+/**
+ * @brief The destination of the JournalWriter, on the thread of the journal:
+ * writes @p line where the sinks say, after the count of the lines lost before
+ * it. A failure to write is swallowed: a journal must never take the program
+ * down.
+ */
+void writeQueuedLine(const QueuedLine& line) {
+  try {
+    Sinks& destination = sinks();
+    const std::lock_guard<std::mutex> lock(destination.mutex);
+    if (line.lostBefore != 0) {
+      writeLostLines(destination, line);
+    }
+    if (line.text.empty()) {
+      return;
+    }
+    const std::string_view body = line.text.substr(1);
+    if (line.text.front() == STANDARD_ERROR_LINE_KIND) {
+      writeToStandardError(destination, body);
+      return;
+    }
+    writeJournalLine(destination, line, body);
+  } catch (...) {  // NOLINT(bugprone-empty-catch)
+  }
+}
+
+/** @returns The writer of this copy of the library. The sinks it writes to are
+ * built first, so they are destroyed after it, once it wrote every line. */
+JournalWriter& writer() {
+  sinks();
+  static JournalWriter instance{&writeQueuedLine};
+  return instance;
+}
+
+/** @brief Queues @p record for the thread that writes the journal. */
+void emitLine(const LogRecord& record) {
+  std::string text;
+  text.reserve(record.body.size() + 1);
+  text += JOURNAL_LINE_KIND;
+  text += record.body;
+  writer().queue(record.level, record.loggerName, text);
 }
 
 }  // namespace
@@ -271,6 +331,7 @@ void Logger::setOutput(const LogOutput& output) {
       throw LogFileOpenException(genericText(*output.filePath));
     }
   }
+  writer().flush();
   Sinks& destination = sinks();
   const std::lock_guard<std::mutex> lock(destination.mutex);
   destination.file.close();
@@ -279,21 +340,27 @@ void Logger::setOutput(const LogOutput& output) {
   destination.forceColor = output.forceColor;
 }
 
-void writeLogLine(const LogRecord& record) {
-  emitLine(record.level, record.loggerName, record.body);
-}
+void writeLogLine(const LogRecord& record) { emitLine(record); }
 
-void setStandardErrorWriter(std::function<void(std::string_view)> writer) {
+void setStandardErrorWriter(
+    std::function<void(std::string_view)> standardErrorWriter) {
+  writer().flush();
   Sinks& destination = sinks();
   const std::lock_guard<std::mutex> lock(destination.mutex);
-  destination.standardError = std::move(writer);
+  destination.standardError = std::move(standardErrorWriter);
 }
 
 void writeStandardErrorLine(std::string_view line) {
-  Sinks& destination = sinks();
-  const std::lock_guard<std::mutex> lock(destination.mutex);
-  writeToStandardError(destination, line);
+  std::string text;
+  text.reserve(line.size() + 1);
+  text += STANDARD_ERROR_LINE_KIND;
+  text += line;
+  writer().queue(LogLevel::Info, {}, text);
 }
+
+void flushJournal() { writer().flush(); }
+
+void closeJournal() { writer().close(); }
 
 bool isStandardErrorColored() { return colorEnabled(); }
 
@@ -303,7 +370,7 @@ void Logger::writeLine(LogLevel candidate, std::string_view body) const {
         LogRecord{.level = candidate, .loggerName = name_, .body = body});
     return;
   }
-  emitLine(candidate, name_, body);
+  emitLine(LogRecord{.level = candidate, .loggerName = name_, .body = body});
 }
 
 Logger::ScopedTimer Logger::scope(std::string label, LogLevel level) const {
@@ -342,7 +409,8 @@ Logger::ScopedTimer::~ScopedTimer() {
     std::ostringstream out;
     out << label_ << " took " << std::fixed
         << std::setprecision(DURATION_DECIMALS) << milliseconds << " ms";
-    emitLine(level_, name_, out.str());
+    const std::string body = out.str();
+    emitLine(LogRecord{.level = level_, .loggerName = name_, .body = body});
   } catch (...) {  // NOLINT(bugprone-empty-catch)
   }
 }

@@ -20,6 +20,7 @@
 #include <memory>
 #endif
 #include "JournalFile.hpp"
+#include "LogLevel.hpp"
 #include "Logger.hpp"
 #include "LoggingException.hpp"
 #include "NonAnsiFolderTestConstants.hpp"
@@ -113,14 +114,20 @@ class CerrCapture {
     std::cerr.rdbuf(buffer_.rdbuf());
   }
 
-  ~CerrCapture() { std::cerr.rdbuf(oldBuffer_); }
+  ~CerrCapture() {
+    rtype::logging::flushJournal();
+    std::cerr.rdbuf(oldBuffer_);
+  }
 
   CerrCapture(const CerrCapture&) = delete;
   CerrCapture& operator=(const CerrCapture&) = delete;
   CerrCapture(CerrCapture&&) = delete;
   CerrCapture& operator=(CerrCapture&&) = delete;
 
-  std::string str() const { return buffer_.str(); }
+  std::string str() const {
+    rtype::logging::flushJournal();
+    return buffer_.str();
+  }
 
  private:
   std::streambuf* oldBuffer_;

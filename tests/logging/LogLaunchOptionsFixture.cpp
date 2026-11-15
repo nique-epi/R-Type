@@ -1,6 +1,7 @@
 #include "LogLaunchOptionsFixture.hpp"
 #include <iostream>
 #include <string>
+#include "LogLevel.hpp"
 #include "Logger.hpp"
 
 using rtype::logging::Logger;
@@ -15,11 +16,13 @@ void LogLaunchOptionsFixture::SetUp() {
 }
 
 void LogLaunchOptionsFixture::TearDown() {
+  rtype::logging::flushJournal();
   std::cerr.rdbuf(originalBuffer_);
   Logger::setLevel(savedLevel_);
   Logger::setOutput(LogOutput{});
 }
 
 std::string LogLaunchOptionsFixture::standardError() const {
+  rtype::logging::flushJournal();
   return standardError_.str();
 }

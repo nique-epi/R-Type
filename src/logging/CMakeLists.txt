@@ -1,4 +1,5 @@
 add_subdirectory(Exceptions)
+add_subdirectory(JournalWriter)
 add_subdirectory(Logger)
 add_subdirectory(LogLaunchOptions)
 add_subdirectory(PathText)

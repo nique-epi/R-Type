@@ -26,6 +26,7 @@ JournalFile::~JournalFile() {
 const std::filesystem::path& JournalFile::path() const { return path_; }
 
 std::vector<std::string> JournalFile::lines() const {
+  rtype::logging::flushJournal();
   std::vector<std::string> lines;
   std::ifstream file(path_);
   std::string line;
