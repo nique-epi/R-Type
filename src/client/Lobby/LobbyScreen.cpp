@@ -32,7 +32,6 @@
 #include "IWaitingRoom.hpp"
 #include "InterfaceConstants.hpp"
 #include "InterfacePixel.hpp"
-#include "KeyChipParts.hpp"
 #include "LobbyPartAreas.hpp"
 #include "LobbyPlace.hpp"
 #include "LobbyScreenConstants.hpp"
@@ -44,6 +43,8 @@
 #include "PilotColor.hpp"
 #include "PlayerLooks.hpp"
 #include "PlayfieldMapping.hpp"
+#include "RoomShortcuts.hpp"
+#include "RoomShortcutsParts.hpp"
 #include "ScreenConstants.hpp"
 #include "ScreenId.hpp"
 #include "ShipLook.hpp"
@@ -68,13 +69,13 @@ const network::LobbyPlayer* playerNumbered(
   return found == players.end() ? nullptr : &*found;
 }
 
-/** @returns What the bay of a player shows: what the server lists, or what
- * the local player asked while the server lists another value. */
 /** @returns Whether @p player waits in the room, ready to start. */
 bool isReady(const network::LobbyPlayer& player) {
   return player.place == network::PilotPlace::Ready;
 }
 
+/** @returns What the bay of a player shows: what the server lists, or what
+ * the local player asked while the server lists another value. */
 BayReadiness readinessOf(const network::LobbyPlayer& player,
                          std::optional<bool> requested) {
   if (requested.has_value() && *requested != isReady(player)) {
@@ -174,21 +175,6 @@ sf::IntRect helpChipArea() {
                                backChipArea().position.x - BUTTON_GAP);
 }
 
-/** @returns Where the room paints RANKING, BUTTON_GAP to the left of HELP. */
-sf::IntRect leaderboardChipArea() {
-  return MenuBuilder::chipArea(
-      {.label = LEADERBOARD_LABEL, .keyName = LEADERBOARD_KEY_NAME},
-      helpChipArea().position.x - BUTTON_GAP);
-}
-
-/** @returns Where the room paints HANGAR, BUTTON_GAP to the left of
- * RANKING. */
-sf::IntRect hangarChipArea() {
-  return MenuBuilder::chipArea(
-      {.label = HANGAR_LABEL, .keyName = HANGAR_KEY_NAME},
-      leaderboardChipArea().position.x - BUTTON_GAP);
-}
-
 /** @returns Whether @p event presses the left button inside @p area, read on
  * the grid of the interface. */
 bool clicksInside(const sf::Event& event, std::optional<sf::IntRect> area,
@@ -284,39 +270,24 @@ LobbyScreen::LobbyScreen(LobbyScreenParts parts,
                                  .palette = parts.palette,
                                  .motion = parts.motion,
                                  .chipArea = helpChipArea()}),
-      leaderboardChip_(KeyChipParts{
-          .text = {.label = LEADERBOARD_LABEL, .keyName = LEADERBOARD_KEY_NAME},
-          .area = leaderboardChipArea(),
-          .key = LEADERBOARD_KEY,
-          .action =
-              [this] {
-                handleEvent(sf::Event::FocusLost{});
-                navigator_->push(LEADERBOARD_SCREEN);
-              },
-          .sounds = parts.sounds}),
+      shortcuts_(RoomShortcutsParts{
+          .navigator = parts.navigator,
+          .sounds = parts.sounds,
+          .beforeOpening = [this] { handleEvent(sf::Event::FocusLost{}); },
+          .right = helpChipArea().position.x - BUTTON_GAP}),
       look_(&parts.look.get()),
-      hangarChip_(KeyChipParts{
-          .text = {.label = HANGAR_LABEL, .keyName = HANGAR_KEY_NAME},
-          .area = hangarChipArea(),
-          .key = HANGAR_KEY,
-          .action =
-              [this] {
-                handleEvent(sf::Event::FocusLost{});
-                navigator_->push(HANGAR_SCREEN);
-              },
-          .sounds = parts.sounds}),
       chat_(parts.chat.get(), parts.settings.get()) {
   repaint();
 }
 
 void LobbyScreen::handleEvent(const sf::Event& event) {
   if (!chat_.isOpen() && help_.handleEvent(event, playfieldPointAt_)) {
-    dropHeldInput(playfieldPointAt_, leaderboardChip_, hangarChip_);
+    dropHeldInput(playfieldPointAt_, shortcuts_);
     return;
   }
   if (chat_.handleEvent(event)) {
     readyKeyHeld_ = false;
-    dropHeldInput(playfieldPointAt_, leaderboardChip_, hangarChip_, menu_);
+    dropHeldInput(playfieldPointAt_, shortcuts_, menu_);
     return;
   }
   if (const std::optional<bool> down = readyKeyDownOf(event, readyKey_)) {
@@ -328,14 +299,13 @@ void LobbyScreen::handleEvent(const sf::Event& event) {
     return;
   }
   readyKeyHeld_ = readyKeyHeld_ && !event.is<sf::Event::FocusLost>();
-  if (leaderboardChip_.handleEvent(event, playfieldPointAt_) ||
-      hangarChip_.handleEvent(event, playfieldPointAt_)) {
+  if (shortcuts_.handleEvent(event, playfieldPointAt_)) {
     return;
   }
   if (clicksInside(event, ownBayAreaIn(menu_, *waitingRoom_, *connection_),
                    playfieldPointAt_)) {
     readyKeyHeld_ = false;
-    dropHeldInput(playfieldPointAt_, leaderboardChip_, hangarChip_, menu_);
+    dropHeldInput(playfieldPointAt_, shortcuts_, menu_);
     navigator_->push(HANGAR_SCREEN);
     return;
   }
@@ -412,8 +382,7 @@ void LobbyScreen::repaint() {
       canvas_->write(*rulesLine_, rulesAnchorOf(*canvas_, pilots),
                      GAME_RULES_STYLE);
     }
-    leaderboardChip_.paint(*canvas_);
-    hangarChip_.paint(*canvas_);
+    shortcuts_.paint(*canvas_);
   }
   help_.paint(*canvas_, parts);
   chat_.paint(*canvas_, palette_.get(), LOBBY_CHAT_BOTTOM);

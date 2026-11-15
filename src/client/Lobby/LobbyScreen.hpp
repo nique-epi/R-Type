@@ -15,7 +15,6 @@
 #include "IShipLookExchange.hpp"
 #include "ISoundPlayer.hpp"
 #include "IWaitingRoom.hpp"
-#include "KeyChip.hpp"
 #include "LobbyPlace.hpp"
 #include "LobbyScreenParts.hpp"
 #include "LobbyState.hpp"
@@ -23,6 +22,7 @@
 #include "MotionPreference.hpp"
 #include "PlayerPalette.hpp"
 #include "PlayfieldMapping.hpp"
+#include "RoomShortcuts.hpp"
 #include "ShipLook.hpp"
 #include "TimeConstants.hpp"
 
@@ -140,9 +140,8 @@ class LobbyScreen : public IScreen {
   bool gameAsked_ = false;
   Menu menu_;
   HelpWalkthrough help_;
-  KeyChip leaderboardChip_;
+  RoomShortcuts shortcuts_;
   const identifiers::ShipLook* look_;
-  KeyChip hangarChip_;
   ChatWindow chat_;
 };
 
