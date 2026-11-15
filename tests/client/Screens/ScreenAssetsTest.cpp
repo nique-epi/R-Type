@@ -54,10 +54,10 @@ using rtype::client::SHOP_SCENE_ID;
 using rtype::client::SMALL_FONT_ID;
 using rtype::client::titleAssets;
 using rtype::client::WHEEL_ROTOR_TURN_ID;
+using rtype::client::WHEEL_ROTOR_TURN_SHEET_SIZE;
 using rtype::client::withEntitySheets;
 using ::testing::Contains;
 using ::testing::IsSupersetOf;
-using ::testing::Not;
 using ::testing::UnorderedElementsAreArray;
 
 /**
@@ -234,15 +234,42 @@ TEST(ScreenAssets, TheIntroLoadsTheTitleAndTheEffectSheet) {
 /**
  * Given the assets of the title screen
  * When their textures are listed
- * Then they hold every picture of the casino, which opens over the waiting
- * room without loading, but the turns of the rotor, too wide for some
- * graphics cards
+ * Then they hold every picture of the casino, the turns of the rotor
+ * included, so the casino opens over the waiting room without loading
  */
 TEST(ScreenAssets, TheTitleLoadsThePicturesOfTheCasino) {
   const std::vector<std::string> textures = titleAssets().textures;
 
   EXPECT_THAT(textures, IsSupersetOf(CASINO_TEXTURES));
-  EXPECT_THAT(textures, Not(Contains(WHEEL_ROTOR_TURN_ID)));
+  EXPECT_THAT(textures, Contains(WHEEL_ROTOR_TURN_ID));
+}
+
+/**
+ * Given the sheet of the turns of the rotor of the repository
+ * When it is read
+ * Then it has the size the roulette cuts its frames from
+ */
+TEST(ScreenAssets, TheRotorSheetHasTheSizeTheRouletteCuts) {
+  sf::Image sheet;
+
+  ASSERT_TRUE(sheet.loadFromFile(repositoryAssets() / WHEEL_ROTOR_TURN_ID));
+
+  EXPECT_EQ(sf::Vector2i(sheet.getSize()), WHEEL_ROTOR_TURN_SHEET_SIZE);
+}
+
+/**
+ * Given the sheet of the turns of the rotor of the repository
+ * When it is read
+ * Then neither of its sides passes the largest side some graphics cards take
+ * for one texture
+ */
+TEST(ScreenAssets, TheRotorSheetFitsEveryGraphicsCard) {
+  sf::Image sheet;
+
+  ASSERT_TRUE(sheet.loadFromFile(repositoryAssets() / WHEEL_ROTOR_TURN_ID));
+
+  EXPECT_LE(sheet.getSize().x, LARGEST_TEXTURE_SIDE);
+  EXPECT_LE(sheet.getSize().y, LARGEST_TEXTURE_SIDE);
 }
 
 /**
