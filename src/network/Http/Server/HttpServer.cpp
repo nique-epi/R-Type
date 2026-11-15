@@ -230,6 +230,9 @@ void HttpServer::add(RouteMethod method, const std::string& path,
     case RouteMethod::Put:
       server_->Put(path, handlerOf(std::move(handler), forwarded_));
       return;
+    case RouteMethod::Delete:
+      server_->Delete(path, handlerOf(std::move(handler), forwarded_));
+      return;
   }
 }
 
