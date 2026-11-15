@@ -18,6 +18,7 @@
 #include "ChipSelectorConstants.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "InterfaceColorConstants.hpp"
+#include "InterfaceConstants.hpp"
 #include "Kopecks.hpp"
 #include "TextStyle.hpp"
 #include "WidgetConstants.hpp"
