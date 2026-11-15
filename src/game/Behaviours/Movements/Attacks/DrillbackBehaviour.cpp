@@ -45,7 +45,7 @@ Intent DrillbackBehaviour::steer(const BehaviourView& view) const {
   const ActionTimings charge =
       timingsAt(view, CHARGE_ATTACK, DRILLBACK_SIGNAL_SETTING);
   const Direction way = isCharging(view) ? LEFTWARD : driftOf(view);
-  const Intent moving{.direction = way, .steered = true};
+  Intent moving{.direction = way, .steered = true};
   if (view.action.has_value()) {
     return withNextPhase(moving, view, charge);
   }

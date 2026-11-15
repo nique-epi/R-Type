@@ -216,7 +216,7 @@ std::uint8_t nextAttackOf(const BehaviourView& view) {
  * drift while it rests, and, rested, its tentacles at a close ship or its
  * next attack. */
 Intent whenIdle(const BehaviourView& view) {
-  const Intent holding = driftingAt(view, nextAttackOf(view));
+  Intent holding = driftingAt(view, nextAttackOf(view));
   if (view.actionsEnded == 0) {
     return withStart(holding, timingsOf(view, TYRANT_ARRIVAL_ATTACK));
   }
