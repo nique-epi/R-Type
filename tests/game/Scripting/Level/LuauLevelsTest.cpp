@@ -68,10 +68,9 @@ TEST(LuauLevels, ReadsTheCampaignTheRepositoryShips) {
 
   scripts.run(rtype::game::scriptSourcesIn(folders));
 
-  const std::vector<int>* const stages =
-      scripts.levels().stagesOf(CAMPAIGN_LEVEL);
-  ASSERT_NE(stages, nullptr);
-  EXPECT_EQ(stages->size(), STAGES_OF_THE_CAMPAIGN);
+  const LuauLevelEntry* const entry = scripts.levels().entryOf(CAMPAIGN_LEVEL);
+  ASSERT_NE(entry, nullptr);
+  EXPECT_EQ(entry->stages.size(), STAGES_OF_THE_CAMPAIGN);
 }
 
 /**
