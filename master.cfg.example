@@ -18,7 +18,15 @@ set database ""
 # site the same value (MASTER_SITE_KEY), and keep this file private.
 set site-key ""
 
+# Make the account of a nickname an admin when the master starts (module
+# accounts). The account must exist; a line that names none waits for the next
+# start. The key of the passwords is no setting: give it in the environment
+# variable RT_PASSWORD_KEY (openssl rand -hex 32); without it the master runs
+# without accounts.
+# admin ACE
+
 # Turn a module off (it is never installed). Refused when a module
-# that stays on depends on it: storage and http need logger, servers needs
-# storage and http.
+# that stays on depends on it: storage, probe and http need logger; servers
+# needs storage, probe and http; leaderboard needs storage, http and servers;
+# accounts needs logger, storage and http.
 # module http off

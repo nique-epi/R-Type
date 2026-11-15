@@ -91,6 +91,7 @@ Each optional module has a CMake option, on by default. Off, its folder is not c
 | `RTYPE_MODULE_CHAT` | the chat of the games | a chat line reaches nobody |
 | `RTYPE_MODULE_PLUGINS` | the loading of plugins | `plugin` and `plugin-folder` are unknown commands |
 | `RTYPE_MODULE_GAME_STATISTICS` | the `game-statistics` plugin; off whenever `RTYPE_MODULE_PLUGINS` is | no `game-statistics` file in `plugins/` |
+| `RTYPE_MODULE_ACCOUNTS` | the accounts and sessions of the master | the master answers 404 to `/api/users` and `/api/sessions`, and `admin` is an unknown command of `master.cfg` |
 
 ```bash
 cmake --preset default -DRTYPE_MODULE_AUDIO=OFF

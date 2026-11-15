@@ -22,7 +22,8 @@ This page tells you where to look when you need to change something. It describe
 | The results of the games and the global leaderboard, `PUT /api/servers/me/results/{gameId}` and `GET /api/leaderboard` | Available; a game server sends its vanilla games after its heartbeats | `src/master/Leaderboard/`, `src/network/Master/` |
 | The master on AWS, installed from each release | Available; see [Deploying the master](/R-Type/deploy-master/) | `infra/`, `.github/workflows/deploy-master.yaml` |
 | A machine of game servers created for a LAN | Available; see [Game servers for a LAN](/R-Type/deploy-game-servers/) | `infra/game-servers/`, `infra/terraform-game/` |
-| Administration, accounts | Not yet written | |
+| Accounts and sessions, over HTTPS only, `POST /api/users` and `POST /api/sessions` | Available; optional module `accounts`, which needs the key `RT_PASSWORD_KEY`; the client and the web site do not sign in yet | `src/master/Accounts/`, `src/network/Master/`, `src/network/Hashing/` |
+| Administration | Not yet written | |
 
 ## Starting the master
 
@@ -53,6 +54,8 @@ The master reads `master.cfg`, in the folder it is started from, between the ins
 | `database` | a path | empty | The SQLite file of the master; empty for `r-type_master.db` next to the executable. |
 | `site-key` | a text | empty | The secret the web site names itself by when it creates a server for a visitor (see [Creating a game server](#creating-a-game-server-post-apiservers)); empty, the master reads nothing the site says of its visitor. Set it in `master.cfg`, never on the command line, which every user of the machine can read. |
 
+`master.cfg` also takes `admin <nickname>`, a command of the module `accounts`, which makes that account an admin when the master starts (see [Accounts and sessions](#accounts-and-sessions-accountsmodule)). The key of the passwords is no setting: it comes from the environment variable `RT_PASSWORD_KEY`, so it is never written in a file of the master or on its command line.
+
 ## Modules
 
 `masterModules()` (`src/master/Modules/`) lists the modules of the master, in the order they install and start; they stop in the reverse order. The master runs no stage of a loop (`MASTER_LOOP_STAGES` is empty): the threads of the HTTP server answer every request.
@@ -65,12 +68,13 @@ The master reads `master.cfg`, in the folder it is started from, between the ins
 | `http` | `MasterHttpModule` | `logger` | the port, and the thread that listens on it |
 | `servers` | `ServersModule` | `logger`, `storage`, `probe`, `http` | `StatusWatch`, the thread of `ServerStatusJob`; its routes run once `http` listens |
 | `leaderboard` | `LeaderboardModule` | `storage`, `http`, `servers` | nothing; its routes run once `http` listens |
+| `accounts` | `AccountsModule` | `logger`, `storage`, `http` | nothing; it makes admins of the accounts `admin` lines name, and its routes run once `http` listens. Optional: `RTYPE_MODULE_ACCOUNTS` |
 
 The storage starts before the HTTP API, so a database the master cannot open stops it before its port opens, and the API stops before the database closes. The probes start before the HTTP API too, so a heartbeat a route accepts always has its probe sent, and they stop after the routes.
 
 ## The HTTP API: `MasterHttpServer`
 
-`MasterHttpServer` (`src/master/Http/`) holds a `network::HttpServer` (`src/network/Http/`, see [Network](/R-Type/network/#http-server-httpserver)), which wraps cpp-httplib and which the supervisor also uses to serve its content pack; no file of the master includes cpp-httplib. Its routes sit under `/api`, answer `GET`, `POST` or `PUT`, and answer `application/json`; each is declared once, with its method and path, in `MasterRouteConstants.hpp` (`src/network/Master/Routes/`), which the master and `MasterClient` both read; they run on the threads of cpp-httplib, at least 8 of them, and must not block for long. A route reads a `network::ApiRequest`: the body, the key of an `Authorization: Bearer <key>` header (RFC 6750, the scheme in any case) and the address of the client. It answers a `network::ApiResponse`: a status, a body, the `detail` of a refusal, one header, such as `Location`, and the media type of the body, `application/json` unless the route sets another.
+`MasterHttpServer` (`src/master/Http/`) holds a `network::HttpServer` (`src/network/Http/`, see [Network](/R-Type/network/#http-server-httpserver)), which wraps cpp-httplib and which the supervisor also uses to serve its content pack; no file of the master includes cpp-httplib. Its routes sit under `/api`, answer `GET`, `POST`, `PUT` or `DELETE`, and answer `application/json`; each is declared once, with its method and path, in `MasterRouteConstants.hpp` (`src/network/Master/Routes/`), which the master and `MasterClient` both read; they run on the threads of cpp-httplib, at least 8 of them, and must not block for long. A route reads a `network::ApiRequest`: the body, the key of an `Authorization: Bearer <key>` header (RFC 6750, the scheme in any case) and the address of the client. It answers a `network::ApiResponse`: a status, a body, the `detail` of a refusal, one header, such as `Location`, and the media type of the body, `application/json` unless the route sets another.
 
 `GET /api/health` answers 200 with the version of the master, `MASTER_VERSION`, the version of `project()` in the root `CMakeLists.txt`:
 
@@ -156,6 +160,9 @@ The storage module opens its file with `rtype_storage` (`openDatabaseFile()`, se
 | 2 | `status_changes` | each change of status of each server, at most one per server and per second, kept 7 days |
 | 3 | `servers` | the secret each server registered with, which its probes carry, and the second of its last valid answer to a probe; both empty for a server registered before |
 | 5 | `heartbeat_samples` | the load of the machine of the server in each sample: the share of its processors that is busy, its memory in use and all its memory; empty in the samples kept before, and for a server that does not measure them |
+| 6 | `accounts` | each account: its nickname, unique without case, the 128 bytes kept of its password, its role, the address and the date of its creation |
+| 6 | `sessions` | each open session: the fingerprint of its token, its account, the address it was opened from, when it opened and when it expires |
+| 6 | `sign_in_failures` | each failed sign-in: its address and its second, forgotten once it no longer counts |
 | 4 | `game_results` | a row per player of each vanilla game a server reported: its server, the id of the game, the nickname, the account, the score, the date, the difficulty and the number of players; the key is the server, the game and the nickname, compared without case |
 
 ## The load of a server
@@ -179,7 +186,7 @@ A host creates its server on the web site, whose hosting page calls `POST /api/s
 - **One address creates `MAXIMUM_CREATIONS_PER_ADDRESS` (5) servers per `CREATION_WINDOW` (1 hour) at most**; the next one answers 429. The count and the insert are one transaction, so requests sent at once cannot pass the quota together. The address is the address of the client (see [The HTTP API](#the-http-api-masterhttpserver)), except for a creation of the web site.
 - **The web site creates for its visitors, each with a quota of its own.** The site calls the master from its own server, so all its visitors would share the quota of one address. It sends two headers with a creation: `X-Site-Key`, the secret both hold, and `X-Site-Client-Address`, the address of the visitor. When the `site-key` setting is not empty and `X-Site-Key` equals it, the creation is counted, and kept in `servers.created_by_address`, under the address of `X-Site-Client-Address` (`visitorAddressOf()`, `src/master/Servers/Services/Helpers/`). In every other case the creation is counted under the address of the client, with no error: an empty setting, a missing or wrong key, or an address that is no address. An address is an IPv4 one, or a text of 45 characters at most made of the characters of an IPv6 one with two colons at least; the master does not parse an IPv6 address further. A visitor and a client that reaches the master directly from the same address share one count.
 - **Whoever lacks the secret cannot choose its address.** The two keys are hashed and their hashes compared in constant time (`secretsMatch()`, `src/network/Hashing/`), so the time of an answer says nothing of the secret, and the master never writes it in its journal. Whoever holds the secret names any address, so creates without limit: the secret is 32 random bytes or more (`openssl rand -hex 32`), sent over HTTPS only, and changing it is one line of `master.cfg` and one variable of the site.
-- **Anyone who reaches the master may create a server** until accounts exist: the web site will then ask for a signed-in host. Revoking a key, and giving it an expiry, are not written yet.
+- **Anyone who reaches the master may create a server**: a creation asks for no account yet, though accounts exist (see [Accounts and sessions](#accounts-and-sessions-accountsmodule)); the web site will ask for a signed-in host once it signs hosts in. Revoking a key, and giving it an expiry, are not written yet.
 
 The host then writes the key in the `server.cfg` of that server, as the setting `master-key`, next to `master-url`; `server.cfg` is never committed, only `server.cfg.example`, with an empty key. The supervisor of the game server registers and sends its heartbeats from then on (see [Server](/R-Type/server/#link-with-the-master-servermastermodule)). One supervisor is one server on the master: it registers its own UDP port, `maximumGames` 8 (`MAXIMUM_RUNNING_GAMES`), and in each heartbeat the games it runs, numbered by place from 1 to 8 and named `GAME 1` to `GAME 8`; a place freed by a game that ended is given to the next game started, so a number names a place, not one game for ever. Its `measures` are the median and the 95th percentile of the ticks of its slowest game and the mean round trip of its players, each game counting as many times as it has players, and the load of its machine: `cpuPercent`, `usedMemoryBytes` and `totalMemoryBytes` (see [Server](/R-Type/server/#the-load-of-the-machine)); it sends no traffic and no loss.
 
@@ -346,6 +353,30 @@ The answer to `GET /api/leaderboard?difficulty=normal&playerCount=2&limit=1&play
 
 The key of a result is checked by the `ServersService` the servers module provides, which tells the server of a key; the controller reuses the reading of a request the servers module writes (`RouteAnswers.hpp`, `src/master/Servers/Controllers/`).
 
+## Accounts and sessions: `AccountsModule`
+
+A player creates an account named by its nickname, then opens sessions with its password; the session token names the account to the master. Nothing reads an account yet: the client and the web site do not sign in, and playing never asks for one. The module is optional (`RTYPE_MODULE_ACCOUNTS`), and every route of it answers over HTTPS only.
+
+| Route | Does | Answers |
+|---|---|---|
+| `POST /api/users` | creates an account from `{"nickname":"ACE","password":"…"}` | 201, `Location: /api/users/<id>`, and `{"id":1,"nickname":"ACE","role":"player"}`; 409 for a nickname taken, 429 over the quota of creations |
+| `POST /api/sessions` | opens a session for the same body | 201, `Location: /api/sessions/me`, and `{"token":"rts_<64 hexadecimal digits>","expiresAt":1800604800,"account":{…}}`; 401 for a wrong nickname or password, 429 after too many failures |
+| `GET /api/users/me` | reads the account of the token sent as `Authorization: Bearer <token>` | 200 and the account; 401 without a session |
+| `DELETE /api/sessions/me` | closes the session of the token | 204, for a session already closed too; 401 without a token |
+
+A body the master cannot read answers 400 naming the member. The token is sent as a Bearer header, never as a cookie: the callers are the game client and the server of the web site, so there is no CORS and no form to forge.
+
+- **Over HTTPS only.** Each route is `MasterRoute::httpsOnly`, and `MasterHttpServer` answers 403 to a request that did not come over HTTPS (`ApiRequest::overHttps`, see [Network](/R-Type/network/#http-server-httpserver)): the master speaks no TLS, so only a request Caddy forwards from the machine counts. A master on a LAN, without Caddy, answers 403 to every route of the accounts.
+- **The key of the passwords** is read from the environment variable `RT_PASSWORD_KEY` when the master starts (`PASSWORD_KEY_VARIABLE`): 64 hexadecimal digits, as `openssl rand -hex 32` draws them. It is never in the database, the repository or the journal. Unset or empty, the master runs without accounts: every route answers 503, and the journal says so at the start. Any other text stops the master at its start with an error naming the variable, never its value. Another key makes every stored password unreadable.
+- **A nickname** is a nickname of the protocol, 1 to 16 bytes of printable UTF-8, and names one account, compared as a game server compares nicknames: `ACE` and `ace` are one account. **A password** is `MINIMUM_PASSWORD_SIZE` to `MAXIMUM_PASSWORD_SIZE` bytes of printable UTF-8 (8 to 128, the defaults of Better Auth).
+- **The database keeps 128 bytes per password**: `hydro_pwhash_create()` of libhydrogen, with a salt of its own and `PASSWORD_HASH_ROUNDS` (200 000, about 60 ms in a release build on an Apple M4 Pro), encrypted with the key (`passwordHashOf()`, `src/network/Hashing/`). A stolen database tests no password without the key. A password never reaches the journal.
+- **A session** lives `SESSION_LIFETIME` (7 days). A use more than `SESSION_REFRESH_AGE` (1 day) after its expiry last moved moves it to 7 days after that use, so a player who plays every week never signs in again, and a session read often is written once a day: the defaults of Better Auth. The token is `rts_` and 32 random bytes in hexadecimal, shown once; the database keeps its fingerprint (`sessionFingerprintOf()`), so a copy of the file opens no session. Opening a session removes the expired ones.
+- **Quotas, per address.** An address creates `MAXIMUM_ACCOUNTS_PER_ADDRESS` (5) accounts per `ACCOUNT_CREATION_WINDOW` (1 hour) at most. That quota and a nickname taken are checked before the password is hashed, then again in the transaction of the insert. After `MAXIMUM_SIGN_IN_FAILURES` (5) failed sign-ins in `SIGN_IN_FAILURE_WINDOW` (15 minutes), every sign-in from that address answers 429 before its password is checked.
+- **The journal** names each sign-in, `ACE signed in from 203.0.113.7`, and each refusal, `sign-in as ACE from 203.0.113.7 refused: wrong nickname or password`.
+- **Roles.** An account is a `player` when it is created. A line `admin <nickname>` of `master.cfg` makes that account an `admin` when the master starts, and the journal says so; a line that names no account yet is written in the journal and applies at the next start after the account exists. Removing the line takes the role from nobody. Nothing reads the role yet: the administration is not written.
+
+The module is laid out as `ServersModule`: `AccountsController`, `AccountsService` (the quotas and the sessions; `Services/Helpers/`, the token and the key), one repository per table (`accounts`, `sessions`, `sign_in_failures`), and the plain structs of `Models/`.
+
 ## The client of the master: `MasterClient`
 
 `MasterClient` (`rtype_network_master_client`, `src/network/Master/Client/`) is what a game server and, to read the games of a server, the game client call: one function per route, each sending the message of its route with the key of `MasterAccess` as Bearer, when it has one.
@@ -391,6 +422,9 @@ void RouteAddingModule::install(rtype::engine::InstallContext& context) {
 |---|---|
 | Add a route of the API | its method and path in `src/network/Master/Routes/MasterRouteConstants.hpp`, its status in `src/master/Http/HttpConstants.hpp`, and the module that answers it, as in [Adding a route](#adding-a-route) |
 | Add a table | a migration at the end of `MASTER_MIGRATIONS`, never an edit of one a master already applied |
+| Answer a route over HTTPS only | `.httpsOnly = true` in its `MasterRoute`; `MasterHttpServer` answers 403 to a request in clear |
+| Change the quotas of the accounts, or how long a session lives | `src/master/Accounts/Services/AccountsServiceConstants.hpp` |
+| Change the bounds of a password, or the cost of its hash | `MINIMUM_PASSWORD_SIZE` and `MAXIMUM_PASSWORD_SIZE` in `MasterMessageConstants.hpp`; `PASSWORD_HASH_ROUNDS` in `src/network/Hashing/HashingConstants.hpp` |
 | Change what a server sends, or its bounds | `src/network/Master/`: `MasterMessageText.cpp` and `MasterMessageConstants.hpp` |
 | Change what a creation, a registration or a heartbeat answers | `ServersController` (`src/master/Servers/Controllers/`) |
 | Change the quota of creations | `MAXIMUM_CREATIONS_PER_ADDRESS` and `CREATION_WINDOW` in `src/master/Servers/Services/ServersServiceConstants.hpp` |

@@ -294,7 +294,7 @@ Every folder of this tree exists today; some of what the comments name is not wr
 
 ### Master
 
-`src/master` holds the master, the program `r-type_server --mode master` runs: it lists the game servers and their games, records their heartbeats, and will run the administration; the web site of `web/` calls its API from a server of its own. Its folders are libraries, and only the server binary links them, so the master never links SFML, `rtype_game` or the code of the server, and reaches Asio only behind the network targets that hide it. Today it creates the game servers with their keys, takes their registration and their heartbeats, probes their UDP port, keeps the status of each, lists the registered servers, and the games, the samples and the statuses of a server, keeps the results of the vanilla games of every server and ranks them in a global leaderboard, and answers `GET /api/health` (see [Master](/R-Type/master/)).
+`src/master` holds the master, the program `r-type_server --mode master` runs: it lists the game servers and their games, records their heartbeats, and will run the administration; the web site of `web/` calls its API from a server of its own. Its folders are libraries, and only the server binary links them, so the master never links SFML, `rtype_game` or the code of the server, and reaches Asio only behind the network targets that hide it. Today it creates the game servers with their keys, takes their registration and their heartbeats, probes their UDP port, keeps the status of each, lists the registered servers, and the games, the samples and the statuses of a server, keeps the results of the vanilla games of every server and ranks them in a global leaderboard, keeps the accounts of the players and their sessions, and answers `GET /api/health` (see [Master](/R-Type/master/)).
 
 ```
 src/master/
@@ -314,13 +314,17 @@ src/master/
 │   ├── Services/     LeaderboardService: only a vanilla game is kept
 │   ├── Repositories/ GameResultRepository: the table game_results and the ranking
 │   └── Models/       ServerGameResult, LeaderboardQuery
+├── Accounts/         the module accounts, optional: the accounts of the players and their sessions, over HTTPS
+│   ├── Controllers/  AccountsController
+│   ├── Services/     AccountsService: the quotas, the sessions; Helpers/, the token and the key of the passwords
+│   ├── Repositories/ AccountRepository, SessionRepository, SignInFailureRepository
+│   └── Models/       the plain structs the layers hand each other
 ├── Modules/          masterModules(), the list of the modules
 ├── Administration/   bans, kicks, maintenance, audit log: being written
-├── Matchmaking/      a server chosen to create a game: being written
-└── Accounts/         optional, with Tickets/: being written
+└── Matchmaking/      a server chosen to create a game: being written
 ```
 
-`LaunchOptions/`, `Logger/`, `Storage/`, `Http/`, `Probe/`, `Servers/`, `Leaderboard/` and `Modules/` exist; the others are being written. A folder of a feature is laid out like a module of a web backend: its module class at the root, then one sub-folder per role, as `Servers/` shows.
+`LaunchOptions/`, `Logger/`, `Storage/`, `Http/`, `Probe/`, `Servers/`, `Leaderboard/`, `Accounts/` and `Modules/` exist; the others, and the signed tickets of the accounts, are being written. A folder of a feature is laid out like a module of a web backend: its module class at the root, then one sub-folder per role, as `Servers/` shows.
 
 ### Tests, web site, assets
 
@@ -381,6 +385,7 @@ This list describes the code as it is today. A pull request that adds, removes o
 | `http` | `MasterHttpModule` | `src/master/Http/` | required |
 | `servers` | `ServersModule` | `src/master/Servers/` | required |
 | `leaderboard` | `LeaderboardModule` | `src/master/Leaderboard/` | required |
+| `accounts` | `AccountsModule` | `src/master/Accounts/` | optional, `RTYPE_MODULE_ACCOUNTS` |
 
 | Module of the client | Class | Folder | Kind |
 |---|---|---|---|
