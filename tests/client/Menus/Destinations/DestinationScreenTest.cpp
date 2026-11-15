@@ -22,6 +22,7 @@ using rtype::client::PlayStart;
 using rtype::client::SERVER_MAP_SCREEN;
 using rtype::client::SHOP_SCREEN;
 using rtype::client::testing::BALANCE_TEXT;
+using rtype::client::testing::CASINO_NAME;
 using rtype::client::testing::CHOSEN_CARD_MIDDLE;
 using rtype::client::testing::DESTINATIONS_SHEET;
 using rtype::client::testing::HANGAR_FILLING_THE_BOX;
@@ -31,6 +32,7 @@ using rtype::client::testing::SERVER_DESCRIPTION_LINE;
 using rtype::client::testing::SPENT_BALANCE;
 using rtype::client::testing::SPENT_BALANCE_TEXT;
 using rtype::client::testing::TWICE_A_LINE;
+using rtype::client::testing::WHEEL_SOURCE;
 using ::testing::ElementsAre;
 using ::testing::IsEmpty;
 
@@ -214,4 +216,84 @@ TEST_F(DestinationScreenFixture, TheBalanceSpentInTheShopIsShownOnTheWayBack) {
   screen().update(ONE_FRAME);
 
   EXPECT_NE(writingOf(canvas(), SPENT_BALANCE_TEXT), nullptr);
+}
+
+/**
+ * Given the destination screen, SERVER in the middle
+ * When Right is pressed and released twice
+ * Then CASINO stands in the middle, its name twice the size of a line
+ */
+TEST_F(DestinationScreenFixture, TwoTurnsToTheRightBringCASINOToTheMiddle) {
+  press(sf::Keyboard::Key::Right);
+
+  press(sf::Keyboard::Key::Right);
+
+  const RecordedWriting* name = writingOf(canvas(), CASINO_NAME);
+  ASSERT_NE(name, nullptr);
+  EXPECT_EQ(name->style.scale, TWICE_A_LINE);
+}
+
+/**
+ * Given the destination screen, SHOP in the middle and CASINO at the right
+ * When it is painted
+ * Then the sprite of CASINO is the wheel of the sheet of the destinations
+ */
+TEST_F(DestinationScreenFixture, TheCasinoCardShowsTheWheel) {
+  press(sf::Keyboard::Key::Right);
+
+  EXPECT_TRUE(std::ranges::any_of(
+      canvas().images, [](const RecordedImage& image) noexcept {
+        return image.assetId == DESTINATIONS_SHEET &&
+               image.source == WHEEL_SOURCE;
+      }));
+}
+
+/**
+ * Given the destination screen, CASINO in the middle
+ * When Enter is pressed and released
+ * Then the server map is asked for, the choice of the server marked for the
+ * casino
+ */
+TEST_F(DestinationScreenFixture, CASINOOpensTheServerMapTowardsTheCasino) {
+  press(sf::Keyboard::Key::Right);
+  press(sf::Keyboard::Key::Right);
+
+  press(sf::Keyboard::Key::Enter);
+
+  EXPECT_THAT(navigator().calls(),
+              ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
+                                        .screen = SERVER_MAP_SCREEN}));
+  EXPECT_TRUE(choice().towardsTheCasino);
+}
+
+/**
+ * Given a client launched with -h, CASINO in the middle
+ * When Enter is pressed and released
+ * Then the connection to the server given at launch is asked for
+ */
+TEST_F(DestinationScreenFixture, CASINOJoinsTheServerGivenAtLaunch) {
+  reopenWith(PlayStart::GivenServer);
+  press(sf::Keyboard::Key::Right);
+  press(sf::Keyboard::Key::Right);
+
+  press(sf::Keyboard::Key::Enter);
+
+  EXPECT_THAT(
+      navigator().calls(),
+      ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
+                                .screen = CONNECTION_TO_CHOSEN_SERVER_SCREEN}));
+}
+
+/**
+ * Given a choice of server marked for the casino by an earlier CASINO, SERVER
+ * in the middle
+ * When Enter is pressed and released
+ * Then the mark is cleared: SERVER leads to the waiting room alone
+ */
+TEST_F(DestinationScreenFixture, SERVERClearsTheMarkOfTheCasino) {
+  choice().towardsTheCasino = true;
+
+  press(sf::Keyboard::Key::Enter);
+
+  EXPECT_FALSE(choice().towardsTheCasino);
 }

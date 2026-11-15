@@ -10,6 +10,7 @@
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingSoundPlayer.hpp"
+#include "ServerChoice.hpp"
 
 /** @brief A destination screen alone, with a recording navigator, canvas and
  * sound player, and a balance of BALANCE kopecks. */
@@ -31,6 +32,8 @@ class DestinationScreenFixture : public ::testing::Test {
   rtype::client::DestinationScreen& screen();
   /** @brief The settings the screen reads its balance from. */
   rtype::client::PlayerSettings& settings();
+  /** @brief The choice of the server CASINO marks for the casino. */
+  rtype::client::ServerChoice& choice();
   [[nodiscard]] const RecordingNavigator& navigator() const;
   [[nodiscard]] const InterfaceCanvasRecord& canvas() const;
   [[nodiscard]] const RecordingSoundPlayer& sounds() const;
@@ -40,5 +43,6 @@ class DestinationScreenFixture : public ::testing::Test {
   InterfaceCanvasRecord canvas_;
   RecordingSoundPlayer sounds_;
   rtype::client::PlayerSettings settings_;
+  rtype::client::ServerChoice choice_;
   std::unique_ptr<rtype::client::DestinationScreen> screen_;
 };

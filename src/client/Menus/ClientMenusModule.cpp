@@ -88,6 +88,7 @@ std::unique_ptr<IScreen> buildDestinationScreen(const ScreenContext& context) {
                              .sounds = soundsOf(context),
                              .settings = context.services.settings.get(),
                              .playfieldPointAt = playfieldMappingOf(context),
+                             .choice = context.serverChoice.get(),
                              .playStart = context.services.playStart},
       interfaceCanvasOf(context));
 }

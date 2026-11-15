@@ -7,6 +7,7 @@
 #include <array>
 #include <cstddef>
 #include "BackgroundColorConstants.hpp"
+#include "CasinoScreenIdConstants.hpp"
 #include "CutCornerBox.hpp"
 #include "DestinationCard.hpp"
 #include "DestinationSpriteConstants.hpp"
@@ -121,9 +122,9 @@ constexpr const char* GO_LABEL = "GO";
  * would put it, so the chips stand clear of the description above them. */
 constexpr int DESTINATION_CHIPS_TOP = 240;
 
-/** @brief The cards, from the left as the screen opens: SERVER in the
- * middle. SERVER leads where PLAY led, so it is built with the start of the
- * client (see serverCardOf()). */
+/** @brief The cards, in the order they turn: SERVER in the middle as the
+ * screen opens. SERVER leads where PLAY led, so it is built with the start of
+ * the client (see serverCardOf()). */
 constexpr const char* SERVER_LABEL = "SERVER";
 constexpr const char* SERVER_DESCRIPTION =
     "JOIN A SECTOR AND FLY WITH UP TO 4 PILOTS";
@@ -139,6 +140,17 @@ constexpr DestinationCard HANGAR_CARD{
     .sheet = DESTINATION_SHEET_ID,
     .frame = DESTINATION_HANGAR_FRAME,
     .screen = HANGAR_SCREEN};
-constexpr std::size_t DESTINATION_COUNT = DESTINATION_CARD_AREAS.size();
+
+/** @brief CASINO leads where SERVER leads, then opens the casino over the
+ * waiting room; built with the start of the client (see casinoCardOf()). */
+constexpr const char* CASINO_DESCRIPTION =
+    "JOIN A SECTOR AND PLAY AT THE BYDO PALACE";
+
+/** @brief The cards turn on the slots of DESTINATION_CARD_AREAS, more cards
+ * than slots: from the left as the screen opens, HANGAR, SERVER, SHOP, the
+ * card of CASINO waiting behind them. */
+constexpr std::size_t DESTINATION_COUNT = 4;
+static_assert(DESTINATION_COUNT >= DESTINATION_CARD_AREAS.size(),
+              "every slot of the stand shows a card");
 
 }  // namespace rtype::client

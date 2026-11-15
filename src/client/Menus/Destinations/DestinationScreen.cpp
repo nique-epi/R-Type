@@ -12,6 +12,7 @@
 #include <utility>
 #include "BarState.hpp"
 #include "Button.hpp"
+#include "CasinoScreenIdConstants.hpp"
 #include "CutCornerBox.hpp"
 #include "DestinationCard.hpp"
 #include "DestinationScreenConstants.hpp"
@@ -31,6 +32,7 @@
 #include "PlayStart.hpp"
 #include "PlayerSettings.hpp"
 #include "RenderingConstants.hpp"
+#include "ServerChoice.hpp"
 #include "SoundConstants.hpp"
 #include "TextureArea.hpp"
 #include "TimeConstants.hpp"
@@ -51,6 +53,17 @@ DestinationCard serverCardOf(PlayStart playStart) {
                          .screen = playStart == PlayStart::GivenServer
                                        ? CONNECTION_TO_CHOSEN_SERVER_SCREEN
                                        : SERVER_MAP_SCREEN};
+}
+
+/** @returns The card CASINO: it leads where SERVER leads, then the waiting
+ * room opens the casino over itself. */
+DestinationCard casinoCardOf(PlayStart playStart) {
+  DestinationCard card = serverCardOf(playStart);
+  card.label = CASINO_LABEL;
+  card.description = CASINO_DESCRIPTION;
+  card.frame = DESTINATION_WHEEL_FRAME;
+  card.landsAtTheCasino = true;
+  return card;
 }
 
 /** @returns Where a chip with @p text lies: as MenuBuilder lays it, ending
@@ -163,9 +176,11 @@ DestinationScreen::DestinationScreen(DestinationScreenParts parts,
     : navigator_(&parts.navigator.get()),
       sounds_(&parts.sounds.get()),
       settings_(&parts.settings.get()),
+      choice_(&parts.choice.get()),
       canvas_(std::move(canvas)),
       playfieldPointAt_(std::move(parts.playfieldPointAt)),
-      cards_{serverCardOf(parts.playStart), SHOP_CARD, HANGAR_CARD},
+      cards_{serverCardOf(parts.playStart), SHOP_CARD,
+             casinoCardOf(parts.playStart), HANGAR_CARD},
       goChip_(
           KeyChipParts{.text = {.label = GO_LABEL, .keyName = CONFIRM_KEY_NAME},
                        .area = goChipArea(),
@@ -217,7 +232,9 @@ void DestinationScreen::turnBy(std::size_t steps) {
 }
 
 void DestinationScreen::openChosen() {
-  navigator_->push(cards_.at(chosen_).screen);
+  const DestinationCard& card = cards_.at(chosen_);
+  choice_->towardsTheCasino = card.landsAtTheCasino;
+  navigator_->push(card.screen);
 }
 
 void DestinationScreen::pointerPressed(sf::Vector2i pixel) {

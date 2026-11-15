@@ -8,6 +8,7 @@
 #include <string_view>
 #include <tuple>
 #include <vector>
+#include "CasinoScreenIdConstants.hpp"
 #include "ConnectionPhase.hpp"
 #include "ConnectionRefusalFixture.hpp"
 #include "ConnectionRefused.hpp"
@@ -20,6 +21,7 @@
 #include "ConnectionScreenTestConstants.hpp"
 #include "ConnectionStatus.hpp"
 #include "ConnectionToMapServerFixture.hpp"
+#include "ConnectionTowardsTheCasinoFixture.hpp"
 #include "Endpoint.hpp"
 #include "GameRules.hpp"
 #include "GameRulesTestConstants.hpp"
@@ -34,6 +36,7 @@
 #include "SoundConstants.hpp"
 
 using rtype::client::ACCEPTED_STATUS_DURATION;
+using rtype::client::CASINO_SCREEN;
 using rtype::client::CLICK_SOUND_ID;
 using rtype::client::CONNECTING_STATUS;
 using rtype::client::ConnectionPhase;
@@ -861,4 +864,31 @@ TEST_F(ConnectionScreenChoiceFixture, TheFormNeverLeavesTheServerItNames) {
   serverRefusesFor(RefusalReason::ServerFull);
 
   EXPECT_EQ(connectAttemptsOf(connection()).size(), 1U);
+}
+
+/**
+ * Given an attempt whose choice of server CASINO marked for the casino
+ * When the server accepted the player long enough
+ * Then the screen opens the waiting room over itself, then the casino over
+ * the room
+ */
+TEST_F(ConnectionTowardsTheCasinoFixture, TheCasinoOpensOverTheWaitingRoom) {
+  accept();
+
+  EXPECT_THAT(navigator().calls(),
+              ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
+                                        .screen = LOBBY_SCREEN},
+                          NavigatorCall{.request = NavigatorRequest::Push,
+                                        .screen = CASINO_SCREEN}));
+}
+
+/**
+ * Given an attempt whose choice of server CASINO marked for the casino
+ * When the server accepted the player long enough
+ * Then the mark is cleared, so a later attempt lands in the waiting room
+ */
+TEST_F(ConnectionTowardsTheCasinoFixture, TheMarkOfTheCasinoIsUsedOnce) {
+  accept();
+
+  EXPECT_FALSE(choice().towardsTheCasino);
 }

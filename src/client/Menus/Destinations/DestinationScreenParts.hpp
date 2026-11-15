@@ -5,6 +5,7 @@
 #include "ISoundPlayer.hpp"
 #include "PlayStart.hpp"
 #include "PlayfieldMapping.hpp"
+#include "ServerChoice.hpp"
 
 namespace rtype::client {
 
@@ -29,6 +30,9 @@ struct DestinationScreenParts {
   std::reference_wrapper<const PlayerSettings> settings;
   /** @brief Gives the point of the playfield under a pixel of the window. */
   PlayfieldMapping playfieldPointAt;
+  /** @brief Where CASINO marks that the next waiting room opens the casino;
+   * it must outlive the screen. */
+  std::reference_wrapper<ServerChoice> choice;
   /** @brief PlayStart::GivenServer makes SERVER join the server given at
    * launch at once, instead of opening the server map. */
   PlayStart playStart{};

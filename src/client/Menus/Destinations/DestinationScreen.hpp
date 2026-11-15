@@ -14,6 +14,7 @@
 #include "ISoundPlayer.hpp"
 #include "KeyChip.hpp"
 #include "PlayfieldMapping.hpp"
+#include "ServerChoice.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -21,15 +22,19 @@ namespace rtype::client {
 struct PlayerSettings;
 
 /**
- * @brief Where PLAY leads, pushed over the title, which it hides: three
- * cards on a turning stand, SERVER, SHOP and HANGAR, the one in the middle
- * large and framed, the two at its sides small and dimmed.
+ * @brief Where PLAY leads, pushed over the title, which it hides: four
+ * cards on a turning stand of three slots, SERVER, SHOP, CASINO and HANGAR,
+ * the one in the middle large and framed, the two at its sides small and
+ * dimmed, the fourth hidden behind them.
  *
  * The arrows turn the stand, a click on a card at a side brings it to the
  * middle; GO, its key MENU_CONFIRM_KEY, or a click on the card in the middle
  * pushes the screen of that card; BACK, MENU_CANCEL_KEY, closes the screen.
  * SERVER opens the server map, or, for a client launched with `-h`, the
- * connection to the server given at launch. The balance of kopecks stands
+ * connection to the server given at launch. CASINO opens the same screen,
+ * and marks the choice of the server so the waiting room it leads to opens
+ * the casino over itself (ServerChoice::towardsTheCasino); the other cards
+ * clear the mark. The balance of kopecks stands
  * at its usual place, top right.
  */
 class DestinationScreen : public IScreen {
@@ -64,6 +69,7 @@ class DestinationScreen : public IScreen {
   IScreenNavigator* navigator_;
   ISoundPlayer* sounds_;
   const PlayerSettings* settings_;
+  ServerChoice* choice_;
   std::unique_ptr<IInterfaceCanvas> canvas_;
   PlayfieldMapping playfieldPointAt_;
   std::array<DestinationCard, DESTINATION_COUNT> cards_;

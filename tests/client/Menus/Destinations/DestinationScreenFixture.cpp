@@ -13,6 +13,7 @@
 #include "RecordingSoundPlayer.hpp"
 #include "ScreenInputs.hpp"
 #include "ScreenTestConstants.hpp"
+#include "ServerChoice.hpp"
 
 using rtype::client::DestinationScreen;
 using rtype::client::DestinationScreenParts;
@@ -31,6 +32,7 @@ void DestinationScreenFixture::reopenWith(PlayStart playStart) {
                              .sounds = sounds_,
                              .settings = settings_,
                              .playfieldPointAt = samePlayfieldPoint,
+                             .choice = choice_,
                              .playStart = playStart},
       std::make_unique<RecordingInterfaceCanvas>(canvas_));
 }
@@ -49,6 +51,10 @@ DestinationScreen& DestinationScreenFixture::screen() { return *screen_; }
 
 rtype::client::PlayerSettings& DestinationScreenFixture::settings() {
   return settings_;
+}
+
+rtype::client::ServerChoice& DestinationScreenFixture::choice() {
+  return choice_;
 }
 
 const RecordingNavigator& DestinationScreenFixture::navigator() const {

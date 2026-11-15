@@ -49,7 +49,9 @@ namespace rtype::client {
  * the player or none is left, and shows the refusal of the last one only. Once
  * the server has accepted the player
  * for ACCEPTED_STATUS_DURATION, the screen follows its ConnectionGoal, once per
- * attempt: it opens the waiting room over itself, or closes. BACK, or
+ * attempt: it opens the waiting room over itself, with the casino over the
+ * room when the choice of the server is marked for it
+ * (ServerChoice::towardsTheCasino), or closes. BACK, or
  * MENU_CANCEL_KEY, drops the attempt and closes the screen.
  */
 class ConnectionScreen : public IScreen {

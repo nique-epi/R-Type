@@ -16,6 +16,9 @@ struct DestinationCard {
   game::SpriteFrame frame{};
   /** @brief The screen it pushes over the destination screen. */
   ScreenId screen;
+  /** @brief Whether the waiting room it leads to opens the casino over
+   * itself (ServerChoice::towardsTheCasino). */
+  bool landsAtTheCasino = false;
 };
 
 }  // namespace rtype::client
