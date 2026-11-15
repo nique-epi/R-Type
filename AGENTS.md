@@ -59,6 +59,7 @@ Paths below are relative to `.claude/rules/`.
 | Announcing a green gate | `fix/execution/fix-execution-zsh-pipestatus.md`, `fix/execution/fix-execution-zero-warnings-proven-on-a-recompiling-build.md`, `fix/execution/fix-execution-run-clang-tidy-before-push.md`, `fix/execution/fix-execution-shellcheck-a-script-before-push.md` |
 | Writing a documentation page or a diagram | `fix/format/fix-format-schematic-diagrams-and-map-level-pages.md`, `fix/format/fix-format-context-before-the-deliverable.md`, the `document-feature` skill |
 | Making a mistake | `core/errors-learning.md` — a mistake in the code produces a new rule, a mistake outside it none |
+| A pull request merged | `fix/process/fix-process-purge-the-worktree-once-its-pr-is-merged.md` |
 | Pausing, finishing a step | `core/context-continuity.md` |
 
 ### Index
@@ -130,6 +131,7 @@ Paths below are relative to `.claude/rules/`.
 - `fix/process/fix-process-plan-mode-writes-only-the-plan.md`
 - `fix/process/fix-process-query-the-graphify-graph-before-exploring.md`
 - `fix/process/fix-process-pr-always-opened-as-draft.md`
+- `fix/process/fix-process-purge-the-worktree-once-its-pr-is-merged.md`
 - `fix/process/fix-process-read-the-project-map-before-placing-a-folder.md`
 - `fix/process/fix-process-relay-agent-report-separating-verified-facts.md`
 - `fix/process/fix-process-reread-rules-after-switching-branch.md`
