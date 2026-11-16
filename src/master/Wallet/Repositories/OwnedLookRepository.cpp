@@ -7,6 +7,8 @@
 #include <vector>
 #include "EpochSeconds.hpp"
 #include "LookOwnership.hpp"
+#include "ResultColumnConstants.hpp"
+#include "StatementParts.hpp"
 #include "WalletRepositoryConstants.hpp"
 
 namespace rtype::master {
@@ -30,11 +32,9 @@ bool OwnedLookRepository::insert(const LookOwnership& ownership) {
 std::vector<std::string> OwnedLookRepository::itemsOf(std::int64_t userId) {
   SQLite::Statement query{connection_, std::string{OWNED_ITEMS_QUERY}};
   query.bind(std::string{WALLET_USER_ID_PARAMETER}, userId);
-  std::vector<std::string> items;
-  while (query.executeStep()) {
-    items.push_back(query.getColumn(FIRST_COLUMN).getString());
-  }
-  return items;
+  return rowsOf(query, [](const SQLite::Statement& row) {
+    return row.getColumn(FIRST_COLUMN).getString();
+  });
 }
 
 bool OwnedLookRepository::owns(std::int64_t userId, const std::string& item) {

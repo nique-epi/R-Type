@@ -19,9 +19,9 @@ constexpr std::size_t DEALER_TEST_ROOMS = 2;
 
 /** @brief The round the tests bet on, its start, and when its bets close. */
 constexpr std::uint64_t BET_ROUND = 58'000'000;
-constexpr rtype::master::MillisecondDate BET_ROUND_START{
+constexpr rtype::network::MillisecondDate BET_ROUND_START{
     DEALER_TEST_CYCLE * static_cast<std::int64_t>(BET_ROUND)};
-constexpr rtype::master::MillisecondDate BET_ROUND_CLOSE{
+constexpr rtype::network::MillisecondDate BET_ROUND_CLOSE{
     BET_ROUND_START + std::chrono::milliseconds{20'000}};
 constexpr std::chrono::milliseconds ONE_TICK{1};
 constexpr std::chrono::milliseconds ONE_PASS{250};

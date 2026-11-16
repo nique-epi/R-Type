@@ -61,6 +61,11 @@ std::string roomPathOf(MasterRoute route, std::uint8_t room) {
       route, RouteParameter{.name = ROOM_PATH_PARAMETER, .value = roomText});
 }
 
+std::string lookPathOf(MasterRoute route, std::string_view item) {
+  return withPathParameter(
+      route, RouteParameter{.name = LOOK_ITEM_PATH_PARAMETER, .value = item});
+}
+
 std::string roundPathOf(MasterRoute route, RoomRound roomRound) {
   const std::string roundText = std::to_string(roomRound.round);
   std::string path = roomPathOf(route, roomRound.room);

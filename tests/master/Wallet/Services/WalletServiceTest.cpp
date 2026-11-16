@@ -33,12 +33,12 @@ using rtype::master::GameCredit;
 using rtype::master::GameCreditOutcome;
 using rtype::master::LookPurchaseOutcome;
 using rtype::master::PageRequest;
-using rtype::master::WalletExchangeRefusal;
 using rtype::network::Currency;
 using rtype::network::ExchangeReceipt;
 using rtype::network::ExchangeRequest;
 using rtype::network::MovementReason;
 using rtype::network::Wallet;
+using rtype::network::WalletExchangeRefusal;
 
 /**
  * Given the account ACE, whose wallet was never read
@@ -204,22 +204,6 @@ TEST_F(WalletServiceFixture, AStakePastTheChipsIsRefused) {
 
   EXPECT_EQ(refused.refusal, std::optional{ChipRefusal::NotEnoughChips});
   EXPECT_EQ(refused.chips, TEST_STARTING_WALLET.chips);
-}
-
-/**
- * Given a payout of 300 chips the casino applies once
- * When it is applied twice
- * Then the second is refused, and the chips grew by 300 only
- */
-TEST_F(WalletServiceFixture, APayoutOfOneReferenceAppliesOnce) {
-  const ChipMovementResult first = applied(payoutOf(A_PAYOUT_OF_THREE_HUNDRED));
-  const ChipMovementResult second =
-      applied(payoutOf(A_PAYOUT_OF_THREE_HUNDRED));
-
-  EXPECT_FALSE(first.refusal.has_value());
-  EXPECT_EQ(second.refusal, std::optional{ChipRefusal::ReferenceUsed});
-  EXPECT_EQ(wallets().walletOf(ace(), WALLET_TEST_DATE).chips,
-            TEST_STARTING_WALLET.chips + A_PAYOUT_OF_THREE_HUNDRED);
 }
 
 /**

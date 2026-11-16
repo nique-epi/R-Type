@@ -3,25 +3,28 @@
 #include <array>
 #include <cstdint>
 #include "CasinoController.hpp"
-#include "CasinoRoute.hpp"
+#include "ControllerRoute.hpp"
 #include "MasterRouteConstants.hpp"
 
 namespace rtype::master {
 
 /** @brief The routes of the casino and what answers each. */
 constexpr std::array CASINO_ROUTES{
-    CasinoRoute{.route = network::LIST_CASINO_ROOMS_ROUTE,
-                .answer = &CasinoController::listRooms},
-    CasinoRoute{.route = network::READ_CASINO_ROOM_ROUTE,
-                .answer = &CasinoController::readRoom},
-    CasinoRoute{.route = network::TAKE_OWN_SEAT_ROUTE,
-                .answer = &CasinoController::takeOwnSeat},
-    CasinoRoute{.route = network::LEAVE_OWN_SEAT_ROUTE,
-                .answer = &CasinoController::leaveOwnSeat},
-    CasinoRoute{.route = network::PLACE_OWN_BETS_ROUTE,
-                .answer = &CasinoController::placeOwnBets},
-    CasinoRoute{.route = network::READ_OWN_BETS_ROUTE,
-                .answer = &CasinoController::readOwnBets}};
+    ControllerRoute<CasinoController>{.route = network::LIST_CASINO_ROOMS_ROUTE,
+                                      .answer = &CasinoController::listRooms},
+    ControllerRoute<CasinoController>{.route = network::READ_CASINO_ROOM_ROUTE,
+                                      .answer = &CasinoController::readRoom},
+    ControllerRoute<CasinoController>{.route = network::TAKE_OWN_SEAT_ROUTE,
+                                      .answer = &CasinoController::takeOwnSeat},
+    ControllerRoute<CasinoController>{
+        .route = network::LEAVE_OWN_SEAT_ROUTE,
+        .answer = &CasinoController::leaveOwnSeat},
+    ControllerRoute<CasinoController>{
+        .route = network::PLACE_OWN_BETS_ROUTE,
+        .answer = &CasinoController::placeOwnBets},
+    ControllerRoute<CasinoController>{
+        .route = network::READ_OWN_BETS_ROUTE,
+        .answer = &CasinoController::readOwnBets}};
 
 /** @brief The settings of the casino while `master.cfg` leaves them out, and
  * their bounds: 3 rooms of 8 seats, rounds of 20 s of bets, 6 s of spin and

@@ -1,9 +1,8 @@
 #include "CasinoController.hpp"
+#include <chrono>
 #include <cstdint>
-#include <functional>
 #include <optional>
 #include <string>
-#include <utility>
 #include <variant>
 #include "ApiRequest.hpp"
 #include "ApiResponse.hpp"
@@ -14,12 +13,10 @@
 #include "CasinoRefusalConstants.hpp"
 #include "CasinoRoomConstants.hpp"
 #include "CasinoService.hpp"
-#include "DatedRequest.hpp"
 #include "HttpConstants.hpp"
 #include "ISessionAccounts.hpp"
 #include "MasterMessageText.hpp"
 #include "MasterRouteConstants.hpp"
-#include "MillisecondDate.hpp"
 #include "QueryBounds.hpp"
 #include "RoomRound.hpp"
 #include "RouletteSchedule.hpp"
@@ -32,10 +29,6 @@ namespace rtype::master {
 
 namespace {
 
-network::ApiResponse okResponse(std::string body) {
-  return network::ApiResponse{.status = OK_STATUS, .body = std::move(body)};
-}
-
 network::ApiResponse unknownRoomRefusal() {
   return refusal(NOT_FOUND_STATUS, UNKNOWN_ROOM_DETAIL);
 }
@@ -43,15 +36,11 @@ network::ApiResponse unknownRoomRefusal() {
 /** @returns The number of a room the path of @p request names, whether the
  * casino runs it or not; nothing when it is no number of a room. */
 std::optional<std::uint8_t> roomNumberOf(const network::ApiRequest& request) {
-  const std::optional<std::string> text =
-      pathTextOf(request, network::ROOM_PATH_PARAMETER);
-  if (!text.has_value()) {
-    return std::nullopt;
-  }
-  const std::optional<std::int64_t> room = boundedNumberIn(
-      *text, QueryBounds{.lowest = network::FIRST_CASINO_ROOM,
-                         .highest = network::MAXIMUM_CASINO_ROOMS,
-                         .absent = network::FIRST_CASINO_ROOM});
+  const std::optional<std::int64_t> room =
+      pathNumberOf(request, network::ROOM_PATH_PARAMETER,
+                   QueryBounds{.lowest = network::FIRST_CASINO_ROOM,
+                               .highest = network::MAXIMUM_CASINO_ROOMS,
+                               .absent = network::FIRST_CASINO_ROOM});
   if (!room.has_value()) {
     return std::nullopt;
   }
@@ -74,16 +63,11 @@ std::optional<std::uint8_t> roomOf(const network::ApiRequest& request,
 std::optional<network::RoomRound> roomRoundOf(
     const network::ApiRequest& request, const CasinoService& service) {
   const std::optional<std::uint8_t> room = roomOf(request, service);
-  const std::optional<std::string> text =
-      pathTextOf(request, network::ROUND_PATH_PARAMETER);
-  if (!room.has_value() || !text.has_value()) {
-    return std::nullopt;
-  }
-  const std::optional<std::int64_t> round =
-      boundedNumberIn(*text, QueryBounds{.lowest = FIRST_ROUND,
-                                         .highest = LAST_ROUND,
-                                         .absent = FIRST_ROUND});
-  if (!round.has_value()) {
+  const std::optional<std::int64_t> round = pathNumberOf(
+      request, network::ROUND_PATH_PARAMETER,
+      QueryBounds{
+          .lowest = FIRST_ROUND, .highest = LAST_ROUND, .absent = FIRST_ROUND});
+  if (!room.has_value() || !round.has_value()) {
     return std::nullopt;
   }
   return network::RoomRound{.room = *room,
@@ -117,10 +101,6 @@ network::ApiResponse betsResponseOf(
   return betRefusalOf(std::get<BetRefusal>(outcome));
 }
 
-DatedRequest datedNow(const network::ApiRequest& request) {
-  return DatedRequest{.request = std::cref(request), .now = currentSecond()};
-}
-
 }  // namespace
 
 CasinoController::CasinoController(ISessionAccounts& accounts,
@@ -145,16 +125,16 @@ network::ApiResponse CasinoController::readRoom(
 
 network::ApiResponse CasinoController::takeOwnSeat(
     const network::ApiRequest& request) {
-  const DatedRequest dated = datedNow(request);
   return answerAsAccountOf(
-      accounts_, dated, [this, &dated](const network::User& user) {
-        const std::optional<std::uint8_t> room =
-            roomOf(dated.request.get(), service_);
+      accounts_, request,
+      [this, &request](const network::User& user,
+                       std::chrono::sys_seconds now) {
+        const std::optional<std::uint8_t> room = roomOf(request, service_);
         if (!room.has_value()) {
           return unknownRoomRefusal();
         }
-        const SeatOutcome outcome = service_.takeSeat(
-            SeatKey{.room = *room, .userId = user.id}, dated.now);
+        const SeatOutcome outcome =
+            service_.takeSeat(SeatKey{.room = *room, .userId = user.id}, now);
         if (outcome == SeatOutcome::RoomFull) {
           return refusal(CONFLICT_STATUS, ROOM_FULL_DETAIL);
         }
@@ -168,11 +148,11 @@ network::ApiResponse CasinoController::takeOwnSeat(
 
 network::ApiResponse CasinoController::leaveOwnSeat(
     const network::ApiRequest& request) {
-  const DatedRequest dated = datedNow(request);
   return answerAsAccountOf(
-      accounts_, dated, [this, &dated](const network::User& user) {
-        const std::optional<std::uint8_t> room =
-            roomNumberOf(dated.request.get());
+      accounts_, request,
+      [this, &request](const network::User& user,
+                       std::chrono::sys_seconds /*now*/) {
+        const std::optional<std::uint8_t> room = roomNumberOf(request);
         if (room.has_value()) {
           service_.leaveSeat(SeatKey{.room = *room, .userId = user.id});
         }
@@ -182,36 +162,36 @@ network::ApiResponse CasinoController::leaveOwnSeat(
 
 network::ApiResponse CasinoController::placeOwnBets(
     const network::ApiRequest& request) {
-  const DatedRequest dated = datedNow(request);
   return answerAsAccountOf(
-      accounts_, dated, [this, &dated](const network::User& user) {
+      accounts_, request,
+      [this, &request](const network::User& user,
+                       std::chrono::sys_seconds /*now*/) {
         const std::optional<network::RoomRound> place =
-            roomRoundOf(dated.request.get(), service_);
+            roomRoundOf(request, service_);
         if (!place.has_value()) {
           return unknownRoomRefusal();
         }
-        return betsResponseOf(service_.placeBets(BetOrder{
-            .place = *place,
-            .userId = user.id,
-            .bets =
-                network::rouletteBetsFromText(dated.request.get().body).bets,
-            .sentAt = currentMillisecond()}));
+        return betsResponseOf(service_.placeBets(
+            BetOrder{.place = *place,
+                     .userId = user.id,
+                     .bets = network::rouletteBetsFromText(request.body).bets,
+                     .sentAt = currentMillisecond()}));
       });
 }
 
 network::ApiResponse CasinoController::readOwnBets(
     const network::ApiRequest& request) {
-  const DatedRequest dated = datedNow(request);
-  return answerAsAccountOf(
-      accounts_, dated, [this, &dated](const network::User& user) {
-        const std::optional<network::RoomRound> place =
-            roomRoundOf(dated.request.get(), service_);
-        if (!place.has_value()) {
-          return unknownRoomRefusal();
-        }
-        return okResponse(
-            network::roundBetsText(service_.betsOf(*place, user.id)));
-      });
+  return answerAsAccountOf(accounts_, request,
+                           [this, &request](const network::User& user,
+                                            std::chrono::sys_seconds /*now*/) {
+                             const std::optional<network::RoomRound> place =
+                                 roomRoundOf(request, service_);
+                             if (!place.has_value()) {
+                               return unknownRoomRefusal();
+                             }
+                             return okResponse(network::roundBetsText(
+                                 service_.betsOf(*place, user.id)));
+                           });
 }
 
 }  // namespace rtype::master

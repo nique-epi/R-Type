@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <vector>
 #include "RouletteBet.hpp"
 
 namespace rtype::network {
@@ -23,5 +24,13 @@ namespace rtype::network {
  */
 [[nodiscard]] std::uint64_t payoutOf(const RouletteBet& bet,
                                      std::uint8_t drawn);
+
+/** @returns The chips @p bets hold, summed on 64 bits so no list
+ * overflows it. */
+[[nodiscard]] std::uint64_t stakeOf(const std::vector<RouletteBet>& bets);
+
+/** @returns Whether @p bets keep to the limits of one round: at most
+ * MAXIMUM_ROULETTE_BETS bets, holding MAXIMUM_ROUND_STAKE chips at most. */
+[[nodiscard]] bool fitsRoundCaps(const std::vector<RouletteBet>& bets);
 
 }  // namespace rtype::network

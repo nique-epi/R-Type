@@ -18,6 +18,10 @@
 
 namespace rtype::master {
 
+network::ApiResponse okResponse(std::string body) {
+  return network::ApiResponse{.status = OK_STATUS, .body = std::move(body)};
+}
+
 network::ApiResponse refusal(int status, std::string_view detail) {
   return network::ApiResponse{
       .status = status, .body = {}, .detail = std::string{detail}};
@@ -65,6 +69,16 @@ std::optional<std::int64_t> boundedNumberIn(std::string_view text,
     return std::nullopt;
   }
   return static_cast<std::int64_t>(*number);
+}
+
+std::optional<std::int64_t> pathNumberOf(const network::ApiRequest& request,
+                                         std::string_view name,
+                                         QueryBounds bounds) {
+  const std::optional<std::string> text = pathTextOf(request, name);
+  if (!text.has_value()) {
+    return std::nullopt;
+  }
+  return boundedNumberIn(*text, bounds);
 }
 
 std::optional<std::int64_t> queryNumberOf(const network::ApiRequest& request,

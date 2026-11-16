@@ -30,9 +30,14 @@ void CasinoRoundJob::run(const std::stop_token& stop) {
 
 std::vector<DrawnRound> CasinoRoundJob::pass() {
   try {
-    return dealer_.drawDueRounds(clock_.now(), settings_);
+    std::vector<DrawnRound> drawn =
+        missedRoundsDue_ ? dealer_.drawMissedRounds(clock_.now(), settings_)
+                         : dealer_.drawDueRounds(clock_.now(), settings_);
+    missedRoundsDue_ = false;
+    return drawn;
   } catch (const std::exception& error) {
     logger_.error("the rounds of the casino were not drawn: ", error.what());
+    missedRoundsDue_ = true;
     return {};
   }
 }

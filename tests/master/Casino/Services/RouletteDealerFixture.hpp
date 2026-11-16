@@ -32,11 +32,16 @@ class RouletteDealerFixture : public ::testing::Test {
   /** @returns What ACE laying 10 chips on 19 and 25 on red in BET_ROOM, on
    * the round of @p sentAt, gave; ACE takes its seat first. */
   std::variant<rtype::network::BetsReceipt, rtype::master::BetRefusal>
-  aceBetsAt(rtype::master::MillisecondDate sentAt);
+  aceBetsAt(rtype::network::MillisecondDate sentAt);
 
   /** @returns The rounds the dealer drew at @p now. */
   std::vector<rtype::master::DrawnRound> drawAt(
-      rtype::master::MillisecondDate now);
+      rtype::network::MillisecondDate now);
+
+  /** @returns What the dealer of the tests draws at @p now, the rounds it
+   * missed included, as the first pass of a job does. */
+  [[nodiscard]] std::vector<rtype::master::DrawnRound> drawMissedAt(
+      rtype::network::MillisecondDate now);
 
   /** @returns The chips of the wallet of ACE. */
   [[nodiscard]] std::uint32_t chipsOfAce();

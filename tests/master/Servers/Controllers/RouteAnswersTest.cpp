@@ -1,9 +1,7 @@
 #include <gtest/gtest.h>
-#include <functional>
-#include <optional>
+#include <chrono>
 #include "ApiRequest.hpp"
 #include "ApiResponse.hpp"
-#include "DatedRequest.hpp"
 #include "HttpHeader.hpp"
 #include "MasterTestConstants.hpp"
 #include "OneSessionAccounts.hpp"
@@ -12,25 +10,29 @@
 #include "RouteAnswersTestConstants.hpp"
 
 using rtype::master::answerAsAccountOf;
-using rtype::master::DatedRequest;
+using rtype::master::currentSecond;
 
 /**
  * Given the session of ACE
  * When a route answers a request carrying its token
- * Then it answers for ACE, and read the session at the date of the request
+ * Then it answers for ACE, and reads the session at the second it answers
  */
 TEST(RouteAnswers, AnswersForTheAccountOfTheSession) {
   OneSessionAccounts accounts = accountsOfAce();
   const rtype::network::ApiRequest request =
       requestWithToken(KNOWN_SESSION_TOKEN);
 
-  const rtype::network::ApiResponse answer = answerAsAccountOf(
-      accounts, DatedRequest{.request = std::cref(request), .now = ANSWERED_AT},
-      answerNaming);
+  const std::chrono::sys_seconds before = currentSecond();
+  const rtype::network::ApiResponse answer =
+      answerAsAccountOf(accounts, request, answerNaming);
+  const std::chrono::sys_seconds after = currentSecond();
 
   EXPECT_EQ(answer.status, ANSWER_OF_THE_ACCOUNT_STATUS);
   EXPECT_EQ(answer.body, SESSION_ACCOUNT_NICKNAME);
-  EXPECT_EQ(accounts.lastAskedAt(), std::optional{ANSWERED_AT});
+  const std::chrono::sys_seconds askedAt =
+      accounts.lastAskedAt().value_or(std::chrono::sys_seconds{});
+  EXPECT_GE(askedAt, before);
+  EXPECT_LE(askedAt, after);
 }
 
 /**
@@ -43,9 +45,8 @@ TEST(RouteAnswers, RefusesATokenNoSessionHas) {
   const rtype::network::ApiRequest request =
       requestWithToken(UNKNOWN_SESSION_TOKEN);
 
-  const rtype::network::ApiResponse answer = answerAsAccountOf(
-      accounts, DatedRequest{.request = std::cref(request), .now = ANSWERED_AT},
-      answerNaming);
+  const rtype::network::ApiResponse answer =
+      answerAsAccountOf(accounts, request, answerNaming);
 
   EXPECT_EQ(answer.status, EXPECTED_UNAUTHORIZED);
   ASSERT_TRUE(answer.header.has_value());
@@ -62,9 +63,8 @@ TEST(RouteAnswers, RefusesARequestWithoutAToken) {
   OneSessionAccounts accounts = accountsOfAce();
   const rtype::network::ApiRequest request = requestWithToken({});
 
-  const rtype::network::ApiResponse answer = answerAsAccountOf(
-      accounts, DatedRequest{.request = std::cref(request), .now = ANSWERED_AT},
-      answerNaming);
+  const rtype::network::ApiResponse answer =
+      answerAsAccountOf(accounts, request, answerNaming);
 
   EXPECT_EQ(answer.status, EXPECTED_UNAUTHORIZED);
 }

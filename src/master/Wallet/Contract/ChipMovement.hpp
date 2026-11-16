@@ -22,10 +22,6 @@ struct ChipMovement {
   /** @brief The fact that moves the chips, kept in the journal: such as
    * `round:<room>:<round>:<user>`. */
   std::string reference;
-  /** @brief Whether a line of the same reason and reference, already in the
-   * journal of that account, refuses this one: true for a fact that pays
-   * once, such as a payout. */
-  bool appliedOnce{false};
   std::chrono::sys_seconds madeAt;
 };
 

@@ -39,10 +39,6 @@ class WalletMovementRepository {
   [[nodiscard]] std::optional<network::WalletExchange> exchangeOf(
       std::int64_t userId, std::int64_t exchangeId);
 
-  /** @returns Whether a line of the wallet of the account of @p line has the
-   * reason and the reference of @p line. */
-  [[nodiscard]] bool holdsReference(const MovementRecord& line);
-
  private:
   SQLite::Database& connection_;
 };

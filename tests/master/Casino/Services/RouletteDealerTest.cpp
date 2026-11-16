@@ -64,20 +64,33 @@ TEST_F(RouletteDealerFixture, PaysTheWinnersOnce) {
 
 /**
  * Given ACE's bets on a round whose bets closed while no dealer looked
- * When the dealer looks three rounds later, while the bets of that round are
- * open
+ * When the dealer looks for missed rounds three rounds later, while the bets
+ * of that round are open
  * Then it draws the round of ACE alone, and pays it
  */
 TEST_F(RouletteDealerFixture, DrawsARoundItMissedOnceItLooksAgain) {
   ASSERT_TRUE(std::holds_alternative<BetsReceipt>(aceBetsAt(BET_ROUND_START)));
 
   const std::vector<DrawnRound> drawn =
-      drawAt(BET_ROUND_START + (DEALER_TEST_CYCLE * 3));
+      drawMissedAt(BET_ROUND_START + (DEALER_TEST_CYCLE * 3));
 
   ASSERT_EQ(drawn.size(), 1U);
   EXPECT_EQ(drawn.front().place.round, BET_ROUND);
   EXPECT_EQ(drawn.front().place.room, BET_ROOM);
   EXPECT_EQ(chipsOfAce(), CHIPS_ONCE_BOTH_WON);
+}
+
+/**
+ * Given ACE's bets on a round whose bets closed while no dealer looked
+ * When the dealer makes its pass of every interval three rounds later, while
+ * the bets of that round are open
+ * Then it draws nothing: only the pass after a start or a failure looks back
+ */
+TEST_F(RouletteDealerFixture, TheIntervalPassLeavesAMissedRound) {
+  ASSERT_TRUE(std::holds_alternative<BetsReceipt>(aceBetsAt(BET_ROUND_START)));
+
+  EXPECT_TRUE(drawAt(BET_ROUND_START + (DEALER_TEST_CYCLE * 3)).empty());
+  EXPECT_EQ(chipsOfAce(), CHIPS_ONCE_STAKED);
 }
 
 /**

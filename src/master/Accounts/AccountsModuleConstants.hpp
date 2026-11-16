@@ -2,22 +2,26 @@
 
 #include <array>
 #include <string_view>
-#include "AccountRoute.hpp"
 #include "AccountsController.hpp"
+#include "ControllerRoute.hpp"
 #include "MasterRouteConstants.hpp"
 
 namespace rtype::master {
 
 /** @brief The routes of the accounts and what answers each. */
 constexpr std::array ACCOUNT_ROUTES{
-    AccountRoute{.route = network::CREATE_USER_ROUTE,
-                 .answer = &AccountsController::createUser},
-    AccountRoute{.route = network::READ_OWN_USER_ROUTE,
-                 .answer = &AccountsController::readOwnUser},
-    AccountRoute{.route = network::CREATE_SESSION_ROUTE,
-                 .answer = &AccountsController::createSession},
-    AccountRoute{.route = network::DELETE_OWN_SESSION_ROUTE,
-                 .answer = &AccountsController::deleteOwnSession}};
+    ControllerRoute<AccountsController>{
+        .route = network::CREATE_USER_ROUTE,
+        .answer = &AccountsController::createUser},
+    ControllerRoute<AccountsController>{
+        .route = network::READ_OWN_USER_ROUTE,
+        .answer = &AccountsController::readOwnUser},
+    ControllerRoute<AccountsController>{
+        .route = network::CREATE_SESSION_ROUTE,
+        .answer = &AccountsController::createSession},
+    ControllerRoute<AccountsController>{
+        .route = network::DELETE_OWN_SESSION_ROUTE,
+        .answer = &AccountsController::deleteOwnSession}};
 
 /** @brief The command of master.cfg that makes an account an admin. */
 constexpr std::string_view ADMIN_COMMAND_NAME = "admin";

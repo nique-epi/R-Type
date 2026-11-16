@@ -1,5 +1,4 @@
 #include "CasinoMessageTextFixtures.hpp"
-#include <chrono>
 #include <cstddef>
 #include <string>
 #include "BetsReceipt.hpp"
@@ -9,6 +8,7 @@
 #include "CasinoRoomListing.hpp"
 #include "CasinoRoomState.hpp"
 #include "MasterMessageText.hpp"
+#include "MillisecondDate.hpp"
 #include "RouletteBet.hpp"
 #include "RouletteBetKind.hpp"
 #include "RouletteBets.hpp"
@@ -16,12 +16,6 @@
 #include "RoundBets.hpp"
 
 namespace rtype::network::testing {
-
-namespace {
-
-using MillisecondDate = std::chrono::sys_time<std::chrono::milliseconds>;
-
-}  // namespace
 
 RouletteBets twoBets() {
   return RouletteBets{.bets = {RouletteBet{.kind = RouletteBetKind::Straight,

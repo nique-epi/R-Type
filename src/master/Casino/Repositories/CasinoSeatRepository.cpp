@@ -10,8 +10,10 @@
 #include "CasinoBindings.hpp"
 #include "CasinoRepositoryConstants.hpp"
 #include "EpochSeconds.hpp"
+#include "ResultColumnConstants.hpp"
 #include "SeatKey.hpp"
 #include "SeatedPlayer.hpp"
+#include "StatementParts.hpp"
 
 namespace rtype::master {
 
@@ -25,7 +27,7 @@ std::optional<std::chrono::sys_seconds> CasinoSeatRepository::seenAt(
   if (!query.executeStep()) {
     return std::nullopt;
   }
-  return dateOfEpochSeconds(query.getColumn(CASINO_FIRST_COLUMN).getInt64());
+  return dateOfEpochSeconds(query.getColumn(FIRST_COLUMN).getInt64());
 }
 
 std::int64_t CasinoSeatRepository::othersSeatedSince(
@@ -34,7 +36,7 @@ std::int64_t CasinoSeatRepository::othersSeatedSince(
   bindSeat(query, seat);
   query.bind(std::string{SEEN_SINCE_PARAMETER}, epochSecondsOf(since));
   query.executeStep();
-  return query.getColumn(CASINO_FIRST_COLUMN).getInt64();
+  return query.getColumn(FIRST_COLUMN).getInt64();
 }
 
 void CasinoSeatRepository::markSeen(SeatKey seat,
@@ -56,13 +58,10 @@ std::vector<SeatedPlayer> CasinoSeatRepository::seatedSince(
   SQLite::Statement query{connection_, std::string{SEATED_PLAYERS_QUERY}};
   query.bind(std::string{ROOM_PARAMETER}, int{room});
   query.bind(std::string{SEEN_SINCE_PARAMETER}, epochSecondsOf(since));
-  std::vector<SeatedPlayer> players;
-  while (query.executeStep()) {
-    players.push_back(SeatedPlayer{
-        .userId = query.getColumn(CASINO_FIRST_COLUMN).getInt64(),
-        .nickname = query.getColumn(CASINO_SECOND_COLUMN).getString()});
-  }
-  return players;
+  return rowsOf(query, [](const SQLite::Statement& row) {
+    return SeatedPlayer{.userId = row.getColumn(FIRST_COLUMN).getInt64(),
+                        .nickname = row.getColumn(SECOND_COLUMN).getString()};
+  });
 }
 
 std::map<std::uint8_t, std::int64_t> CasinoSeatRepository::countsSince(
@@ -71,9 +70,9 @@ std::map<std::uint8_t, std::int64_t> CasinoSeatRepository::countsSince(
   query.bind(std::string{SEEN_SINCE_PARAMETER}, epochSecondsOf(since));
   std::map<std::uint8_t, std::int64_t> counts;
   while (query.executeStep()) {
-    counts.emplace(static_cast<std::uint8_t>(
-                       query.getColumn(CASINO_FIRST_COLUMN).getInt()),
-                   query.getColumn(CASINO_SECOND_COLUMN).getInt64());
+    counts.emplace(
+        static_cast<std::uint8_t>(query.getColumn(FIRST_COLUMN).getInt()),
+        query.getColumn(SECOND_COLUMN).getInt64());
   }
   return counts;
 }

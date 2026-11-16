@@ -2,7 +2,6 @@
 #include <httplib.h>
 #include <cstdint>
 #include <string>
-#include <utility>
 #include "BetsReceipt.hpp"
 #include "CasinoRoomListing.hpp"
 #include "CasinoRoomState.hpp"
@@ -53,10 +52,11 @@ void MasterCasinoClient::leaveSeat(const std::string& token,
 BetsReceipt MasterCasinoClient::placeBets(const std::string& token,
                                           RoomRound round,
                                           const RouletteBets& bets) {
-  httplib::Request request = masterRequestOf(
-      PLACE_OWN_BETS_ROUTE, roundPathOf(PLACE_OWN_BETS_ROUTE, round));
-  setJsonBody(request, rouletteBetsText(bets));
-  return betsReceiptFromText(transport_.send(std::move(request), token));
+  return betsReceiptFromText(
+      transport_.send(jsonRequestOf(PLACE_OWN_BETS_ROUTE,
+                                    roundPathOf(PLACE_OWN_BETS_ROUTE, round),
+                                    rouletteBetsText(bets)),
+                      token));
 }
 
 RoundBets MasterCasinoClient::readOwnBets(const std::string& token,

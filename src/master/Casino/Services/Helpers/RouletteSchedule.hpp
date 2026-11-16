@@ -16,13 +16,13 @@ namespace rtype::master {
  * the start of round n + 1. Each duration is longer than none.
  */
 [[nodiscard]] ScheduledRound scheduledRoundAt(
-    MillisecondDate now, const RouletteDurations& durations);
+    network::MillisecondDate now, const RouletteDurations& durations);
 
 /** @returns The first round of @p scheduled whose bets are still open: its
  * own while they are, the next one once they closed. */
 [[nodiscard]] std::uint64_t firstOpenRound(const ScheduledRound& scheduled);
 
 /** @returns The clock of the system, to the millisecond. */
-[[nodiscard]] MillisecondDate currentMillisecond();
+[[nodiscard]] network::MillisecondDate currentMillisecond();
 
 }  // namespace rtype::master

@@ -67,7 +67,7 @@ void addStarterLooks(SQLite::Database& connection,
  * the wallet of @p opening starts with some. */
 void recordOpening(SQLite::Database& connection, const WalletOpening& opening,
                    network::Currency currency) {
-  const std::uint32_t starting = balanceIn(opening.starting, currency);
+  const std::uint32_t starting = network::balanceIn(opening.starting, currency);
   if (starting == 0) {
     return;
   }
@@ -89,32 +89,6 @@ network::Wallet boundedWallet(const network::Wallet& wallet) {
       .chips = std::min(wallet.chips, network::MAXIMUM_CHIPS)};
 }
 
-/** @returns Why the cashier refuses @p request from a wallet of @p before,
- * nothing when it accepts it. */
-std::optional<WalletExchangeRefusal> exchangeRefusalOf(
-    const network::Wallet& before, const network::ExchangeRequest& request) {
-  if (request.amount == 0 || request.amount > maximumOf(request.from)) {
-    return WalletExchangeRefusal::InvalidAmount;
-  }
-  if (!canSpend(before, request.from, request.amount)) {
-    return WalletExchangeRefusal::NotEnough;
-  }
-  if (!canReceive(before, otherCurrency(request.from), request.amount)) {
-    return WalletExchangeRefusal::PastTheMaximum;
-  }
-  return std::nullopt;
-}
-
-/** @returns The balances of @p order once its amount changed currency. */
-network::Wallet exchangedWallet(const ExchangeOrder& order) {
-  const network::Currency from = order.request.from;
-  const network::Wallet spent = withBalance(
-      order.before, from, balanceIn(order.before, from) - order.request.amount);
-  return withBalance(
-      spent, otherCurrency(from),
-      balanceIn(spent, otherCurrency(from)) + order.request.amount);
-}
-
 /** @brief Writes @p order: the two lines of the exchange, which name the
  * first, and the balances it leaves.
  * @returns The exchange and those balances. */
@@ -132,10 +106,11 @@ network::ExchangeReceipt writtenExchange(SQLite::Database& connection,
                       .madeAt = order.madeAt};
   movements.insert(line);
   line.id = std::nullopt;
-  line.currency = otherCurrency(order.request.from);
+  line.currency = network::otherCurrency(order.request.from);
   line.amount = order.request.amount;
   movements.insert(line);
-  const network::Wallet after = exchangedWallet(order);
+  const network::Wallet after =
+      network::exchangedWallet(order.before, order.request);
   WalletRepository{connection}.replace(order.userId, after);
   return network::ExchangeReceipt{
       .exchange = network::WalletExchange{.id = exchangeId,
@@ -157,7 +132,7 @@ std::optional<LookPurchaseOutcome> lookRefusalOf(SQLite::Database& connection,
   if (price == network::NOT_FOR_SALE) {
     return LookPurchaseOutcome::NotForSale;
   }
-  if (!canSpend(order.before, network::Currency::Kopecks, price)) {
+  if (!network::canSpend(order.before, network::Currency::Kopecks, price)) {
     return LookPurchaseOutcome::NotEnoughKopecks;
   }
   return std::nullopt;
@@ -183,7 +158,7 @@ network::Wallet writtenPurchase(SQLite::Database& connection,
                     .item = name,
                     .origin = LookOrigin::Purchase,
                     .acquiredAt = order.boughtAt});
-  const network::Wallet after = withBalance(
+  const network::Wallet after = network::withBalance(
       order.before, network::Currency::Kopecks, order.before.kopecks - price);
   WalletRepository{connection}.replace(order.userId, after);
   return after;
@@ -201,21 +176,10 @@ MovementRecord lineOf(const ChipMovement& movement, std::int64_t moved) {
                         .madeAt = movement.madeAt};
 }
 
-/** @returns Why @p movement does not apply to a wallet holding @p before,
- * nothing when it does. A movement applied once is refused when a line of
- * the same reason and reference is in the journal. */
-std::optional<ChipRefusal> chipRefusalOf(SQLite::Database& connection,
-                                         const ChipMovement& movement,
-                                         const network::Wallet& before) {
-  if (movement.appliedOnce &&
-      WalletMovementRepository{connection}.holdsReference(
-          lineOf(movement, movement.amount))) {
-    return ChipRefusal::ReferenceUsed;
-  }
-  if (movement.amount < 0 && -movement.amount > std::int64_t{before.chips}) {
-    return ChipRefusal::NotEnoughChips;
-  }
-  return std::nullopt;
+/** @returns Whether @p movement takes more chips than a wallet holding
+ * @p before has. */
+bool takesTooMany(const ChipMovement& movement, const network::Wallet& before) {
+  return movement.amount < 0 && -movement.amount > std::int64_t{before.chips};
 }
 
 /** @brief Writes @p movement on a wallet holding @p before: its line of the
@@ -226,13 +190,15 @@ std::uint32_t writtenChips(SQLite::Database& connection,
                            const network::Wallet& before) {
   const std::uint32_t chips =
       movement.amount >= 0
-          ? creditedBalance(before, network::Currency::Chips,
-                            static_cast<std::uint64_t>(movement.amount))
+          ? network::creditedBalance(
+                before, network::Currency::Chips,
+                static_cast<std::uint64_t>(movement.amount))
           : static_cast<std::uint32_t>(before.chips + movement.amount);
   WalletMovementRepository{connection}.insert(
       lineOf(movement, std::int64_t{chips} - before.chips));
   WalletRepository{connection}.replace(
-      movement.userId, withBalance(before, network::Currency::Chips, chips));
+      movement.userId,
+      network::withBalance(before, network::Currency::Chips, chips));
   return chips;
 }
 
@@ -241,8 +207,8 @@ std::uint32_t writtenChips(SQLite::Database& connection,
 void writtenCredit(SQLite::Database& connection, const GameCredit& credit,
                    const network::Wallet& before) {
   if (credit.kopecks > 0) {
-    const std::uint32_t kopecks =
-        creditedBalance(before, network::Currency::Kopecks, credit.kopecks);
+    const std::uint32_t kopecks = network::creditedBalance(
+        before, network::Currency::Kopecks, credit.kopecks);
     WalletMovementRepository{connection}.insert(
         MovementRecord{.id = std::nullopt,
                        .userId = credit.userId,
@@ -253,7 +219,7 @@ void writtenCredit(SQLite::Database& connection, const GameCredit& credit,
                        .madeAt = credit.creditedAt});
     WalletRepository{connection}.replace(
         credit.userId,
-        withBalance(before, network::Currency::Kopecks, kopecks));
+        network::withBalance(before, network::Currency::Kopecks, kopecks));
   }
   OwnedLookRepository looks{connection};
   for (const std::string& item : credit.wonLooks) {
@@ -290,21 +256,22 @@ network::MovementListing WalletService::movementsOf(
   });
 }
 
-std::variant<network::ExchangeReceipt, WalletExchangeRefusal>
+std::variant<network::ExchangeReceipt, network::WalletExchangeRefusal>
 WalletService::exchange(std::int64_t userId,
                         const network::ExchangeRequest& request,
                         std::chrono::sys_seconds now) {
   return database_.transact(
       [this, userId, &request, now](SQLite::Database& connection)
-          -> std::variant<network::ExchangeReceipt, WalletExchangeRefusal> {
+          -> std::variant<network::ExchangeReceipt,
+                          network::WalletExchangeRefusal> {
         const ExchangeOrder order{
             .userId = userId,
             .before = openedWallet(connection, userId, now)
                           .value_or(network::Wallet{}),
             .request = request,
             .madeAt = now};
-        if (const std::optional<WalletExchangeRefusal> refusal =
-                exchangeRefusalOf(order.before, request)) {
+        if (const std::optional<network::WalletExchangeRefusal> refusal =
+                network::exchangeRefusalOf(order.before, request)) {
           return *refusal;
         }
         return writtenExchange(connection, order);
@@ -323,8 +290,8 @@ network::OwnedLooks WalletService::ownedLooksOf(std::int64_t userId,
   return database_.transact([this, userId, now](SQLite::Database& connection) {
     static_cast<void>(openedWallet(connection, userId, now));
     return network::OwnedLooks{
-        .items =
-            inCatalogueOrder(OwnedLookRepository{connection}.itemsOf(userId))};
+        .items = network::inCatalogueOrder(
+            OwnedLookRepository{connection}.itemsOf(userId))};
   });
 }
 
@@ -355,9 +322,9 @@ ChipMovementResult WalletService::applyChips(SQLite::Database& connection,
     return ChipMovementResult{.refusal = ChipRefusal::UnknownAccount,
                               .chips = 0};
   }
-  if (const std::optional<ChipRefusal> refusal =
-          chipRefusalOf(connection, movement, *before)) {
-    return ChipMovementResult{.refusal = refusal, .chips = before->chips};
+  if (takesTooMany(movement, *before)) {
+    return ChipMovementResult{.refusal = ChipRefusal::NotEnoughChips,
+                              .chips = before->chips};
   }
   if (movement.amount == 0) {
     return ChipMovementResult{.refusal = std::nullopt, .chips = before->chips};

@@ -1,9 +1,9 @@
 #include "WalletModule.hpp"
 #include <cstdint>
-#include <functional>
 #include <string>
 #include <vector>
 #include "ConfigurationRegistry.hpp"
+#include "ControllerRoute.hpp"
 #include "IAccountWallet.hpp"
 #include "ISessionAccounts.hpp"
 #include "InstallContext.hpp"
@@ -16,23 +16,9 @@
 #include "Wallet.hpp"
 #include "WalletController.hpp"
 #include "WalletModuleConstants.hpp"
-#include "WalletRoute.hpp"
 #include "WalletService.hpp"
 
 namespace rtype::master {
-
-namespace {
-
-/** @brief Adds every route of WALLET_ROUTES to @p server, answered by
- * @p controller. */
-void addRoutes(MasterHttpServer& server, WalletController& controller) {
-  for (const WalletRoute& walletRoute : WALLET_ROUTES) {
-    server.add(walletRoute.route,
-               std::bind_front(walletRoute.answer, &controller));
-  }
-}
-
-}  // namespace
 
 std::string WalletModule::name() const {
   return std::string{WALLET_MODULE_NAME};
@@ -50,7 +36,7 @@ void WalletModule::install(engine::InstallContext& context) {
   context.provide<IAccountWallet>(service);
   WalletController& controller =
       controller_.emplace(context.require<ISessionAccounts>(), service);
-  addRoutes(context.require<MasterHttpServer>(), controller);
+  addRoutes(context.require<MasterHttpServer>(), WALLET_ROUTES, controller);
 }
 
 void WalletModule::start() {}

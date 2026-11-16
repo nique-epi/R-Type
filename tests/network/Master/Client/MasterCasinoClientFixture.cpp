@@ -1,5 +1,4 @@
 #include "MasterCasinoClientFixture.hpp"
-#include <chrono>
 #include <optional>
 #include <string>
 #include <vector>
@@ -12,6 +11,7 @@
 #include "MasterAccountClientTestConstants.hpp"
 #include "MasterCasinoClient.hpp"
 #include "MasterCasinoClientTestConstants.hpp"
+#include "MillisecondDate.hpp"
 #include "RecordedRequest.hpp"
 #include "RouletteBets.hpp"
 #include "RoulettePhase.hpp"
@@ -22,10 +22,10 @@ using rtype::network::CasinoPlayer;
 using rtype::network::CasinoRoom;
 using rtype::network::CasinoRoomListing;
 using rtype::network::CasinoRoomState;
+using rtype::network::MillisecondDate;
 using rtype::network::RouletteBets;
 using rtype::network::RoulettePhase;
 using rtype::network::RoundBets;
-using MillisecondDate = std::chrono::sys_time<std::chrono::milliseconds>;
 
 MasterCasinoClientFixture::MasterCasinoClientFixture()
     : client_(master_.url()) {}

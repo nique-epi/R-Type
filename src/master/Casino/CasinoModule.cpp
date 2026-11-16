@@ -1,7 +1,6 @@
 #include "CasinoModule.hpp"
 #include <chrono>
 #include <cstdint>
-#include <functional>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -12,6 +11,7 @@
 #include "CasinoService.hpp"
 #include "CasinoSettings.hpp"
 #include "ConfigurationRegistry.hpp"
+#include "ControllerRoute.hpp"
 #include "IAccountWallet.hpp"
 #include "ISessionAccounts.hpp"
 #include "InstallContext.hpp"
@@ -29,15 +29,6 @@
 namespace rtype::master {
 
 namespace {
-
-/** @brief Adds every route of CASINO_ROUTES to @p server, answered by
- * @p controller. */
-void addRoutes(MasterHttpServer& server, CasinoController& controller) {
-  for (const CasinoRoute& casinoRoute : CASINO_ROUTES) {
-    server.add(casinoRoute.route,
-               std::bind_front(casinoRoute.answer, &controller));
-  }
-}
 
 /** @returns The value of @p setting, @p absent when it holds none. */
 std::int64_t integerOf(const engine::SettingValue* setting,
@@ -66,7 +57,7 @@ void CasinoModule::install(engine::InstallContext& context) {
   dealer_.emplace(database, wallet, draw_);
   CasinoController& controller =
       controller_.emplace(context.require<ISessionAccounts>(), service);
-  addRoutes(context.require<MasterHttpServer>(), controller);
+  addRoutes(context.require<MasterHttpServer>(), CASINO_ROUTES, controller);
 }
 
 void CasinoModule::start() {

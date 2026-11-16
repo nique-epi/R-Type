@@ -1,5 +1,6 @@
 #include "GameFlow.hpp"
 #include <algorithm>
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <optional>
@@ -100,9 +101,12 @@ void changeState(GameState& state, GameState next, engine::EventBus& events) {
                                   .current = next});
 }
 
-/** @brief Moves @p state from InProgress to Finished, with @p outcome.
+/** @brief Moves @p state from InProgress to Finished, with @p outcome, and
+ * starts counting @p finishedTicks again.
  * @returns The change to publish. */
-GameStateChanged finishing(GameState& state, GameOutcome outcome) {
+GameStateChanged finishing(GameState& state, std::size_t& finishedTicks,
+                           GameOutcome outcome) {
+  finishedTicks = 0;
   return GameStateChanged{.previous = std::exchange(state, GameState::Finished),
                           .current = GameState::Finished,
                           .outcome = outcome};
@@ -173,8 +177,8 @@ void GameFlow::advanceState() {
 
 void GameFlow::finish() {
   if (state_ == GameState::InProgress) {
-    game_.events.get().publish(finishing(state_, GameOutcome::Defeat));
-    finishedTicks_ = 0;
+    game_.events.get().publish(
+        finishing(state_, finishedTicks_, GameOutcome::Defeat));
   }
 }
 
@@ -193,8 +197,8 @@ void GameFlow::finishIfOver() {
     return;
   }
   logger_.info("game finished: ", ending->reason);
-  game_.events.get().publish(finishing(state_, ending->outcome));
-  finishedTicks_ = 0;
+  game_.events.get().publish(
+      finishing(state_, finishedTicks_, ending->outcome));
   replication_.onGameFinished(ending->outcome);
 }
 

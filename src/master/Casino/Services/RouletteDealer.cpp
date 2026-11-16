@@ -31,7 +31,8 @@ namespace rtype::master {
 namespace {
 
 /** @returns The round of each of the first @p rooms rooms whose bets closed
- * at @p scheduled, and that @p connection holds no number of. */
+ * at @p scheduled, and that @p connection holds no number of: one query for
+ * every room. */
 std::vector<network::RoomRound> closedRoundsOf(SQLite::Database& connection,
                                                const ScheduledRound& scheduled,
                                                std::uint8_t rooms) {
@@ -39,13 +40,14 @@ std::vector<network::RoomRound> closedRoundsOf(SQLite::Database& connection,
   if (scheduled.phase == network::RoulettePhase::Betting) {
     return closed;
   }
-  CasinoRoundRepository repository{connection};
+  const std::vector<std::uint8_t> drawn =
+      CasinoRoundRepository{connection}.roomsDrawnIn(scheduled.round);
   for (std::uint8_t offset = 0; offset < rooms; ++offset) {
-    const network::RoomRound place{
-        .room = static_cast<std::uint8_t>(network::FIRST_CASINO_ROOM + offset),
-        .round = scheduled.round};
-    if (!repository.numberOf(place).has_value()) {
-      closed.push_back(place);
+    const auto room =
+        static_cast<std::uint8_t>(network::FIRST_CASINO_ROOM + offset);
+    if (std::ranges::find(drawn, room) == drawn.end()) {
+      closed.push_back(
+          network::RoomRound{.room = room, .round = scheduled.round});
     }
   }
   return closed;
@@ -58,10 +60,40 @@ RouletteDealer::RouletteDealer(MasterDatabase& database, IAccountWallet& wallet,
     : database_(database), wallet_(wallet), draw_(draw) {}
 
 std::vector<DrawnRound> RouletteDealer::drawDueRounds(
-    MillisecondDate now, const CasinoSettings& settings) {
+    network::MillisecondDate now, const CasinoSettings& settings) {
+  const ScheduledRound scheduled = scheduledRoundAt(now, settings.durations);
+  return drawnEach(
+      database_.run([&scheduled, &settings](SQLite::Database& connection) {
+        return closedRoundsOf(connection, scheduled, settings.rooms);
+      }),
+      now);
+}
+
+std::vector<DrawnRound> RouletteDealer::drawMissedRounds(
+    network::MillisecondDate now, const CasinoSettings& settings) {
+  const ScheduledRound scheduled = scheduledRoundAt(now, settings.durations);
+  return drawnEach(
+      database_.run([&scheduled, &settings](SQLite::Database& connection) {
+        std::vector<network::RoomRound> due =
+            CasinoBetRepository{connection}.undrawnBefore(
+                firstOpenRound(scheduled));
+        for (const network::RoomRound& place :
+             closedRoundsOf(connection, scheduled, settings.rooms)) {
+          if (std::ranges::find(due, place) == due.end()) {
+            due.push_back(place);
+          }
+        }
+        return due;
+      }),
+      now);
+}
+
+std::vector<DrawnRound> RouletteDealer::drawnEach(
+    const std::vector<network::RoomRound>& places,
+    network::MillisecondDate now) {
   const auto second = std::chrono::floor<std::chrono::seconds>(now);
   std::vector<DrawnRound> drawnRounds;
-  for (const network::RoomRound& place : dueRounds(now, settings)) {
+  for (const network::RoomRound& place : places) {
     if (const std::optional<DrawnRound> round = drawn(place, second)) {
       drawnRounds.push_back(*round);
     }
@@ -70,23 +102,6 @@ std::vector<DrawnRound> RouletteDealer::drawDueRounds(
     tidy(second);
   }
   return drawnRounds;
-}
-
-std::vector<network::RoomRound> RouletteDealer::dueRounds(
-    MillisecondDate now, const CasinoSettings& settings) {
-  const ScheduledRound scheduled = scheduledRoundAt(now, settings.durations);
-  return database_.run([&scheduled, &settings](SQLite::Database& connection) {
-    std::vector<network::RoomRound> due =
-        CasinoBetRepository{connection}.undrawnBefore(
-            firstOpenRound(scheduled));
-    for (const network::RoomRound& place :
-         closedRoundsOf(connection, scheduled, settings.rooms)) {
-      if (std::ranges::find(due, place) == due.end()) {
-        due.push_back(place);
-      }
-    }
-    return due;
-  });
 }
 
 std::optional<DrawnRound> RouletteDealer::drawn(network::RoomRound place,
@@ -109,7 +124,6 @@ std::optional<DrawnRound> RouletteDealer::drawn(network::RoomRound place,
                                      .amount = payout,
                                      .reason = network::MovementReason::Payout,
                                      .reference = roundReferenceOf(place),
-                                     .appliedOnce = true,
                                      .madeAt = now}));
       }
     }

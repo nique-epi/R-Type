@@ -11,7 +11,8 @@
 #include "MovementReason.hpp"
 #include "MovementRecord.hpp"
 #include "PageRequest.hpp"
-#include "ServersRepositoryConstants.hpp"
+#include "ResultColumnConstants.hpp"
+#include "StatementParts.hpp"
 #include "WalletExchange.hpp"
 #include "WalletMovement.hpp"
 #include "WalletRepositoryConstants.hpp"
@@ -68,13 +69,8 @@ std::vector<network::WalletMovement> WalletMovementRepository::pageOf(
     std::int64_t userId, const PageRequest& page) {
   SQLite::Statement query{connection_, std::string{MOVEMENT_PAGE_QUERY}};
   query.bind(std::string{WALLET_USER_ID_PARAMETER}, userId);
-  query.bind(std::string{LIMIT_PARAMETER}, page.limit);
-  query.bind(std::string{OFFSET_PARAMETER}, page.offset);
-  std::vector<network::WalletMovement> movements;
-  while (query.executeStep()) {
-    movements.push_back(movementIn(query));
-  }
-  return movements;
+  bindPage(query, page);
+  return rowsOf(query, movementIn);
 }
 
 std::optional<network::WalletExchange> WalletMovementRepository::exchangeOf(
@@ -94,16 +90,6 @@ std::optional<network::WalletExchange> WalletMovementRepository::exchangeOf(
       .from = debit.currency,
       .amount = static_cast<std::uint32_t>(-debit.amount),
       .madeAt = debit.madeAt};
-}
-
-bool WalletMovementRepository::holdsReference(const MovementRecord& line) {
-  SQLite::Statement query{connection_, std::string{REFERENCE_HELD_QUERY}};
-  query.bind(std::string{WALLET_USER_ID_PARAMETER}, line.userId);
-  query.bind(std::string{REASON_PARAMETER},
-             std::string{network::movementReasonText(line.reason)});
-  query.bind(std::string{REFERENCE_PARAMETER}, line.reference);
-  query.executeStep();
-  return query.getColumn(FIRST_COLUMN).getInt() != 0;
 }
 
 }  // namespace rtype::master

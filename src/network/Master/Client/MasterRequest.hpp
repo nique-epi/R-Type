@@ -14,7 +14,10 @@ namespace rtype::network {
 [[nodiscard]] httplib::Request masterRequestOf(MasterRoute route,
                                                std::string path);
 
-/** @brief Makes @p body the body of @p request, typed JSON_CONTENT_TYPE. */
-void setJsonBody(httplib::Request& request, std::string body);
+/** @returns The request of @p route for @p path, as masterRequestOf(), with
+ * @p body as its body, typed JSON_CONTENT_TYPE. */
+[[nodiscard]] httplib::Request jsonRequestOf(MasterRoute route,
+                                             std::string path,
+                                             std::string body);
 
 }  // namespace rtype::network

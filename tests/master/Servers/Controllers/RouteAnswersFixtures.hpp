@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include <string_view>
 #include "ApiRequest.hpp"
 #include "ApiResponse.hpp"
@@ -14,6 +15,6 @@
     std::string_view token);
 
 /** @returns An answer of ANSWER_OF_THE_ACCOUNT_STATUS whose body is the
- * nickname of @p user. */
+ * nickname of @p user, whatever the second @p now it answers at. */
 [[nodiscard]] rtype::network::ApiResponse answerNaming(
-    const rtype::network::User& user);
+    const rtype::network::User& user, std::chrono::sys_seconds now);

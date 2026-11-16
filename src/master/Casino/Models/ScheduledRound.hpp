@@ -15,9 +15,9 @@ namespace rtype::master {
 struct ScheduledRound {
   std::uint64_t round{};
   network::RoulettePhase phase{network::RoulettePhase::Betting};
-  MillisecondDate closesAt;
-  MillisecondDate resultAt;
-  MillisecondDate endsAt;
+  network::MillisecondDate closesAt;
+  network::MillisecondDate resultAt;
+  network::MillisecondDate endsAt;
 };
 
 }  // namespace rtype::master

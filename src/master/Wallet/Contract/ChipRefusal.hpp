@@ -8,8 +8,6 @@ namespace rtype::master {
 enum class ChipRefusal : std::uint8_t {
   /** @brief It takes more chips than the wallet holds. */
   NotEnoughChips,
-  /** @brief It applies once, and the journal holds its reference already. */
-  ReferenceUsed,
   /** @brief No account has its user id. */
   UnknownAccount,
 };

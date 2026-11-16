@@ -26,13 +26,6 @@ namespace rtype::network {
 
 namespace {
 
-/** @returns The request of @p route carrying @p body in JSON. */
-httplib::Request requestOf(MasterRoute route, const std::string& body) {
-  httplib::Request request = masterRequestOf(route, apiPathOf(route));
-  setJsonBody(request, body);
-  return request;
-}
-
 /** @returns The path of the page of LIST_SERVERS_ROUTE that starts after
  * @p offset servers: `/api/servers?limit=100&offset=200`. */
 std::string serverPagePathOf(std::int64_t offset) {
@@ -89,10 +82,9 @@ void MasterClient::sendHeartbeat(const ServerHeartbeat& heartbeat) {
 
 void MasterClient::sendResult(const std::string& gameId,
                               const FinishedGame& game) {
-  httplib::Request request =
-      requestOf(KEEP_OWN_RESULT_ROUTE, finishedGameText(game));
-  request.path = gamePathOf(KEEP_OWN_RESULT_ROUTE, gameId);
-  static_cast<void>(send(std::move(request)));
+  static_cast<void>(send(jsonRequestOf(
+      KEEP_OWN_RESULT_ROUTE, gamePathOf(KEEP_OWN_RESULT_ROUTE, gameId),
+      finishedGameText(game))));
 }
 
 GameListing MasterClient::listGames(std::int64_t serverId) {
@@ -124,7 +116,7 @@ GlobalLeaderboard MasterClient::readLeaderboard(
 }
 
 std::string MasterClient::answerOf(MasterRoute route, const std::string& body) {
-  return send(requestOf(route, body));
+  return send(jsonRequestOf(route, apiPathOf(route), body));
 }
 
 std::string MasterClient::send(httplib::Request request) {

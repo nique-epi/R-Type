@@ -50,6 +50,13 @@ namespace rtype::network {
  */
 [[nodiscard]] std::string roundPathOf(MasterRoute route, RoomRound roomRound);
 
+/**
+ * @returns The path a client calls @p route by when its path names the look
+ * @p item: `/api/users/me/looks/crown` for BUY_OWN_LOOK_ROUTE. The names of
+ * the looks are lowercase letters, written as they come.
+ */
+[[nodiscard]] std::string lookPathOf(MasterRoute route, std::string_view item);
+
 /** @returns How HTTP names @p method: GET_METHOD, POST_METHOD, PUT_METHOD or
  * DELETE_METHOD. */
 [[nodiscard]] std::string_view methodNameOf(RouteMethod method);

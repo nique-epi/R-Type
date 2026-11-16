@@ -10,7 +10,9 @@
 #include "CasinoRepositoryConstants.hpp"
 #include "DrawnRound.hpp"
 #include "EpochSeconds.hpp"
+#include "ResultColumnConstants.hpp"
 #include "RoomRound.hpp"
+#include "StatementParts.hpp"
 
 namespace rtype::master {
 
@@ -24,8 +26,16 @@ std::optional<std::uint8_t> CasinoRoundRepository::numberOf(
   if (!query.executeStep()) {
     return std::nullopt;
   }
-  return static_cast<std::uint8_t>(
-      query.getColumn(CASINO_FIRST_COLUMN).getInt());
+  return static_cast<std::uint8_t>(query.getColumn(FIRST_COLUMN).getInt());
+}
+
+std::vector<std::uint8_t> CasinoRoundRepository::roomsDrawnIn(
+    std::uint64_t round) {
+  SQLite::Statement query{connection_, std::string{DRAWN_ROOMS_QUERY}};
+  query.bind(std::string{ROUND_PARAMETER}, static_cast<std::int64_t>(round));
+  return rowsOf(query, [](const SQLite::Statement& row) {
+    return static_cast<std::uint8_t>(row.getColumn(FIRST_COLUMN).getInt());
+  });
 }
 
 bool CasinoRoundRepository::insert(const DrawnRound& round) {
@@ -41,12 +51,9 @@ std::vector<std::uint8_t> CasinoRoundRepository::numbersBefore(
   SQLite::Statement query{connection_, std::string{HISTORY_QUERY}};
   bindPlace(query, place);
   query.bind(std::string{KEPT_PARAMETER}, static_cast<std::int64_t>(count));
-  std::vector<std::uint8_t> numbers;
-  while (query.executeStep()) {
-    numbers.push_back(static_cast<std::uint8_t>(
-        query.getColumn(CASINO_FIRST_COLUMN).getInt()));
-  }
-  return numbers;
+  return rowsOf(query, [](const SQLite::Statement& row) {
+    return static_cast<std::uint8_t>(row.getColumn(FIRST_COLUMN).getInt());
+  });
 }
 
 void CasinoRoundRepository::pruneKeeping(std::size_t kept) {

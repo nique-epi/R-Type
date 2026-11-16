@@ -14,7 +14,7 @@ struct BetOrder {
   network::RoomRound place;
   std::int64_t userId{};
   std::vector<network::RouletteBet> bets;
-  MillisecondDate sentAt;
+  network::MillisecondDate sentAt;
 };
 
 }  // namespace rtype::master

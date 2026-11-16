@@ -17,7 +17,8 @@ namespace rtype::master {
  * @brief Draws the number of each round of the casino once its bets closed,
  * and pays its winners. Each round is drawn in one transaction: its number
  * written in `casino_rounds`, and each payout added to the wallet with the
- * reference of the round, applied once. The transaction of new bets checks
+ * reference of the round. That transaction draws nothing when the row is
+ * there already, so a round is paid once; the transaction of new bets checks
  * that same row, so a bet never lands on a drawn round.
  */
 class RouletteDealer {
@@ -27,10 +28,9 @@ class RouletteDealer {
                  network::IRouletteDraw& draw);
 
   /**
-   * @brief Draws every round due at @p now: the round of each room of
-   * @p settings once its bets closed, and every earlier round that holds bets
-   * and was never drawn, such as one whose bets closed while the master was
-   * down. A round already drawn is never drawn again.
+   * @brief Draws the round of each room of @p settings whose bets closed at
+   * @p now, unless it was drawn already: the pass a running master makes
+   * every interval, which reads which rooms were drawn in one query.
    *
    * Once it drew a round, it tidies the tables: seats not seen for
    * network::CASINO_SEAT_LIFETIME, the bets of rounds drawn more than
@@ -38,13 +38,26 @@ class RouletteDealer {
    * network::CASINO_HISTORY_LENGTH that no kept bet names.
    * @returns The rounds it drew, oldest first.
    */
-  std::vector<DrawnRound> drawDueRounds(MillisecondDate now,
+  std::vector<DrawnRound> drawDueRounds(network::MillisecondDate now,
                                         const CasinoSettings& settings);
 
+  /**
+   * @brief Draws what drawDueRounds() draws, and every earlier round that
+   * holds bets and was never drawn, such as one whose bets closed while the
+   * master was down: the pass of a start, and of a pass after one that failed.
+   * It tidies the tables as drawDueRounds() does.
+   * @returns The rounds it drew, oldest first.
+   */
+  std::vector<DrawnRound> drawMissedRounds(network::MillisecondDate now,
+                                           const CasinoSettings& settings);
+
  private:
-  /** @returns The rounds due at @p now that were never drawn. */
-  [[nodiscard]] std::vector<network::RoomRound> dueRounds(
-      MillisecondDate now, const CasinoSettings& settings);
+  /** @brief Draws each of @p places at @p now, then tidies the tables once
+   * it drew one.
+   * @returns The rounds it drew. */
+  std::vector<DrawnRound> drawnEach(
+      const std::vector<network::RoomRound>& places,
+      network::MillisecondDate now);
 
   /** @brief Draws @p place at @p now and pays its winners.
    * @returns The round drawn; nothing when it was drawn already. */

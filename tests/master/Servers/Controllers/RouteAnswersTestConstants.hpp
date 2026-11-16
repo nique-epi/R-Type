@@ -1,6 +1,5 @@
 #pragma once
 
-#include <chrono>
 #include <cstdint>
 #include <string_view>
 
@@ -12,10 +11,6 @@ constexpr std::string_view UNKNOWN_SESSION_TOKEN =
     "rts_ffeeddccbbaa99887766554433221100ffeeddccbbaa99887766554433221100";
 constexpr std::int64_t SESSION_ACCOUNT_ID = 7;
 constexpr std::string_view SESSION_ACCOUNT_NICKNAME = "ACE";
-
-/** @brief The date the tests answer their requests at. */
-constexpr std::chrono::sys_seconds ANSWERED_AT{
-    std::chrono::seconds{1'800'000'000}};
 
 /** @brief The status of the answer of the tests once it named the account. */
 constexpr int ANSWER_OF_THE_ACCOUNT_STATUS = 200;

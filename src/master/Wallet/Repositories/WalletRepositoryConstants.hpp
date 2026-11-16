@@ -37,11 +37,6 @@ constexpr std::string_view EXCHANGE_DEBIT_QUERY = R"sql(
 SELECT id, currency, amount, reason, made_at FROM wallet_movements
 WHERE user_id = :user_id AND id = :id AND reason = :reason AND amount < 0
 )sql";
-constexpr std::string_view REFERENCE_HELD_QUERY = R"sql(
-SELECT EXISTS (SELECT 1 FROM wallet_movements
-               WHERE user_id = :user_id AND reason = :reason
-                 AND reference = :reference)
-)sql";
 
 /** @brief The statements of the table `owned_looks`. */
 constexpr std::string_view INSERT_OWNED_LOOK_STATEMENT = R"sql(
@@ -82,7 +77,6 @@ constexpr std::string_view CREDITED_AT_PARAMETER = ":credited_at";
 /** @brief The columns the queries of the wallets read. */
 constexpr int KOPECKS_COLUMN = 0;
 constexpr int CHIPS_COLUMN = 1;
-constexpr int FIRST_COLUMN = 0;
 constexpr int MOVEMENT_ID_COLUMN = 0;
 constexpr int MOVEMENT_CURRENCY_COLUMN = 1;
 constexpr int MOVEMENT_AMOUNT_COLUMN = 2;

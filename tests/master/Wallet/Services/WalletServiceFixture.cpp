@@ -73,18 +73,6 @@ rtype::master::ChipMovement WalletServiceFixture::stakeOf(
       .amount = amount,
       .reason = rtype::network::MovementReason::Stake,
       .reference = std::string{STAKE_REFERENCE},
-      .appliedOnce = false,
-      .madeAt = WALLET_TEST_DATE};
-}
-
-rtype::master::ChipMovement WalletServiceFixture::payoutOf(
-    std::int64_t amount) const {
-  return rtype::master::ChipMovement{
-      .userId = ace_,
-      .amount = amount,
-      .reason = rtype::network::MovementReason::Payout,
-      .reference = std::string{PAYOUT_REFERENCE},
-      .appliedOnce = true,
       .madeAt = WALLET_TEST_DATE};
 }
 

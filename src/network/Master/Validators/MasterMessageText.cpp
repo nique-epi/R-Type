@@ -13,6 +13,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <utility>
 #include <vector>
 #include "BetsReceipt.hpp"
@@ -44,6 +45,7 @@
 #include "MasterHttpConstants.hpp"
 #include "MasterMessageConstants.hpp"
 #include "MasterRouteConstants.hpp"
+#include "MillisecondDate.hpp"
 #include "MovementListing.hpp"
 #include "MovementReason.hpp"
 #include "NetworkConstants.hpp"
@@ -164,6 +166,22 @@ JsonField elementOf(const JsonField& array, std::size_t index) {
 }
 
 /**
+ * @returns Each element of the array @p field, as @p readOne reads it.
+ * @throws InvalidMasterMessageException when it is no array, holds more than
+ * @p maximumSize elements, or holds one @p readOne refuses.
+ */
+template <typename ReadOne>
+auto arrayOf(const JsonField& field, std::size_t maximumSize, ReadOne readOne) {
+  const std::size_t count = arraySizeOf(field, maximumSize);
+  std::vector<std::invoke_result_t<ReadOne, const JsonField&>> read;
+  read.reserve(count);
+  for (std::size_t index = 0; index < count; ++index) {
+    read.push_back(readOne(elementOf(field, index)));
+  }
+  return read;
+}
+
+/**
  * @returns The integer @p field holds; JSON writes no integer below 0 here,
  * since no member may hold one.
  */
@@ -177,6 +195,14 @@ std::uint64_t integerOf(const JsonField& field, IntegerBounds bounds) {
     refuse(field);
   }
   return number;
+}
+
+/** @returns The date @p field holds, in seconds since 1970, within
+ * @p bounds. */
+std::chrono::sys_seconds secondsDateOf(const JsonField& field,
+                                       IntegerBounds bounds) {
+  return std::chrono::sys_seconds{std::chrono::seconds{
+      static_cast<std::int64_t>(integerOf(field, bounds))}};
 }
 
 /** @returns The string @p field holds. */
@@ -264,26 +290,23 @@ std::optional<Enum> valueOfText(
   return std::nullopt;
 }
 
-HostedGameState stateOf(const JsonField& field) {
-  const std::optional<HostedGameState> state =
-      valueOfText<HostedGameState>(HOSTED_GAME_STATE_TEXTS, stringOf(field));
-  if (!state.has_value()) {
+/** @returns The value of Enum @p field writes, one of @p texts, one text per
+ * value in the order of the enum. */
+template <typename Enum, std::size_t Count>
+Enum enumIn(const JsonField& field,
+            const std::array<std::string_view, Count>& texts) {
+  const std::optional<Enum> value = valueOfText<Enum>(texts, stringOf(field));
+  if (!value.has_value()) {
     refuse(field);
   }
-  return *state;
+  return *value;
 }
 
 /** @returns The nicknames of the protocol @p field lists, @p maximumCount at
  * most. */
 std::vector<std::string> nicknamesOf(const JsonField& field,
                                      std::size_t maximumCount) {
-  const std::size_t count = arraySizeOf(field, maximumCount);
-  std::vector<std::string> nicknames;
-  nicknames.reserve(count);
-  for (std::size_t index = 0; index < count; ++index) {
-    nicknames.push_back(nicknameOf(elementOf(field, index)));
-  }
-  return nicknames;
+  return arrayOf(field, maximumCount, nicknameOf);
 }
 
 /** @returns Whether @p field holds true; it must hold a JSON boolean. */
@@ -347,7 +370,8 @@ HostedGame gameOf(const JsonField& game) {
   return HostedGame{
       .number = gameNumberOf(game),
       .name = gameNameOf(game),
-      .state = stateOf(memberOf(game, STATE_MEMBER)),
+      .state = enumIn<HostedGameState>(memberOf(game, STATE_MEMBER),
+                                       HOSTED_GAME_STATE_TEXTS),
       .difficulty = nicknameOf(memberOf(game, DIFFICULTY_MEMBER)),
       .lives = livesOf(game),
       .friendlyFire = booleanOf(memberOf(game, FRIENDLY_FIRE_MEMBER)),
@@ -370,21 +394,13 @@ void requireDistinctNumbers(const JsonField& games,
   }
 }
 
-ListedGameState listedStateOf(const JsonField& field) {
-  const std::optional<ListedGameState> state =
-      valueOfText<ListedGameState>(LISTED_GAME_STATE_TEXTS, stringOf(field));
-  if (!state.has_value()) {
-    refuse(field);
-  }
-  return *state;
-}
-
 ListedGame listedGameOf(const JsonField& game) {
   requireObject(game);
   return ListedGame{
       .number = gameNumberOf(game),
       .name = gameNameOf(game),
-      .state = listedStateOf(memberOf(game, STATE_MEMBER)),
+      .state = enumIn<ListedGameState>(memberOf(game, STATE_MEMBER),
+                                       LISTED_GAME_STATE_TEXTS),
       .playerCount = static_cast<std::uint8_t>(
           integerOf(memberOf(game, PLAYER_COUNT_MEMBER),
                     IntegerBounds{.lowest = MINIMUM_LISTED_PLAYERS,
@@ -409,12 +425,7 @@ nlohmann::json listedGameDocument(const ListedGame& game) {
 
 std::vector<HostedGame> gamesOf(const JsonField& heartbeat) {
   const JsonField games = memberOf(heartbeat, GAMES_MEMBER);
-  const std::size_t count = arraySizeOf(games, MAXIMUM_HOSTED_GAMES);
-  std::vector<HostedGame> hosted;
-  hosted.reserve(count);
-  for (std::size_t index = 0; index < count; ++index) {
-    hosted.push_back(gameOf(elementOf(games, index)));
-  }
+  std::vector<HostedGame> hosted = arrayOf(games, MAXIMUM_HOSTED_GAMES, gameOf);
   requireDistinctNumbers(games, hosted);
   return hosted;
 }
@@ -499,6 +510,17 @@ nlohmann::json measuresDocument(const ServerMeasures& measures) {
   return document;
 }
 
+/** @returns A JSON array of each of @p items, as @p documentOf writes it. */
+template <typename Item, typename Document>
+nlohmann::json arrayDocument(const std::vector<Item>& items,
+                             Document documentOf) {
+  nlohmann::json list = nlohmann::json::array();
+  for (const Item& item : items) {
+    list.push_back(documentOf(item));
+  }
+  return list;
+}
+
 /**
  * @returns An object whose one member, @p member, lists each of @p items as
  * @p documentOf writes it: the shape of every list the master answers.
@@ -508,10 +530,7 @@ nlohmann::json listingDocument(std::string_view member,
                                const std::vector<Item>& items,
                                Document documentOf) {
   nlohmann::json document;
-  document[member] = nlohmann::json::array();
-  for (const Item& item : items) {
-    document[member].push_back(documentOf(item));
-  }
+  document[member] = arrayDocument(items, documentOf);
   return document;
 }
 
@@ -576,11 +595,7 @@ ServerRegistration registrationOf(const JsonField& registration) {
 
 /** @returns The status @p field writes, one of SERVER_STATUS_TEXTS. */
 ServerStatus listedStatusOf(const JsonField& field) {
-  const std::optional<ServerStatus> status = serverStatusOf(stringOf(field));
-  if (!status.has_value()) {
-    refuse(field);
-  }
-  return *status;
+  return enumIn<ServerStatus>(field, SERVER_STATUS_TEXTS);
 }
 
 /** @returns The count @p field holds, 0 to @p highest. */
@@ -638,11 +653,9 @@ bool isMadeOf(std::string_view text, std::string_view digits) {
 
 /** @returns The date the game @p game ended. */
 std::chrono::sys_seconds playedAtOf(const JsonField& game) {
-  const std::uint64_t seconds = integerOf(
+  return secondsDateOf(
       memberOf(game, PLAYED_AT_MEMBER),
       IntegerBounds{.lowest = EARLIEST_PLAYED_AT, .highest = LATEST_PLAYED_AT});
-  return std::chrono::sys_seconds{
-      std::chrono::seconds{static_cast<std::int64_t>(seconds)}};
 }
 
 /** @returns The account of @p player, nothing for a guest. */
@@ -673,13 +686,7 @@ std::vector<std::string> wonLooksOf(const JsonField& player) {
   if (!looks.has_value()) {
     return {};
   }
-  const std::size_t count = arraySizeOf(*looks, MAXIMUM_WON_LOOKS);
-  std::vector<std::string> read;
-  read.reserve(count);
-  for (std::size_t index = 0; index < count; ++index) {
-    read.push_back(lookNameOf(elementOf(*looks, index)));
-  }
-  return read;
+  return arrayOf(*looks, MAXIMUM_WON_LOOKS, lookNameOf);
 }
 
 /** @returns Whether @p game says it was won; false when it does not say, as
@@ -827,14 +834,10 @@ std::string globalLeaderboardText(const GlobalLeaderboard& leaderboard) {
 GlobalLeaderboard globalLeaderboardFromText(std::string_view text) {
   const nlohmann::json document = parsedObject(text);
   const JsonField leaderboard = wholeMessage(document);
-  const JsonField scores = memberOf(leaderboard, SCORES_MEMBER);
-  const std::size_t count =
-      arraySizeOf(scores, static_cast<std::size_t>(MAXIMUM_PAGE_SIZE));
   GlobalLeaderboard read;
-  read.scores.reserve(count);
-  for (std::size_t index = 0; index < count; ++index) {
-    read.scores.push_back(globalLeaderboardRowOf(elementOf(scores, index)));
-  }
+  read.scores = arrayOf(memberOf(leaderboard, SCORES_MEMBER),
+                        static_cast<std::size_t>(MAXIMUM_PAGE_SIZE),
+                        globalLeaderboardRowOf);
   if (const std::optional<JsonField> player =
           optionalMemberOf(leaderboard, PLAYER_MEMBER)) {
     read.player = globalLeaderboardRowOf(*player);
@@ -948,15 +951,10 @@ std::string serverListingText(const ServerListing& listing) {
 
 ServerListing serverListingFromText(std::string_view text) {
   const nlohmann::json document = parsedObject(text);
-  const JsonField servers = memberOf(wholeMessage(document), SERVERS_MEMBER);
-  const std::size_t count =
-      arraySizeOf(servers, static_cast<std::size_t>(MAXIMUM_PAGE_SIZE));
-  ServerListing listing;
-  listing.servers.reserve(count);
-  for (std::size_t index = 0; index < count; ++index) {
-    listing.servers.push_back(listedServerOf(elementOf(servers, index)));
-  }
-  return listing;
+  return ServerListing{
+      .servers =
+          arrayOf(memberOf(wholeMessage(document), SERVERS_MEMBER),
+                  static_cast<std::size_t>(MAXIMUM_PAGE_SIZE), listedServerOf)};
 }
 
 std::string sampleListingText(const SampleListing& listing) {
@@ -1068,11 +1066,7 @@ Wallet walletOf(const JsonField& wallet) {
 }
 
 Currency currencyIn(const JsonField& field) {
-  const std::optional<Currency> currency = currencyOf(stringOf(field));
-  if (!currency.has_value()) {
-    refuse(field);
-  }
-  return *currency;
+  return enumIn<Currency>(field, CURRENCY_TEXTS);
 }
 
 std::uint32_t exchangedAmountOf(const JsonField& field) {
@@ -1101,11 +1095,13 @@ nlohmann::json walletExchangeDocument(const WalletExchange& exchange) {
 
 /** @returns The whole number @p field holds, 0 to the largest of 64 signed
  * bits: a number of the journal, or a date in seconds since 1970. */
+constexpr IntegerBounds NON_NEGATIVE_BOUNDS{
+    .lowest = 0,
+    .highest =
+        static_cast<std::uint64_t>(std::numeric_limits<std::int64_t>::max())};
+
 std::int64_t nonNegativeIntegerOf(const JsonField& field) {
-  return static_cast<std::int64_t>(integerOf(
-      field, IntegerBounds{.lowest = 0,
-                           .highest = static_cast<std::uint64_t>(
-                               std::numeric_limits<std::int64_t>::max())}));
+  return static_cast<std::int64_t>(integerOf(field, NON_NEGATIVE_BOUNDS));
 }
 
 WalletExchange walletExchangeOf(const JsonField& exchange) {
@@ -1113,8 +1109,8 @@ WalletExchange walletExchangeOf(const JsonField& exchange) {
       .id = nonNegativeIntegerOf(memberOf(exchange, ID_MEMBER)),
       .from = currencyIn(memberOf(exchange, FROM_MEMBER)),
       .amount = exchangedAmountOf(memberOf(exchange, AMOUNT_MEMBER)),
-      .madeAt = std::chrono::sys_seconds{std::chrono::seconds{
-          nonNegativeIntegerOf(memberOf(exchange, MADE_AT_MEMBER))}}};
+      .madeAt = secondsDateOf(memberOf(exchange, MADE_AT_MEMBER),
+                              NON_NEGATIVE_BOUNDS)};
 }
 
 }  // namespace
@@ -1172,15 +1168,9 @@ std::string ownedLooksText(const OwnedLooks& looks) {
 
 OwnedLooks ownedLooksFromText(std::string_view text) {
   const nlohmann::json document = parsedObject(text);
-  const JsonField items = memberOf(wholeMessage(document), ITEMS_MEMBER);
-  const std::size_t count =
-      arraySizeOf(items, identifiers::SHIP_LOOK_ITEM_COUNT);
-  OwnedLooks looks;
-  looks.items.reserve(count);
-  for (std::size_t index = 0; index < count; ++index) {
-    looks.items.push_back(lookNameOf(elementOf(items, index)));
-  }
-  return looks;
+  return OwnedLooks{.items =
+                        arrayOf(memberOf(wholeMessage(document), ITEMS_MEMBER),
+                                identifiers::SHIP_LOOK_ITEM_COUNT, lookNameOf)};
 }
 
 std::string lookPurchaseText(const LookPurchase& purchase) {
@@ -1214,8 +1204,6 @@ std::optional<Currency> currencyOf(std::string_view text) {
 }
 
 namespace {
-
-using MillisecondDate = std::chrono::sys_time<std::chrono::milliseconds>;
 
 std::int64_t millisecondsOf(MillisecondDate date) {
   return date.time_since_epoch().count();
@@ -1285,21 +1273,8 @@ std::optional<std::uint8_t> winningNumberOf(const JsonField& message) {
   return static_cast<std::uint8_t>(*number);
 }
 
-RouletteBetKind betKindIn(const JsonField& field) {
-  const std::optional<RouletteBetKind> kind =
-      rouletteBetKindOf(stringOf(field));
-  if (!kind.has_value()) {
-    refuse(field);
-  }
-  return *kind;
-}
-
 RoulettePhase phaseIn(const JsonField& field) {
-  const std::optional<RoulettePhase> phase = roulettePhaseOf(stringOf(field));
-  if (!phase.has_value()) {
-    refuse(field);
-  }
-  return *phase;
+  return enumIn<RoulettePhase>(field, ROULETTE_PHASE_TEXTS);
 }
 
 nlohmann::json betDocument(const RouletteBet& bet) {
@@ -1313,7 +1288,8 @@ nlohmann::json betDocument(const RouletteBet& bet) {
 RouletteBet betOf(const JsonField& bet) {
   requireObject(bet);
   return RouletteBet{
-      .kind = betKindIn(memberOf(bet, KIND_MEMBER)),
+      .kind = enumIn<RouletteBetKind>(memberOf(bet, KIND_MEMBER),
+                                      ROULETTE_BET_KIND_TEXTS),
       .firstNumber = static_cast<std::uint8_t>(integerOf(
           memberOf(bet, FIRST_NUMBER_MEMBER),
           IntegerBounds{.lowest = 0,
@@ -1323,25 +1299,11 @@ RouletteBet betOf(const JsonField& bet) {
           IntegerBounds{.lowest = 0, .highest = MAXIMUM_READ_BET_AMOUNT}))};
 }
 
-nlohmann::json betsDocument(const std::vector<RouletteBet>& bets) {
-  nlohmann::json list = nlohmann::json::array();
-  for (const RouletteBet& bet : bets) {
-    list.push_back(betDocument(bet));
-  }
-  return list;
-}
-
 /** @returns The bets the member bets of @p message lists,
  * MAXIMUM_READ_ROULETTE_BETS at most. */
 std::vector<RouletteBet> betsOf(const JsonField& message) {
-  const JsonField field = memberOf(message, BETS_MEMBER);
-  const std::size_t count = arraySizeOf(field, MAXIMUM_READ_ROULETTE_BETS);
-  std::vector<RouletteBet> bets;
-  bets.reserve(count);
-  for (std::size_t index = 0; index < count; ++index) {
-    bets.push_back(betOf(elementOf(field, index)));
-  }
-  return bets;
+  return arrayOf(memberOf(message, BETS_MEMBER), MAXIMUM_READ_ROULETTE_BETS,
+                 betOf);
 }
 
 std::uint8_t roomIdOf(const JsonField& room) {
@@ -1394,27 +1356,8 @@ CasinoPlayer casinoPlayerOf(const JsonField& player) {
                       .payout = payoutOf(player)};
 }
 
-std::vector<CasinoPlayer> casinoPlayersOf(const JsonField& state) {
-  const JsonField field = memberOf(state, PLAYERS_MEMBER);
-  const std::size_t count = arraySizeOf(field, MAXIMUM_CASINO_SEATS);
-  std::vector<CasinoPlayer> players;
-  players.reserve(count);
-  for (std::size_t index = 0; index < count; ++index) {
-    players.push_back(casinoPlayerOf(elementOf(field, index)));
-  }
-  return players;
-}
-
-std::vector<std::uint8_t> historyOf(const JsonField& state) {
-  const JsonField field = memberOf(state, HISTORY_MEMBER);
-  const std::size_t count = arraySizeOf(field, CASINO_HISTORY_LENGTH);
-  std::vector<std::uint8_t> history;
-  history.reserve(count);
-  for (std::size_t index = 0; index < count; ++index) {
-    history.push_back(static_cast<std::uint8_t>(
-        integerOf(elementOf(field, index), WHEEL_NUMBER_BOUNDS)));
-  }
-  return history;
+std::uint8_t wheelNumberOf(const JsonField& field) {
+  return static_cast<std::uint8_t>(integerOf(field, WHEEL_NUMBER_BOUNDS));
 }
 
 nlohmann::json roomStateDocument(const CasinoRoomState& state) {
@@ -1430,11 +1373,7 @@ nlohmann::json roomStateDocument(const CasinoRoomState& state) {
   document[SERVER_TIME_MEMBER] = millisecondsOf(state.serverTime);
   document[WINNING_NUMBER_MEMBER] = nullableOf(state.winningNumber);
   document[HISTORY_MEMBER] = state.history;
-  nlohmann::json players = nlohmann::json::array();
-  for (const CasinoPlayer& player : state.players) {
-    players.push_back(casinoPlayerDocument(player));
-  }
-  document[PLAYERS_MEMBER] = players;
+  document[PLAYERS_MEMBER] = arrayDocument(state.players, casinoPlayerDocument);
   return document;
 }
 
@@ -1451,8 +1390,10 @@ CasinoRoomState roomStateOf(const JsonField& state) {
       .endsAt = millisecondDateOf(memberOf(state, ENDS_AT_MEMBER)),
       .serverTime = millisecondDateOf(memberOf(state, SERVER_TIME_MEMBER)),
       .winningNumber = winningNumberOf(state),
-      .history = historyOf(state),
-      .players = casinoPlayersOf(state)};
+      .history = arrayOf(memberOf(state, HISTORY_MEMBER), CASINO_HISTORY_LENGTH,
+                         wheelNumberOf),
+      .players = arrayOf(memberOf(state, PLAYERS_MEMBER), MAXIMUM_CASINO_SEATS,
+                         casinoPlayerOf)};
 }
 
 }  // namespace
@@ -1463,14 +1404,9 @@ std::string casinoRoomListingText(const CasinoRoomListing& listing) {
 
 CasinoRoomListing casinoRoomListingFromText(std::string_view text) {
   const nlohmann::json document = parsedObject(text);
-  const JsonField field = memberOf(wholeMessage(document), ROOMS_MEMBER);
-  const std::size_t count = arraySizeOf(field, MAXIMUM_CASINO_ROOMS);
-  CasinoRoomListing listing;
-  listing.rooms.reserve(count);
-  for (std::size_t index = 0; index < count; ++index) {
-    listing.rooms.push_back(roomOf(elementOf(field, index)));
-  }
-  return listing;
+  return CasinoRoomListing{
+      .rooms = arrayOf(memberOf(wholeMessage(document), ROOMS_MEMBER),
+                       MAXIMUM_CASINO_ROOMS, roomOf)};
 }
 
 std::string casinoRoomStateText(const CasinoRoomState& state) {
@@ -1484,7 +1420,7 @@ CasinoRoomState casinoRoomStateFromText(std::string_view text) {
 
 std::string rouletteBetsText(const RouletteBets& bets) {
   nlohmann::json document;
-  document[BETS_MEMBER] = betsDocument(bets.bets);
+  document[BETS_MEMBER] = arrayDocument(bets.bets, betDocument);
   return textOf(document);
 }
 
@@ -1496,7 +1432,7 @@ RouletteBets rouletteBetsFromText(std::string_view text) {
 std::string betsReceiptText(const BetsReceipt& receipt) {
   nlohmann::json document;
   document[ROUND_MEMBER] = receipt.round;
-  document[BETS_MEMBER] = betsDocument(receipt.bets);
+  document[BETS_MEMBER] = arrayDocument(receipt.bets, betDocument);
   document[STAKE_MEMBER] = receipt.stake;
   document[CHIPS_MEMBER] = receipt.chips;
   return textOf(document);
@@ -1514,7 +1450,7 @@ BetsReceipt betsReceiptFromText(std::string_view text) {
 std::string roundBetsText(const RoundBets& bets) {
   nlohmann::json document;
   document[ROUND_MEMBER] = bets.round;
-  document[BETS_MEMBER] = betsDocument(bets.bets);
+  document[BETS_MEMBER] = arrayDocument(bets.bets, betDocument);
   document[STAKE_MEMBER] = bets.stake;
   document[PAYOUT_MEMBER] = nullableOf(bets.payout);
   document[WINNING_NUMBER_MEMBER] = nullableOf(bets.winningNumber);

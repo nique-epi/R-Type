@@ -23,6 +23,7 @@
 #include "MasterRoutePath.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PageRequest.hpp"
+#include "QueryBounds.hpp"
 #include "RouteAnswers.hpp"
 #include "ServerRecord.hpp"
 #include "ServerRegistration.hpp"
@@ -31,7 +32,6 @@
 #include "SettingValue.hpp"
 #include "SiteClaim.hpp"
 #include "SiteVisitorAddress.hpp"
-#include "WholeNumberText.hpp"
 
 namespace rtype::master {
 
@@ -39,18 +39,12 @@ namespace {
 
 /** @returns The id the path of @p request names, nothing when it is no id. */
 std::optional<std::int64_t> serverIdOf(const network::ApiRequest& request) {
-  const auto parameter = request.pathParameters.find(
-      std::string{network::SERVER_ID_PATH_PARAMETER});
-  if (parameter == request.pathParameters.end()) {
-    return std::nullopt;
-  }
-  const std::optional<std::uint64_t> serverId =
-      network::wholeNumberIn<std::uint64_t>(parameter->second);
-  if (!serverId.has_value() || *serverId < network::FIRST_SERVER_ID ||
-      *serverId > network::HIGHEST_SERVER_ID) {
-    return std::nullopt;
-  }
-  return static_cast<std::int64_t>(*serverId);
+  return pathNumberOf(
+      request, network::SERVER_ID_PATH_PARAMETER,
+      QueryBounds{
+          .lowest = static_cast<std::int64_t>(network::FIRST_SERVER_ID),
+          .highest = static_cast<std::int64_t>(network::HIGHEST_SERVER_ID),
+          .absent = static_cast<std::int64_t>(network::FIRST_SERVER_ID)});
 }
 
 /**
@@ -74,7 +68,7 @@ network::ApiResponse answerOfServerPage(const network::ApiRequest& request,
   if (!listing.has_value()) {
     return refusal(NOT_FOUND_STATUS, UNKNOWN_SERVER_DETAIL);
   }
-  return network::ApiResponse{.status = OK_STATUS, .body = write(*listing)};
+  return okResponse(write(*listing));
 }
 
 /** @returns The value of the header @p name of @p request, empty without
@@ -118,13 +112,13 @@ network::ApiResponse serverResponse(
   nlohmann::json server =
       nlohmann::json::parse(network::registrationText(registration));
   server[network::ID_MEMBER] = serverId;
-  return network::ApiResponse{.status = OK_STATUS, .body = server.dump()};
+  return okResponse(server.dump());
 }
 
 network::ApiResponse heartbeatAnswer() {
   nlohmann::json answer;
   answer[network::COMMANDS_MEMBER] = nlohmann::json::array();
-  return network::ApiResponse{.status = OK_STATUS, .body = answer.dump()};
+  return okResponse(answer.dump());
 }
 
 }  // namespace

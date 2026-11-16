@@ -2,9 +2,9 @@
 
 #include <cstdint>
 
-namespace rtype::master {
+namespace rtype::network {
 
-/** @brief Why the cashier refused an exchange. */
+/** @brief Why the cashier refuses an exchange. */
 enum class WalletExchangeRefusal : std::uint8_t {
   /** @brief An amount of none, or past the largest balance. */
   InvalidAmount,
@@ -14,4 +14,4 @@ enum class WalletExchangeRefusal : std::uint8_t {
   PastTheMaximum,
 };
 
-}  // namespace rtype::master
+}  // namespace rtype::network

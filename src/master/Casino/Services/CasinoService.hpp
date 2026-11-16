@@ -69,19 +69,20 @@ class CasinoService {
                                           std::int64_t userId);
 
   /** @returns Every room, with the players seated and the round at @p now. */
-  [[nodiscard]] network::CasinoRoomListing rooms(MillisecondDate now);
+  [[nodiscard]] network::CasinoRoomListing rooms(network::MillisecondDate now);
 
   /** @returns The state of the room @p room at @p now: its number only once
    * its bets closed and it was drawn. */
-  [[nodiscard]] network::CasinoRoomState roomState(std::uint8_t room,
-                                                   MillisecondDate now);
+  [[nodiscard]] network::CasinoRoomState roomState(
+      std::uint8_t room, network::MillisecondDate now);
 
  private:
-  /** @returns The bets of @p order written, the old ones handed back.
-   * @throws CasinoStakeRefusedException when the wallet refuses the stake,
-   * which rolls the transaction back. */
-  network::BetsReceipt writtenBets(SQLite::Database& connection,
-                                   const BetOrder& order);
+  /** @brief Writes the bets of @p order in place of the ones it replaces,
+   * with one movement of the wallet for the difference of their stakes.
+   * @returns The receipt; NotEnoughChips, with nothing written, when the
+   * wallet holds less than the chips the new stake adds. */
+  std::variant<network::BetsReceipt, BetRefusal> writtenBets(
+      SQLite::Database& connection, const BetOrder& order);
 
   MasterDatabase& database_;
   IAccountWallet& wallet_;

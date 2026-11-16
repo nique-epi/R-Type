@@ -62,7 +62,8 @@ class WalletService final : public IAccountWallet {
    * leaves holds less, PastTheMaximum when the other balance would pass its
    * largest value.
    */
-  [[nodiscard]] std::variant<network::ExchangeReceipt, WalletExchangeRefusal>
+  [[nodiscard]] std::variant<network::ExchangeReceipt,
+                             network::WalletExchangeRefusal>
   exchange(std::int64_t userId, const network::ExchangeRequest& request,
            std::chrono::sys_seconds now);
 
