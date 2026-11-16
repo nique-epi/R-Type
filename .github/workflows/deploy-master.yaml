@@ -3,7 +3,8 @@ name: deploy-master
 # Deploys the server package of a release to the master instance of AWS:
 # the instance downloads the package from the release, the workflow only
 # sends it infra/release.sh and infra/master/deploy.sh through SSM, with the
-# domain of MASTER_URL that Caddy answers HTTPS for. Called by the release workflow
+# domain of MASTER_URL that Caddy answers HTTPS for and the key of the
+# passwords of the secret MASTER_PASSWORD_KEY. Called by the release workflow
 # on every tag, and run by hand to redeploy or to go back to an older tag.
 on:
   workflow_call:
@@ -12,6 +13,11 @@ on:
         description: The release to deploy, such as v0.1.0
         required: true
         type: string
+    # A secret of the environment production reaches a called workflow only
+    # when the caller passes it by name; missing, it reads as empty.
+    secrets:
+      MASTER_PASSWORD_KEY:
+        required: false
   workflow_dispatch:
     inputs:
       tag:
@@ -40,6 +46,7 @@ jobs:
       TAG: ${{ inputs.tag }}
       INSTANCE_ID: ${{ vars.MASTER_INSTANCE_ID }}
       MASTER_URL: ${{ vars.MASTER_URL }}
+      PASSWORD_KEY: ${{ secrets.MASTER_PASSWORD_KEY }}
     steps:
       - uses: actions/checkout@v5
 
@@ -59,6 +66,15 @@ jobs:
           fi
           echo "DOMAIN=$domain" >> "$GITHUB_ENV"
 
+      # The key goes into a line of the script: it is checked before, and its
+      # value is never printed.
+      - name: Check the key of the passwords
+        run: |
+          if [ -n "$PASSWORD_KEY" ] && ! printf '%s' "$PASSWORD_KEY" | grep -Eq '^[0-9a-f]{64}$'; then
+            echo 'MASTER_PASSWORD_KEY must be 64 lowercase hexadecimal digits, as "openssl rand -hex 32" prints them'
+            exit 1
+          fi
+
       - uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
@@ -68,7 +84,7 @@ jobs:
         run: |
           version=${TAG#v}
           {
-            printf 'VERSION=%s\nDOMAIN=%s\n' "$version" "$DOMAIN"
+            printf 'VERSION=%s\nDOMAIN=%s\nPASSWORD_KEY=%s\n' "$version" "$DOMAIN" "$PASSWORD_KEY"
             cat infra/release.sh infra/master/deploy.sh
           } > "$RUNNER_TEMP/script.sh"
           infra/run-on-instance.sh "$INSTANCE_ID" "$RUNNER_TEMP/script.sh"
