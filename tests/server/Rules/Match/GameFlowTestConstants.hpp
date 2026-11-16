@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <cstddef>
+#include <cstdint>
 #include "BossStageConstants.hpp"
 #include "TimeConstants.hpp"
 
@@ -9,6 +10,9 @@ namespace rtype::server::testing {
 
 /** @brief The ticks the game needs after the last Bydo is gone to find it. */
 constexpr std::size_t TICKS_TO_FIND_THE_SKY_CLEAR = 1;
+
+/** @brief A look item a player won, the first of the catalog. */
+constexpr std::uint8_t A_WON_LOOK_NUMBER = 1;
 
 /** @brief A second of ticks: the Bydos of the wave are still far from the
  * ships. */

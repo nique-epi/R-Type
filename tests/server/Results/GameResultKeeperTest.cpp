@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <chrono>
 #include <string>
+#include <vector>
 #include "ConnectedPlayer.hpp"
 #include "GameInstanceTestConstants.hpp"
 #include "GameResult.hpp"
@@ -259,6 +260,83 @@ TEST_F(GameResultKeeperFixture, DatesAndNamesTheResultAtTheEnd) {
   EXPECT_EQ(result.difficulty, KEEPER_DIFFICULTY);
   EXPECT_GE(result.endedAt, before);
   EXPECT_LE(result.endedAt, std::chrono::system_clock::now());
+}
+
+/**
+ * Given a player signed in to an account
+ * When the game finishes
+ * Then its row names that account
+ */
+TEST_F(GameResultKeeperFixture, RecordsTheAccountOfAPlayer) {
+  seat(FIRST_PLAYER).accountId = KEEPER_ACCOUNT_ID;
+  startTheGame();
+
+  finishTheGame();
+
+  EXPECT_EQ(onlyResult().players.at(0).accountId, KEEPER_ACCOUNT_ID);
+}
+
+/**
+ * Given a player who won the crown, then the halo
+ * When the game finishes
+ * Then its row names both items of the catalog, in that order
+ */
+TEST_F(GameResultKeeperFixture, RecordsTheLooksAPlayerWon) {
+  ConnectedPlayer& player = seat(FIRST_PLAYER);
+  startTheGame();
+  player.wonLookNumbers = {CROWN_LOOK_NUMBER, HALO_LOOK_NUMBER};
+
+  finishTheGame();
+
+  EXPECT_EQ(onlyResult().players.at(0).wonLooks,
+            (std::vector<std::string>{std::string{CROWN_LOOK_NAME},
+                                      std::string{HALO_LOOK_NAME}}));
+}
+
+/**
+ * Given a player who won the crown, then left before the end
+ * When the game finishes
+ * Then the row it left names the crown
+ */
+TEST_F(GameResultKeeperFixture, RecordsTheLooksOfAPlayerWhoLeft) {
+  ConnectedPlayer& player = seat(FIRST_PLAYER);
+  seat(SECOND_PLAYER);
+  startTheGame();
+  player.wonLookNumbers = {CROWN_LOOK_NUMBER};
+  leave(FIRST_PLAYER);
+
+  finishTheGame();
+
+  EXPECT_EQ(onlyResult().players.at(0).wonLooks,
+            (std::vector<std::string>{std::string{CROWN_LOOK_NAME}}));
+}
+
+/**
+ * Given a game in progress
+ * When its players clear the level
+ * Then its result says it was won
+ */
+TEST_F(GameResultKeeperFixture, RecordsAWonGame) {
+  seat(FIRST_PLAYER);
+  startTheGame();
+
+  winTheGame();
+
+  EXPECT_TRUE(onlyResult().victory);
+}
+
+/**
+ * Given a game in progress
+ * When it finishes without its level cleared
+ * Then its result says it was not won
+ */
+TEST_F(GameResultKeeperFixture, RecordsALostGame) {
+  seat(FIRST_PLAYER);
+  startTheGame();
+
+  finishTheGame();
+
+  EXPECT_FALSE(onlyResult().victory);
 }
 
 }  // namespace rtype::server::testing

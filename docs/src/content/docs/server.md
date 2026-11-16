@@ -1362,6 +1362,8 @@ erDiagram
     INTEGER vanilla
     INTEGER sent_at
     INTEGER refused_at
+    TEXT won_looks
+    INTEGER victory
   }
   player_statistics {
     TEXT player
@@ -1380,17 +1382,19 @@ The table is `STRICT`: SQLite refuses a value it cannot store in the declared ty
 |---|---|
 | `game_id` | 32 hexadecimal characters drawn by SQLite, not a counter, so a deleted file never reuses an identifier |
 | `nickname` | The nickname of the player; `NOCASE` folds ASCII letters only, as `PlayerRoster::hasNickname()` does, so `ACE` and `ace` are one player |
-| `account_id` | Empty: accounts do not exist yet |
+| `account_id` | The account of the player on the master, in decimal digits, as its `ConnectionRequest` named it; empty for a guest. Nothing proves it: the server only reports it to the master |
 | `score`, `deaths` | What the player left the game with |
 | `played_at` | When the game ended, in seconds since 1970 UTC |
 | `difficulty`, `player_count` | `GameSettings::difficulty` (always `normal` for now) and the players connected at the start |
 | `vanilla` | 1 for a vanilla game, 0 otherwise (see [Vanilla games](#vanilla-games-vanillabreaches)) |
 | `sent_at` | When the master kept the game, in seconds since 1970 UTC; empty until then, and for a game that is not vanilla |
 | `refused_at` | When the master refused the game for good (see [Link with the master](#link-with-the-master-servermastermodule)); empty otherwise. Added by the second migration |
+| `won_looks` | The names of the look items the player won in the game (`LookItemKeeper`), separated by a space, each once, in the order it won them; empty when it won none. Added by the fifth migration |
+| `victory` | 1 when the players cleared the level, 0 otherwise, a game the server ended by itself included. Added by the fifth migration, which reads every older row as lost |
 
 The view `player_statistics` adds up the rows of each player, every difficulty together: `games_played`, `best_score`, `total_score` and `deaths`, under the account identifier when there is one and under the nickname otherwise. It holds no data of its own, so it cannot disagree with the rows. Nothing in the game reads it yet.
 
-`openDatabaseFile()` (`rtype_storage`, `src/storage/`) opens every connection: a write-ahead log, `synchronous` FULL, then the migrations the file does not hold, each committed with its number in `PRAGMA user_version`. A change adds a line to `SERVER_MIGRATIONS` (`ServerMigrationsConstants.hpp`), never edits one: the supervisor and every game open the file with that list, and a program with a shorter one refuses the file. The first two make the results; the third made the table of the bans of the console, and the fourth drops it, now that the console bans nobody, so a file that already holds the table still opens. The file of a server is the setting `database` (`set database <file>` in `server.cfg`, or `--database <file>`); while it is empty, it is `r-type_server_<port>.db` next to the executable, the port being the one the network module gives through `IListeningPort`, or 4242 when no module gives one. A file that cannot be opened, cannot use a write-ahead log (a network file system) or was written by a newer program stops the start with an error that names it.
+`openDatabaseFile()` (`rtype_storage`, `src/storage/`) opens every connection: a write-ahead log, `synchronous` FULL, then the migrations the file does not hold, each committed with its number in `PRAGMA user_version`. A change adds a line to `SERVER_MIGRATIONS` (`ServerMigrationsConstants.hpp`), never edits one: the supervisor and every game open the file with that list, and a program with a shorter one refuses the file. The first two make the results; the third made the table of the bans of the console, and the fourth drops it, now that the console bans nobody, so a file that already holds the table still opens; the fifth adds `won_looks` and `victory`. The file of a server is the setting `database` (`set database <file>` in `server.cfg`, or `--database <file>`); while it is empty, it is `r-type_server_<port>.db` next to the executable, the port being the one the network module gives through `IListeningPort`, or 4242 when no module gives one. A file that cannot be opened, cannot use a write-ahead log (a network file system) or was written by a newer program stops the start with an error that names it.
 
 - Every game of a supervisor opens the same file, and two games can start within a millisecond of each other on a file that does not exist yet. Each opening waits for the others, up to `DATABASE_BUSY_TIMEOUT_MILLISECONDS` (5 s): SQLite refuses the switch to the write-ahead log at once, without waiting, while another connection holds the lock it needs, so `openDatabaseFile()` asks again every `WAL_SWITCH_RETRY_PAUSE` (10 ms) until that delay ends. Each migration reads the version of the file inside its own write transaction, so a migration another game applied in the meantime is never applied twice. A file already in a write-ahead log and migrated is opened without taking any write lock.
 - A process killed loses no committed game; a test saves a game and ends its process at once. What still waits in a queue is lost, at most one `STORAGE_POLL_INTERVAL` of work.

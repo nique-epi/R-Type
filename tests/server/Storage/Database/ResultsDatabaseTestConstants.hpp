@@ -30,6 +30,13 @@ constexpr std::uint32_t HIGH_SCORE = 300;
 constexpr std::uint32_t TWO_DEATHS = 2;
 constexpr std::uint32_t ONE_DEATH = 1;
 constexpr std::size_t GAME_ID_SIZE = 32;
+
+/** @brief The account ACE played under, the largest one eight bytes hold,
+ * whose digits a text column must keep whole; and two items of the catalog of
+ * the ship looks it won. */
+constexpr std::uint64_t SAVED_ACCOUNT_ID = 18'446'744'073'709'551'615U;
+constexpr std::string_view WON_CROWN = "crown";
+constexpr std::string_view WON_HALO = "halo";
 constexpr std::size_t PLAYERS_ON_A_FULL_BOARD = 11;
 constexpr std::uint32_t LAST_RANK_ON_A_FULL_BOARD = 11;
 constexpr int DIED_AT_ONCE_EXIT_CODE = 42;

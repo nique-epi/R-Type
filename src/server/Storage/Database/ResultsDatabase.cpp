@@ -8,7 +8,9 @@
 #include <cstdint>
 #include <filesystem>
 #include <optional>
+#include <ranges>
 #include <string>
+#include <string_view>
 #include <vector>
 #include "DatabaseFile.hpp"
 #include "GameResult.hpp"
@@ -19,6 +21,7 @@
 #include "ResultsDatabaseConstants.hpp"
 #include "ServerMigrationsConstants.hpp"
 #include "UnsentGame.hpp"
+#include "WholeNumberText.hpp"
 
 namespace rtype::server {
 
@@ -33,12 +36,58 @@ void bindGame(SQLite::Statement& insert, const GameResult& result,
   insert.bind(DIFFICULTY_PARAMETER, result.difficulty);
   insert.bind(PLAYER_COUNT_PARAMETER, result.playerCount);
   insert.bind(VANILLA_PARAMETER, static_cast<std::int32_t>(result.vanilla));
+  insert.bind(VICTORY_PARAMETER, static_cast<std::int32_t>(result.victory));
+}
+
+/** @returns @p looks as won_looks keeps them: separated by
+ * WON_LOOKS_SEPARATOR, empty when there is none. */
+std::string joinedLooks(const std::vector<std::string>& looks) {
+  std::string joined;
+  for (const std::string& look : looks) {
+    if (!joined.empty()) {
+      joined += WON_LOOKS_SEPARATOR;
+    }
+    joined += look;
+  }
+  return joined;
+}
+
+/** @returns The names @p joined keeps, as joinedLooks() writes them. */
+std::vector<std::string> splitLooks(std::string_view joined) {
+  std::vector<std::string> looks;
+  for (const auto look : std::views::split(joined, WON_LOOKS_SEPARATOR)) {
+    if (!look.empty()) {
+      looks.emplace_back(look.begin(), look.end());
+    }
+  }
+  return looks;
+}
+
+/** @brief Binds @p accountId in decimal digits, or null for a guest. */
+void bindAccount(SQLite::Statement& insert, std::uint64_t accountId) {
+  if (accountId == network::GUEST_ACCOUNT_ID) {
+    insert.bind(ACCOUNT_ID_PARAMETER);
+    return;
+  }
+  insert.bind(ACCOUNT_ID_PARAMETER, std::to_string(accountId));
+}
+
+/** @returns The account @p column keeps; a guest for a null, or for a text
+ * that is no whole number, which this server never writes. */
+std::uint64_t accountOf(const SQLite::Column& column) {
+  if (column.isNull()) {
+    return network::GUEST_ACCOUNT_ID;
+  }
+  return network::wholeNumberIn<std::uint64_t>(column.getString())
+      .value_or(network::GUEST_ACCOUNT_ID);
 }
 
 void bindPlayer(SQLite::Statement& insert, const PlayerResult& player) {
   insert.bind(NICKNAME_PARAMETER, player.nickname);
+  bindAccount(insert, player.accountId);
   insert.bind(SCORE_PARAMETER, player.score);
   insert.bind(DEATHS_PARAMETER, player.deaths);
+  insert.bind(WON_LOOKS_PARAMETER, joinedLooks(player.wonLooks));
 }
 
 /** @brief Binds the filters of @p request; one that asks for every value
@@ -74,14 +123,18 @@ UnsentGame unsentGameOf(const SQLite::Statement& query) {
           .endedAt = std::chrono::sys_seconds{std::chrono::seconds{
               query.getColumn(PLAYED_AT_COLUMN).getInt64()}},
           .players = {},
-          .vanilla = true}};
+          .vanilla = true,
+          .victory = query.getColumn(VICTORY_COLUMN).getInt() != 0}};
 }
 
 /** @returns The player of the row @p query is on. */
 PlayerResult playerOf(const SQLite::Statement& query) {
-  return PlayerResult{.nickname = query.getColumn(NICKNAME_COLUMN).getString(),
-                      .score = query.getColumn(SCORE_COLUMN).getUInt(),
-                      .deaths = query.getColumn(DEATHS_COLUMN).getUInt()};
+  return PlayerResult{
+      .nickname = query.getColumn(NICKNAME_COLUMN).getString(),
+      .score = query.getColumn(SCORE_COLUMN).getUInt(),
+      .deaths = query.getColumn(DEATHS_COLUMN).getUInt(),
+      .accountId = accountOf(query.getColumn(ACCOUNT_ID_COLUMN)),
+      .wonLooks = splitLooks(query.getColumn(WON_LOOKS_COLUMN).getString())};
 }
 
 /** @brief Writes @p answeredAt on every row of @p gameId with @p update. */

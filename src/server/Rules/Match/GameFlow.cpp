@@ -100,6 +100,14 @@ void changeState(GameState& state, GameState next, engine::EventBus& events) {
                                   .current = next});
 }
 
+/** @brief Moves @p state from InProgress to Finished, with @p outcome.
+ * @returns The change to publish. */
+GameStateChanged finishing(GameState& state, GameOutcome outcome) {
+  return GameStateChanged{.previous = std::exchange(state, GameState::Finished),
+                          .current = GameState::Finished,
+                          .outcome = outcome};
+}
+
 /** @brief Writes that the game started, with how many players. */
 void logStart(const logging::Logger& logger, PlayerRoster& roster) {
   logger.info("game started, players connected: ", roster.connected().size());
@@ -165,7 +173,7 @@ void GameFlow::advanceState() {
 
 void GameFlow::finish() {
   if (state_ == GameState::InProgress) {
-    changeState(state_, GameState::Finished, game_.events.get());
+    game_.events.get().publish(finishing(state_, GameOutcome::Defeat));
     finishedTicks_ = 0;
   }
 }
@@ -185,7 +193,8 @@ void GameFlow::finishIfOver() {
     return;
   }
   logger_.info("game finished: ", ending->reason);
-  finish();
+  game_.events.get().publish(finishing(state_, ending->outcome));
+  finishedTicks_ = 0;
   replication_.onGameFinished(ending->outcome);
 }
 
@@ -209,6 +218,7 @@ void GameFlow::startNewWorld() {
   for (ConnectedPlayer* const player : game_.roster.get().connected()) {
     player->ready = false;
     player->score = 0;
+    player->wonLookNumbers.clear();
     player->livesWithoutShip = game_.settings.rules.lives;
     player->ticksUntilRespawn = 0;
     player->shipEntityId = identifiers::NO_ENTITY_ID;

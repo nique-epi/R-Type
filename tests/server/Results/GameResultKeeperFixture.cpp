@@ -4,6 +4,7 @@
 #include <optional>
 #include <string>
 #include "ConnectedPlayer.hpp"
+#include "GameOutcome.hpp"
 #include "GameResult.hpp"
 #include "GameResultKeeperTestConstants.hpp"
 #include "GameRuleConstants.hpp"
@@ -52,6 +53,12 @@ void GameResultKeeperFixture::startTheGame() {
 void GameResultKeeperFixture::finishTheGame() {
   keeper_.onStateChanged(GameStateChanged{.previous = GameState::InProgress,
                                           .current = GameState::Finished});
+}
+
+void GameResultKeeperFixture::winTheGame() {
+  keeper_.onStateChanged(GameStateChanged{.previous = GameState::InProgress,
+                                          .current = GameState::Finished,
+                                          .outcome = GameOutcome::Victory});
 }
 
 void GameResultKeeperFixture::waitForPlayersAgain() {

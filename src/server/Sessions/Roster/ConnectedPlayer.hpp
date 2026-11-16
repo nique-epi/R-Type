@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <vector>
 #include "AppliedInput.hpp"
 #include "ArrivalLedger.hpp"
 #include "Endpoint.hpp"
@@ -48,6 +49,11 @@ struct ConnectedPlayer {
   /** @brief The points the player earned in the current game; back to 0 when a
    * new world is built. */
   std::uint32_t score{0};
+  /** @brief The look items the player won in the current game, each once, as
+   * the numbers LookItemWon carries (see identifiers::lookIndexOf()), in the
+   * order it won them. LookItemKeeper fills it; emptied when a new world is
+   * built. */
+  std::vector<std::uint8_t> wonLookNumbers{};
   /** @brief The lives the player has while it has no ship, the next ship
    * included: game::STARTING_LIVES when it is seated, the lives of the rules
    * of the game once it joined and when a new world is built, one less each

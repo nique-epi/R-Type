@@ -30,8 +30,8 @@ constexpr std::string_view DROP_BANS_TABLE_MIGRATION = "DROP TABLE bans;";
  * that opens it, the supervisor and each game: a change adds one, never edits
  * one, and a process with a shorter list refuses the file (see
  * storage::openDatabaseFile()). */
-constexpr std::array<std::string_view, 4> SERVER_MIGRATIONS{
+constexpr std::array<std::string_view, 5> SERVER_MIGRATIONS{
     RESULTS_TABLE_MIGRATION, UNSENT_GAMES_MIGRATION, BANS_TABLE_MIGRATION,
-    DROP_BANS_TABLE_MIGRATION};
+    DROP_BANS_TABLE_MIGRATION, RESULTS_OF_ACCOUNTS_MIGRATION};
 
 }  // namespace rtype::server

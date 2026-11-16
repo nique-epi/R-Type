@@ -32,6 +32,37 @@ TEST_F(LookItemKeeperFixture,
 }
 
 /**
+ * Given the ship of player 1 and a crown it touched, delivered
+ * When the keeper runs its next tick
+ * Then player 1 keeps the crown among the items it won in the game
+ */
+TEST_F(LookItemKeeperFixture, TheWinnerKeepsTheItemForTheResults) {
+  const ConnectedPlayer& first = join(FIRST_SEAT);
+  publishTouch(first, spawnACrown());
+  deliver();
+
+  tick();
+
+  EXPECT_EQ(first.wonLookNumbers, (std::vector<std::uint8_t>{CROWN_NUMBER}));
+}
+
+/**
+ * Given the ship of player 1 and two crowns it touched in one tick, delivered
+ * When the keeper runs its next tick
+ * Then player 1 keeps the crown once among the items it won
+ */
+TEST_F(LookItemKeeperFixture, AnItemWonTwiceIsKeptOnce) {
+  const ConnectedPlayer& first = join(FIRST_SEAT);
+  publishTouch(first, spawnACrown());
+  publishTouch(first, spawnACrown());
+  deliver();
+
+  tick();
+
+  EXPECT_EQ(first.wonLookNumbers, (std::vector<std::uint8_t>{CROWN_NUMBER}));
+}
+
+/**
  * Given a crown touched by two ships in one tick
  * When the keeper runs its next tick and the bus delivers its events
  * Then the crown is removed once, and gone from the world
