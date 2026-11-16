@@ -26,7 +26,4 @@ InvalidPasswordKeyException::InvalidPasswordKeyException(
                       " holds no key: 64 hexadecimal digits are expected, as "
                       "`openssl rand -hex 32` draws them") {}
 
-CasinoStakeRefusedException::CasinoStakeRefusedException()
-    : MasterException("the wallet refused the stake of the bets") {}
-
 }  // namespace rtype::master

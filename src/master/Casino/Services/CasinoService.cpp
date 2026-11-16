@@ -25,7 +25,6 @@
 #include "ChipMovementResult.hpp"
 #include "IAccountWallet.hpp"
 #include "MasterDatabase.hpp"
-#include "MasterException.hpp"
 #include "MillisecondDate.hpp"
 #include "MovementReason.hpp"
 #include "PlayerBet.hpp"
@@ -96,15 +95,18 @@ std::optional<BetRefusal> tableRefusalOf(SQLite::Database& connection,
   return std::nullopt;
 }
 
-/** @returns The movement of @p amount chips, for @p reason, of the account
- * and the round of @p order. */
-ChipMovement chipMovementOf(const BetOrder& order, std::int64_t amount,
-                            network::MovementReason reason) {
+/** @returns The one movement that turns a stake of @p previous chips on the
+ * round of @p order into the stake of its bets: a stake for the chips it adds,
+ * a refund for the chips it hands back, and nothing to write when both are
+ * equal. */
+ChipMovement stakeChangeOf(const BetOrder& order, std::uint64_t previous) {
+  const auto change = static_cast<std::int64_t>(previous) -
+                      static_cast<std::int64_t>(network::stakeOf(order.bets));
   return ChipMovement{.userId = order.userId,
-                      .amount = amount,
-                      .reason = reason,
+                      .amount = change,
+                      .reason = change > 0 ? network::MovementReason::Refund
+                                           : network::MovementReason::Stake,
                       .reference = roundReferenceOf(order.place),
-                      .appliedOnce = false,
                       .madeAt = secondOf(order.sentAt)};
 }
 
@@ -191,19 +193,15 @@ std::variant<network::BetsReceipt, BetRefusal> CasinoService::placeBets(
     return *refusal;
   }
   const RouletteDurations durations = settings_().durations;
-  try {
-    return database_.transact(
-        [this, &order, &durations](SQLite::Database& connection)
-            -> std::variant<network::BetsReceipt, BetRefusal> {
-          if (const std::optional<BetRefusal> refusal =
-                  tableRefusalOf(connection, order, durations)) {
-            return *refusal;
-          }
-          return writtenBets(connection, order);
-        });
-  } catch (const CasinoStakeRefusedException&) {
-    return BetRefusal::NotEnoughChips;
-  }
+  return database_.transact(
+      [this, &order, &durations](SQLite::Database& connection)
+          -> std::variant<network::BetsReceipt, BetRefusal> {
+        if (const std::optional<BetRefusal> refusal =
+                tableRefusalOf(connection, order, durations)) {
+          return *refusal;
+        }
+        return writtenBets(connection, order);
+      });
 }
 
 network::RoundBets CasinoService::betsOf(network::RoomRound place,
@@ -270,31 +268,22 @@ network::CasinoRoomState CasinoService::roomState(
   return state;
 }
 
-network::BetsReceipt CasinoService::writtenBets(SQLite::Database& connection,
-                                                const BetOrder& order) {
+std::variant<network::BetsReceipt, BetRefusal> CasinoService::writtenBets(
+    SQLite::Database& connection, const BetOrder& order) {
   CasinoBetRepository bets{connection};
-  const auto handedBack = static_cast<std::uint32_t>(
-      network::stakeOf(bets.betsOf(order.place, order.userId)));
-  if (wallet_
-          .applyChips(connection,
-                      chipMovementOf(order, handedBack,
-                                     network::MovementReason::Refund))
-          .refusal.has_value()) {
-    throw CasinoStakeRefusedException();
+  const auto stake = static_cast<std::uint32_t>(network::stakeOf(order.bets));
+  const ChipMovementResult moved = wallet_.applyChips(
+      connection, stakeChangeOf(order, network::stakeOf(bets.betsOf(
+                                           order.place, order.userId))));
+  if (moved.refusal.has_value()) {
+    return BetRefusal::NotEnoughChips;
   }
   bets.removeOf(order.place, order.userId);
   bets.insert(order.place, order.userId, order.bets);
-  const auto stake = static_cast<std::uint32_t>(network::stakeOf(order.bets));
-  const ChipMovementResult staked = wallet_.applyChips(
-      connection, chipMovementOf(order, -std::int64_t{stake},
-                                 network::MovementReason::Stake));
-  if (staked.refusal.has_value()) {
-    throw CasinoStakeRefusedException();
-  }
   return network::BetsReceipt{.round = order.place.round,
                               .bets = order.bets,
                               .stake = stake,
-                              .chips = staked.chips};
+                              .chips = moved.chips};
 }
 
 }  // namespace rtype::master

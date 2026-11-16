@@ -77,11 +77,12 @@ class CasinoService {
       std::uint8_t room, network::MillisecondDate now);
 
  private:
-  /** @returns The bets of @p order written, the old ones handed back.
-   * @throws CasinoStakeRefusedException when the wallet refuses the stake,
-   * which rolls the transaction back. */
-  network::BetsReceipt writtenBets(SQLite::Database& connection,
-                                   const BetOrder& order);
+  /** @brief Writes the bets of @p order in place of the ones it replaces,
+   * with one movement of the wallet for the difference of their stakes.
+   * @returns The receipt; NotEnoughChips, with nothing written, when the
+   * wallet holds less than the chips the new stake adds. */
+  std::variant<network::BetsReceipt, BetRefusal> writtenBets(
+      SQLite::Database& connection, const BetOrder& order);
 
   MasterDatabase& database_;
   IAccountWallet& wallet_;

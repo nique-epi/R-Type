@@ -41,14 +41,4 @@ class InvalidPasswordKeyException : public MasterException {
   explicit InvalidPasswordKeyException(std::string_view variable);
 };
 
-/**
- * @brief The wallet refused the stake of new bets of the casino, after the
- * bets they replace were handed back: thrown inside the transaction of the
- * bets, so leaving it rolls every write of that transaction back.
- */
-class CasinoStakeRefusedException : public MasterException {
- public:
-  CasinoStakeRefusedException();
-};
-
 }  // namespace rtype::master
