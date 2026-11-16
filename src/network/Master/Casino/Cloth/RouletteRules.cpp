@@ -1,6 +1,7 @@
 #include "RouletteRules.hpp"
 #include <algorithm>
 #include <cstdint>
+#include <vector>
 #include "RouletteBet.hpp"
 #include "RouletteBetKind.hpp"
 #include "RouletteConstants.hpp"
@@ -172,6 +173,19 @@ std::uint64_t payoutOf(const RouletteBet& bet, std::uint8_t drawn) {
     return 0;
   }
   return static_cast<std::uint64_t>(bet.amount) * returnOf(bet.kind);
+}
+
+std::uint64_t stakeOf(const std::vector<RouletteBet>& bets) {
+  std::uint64_t stake = 0;
+  for (const RouletteBet& bet : bets) {
+    stake += bet.amount;
+  }
+  return stake;
+}
+
+bool fitsRoundCaps(const std::vector<RouletteBet>& bets) {
+  return bets.size() <= MAXIMUM_ROULETTE_BETS &&
+         stakeOf(bets) <= MAXIMUM_ROUND_STAKE;
 }
 
 }  // namespace rtype::network

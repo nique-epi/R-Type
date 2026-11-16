@@ -65,14 +65,12 @@ std::optional<BetRefusal> ruleRefusalOf(
   if (bets.size() > network::MAXIMUM_ROULETTE_BETS) {
     return BetRefusal::TooManyBets;
   }
-  std::uint64_t total = 0;
   for (const network::RouletteBet& bet : bets) {
     if (bet.amount == 0 || !network::isPlaceableBet(bet)) {
       return BetRefusal::InvalidBet;
     }
-    total += bet.amount;
   }
-  if (total > network::MAXIMUM_ROUND_STAKE) {
+  if (!network::fitsRoundCaps(bets)) {
     return BetRefusal::OverTheCap;
   }
   return std::nullopt;
@@ -217,7 +215,7 @@ network::RoundBets CasinoService::betsOf(network::RoomRound place,
         .stake = 0,
         .payout = std::nullopt,
         .winningNumber = CasinoRoundRepository{connection}.numberOf(place)};
-    answer.stake = stakeOf(answer.bets);
+    answer.stake = static_cast<std::uint32_t>(network::stakeOf(answer.bets));
     if (answer.winningNumber.has_value()) {
       answer.payout = payoutOfBets(answer.bets, *answer.winningNumber);
     }
@@ -275,8 +273,8 @@ network::CasinoRoomState CasinoService::roomState(
 network::BetsReceipt CasinoService::writtenBets(SQLite::Database& connection,
                                                 const BetOrder& order) {
   CasinoBetRepository bets{connection};
-  const std::uint32_t handedBack =
-      stakeOf(bets.betsOf(order.place, order.userId));
+  const auto handedBack = static_cast<std::uint32_t>(
+      network::stakeOf(bets.betsOf(order.place, order.userId)));
   if (wallet_
           .applyChips(connection,
                       chipMovementOf(order, handedBack,
@@ -286,7 +284,7 @@ network::BetsReceipt CasinoService::writtenBets(SQLite::Database& connection,
   }
   bets.removeOf(order.place, order.userId);
   bets.insert(order.place, order.userId, order.bets);
-  const std::uint32_t stake = stakeOf(order.bets);
+  const auto stake = static_cast<std::uint32_t>(network::stakeOf(order.bets));
   const ChipMovementResult staked = wallet_.applyChips(
       connection, chipMovementOf(order, -std::int64_t{stake},
                                  network::MovementReason::Stake));

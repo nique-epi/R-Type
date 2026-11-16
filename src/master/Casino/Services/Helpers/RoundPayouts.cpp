@@ -8,14 +8,6 @@
 
 namespace rtype::master {
 
-std::uint32_t stakeOf(const std::vector<network::RouletteBet>& bets) {
-  std::uint32_t stake = 0;
-  for (const network::RouletteBet& bet : bets) {
-    stake += bet.amount;
-  }
-  return stake;
-}
-
 std::map<std::int64_t, std::uint32_t> stakesOf(
     const std::vector<PlayerBet>& bets) {
   std::map<std::int64_t, std::uint32_t> stakes;
