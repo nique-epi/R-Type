@@ -16,6 +16,7 @@
 #include "MasterRouteConstants.hpp"
 #include "MasterRoutePath.hpp"
 #include "RouteAnswers.hpp"
+#include "SiteVisitors.hpp"
 #include "User.hpp"
 
 namespace rtype::master {
@@ -27,10 +28,13 @@ std::chrono::sys_seconds now() {
       std::chrono::system_clock::now());
 }
 
-CredentialsAttempt credentialsAttemptOf(const network::ApiRequest& request) {
+/** @returns What @p request asks, counted under the visitor of the web site
+ * it names, or the client it came from. */
+CredentialsAttempt credentialsAttemptOf(const network::ApiRequest& request,
+                                        const SiteVisitors& siteVisitors) {
   return CredentialsAttempt{
       .credentials = network::userCredentialsFromText(request.body),
-      .address = request.remoteAddress,
+      .address = siteVisitors.addressOf(request),
       .requestedAt = now()};
 }
 
@@ -82,14 +86,16 @@ network::ApiResponse createdSessionResponse(
 
 }  // namespace
 
-AccountsController::AccountsController(AccountsService& service)
-    : service_(service) {}
+AccountsController::AccountsController(AccountsService& service,
+                                       const SiteVisitors& siteVisitors)
+    : service_(service), siteVisitors_(siteVisitors) {}
 
 network::ApiResponse AccountsController::createUser(
     const network::ApiRequest& request) {
   return answerOrRefuse([this, &request] {
-    return answerOf(service_.createUser(credentialsAttemptOf(request)),
-                    createdUserResponse);
+    return answerOf(
+        service_.createUser(credentialsAttemptOf(request, siteVisitors_)),
+        createdUserResponse);
   });
 }
 
@@ -107,8 +113,9 @@ network::ApiResponse AccountsController::readOwnUser(
 network::ApiResponse AccountsController::createSession(
     const network::ApiRequest& request) {
   return answerOrRefuse([this, &request] {
-    return answerOf(service_.createSession(credentialsAttemptOf(request)),
-                    createdSessionResponse);
+    return answerOf(
+        service_.createSession(credentialsAttemptOf(request, siteVisitors_)),
+        createdSessionResponse);
   });
 }
 

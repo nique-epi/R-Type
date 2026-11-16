@@ -144,7 +144,7 @@ Master modules:
 | `logger` | nothing | Applies the logging options when it starts. |
 | `storage` | `logger` | Opens the database of the master. |
 | `probe` | `logger` | Opens the UDP socket the probes of the game servers leave from. |
-| `http` | `logger` | Opens the port of the HTTP API. |
+| `http` | `logger` | Opens the port of the HTTP API, and reads the `site-key` with which the web site names its visitors. |
 | `servers` | `logger`, `storage`, `probe`, `http` | Creates the game servers with their keys, takes their registration and their heartbeats, and probes their UDP port. |
 | `leaderboard` | `storage`, `http`, `servers` | Keeps the results of the vanilla games and ranks them in the global leaderboard. |
 | `accounts` | `logger`, `storage`, `http` | Keeps the accounts of the players and their sessions, over HTTPS only. Optional: `RTYPE_MODULE_ACCOUNTS`. |

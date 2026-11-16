@@ -3,6 +3,7 @@
 #include "AccountsService.hpp"
 #include "ApiRequest.hpp"
 #include "ApiResponse.hpp"
+#include "SiteVisitors.hpp"
 
 namespace rtype::master {
 
@@ -15,17 +16,26 @@ namespace rtype::master {
  * number in the path. Every refusal is a problem document: 400 naming the
  * faulty member, 401 without a valid session (with `WWW-Authenticate: Bearer`),
  * 409 for a nickname taken, 429 over a quota.
+ *
+ * A creation and a sign-in are counted under the visitor the web site names
+ * with the site key (SiteVisitors::addressOf()), under the address they came
+ * from otherwise.
  */
 class AccountsController {
  public:
-  /** @param service Applies the rules of the accounts; it must outlive the
-   * controller. */
-  explicit AccountsController(AccountsService& service);
+  /**
+   * @param service Applies the rules of the accounts; it must outlive the
+   * controller.
+   * @param siteVisitors Who a creation or a sign-in is counted under; it must
+   * outlive the controller.
+   */
+  AccountsController(AccountsService& service,
+                     const SiteVisitors& siteVisitors);
 
   /**
    * @returns The answer of `POST /api/users`: 201, `Location` naming the
    * account, and the account; 409 for a nickname taken, 429 when the address
-   * created too many accounts.
+   * or the visitor created too many accounts.
    */
   [[nodiscard]] network::ApiResponse createUser(
       const network::ApiRequest& request);
@@ -38,8 +48,8 @@ class AccountsController {
   /**
    * @returns The answer of `POST /api/sessions`: 201, `Location` naming the
    * session of the token, and the session with its token, shown this once; 401
-   * for a wrong nickname or password, 429 when the address failed too many
-   * sign-ins.
+   * for a wrong nickname or password, 429 when the address or the visitor
+   * failed too many sign-ins.
    */
   [[nodiscard]] network::ApiResponse createSession(
       const network::ApiRequest& request);
@@ -51,6 +61,7 @@ class AccountsController {
 
  private:
   AccountsService& service_;
+  const SiteVisitors& siteVisitors_;
 };
 
 }  // namespace rtype::master
