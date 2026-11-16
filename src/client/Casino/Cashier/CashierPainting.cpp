@@ -48,8 +48,8 @@ void paintBalance(IInterfaceCanvas& canvas, const CashierView& view,
                   bool source) {
   const char* word = balanceWordOf(view.way, source);
   const std::uint32_t amount = source
-                                   ? sourceOf(view.tried.purse, view.way)
-                                   : destinationOf(view.tried.purse, view.way);
+                                   ? sourceOf(view.tried.wallet, view.way)
+                                   : destinationOf(view.tried.wallet, view.way);
   const TextAlignment alignment =
       source ? TextAlignment::Left : TextAlignment::Right;
   const int column = source ? CASHIER_LEFT : CASHIER_RIGHT;
@@ -117,9 +117,9 @@ void paintAfter(IInterfaceCanvas& canvas, const CashierView& view) {
     return;
   }
   for (const bool source : {true, false}) {
-    const std::uint32_t after = source
-                                    ? sourceOf(view.tried.purse, view.way)
-                                    : destinationOf(view.tried.purse, view.way);
+    const std::uint32_t after =
+        source ? sourceOf(view.tried.wallet, view.way)
+               : destinationOf(view.tried.wallet, view.way);
     canvas.write(kopecksText(after) + CASHIER_AMOUNT_WORD_GAP +
                      balanceWordOf(view.way, source),
                  {source ? CASHIER_LEFT : CASHIER_RIGHT, CASHIER_RESULT_TOP},

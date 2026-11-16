@@ -1,13 +1,16 @@
 #include "CashierRules.hpp"
 #include <cstdint>
+#include <optional>
 #include <string>
 #include "CashierConstants.hpp"
+#include "CashierExchange.hpp"
 #include "CashierWay.hpp"
-#include "ChipsExchange.hpp"
-#include "Exchange.hpp"
-#include "ExchangeRefusal.hpp"
+#include "Currency.hpp"
+#include "ExchangeRequest.hpp"
 #include "Kopecks.hpp"
-#include "Purse.hpp"
+#include "Wallet.hpp"
+#include "WalletBalances.hpp"
+#include "WalletExchangeRefusal.hpp"
 #include "WalletRefusal.hpp"
 
 namespace rtype::client {
@@ -24,34 +27,53 @@ std::string destinationWordOf(CashierWay way) {
   return way == CashierWay::BuyChips ? CHIPS_WORD : KOPECKS_WORD;
 }
 
+/** @returns The currency @p way takes from: the kopecks to buy chips, the
+ * chips to cash out. */
+network::Currency currencyTakenBy(CashierWay way) {
+  return way == CashierWay::BuyChips ? network::Currency::Kopecks
+                                     : network::Currency::Chips;
+}
+
 }  // namespace
 
-Exchange exchangeAt(const Purse& purse, CashierWay way, std::uint32_t amount) {
-  return way == CashierWay::BuyChips ? buyChips(purse, amount)
-                                     : cashOutChips(purse, amount);
+network::ExchangeRequest exchangeRequestOf(CashierWay way,
+                                           std::uint32_t amount) {
+  return network::ExchangeRequest{.from = currencyTakenBy(way),
+                                  .amount = amount};
 }
 
-std::uint32_t sourceOf(const Purse& purse, CashierWay way) {
-  return way == CashierWay::BuyChips ? purse.kopecks : purse.chips;
+CashierExchange exchangeAt(const network::Wallet& wallet, CashierWay way,
+                           std::uint32_t amount) {
+  const network::ExchangeRequest request = exchangeRequestOf(way, amount);
+  if (const std::optional<network::WalletExchangeRefusal> refusal =
+          network::exchangeRefusalOf(wallet, request)) {
+    return CashierExchange{.refusal = refusal, .wallet = wallet};
+  }
+  return CashierExchange{.refusal = std::nullopt,
+                         .wallet = network::exchangedWallet(wallet, request)};
 }
 
-std::uint32_t destinationOf(const Purse& purse, CashierWay way) {
-  return way == CashierWay::BuyChips ? purse.chips : purse.kopecks;
+std::uint32_t sourceOf(const network::Wallet& wallet, CashierWay way) {
+  return network::balanceIn(wallet, currencyTakenBy(way));
 }
 
-std::string cashierLineOf(const Exchange& tried, CashierWay way,
+std::uint32_t destinationOf(const network::Wallet& wallet, CashierWay way) {
+  return network::balanceIn(wallet,
+                            network::otherCurrency(currencyTakenBy(way)));
+}
+
+std::string cashierLineOf(const CashierExchange& tried, CashierWay way,
                           std::uint32_t amount) {
   if (!tried.refusal.has_value()) {
     return {};
   }
   switch (*tried.refusal) {
-    case ExchangeRefusal::NothingToExchange:
+    case network::WalletExchangeRefusal::InvalidAmount:
       return NOTHING_TO_EXCHANGE_LINE;
-    case ExchangeRefusal::NotEnoughKopecks:
-    case ExchangeRefusal::NotEnoughChips:
+    case network::WalletExchangeRefusal::NotEnough:
       return NOT_ENOUGH_START + sourceWordOf(way) + MISSING_SEPARATOR +
-             kopecksText(amount - sourceOf(tried.purse, way)) + MISSING_END;
-    case ExchangeRefusal::BalanceFull:
+             kopecksText(amount - sourceOf(tried.wallet, way)) + MISSING_END;
+    case network::WalletExchangeRefusal::PastTheMaximum:
       break;
   }
   return FULL_START + destinationWordOf(way);

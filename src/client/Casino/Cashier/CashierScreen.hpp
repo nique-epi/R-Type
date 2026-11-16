@@ -9,9 +9,9 @@
 #include <string>
 #include "AccountLinkConstants.hpp"
 #include "CashierAmount.hpp"
+#include "CashierExchange.hpp"
 #include "CashierScreenParts.hpp"
 #include "CashierWay.hpp"
-#include "Exchange.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "IScreen.hpp"
 #include "IScreenNavigator.hpp"
@@ -20,6 +20,7 @@
 #include "KeyChip.hpp"
 #include "PlayfieldMapping.hpp"
 #include "TimeConstants.hpp"
+#include "Wallet.hpp"
 
 namespace rtype::client {
 
@@ -70,10 +71,11 @@ class CashierScreen final : public IScreen {
   /** @brief Closes the cashier once the master made the exchange asked, or
    * says why it did not. */
   void settle();
-  /** @returns The exchange the amount would make with @p purse, the purse
-   * of the wallet; with an empty purse while the master has not answered it.
-   */
-  [[nodiscard]] Exchange triedWith(const std::optional<Purse>& purse) const;
+  /** @returns The exchange the amount would make with @p balances, the
+   * balances of the wallet; with empty balances while the master has not
+   * answered them. */
+  [[nodiscard]] CashierExchange triedWith(
+      const std::optional<network::Wallet>& balances) const;
   void repaint();
 
   IScreenNavigator* navigator_;

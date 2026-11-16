@@ -12,6 +12,7 @@
 #include "AccountLinkConstants.hpp"
 #include "CashierAmount.hpp"
 #include "CashierConstants.hpp"
+#include "CashierExchange.hpp"
 #include "CashierPainting.hpp"
 #include "CashierRules.hpp"
 #include "CashierScreenParts.hpp"
@@ -20,18 +21,13 @@
 #include "CasinoBarChip.hpp"
 #include "ChipRow.hpp"
 #include "ChipSelector.hpp"
-#include "Currency.hpp"
-#include "Exchange.hpp"
 #include "ExchangeRequest.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "InterfacePixel.hpp"
-#include "Purse.hpp"
-#include "ShipLocker.hpp"
 #include "SoundConstants.hpp"
 #include "TimeConstants.hpp"
 #include "Wallet.hpp"
 #include "WalletChangeReading.hpp"
-#include "WalletPurse.hpp"
 #include "WalletRefusal.hpp"
 
 namespace rtype::client {
@@ -108,15 +104,12 @@ void CashierScreen::pointerPressed(sf::Vector2i pixel) {
 }
 
 void CashierScreen::confirm() {
-  const std::optional<Purse> purse = walletPurse(*wallet_);
-  if (exchangeAsk_ != NO_ACCOUNT_ASK || !purse.has_value() ||
-      triedWith(purse).refusal.has_value()) {
+  const std::optional<network::Wallet> balances = wallet_->wallet();
+  if (exchangeAsk_ != NO_ACCOUNT_ASK || !balances.has_value() ||
+      triedWith(balances).refusal.has_value()) {
     return;
   }
-  exchangeAsk_ = wallet_->exchange(network::ExchangeRequest{
-      .from = way_ == CashierWay::BuyChips ? network::Currency::Kopecks
-                                           : network::Currency::Chips,
-      .amount = amount_.amount()});
+  exchangeAsk_ = wallet_->exchange(exchangeRequestOf(way_, amount_.amount()));
   notice_ = exchangeAsk_ == NO_ACCOUNT_ASK
                 ? cashierRefusalLineOf(WalletRefusal::SignedOut)
                 : std::string{EXCHANGING_LINE};
@@ -139,17 +132,17 @@ void CashierScreen::settle() {
   navigator_->pop();
 }
 
-Exchange CashierScreen::triedWith(const std::optional<Purse>& purse) const {
+CashierExchange CashierScreen::triedWith(
+    const std::optional<network::Wallet>& balances) const {
   return exchangeAt(
-      purse.value_or(Purse{.kopecks = 0, .chips = 0, .locker = ShipLocker{}}),
-      way_, amount_.amount());
+      balances.value_or(network::Wallet{.kopecks = 0, .chips = 0}), way_,
+      amount_.amount());
 }
 
 void CashierScreen::repaint() {
-  const std::optional<Purse> purse = walletPurse(*wallet_);
   const std::optional<network::Wallet> balances = wallet_->wallet();
-  const Exchange exchange = triedWith(purse);
-  const bool known = purse.has_value();
+  const CashierExchange exchange = triedWith(balances);
+  const bool known = balances.has_value();
   confirmChip_.setEnabled(known && exchangeAsk_ == NO_ACCOUNT_ASK &&
                           !exchange.refusal.has_value());
   canvas_->clear();
