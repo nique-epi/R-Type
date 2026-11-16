@@ -8,7 +8,6 @@
 #include <utility>
 #include "BetsReading.hpp"
 #include "CasinoAsks.hpp"
-#include "CasinoLinkConstants.hpp"
 #include "CasinoLinkState.hpp"
 #include "CasinoReadings.hpp"
 #include "CasinoRefusal.hpp"
@@ -17,6 +16,7 @@
 #include "CasinoRoomsReading.hpp"
 #include "CasinoSeat.hpp"
 #include "HttpStatusConstants.hpp"
+#include "MasterCalls.hpp"
 #include "MasterCasinoClient.hpp"
 #include "NetworkException.hpp"
 #include "OwnBetsReading.hpp"
@@ -59,33 +59,6 @@ CasinoRefusal betsRefusalOf(const network::MasterRefusedException& refused) {
   }
 }
 
-/** @returns Why @p call failed, nothing when it went through; @p refusalOf
- * reads a refusal of the master. */
-template <typename Call, typename RefusalOf>
-std::optional<CasinoRefusal> failureOf(Call call, RefusalOf refusalOf) {
-  try {
-    call();
-  } catch (const network::MasterRefusedException& refused) {
-    return refusalOf(refused);
-  } catch (const network::MasterUnreachableException&) {
-    return CasinoRefusal::MasterUnreachable;
-  } catch (const network::NetworkException&) {
-    return CasinoRefusal::MasterRefused;
-  }
-  return std::nullopt;
-}
-
-/** @returns What @p call reads, or nothing when the master does not answer,
- * refuses, or answers what cannot be read. */
-template <typename Call>
-auto readingOrNothing(Call call) -> std::optional<decltype(call())> {
-  try {
-    return call();
-  } catch (const network::NetworkException&) {
-    return std::nullopt;
-  }
-}
-
 /** @brief Takes, renews or leaves the seat of @p asks when the ask is newer
  * than the one @p state served. */
 void serveSeat(network::MasterCasinoClient& client, const CasinoAsks& asks,
@@ -94,7 +67,7 @@ void serveSeat(network::MasterCasinoClient& client, const CasinoAsks& asks,
     return;
   }
   SeatReading reading{.ask = asks.seatAsk, .seat = asks.seat, .refusal = {}};
-  reading.refusal = failureOf(
+  reading.refusal = masterRefusalOf<CasinoRefusal>(
       [&client, &asks] {
         if (asks.seat.seated) {
           static_cast<void>(client.takeSeat(asks.token, asks.seat.room));
@@ -120,7 +93,7 @@ void serveBets(network::MasterCasinoClient& client, const CasinoAsks& asks,
                       .round = asks.betsRound,
                       .receipt = {},
                       .refusal = {}};
-  reading.refusal = failureOf(
+  reading.refusal = masterRefusalOf<CasinoRefusal>(
       [&client, &asks, &reading] {
         reading.receipt =
             client.placeBets(asks.token, asks.betsRound, asks.bets);
@@ -160,30 +133,18 @@ void serveReads(network::MasterCasinoClient& client, const CasinoAsks& asks,
   }
 }
 
-/** @brief The loop of the thread: waits for a newer ask, and serves it with
- * @p client. */
-void runCasinoLink(const std::stop_token& stop,
-                   network::MasterCasinoClient& client,
-                   CasinoLinkState& state) {
-  std::uint64_t seen = 0;
-  while (!stop.stop_requested()) {
-    seen = state.asks.waitForNewer(seen, CASINO_ASK_WAIT, stop);
-    const std::optional<CasinoAsks> asks = state.asks.value();
-    if (asks.has_value()) {
-      serveSeat(client, *asks, state);
-      serveBets(client, *asks, state);
-      serveReads(client, *asks, state);
-    }
-  }
-}
-
 }  // namespace
 
 void MasterCasinoLink::start(const std::string& url) {
   auto client = std::make_unique<network::MasterCasinoClient>(url);
   thread_ = std::jthread(
       [this, client = std::move(client)](const std::stop_token& stop) {
-        runCasinoLink(stop, *client, state_);
+        serveAsksUntilStopped(stop, state_.asks,
+                              [this, &client](const CasinoAsks& asks) {
+                                serveSeat(*client, asks, state_);
+                                serveBets(*client, asks, state_);
+                                serveReads(*client, asks, state_);
+                              });
       });
 }
 

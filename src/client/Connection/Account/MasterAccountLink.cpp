@@ -8,11 +8,11 @@
 #include <thread>
 #include <utility>
 #include "AccountAsks.hpp"
-#include "AccountLinkConstants.hpp"
 #include "AccountLinkState.hpp"
 #include "ExchangeRequest.hpp"
 #include "HttpStatusConstants.hpp"
 #include "MasterAccountClient.hpp"
+#include "MasterCalls.hpp"
 #include "NetworkException.hpp"
 #include "SignInRefusal.hpp"
 #include "UserReading.hpp"
@@ -53,15 +53,13 @@ WalletRefusal walletRefusalOf(int status) {
 UserReading userReadingOf(network::MasterAccountClient& client,
                           const AccountAsks& asks) {
   UserReading reading{.ask = asks.userAsk, .user = {}, .refusal = {}};
-  try {
-    reading.user = client.readOwnUser(asks.userToken);
-  } catch (const network::MasterRefusedException& refused) {
-    reading.refusal = signInRefusalOf(refused.status());
-  } catch (const network::MasterUnreachableException&) {
-    reading.refusal = SignInRefusal::MasterUnreachable;
-  } catch (const network::NetworkException&) {
-    reading.refusal = SignInRefusal::MasterRefused;
-  }
+  reading.refusal = masterRefusalOf<SignInRefusal>(
+      [&client, &asks, &reading] {
+        reading.user = client.readOwnUser(asks.userToken);
+      },
+      [](const network::MasterRefusedException& refused) {
+        return signInRefusalOf(refused.status());
+      });
   return reading;
 }
 
@@ -70,27 +68,12 @@ UserReading userReadingOf(network::MasterAccountClient& client,
 template <typename Change>
 WalletChangeReading walletChangeOf(std::uint64_t ask, Change change) {
   WalletChangeReading reading{.ask = ask, .wallet = {}, .refusal = {}};
-  try {
-    reading.wallet = change();
-  } catch (const network::MasterRefusedException& refused) {
-    reading.refusal = walletRefusalOf(refused.status());
-  } catch (const network::MasterUnreachableException&) {
-    reading.refusal = WalletRefusal::MasterUnreachable;
-  } catch (const network::NetworkException&) {
-    reading.refusal = WalletRefusal::MasterRefused;
-  }
+  reading.refusal = masterRefusalOf<WalletRefusal>(
+      [&change, &reading] { reading.wallet = change(); },
+      [](const network::MasterRefusedException& refused) {
+        return walletRefusalOf(refused.status());
+      });
   return reading;
-}
-
-/** @returns What @p call reads, or nothing when the master does not answer,
- * refuses, or answers what cannot be read. */
-template <typename Call>
-auto readingOrNothing(Call call) -> std::optional<decltype(call())> {
-  try {
-    return call();
-  } catch (const network::NetworkException&) {
-    return std::nullopt;
-  }
 }
 
 /** @brief Reads with @p client the wallet of the token of @p asks, and
@@ -146,29 +129,17 @@ void serveWallet(network::MasterAccountClient& client, const AccountAsks& asks,
   }
 }
 
-/** @brief The loop of the thread: waits for a newer ask, and serves it with
- * @p client. */
-void runAccountLink(const std::stop_token& stop,
-                    network::MasterAccountClient& client,
-                    AccountLinkState& state) {
-  std::uint64_t seen = 0;
-  while (!stop.stop_requested()) {
-    seen = state.asks.waitForNewer(seen, ACCOUNT_ASK_WAIT, stop);
-    const std::optional<AccountAsks> asks = state.asks.value();
-    if (asks.has_value()) {
-      serveUser(client, *asks, state);
-      serveWallet(client, *asks, state);
-    }
-  }
-}
-
 }  // namespace
 
 void MasterAccountLink::start(const std::string& url) {
   auto client = std::make_unique<network::MasterAccountClient>(url);
   thread_ = std::jthread(
       [this, client = std::move(client)](const std::stop_token& stop) {
-        runAccountLink(stop, *client, state_);
+        serveAsksUntilStopped(stop, state_.asks,
+                              [this, &client](const AccountAsks& asks) {
+                                serveUser(*client, asks, state_);
+                                serveWallet(*client, asks, state_);
+                              });
       });
 }
 

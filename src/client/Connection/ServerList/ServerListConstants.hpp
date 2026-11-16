@@ -9,10 +9,6 @@ namespace rtype::client {
  * the master. */
 constexpr std::string_view MASTER_URL_SCHEME = "http://";
 
-/** @brief How long MasterLink sleeps before it looks again whether it must
- * stop, when no ask comes; a stop wakes it at once. */
-constexpr std::chrono::seconds MASTER_ASK_WAIT{1};
-
 /**
  * @brief How long a round of pings waits for the answers of its servers once
  * the master listed them: a server that has not answered by then is

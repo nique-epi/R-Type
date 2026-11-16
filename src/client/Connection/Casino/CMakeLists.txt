@@ -8,6 +8,7 @@ target_link_libraries(rtype_client_connection_casino
     rtype_network_master_messages
     rtype_network_master_routes
   PRIVATE
+    rtype_client_connection_master_calls
     rtype_network_exceptions
     rtype_network_http_api
     rtype_network_master_client
