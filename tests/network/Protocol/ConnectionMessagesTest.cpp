@@ -34,9 +34,11 @@ using testing::FIVE_LIVES;
 using testing::FOUR_ROCKETS;
 using testing::GAME_KIND_ABOVE_THE_LAST;
 using testing::GAME_KIND_BELOW_THE_FIRST;
+using testing::GUEST_ACCOUNT_ON_THE_PAGE;
 using testing::hardRulesWithFriendlyFire;
 using testing::HEARTBEAT_SENT_AT;
 using testing::HEARTBEAT_TICK;
+using testing::LARGEST_ACCOUNT_ID;
 using testing::LAST_NAMED_GAME;
 using testing::newGameRequestWith;
 using testing::NICKNAME_WITH_LINE_FEED;
@@ -51,24 +53,71 @@ using testing::SEVENTEEN_BYTE_NICKNAME;
 using testing::SIXTEEN_BYTE_NICKNAME;
 using testing::SMALLEST_REQUEST_DATAGRAM_SIZE_ON_THE_PAGE;
 using testing::smallestRequest;
+using testing::SOME_ACCOUNT_ID;
 using testing::SOME_COOKIE;
-using testing::writeAnyGameChoice;
+using testing::writeGuestAskingForAnyGame;
 using testing::writeRequestFor;
 
 /**
  * Given a request with a cookie and the nickname "A", for any game
  * When it is encoded
  * Then the payload is the cookie on eight bytes, the length 1 and the letter
- * A, then the kind 1 and the number 0 on two bytes
+ * A, the account 0 of a guest on eight bytes, then the kind 1 and the number 0
+ * on two bytes
  */
 TEST(ConnectionRequest, EncodesTheCookieThenTheNicknameWithItsLength) {
-  const auto expected = byteSequence({0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
-                                      0x08, 0x01, 0x41, 0x01, 0x00, 0x00});
+  const auto expected = byteSequence(
+      {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x01, 0x41, 0x00,
+       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00});
 
   EXPECT_EQ(
       encodeMessage(ConnectionRequest{
           .cookie = SOME_COOKIE, .nickname = std::string{ONE_BYTE_NICKNAME}}),
       expected);
+}
+
+/**
+ * Given a request of the account 0x1112131415161718
+ * When it is encoded
+ * Then the account follows the nickname on eight bytes, most significant first
+ */
+TEST(ConnectionRequest, EncodesTheAccountAfterTheNickname) {
+  const auto expected = byteSequence(
+      {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x01, 0x41, 0x11,
+       0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x01, 0x00, 0x00});
+
+  EXPECT_EQ(encodeMessage(
+                ConnectionRequest{.cookie = SOME_COOKIE,
+                                  .nickname = std::string{ONE_BYTE_NICKNAME},
+                                  .accountId = SOME_ACCOUNT_ID}),
+            expected);
+}
+
+/**
+ * Given a request of the largest account eight bytes hold
+ * When it is encoded then decoded
+ * Then the decoded request carries that account
+ */
+TEST(ConnectionRequest, CarriesTheLargestAccount) {
+  const ConnectionRequest request{.cookie = SOME_COOKIE,
+                                  .nickname = std::string{ONE_BYTE_NICKNAME},
+                                  .accountId = LARGEST_ACCOUNT_ID};
+
+  EXPECT_EQ(decodeMessage<ConnectionRequest>(encodeMessage(request)).accountId,
+            LARGEST_ACCOUNT_ID);
+}
+
+/**
+ * Given a request that names no account
+ * When it is encoded then decoded
+ * Then the decoded request is the one of a guest, account 0
+ */
+TEST(ConnectionRequest, AGuestCarriesAccountZero) {
+  const ConnectionRequest request{.cookie = SOME_COOKIE,
+                                  .nickname = std::string{ONE_BYTE_NICKNAME}};
+
+  EXPECT_EQ(decodeMessage<ConnectionRequest>(encodeMessage(request)).accountId,
+            GUEST_ACCOUNT_ON_THE_PAGE);
 }
 
 /**
@@ -89,8 +138,9 @@ TEST(ConnectionRequest, DecodesWhatItEncoded) {
  * Then the same bytes come back
  */
 TEST(ConnectionRequest, EncodesAgainTheBytesItDecoded) {
-  const auto bytes = byteSequence({0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                                   0x00, 0x02, 0xC3, 0xA9, 0x01, 0x00, 0x00});
+  const auto bytes = byteSequence(
+      {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xC3, 0xA9,
+       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00});
 
   EXPECT_EQ(encodeMessage(decodeMessage<ConnectionRequest>(bytes)), bytes);
 }
@@ -132,8 +182,9 @@ TEST(ConnectionRequest, RefusedRequestWritesNothing) {
  * Then an InvalidNicknameException is raised
  */
 TEST(ConnectionRequest, RefusesToReadAnEmptyNickname) {
-  const auto bytes = byteSequence(
-      {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00});
+  const auto bytes = byteSequence({0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                                   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                                   0x00, 0x00, 0x00, 0x01, 0x00, 0x00});
 
   EXPECT_THROW((void)decodeMessage<ConnectionRequest>(bytes),
                InvalidNicknameException);
@@ -148,7 +199,7 @@ TEST(ConnectionRequest, RefusesToReadASeventeenByteNickname) {
   ByteWriter writer;
   writer.writeUint64(SOME_COOKIE);
   writer.writeString(SEVENTEEN_BYTE_NICKNAME);
-  writeAnyGameChoice(writer);
+  writeGuestAskingForAnyGame(writer);
 
   EXPECT_THROW((void)decodeMessage<ConnectionRequest>(writer.bytes()),
                InvalidNicknameException);
@@ -163,7 +214,7 @@ TEST(ConnectionRequest, RefusesToReadANicknameHoldingALineFeed) {
   ByteWriter writer;
   writer.writeUint64(SOME_COOKIE);
   writer.writeString(NICKNAME_WITH_LINE_FEED);
-  writeAnyGameChoice(writer);
+  writeGuestAskingForAnyGame(writer);
 
   EXPECT_THROW((void)decodeMessage<ConnectionRequest>(writer.bytes()),
                InvalidNicknameException);
@@ -175,8 +226,9 @@ TEST(ConnectionRequest, RefusesToReadANicknameHoldingALineFeed) {
  * Then an InvalidNicknameException is raised
  */
 TEST(ConnectionRequest, RefusesToReadANicknameThatIsNotUtf8) {
-  const auto bytes = byteSequence({0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                                   0x00, 0x02, 0xC0, 0x80, 0x01, 0x00, 0x00});
+  const auto bytes = byteSequence(
+      {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xC0, 0x80,
+       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00});
 
   EXPECT_THROW((void)decodeMessage<ConnectionRequest>(bytes),
                InvalidNicknameException);
@@ -200,8 +252,9 @@ TEST(ConnectionRequest, RefusesARequestCutShort) {
  * Then a TrailingBytesException is raised
  */
 TEST(ConnectionRequest, RefusesBytesAfterTheGame) {
-  const auto bytes = byteSequence({0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                                   0x00, 0x01, 0x41, 0x01, 0x00, 0x00, 0x00});
+  const auto bytes = byteSequence(
+      {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x41, 0x00,
+       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00});
 
   EXPECT_THROW((void)decodeMessage<ConnectionRequest>(bytes),
                TrailingBytesException);
@@ -260,8 +313,9 @@ TEST(ConnectionRequest, CarriesTheLastGameItMayName) {
  * significant first
  */
 TEST(ConnectionRequest, EncodesTheKindThenTheNumberOfTheGame) {
-  const auto expected = byteSequence({0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
-                                      0x08, 0x01, 0x41, 0x02, 0x01, 0x02});
+  const auto expected = byteSequence(
+      {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x01, 0x41, 0x00,
+       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x01, 0x02});
 
   EXPECT_EQ(encodeMessage(requestFor(GameChoice{
                 .kind = GameChoiceKind::ExistingGame, .number = 0x0102})),
@@ -275,9 +329,10 @@ TEST(ConnectionRequest, EncodesTheKindThenTheNumberOfTheGame) {
  * 4 and "hard", then the lives 5 and the friendly fire 1
  */
 TEST(ConnectionRequest, EncodesTheRulesAfterTheNumberOfANewGame) {
-  const auto expected = byteSequence({0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
-                                      0x08, 0x01, 0x41, 0x03, 0x00, 0x00, 0x04,
-                                      0x68, 0x61, 0x72, 0x64, 0x05, 0x01});
+  const auto expected =
+      byteSequence({0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x01, 0x41,
+                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x00,
+                    0x00, 0x04, 0x68, 0x61, 0x72, 0x64, 0x05, 0x01});
 
   EXPECT_EQ(encodeMessage(newGameRequestWith(hardRulesWithFriendlyFire())),
             expected);
@@ -355,9 +410,10 @@ TEST(ConnectionRequest, RefusesToWriteRulesWithAnyGame) {
  * Then an InvalidBoolException is raised: friendly fire is 0 or 1
  */
 TEST(ConnectionRequest, RefusesToReadAFriendlyFireOfTwo) {
-  const auto bytes = byteSequence({0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
-                                   0x08, 0x01, 0x41, 0x03, 0x00, 0x00, 0x04,
-                                   0x68, 0x61, 0x72, 0x64, 0x05, 0x02});
+  const auto bytes =
+      byteSequence({0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x01, 0x41,
+                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x00,
+                    0x00, 0x04, 0x68, 0x61, 0x72, 0x64, 0x05, 0x02});
 
   EXPECT_THROW((void)decodeMessage<ConnectionRequest>(bytes),
                InvalidBoolException);
@@ -369,9 +425,9 @@ TEST(ConnectionRequest, RefusesToReadAFriendlyFireOfTwo) {
  * Then an InvalidDifficultyException is raised
  */
 TEST(ConnectionRequest, RefusesToReadAnEmptyDifficulty) {
-  const auto bytes =
-      byteSequence({0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x01, 0x41,
-                    0x03, 0x00, 0x00, 0x00, 0x03, 0x00});
+  const auto bytes = byteSequence(
+      {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x01, 0x41, 0x00, 0x00,
+       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x03, 0x00});
 
   EXPECT_THROW((void)decodeMessage<ConnectionRequest>(bytes),
                InvalidDifficultyException);
@@ -384,7 +440,8 @@ TEST(ConnectionRequest, RefusesToReadAnEmptyDifficulty) {
  */
 TEST(ConnectionRequest, RefusesToReadANewGameWithoutItsRules) {
   const auto bytes = byteSequence({0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
-                                   0x08, 0x01, 0x41, 0x03, 0x00, 0x00});
+                                   0x08, 0x01, 0x41, 0x00, 0x00, 0x00, 0x00,
+                                   0x00, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00});
 
   EXPECT_THROW((void)decodeMessage<ConnectionRequest>(bytes),
                BufferUnderflowException);
@@ -510,8 +567,9 @@ TEST(ConnectionRequest, RefusedKindWritesNothing) {
  * Then a BufferUnderflowException is raised
  */
 TEST(ConnectionRequest, RefusesARequestCutInTheNumberOfTheGame) {
-  const auto bytes = byteSequence(
-      {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x41, 0x02, 0x01});
+  const auto bytes = byteSequence({0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                                   0x00, 0x01, 0x41, 0x00, 0x00, 0x00, 0x00,
+                                   0x00, 0x00, 0x00, 0x00, 0x02, 0x01});
 
   EXPECT_THROW((void)decodeMessage<ConnectionRequest>(bytes),
                BufferUnderflowException);
@@ -520,9 +578,9 @@ TEST(ConnectionRequest, RefusesARequestCutInTheNumberOfTheGame) {
 /**
  * Given a request with a one-byte nickname, the smallest there is
  * When its datagram is encoded
- * Then it holds the 38 bytes the protocol page gives
+ * Then it holds the 46 bytes the protocol page gives
  */
-TEST(ConnectionRequest, SmallestRequestDatagramHoldsThirtyEightBytes) {
+TEST(ConnectionRequest, SmallestRequestDatagramHoldsFortySixBytes) {
   EXPECT_EQ(DatagramCodec::encode(PacketHeader{}, smallestRequest()).size(),
             SMALLEST_REQUEST_DATAGRAM_SIZE_ON_THE_PAGE);
 }

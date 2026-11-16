@@ -1,5 +1,5 @@
 ---
-title: 'Network protocol: version 17'
+title: 'Network protocol: version 18'
 description: The datagrams the client and the server exchange over UDP, byte by byte, and what each side does when one is lost or cannot be read.
 sidebar:
   label: Protocol
@@ -11,7 +11,7 @@ This page is the specification of the protocol the client and the server speak: 
 
 ## Status of this document
 
-- This is version 17 of the protocol. It is the only version the code speaks. [Versions and compatibility](#versions-and-compatibility) says when the version changes and what two programs of different versions do; [Version 2](#version-2), [Version 3](#version-3), [Version 4](#version-4), [Version 5](#version-5), [Version 6](#version-6), [Version 7](#version-7), [Version 8](#version-8), [Version 9](#version-9), [Version 10](#version-10), [Version 11](#version-11), [Version 12](#version-12), [Version 13](#version-13), [Version 14](#version-14), [Version 15](#version-15), [Version 16](#version-16) and [Version 17](#version-17) say what each changed from the version before, and what the rest of the second part of the project will change.
+- This is version 18 of the protocol. It is the only version the code speaks. [Versions and compatibility](#versions-and-compatibility) says when the version changes and what two programs of different versions do; [Version 2](#version-2), [Version 3](#version-3), [Version 4](#version-4), [Version 5](#version-5), [Version 6](#version-6), [Version 7](#version-7), [Version 8](#version-8), [Version 9](#version-9), [Version 10](#version-10), [Version 11](#version-11), [Version 12](#version-12), [Version 13](#version-13), [Version 14](#version-14), [Version 15](#version-15), [Version 16](#version-16), [Version 17](#version-17) and [Version 18](#version-18) say what each changed from the version before, and what the rest of the second part of the project will change.
 - The words MUST, MUST NOT, SHOULD and MAY are used as in RFC 2119. A MUST is a rule every implementation follows to interoperate; a SHOULD names a behavior the code of this repository has and another implementation can drop without breaking the exchange.
 - Everything on this page is checked against the code of `src/network`, `src/server` and `src/client`. [Implementation status](#implementation-status) lists the rules the programs do not apply yet, so a rule never reads as working when it does not.
 - Numbers are decimal unless written `0x`. A size is in bytes.
@@ -78,7 +78,7 @@ Both changes together save 12 bytes on the 268 of the typical state, 4.5 %, befo
 
 ## Datagram
 
-A datagram is a 22-byte header followed by one or more messages. The header, byte by byte; every field is used in version 17.
+A datagram is a 22-byte header followed by one or more messages. The header, byte by byte; every field is used in version 18.
 
 <ByteLayout
   label="The 22-byte header: protocolId on bytes 0 to 3, version on byte 4, flags on byte 5, sessionToken on bytes 6 to 13, sequence on bytes 14 and 15, acknowledgedSequence on bytes 16 and 17, acknowledgementBits on bytes 18 to 21."
@@ -101,7 +101,7 @@ A datagram is a 22-byte header followed by one or more messages. The header, byt
   ]}
 />
 
-| Offset | Size | Field | In version 17 |
+| Offset | Size | Field | In version 18 |
 |---|---|---|---|
 | 0 | 4 | `protocolId` | `0x52545950`, `RTYP` in ASCII |
 | 4 | 1 | `version` | 16 |
@@ -131,7 +131,7 @@ A received datagram goes through these checks in order. No buffer is sized from 
 |---|---|
 | The datagram holds 25 to 1200 bytes | dropped |
 | `protocolId` is `RTYP` | dropped |
-| `version` is not 17 | dropped; the server answers an unknown sender with `ConnectionRefused` (`IncompatibleVersion`) if the datagram holds at least 26 bytes |
+| `version` is not 18 | dropped; the server answers an unknown sender with `ConnectionRefused` (`IncompatibleVersion`) if the datagram holds at least 26 bytes |
 | `COMPRESSED` is set | the server drops the datagram; the client decodes the body and clears the flag, or drops the datagram when it cannot (see [Compression](#compression)) |
 | `flags` has no bit but `ACKNOWLEDGES` and `GUARANTEED`, once `COMPRESSED` is cleared | dropped |
 | The message sizes add up exactly to the end of the datagram | dropped |
@@ -153,7 +153,7 @@ The type identifies a message in both directions: `Disconnection` and `Heartbeat
 
 | Type | Message | Payload | Sent |
 |---|---|---|---|
-| 1 | `ConnectionRequest` | `cookie` `u64` (0 until the server gives one), `nickname` `string` (1 to 16 bytes), `kind` `u8`: 1 `AnyGame`, 2 `ExistingGame`, 3 `NewGame`, then `number` `u16`, the game asked for; with `NewGame` only, then the rules of that game: `difficulty` `string` (1 to 16 bytes), `lives` `u8`, `friendlyFire` `bool` (see [Supervisor](#supervisor)) | every 500 ms until an answer; the client gives up after 5 s |
+| 1 | `ConnectionRequest` | `cookie` `u64` (0 until the server gives one), `nickname` `string` (1 to 16 bytes), `accountId` `u64` (0 for a guest, otherwise the id of the account of the player on the master), `kind` `u8`: 1 `AnyGame`, 2 `ExistingGame`, 3 `NewGame`, then `number` `u16`, the game asked for; with `NewGame` only, then the rules of that game: `difficulty` `string` (1 to 16 bytes), `lives` `u8`, `friendlyFire` `bool` (see [Supervisor](#supervisor)) | every 500 ms until an answer; the client gives up after 5 s |
 | 4 | `Disconnection` | none | when the player closes the client, three times 50 ms apart |
 | 5 | `Heartbeat` | `sentAt` `u32`, `echoes` `bool`, `echo.sentAt` `u32`, `echo.heldFor` `u32`, `ticks` `bool` (always 0), `tick` `u32` (always 0) (see [Round trip](#round-trip) and [Clock of the server](#clock-of-the-server)) | every 500 ms, whatever else it sends; the client also 40 ms after accepting a datagram that holds guaranteed messages when nothing else was sent |
 | 6 | `ReadyState` | `ready` `bool` | when the player changes it, and again while `LobbyState` shows another value |
@@ -203,7 +203,7 @@ A message is accepted only when its payload has exactly the size its fields add 
 
 | Message | Rule |
 |---|---|
-| `ConnectionRequest` | the nickname follows the rules of [Connection](#connection): 1 to 16 bytes of valid UTF-8, no control character; `kind` is 1 to 3; `number` is 1 to 65535 with `ExistingGame`, and 0 with `AnyGame` and `NewGame`; the rules follow `number` with `NewGame` and with no other kind; their `difficulty` follows the rules of a nickname. Any `lives` byte is read: the supervisor refuses those it does not accept (see [Supervisor](#supervisor)) |
+| `ConnectionRequest` | the nickname follows the rules of [Connection](#connection): 1 to 16 bytes of valid UTF-8, no control character; any `accountId` is read; `kind` is 1 to 3; `number` is 1 to 65535 with `ExistingGame`, and 0 with `AnyGame` and `NewGame`; the rules follow `number` with `NewGame` and with no other kind; their `difficulty` follows the rules of a nickname. Any `lives` byte is read: the supervisor refuses those it does not accept (see [Supervisor](#supervisor)) |
 | `ConnectionAccepted` | `playerNumber` is 1 to 4; `size` is 8388608 at most; the payload is 39 bytes |
 | `LobbyState` | at most 4 players, each `playerNumber` 1 to 4 and listed once, each nickname valid as above |
 | `GameEnded` | `outcome` is 1 or 2; at most 4 players, each `playerNumber` 1 to 4 and listed once |
@@ -311,7 +311,7 @@ How the server computes the cookie is its own business, as long as it keeps noth
 
 A player keeps the number given by `ConnectionAccepted` until it leaves; the number also picks the color of the player, so no color travels. The nickname travels only in `ConnectionRequest` and `LobbyState`, never during a game. Its limit is 16 bytes, not 16 characters: a letter without accent takes 1 byte, an accented letter 2 and some symbols up to 4, so each accent leaves room for one letter less. The text field of the client counts bytes and refuses a character that would not fit whole; the server drops a request whose nickname is empty, longer than 16 bytes, not valid UTF-8 or holds a control character, U+0000 to U+001F or U+007F, so a nickname can never start a line of its own in a log. The server answers a `ConnectionRequest` with a valid cookie from a sender it already accepted with the same `ConnectionAccepted` again, same number, same token and same pack, at most once per 250 ms per player (half the 500 ms between two requests, so a request whose acceptance was lost is not held back because it crossed the network faster than the one before); the requests in between get nothing.
 
-A sender that did not prove its address, that is whose request carries no valid cookie, never gets more bytes than it sent: a challenge (33 bytes) is smaller than the smallest request (38), and so is a refusal (26). Only a request with a valid cookie gets a `ConnectionAccepted`, which takes 64 bytes: the cookie went to the address the request came from, so the acceptance goes to an address that proved it receives the datagrams of the server. QUIC lifts its own limit on what it sends an address once it has validated that address the same way (RFC 9000, section 8). Whoever sees the traffic of a player and replays its cookie gets at most four acceptances per second sent to that player, for the 20 s at most that the cookie stays valid.
+A sender that did not prove its address, that is whose request carries no valid cookie, never gets more bytes than it sent: a challenge (33 bytes) is smaller than the smallest request (46), and so is a refusal (26). Only a request with a valid cookie gets a `ConnectionAccepted`, which takes 64 bytes: the cookie went to the address the request came from, so the acceptance goes to an address that proved it receives the datagrams of the server. QUIC lifts its own limit on what it sends an address once it has validated that address the same way (RFC 9000, section 8). Whoever sees the traffic of a player and replays its cookie gets at most four acceptances per second sent to that player, for the 20 s at most that the cookie stays valid.
 
 A nickname is unique on the server: a request whose nickname a player already holds is refused with `NicknameTaken`, before the cookie is checked. Letters of the ASCII alphabet compare without regard to case (`Ace` and `ACE` are the same nickname), every other byte compares as it is, so `É` and `é` are two nicknames. A player whose seat is held (see [A session](#a-session)) still holds its nickname; it is free again once the seat is. A sender already accepted is not refused as a duplicate of itself.
 
@@ -605,7 +605,7 @@ This section gathers what each side does when something goes wrong, from a datag
 
 ### Supervisor
 
-A supervisor (`r-type_server`, or `--mode supervisor`) starts a game process (`--mode game`) per game and sends each player to one. Four messages carry it. The datagram of a `ConnectionRedirect` is 27 bytes, never more than the 38 bytes of the smallest `ConnectionRequest` it answers, so it adds no amplification.
+A supervisor (`r-type_server`, or `--mode supervisor`) starts a game process (`--mode game`) per game and sends each player to one. Four messages carry it. The datagram of a `ConnectionRedirect` is 27 bytes, never more than the 46 bytes of the smallest `ConnectionRequest` it answers, so it adds no amplification.
 
 | Type | Message | Payload | Sent |
 |---|---|---|---|
@@ -766,7 +766,7 @@ On the games captured while the dictionary was trained, the datagram of the serv
 
 ## Versions and compatibility
 
-A program speaks one version of the protocol, the number at offset 4 of every datagram it sends. This section says what stays the same in every version, which changes give the protocol a new number, and what two programs of different versions do when they meet. The sections after it apply these rules to each version, from version 2 to version 17.
+A program speaks one version of the protocol, the number at offset 4 of every datagram it sends. This section says what stays the same in every version, which changes give the protocol a new number, and what two programs of different versions do when they meet. The sections after it apply these rules to each version, from version 2 to version 18.
 
 ### What never changes
 
@@ -891,6 +891,10 @@ Version 16 lets the content of a server draw visual effects without code on the 
 ## Version 17
 
 Version 17 gives a ship look a fourth byte, `hull`, after `face`: `ShipLookChoice` holds four bytes and `PlayerLooks` five per player (see [Ship looks](#ship-looks)). The catalog grows from 10 to 30 numbers, 25 accessories then 5 hulls; `LookItemWon` carries 1 to 25, never a hull, which is only bought. A peer of version 16 would read the fourth byte as trailing bytes and drop the message, so `version` became 17, and the server answers a client of version 16 with `ConnectionRefused` (`IncompatibleVersion`). The layout of the header and of every other message is the same as in version 16.
+
+## Version 18
+
+Version 18 lets a player who signed in to the master earn from its games: `ConnectionRequest` carries `accountId`, a `u64` after `nickname`, 0 for a guest. The server reads any value and proves none: it only passes the account on with the results it reports to the master. A peer of version 17 would read the account as the kind and the number of the game, so `version` became 18, and the server answers a client of version 17 with `ConnectionRefused` (`IncompatibleVersion`). The smallest request grows from 38 to 46 bytes, so every answer to a sender that did not prove its address stays smaller than it. The layout of the header and of every other message is the same as in version 17.
 
 ## Implementation status
 

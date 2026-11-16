@@ -96,6 +96,7 @@ void encodePayload(ByteWriter& writer, const ConnectionRequest& message) {
   validate(message);
   writer.writeUint64(message.cookie);
   writer.writeString(message.nickname);
+  writer.writeUint64(message.accountId);
   writer.writeUint8(static_cast<std::uint8_t>(message.game.kind));
   writer.writeUint16(message.game.number);
   if (message.rules.has_value()) {
@@ -110,6 +111,7 @@ ConnectionRequest decodePayload(
   ConnectionRequest message{
       .cookie = reader.readUint64(),
       .nickname = reader.readString(),
+      .accountId = reader.readUint64(),
       .game =
           GameChoice{.kind = static_cast<GameChoiceKind>(reader.readUint8()),
                      .number = reader.readUint16()}};
