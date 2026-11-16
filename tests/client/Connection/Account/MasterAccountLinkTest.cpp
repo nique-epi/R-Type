@@ -134,11 +134,13 @@ TEST_F(MasterAccountLinkFixture, SaysAPurchaseThePriceRefused) {
 }
 
 /**
- * Given a master that sells the crown, then answers the wallet left
+ * Given a master that sells the crown, whose wallet route still answers the
+ * balances before it
  * When the link buys the crown, the wallet never asked
- * Then the wallet is read again, with the balances the purchase left
+ * Then the wallet shows the balances the purchase answered, and the looks
+ * read again
  */
-TEST_F(MasterAccountLinkFixture, APurchaseMadeReadsTheWalletAgain) {
+TEST_F(MasterAccountLinkFixture, APurchaseMadeShowsTheBalancesItAnswered) {
   master().answer(std::string{BUY_CROWN_ROUTE},
                   CannedAnswer{.status = LINK_CREATED_STATUS,
                                .body = rtype::network::lookPurchaseText(
@@ -147,13 +149,18 @@ TEST_F(MasterAccountLinkFixture, APurchaseMadeReadsTheWalletAgain) {
   master().answer(
       std::string{OWN_WALLET_ROUTE},
       CannedAnswer{.status = LINK_OK_STATUS,
-                   .body = rtype::network::walletText(LINK_WALLET_AFTER)});
+                   .body = rtype::network::walletText(LINK_WALLET)});
+  master().answer(
+      std::string{OWN_LOOKS_ROUTE},
+      CannedAnswer{.status = LINK_OK_STATUS,
+                   .body = rtype::network::ownedLooksText(LINK_LOOKS)});
 
   static_cast<void>(link().askPurchase(std::string{LINK_TOKEN}, LINK_CROWN));
 
   const std::optional<WalletReading> reading = walletSoon();
   ASSERT_TRUE(reading.has_value());
   EXPECT_EQ(reading->wallet, LINK_WALLET_AFTER);
+  EXPECT_EQ(reading->looks, LINK_LOOKS);
 }
 
 /**
@@ -215,4 +222,42 @@ TEST_F(MasterAccountLinkFixture, APurchaseOfALookNotSoldSaysSo) {
 
   ASSERT_TRUE(answer.has_value());
   EXPECT_EQ(answer->refusal, WalletRefusal::NotForSale);
+}
+
+/**
+ * Given a wallet read, and a master whose cashier changes 500 kopecks into
+ * chips while its wallet route still answers the balances before
+ * When the link asks that exchange
+ * Then the wallet shows the balances the exchange answered, its looks kept
+ */
+TEST_F(MasterAccountLinkFixture, AnExchangeMadeShowsTheBalancesItAnswered) {
+  master().answer(
+      std::string{OWN_WALLET_ROUTE},
+      CannedAnswer{.status = LINK_OK_STATUS,
+                   .body = rtype::network::walletText(LINK_WALLET)});
+  master().answer(
+      std::string{OWN_LOOKS_ROUTE},
+      CannedAnswer{.status = LINK_OK_STATUS,
+                   .body = rtype::network::ownedLooksText(LINK_LOOKS)});
+  master().answer(
+      std::string{OWN_EXCHANGES_ROUTE},
+      CannedAnswer{
+          .status = LINK_CREATED_STATUS,
+          .body = rtype::network::exchangeReceiptText(ExchangeReceipt{
+              .exchange = WalletExchange{.id = 1,
+                                         .from = LINK_BUY_500_CHIPS.from,
+                                         .amount = LINK_BUY_500_CHIPS.amount,
+                                         .madeAt = LINK_MADE_AT},
+              .wallet = LINK_WALLET_AFTER})});
+  link().askWallet(std::string{LINK_TOKEN});
+  ASSERT_TRUE(walletSoon().has_value());
+
+  static_cast<void>(answerSoon(
+      [this] { return link().exchange(); },
+      link().askExchange(std::string{LINK_TOKEN}, LINK_BUY_500_CHIPS)));
+
+  const std::optional<WalletReading> reading = link().wallet();
+  ASSERT_TRUE(reading.has_value());
+  EXPECT_EQ(reading->wallet, LINK_WALLET_AFTER);
+  EXPECT_EQ(reading->looks, LINK_LOOKS);
 }

@@ -45,7 +45,7 @@ class IAccountLink {
   [[nodiscard]] virtual std::optional<UserReading> user() const = 0;
 
   /** @returns The newest wallet read, nothing before the first. A purchase
-   * or an exchange made reads the wallet again. */
+   * or an exchange made gives the balances it answered. */
   [[nodiscard]] virtual std::optional<WalletReading> wallet() const = 0;
 
   /** @returns The newest answer to a purchase, nothing before the first. */

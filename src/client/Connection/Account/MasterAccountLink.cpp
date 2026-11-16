@@ -14,6 +14,7 @@
 #include "MasterAccountClient.hpp"
 #include "MasterCalls.hpp"
 #include "NetworkException.hpp"
+#include "OwnedLooks.hpp"
 #include "SignInRefusal.hpp"
 #include "UserReading.hpp"
 #include "Wallet.hpp"
@@ -117,34 +118,79 @@ void serveUser(network::MasterAccountClient& client, const AccountAsks& asks,
   state.served.userAsk = asks.userAsk;
 }
 
+/** @returns The looks the wallet @p state read for the token of @p asks,
+ * which an exchange leaves as they were; read with @p client when none was
+ * read for that token. */
+std::optional<network::OwnedLooks> looksKept(
+    network::MasterAccountClient& client, const AccountAsks& asks,
+    const AccountLinkState& state) {
+  const std::optional<WalletReading> known = state.wallet.value();
+  if (known.has_value() && known->token == asks.token &&
+      known->looks.has_value()) {
+    return known->looks;
+  }
+  return readingOrNothing(
+      [&client, &asks] { return client.listOwnLooks(asks.token); });
+}
+
+/** @brief Buys the look of @p asks when the purchase is newer than the one
+ * @p state served; once made, publishes the balances it answered with the
+ * looks read again. */
+void servePurchase(network::MasterAccountClient& client,
+                   const AccountAsks& asks, AccountLinkState& state) {
+  if (asks.purchaseAsk <= state.served.purchaseAsk) {
+    return;
+  }
+  const WalletChangeReading bought = walletChangeOf(
+      asks.purchaseAsk,
+      [&client, &asks] {
+        return client.buyOwnLook(asks.token, asks.purchaseItem).wallet;
+      },
+      purchaseRefusalOf);
+  state.purchase.publish(bought);
+  state.served.purchaseAsk = asks.purchaseAsk;
+  if (bought.wallet.has_value()) {
+    state.wallet.publish(
+        WalletReading{.token = asks.token,
+                      .wallet = bought.wallet,
+                      .looks = readingOrNothing([&client, &asks] {
+                        return client.listOwnLooks(asks.token);
+                      })});
+  }
+}
+
+/** @brief Makes the exchange of @p asks when it is newer than the one
+ * @p state served; once made, publishes the balances it answered with the
+ * looks kept. */
+void serveExchange(network::MasterAccountClient& client,
+                   const AccountAsks& asks, AccountLinkState& state) {
+  if (asks.exchangeAsk <= state.served.exchangeAsk) {
+    return;
+  }
+  const WalletChangeReading exchanged = walletChangeOf(
+      asks.exchangeAsk,
+      [&client, &asks] {
+        return client.exchange(asks.token, asks.exchangeRequest).wallet;
+      },
+      exchangeRefusalOf);
+  state.exchange.publish(exchanged);
+  state.served.exchangeAsk = asks.exchangeAsk;
+  if (exchanged.wallet.has_value()) {
+    state.wallet.publish(
+        WalletReading{.token = asks.token,
+                      .wallet = exchanged.wallet,
+                      .looks = looksKept(client, asks, state)});
+  }
+}
+
 /** @brief Answers the purchase and the exchange of @p asks newer than those
- * @p state served, then the wallet, read again after a change made. */
+ * @p state served, each publishing the balances it left, then the wallet
+ * when it was asked. */
 void serveWallet(network::MasterAccountClient& client, const AccountAsks& asks,
                  AccountLinkState& state) {
-  bool changed = false;
-  if (asks.purchaseAsk > state.served.purchaseAsk) {
-    const WalletChangeReading bought = walletChangeOf(
-        asks.purchaseAsk,
-        [&client, &asks] {
-          return client.buyOwnLook(asks.token, asks.purchaseItem).wallet;
-        },
-        purchaseRefusalOf);
-    state.purchase.publish(bought);
-    state.served.purchaseAsk = asks.purchaseAsk;
-    changed = changed || bought.wallet.has_value();
-  }
-  if (asks.exchangeAsk > state.served.exchangeAsk) {
-    const WalletChangeReading exchanged = walletChangeOf(
-        asks.exchangeAsk,
-        [&client, &asks] {
-          return client.exchange(asks.token, asks.exchangeRequest).wallet;
-        },
-        exchangeRefusalOf);
-    state.exchange.publish(exchanged);
-    state.served.exchangeAsk = asks.exchangeAsk;
-    changed = changed || exchanged.wallet.has_value();
-  }
-  if (changed || asks.walletAsk > state.served.walletAsk) {
+  servePurchase(client, asks, state);
+  serveExchange(client, asks, state);
+  if (asks.walletAsk > state.served.walletAsk) {
     readWallet(client, asks, state);
   }
 }

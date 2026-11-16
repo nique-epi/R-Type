@@ -24,9 +24,10 @@ namespace rtype::client {
  * The frame loop publishes its asks; the thread sleeps until a newer one,
  * serves the newest of each kind only, the account first, then a purchase, an
  * exchange and the wallet, and publishes what the master answered. A purchase
- * or an exchange made reads the wallet again, so the balances and the looks
- * follow it. A master that does not answer, refuses or writes what cannot be
- * read gives a reading that says so, never no reading.
+ * or an exchange made publishes the balances it answered as the wallet, with
+ * the looks read again after a purchase and kept after an exchange. A master
+ * that does not answer, refuses or writes what cannot be read gives a reading
+ * that says so, never no reading.
  *
  * Building it opens nothing; start() builds the client of the master, which
  * checks its url, and starts the thread, which owns it; stop() ends the
