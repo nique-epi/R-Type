@@ -7,6 +7,7 @@
 #include <limits>
 #include <string_view>
 #include "NetworkConstants.hpp"
+#include "ShipLookConstants.hpp"
 
 namespace rtype::network {
 
@@ -145,6 +146,13 @@ constexpr std::string_view VANILLA_MEMBER = "vanilla";
 constexpr std::string_view NICKNAME_MEMBER = "nickname";
 constexpr std::string_view ACCOUNT_ID_MEMBER = "accountId";
 constexpr std::string_view SCORE_MEMBER = "score";
+constexpr std::string_view VICTORY_MEMBER = "victory";
+constexpr std::string_view WON_LOOKS_MEMBER = "wonLooks";
+
+/** @brief The most look items a row of a result may name: a game server
+ * reports each item a player won once, and the catalog holds
+ * identifiers::SHIP_LOOK_ITEM_COUNT of them. */
+constexpr std::size_t MAXIMUM_WON_LOOKS = identifiers::SHIP_LOOK_ITEM_COUNT;
 
 /** @brief The bounds of the rank of a row of a leaderboard: 1 for the best
  * score, at most one rank per player kept, whom a column INTEGER of SQLite

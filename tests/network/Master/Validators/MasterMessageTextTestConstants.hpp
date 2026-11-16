@@ -251,6 +251,18 @@ constexpr std::uint32_t FIRST_PILOT_SCORE = 12'000;
 constexpr std::uint32_t SECOND_PILOT_SCORE = 800;
 constexpr std::string_view SECOND_PILOT_ACCOUNT = "account-42";
 
+/** @brief The game "Paris 1" reports was won, and BYDO_HUNTER won two items
+ * of the catalog of the ship looks in it. */
+constexpr bool PARIS_GAME_WON = true;
+constexpr std::string_view SECOND_PILOT_FIRST_LOOK = "crown";
+constexpr std::string_view SECOND_PILOT_SECOND_LOOK = "halo";
+
+/** @brief A name no item of the catalog has; the 30 items of the whole
+ * catalog, and one more. */
+constexpr std::string_view LOOK_OUTSIDE_THE_CATALOG = "unicorn_horn";
+constexpr std::size_t LOOKS_OF_THE_WHOLE_CATALOG = 30;
+constexpr std::size_t ONE_LOOK_PAST_THE_CATALOG = 31;
+
 /** @brief The id "Paris 1" drew for that game, and texts shaped almost like
  * one: uppercase, one digit short, one digit more. */
 constexpr std::string_view PARIS_GAME_ID = "0123456789abcdef0123456789abcdef";
@@ -292,6 +304,11 @@ constexpr std::string_view PLAYER_COUNT_POINTER = "/playerCount";
 constexpr std::string_view FIRST_PLAYER_SCORE_POINTER = "/players/0/score";
 constexpr std::string_view SECOND_PLAYER_ACCOUNT_POINTER =
     "/players/1/accountId";
+constexpr std::string_view VICTORY_POINTER = "/victory";
+constexpr std::string_view SECOND_PLAYER_WON_LOOKS_POINTER =
+    "/players/1/wonLooks";
+constexpr std::string_view SECOND_PLAYER_FIRST_LOOK_POINTER =
+    "/players/1/wonLooks/0";
 
 /** @brief A page of a leaderboard with ACE first and BYDO_HUNTER asked for,
  * as the master writes it. */

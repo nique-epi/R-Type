@@ -143,13 +143,16 @@ namespace rtype::network {
 [[nodiscard]] bool isWellFormedGameId(std::string_view text);
 
 /** @returns @p game as the JSON body of
- * `PUT /api/servers/me/results/{gameId}`, the accountId of a guest left out. */
+ * `PUT /api/servers/me/results/{gameId}`, the accountId of a guest left out,
+ * victory and the wonLooks of each player always written. */
 [[nodiscard]] std::string finishedGameText(const FinishedGame& game);
 
 /**
  * @returns The finished game a server sent as @p text; a member it does not
  * know is ignored. A game that was not vanilla reads as any other: the master
- * refuses it after reading it.
+ * refuses it after reading it. A game without victory reads as lost, and a
+ * player without wonLooks as one who won no item, as a server older than these
+ * members reports.
  * @throws InvalidMasterMessageException naming the first member that is
  * missing, of another type or out of its bounds: a playedAt outside
  * EARLIEST_PLAYED_AT to LATEST_PLAYED_AT, a difficulty or a nickname that is no
@@ -158,7 +161,9 @@ namespace rtype::network {
  * FEWEST_FINISHED_GAME_PLAYERS or more than MAXIMUM_PLAYERS players, more
  * players than its playerCount, one nickname twice (nicknameKey()), an
  * accountId that is empty, longer than MAXIMUM_ACCOUNT_ID_SIZE or not printable
- * UTF-8, a score above HIGHEST_SCORE.
+ * UTF-8, a score above HIGHEST_SCORE, a victory that is no boolean, a wonLooks
+ * that is no array or holds more than MAXIMUM_WON_LOOKS names, a name that is
+ * not one of identifiers::SHIP_LOOK_ITEM_NAMES.
  */
 [[nodiscard]] FinishedGame finishedGameFromText(std::string_view text);
 

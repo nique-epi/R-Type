@@ -42,6 +42,7 @@
 #include "ServerRegistration.hpp"
 #include "ServerSample.hpp"
 #include "ServerStatus.hpp"
+#include "ShipLookConstants.hpp"
 #include "StatusListing.hpp"
 #include "User.hpp"
 #include "UserCredentials.hpp"
@@ -629,6 +630,42 @@ std::optional<std::string> accountIdOf(const JsonField& player) {
   return boundedTextOf(*account, MAXIMUM_ACCOUNT_ID_SIZE);
 }
 
+/** @returns The name @p field holds, one of identifiers::SHIP_LOOK_ITEM_NAMES.
+ */
+std::string lookNameOf(const JsonField& field) {
+  std::string name = stringOf(field);
+  if (std::ranges::find(identifiers::SHIP_LOOK_ITEM_NAMES, name) ==
+      identifiers::SHIP_LOOK_ITEM_NAMES.end()) {
+    refuse(field);
+  }
+  return name;
+}
+
+/** @returns The look items @p player won, at most MAXIMUM_WON_LOOKS; none
+ * when it does not say, as a server older than the member reports. */
+std::vector<std::string> wonLooksOf(const JsonField& player) {
+  const std::optional<JsonField> looks =
+      optionalMemberOf(player, WON_LOOKS_MEMBER);
+  if (!looks.has_value()) {
+    return {};
+  }
+  const std::size_t count = arraySizeOf(*looks, MAXIMUM_WON_LOOKS);
+  std::vector<std::string> read;
+  read.reserve(count);
+  for (std::size_t index = 0; index < count; ++index) {
+    read.push_back(lookNameOf(elementOf(*looks, index)));
+  }
+  return read;
+}
+
+/** @returns Whether @p game says it was won; false when it does not say, as
+ * a server older than the member reports. */
+bool victoryOf(const JsonField& game) {
+  const std::optional<JsonField> victory =
+      optionalMemberOf(game, VICTORY_MEMBER);
+  return victory.has_value() && booleanOf(*victory);
+}
+
 FinishedGamePlayer finishedGamePlayerOf(const JsonField& player) {
   requireObject(player);
   return FinishedGamePlayer{
@@ -636,7 +673,8 @@ FinishedGamePlayer finishedGamePlayerOf(const JsonField& player) {
       .accountId = accountIdOf(player),
       .score = static_cast<std::uint32_t>(integerOf(
           memberOf(player, SCORE_MEMBER),
-          IntegerBounds{.lowest = LOWEST_SCORE, .highest = HIGHEST_SCORE}))};
+          IntegerBounds{.lowest = LOWEST_SCORE, .highest = HIGHEST_SCORE})),
+      .wonLooks = wonLooksOf(player)};
 }
 
 std::vector<FinishedGamePlayer> finishedGamePlayersOf(const JsonField& game) {
@@ -680,6 +718,7 @@ nlohmann::json finishedGamePlayerDocument(const FinishedGamePlayer& player) {
     document[ACCOUNT_ID_MEMBER] = *player.accountId;
   }
   document[SCORE_MEMBER] = player.score;
+  document[WON_LOOKS_MEMBER] = player.wonLooks;
   return document;
 }
 
@@ -732,6 +771,7 @@ std::string finishedGameText(const FinishedGame& game) {
   document[DIFFICULTY_MEMBER] = game.difficulty;
   document[PLAYER_COUNT_MEMBER] = game.playerCount;
   document[VANILLA_MEMBER] = game.vanilla;
+  document[VICTORY_MEMBER] = game.victory;
   return textOf(document);
 }
 
@@ -745,7 +785,8 @@ FinishedGame finishedGameFromText(std::string_view text) {
                         IntegerBounds{.lowest = MINIMUM_PLAYERS_PER_GAME,
                                       .highest = MAXIMUM_PLAYERS})),
                     .vanilla = booleanOf(memberOf(game, VANILLA_MEMBER)),
-                    .players = finishedGamePlayersOf(game)};
+                    .players = finishedGamePlayersOf(game),
+                    .victory = victoryOf(game)};
   requirePlayersOfTheGame(game, read);
   return read;
 }

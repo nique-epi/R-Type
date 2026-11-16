@@ -48,19 +48,34 @@ network::ServerHeartbeat heartbeatOf(std::vector<network::HostedGame> games,
                                   .probeToken = probeToken};
 }
 
+namespace {
+
+/** @returns @p accountId in decimal digits; nothing for a guest. */
+std::optional<std::string> accountTextOf(std::uint64_t accountId) {
+  if (accountId == network::GUEST_ACCOUNT_ID) {
+    return std::nullopt;
+  }
+  return std::to_string(accountId);
+}
+
+}  // namespace
+
 network::FinishedGame finishedGameOf(const GameResult& result) {
   std::vector<network::FinishedGamePlayer> players;
   players.reserve(result.players.size());
   for (const PlayerResult& player : result.players) {
-    players.push_back(network::FinishedGamePlayer{.nickname = player.nickname,
-                                                  .accountId = std::nullopt,
-                                                  .score = player.score});
+    players.push_back(network::FinishedGamePlayer{
+        .nickname = player.nickname,
+        .accountId = accountTextOf(player.accountId),
+        .score = player.score,
+        .wonLooks = player.wonLooks});
   }
   return network::FinishedGame{.playedAt = result.endedAt,
                                .difficulty = result.difficulty,
                                .playerCount = result.playerCount,
                                .vanilla = result.vanilla,
-                               .players = std::move(players)};
+                               .players = std::move(players),
+                               .victory = result.victory};
 }
 
 }  // namespace rtype::server

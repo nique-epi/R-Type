@@ -119,6 +119,14 @@ namespace rtype::network::testing {
 [[nodiscard]] std::string finishedGameTextWith(std::string_view pointer,
                                                const nlohmann::json& value);
 
+/** @returns The game of parisFinishedGame() as JSON, without the member at
+ * @p pointer. */
+[[nodiscard]] std::string finishedGameTextWithout(std::string_view pointer);
+
+/** @returns A JSON array of @p count names of the catalog of the ship looks,
+ * in its order, from its first item again past its last. */
+[[nodiscard]] nlohmann::json lookNames(std::size_t count);
+
 /** @returns The game of parisFinishedGame() as JSON, started by
  * PLAYERS_OF_A_FULL_GAME players, its players the first @p playerCount of
  * FIVE_PILOTS, at most five. */

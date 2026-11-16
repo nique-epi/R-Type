@@ -39,6 +39,12 @@ constexpr std::string_view TRAILING_PILOT = "R9";
 constexpr std::uint32_t TRAILING_PILOT_SCORE = 800;
 constexpr std::uint32_t TRAILING_PILOT_DEATHS = 3;
 
+/** @brief The account R9 played under, as the master reads it: its decimal
+ * digits; and the item it won. */
+constexpr std::uint64_t TRAILING_PILOT_ACCOUNT_ID = 42;
+constexpr std::string_view TRAILING_PILOT_ACCOUNT_TEXT = "42";
+constexpr std::string_view TRAILING_PILOT_WON_LOOK = "crown";
+
 /** @brief A median tick a heartbeat carries, in milliseconds. */
 constexpr double CARRIED_MEDIAN_TICK_MILLISECONDS = 2.5;
 

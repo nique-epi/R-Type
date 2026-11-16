@@ -43,8 +43,11 @@ using rtype::server::testing::PROBE_SECRET_CEILING;
 using rtype::server::testing::PROBE_SECRET_FLOOR;
 using rtype::server::testing::PROBE_TOKEN_OF_A_HEARTBEAT;
 using rtype::server::testing::TRAILING_PILOT;
+using rtype::server::testing::TRAILING_PILOT_ACCOUNT_ID;
+using rtype::server::testing::TRAILING_PILOT_ACCOUNT_TEXT;
 using rtype::server::testing::TRAILING_PILOT_DEATHS;
 using rtype::server::testing::TRAILING_PILOT_SCORE;
+using rtype::server::testing::TRAILING_PILOT_WON_LOOK;
 
 /**
  * Given a server named, on a port, hosting eight games
@@ -155,10 +158,12 @@ TEST(MasterMessages, AHeartbeatCarriesTheTokenItIsGiven) {
 }
 
 /**
- * Given a vanilla game of two pilots that ended
+ * Given a won vanilla game of a guest and of a pilot signed in to account 42
+ * who won the crown
  * When its result is written for the master
  * Then it carries its date, difficulty, players at the start, that it was
- * vanilla, and each pilot as a guest with its score, without the deaths
+ * vanilla and won, the guest without an account, the other pilot under "42"
+ * with the crown, each with its score and without the deaths
  */
 TEST(MasterMessages, TheResultOfAGameIsWhatTheMasterKeeps) {
   const FinishedGame game = finishedGameOf(GameResult{
@@ -168,22 +173,29 @@ TEST(MasterMessages, TheResultOfAGameIsWhatTheMasterKeeps) {
       .players = {PlayerResult{.nickname = std::string{LEADING_PILOT},
                                .score = LEADING_PILOT_SCORE,
                                .deaths = LEADING_PILOT_DEATHS},
-                  PlayerResult{.nickname = std::string{TRAILING_PILOT},
-                               .score = TRAILING_PILOT_SCORE,
-                               .deaths = TRAILING_PILOT_DEATHS}},
-      .vanilla = true});
+                  PlayerResult{
+                      .nickname = std::string{TRAILING_PILOT},
+                      .score = TRAILING_PILOT_SCORE,
+                      .deaths = TRAILING_PILOT_DEATHS,
+                      .accountId = TRAILING_PILOT_ACCOUNT_ID,
+                      .wonLooks = {std::string{TRAILING_PILOT_WON_LOOK}}}},
+      .vanilla = true,
+      .victory = true});
 
-  EXPECT_EQ(game,
-            (FinishedGame{
-                .playedAt = ENDED_GAME_DATE,
-                .difficulty = std::string{ENDED_GAME_DIFFICULTY},
-                .playerCount = ENDED_GAME_PLAYERS,
-                .vanilla = true,
-                .players = {
-                    FinishedGamePlayer{.nickname = std::string{LEADING_PILOT},
-                                       .accountId = std::nullopt,
-                                       .score = LEADING_PILOT_SCORE},
-                    FinishedGamePlayer{.nickname = std::string{TRAILING_PILOT},
-                                       .accountId = std::nullopt,
-                                       .score = TRAILING_PILOT_SCORE}}}));
+  EXPECT_EQ(
+      game,
+      (FinishedGame{
+          .playedAt = ENDED_GAME_DATE,
+          .difficulty = std::string{ENDED_GAME_DIFFICULTY},
+          .playerCount = ENDED_GAME_PLAYERS,
+          .vanilla = true,
+          .players = {FinishedGamePlayer{.nickname = std::string{LEADING_PILOT},
+                                         .accountId = std::nullopt,
+                                         .score = LEADING_PILOT_SCORE},
+                      FinishedGamePlayer{
+                          .nickname = std::string{TRAILING_PILOT},
+                          .accountId = std::string{TRAILING_PILOT_ACCOUNT_TEXT},
+                          .score = TRAILING_PILOT_SCORE,
+                          .wonLooks = {std::string{TRAILING_PILOT_WON_LOOK}}}},
+          .victory = true}));
 }

@@ -39,8 +39,9 @@ namespace rtype::server {
 
 /**
  * @returns @p result as the master keeps it: its date, its difficulty, its
- * players when it started, whether it was vanilla, and the nickname and score
- * of each player, a guest each; the deaths stay on this server.
+ * players when it started, whether it was vanilla and won, and the nickname,
+ * the score, the account in decimal digits (none for a guest) and the won
+ * looks of each player; the deaths stay on this server.
  */
 [[nodiscard]] network::FinishedGame finishedGameOf(const GameResult& result);
 

@@ -335,8 +335,8 @@ The leaderboard module (`src/master/Leaderboard/`) gathers the results of every 
 | `GET /api/leaderboard?difficulty=normal&playerCount=2` | the best score of each player, by rank, a page at a time, to anyone; `difficulty` and `playerCount` each filter only when given, so a query without them reads every game; `server=<id>` reads one server, `player=<nickname>` adds the row of that player | 200; 400 when a parameter given is out of its bounds, an empty `difficulty` included |
 
 ```json
-{"playedAt":1800000000,"difficulty":"normal","playerCount":2,"vanilla":true,
- "players":[{"nickname":"ACE","score":12000},{"nickname":"R9","accountId":"account-42","score":800}]}
+{"playedAt":1800000000,"difficulty":"normal","playerCount":2,"vanilla":true,"victory":true,
+ "players":[{"nickname":"ACE","score":12000,"wonLooks":[]},{"nickname":"R9","accountId":"42","score":800,"wonLooks":["crown"]}]}
 ```
 
 The answer to `GET /api/leaderboard?difficulty=normal&playerCount=2&limit=1&player=R9`, when this game is the only one of that leaderboard:
@@ -351,7 +351,7 @@ The answer to `GET /api/leaderboard?difficulty=normal&playerCount=2&limit=1&play
 - **A row keeps its server**, so `server=<id>` reads one server, each row of the answer names the server of its game, and the rows of a server can be erased with it.
 - **One player, one row**: an account is one player under any nickname, its id compared as written; a guest is one player per nickname, whatever the server. Nicknames are compared as a game server compares them (`nicknameKey()`, SQLite's `NOCASE`): ASCII letters without case, every other character as it is, so `ACE` and `ace` are one guest, `ÉLODIE` and `élodie` two. Among the rows of a player, its best score counts, the earliest game first when two are equal. Equal scores share a rank, and the next rank skips them (1, 1, 3).
 - **`player`** names a nickname, compared the same way; the row of the player who played under it in any game of that leaderboard comes in `player` wherever it ranks, under the nickname of its best score, and `player` is left out when it names no one with a score there. A page is `limit` and `offset`, as for [the list of the servers](#listing-the-servers-and-their-history).
-- **Bounds of a result**: `playedAt` in seconds since 1970 UTC, from 0 to 2^63 − 1; `difficulty` and each `nickname`, nicknames of the protocol; `playerCount`, the players when the game started, 1 to `MAXIMUM_PLAYERS` (4); 1 to 4 `players`, no more than `playerCount`, since a game server lets nobody in once a game runs, and no nickname twice; `accountId`, left out for a guest, else 1 to `MAXIMUM_ACCOUNT_ID_SIZE` (64) bytes of printable UTF-8; `score`, 0 to 2^32 − 1, what a game server keeps.
+- **Bounds of a result**: `playedAt` in seconds since 1970 UTC, from 0 to 2^63 − 1; `difficulty` and each `nickname`, nicknames of the protocol; `playerCount`, the players when the game started, 1 to `MAXIMUM_PLAYERS` (4); 1 to 4 `players`, no more than `playerCount`, since a game server lets nobody in once a game runs, and no nickname twice; `accountId`, left out for a guest, else 1 to `MAXIMUM_ACCOUNT_ID_SIZE` (64) bytes of printable UTF-8; `score`, 0 to 2^32 − 1, what a game server keeps; `victory`, a boolean, read as `false` when missing; `wonLooks`, the look items the player won, names of `SHIP_LOOK_ITEM_NAMES`, at most `MAXIMUM_WON_LOOKS` (30, the whole catalog, since a game server names each item once), read as none when missing, so a game server older than these two members still reports. A game server writes `accountId` as the decimal digits of the account its player signed in to, which nothing proves, and leaves it out for a guest.
 
 The key of a result is checked by the `ServersService` the servers module provides, which tells the server of a key; the controller reuses the reading of a request the servers module writes (`RouteAnswers.hpp`, `src/master/Servers/Controllers/`).
 

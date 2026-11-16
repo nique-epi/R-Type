@@ -25,6 +25,9 @@ struct FinishedGame {
   /** @brief A row per player, 1 to MAXIMUM_PLAYERS, those who left before its
    * end included. */
   std::vector<FinishedGamePlayer> players;
+  /** @brief Whether its players cleared the level; false when a server older
+   * than the member does not say. */
+  bool victory{false};
 
   bool operator==(const FinishedGame&) const = default;
 };

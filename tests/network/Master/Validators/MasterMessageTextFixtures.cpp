@@ -26,6 +26,7 @@
 #include "ServerRegistration.hpp"
 #include "ServerSample.hpp"
 #include "ServerStatus.hpp"
+#include "ShipLookConstants.hpp"
 
 namespace rtype::network::testing {
 
@@ -262,18 +263,34 @@ FinishedGame parisFinishedGame() {
       .difficulty = std::string{PARIS_DIFFICULTY},
       .playerCount = PLAYING_GAME_PLAYER_COUNT,
       .vanilla = true,
-      .players = {
-          FinishedGamePlayer{.nickname = std::string{FIRST_PILOT},
-                             .accountId = std::nullopt,
-                             .score = FIRST_PILOT_SCORE},
-          FinishedGamePlayer{.nickname = std::string{SECOND_PILOT},
-                             .accountId = std::string{SECOND_PILOT_ACCOUNT},
-                             .score = SECOND_PILOT_SCORE}}};
+      .players = {FinishedGamePlayer{.nickname = std::string{FIRST_PILOT},
+                                     .accountId = std::nullopt,
+                                     .score = FIRST_PILOT_SCORE},
+                  FinishedGamePlayer{
+                      .nickname = std::string{SECOND_PILOT},
+                      .accountId = std::string{SECOND_PILOT_ACCOUNT},
+                      .score = SECOND_PILOT_SCORE,
+                      .wonLooks = {std::string{SECOND_PILOT_FIRST_LOOK},
+                                   std::string{SECOND_PILOT_SECOND_LOOK}}}},
+      .victory = PARIS_GAME_WON};
 }
 
 std::string finishedGameTextWith(std::string_view pointer,
                                  const nlohmann::json& value) {
   return withValueAt(finishedGameText(parisFinishedGame()), pointer, value);
+}
+
+std::string finishedGameTextWithout(std::string_view pointer) {
+  return withoutValueAt(finishedGameText(parisFinishedGame()), pointer);
+}
+
+nlohmann::json lookNames(std::size_t count) {
+  nlohmann::json names = nlohmann::json::array();
+  for (std::size_t index = 0; index < count; ++index) {
+    names.push_back(identifiers::SHIP_LOOK_ITEM_NAMES.at(
+        index % identifiers::SHIP_LOOK_ITEM_NAMES.size()));
+  }
+  return names;
 }
 
 std::string finishedGameTextOfPlayers(std::size_t playerCount) {
