@@ -7,7 +7,7 @@ target_include_directories(client_status_band_tests PRIVATE ${RTYPE_TEST_SOURCE_
 target_sources(client_screen_tests PRIVATE PointerEvents.cpp)
 target_sources(client_interface_tests PRIVATE KeyChipFixture.cpp KeyChipTest.cpp MenuBuilderDialogRowsFixtures.cpp MenuBuilderDialogRowsTest.cpp MenuBuilderPanelEndBarsFixtures.cpp MenuBuilderPanelEndBarsTest.cpp MenuTest.cpp MenuFixture.cpp MenuWithAFieldFixture.cpp TabbedPanelMenuFixture.cpp MenuFixtures.cpp MenuBuilderTest.cpp TextFieldTest.cpp MenuPainting.cpp WindowSizeChartTest.cpp HangarBayTest.cpp HangarBayFixtures.cpp PointerEvents.cpp)
 target_link_libraries(client_widget_piece_tests PRIVATE rtype_client_row_window rtype_client_scroll_mark)
-target_sources(client_widget_piece_tests PRIVATE RowWindowTest.cpp ScrollMarkTest.cpp ItemListFixtures.cpp ItemListTest.cpp TabStripFixtures.cpp OutlineTest.cpp CheckBoxTest.cpp KeyCapTest.cpp TabStripTest.cpp GlowingCallPaintingFixtures.cpp GlowingCallPaintingTest.cpp)
+target_sources(client_widget_piece_tests PRIVATE RowWindowTest.cpp ScrollMarkTest.cpp ItemListFixtures.cpp ItemListTest.cpp TabStripFixtures.cpp TabRailFixtures.cpp TabRailTest.cpp OutlineTest.cpp CheckBoxTest.cpp KeyCapTest.cpp TabStripTest.cpp GlowingCallPaintingFixtures.cpp GlowingCallPaintingTest.cpp)
 
 add_subdirectory(ChatWindow)
 add_subdirectory(FlightLog)

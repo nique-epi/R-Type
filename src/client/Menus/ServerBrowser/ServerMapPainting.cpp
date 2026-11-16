@@ -193,17 +193,11 @@ MiniMap miniMapOf(const ServerMapChoice& choice) {
 
 }  // namespace
 
-void paintServerMapHeader(IInterfaceCanvas& canvas, std::size_t serverCount) {
+void paintServerMapHeader(IInterfaceCanvas& canvas) {
   canvas.write(
       SERVER_MAP_TITLE, SERVER_MAP_TITLE_ANCHOR,
       TextStyle{
           .font = TextFont::Regular, .color = HUD_CYAN, .outlined = true});
-  canvas.write(
-      (serverCount == 1 ? std::string{ONE_SERVER_TEXT}
-                        : std::to_string(serverCount) + SERVER_COUNT_SUFFIX) +
-          SERVER_MAP_HINT,
-      SERVER_MAP_SUBTITLE_ANCHOR,
-      TextStyle{.font = TextFont::Small, .color = PALE_BLUE, .outlined = true});
 }
 
 void paintServerMapMessage(IInterfaceCanvas& canvas, ServerListPhase phase) {

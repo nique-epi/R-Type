@@ -19,19 +19,17 @@ namespace rtype::client {
 constexpr const char* SECTOR_MAP_SHEET_ID = "sprites/sector_map.png";
 
 /** @brief Sides of the glyphs, in pixels of the sheet: a planet grows with
- * the pilots of its server, the house of the hangar and the kiosk of the
- * shop. */
+ * the pilots of its server. */
 constexpr int SMALL_PLANET_SIZE = 5;
 constexpr int MEDIUM_PLANET_SIZE = 7;
 constexpr int LARGE_PLANET_SIZE = 9;
-constexpr int HANGAR_HOUSE_SIZE = 9;
-constexpr int SHOP_KIOSK_SIZE = 9;
 
 /**
  * @brief The first frame of each row of the sheet, from the top: a planet
  * with no pilot, with a few, with a crowd, a slow server (a large planet in
- * an orange ring), a server of another version (dark and still), and the
- * house of the hangar.
+ * an orange ring), and a server of another version (dark and still). The
+ * house of the hangar and the kiosk of the shop under them are no longer
+ * drawn.
  */
 constexpr game::SpriteFrame SMALL_PLANET_FRAME{.left = 0,
                                                .top = 0,
@@ -54,18 +52,6 @@ constexpr game::SpriteFrame OTHER_VERSION_PLANET_FRAME{
     .top = bottomOf(SLOW_PLANET_FRAME) + SPRITE_SPACING,
     .width = MEDIUM_PLANET_SIZE,
     .height = MEDIUM_PLANET_SIZE};
-constexpr game::SpriteFrame HANGAR_HOUSE_FRAME{
-    .left = 0,
-    .top = bottomOf(OTHER_VERSION_PLANET_FRAME) + SPRITE_SPACING,
-    .width = HANGAR_HOUSE_SIZE,
-    .height = HANGAR_HOUSE_SIZE};
-/** @brief The last row: the kiosk of the shop, its striped awning over its
- * counter, against the bottom of its frame. */
-constexpr game::SpriteFrame SHOP_KIOSK_FRAME{
-    .left = 0,
-    .top = bottomOf(HANGAR_HOUSE_FRAME) + SPRITE_SPACING,
-    .width = SHOP_KIOSK_SIZE,
-    .height = SHOP_KIOSK_SIZE};
 
 /**
  * @brief A planet turns: a light band runs across it over
