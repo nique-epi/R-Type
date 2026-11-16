@@ -226,6 +226,14 @@ namespace rtype::network {
  * `GET /api/users/me`. */
 [[nodiscard]] std::string userText(const User& account);
 
+/**
+ * @returns The account the master answered as @p text: an object whose `id`
+ * is a whole number of at least 1, whose `nickname` is a text and whose
+ * `role` is one of USER_ROLE_TEXTS.
+ * @throws InvalidMasterMessageException naming the first member that is not.
+ */
+[[nodiscard]] User userFromText(std::string_view text);
+
 /** @returns @p session as the JSON answer of `POST /api/sessions`. */
 [[nodiscard]] std::string createdSessionText(const CreatedSession& session);
 

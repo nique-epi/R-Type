@@ -994,6 +994,33 @@ std::string userText(const User& account) {
   return textOf(userDocument(account));
 }
 
+User userFromText(std::string_view text) {
+  const nlohmann::json document = nlohmann::json::parse(text, nullptr, false);
+  if (!document.is_object()) {
+    throw InvalidMasterMessageException("");
+  }
+  const auto id = document.find(ID_MEMBER);
+  if (id == document.end() || !id->is_number_integer() ||
+      id->get<std::int64_t>() < 1) {
+    throw InvalidMasterMessageException("/" + std::string{ID_MEMBER});
+  }
+  const auto nickname = document.find(NICKNAME_MEMBER);
+  if (nickname == document.end() || !nickname->is_string()) {
+    throw InvalidMasterMessageException("/" + std::string{NICKNAME_MEMBER});
+  }
+  const auto role = document.find(ROLE_MEMBER);
+  const std::optional<UserRole> userRole =
+      role != document.end() && role->is_string()
+          ? userRoleOf(role->get<std::string>())
+          : std::nullopt;
+  if (!userRole.has_value()) {
+    throw InvalidMasterMessageException("/" + std::string{ROLE_MEMBER});
+  }
+  return User{.id = id->get<std::int64_t>(),
+              .nickname = nickname->get<std::string>(),
+              .role = *userRole};
+}
+
 std::string createdSessionText(const CreatedSession& session) {
   nlohmann::json document;
   document[TOKEN_MEMBER] = session.token;

@@ -1,23 +1,17 @@
 #include "MasterAccountClient.hpp"
 #include <httplib.h>
-#include <cstdint>
-#include <nlohmann/json.hpp>
-#include <optional>
 #include <string>
 #include <string_view>
 #include "ExchangeReceipt.hpp"
 #include "ExchangeRequest.hpp"
 #include "LookPurchase.hpp"
 #include "MasterHttpConstants.hpp"
-#include "MasterMessageConstants.hpp"
 #include "MasterMessageText.hpp"
 #include "MasterRoute.hpp"
 #include "MasterRouteConstants.hpp"
 #include "MasterRoutePath.hpp"
-#include "NetworkException.hpp"
 #include "OwnedLooks.hpp"
 #include "User.hpp"
-#include "UserRole.hpp"
 #include "Wallet.hpp"
 
 // NOLINTBEGIN(clang-analyzer-cplusplus.NewDeleteLeaks)
@@ -51,46 +45,13 @@ std::string ownLookPathOf(std::string_view item) {
   return path;
 }
 
-/**
- * @returns The account the master answered as @p text: an object whose `id`
- * is a whole number of at least 1, whose `nickname` is a text and whose
- * `role` is one of USER_ROLE_TEXTS.
- * @throws InvalidMasterMessageException naming the first member that is not.
- */
-User ownUserFromText(std::string_view text) {
-  const nlohmann::json document = nlohmann::json::parse(text, nullptr, false);
-  if (!document.is_object()) {
-    throw InvalidMasterMessageException("");
-  }
-  const auto id = document.find(ID_MEMBER);
-  if (id == document.end() || !id->is_number_integer() ||
-      id->get<std::int64_t>() < 1) {
-    throw InvalidMasterMessageException("/" + std::string{ID_MEMBER});
-  }
-  const auto nickname = document.find(NICKNAME_MEMBER);
-  if (nickname == document.end() || !nickname->is_string()) {
-    throw InvalidMasterMessageException("/" + std::string{NICKNAME_MEMBER});
-  }
-  const auto role = document.find(ROLE_MEMBER);
-  const std::optional<UserRole> userRole =
-      role != document.end() && role->is_string()
-          ? userRoleOf(role->get<std::string>())
-          : std::nullopt;
-  if (!userRole.has_value()) {
-    throw InvalidMasterMessageException("/" + std::string{ROLE_MEMBER});
-  }
-  return User{.id = id->get<std::int64_t>(),
-              .nickname = nickname->get<std::string>(),
-              .role = *userRole};
-}
-
 }  // namespace
 
 MasterAccountClient::MasterAccountClient(const std::string& url)
     : transport_(url) {}
 
 User MasterAccountClient::readOwnUser(const std::string& token) {
-  return ownUserFromText(transport_.send(
+  return userFromText(transport_.send(
       requestOf(READ_OWN_USER_ROUTE, apiPathOf(READ_OWN_USER_ROUTE), {}),
       token));
 }
