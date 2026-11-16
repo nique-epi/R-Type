@@ -29,6 +29,15 @@ std::optional<std::uint8_t> CasinoRoundRepository::numberOf(
   return static_cast<std::uint8_t>(query.getColumn(FIRST_COLUMN).getInt());
 }
 
+std::vector<std::uint8_t> CasinoRoundRepository::roomsDrawnIn(
+    std::uint64_t round) {
+  SQLite::Statement query{connection_, std::string{DRAWN_ROOMS_QUERY}};
+  query.bind(std::string{ROUND_PARAMETER}, static_cast<std::int64_t>(round));
+  return rowsOf(query, [](const SQLite::Statement& row) {
+    return static_cast<std::uint8_t>(row.getColumn(FIRST_COLUMN).getInt());
+  });
+}
+
 bool CasinoRoundRepository::insert(const DrawnRound& round) {
   SQLite::Statement insert{connection_, std::string{INSERT_ROUND_STATEMENT}};
   bindPlace(insert, round.place);

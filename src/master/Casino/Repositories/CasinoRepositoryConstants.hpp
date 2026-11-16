@@ -79,6 +79,8 @@ INSERT INTO casino_rounds (room, round, winning_number, drawn_at)
 VALUES (:room, :round, :winning_number, :drawn_at)
 ON CONFLICT (room, round) DO NOTHING
 )sql";
+constexpr std::string_view DRAWN_ROOMS_QUERY =
+    "SELECT room FROM casino_rounds WHERE round = :round";
 constexpr std::string_view HISTORY_QUERY = R"sql(
 SELECT winning_number FROM casino_rounds WHERE room = :room AND round < :round
 ORDER BY round DESC LIMIT :kept

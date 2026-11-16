@@ -90,6 +90,11 @@ std::vector<rtype::master::DrawnRound> RouletteDealerFixture::drawAt(
   return dealer_.drawDueRounds(now, DEALER_TEST_SETTINGS);
 }
 
+std::vector<rtype::master::DrawnRound> RouletteDealerFixture::drawMissedAt(
+    rtype::network::MillisecondDate now) {
+  return dealer_.drawMissedRounds(now, DEALER_TEST_SETTINGS);
+}
+
 std::uint32_t RouletteDealerFixture::chipsOfAce() {
   return wallets_.walletOf(ace_, WALLET_TEST_DATE).chips;
 }

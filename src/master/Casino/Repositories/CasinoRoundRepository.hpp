@@ -20,6 +20,9 @@ class CasinoRoundRepository {
   /** @returns The number @p place drew, nothing before it was drawn. */
   [[nodiscard]] std::optional<std::uint8_t> numberOf(network::RoomRound place);
 
+  /** @returns The rooms whose round @p round was drawn. */
+  [[nodiscard]] std::vector<std::uint8_t> roomsDrawnIn(std::uint64_t round);
+
   /** @brief Writes @p round as drawn.
    * @returns Whether it was written: false when its round was drawn
    * already, which keeps its first number. */

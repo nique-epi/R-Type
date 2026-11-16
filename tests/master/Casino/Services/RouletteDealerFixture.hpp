@@ -38,6 +38,11 @@ class RouletteDealerFixture : public ::testing::Test {
   std::vector<rtype::master::DrawnRound> drawAt(
       rtype::network::MillisecondDate now);
 
+  /** @returns What the dealer of the tests draws at @p now, the rounds it
+   * missed included, as the first pass of a job does. */
+  [[nodiscard]] std::vector<rtype::master::DrawnRound> drawMissedAt(
+      rtype::network::MillisecondDate now);
+
   /** @returns The chips of the wallet of ACE. */
   [[nodiscard]] std::uint32_t chipsOfAce();
 
