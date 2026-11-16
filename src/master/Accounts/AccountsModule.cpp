@@ -1,15 +1,14 @@
 #include "AccountsModule.hpp"
-#include <functional>
 #include <span>
 #include <string>
 #include <utility>
 #include <vector>
-#include "AccountRoute.hpp"
 #include "AccountsController.hpp"
 #include "AccountsModuleConstants.hpp"
 #include "AccountsService.hpp"
 #include "CommandDefinition.hpp"
 #include "CommandInterpreter.hpp"
+#include "ControllerRoute.hpp"
 #include "EngineException.hpp"
 #include "ISessionAccounts.hpp"
 #include "InstallContext.hpp"
@@ -22,19 +21,6 @@
 #include "WireTypes.hpp"
 
 namespace rtype::master {
-
-namespace {
-
-/** @brief Adds every route of ACCOUNT_ROUTES to @p server, answered by
- * @p controller. */
-void addRoutes(MasterHttpServer& server, AccountsController& controller) {
-  for (const AccountRoute& accountRoute : ACCOUNT_ROUTES) {
-    server.add(accountRoute.route,
-               std::bind_front(accountRoute.answer, &controller));
-  }
-}
-
-}  // namespace
 
 AccountsModule::AccountsModule(std::string passwordKeyText)
     : passwordKeyText_(std::move(passwordKeyText)),
@@ -56,7 +42,7 @@ void AccountsModule::install(engine::InstallContext& context) {
       service_.emplace(context.require<MasterDatabase>(), key);
   context.provide<ISessionAccounts>(service);
   AccountsController& controller = controller_.emplace(service);
-  addRoutes(context.require<MasterHttpServer>(), controller);
+  addRoutes(context.require<MasterHttpServer>(), ACCOUNT_ROUTES, controller);
 }
 
 void AccountsModule::start() {
