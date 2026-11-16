@@ -3,6 +3,9 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include "BetsReceipt.hpp"
+#include "CasinoRoomListing.hpp"
+#include "CasinoRoomState.hpp"
 #include "CreatedServer.hpp"
 #include "CreatedSession.hpp"
 #include "Currency.hpp"
@@ -15,6 +18,10 @@
 #include "MovementListing.hpp"
 #include "MovementReason.hpp"
 #include "OwnedLooks.hpp"
+#include "RouletteBetKind.hpp"
+#include "RouletteBets.hpp"
+#include "RoulettePhase.hpp"
+#include "RoundBets.hpp"
 #include "SampleListing.hpp"
 #include "ServerCreation.hpp"
 #include "ServerHeartbeat.hpp"
@@ -311,5 +318,81 @@ namespace rtype::network {
 /** @returns The currency @p text writes, nothing when it is none of
  * CURRENCY_TEXTS. */
 [[nodiscard]] std::optional<Currency> currencyOf(std::string_view text);
+
+/** @returns @p listing as the JSON answer of `GET /api/casino/rooms`. */
+[[nodiscard]] std::string casinoRoomListingText(
+    const CasinoRoomListing& listing);
+
+/**
+ * @returns The rooms the master answered as @p text.
+ * @throws InvalidMasterMessageException naming the first member that is
+ * missing or out of its bounds.
+ */
+[[nodiscard]] CasinoRoomListing casinoRoomListingFromText(
+    std::string_view text);
+
+/** @returns @p state as the JSON answer of `GET /api/casino/rooms/{room}`:
+ * winningNumber and payout written null until the number is drawn. */
+[[nodiscard]] std::string casinoRoomStateText(const CasinoRoomState& state);
+
+/**
+ * @returns The state of a room the master answered as @p text.
+ * @throws InvalidMasterMessageException naming the first member that is
+ * missing or out of its bounds.
+ */
+[[nodiscard]] CasinoRoomState casinoRoomStateFromText(std::string_view text);
+
+/** @returns @p bets as the JSON body of
+ * `PUT /api/casino/rooms/{room}/rounds/{round}/bets/me`. */
+[[nodiscard]] std::string rouletteBetsText(const RouletteBets& bets);
+
+/**
+ * @returns The bets a player sent as @p text, read as the wire carries them:
+ * whether each lies on the cloth, their count and their total are the
+ * master's to check.
+ * @throws InvalidMasterMessageException naming the first member that is
+ * missing, a kind that is none of ROULETTE_BET_KIND_TEXTS, a number past 255,
+ * an amount past 32 bits, or a list longer than MAXIMUM_READ_ROULETTE_BETS.
+ */
+[[nodiscard]] RouletteBets rouletteBetsFromText(std::string_view text);
+
+/** @returns @p receipt as the JSON answer of
+ * `PUT /api/casino/rooms/{room}/rounds/{round}/bets/me`. */
+[[nodiscard]] std::string betsReceiptText(const BetsReceipt& receipt);
+
+/**
+ * @returns The receipt the master answered as @p text.
+ * @throws InvalidMasterMessageException naming the first member that is
+ * missing or out of its bounds.
+ */
+[[nodiscard]] BetsReceipt betsReceiptFromText(std::string_view text);
+
+/** @returns @p bets as the JSON answer of
+ * `GET /api/casino/rooms/{room}/rounds/{round}/bets/me`: payout and
+ * winningNumber written null until the number is drawn. */
+[[nodiscard]] std::string roundBetsText(const RoundBets& bets);
+
+/**
+ * @returns The bets of a round the master answered as @p text.
+ * @throws InvalidMasterMessageException naming the first member that is
+ * missing or out of its bounds.
+ */
+[[nodiscard]] RoundBets roundBetsFromText(std::string_view text);
+
+/** @returns How @p kind is written: one of ROULETTE_BET_KIND_TEXTS. */
+[[nodiscard]] std::string_view rouletteBetKindText(RouletteBetKind kind);
+
+/** @returns The kind @p text writes, nothing when it is none of
+ * ROULETTE_BET_KIND_TEXTS. */
+[[nodiscard]] std::optional<RouletteBetKind> rouletteBetKindOf(
+    std::string_view text);
+
+/** @returns How @p phase is written: one of ROULETTE_PHASE_TEXTS. */
+[[nodiscard]] std::string_view roulettePhaseText(RoulettePhase phase);
+
+/** @returns The phase @p text writes, nothing when it is none of
+ * ROULETTE_PHASE_TEXTS. */
+[[nodiscard]] std::optional<RoulettePhase> roulettePhaseOf(
+    std::string_view text);
 
 }  // namespace rtype::network

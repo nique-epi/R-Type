@@ -293,4 +293,53 @@ constexpr auto MOVEMENT_REASON_TEXTS = std::to_array<std::string_view>(
 constexpr std::uint64_t MAXIMUM_EXCHANGE_AMOUNT =
     std::numeric_limits<std::uint32_t>::max();
 
+/** @brief The members of the rooms of the casino, of their state, and of
+ * the bets of a round. */
+constexpr std::string_view ROOMS_MEMBER = "rooms";
+constexpr std::string_view SEATS_MEMBER = "seats";
+constexpr std::string_view SEATED_MEMBER = "seated";
+constexpr std::string_view ROUND_MEMBER = "round";
+constexpr std::string_view PHASE_MEMBER = "phase";
+constexpr std::string_view CLOSES_AT_MEMBER = "closesAt";
+constexpr std::string_view RESULT_AT_MEMBER = "resultAt";
+constexpr std::string_view ENDS_AT_MEMBER = "endsAt";
+constexpr std::string_view SERVER_TIME_MEMBER = "serverTime";
+constexpr std::string_view WINNING_NUMBER_MEMBER = "winningNumber";
+constexpr std::string_view HISTORY_MEMBER = "history";
+constexpr std::string_view STAKE_MEMBER = "stake";
+constexpr std::string_view PAYOUT_MEMBER = "payout";
+constexpr std::string_view BETS_MEMBER = "bets";
+constexpr std::string_view KIND_MEMBER = "kind";
+constexpr std::string_view FIRST_NUMBER_MEMBER = "firstNumber";
+
+/** @brief The longest name of a room of the casino, in bytes of UTF-8. */
+constexpr std::size_t MAXIMUM_CASINO_ROOM_NAME_SIZE = 32;
+
+/** @brief How each RouletteBetKind is written, in the order of the enum. */
+constexpr auto ROULETTE_BET_KIND_TEXTS = std::to_array<std::string_view>(
+    {"straight", "split", "splitAcross", "street", "corner", "sixLine", "dozen",
+     "column", "red", "black", "even", "odd", "low", "high"});
+
+/** @brief How each RoulettePhase is written, in the order of the enum. */
+constexpr auto ROULETTE_PHASE_TEXTS =
+    std::to_array<std::string_view>({"betting", "spinning", "result"});
+
+/**
+ * @brief The most bets a body of bets may list, and the most chips one bet of
+ * it may hold, as the wire carries them. The master reads a list up to twice
+ * MAXIMUM_ROULETTE_BETS, so it answers a list just over the limit, or a bet
+ * over the cap of a round, with the rule it breaks; a longer list is refused
+ * as a malformed body.
+ */
+constexpr std::size_t MAXIMUM_READ_ROULETTE_BETS = 64;
+constexpr std::uint64_t MAXIMUM_READ_BET_AMOUNT =
+    std::numeric_limits<std::uint32_t>::max();
+
+/** @brief The largest round a message may name, and the largest date in
+ * milliseconds: any whole number of 64 signed bits. */
+constexpr std::uint64_t HIGHEST_ROUND =
+    std::numeric_limits<std::int64_t>::max();
+constexpr std::uint64_t LATEST_MILLISECONDS =
+    std::numeric_limits<std::int64_t>::max();
+
 }  // namespace rtype::network

@@ -113,6 +113,48 @@ constexpr MasterRoute BUY_OWN_LOOK_ROUTE{.method = RouteMethod::Put,
                                          .path = "/users/me/looks/:item",
                                          .httpsOnly = true};
 
+/** @brief The parameters of a path that name a room of the casino and a
+ * round of its wheel. */
+constexpr std::string_view ROOM_PATH_PARAMETER = "room";
+constexpr std::string_view ROUND_PATH_PARAMETER = "round";
+/** @brief The roulette rooms of the casino of the master, with their round
+ * and phase; open to everyone, over plain HTTP too. */
+constexpr MasterRoute LIST_CASINO_ROOMS_ROUTE{.method = RouteMethod::Get,
+                                              .path = "/casino/rooms"};
+/** @brief The state of one room: its round, the dates of its phases, the
+ * number drawn once the bets closed, the last numbers and the players seated;
+ * open to everyone. */
+constexpr MasterRoute READ_CASINO_ROOM_ROUTE{.method = RouteMethod::Get,
+                                             .path = "/casino/rooms/:room"};
+/**
+ * @brief Seats the account of the token in the room, or renews its seat: a
+ * seat not renewed for CASINO_SEAT_LIFETIME is lost. The routes of the seats
+ * and of the bets are answered over HTTPS only, to the account of a session.
+ */
+constexpr MasterRoute TAKE_OWN_SEAT_ROUTE{
+    .method = RouteMethod::Put,
+    .path = "/casino/rooms/:room/seats/me",
+    .httpsOnly = true};
+/** @brief Gets the account of the token up from the room; leaving again
+ * succeeds. */
+constexpr MasterRoute LEAVE_OWN_SEAT_ROUTE{
+    .method = RouteMethod::Delete,
+    .path = "/casino/rooms/:room/seats/me",
+    .httpsOnly = true};
+/** @brief Replaces every bet the account of the token holds on a round of a
+ * room, while its bets are open: the bets it held are handed back, the new
+ * ones staked. */
+constexpr MasterRoute PLACE_OWN_BETS_ROUTE{
+    .method = RouteMethod::Put,
+    .path = "/casino/rooms/:room/rounds/:round/bets/me",
+    .httpsOnly = true};
+/** @brief The bets the account of the token holds on a round of a room, and
+ * what the round paid them once drawn. */
+constexpr MasterRoute READ_OWN_BETS_ROUTE{
+    .method = RouteMethod::Get,
+    .path = "/casino/rooms/:room/rounds/:round/bets/me",
+    .httpsOnly = true};
+
 /** @brief The parameter of a path that names a game of a server. */
 constexpr std::string_view GAME_ID_PATH_PARAMETER = "gameId";
 
