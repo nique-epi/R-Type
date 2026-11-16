@@ -31,7 +31,6 @@ GameScreenFixture::GameScreenFixture()
           return std::make_unique<GameScreen>(
               GameScreenParts{.navigator = screens_,
                               .settings = settings_,
-                              .settingsService = settingsService_,
                               .inputs = inputs_,
                               .entityMessages = entityMessages_,
                               .serverTicks = serverTicks_,

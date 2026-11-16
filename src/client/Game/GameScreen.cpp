@@ -201,7 +201,6 @@ GameScreen::GameScreen(GameScreenParts parts,
       entityLayer_(std::move(entityLayer)),
       statusCanvas_(std::move(statusCanvas)),
       settings_(&parts.settings.get()),
-      settingsService_(&parts.settingsService.get()),
       effects_(entities_, components_, std::random_device{}()),
       feedback_(EntityFeedback{.effects = effects_, .sounds = parts.sounds}),
       prediction_(parts.connection.get().status().playerNumber,
@@ -336,7 +335,6 @@ void GameScreen::recordEnd(const network::GameEnded& ended) {
       finalPilotsOf(scoreBoard_.pilots(), ended), shipLooks_->playerLooks()));
   if (!kopecksGained_.has_value()) {
     kopecksGained_ = kopecksEarnedBy(pilots, ended.outcome);
-    creditKopecks(*settingsService_, kopecksGained_.value_or(0));
   }
   *result_ = GameResult{.pilots = std::move(pilots),
                         .outcome = ended.outcome,

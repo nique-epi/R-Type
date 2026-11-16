@@ -234,10 +234,7 @@ TEST_F(SettingsServiceFixture, RestoringTakesTheSettingsAndTellsEveryOne) {
                                     SettingId::ChatBackground,
                                     SettingId::LagometerScale,
                                     SettingId::LagometerBackground,
-                                    SettingId::ShipLook,
-                                    SettingId::ShipLocker,
-                                    SettingId::Kopecks,
-                                    SettingId::Chips}));
+                                    SettingId::ShipLook}));
 }
 
 /**

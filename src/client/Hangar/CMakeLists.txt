@@ -4,7 +4,6 @@ add_subdirectory(Dock)
 add_library(rtype_client_hangar_module STATIC
   ClientHangarModule.cpp
   HangarScreen.cpp
-  WonItems.cpp
 )
 
 target_include_directories(rtype_client_hangar_module PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

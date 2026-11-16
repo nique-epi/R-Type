@@ -15,7 +15,6 @@
 #include "ColorMode.hpp"
 #include "InputConstants.hpp"
 #include "KeyNames.hpp"
-#include "NamedBalance.hpp"
 #include "NamedNumber.hpp"
 #include "PixelSize.hpp"
 #include "PlayerSettings.hpp"
@@ -23,7 +22,6 @@
 #include "SettingRange.hpp"
 #include "SettingsConstants.hpp"
 #include "SettingsTextConstants.hpp"
-#include "ShipLocker.hpp"
 #include "ShipLookConstants.hpp"
 #include "ShipLookNumbers.hpp"
 #include "ShipLookSlot.hpp"
@@ -268,78 +266,15 @@ std::optional<LineOutcome> applyLook(PlayerSettings& settings,
   return std::nullopt;
 }
 
-/** @returns The locker the value @p text of the file describes: the items it
- * names, separated by LOCKER_ITEM_SEPARATOR; a name no item has is skipped,
- * and EMPTY_LOCKER_VALUE names none. */
-ShipLocker lockerNamed(std::string_view text) {
-  ShipLocker locker;
-  locker.items.reset();
-  std::size_t start = 0;
-  while (start <= text.size()) {
-    const std::size_t end =
-        std::min(text.find(LOCKER_ITEM_SEPARATOR, start), text.size());
-    const std::string_view name = text.substr(start, end - start);
-    for (std::size_t item = 0; item < SHIP_LOOK_ITEM_COUNT; ++item) {
-      if (SHIP_LOOK_ITEM_NAMES.at(item) == name) {
-        locker.items.set(item);
-      }
-    }
-    start = end + 1;
-  }
-  return locker;
-}
-
-/** @returns The value of the locker in the file: the names of the items it
- * holds, in the order of the catalog, or EMPTY_LOCKER_VALUE. */
-std::string lockerValue(const ShipLocker& locker) {
-  std::string value;
-  for (std::size_t item = 0; item < SHIP_LOOK_ITEM_COUNT; ++item) {
-    if (locker.items.test(item)) {
-      if (!value.empty()) {
-        value += LOCKER_ITEM_SEPARATOR;
-      }
-      value += SHIP_LOOK_ITEM_NAMES.at(item);
-    }
-  }
-  return value.empty() ? std::string{EMPTY_LOCKER_VALUE} : value;
-}
-
-/** @returns Applied when the line is the locker, nothing when it names
+/** @returns Applied when the line is one of RETIRED_SETTING_NAMES, which
+ * an older file may hold and is skipped in silence; nothing when it names
  * another setting. */
-std::optional<LineOutcome> applyLocker(PlayerSettings& settings,
-                                       SettingLine setting) {
-  if (setting.name != SHIP_LOCKER_NAME) {
+std::optional<LineOutcome> skipRetired(SettingLine setting) {
+  if (std::ranges::find(RETIRED_SETTING_NAMES, setting.name) ==
+      RETIRED_SETTING_NAMES.end()) {
     return std::nullopt;
   }
-  settings.shipLocker = lockerNamed(setting.value);
   return LineOutcome::Applied;
-}
-
-/** @brief Sets @p balance to the whole number @p text holds within the range
- * of its setting, or to none when @p text holds no such number.
- * @returns Applied, or InvalidValue when the player was left none. */
-LineOutcome applyBalance(PlayerSettings& settings, const NamedBalance& balance,
-                         std::string_view text) {
-  const std::optional<int> parsed = integerIn(text, balance.setting->range);
-  settings.*balance.setting->member =
-      static_cast<std::uint32_t>(parsed.value_or(0));
-  return parsed.has_value() ? LineOutcome::Applied : LineOutcome::InvalidValue;
-}
-
-/** @returns What became of a line about what the player holds, the locker or
- * a balance of BALANCE_NUMBERS; nothing when it names another setting. */
-std::optional<LineOutcome> applyHoldings(PlayerSettings& settings,
-                                         SettingLine setting) {
-  if (const std::optional<LineOutcome> outcome =
-          applyLocker(settings, setting)) {
-    return outcome;
-  }
-  for (const NamedBalance& balance : BALANCE_NUMBERS) {
-    if (setting.name == balance.name) {
-      return applyBalance(settings, balance, setting.value);
-    }
-  }
-  return std::nullopt;
 }
 
 /** @brief Applies @p setting when it names a setting written as a word or a
@@ -383,8 +318,7 @@ LineOutcome applySetting(PlayerSettings& settings, SettingLine setting) {
   if (const std::optional<LineOutcome> outcome = applyLook(settings, setting)) {
     return *outcome;
   }
-  if (const std::optional<LineOutcome> outcome =
-          applyHoldings(settings, setting)) {
+  if (const std::optional<LineOutcome> outcome = skipRetired(setting)) {
     return *outcome;
   }
   const std::optional<BoundAction> action =
@@ -422,8 +356,7 @@ std::string ignoredLine(std::size_t number, LineOutcome outcome) {
   return text;
 }
 
-/** @brief Writes a line for each of @p numbers, a list of NamedNumber or of
- * NamedBalance. */
+/** @brief Writes a line for each of @p numbers, a list of NamedNumber. */
 template <typename NamedSettings>
 void writeNumbers(std::string& text, const PlayerSettings& settings,
                   const NamedSettings& numbers) {
@@ -473,8 +406,6 @@ std::string settingsText(const PlayerSettings& settings) {
   writeLine(text, SHIP_EYES_NAME, lookItemValue(settings.shipLook.eyes));
   writeLine(text, SHIP_FACE_NAME, lookItemValue(settings.shipLook.face));
   writeLine(text, SHIP_HULL_NAME, lookItemValue(settings.shipLook.hull));
-  writeLine(text, SHIP_LOCKER_NAME, lockerValue(settings.shipLocker));
-  writeNumbers(text, settings, BALANCE_NUMBERS);
   return text;
 }
 

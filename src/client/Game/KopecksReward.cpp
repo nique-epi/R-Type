@@ -5,9 +5,6 @@
 #include "FinalPilot.hpp"
 #include "GameEnded.hpp"
 #include "GameKopecks.hpp"
-#include "PlayerSettings.hpp"
-#include "SettingDefinitionConstants.hpp"
-#include "SettingsService.hpp"
 
 namespace rtype::client {
 
@@ -21,16 +18,6 @@ std::uint32_t kopecksEarnedBy(std::span<const FinalPilot> pilots,
   return outcome == network::WireGameOutcome::Victory
              ? network::withVictoryBonus(earned)
              : earned;
-}
-
-void creditKopecks(SettingsService& settings, std::uint32_t gain) {
-  if (gain == 0) {
-    return;
-  }
-  const std::uint32_t balance = network::boundedKopecks(
-      std::uint64_t{settings.settings().kopecks} + gain);
-  static_cast<void>(settings.apply(KOPECKS_SETTING, balance));
-  static_cast<void>(settings.saveIfChanged());
 }
 
 }  // namespace rtype::client

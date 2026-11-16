@@ -5,14 +5,12 @@
 #include <optional>
 #include "ColorMode.hpp"
 #include "DisplayMode.hpp"
-#include "KopecksConstants.hpp"
 #include "PixelSize.hpp"
 #include "PlayerSettings.hpp"
 #include "Setting.hpp"
 #include "SettingId.hpp"
 #include "SettingRange.hpp"
 #include "SettingsConstants.hpp"
-#include "ShipLocker.hpp"
 #include "ShipLook.hpp"
 
 namespace rtype::client {
@@ -117,26 +115,6 @@ constexpr Setting<int> LAGOMETER_BACKGROUND_SETTING{
     .id = SettingId::LagometerBackground,
     .range = LAGOMETER_BACKGROUND_RANGE};
 
-constexpr Setting<ShipLocker> SHIP_LOCKER_SETTING{
-    .member = &PlayerSettings::shipLocker,
-    .id = SettingId::ShipLocker,
-    .range = std::nullopt};
-
-/** @brief The balance of the player: none to MAXIMUM_KOPECKS. */
-constexpr SettingRange KOPECKS_RANGE{
-    .minimum = 0, .maximum = static_cast<int>(network::MAXIMUM_KOPECKS)};
-constexpr Setting<std::uint32_t> KOPECKS_SETTING{
-    .member = &PlayerSettings::kopecks,
-    .id = SettingId::Kopecks,
-    .range = KOPECKS_RANGE};
-
-/** @brief The chips of the player: none to MAXIMUM_CHIPS. */
-constexpr SettingRange CHIPS_RANGE{
-    .minimum = 0, .maximum = static_cast<int>(network::MAXIMUM_CHIPS)};
-constexpr Setting<std::uint32_t> CHIPS_SETTING{.member = &PlayerSettings::chips,
-                                               .id = SettingId::Chips,
-                                               .range = CHIPS_RANGE};
-
 /** @brief Every setting a listener can be told about. */
 constexpr std::array ALL_SETTING_IDS{
     SettingId::MusicVolume,
@@ -160,9 +138,6 @@ constexpr std::array ALL_SETTING_IDS{
     SettingId::LagometerScale,
     SettingId::LagometerBackground,
     SettingId::ShipLook,
-    SettingId::ShipLocker,
-    SettingId::Kopecks,
-    SettingId::Chips,
 };
 
 }  // namespace rtype::client

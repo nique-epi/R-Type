@@ -39,7 +39,6 @@
 #include "PlayerPalette.hpp"
 #include "ScoreBoard.hpp"
 #include "ScreenConstants.hpp"
-#include "SettingsService.hpp"
 #include "SilenceWarning.hpp"
 #include "SystemScheduler.hpp"
 #include "TimeConstants.hpp"
@@ -186,7 +185,6 @@ class GameScreen : public IScreen {
   std::unique_ptr<IEntityLayer> entityLayer_;
   std::unique_ptr<IInterfaceCanvas> statusCanvas_;
   const PlayerSettings* settings_;
-  SettingsService* settingsService_;
   engine::EntityRegistry entities_;
   engine::ComponentRegistry components_{entities_};
   EffectSpawner effects_;

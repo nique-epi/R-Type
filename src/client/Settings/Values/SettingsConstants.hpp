@@ -110,21 +110,12 @@ constexpr std::string_view SHIP_HEAD_NAME = "ship_head";
 constexpr std::string_view SHIP_EYES_NAME = "ship_eyes";
 constexpr std::string_view SHIP_FACE_NAME = "ship_face";
 constexpr std::string_view SHIP_HULL_NAME = "ship_hull";
+
+/** @brief The lines of the locker, the kopecks and the chips, which files of
+ * earlier versions hold; the settings no longer keep them. */
 constexpr std::string_view SHIP_LOCKER_NAME = "ship_locker";
-
-/** @brief The kopecks, the currency of the shop: the name of their line, up
- * to network::MAXIMUM_KOPECKS. A first launch holds none. */
 constexpr std::string_view KOPECKS_NAME = "kopecks";
-
-/** @brief The chips of the casino, changed one for one with kopecks at its
- * cashier: the name of their line, up to network::MAXIMUM_CHIPS. A first
- * launch holds none. */
 constexpr std::string_view CHIPS_NAME = "chips";
-
-/** @brief What separates the items of the locker in the settings file, and the
- * value of a locker that holds none. */
-constexpr char LOCKER_ITEM_SEPARATOR = ',';
-constexpr std::string_view EMPTY_LOCKER_VALUE = "none";
 
 /** @brief The value of a slot of the ship that wears nothing; for the hull,
  * the standard ship. */
