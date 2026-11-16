@@ -5,6 +5,7 @@
 #include <string_view>
 #include "ConnectionRefused.hpp"
 #include "ConnectionScreen.hpp"
+#include "FakeAccountSession.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingServerConnection.hpp"
@@ -47,6 +48,7 @@ class ConnectionToMapServerFixture : public ::testing::Test {
 
   RecordingNavigator navigator_;
   RecordingServerConnection connection_;
+  FakeAccountSession account_;
   InterfaceCanvasRecord canvas_;
   RecordingSoundPlayer sounds_;
   rtype::client::ServerChoice choice_;

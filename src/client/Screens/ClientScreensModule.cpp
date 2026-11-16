@@ -21,10 +21,12 @@
 #include "EventUse.hpp"
 #include "FrameLoop.hpp"
 #include "GameWindow.hpp"
+#include "IAccountSession.hpp"
 #include "IEntityTypeTable.hpp"
 #include "IGameCatalog.hpp"
 #include "IServerCatalog.hpp"
 #include "IServerTicks.hpp"
+#include "IWallet.hpp"
 #include "InstallContext.hpp"
 #include "IntegerSettingDefinition.hpp"
 #include "MasterLeaderboard.hpp"
@@ -88,7 +90,8 @@ std::string ClientScreensModule::name() const {
 
 std::vector<std::string> ClientScreensModule::dependencies() const {
   return {std::string{ASSETS_MODULE_NAME}, std::string{SETTINGS_MODULE_NAME},
-          std::string{WINDOW_MODULE_NAME}, std::string{CONNECTION_MODULE_NAME}};
+          std::string{WINDOW_MODULE_NAME}, std::string{CONNECTION_MODULE_NAME},
+          std::string{ACCOUNT_MODULE_NAME}};
 }
 
 std::vector<std::string> ClientScreensModule::optionalDependencies() const {
@@ -114,6 +117,8 @@ void ClientScreensModule::install(engine::InstallContext& context) {
   serverTicks_ = &context.require<IServerTicks>();
   serverCatalog_ = &context.require<IServerCatalog>();
   gameCatalog_ = &context.require<IGameCatalog>();
+  account_ = &context.require<IAccountSession>();
+  wallet_ = &context.require<IWallet>();
   loop_ = &context.require<FrameLoop>();
   listeners_ = &context.require<EventListeners>();
   declareSettings(context.require<engine::ConfigurationRegistry>());
@@ -172,6 +177,8 @@ ScreenServices ClientScreensModule::services(
       .serverTicks = *serverTicks_,
       .serverCatalog = *serverCatalog_,
       .gameCatalog = *gameCatalog_,
+      .account = *account_,
+      .wallet = *wallet_,
       .choice = ServerChoice{.server = server,
                              .nickname = nicknameSetting_->text(),
                              .game = launch_.game,

@@ -157,6 +157,7 @@ ConnectionScreen::ConnectionScreen(ConnectionScreenParts parts,
                                    std::unique_ptr<IInterfaceCanvas> canvas)
     : navigator_(&parts.navigator.get()),
       connection_(&parts.connection.get()),
+      account_(&parts.account.get()),
       choice_(&parts.choice.get()),
       goal_(parts.goal),
       start_(parts.start),
@@ -227,7 +228,8 @@ void ConnectionScreen::connect() {
     fieldProblem_ = MISSING_NICKNAME_STATUS;
     return;
   }
-  const GameRequest request = requestOf(*choice_, start_);
+  GameRequest request = requestOf(*choice_, start_);
+  request.accountId = account_->accountId();
   choice_->lastServer = server;
   choice_->lastRequest = request;
   if (remembersServer(start_)) {

@@ -84,6 +84,7 @@ void ConnectionToMapServerFixture::open() {
       ConnectionScreenParts{.navigator = navigator_,
                             .sounds = sounds_,
                             .connection = connection_,
+                            .account = account_,
                             .playfieldPointAt = samePlayfieldPoint,
                             .choice = choice_,
                             .start = ConnectionStart::NicknameOnConfirm},

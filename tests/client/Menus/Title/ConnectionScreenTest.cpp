@@ -69,6 +69,7 @@ using rtype::client::testing::NO_NICKNAME_TEXT;
 using rtype::client::testing::NOTHING_RECEIVED;
 using rtype::client::testing::PACK_SIZE;
 using rtype::client::testing::PORT_ZERO_TEXT;
+using rtype::client::testing::SIGNED_IN_PLAYER_ACCOUNT_ID;
 using rtype::client::testing::THIRD_PLAYER;
 using rtype::client::testing::TYPED_NICKNAME;
 using rtype::client::testing::TYPED_NICKNAME_TEXT;
@@ -861,4 +862,17 @@ TEST_F(ConnectionScreenChoiceFixture, TheFormNeverLeavesTheServerItNames) {
   serverRefusesFor(RefusalReason::ServerFull);
 
   EXPECT_EQ(connectAttemptsOf(connection()).size(), 1U);
+}
+
+/**
+ * Given the connection screen, the player signed in to an account
+ * When Enter starts an attempt
+ * Then the attempt names that account to the server
+ */
+TEST_F(SignedInConnectionScreenFixture, AnAttemptNamesTheAccountSignedIn) {
+  choose(sf::Keyboard::Key::Enter);
+
+  ASSERT_EQ(connectAttemptsOf(connection()).size(), 1U);
+  EXPECT_EQ(connectAttemptsOf(connection()).front().accountId,
+            SIGNED_IN_PLAYER_ACCOUNT_ID);
 }

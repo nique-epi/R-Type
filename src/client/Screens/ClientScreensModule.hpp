@@ -13,6 +13,7 @@
 #include "EventListeners.hpp"
 #include "FrameLoop.hpp"
 #include "GameWindow.hpp"
+#include "IAccountSession.hpp"
 #include "IAudioService.hpp"
 #include "IEntityTypeTable.hpp"
 #include "IGameCatalog.hpp"
@@ -20,6 +21,7 @@
 #include "IOptionalDependencies.hpp"
 #include "IServerCatalog.hpp"
 #include "IServerTicks.hpp"
+#include "IWallet.hpp"
 #include "InstallContext.hpp"
 #include "Logger.hpp"
 #include "MasterLeaderboard.hpp"
@@ -133,6 +135,8 @@ class ClientScreensModule final : public engine::IModule,
   const IServerTicks* serverTicks_{nullptr};
   IServerCatalog* serverCatalog_{nullptr};
   IGameCatalog* gameCatalog_{nullptr};
+  IAccountSession* account_{nullptr};
+  IWallet* wallet_{nullptr};
   FrameLoop* loop_{nullptr};
   EventListeners* listeners_{nullptr};
   /** @brief Declared before screens_, which keep a reference to it. */

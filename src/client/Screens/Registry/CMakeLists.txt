@@ -6,6 +6,8 @@ target_include_directories(rtype_client_screen_registry PUBLIC ${CMAKE_CURRENT_S
 
 target_link_libraries(rtype_client_screen_registry
   PUBLIC
+    rtype_client_account_session
+    rtype_client_account_wallet
     rtype_client_application
     rtype_client_asset_library
     rtype_client_audio_contract_service

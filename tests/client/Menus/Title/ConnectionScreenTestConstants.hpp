@@ -74,4 +74,9 @@ constexpr std::size_t HALF_RECEIVED = 75'000;
 constexpr std::string_view BAD_DIFFICULTY_REFUSAL = "REFUSED: BAD DIFFICULTY";
 constexpr std::string_view LIVES_BOUNDS_REFUSAL = "REFUSED: LIVES 1 TO 9";
 
+/** @brief The account a signed-in player plays under, and its token. */
+constexpr std::uint64_t SIGNED_IN_PLAYER_ACCOUNT_ID = 42;
+constexpr std::string_view SIGNED_IN_TOKEN =
+    "rt_00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff";
+
 }  // namespace rtype::client::testing

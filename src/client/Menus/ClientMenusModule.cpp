@@ -120,6 +120,7 @@ std::unique_ptr<IScreen> buildConnectionScreen(
       ConnectionScreenParts{.navigator = context.navigator.get(),
                             .sounds = soundsOf(context),
                             .connection = context.services.connection.get(),
+                            .account = context.services.account.get(),
                             .playfieldPointAt = playfieldMappingOf(context),
                             .choice = context.serverChoice.get(),
                             .goal = goal,

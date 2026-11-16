@@ -32,7 +32,8 @@ class LaunchOptions {
    * @brief Reads every option of the client from @p arguments, the arguments
    * it was launched with, without its name, in one pass from the first to the
    * last: `-h <address>`, `-p <port>`, `-n <nickname>`, `--game <game>`,
-   * `--set <name>=<value>`, `--no-sound`, `--traffic-csv <file>` and `--help`,
+   * `--set <name>=<value>`, `--session <token>`, `--no-sound`,
+   * `--traffic-csv <file>` and `--help`,
    * the options of the network simulator (see
    * network::SimulatorLaunchOptions::readOption()) and the logging options
    * (see logging::LogLaunchOptions::readOption()), whose exceptions this
@@ -70,12 +71,6 @@ class LaunchOptions {
    */
   [[nodiscard]] static LaunchOptions read(
       std::span<const std::string_view> arguments);
-
-  /**
-   * @returns what `--help` prints: every option of the client, the logging
-   *          ones included, with its default.
-   */
-  [[nodiscard]] static std::string usage();
 
   /** @returns the address and the port of the server to join, the nickname
    * of the player, UTF-8, and the game it asks for. */
@@ -121,6 +116,10 @@ class LaunchOptions {
   [[nodiscard]] const std::optional<std::filesystem::path>& trafficCsvFile()
       const;
 
+  /** @returns The token given after `--session`, which the account module
+   * signs in with; nothing when it was not given. */
+  [[nodiscard]] const std::optional<std::string>& sessionToken() const;
+
  private:
   explicit LaunchOptions(LaunchValues values);
 
@@ -128,5 +127,11 @@ class LaunchOptions {
   network::SimulatorLaunchOptions simulatorOptions_;
   logging::LogLaunchOptions logOptions_;
 };
+
+/**
+ * @returns what `--help` prints: every option of the client, the logging ones
+ * included, with its default.
+ */
+[[nodiscard]] std::string launchUsage();
 
 }  // namespace rtype::client

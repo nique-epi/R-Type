@@ -8,6 +8,7 @@
 #include "ConnectionStart.hpp"
 #include "ConnectionStatus.hpp"
 #include "Endpoint.hpp"
+#include "IAccountSession.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "IScreen.hpp"
 #include "IScreenNavigator.hpp"
@@ -99,6 +100,7 @@ class ConnectionScreen : public IScreen {
 
   IScreenNavigator* navigator_{};
   IServerConnection* connection_{};
+  const IAccountSession* account_{};
   ServerChoice* choice_{};
   ConnectionGoal goal_;
   /** @brief When the attempt starts, which also decides whether the form

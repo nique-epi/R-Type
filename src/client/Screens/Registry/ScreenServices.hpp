@@ -5,12 +5,14 @@
 #include "ChatChannel.hpp"
 #include "EntityMessageQueue.hpp"
 #include "GameWindow.hpp"
+#include "IAccountSession.hpp"
 #include "IAudioService.hpp"
 #include "IEntityTypeSource.hpp"
 #include "IEntityTypeTable.hpp"
 #include "IGameCatalog.hpp"
 #include "IServerCatalog.hpp"
 #include "IServerTicks.hpp"
+#include "IWallet.hpp"
 #include "MasterLeaderboard.hpp"
 #include "PlayStart.hpp"
 #include "PlayerSettings.hpp"
@@ -62,6 +64,10 @@ struct ScreenServices {
    * one of them, for the server map. */
   std::reference_wrapper<IServerCatalog> serverCatalog;
   std::reference_wrapper<IGameCatalog> gameCatalog;
+  /** @brief The account the player plays under, and what it holds on the
+   * master: the shop, the hangar, the cashier and the balances read it. */
+  std::reference_wrapper<IAccountSession> account;
+  std::reference_wrapper<IWallet> wallet;
   /** @brief The server, the nickname and the game the first connection
    * screen starts with. */
   ServerChoice choice;

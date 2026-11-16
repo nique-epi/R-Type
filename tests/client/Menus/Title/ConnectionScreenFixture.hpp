@@ -7,6 +7,7 @@
 #include "ConnectionGoal.hpp"
 #include "ConnectionScreen.hpp"
 #include "ConnectionStatus.hpp"
+#include "FakeAccountSession.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingServerConnection.hpp"
@@ -45,6 +46,10 @@ class ConnectionScreenFixture : public ::testing::Test {
   /** @returns The sounds the screen played. */
   [[nodiscard]] const RecordingSoundPlayer& sounds() const;
 
+  /** @brief The account the attempts name: a guest, unless a fixture signs
+   * it in. */
+  FakeAccountSession account_;
+
  private:
   RecordingNavigator navigator_;
   RecordingServerConnection connection_;
@@ -52,6 +57,13 @@ class ConnectionScreenFixture : public ::testing::Test {
   RecordingSoundPlayer sounds_;
   rtype::client::ServerChoice choice_;
   rtype::client::ConnectionScreen screen_;
+};
+
+/** @brief The same screen, the player signed in to SIGNED_IN_PLAYER_ACCOUNT_ID.
+ */
+class SignedInConnectionScreenFixture : public ConnectionScreenFixture {
+ protected:
+  SignedInConnectionScreenFixture();
 };
 
 /** @brief The same screen, pushed over the screen the player came from. */
