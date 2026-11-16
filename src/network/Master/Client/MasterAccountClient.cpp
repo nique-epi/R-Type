@@ -2,13 +2,11 @@
 #include <httplib.h>
 #include <string>
 #include <string_view>
-#include <utility>
 #include "ExchangeReceipt.hpp"
 #include "ExchangeRequest.hpp"
 #include "LookPurchase.hpp"
 #include "MasterMessageText.hpp"
 #include "MasterRequest.hpp"
-#include "MasterRoute.hpp"
 #include "MasterRouteConstants.hpp"
 #include "MasterRoutePath.hpp"
 #include "OwnedLooks.hpp"
@@ -17,21 +15,6 @@
 
 // NOLINTBEGIN(clang-analyzer-cplusplus.NewDeleteLeaks)
 namespace rtype::network {
-
-namespace {
-
-/** @returns The path of BUY_OWN_LOOK_ROUTE for the look @p item:
- * `/api/users/me/looks/crown`. The names of the looks are lowercase letters,
- * written as they come. */
-std::string ownLookPathOf(std::string_view item) {
-  std::string path = apiPathOf(BUY_OWN_LOOK_ROUTE);
-  const std::string placeholder = std::string{PATH_PARAMETER_PREFIX} +
-                                  std::string{LOOK_ITEM_PATH_PARAMETER};
-  path.replace(path.find(placeholder), placeholder.size(), item);
-  return path;
-}
-
-}  // namespace
 
 MasterAccountClient::MasterAccountClient(const std::string& url)
     : transport_(url) {}
@@ -57,15 +40,17 @@ OwnedLooks MasterAccountClient::listOwnLooks(const std::string& token) {
 LookPurchase MasterAccountClient::buyOwnLook(const std::string& token,
                                              std::string_view item) {
   return lookPurchaseFromText(transport_.send(
-      masterRequestOf(BUY_OWN_LOOK_ROUTE, ownLookPathOf(item)), token));
+      masterRequestOf(BUY_OWN_LOOK_ROUTE, lookPathOf(BUY_OWN_LOOK_ROUTE, item)),
+      token));
 }
 
 ExchangeReceipt MasterAccountClient::exchange(const std::string& token,
                                               const ExchangeRequest& request) {
-  httplib::Request call = masterRequestOf(CREATE_OWN_EXCHANGE_ROUTE,
-                                          apiPathOf(CREATE_OWN_EXCHANGE_ROUTE));
-  setJsonBody(call, exchangeRequestText(request));
-  return exchangeReceiptFromText(transport_.send(std::move(call), token));
+  return exchangeReceiptFromText(
+      transport_.send(jsonRequestOf(CREATE_OWN_EXCHANGE_ROUTE,
+                                    apiPathOf(CREATE_OWN_EXCHANGE_ROUTE),
+                                    exchangeRequestText(request)),
+                      token));
 }
 
 }  // namespace rtype::network

@@ -4,9 +4,11 @@
 #include "MasterRoutePathTestConstants.hpp"
 #include "RoomRound.hpp"
 
+using rtype::network::BUY_OWN_LOOK_ROUTE;
 using rtype::network::gamePathOf;
 using rtype::network::KEEP_OWN_RESULT_ROUTE;
 using rtype::network::LIST_SERVER_GAMES_ROUTE;
+using rtype::network::lookPathOf;
 using rtype::network::PLACE_OWN_BETS_ROUTE;
 using rtype::network::roomPathOf;
 using rtype::network::RoomRound;
@@ -53,4 +55,13 @@ TEST(MasterRoutePath, ThePathOfTheBetsNamesTheRoomAndTheRound) {
   EXPECT_EQ(roundPathOf(PLACE_OWN_BETS_ROUTE,
                         RoomRound{.room = SECOND_ROOM, .round = SOME_ROUND}),
             SOME_ROUND_BETS_PATH);
+}
+
+/**
+ * Given the route that buys a look for the account of the token
+ * When its path is made for the crown
+ * Then it is `/api/users/me/looks/crown`
+ */
+TEST(MasterRoutePath, ThePathOfAPurchaseNamesTheLook) {
+  EXPECT_EQ(lookPathOf(BUY_OWN_LOOK_ROUTE, CROWN_LOOK), CROWN_PURCHASE_PATH);
 }

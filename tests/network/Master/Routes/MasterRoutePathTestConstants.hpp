@@ -20,3 +20,7 @@ constexpr std::string_view SECOND_ROOM_SEAT_PATH =
     "/api/casino/rooms/2/seats/me";
 constexpr std::string_view SOME_ROUND_BETS_PATH =
     "/api/casino/rooms/2/rounds/815/bets/me";
+
+/** @brief A look of the shop, and where it is bought. */
+constexpr std::string_view CROWN_LOOK = "crown";
+constexpr std::string_view CROWN_PURCHASE_PATH = "/api/users/me/looks/crown";
