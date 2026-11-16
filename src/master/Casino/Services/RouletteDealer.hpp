@@ -17,7 +17,8 @@ namespace rtype::master {
  * @brief Draws the number of each round of the casino once its bets closed,
  * and pays its winners. Each round is drawn in one transaction: its number
  * written in `casino_rounds`, and each payout added to the wallet with the
- * reference of the round, applied once. The transaction of new bets checks
+ * reference of the round. That transaction draws nothing when the row is
+ * there already, so a round is paid once; the transaction of new bets checks
  * that same row, so a bet never lands on a drawn round.
  */
 class RouletteDealer {

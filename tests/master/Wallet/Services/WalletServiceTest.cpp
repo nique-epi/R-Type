@@ -207,22 +207,6 @@ TEST_F(WalletServiceFixture, AStakePastTheChipsIsRefused) {
 }
 
 /**
- * Given a payout of 300 chips the casino applies once
- * When it is applied twice
- * Then the second is refused, and the chips grew by 300 only
- */
-TEST_F(WalletServiceFixture, APayoutOfOneReferenceAppliesOnce) {
-  const ChipMovementResult first = applied(payoutOf(A_PAYOUT_OF_THREE_HUNDRED));
-  const ChipMovementResult second =
-      applied(payoutOf(A_PAYOUT_OF_THREE_HUNDRED));
-
-  EXPECT_FALSE(first.refusal.has_value());
-  EXPECT_EQ(second.refusal, std::optional{ChipRefusal::ReferenceUsed});
-  EXPECT_EQ(wallets().walletOf(ace(), WALLET_TEST_DATE).chips,
-            TEST_STARTING_WALLET.chips + A_PAYOUT_OF_THREE_HUNDRED);
-}
-
-/**
  * Given a game that pays ACE 1245 kopecks and the crown
  * When it is credited twice
  * Then the second credits nothing: the kopecks and the crown came once

@@ -36,10 +36,6 @@ class WalletServiceFixture : public ::testing::Test {
    * as asked. */
   [[nodiscard]] rtype::master::ChipMovement stakeOf(std::int64_t amount) const;
 
-  /** @returns A payout of @p amount chips to ACE, of PAYOUT_REFERENCE,
-   * applied once. */
-  [[nodiscard]] rtype::master::ChipMovement payoutOf(std::int64_t amount) const;
-
   /** @returns What @p movement did, applied in a transaction of its own. */
   rtype::master::ChipMovementResult applied(
       const rtype::master::ChipMovement& movement);

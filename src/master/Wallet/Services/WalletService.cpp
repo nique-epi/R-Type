@@ -176,21 +176,10 @@ MovementRecord lineOf(const ChipMovement& movement, std::int64_t moved) {
                         .madeAt = movement.madeAt};
 }
 
-/** @returns Why @p movement does not apply to a wallet holding @p before,
- * nothing when it does. A movement applied once is refused when a line of
- * the same reason and reference is in the journal. */
-std::optional<ChipRefusal> chipRefusalOf(SQLite::Database& connection,
-                                         const ChipMovement& movement,
-                                         const network::Wallet& before) {
-  if (movement.appliedOnce &&
-      WalletMovementRepository{connection}.holdsReference(
-          lineOf(movement, movement.amount))) {
-    return ChipRefusal::ReferenceUsed;
-  }
-  if (movement.amount < 0 && -movement.amount > std::int64_t{before.chips}) {
-    return ChipRefusal::NotEnoughChips;
-  }
-  return std::nullopt;
+/** @returns Whether @p movement takes more chips than a wallet holding
+ * @p before has. */
+bool takesTooMany(const ChipMovement& movement, const network::Wallet& before) {
+  return movement.amount < 0 && -movement.amount > std::int64_t{before.chips};
 }
 
 /** @brief Writes @p movement on a wallet holding @p before: its line of the
@@ -333,9 +322,9 @@ ChipMovementResult WalletService::applyChips(SQLite::Database& connection,
     return ChipMovementResult{.refusal = ChipRefusal::UnknownAccount,
                               .chips = 0};
   }
-  if (const std::optional<ChipRefusal> refusal =
-          chipRefusalOf(connection, movement, *before)) {
-    return ChipMovementResult{.refusal = refusal, .chips = before->chips};
+  if (takesTooMany(movement, *before)) {
+    return ChipMovementResult{.refusal = ChipRefusal::NotEnoughChips,
+                              .chips = before->chips};
   }
   if (movement.amount == 0) {
     return ChipMovementResult{.refusal = std::nullopt, .chips = before->chips};

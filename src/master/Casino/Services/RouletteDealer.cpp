@@ -109,7 +109,6 @@ std::optional<DrawnRound> RouletteDealer::drawn(network::RoomRound place,
                                      .amount = payout,
                                      .reason = network::MovementReason::Payout,
                                      .reference = roundReferenceOf(place),
-                                     .appliedOnce = true,
                                      .madeAt = now}));
       }
     }

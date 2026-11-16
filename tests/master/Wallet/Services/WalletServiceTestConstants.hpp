@@ -57,12 +57,10 @@ constexpr std::string_view STARTER_TOP_HAT_NAME = "top_hat";
 constexpr std::string_view STARTER_COOL_SHADES_NAME = "cool_shades";
 constexpr std::string_view STARTER_MUSTACHE_NAME = "mustache";
 
-/** @brief Chips the casino stakes and pays in the tests, and the reference
- * of a payout and of a stake. */
+/** @brief Chips the casino stakes in the tests, and the reference of a
+ * stake. */
 constexpr std::int64_t A_STAKE_OF_A_HUNDRED = -100;
 constexpr std::int64_t A_STAKE_PAST_THE_CHIPS = -501;
-constexpr std::int64_t A_PAYOUT_OF_THREE_HUNDRED = 300;
-constexpr std::string_view PAYOUT_REFERENCE = "round:1:42:1";
 constexpr std::string_view STAKE_REFERENCE = "round:1:43:1";
 
 /** @brief A game the tests credit: its kopecks, a look won and a name of no
