@@ -11,6 +11,7 @@
 #include "BetRefusal.hpp"
 #include "BetsReceipt.hpp"
 #include "CasinoControllerConstants.hpp"
+#include "CasinoRefusalConstants.hpp"
 #include "CasinoRoomConstants.hpp"
 #include "CasinoService.hpp"
 #include "DatedRequest.hpp"
@@ -92,9 +93,9 @@ std::optional<network::RoomRound> roomRoundOf(
 network::ApiResponse betRefusalOf(BetRefusal reason) {
   switch (reason) {
     case BetRefusal::BetsClosed:
-      return refusal(CONFLICT_STATUS, BETS_CLOSED_DETAIL);
+      return refusal(CONFLICT_STATUS, network::BETS_CLOSED_DETAIL);
     case BetRefusal::NotSeated:
-      return refusal(CONFLICT_STATUS, NOT_SEATED_DETAIL);
+      return refusal(CONFLICT_STATUS, network::NOT_SEATED_DETAIL);
     case BetRefusal::InvalidBet:
       return refusal(UNPROCESSABLE_CONTENT_STATUS, INVALID_BET_DETAIL);
     case BetRefusal::TooManyBets:
@@ -102,9 +103,10 @@ network::ApiResponse betRefusalOf(BetRefusal reason) {
     case BetRefusal::OverTheCap:
       return refusal(UNPROCESSABLE_CONTENT_STATUS, OVER_THE_CAP_DETAIL);
     case BetRefusal::NotEnoughChips:
-      return refusal(UNPROCESSABLE_CONTENT_STATUS, NOT_ENOUGH_CHIPS_DETAIL);
+      return refusal(UNPROCESSABLE_CONTENT_STATUS,
+                     network::NOT_ENOUGH_CHIPS_DETAIL);
   }
-  return refusal(CONFLICT_STATUS, BETS_CLOSED_DETAIL);
+  return refusal(CONFLICT_STATUS, network::BETS_CLOSED_DETAIL);
 }
 
 network::ApiResponse betsResponseOf(

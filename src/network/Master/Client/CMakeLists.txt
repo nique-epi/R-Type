@@ -2,7 +2,9 @@ find_package(nlohmann_json CONFIG REQUIRED)
 
 add_library(rtype_network_master_client STATIC
   MasterAccountClient.cpp
+  MasterCasinoClient.cpp
   MasterClient.cpp
+  MasterRequest.cpp
   MasterTransport.cpp
 )
 

@@ -212,9 +212,12 @@ MasterRefusedException::MasterRefusedException(int status,
                                                const std::string& detail)
     : NetworkException("the master refused the request with status " +
                        std::to_string(status) + ": " + detail),
-      status_(status) {}
+      status_(status),
+      detail_(detail) {}
 
 int MasterRefusedException::status() const { return status_; }
+
+const std::string& MasterRefusedException::detail() const { return detail_; }
 
 InvalidMasterUrlException::InvalidMasterUrlException(const std::string& url)
     : NetworkException("no master can be called at \"" + url +

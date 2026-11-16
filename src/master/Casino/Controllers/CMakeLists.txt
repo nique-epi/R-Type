@@ -10,6 +10,7 @@ target_link_libraries(rtype_master_casino_controllers
   PRIVATE
     rtype_master_casino_helpers
     rtype_master_servers_controllers
+    rtype_network_master_casino_table
     rtype_network_master_routes
     rtype_network_master_validators
 )
