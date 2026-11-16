@@ -29,6 +29,7 @@ export async function SiteShell({
     { href: pathOf(lang, 'ranking'), label: pages.nav.ranking },
     { href: pathOf(lang, 'wiki'), label: pages.nav.wiki },
     { href: pathOf(lang, 'team'), label: pages.nav.team },
+    { href: pathOf(lang, 'signUp'), label: pages.nav.signUp },
   ];
 
   return (
