@@ -10,6 +10,7 @@
 #include "EntityIdConstants.hpp"
 #include "InputPace.hpp"
 #include "LivesConstants.hpp"
+#include "ProtocolConstants.hpp"
 #include "RoundTripMeter.hpp"
 #include "SentStates.hpp"
 #include "TimeConstants.hpp"
@@ -28,6 +29,10 @@ struct ConnectedPlayer {
   /** @brief 1 to MAXIMUM_NICKNAME_SIZE bytes of UTF-8, as the request carried
    * it. */
   std::string nickname;
+  /** @brief The account of the player on the master, as its request carried
+   * it; network::GUEST_ACCOUNT_ID for a guest. Nothing proves it: the server
+   * only reports it to the master with the results of the game. */
+  std::uint64_t accountId{network::GUEST_ACCOUNT_ID};
   /** @brief The address and port the player sends from, where every datagram
    * to the player goes. */
   network::Endpoint endpoint;

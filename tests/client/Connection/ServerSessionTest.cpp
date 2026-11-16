@@ -74,6 +74,7 @@ using testing::SESSION_TOKEN;
 using testing::sessionHeader;
 using testing::SHIP_ID;
 using testing::SHIP_TYPE_NUMBER;
+using testing::SIGNED_IN_ACCOUNT_ID;
 using ::testing::SizeIs;
 using testing::stateListing;
 using testing::THIRD_SEQUENCE;
@@ -124,6 +125,17 @@ TEST_F(ServerSessionFixture, SendsARequestWithoutCookieAtOnce) {
             (network::ConnectionRequest{.cookie = 0,
                                         .nickname = std::string{NICKNAME}}));
   EXPECT_EQ(phase(), ConnectionPhase::Connecting);
+}
+
+/**
+ * Given a connection with no attempt
+ * When it connects to a server for a player signed in to an account
+ * Then the request carries that account
+ */
+TEST_F(ServerSessionFixture, SendsTheAccountOfThePlayer) {
+  connect(GameRequest{.accountId = SIGNED_IN_ACCOUNT_ID});
+
+  EXPECT_EQ(lastRequest().accountId, SIGNED_IN_ACCOUNT_ID);
 }
 
 /**

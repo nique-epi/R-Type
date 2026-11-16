@@ -33,6 +33,11 @@
 [[nodiscard]] std::vector<std::byte> requestDatagramOf(
     const std::string& nickname, std::uint64_t cookie);
 
+/** @returns A datagram holding a ConnectionRequest that carries @p cookie and
+ * PLAYER_NICKNAME, from a player signed in to the account @p accountId. */
+[[nodiscard]] std::vector<std::byte> requestDatagramOfAccount(
+    std::uint64_t accountId, std::uint64_t cookie);
+
 /** @returns A datagram holding a ServerInformationRequest sent at
  * @p sentAt. */
 [[nodiscard]] std::vector<std::byte> informationRequestDatagram(

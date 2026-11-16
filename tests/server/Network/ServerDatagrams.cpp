@@ -68,6 +68,16 @@ std::vector<std::byte> requestDatagramOf(const std::string& nickname,
                                         .nickname = nickname});
 }
 
+std::vector<std::byte> requestDatagramOfAccount(std::uint64_t accountId,
+                                                std::uint64_t cookie) {
+  return rtype::network::DatagramCodec::encode(
+      rtype::network::PacketHeader{},
+      rtype::network::ConnectionRequest{
+          .cookie = cookie,
+          .nickname = std::string{rtype::server::testing::PLAYER_NICKNAME},
+          .accountId = accountId});
+}
+
 std::vector<std::byte> informationRequestDatagram(
     const rtype::network::PacketHeader& header, std::uint32_t sentAt) {
   return rtype::network::DatagramCodec::encode(

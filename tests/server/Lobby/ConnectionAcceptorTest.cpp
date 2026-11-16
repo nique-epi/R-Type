@@ -35,6 +35,7 @@
 
 namespace rtype::server {
 
+using network::testing::GUEST_ACCOUNT_ON_THE_PAGE;
 using testing::A_FIFTH_OF_A_SECOND_LATER;
 using testing::A_TENTH_OF_A_SECOND_LATER;
 using testing::ACCEPTANCE_REPEAT_TIME;
@@ -53,11 +54,40 @@ using testing::nicknameOf;
 using testing::onlyMessageIn;
 using testing::onlyMessageTypeOf;
 using testing::OTHER_PROTOCOL_ID;
+using testing::PLAYER_ACCOUNT_ID;
 using testing::PLAYER_NICKNAME;
 using testing::playerEndpoint;
 using testing::REFUSAL_DATAGRAM_SIZE;
 using testing::REQUEST_TIME;
 using testing::SHORTEST_NICKNAME;
+
+/**
+ * Given a sender that got a challenge
+ * When it sends its request again with the cookie, signed in to an account
+ * Then the player it seats keeps that account
+ */
+TEST_F(ConnectionAcceptorFixture, SeatsThePlayerUnderTheAccountOfItsRequest) {
+  const std::uint64_t cookie = challengeCookie(playerEndpoint(0));
+
+  receive(playerEndpoint(0),
+          requestDatagramOfAccount(PLAYER_ACCOUNT_ID, cookie));
+
+  ASSERT_NE(roster().find(playerEndpoint(0)), nullptr);
+  EXPECT_EQ(roster().find(playerEndpoint(0))->accountId, PLAYER_ACCOUNT_ID);
+}
+
+/**
+ * Given a sender that got a challenge
+ * When it sends its request again with the cookie, as a guest
+ * Then the player it seats has the account of a guest, 0
+ */
+TEST_F(ConnectionAcceptorFixture, SeatsAGuestUnderNoAccount) {
+  connect(playerEndpoint(0));
+
+  ASSERT_NE(roster().find(playerEndpoint(0)), nullptr);
+  EXPECT_EQ(roster().find(playerEndpoint(0))->accountId,
+            GUEST_ACCOUNT_ON_THE_PAGE);
+}
 
 /**
  * Given an acceptor with nobody connected

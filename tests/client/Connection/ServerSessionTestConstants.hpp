@@ -34,6 +34,9 @@ constexpr std::uint32_t PILOT_FINAL_SCORE = 1200;
  * not speak.
  */
 constexpr std::uint64_t SESSION_TOKEN = 0x0123456789abcdef;
+
+/** @brief The account of a player signed in to the master. */
+constexpr std::uint64_t SIGNED_IN_ACCOUNT_ID = 0x1122334455667788;
 constexpr std::uint8_t NEXT_PROTOCOL_VERSION = 19;
 
 /** @brief The version a server of this protocol writes in its headers. */
