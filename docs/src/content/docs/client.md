@@ -701,7 +701,7 @@ In a game, `dressPilotShips()` (`src/client/Game/PilotShipLooks.hpp`) gives the 
 | Click on the radio of the counter, R (`SHOP_RADIO_KEY`) | changes the music; a key held down acts once |
 | Escape, BACK | close the shop |
 
-The shop opens for a player signed in only; for a guest, the shop module builds the dialog that asks to sign in in its place. It asks the master the wallet again when it opens, and reads the balance and the looks owned from `IWallet`. BUY on the sales slip asks the master to buy the ware for the account (`IWallet::buy()`, `PUT /api/users/me/looks/{item}`, see [Master](/R-Type/master/#wallets-walletmodule)): the slip waits for the answer, then is stamped paid, the price gone from the kopecks and the ware owned, or closes, the status line saying why. A ware owned, or one the balance read last cannot pay, is refused at once by `buyLookItem()` (`src/client/Economy/`), without asking the master. The hangar then shows the item unlocked.
+The shop opens for a player signed in only; for a guest, the shop module builds the dialog that asks to sign in in its place. It asks the master the wallet again when it opens, and reads the balance and the looks owned from `IWallet`. BUY on the sales slip asks the master to buy the ware for the account (`IWallet::buy()`, `PUT /api/users/me/looks/{item}`, see [Master](/R-Type/master/#wallets-walletmodule)): the slip waits for the answer, then is stamped paid, the price gone from the kopecks and the ware owned, or closes, the status line saying why. A ware owned, or one the balance read last cannot pay, is refused at once by `lookRefusalOf()` (`src/client/Economy/`), without asking the master. The hangar then shows the item unlocked.
 
 | Situation | Status line | Sound |
 |---|---|---|

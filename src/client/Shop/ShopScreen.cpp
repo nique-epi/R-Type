@@ -22,7 +22,6 @@
 #include "LookItems.hpp"
 #include "MenuBuilder.hpp"
 #include "MotionPreference.hpp"
-#include "Purchase.hpp"
 #include "PurchaseRefusal.hpp"
 #include "PurchaseTicket.hpp"
 #include "Purse.hpp"
@@ -238,9 +237,8 @@ void ShopScreen::offer() {
     message_ = std::string{READING_WALLET_STATUS};
     return;
   }
-  const Purchase trial = buyLookItem(*purse, item);
-  if (trial.refusal.has_value() &&
-      *trial.refusal != PurchaseRefusal::TooExpensive) {
+  const std::optional<PurchaseRefusal> refusal = lookRefusalOf(*purse, item);
+  if (refusal.has_value() && *refusal != PurchaseRefusal::TooExpensive) {
     static_cast<void>(buy());
     return;
   }
@@ -254,12 +252,12 @@ bool ShopScreen::buy() {
     message_ = std::string{READING_WALLET_STATUS};
     return false;
   }
-  const Purchase trial = buyLookItem(*purse, item);
-  if (trial.refusal.has_value()) {
+  if (const std::optional<PurchaseRefusal> refusal =
+          lookRefusalOf(*purse, item)) {
     const std::uint32_t price = network::lookItemPrice(item);
     message_ = refusalLineOf(
-        *trial.refusal, price > purse->kopecks ? price - purse->kopecks : 0);
-    speech_.refused(*trial.refusal, item);
+        *refusal, price > purse->kopecks ? price - purse->kopecks : 0);
+    speech_.refused(*refusal, item);
     return false;
   }
   purchaseAsk_ = wallet_->buy(item);
