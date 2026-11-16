@@ -95,14 +95,15 @@ void fileRow(const SQLite::Statement& select,
 GameResultRepository::GameResultRepository(MasterDatabase& database)
     : database_(database) {}
 
-void GameResultRepository::add(const ServerGameResult& result) {
-  database_.transact([&result](SQLite::Database& connection) {
+bool GameResultRepository::add(const ServerGameResult& result) {
+  return database_.transact([&result](SQLite::Database& connection) {
     if (isKept(connection, result)) {
-      return;
+      return false;
     }
     for (const network::FinishedGamePlayer& player : result.game.players) {
       insertRow(connection, result, player);
     }
+    return true;
   });
 }
 

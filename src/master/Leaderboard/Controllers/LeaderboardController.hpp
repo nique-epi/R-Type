@@ -2,6 +2,7 @@
 
 #include "ApiRequest.hpp"
 #include "ApiResponse.hpp"
+#include "IAccountWallet.hpp"
 #include "LeaderboardService.hpp"
 #include "MasterDatabase.hpp"
 #include "ServersService.hpp"
@@ -18,14 +19,17 @@ namespace rtype::master {
 class LeaderboardController {
  public:
   /** @param servers Tells the server of a key; it must outlive the
-   * controller. */
-  LeaderboardController(MasterDatabase& database, ServersService& servers);
+   * controller. @p wallet credits what a game pays the accounts of its
+   * players, null when the master runs without wallets. */
+  LeaderboardController(MasterDatabase& database, ServersService& servers,
+                        IAccountWallet* wallet);
 
   /**
    * @returns The answer of `PUT /api/servers/me/results/{gameId}`: 204 once
-   * the result is kept, or was kept already; 400 for an id that is no id of a
-   * game, a body whose member is missing or out of its bounds, or a game that
-   * was not vanilla. The key is checked first, then the id, then the body.
+   * the result is kept, and its players credited, or was kept already; 400 for
+   * an id that is no id of a game, a body whose member is missing or out of its
+   * bounds, or a game that was not vanilla. The key is checked first, then the
+   * id, then the body.
    */
   [[nodiscard]] network::ApiResponse keepOwnResult(
       const network::ApiRequest& request);

@@ -13,5 +13,6 @@ constexpr std::string_view SERVERS_MODULE_NAME = "servers";
 constexpr std::string_view LEADERBOARD_MODULE_NAME = "leaderboard";
 constexpr std::string_view ACCOUNTS_MODULE_NAME = "accounts";
 constexpr std::string_view WALLET_MODULE_NAME = "wallet";
+constexpr std::string_view CASINO_MODULE_NAME = "casino";
 
 }  // namespace rtype::master

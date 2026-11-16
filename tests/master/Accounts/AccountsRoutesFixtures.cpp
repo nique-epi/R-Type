@@ -47,11 +47,19 @@ RouteCall deleteSessionCall(std::string_view token) {
                    .overHttps = true};
 }
 
-std::vector<std::string> accountsOffLines() {
+std::vector<std::string> walletOffLines() {
   std::vector<std::string> lines;
+  if (rtype::engine::CASINO_MODULE_BUILT) {
+    lines.emplace_back(CASINO_OFF_LINE);
+  }
   if (rtype::engine::WALLET_MODULE_BUILT) {
     lines.emplace_back(WALLET_OFF_LINE);
   }
+  return lines;
+}
+
+std::vector<std::string> accountsOffLines() {
+  std::vector<std::string> lines = walletOffLines();
   lines.emplace_back(ACCOUNTS_OFF_LINE);
   return lines;
 }

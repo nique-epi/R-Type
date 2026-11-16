@@ -37,6 +37,7 @@ constexpr std::size_t ALLOWED_ACCOUNT_CREATIONS = 5;
 constexpr std::string_view ACE_ADMIN_LINE = "admin ACE";
 constexpr std::string_view ACCOUNTS_OFF_LINE = "module accounts off";
 constexpr std::string_view WALLET_OFF_LINE = "module wallet off";
+constexpr std::string_view CASINO_OFF_LINE = "module casino off";
 
 /** @brief A key of the passwords one byte short: 62 hexadecimal digits. */
 constexpr std::string_view PASSWORD_KEY_ONE_BYTE_SHORT =
