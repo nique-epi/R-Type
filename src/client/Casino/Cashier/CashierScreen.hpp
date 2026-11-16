@@ -70,9 +70,10 @@ class CashierScreen final : public IScreen {
   /** @brief Closes the cashier once the master made the exchange asked, or
    * says why it did not. */
   void settle();
-  /** @returns The exchange the amount would make with the purse of the
-   * settings. */
-  [[nodiscard]] Exchange tried() const;
+  /** @returns The exchange the amount would make with @p purse, the purse
+   * of the wallet; with an empty purse while the master has not answered it.
+   */
+  [[nodiscard]] Exchange triedWith(const std::optional<Purse>& purse) const;
   void repaint();
 
   IScreenNavigator* navigator_;
