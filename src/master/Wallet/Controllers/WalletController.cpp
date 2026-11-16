@@ -39,13 +39,13 @@ network::ApiResponse okResponse(std::string body) {
   return network::ApiResponse{.status = OK_STATUS, .body = std::move(body)};
 }
 
-network::ApiResponse exchangeRefusalOf(WalletExchangeRefusal reason) {
+network::ApiResponse exchangeRefusalOf(network::WalletExchangeRefusal reason) {
   switch (reason) {
-    case WalletExchangeRefusal::InvalidAmount:
+    case network::WalletExchangeRefusal::InvalidAmount:
       return refusal(UNPROCESSABLE_CONTENT_STATUS, INVALID_AMOUNT_DETAIL);
-    case WalletExchangeRefusal::NotEnough:
+    case network::WalletExchangeRefusal::NotEnough:
       return refusal(CONFLICT_STATUS, NOT_ENOUGH_DETAIL);
-    case WalletExchangeRefusal::PastTheMaximum:
+    case network::WalletExchangeRefusal::PastTheMaximum:
       return refusal(CONFLICT_STATUS, PAST_THE_MAXIMUM_DETAIL);
   }
   return refusal(CONFLICT_STATUS, NOT_ENOUGH_DETAIL);
@@ -64,12 +64,12 @@ network::ApiResponse createdExchangeResponse(
 }
 
 network::ApiResponse exchangeResponseOf(
-    const std::variant<network::ExchangeReceipt, WalletExchangeRefusal>&
-        outcome) {
+    const std::variant<network::ExchangeReceipt,
+                       network::WalletExchangeRefusal>& outcome) {
   if (const auto* receipt = std::get_if<network::ExchangeReceipt>(&outcome)) {
     return createdExchangeResponse(*receipt);
   }
-  return exchangeRefusalOf(std::get<WalletExchangeRefusal>(outcome));
+  return exchangeRefusalOf(std::get<network::WalletExchangeRefusal>(outcome));
 }
 
 /** @returns The number of the exchange the path of @p request names, nothing

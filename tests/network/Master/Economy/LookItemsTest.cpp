@@ -4,10 +4,13 @@
 #include "LookItems.hpp"
 #include "LookItemsTestConstants.hpp"
 
+using rtype::network::inCatalogueOrder;
 using rtype::network::lookItemOfName;
 using rtype::network::testing::CROWN_IN_CAPITALS;
 using rtype::network::testing::CROWN_ITEM;
 using rtype::network::testing::CROWN_ITEM_NAME;
+using rtype::network::testing::LOOKS_IN_CATALOGUE_ORDER;
+using rtype::network::testing::LOOKS_IN_NO_ORDER;
 using rtype::network::testing::NO_ITEM_NAME;
 
 /**
@@ -28,4 +31,13 @@ TEST(LookItems, FindsAnItemByItsName) {
 TEST(LookItems, FindsNoItemForANameNoItemHas) {
   EXPECT_FALSE(lookItemOfName(CROWN_IN_CAPITALS).has_value());
   EXPECT_FALSE(lookItemOfName(NO_ITEM_NAME).has_value());
+}
+
+/**
+ * Given names of looks in no order, a name of no look among them
+ * When they are put in the order of the catalogue
+ * Then they follow SHIP_LOOK_ITEM_NAMES, and the unknown name goes last
+ */
+TEST(LookItems, PutsLooksInTheOrderOfTheCatalogue) {
+  EXPECT_EQ(inCatalogueOrder(LOOKS_IN_NO_ORDER), LOOKS_IN_CATALOGUE_ORDER);
 }

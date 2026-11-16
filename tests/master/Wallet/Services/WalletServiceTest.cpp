@@ -33,12 +33,12 @@ using rtype::master::GameCredit;
 using rtype::master::GameCreditOutcome;
 using rtype::master::LookPurchaseOutcome;
 using rtype::master::PageRequest;
-using rtype::master::WalletExchangeRefusal;
 using rtype::network::Currency;
 using rtype::network::ExchangeReceipt;
 using rtype::network::ExchangeRequest;
 using rtype::network::MovementReason;
 using rtype::network::Wallet;
+using rtype::network::WalletExchangeRefusal;
 
 /**
  * Given the account ACE, whose wallet was never read

@@ -3,9 +3,8 @@
 #include "WalletBalances.hpp"
 #include "WalletBalancesTestConstants.hpp"
 
-using rtype::master::canReceive;
-using rtype::master::creditedBalance;
-using rtype::master::inCatalogueOrder;
+using rtype::network::canReceive;
+using rtype::network::creditedBalance;
 using rtype::network::Currency;
 
 /**
@@ -29,13 +28,4 @@ TEST(WalletBalances, ACreditStopsAtTheLargestBalance) {
   EXPECT_EQ(creditedBalance(TEN_CHIPS_SHORT_OF_THE_MAXIMUM, Currency::Chips,
                             A_HUNDRED_CHIPS),
             LARGEST_CHIPS);
-}
-
-/**
- * Given names of looks in no order, a name of no look among them
- * When they are put in the order of the catalogue
- * Then they follow SHIP_LOOK_ITEM_NAMES, and the unknown name goes last
- */
-TEST(WalletBalances, PutsLooksInTheOrderOfTheCatalogue) {
-  EXPECT_EQ(inCatalogueOrder(LOOKS_IN_NO_ORDER), LOOKS_IN_CATALOGUE_ORDER);
 }
