@@ -24,6 +24,7 @@
 #include "ShopScreenIdConstants.hpp"
 
 using rtype::client::Ambience;
+using rtype::client::CASINO_SCREEN;
 using rtype::client::CONNECTION_SCREEN;
 using rtype::client::CONNECTION_TO_MAP_SERVER_SCREEN;
 using rtype::client::GameRequest;
@@ -608,16 +609,18 @@ TEST_F(ServerMapScreenFixture, SOpensTheShop) {
 }
 
 /**
- * Given the map, whose CASINO tab is locked
+ * Given the map
  * When C is pressed and released
- * Then nothing opens
+ * Then the casino opens over the map
  */
-TEST_F(ServerMapScreenFixture, TheLockedCasinoOpensNothing) {
+TEST_F(ServerMapScreenFixture, COpensTheCasino) {
   openOn(readyList());
 
   press(sf::Keyboard::Key::C);
 
-  EXPECT_TRUE(navigator().calls().empty());
+  EXPECT_THAT(navigator().calls(),
+              ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
+                                        .screen = CASINO_SCREEN}));
 }
 
 /**
@@ -649,16 +652,18 @@ TEST_F(ServerMapScreenFixture, AClickBetweenTwoTabsOpensNothing) {
 }
 
 /**
- * Given the map, whose CASINO tab is locked
- * When the left button is pressed and released on it
- * Then nothing opens
+ * Given the map
+ * When the left button is pressed and released on the CASINO tab
+ * Then the casino opens over the map
  */
-TEST_F(ServerMapScreenFixture, AClickOnTheLockedCasinoOpensNothing) {
+TEST_F(ServerMapScreenFixture, AClickOnTheCasinoTabOpensTheCasino) {
   openOn(readyList());
 
   pointAt(ON_THE_CASINO_TAB, true);
 
-  EXPECT_TRUE(navigator().calls().empty());
+  EXPECT_THAT(navigator().calls(),
+              ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
+                                        .screen = CASINO_SCREEN}));
 }
 
 /**
