@@ -6,7 +6,6 @@
 #include <optional>
 #include <string>
 #include <string_view>
-#include "AccountCredentials.hpp"
 #include "CreatedServer.hpp"
 #include "DatedStatus.hpp"
 #include "GlobalLeaderboard.hpp"
@@ -20,13 +19,11 @@
 #include "ServerRegistration.hpp"
 #include "ServerStatus.hpp"
 #include "StatusListing.hpp"
+#include "UserCredentials.hpp"
 
-using rtype::network::AccountCredentials;
 using rtype::network::CreatedServer;
 using rtype::network::createdServerFromText;
 using rtype::network::createdServerText;
-using rtype::network::credentialsFromText;
-using rtype::network::credentialsText;
 using rtype::network::DatedStatus;
 using rtype::network::finishedGameFromText;
 using rtype::network::finishedGameText;
@@ -56,6 +53,9 @@ using rtype::network::ServerStatus;
 using rtype::network::serverStatusOf;
 using rtype::network::StatusListing;
 using rtype::network::statusListingText;
+using rtype::network::UserCredentials;
+using rtype::network::userCredentialsFromText;
+using rtype::network::userCredentialsText;
 using rtype::network::testing::ACCOUNT_ID_OF_65_BYTES;
 using rtype::network::testing::ACCOUNT_NICKNAME;
 using rtype::network::testing::ACCOUNT_NICKNAME_POINTER;
@@ -68,7 +68,6 @@ using rtype::network::testing::CPU_ABOVE_ALL;
 using rtype::network::testing::CPU_OF_EVERY_PROCESSOR;
 using rtype::network::testing::CPU_PERCENT_POINTER;
 using rtype::network::testing::createdServerRefusal;
-using rtype::network::testing::credentialsRefusal;
 using rtype::network::testing::DEGRADED_STATUS_LISTING_TEXT;
 using rtype::network::testing::DEGRADED_TEXT;
 using rtype::network::testing::DIFFICULTIES_PAST_THE_MOST;
@@ -213,6 +212,7 @@ using rtype::network::testing::UPPERCASE_GAME_ID;
 using rtype::network::testing::UPPERCASE_KEY;
 using rtype::network::testing::UPPERCASE_TOKEN;
 using rtype::network::testing::USED_MEMORY_POINTER;
+using rtype::network::testing::userCredentialsRefusal;
 using rtype::network::testing::VANILLA_AS_TEXT;
 using rtype::network::testing::VANILLA_POINTER;
 using rtype::network::testing::WAITING_GAME_NUMBER;
@@ -1173,11 +1173,12 @@ TEST(MasterMessageText, RefusesALeaderboardRowOfRankZero) {
  * Then they are the same credentials
  */
 TEST(MasterMessageText, ReadsAPasswordOfEightBytes) {
-  const AccountCredentials credentials{
+  const UserCredentials credentials{
       .nickname = std::string{ACCOUNT_NICKNAME},
       .password = std::string(SHORTEST_PASSWORD_SIZE, PASSWORD_LETTER)};
 
-  EXPECT_EQ(credentialsFromText(credentialsText(credentials)), credentials);
+  EXPECT_EQ(userCredentialsFromText(userCredentialsText(credentials)),
+            credentials);
 }
 
 /**
@@ -1186,11 +1187,12 @@ TEST(MasterMessageText, ReadsAPasswordOfEightBytes) {
  * Then they are the same credentials
  */
 TEST(MasterMessageText, ReadsAPasswordOf128Bytes) {
-  const AccountCredentials credentials{
+  const UserCredentials credentials{
       .nickname = std::string{ACCOUNT_NICKNAME},
       .password = std::string(LONGEST_PASSWORD_SIZE, PASSWORD_LETTER)};
 
-  EXPECT_EQ(credentialsFromText(credentialsText(credentials)), credentials);
+  EXPECT_EQ(userCredentialsFromText(userCredentialsText(credentials)),
+            credentials);
 }
 
 /**
@@ -1199,11 +1201,11 @@ TEST(MasterMessageText, ReadsAPasswordOf128Bytes) {
  * Then the password is refused
  */
 TEST(MasterMessageText, RefusesAPasswordOf129Bytes) {
-  const AccountCredentials credentials{
+  const UserCredentials credentials{
       .nickname = std::string{ACCOUNT_NICKNAME},
       .password = std::string(LONGEST_PASSWORD_SIZE + 1, PASSWORD_LETTER)};
 
-  EXPECT_THAT(credentialsRefusal(credentialsText(credentials)),
+  EXPECT_THAT(userCredentialsRefusal(userCredentialsText(credentials)),
               HasSubstr(quoted(PASSWORD_POINTER)));
 }
 
@@ -1213,11 +1215,11 @@ TEST(MasterMessageText, RefusesAPasswordOf129Bytes) {
  * Then the nickname is refused
  */
 TEST(MasterMessageText, RefusesANicknameTheProtocolRefuses) {
-  const AccountCredentials credentials{
+  const UserCredentials credentials{
       .nickname = std::string{NICKNAME_PAST_THE_PROTOCOL},
       .password = std::string(SHORTEST_PASSWORD_SIZE, PASSWORD_LETTER)};
 
-  EXPECT_THAT(credentialsRefusal(credentialsText(credentials)),
+  EXPECT_THAT(userCredentialsRefusal(userCredentialsText(credentials)),
               HasSubstr(quoted(ACCOUNT_NICKNAME_POINTER)));
 }
 

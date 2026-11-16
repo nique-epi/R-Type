@@ -229,9 +229,9 @@ std::string registrationRefusal(std::string_view text) {
   return {};
 }
 
-std::string credentialsRefusal(std::string_view text) {
+std::string userCredentialsRefusal(std::string_view text) {
   try {
-    static_cast<void>(credentialsFromText(text));
+    static_cast<void>(userCredentialsFromText(text));
   } catch (const InvalidMasterMessageException& refusal) {
     return refusal.what();
   }

@@ -8,16 +8,16 @@
 
 namespace rtype::master {
 
-std::optional<network::PasswordKey> passwordKeyFromText(std::string_view text) {
+network::PasswordKey passwordKeyFromText(std::string_view text) {
   if (text.empty()) {
-    return std::nullopt;
+    throw MissingPasswordKeyException(PASSWORD_KEY_VARIABLE);
   }
   const std::optional<network::PasswordKey> key =
       network::passwordKeyOfHexadecimal(text);
   if (!key.has_value()) {
     throw InvalidPasswordKeyException(PASSWORD_KEY_VARIABLE);
   }
-  return key;
+  return *key;
 }
 
 }  // namespace rtype::master

@@ -1,6 +1,6 @@
 add_library(rtype_master_accounts_repositories STATIC
-  AccountRepository.cpp
-  AccountRow.cpp
+  UserRepository.cpp
+  UserRow.cpp
   SessionRepository.cpp
   SignInFailureRepository.cpp
 )

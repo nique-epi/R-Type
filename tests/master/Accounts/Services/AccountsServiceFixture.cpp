@@ -7,23 +7,23 @@
 #include <optional>
 #include <string>
 #include <variant>
-#include "Account.hpp"
-#include "AccountCredentials.hpp"
 #include "AccountsServiceTestConstants.hpp"
 #include "AccountsTestConstants.hpp"
-#include "CredentialsRequest.hpp"
+#include "CreatedSession.hpp"
+#include "CredentialsAttempt.hpp"
 #include "Hashing.hpp"
 #include "MasterTestConstants.hpp"
-#include "OpenedSession.hpp"
 #include "PasswordKey.hpp"
 #include "StorageConstants.hpp"
+#include "User.hpp"
+#include "UserCredentials.hpp"
 
 namespace {
 
-rtype::master::CredentialsRequest aceRequest() {
-  return rtype::master::CredentialsRequest{
+rtype::master::CredentialsAttempt aceRequest() {
+  return rtype::master::CredentialsAttempt{
       .credentials =
-          rtype::network::AccountCredentials{
+          rtype::network::UserCredentials{
               .nickname = std::string{ACE_NICKNAME},
               .password = std::string{ACE_PASSWORD}},
       .address = std::string{SERVICE_CLIENT_ADDRESS},
@@ -36,18 +36,18 @@ AccountsServiceFixture::AccountsServiceFixture()
     : service_(file_.database(),
                rtype::network::passwordKeyOfHexadecimal(TEST_PASSWORD_KEY)
                    .value_or(rtype::network::PasswordKey{})) {
-  static_cast<void>(service_.createAccount(aceRequest()));
+  static_cast<void>(service_.createUser(aceRequest()));
 }
 
 std::string AccountsServiceFixture::aceToken() {
-  const auto opened = service_.openSession(aceRequest());
-  const auto* session = std::get_if<rtype::network::OpenedSession>(&opened);
+  const auto opened = service_.createSession(aceRequest());
+  const auto* session = std::get_if<rtype::network::CreatedSession>(&opened);
   return session == nullptr ? std::string{} : session->token;
 }
 
-std::optional<rtype::network::Account> AccountsServiceFixture::accountAt(
+std::optional<rtype::network::User> AccountsServiceFixture::accountAt(
     const std::string& token, std::chrono::sys_seconds date) {
-  return service_.accountOfToken(token, date);
+  return service_.userOfToken(token, date);
 }
 
 std::string AccountsServiceFixture::keptPassword() const {

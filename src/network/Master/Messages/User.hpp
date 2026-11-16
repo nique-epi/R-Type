@@ -2,17 +2,17 @@
 
 #include <cstdint>
 #include <string>
-#include "AccountRole.hpp"
+#include "UserRole.hpp"
 
 namespace rtype::network {
 
 /** @brief An account as the master shows it: never its password. */
-struct Account {
+struct User {
   std::int64_t id{};
   std::string nickname;
-  AccountRole role{AccountRole::Player};
+  UserRole role{UserRole::Player};
 
-  bool operator==(const Account&) const = default;
+  bool operator==(const User&) const = default;
 };
 
 }  // namespace rtype::network

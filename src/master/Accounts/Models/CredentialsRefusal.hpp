@@ -5,7 +5,7 @@
 namespace rtype::master {
 
 /** @brief Why the master refused to create an account or to open a session. */
-enum class AccountRefusal : std::uint8_t {
+enum class CredentialsRefusal : std::uint8_t {
   /** @brief Another account has the nickname, compared without the case of
    * its ASCII letters. */
   NicknameTaken,

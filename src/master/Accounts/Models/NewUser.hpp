@@ -8,7 +8,7 @@ namespace rtype::master {
 
 /** @brief An account to add: its nickname, the hash of its password, and who
  * created it when. It is a player until an `admin` line names it. */
-struct NewAccount {
+struct NewUser {
   std::string nickname;
   network::PasswordHash passwordHash{};
   std::string createdByAddress;

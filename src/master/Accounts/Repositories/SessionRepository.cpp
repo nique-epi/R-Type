@@ -5,14 +5,14 @@
 #include <chrono>
 #include <optional>
 #include <string>
-#include "AccountRow.hpp"
 #include "AccountsRepositoryConstants.hpp"
+#include "ActiveSession.hpp"
 #include "EpochSeconds.hpp"
 #include "MasterDatabase.hpp"
 #include "NewSession.hpp"
 #include "ServersRepositoryConstants.hpp"
-#include "SessionOwner.hpp"
 #include "StatementParts.hpp"
+#include "UserRow.hpp"
 
 namespace rtype::master {
 
@@ -22,7 +22,7 @@ void insertOn(SQLite::Database& connection, const NewSession& session) {
   SQLite::Statement insert{connection, std::string{INSERT_SESSION_STATEMENT}};
   insert.bind(std::string{TOKEN_FINGERPRINT_PARAMETER},
               session.tokenFingerprint);
-  insert.bind(std::string{SESSION_ACCOUNT_ID_PARAMETER}, session.accountId);
+  insert.bind(std::string{SESSION_USER_ID_PARAMETER}, session.userId);
   insert.bind(std::string{ADDRESS_PARAMETER}, session.address);
   insert.bind(std::string{CREATED_AT_PARAMETER},
               epochSecondsOf(session.createdAt));
@@ -44,19 +44,19 @@ void SessionRepository::addRemovingExpired(const NewSession& session) {
   });
 }
 
-std::optional<SessionOwner> SessionRepository::ownerOf(
+std::optional<ActiveSession> SessionRepository::ownerOf(
     const std::string& fingerprint, std::chrono::sys_seconds now) {
   return database_.run(
       [&fingerprint,
-       now](SQLite::Database& connection) -> std::optional<SessionOwner> {
+       now](SQLite::Database& connection) -> std::optional<ActiveSession> {
         SQLite::Statement query{connection, std::string{SESSION_OWNER_QUERY}};
         query.bind(std::string{TOKEN_FINGERPRINT_PARAMETER}, fingerprint);
         query.bind(std::string{NOW_PARAMETER}, epochSecondsOf(now));
         if (!query.executeStep()) {
           return std::nullopt;
         }
-        return SessionOwner{
-            .account = accountIn(query),
+        return ActiveSession{
+            .user = userIn(query),
             .expiresAt = dateOfEpochSeconds(
                 query.getColumn(SESSION_EXPIRES_AT_COLUMN).getInt64())};
       });

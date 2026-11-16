@@ -21,8 +21,9 @@ set site-key ""
 # Make the account of a nickname an admin when the master starts (module
 # accounts). The account must exist; a line that names none waits for the next
 # start. The key of the passwords is no setting: give it in the environment
-# variable RT_PASSWORD_KEY (openssl rand -hex 32); without it the master runs
-# without accounts.
+# variable RT_PASSWORD_KEY (openssl rand -hex 32, drawn once and kept); without
+# it the master does not start, unless the accounts are off (module accounts
+# off, below).
 # admin ACE
 
 # Turn a module off (it is never installed). Refused when a module

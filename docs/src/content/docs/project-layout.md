@@ -317,7 +317,7 @@ src/master/
 ├── Accounts/         the module accounts, optional: the accounts of the players and their sessions, over HTTPS
 │   ├── Controllers/  AccountsController
 │   ├── Services/     AccountsService: the quotas, the sessions; Helpers/, the token and the key of the passwords
-│   ├── Repositories/ AccountRepository, SessionRepository, SignInFailureRepository
+│   ├── Repositories/ UserRepository, SessionRepository, SignInFailureRepository
 │   └── Models/       the plain structs the layers hand each other
 ├── Modules/          masterModules(), the list of the modules
 ├── Administration/   bans, kicks, maintenance, audit log: being written

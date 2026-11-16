@@ -3,14 +3,11 @@
 #include <optional>
 #include <string>
 #include <string_view>
-#include "Account.hpp"
-#include "AccountCredentials.hpp"
-#include "AccountRole.hpp"
 #include "CreatedServer.hpp"
+#include "CreatedSession.hpp"
 #include "FinishedGame.hpp"
 #include "GameListing.hpp"
 #include "GlobalLeaderboard.hpp"
-#include "OpenedSession.hpp"
 #include "SampleListing.hpp"
 #include "ServerCreation.hpp"
 #include "ServerHeartbeat.hpp"
@@ -18,6 +15,9 @@
 #include "ServerRegistration.hpp"
 #include "ServerStatus.hpp"
 #include "StatusListing.hpp"
+#include "User.hpp"
+#include "UserCredentials.hpp"
+#include "UserRole.hpp"
 
 namespace rtype::network {
 
@@ -182,8 +182,8 @@ namespace rtype::network {
 
 /** @returns @p credentials as the JSON body of `POST /api/users` and of
  * `POST /api/sessions`. */
-[[nodiscard]] std::string credentialsText(
-    const AccountCredentials& credentials);
+[[nodiscard]] std::string userCredentialsText(
+    const UserCredentials& credentials);
 
 /**
  * @returns The credentials a player sent as @p text; a member it does not know
@@ -192,21 +192,21 @@ namespace rtype::network {
  * nickname of the protocol (isValidNickname()), or `/password` when it is not
  * MINIMUM_PASSWORD_SIZE to MAXIMUM_PASSWORD_SIZE bytes of printable UTF-8.
  */
-[[nodiscard]] AccountCredentials credentialsFromText(std::string_view text);
+[[nodiscard]] UserCredentials userCredentialsFromText(std::string_view text);
 
-/** @returns How @p role is written: one of ACCOUNT_ROLE_TEXTS. */
-[[nodiscard]] std::string_view accountRoleText(AccountRole role);
+/** @returns How @p role is written: one of USER_ROLE_TEXTS. */
+[[nodiscard]] std::string_view userRoleText(UserRole role);
 
 /** @returns The role @p text writes, or nothing for a text not in
- * ACCOUNT_ROLE_TEXTS. */
-[[nodiscard]] std::optional<AccountRole> accountRoleOf(std::string_view text);
+ * USER_ROLE_TEXTS. */
+[[nodiscard]] std::optional<UserRole> userRoleOf(std::string_view text);
 
 /** @returns @p account as the JSON answer of `POST /api/users` and of
  * `GET /api/users/me`. */
-[[nodiscard]] std::string accountText(const Account& account);
+[[nodiscard]] std::string userText(const User& account);
 
 /** @returns @p session as the JSON answer of `POST /api/sessions`. */
-[[nodiscard]] std::string openedSessionText(const OpenedSession& session);
+[[nodiscard]] std::string createdSessionText(const CreatedSession& session);
 
 /**
  * @returns Whether @p text has the shape of a token of a session:

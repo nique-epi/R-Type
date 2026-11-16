@@ -175,7 +175,7 @@ ALTER TABLE heartbeat_samples ADD COLUMN total_memory_bytes REAL;
  * 128 bytes of hydro_pwhash_create() (network::passwordHashOf()), encrypted
  * with the key given at launch, which the file never holds. The role is text
  * with no CHECK, as the status of a server: a later role needs no rebuild of
- * the table; the master writes only network::ACCOUNT_ROLE_TEXTS.
+ * the table; the master writes only network::USER_ROLE_TEXTS.
  *
  * A session is keyed by the fingerprint of its token, never the token, so a
  * copy of the file opens no session; the table has no rowid, as
@@ -183,7 +183,7 @@ ALTER TABLE heartbeat_samples ADD COLUMN total_memory_bytes REAL;
  * forgotten once it no longer counts.
  */
 constexpr std::string_view ACCOUNTS_MIGRATION = R"sql(
-CREATE TABLE accounts (
+CREATE TABLE users (
   id                 INTEGER PRIMARY KEY,
   nickname           TEXT    NOT NULL UNIQUE COLLATE NOCASE,
   password_hash      BLOB    NOT NULL,
@@ -192,11 +192,11 @@ CREATE TABLE accounts (
   created_at         INTEGER NOT NULL
 ) STRICT;
 
-CREATE INDEX accounts_by_creator ON accounts (created_by_address, created_at);
+CREATE INDEX users_by_creator ON users (created_by_address, created_at);
 
 CREATE TABLE sessions (
   token_fingerprint TEXT    PRIMARY KEY,
-  account_id        INTEGER NOT NULL REFERENCES accounts (id),
+  user_id           INTEGER NOT NULL REFERENCES users (id),
   address           TEXT    NOT NULL,
   created_at        INTEGER NOT NULL,
   expires_at        INTEGER NOT NULL

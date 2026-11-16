@@ -9,7 +9,7 @@ namespace rtype::network {
  * JSON. Every account is a player when it is created; the `admin` command of
  * master.cfg makes one an admin.
  */
-enum class AccountRole : std::uint8_t {
+enum class UserRole : std::uint8_t {
   Player,
   Admin,
 };

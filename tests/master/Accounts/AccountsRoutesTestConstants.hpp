@@ -18,13 +18,13 @@ constexpr std::string_view WRONG_PASSWORD = "correct horse battery stapler";
 constexpr std::string_view SEVEN_BYTE_PASSWORD = "seven77";
 
 /** @brief The members the answers of the accounts hold, and their values. */
-constexpr std::string_view ACCOUNT_NICKNAME_MEMBER_NAME = "nickname";
+constexpr std::string_view USER_NICKNAME_MEMBER_NAME = "nickname";
 constexpr std::string_view ROLE_MEMBER_NAME = "role";
 constexpr std::string_view TOKEN_MEMBER_NAME = "token";
 constexpr std::string_view PLAYER_ROLE_NAME = "player";
 constexpr std::string_view ADMIN_ROLE_NAME = "admin";
 constexpr std::string_view SESSION_TOKEN_START = "rts_";
-constexpr std::string_view ACCOUNT_LOCATION_START = "/api/users/";
+constexpr std::string_view USER_LOCATION_START = "/api/users/";
 constexpr std::string_view PASSWORD_POINTER_TEXT = "/password";
 
 /** @brief The sign-ins one address may fail, and the accounts it may create,
@@ -32,8 +32,14 @@ constexpr std::string_view PASSWORD_POINTER_TEXT = "/password";
 constexpr std::size_t ALLOWED_SIGN_IN_FAILURES = 5;
 constexpr std::size_t ALLOWED_ACCOUNT_CREATIONS = 5;
 
-/** @brief The line of master.cfg that makes ACE an admin. */
+/** @brief The line of master.cfg that makes ACE an admin, and the one that
+ * turns the accounts off. */
 constexpr std::string_view ACE_ADMIN_LINE = "admin ACE";
+constexpr std::string_view ACCOUNTS_OFF_LINE = "module accounts off";
+
+/** @brief A key of the passwords one byte short: 62 hexadecimal digits. */
+constexpr std::string_view PASSWORD_KEY_ONE_BYTE_SHORT =
+    "00112233445566778899aabbccddeeff00112233445566778899aabbccddee";
 
 /** @brief What the journal writes of a refused sign-in. */
 constexpr std::string_view REFUSED_SIGN_IN_TEXT = "sign-in as ACE from ";

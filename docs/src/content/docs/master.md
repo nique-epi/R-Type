@@ -22,7 +22,7 @@ This page tells you where to look when you need to change something. It describe
 | The results of the games and the global leaderboard, `PUT /api/servers/me/results/{gameId}` and `GET /api/leaderboard` | Available; a game server sends its vanilla games after its heartbeats | `src/master/Leaderboard/`, `src/network/Master/` |
 | The master on AWS, installed from each release | Available; see [Deploying the master](/R-Type/deploy-master/) | `infra/`, `.github/workflows/deploy-master.yaml` |
 | A machine of game servers created for a LAN | Available; see [Game servers for a LAN](/R-Type/deploy-game-servers/) | `infra/game-servers/`, `infra/terraform-game/` |
-| Accounts and sessions, over HTTPS only, `POST /api/users` and `POST /api/sessions` | Available; optional module `accounts`, which needs the key `RT_PASSWORD_KEY`; the client and the web site do not sign in yet | `src/master/Accounts/`, `src/network/Master/`, `src/network/Hashing/` |
+| Accounts and sessions, over HTTPS only, `POST /api/users` and `POST /api/sessions` | Available; optional module `accounts`, without whose key `RT_PASSWORD_KEY` the master does not start; the client and the web site do not sign in yet | `src/master/Accounts/`, `src/network/Master/`, `src/network/Hashing/` |
 | Administration | Not yet written | |
 
 ## Starting the master
@@ -30,8 +30,10 @@ This page tells you where to look when you need to change something. It describe
 `--mode master` comes first, before every other option; `r-type_server` alone, or `--mode supervisor`, runs the game server, its supervisor, and `--mode game` is the game process a supervisor starts (see [Server](/R-Type/server/#the-three-roles-supervisor-game-and-master)). `chooseServerMode()` (`src/server/LaunchOptions/`) reads the mode, then `MasterLaunchOptions` (`src/master/LaunchOptions/`) reads the rest in one pass, the logging options included (see [Logging](/R-Type/logging/#choosing-the-level-and-the-output-at-launch)).
 
 ```bash
-./r-type_server --mode master -p 8081
+RT_PASSWORD_KEY=$(cat ~/.rtype-password-key) ./r-type_server --mode master -p 8081
 ```
+
+The master stops at its start without the key of the passwords of its accounts, `RT_PASSWORD_KEY`: draw it once with `openssl rand -hex 32` and keep it, since another key makes every stored password unreadable. A master that needs no accounts, such as one for a LAN, runs without a key once its `master.cfg` holds `module accounts off` (see [Accounts and sessions](#accounts-and-sessions-accountsmodule)).
 
 | Option | Effect |
 |---|---|
@@ -160,8 +162,8 @@ The storage module opens its file with `rtype_storage` (`openDatabaseFile()`, se
 | 2 | `status_changes` | each change of status of each server, at most one per server and per second, kept 7 days |
 | 3 | `servers` | the secret each server registered with, which its probes carry, and the second of its last valid answer to a probe; both empty for a server registered before |
 | 5 | `heartbeat_samples` | the load of the machine of the server in each sample: the share of its processors that is busy, its memory in use and all its memory; empty in the samples kept before, and for a server that does not measure them |
-| 6 | `accounts` | each account: its nickname, unique without case, the 128 bytes kept of its password, its role, the address and the date of its creation |
-| 6 | `sessions` | each open session: the fingerprint of its token, its account, the address it was opened from, when it opened and when it expires |
+| 6 | `users` | each account: its nickname, unique without case, the 128 bytes kept of its password, its role, the address and the date of its creation |
+| 6 | `sessions` | each open session: the fingerprint of its token, its user, the address it was opened from, when it opened and when it expires |
 | 6 | `sign_in_failures` | each failed sign-in: its address and its second, forgotten once it no longer counts |
 | 4 | `game_results` | a row per player of each vanilla game a server reported: its server, the id of the game, the nickname, the account, the score, the date, the difficulty and the number of players; the key is the server, the game and the nickname, compared without case |
 
@@ -360,22 +362,22 @@ A player creates an account named by its nickname, then opens sessions with its 
 | Route | Does | Answers |
 |---|---|---|
 | `POST /api/users` | creates an account from `{"nickname":"ACE","password":"…"}` | 201, `Location: /api/users/<id>`, and `{"id":1,"nickname":"ACE","role":"player"}`; 409 for a nickname taken, 429 over the quota of creations |
-| `POST /api/sessions` | opens a session for the same body | 201, `Location: /api/sessions/me`, and `{"token":"rts_<64 hexadecimal digits>","expiresAt":1800604800,"account":{…}}`; 401 for a wrong nickname or password, 429 after too many failures |
+| `POST /api/sessions` | opens a session for the same body | 201, `Location: /api/sessions/me`, and `{"token":"rts_<64 hexadecimal digits>","expiresAt":1800604800,"user":{…}}`; 401 for a wrong nickname or password, 429 after too many failures |
 | `GET /api/users/me` | reads the account of the token sent as `Authorization: Bearer <token>` | 200 and the account; 401 without a session |
 | `DELETE /api/sessions/me` | closes the session of the token | 204, for a session already closed too; 401 without a token |
 
 A body the master cannot read answers 400 naming the member. The token is sent as a Bearer header, never as a cookie: the callers are the game client and the server of the web site, so there is no CORS and no form to forge.
 
 - **Over HTTPS only.** Each route is `MasterRoute::httpsOnly`, and `MasterHttpServer` answers 403 to a request that did not come over HTTPS (`ApiRequest::overHttps`, see [Network](/R-Type/network/#http-server-httpserver)): the master speaks no TLS, so only a request Caddy forwards from the machine counts. A master on a LAN, without Caddy, answers 403 to every route of the accounts.
-- **The key of the passwords** is read from the environment variable `RT_PASSWORD_KEY` when the master starts (`PASSWORD_KEY_VARIABLE`): 64 hexadecimal digits, as `openssl rand -hex 32` draws them. It is never in the database, the repository or the journal. Unset or empty, the master runs without accounts: every route answers 503, and the journal says so at the start. Any other text stops the master at its start with an error naming the variable, never its value. Another key makes every stored password unreadable. On AWS, the deployment gives the master its key and never changes it (see [Deploying the master](/R-Type/deploy-master/#giving-the-master-its-key-of-the-passwords)).
+- **The key of the passwords** is read from the environment variable `RT_PASSWORD_KEY` when the master starts (`PASSWORD_KEY_VARIABLE`): 64 hexadecimal digits, as `openssl rand -hex 32` draws them. It is never in the database, the repository or the journal. Unset or empty, the master stops at its start, before its port opens (`MissingPasswordKeyException`), and so does any other text that is no key (`InvalidPasswordKeyException`); the error names the variable, never its value. A master that must run without accounts turns them off with `module accounts off`. Another key makes every stored password unreadable. On AWS, the deployment gives the master its key and never changes it (see [Deploying the master](/R-Type/deploy-master/#giving-the-master-its-key-of-the-passwords)).
 - **A nickname** is a nickname of the protocol, 1 to 16 bytes of printable UTF-8, and names one account, compared as a game server compares nicknames: `ACE` and `ace` are one account. **A password** is `MINIMUM_PASSWORD_SIZE` to `MAXIMUM_PASSWORD_SIZE` bytes of printable UTF-8 (8 to 128, the defaults of Better Auth).
 - **The database keeps 128 bytes per password**: `hydro_pwhash_create()` of libhydrogen, with a salt of its own and `PASSWORD_HASH_ROUNDS` (200 000, about 60 ms in a release build on an Apple M4 Pro), encrypted with the key (`passwordHashOf()`, `src/network/Hashing/`). A stolen database tests no password without the key. A password never reaches the journal.
 - **A session** lives `SESSION_LIFETIME` (7 days). A use more than `SESSION_REFRESH_AGE` (1 day) after its expiry last moved moves it to 7 days after that use, so a player who plays every week never signs in again, and a session read often is written once a day: the defaults of Better Auth. The token is `rts_` and 32 random bytes in hexadecimal, shown once; the database keeps its fingerprint (`sessionFingerprintOf()`), so a copy of the file opens no session. Opening a session removes the expired ones.
-- **Quotas, per address.** An address creates `MAXIMUM_ACCOUNTS_PER_ADDRESS` (5) accounts per `ACCOUNT_CREATION_WINDOW` (1 hour) at most. That quota and a nickname taken are checked before the password is hashed, then again in the transaction of the insert. After `MAXIMUM_SIGN_IN_FAILURES` (5) failed sign-ins in `SIGN_IN_FAILURE_WINDOW` (15 minutes), every sign-in from that address answers 429 before its password is checked.
+- **Quotas, per address.** An address creates `MAXIMUM_USERS_PER_ADDRESS` (5) accounts per `USER_CREATION_WINDOW` (1 hour) at most. That quota and a nickname taken are checked before the password is hashed, then again in the transaction of the insert. After `MAXIMUM_SIGN_IN_FAILURES` (5) failed sign-ins in `SIGN_IN_FAILURE_WINDOW` (15 minutes), every sign-in from that address answers 429 before its password is checked.
 - **The journal** names each sign-in, `ACE signed in from 203.0.113.7`, and each refusal, `sign-in as ACE from 203.0.113.7 refused: wrong nickname or password`.
 - **Roles.** An account is a `player` when it is created. A line `admin <nickname>` of `master.cfg` makes that account an `admin` when the master starts, and the journal says so; a line that names no account yet is written in the journal and applies at the next start after the account exists. Removing the line takes the role from nobody. Nothing reads the role yet: the administration is not written.
 
-The module is laid out as `ServersModule`: `AccountsController`, `AccountsService` (the quotas and the sessions; `Services/Helpers/`, the token and the key), one repository per table (`accounts`, `sessions`, `sign_in_failures`), and the plain structs of `Models/`.
+The module is laid out as `ServersModule`: `AccountsController`, `AccountsService` (the quotas and the sessions; `Services/Helpers/`, the token and the key), one repository per table (`UserRepository` for `users`, `SessionRepository`, `SignInFailureRepository`), and the plain structs of `Models/`.
 
 ## The client of the master: `MasterClient`
 

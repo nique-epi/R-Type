@@ -14,10 +14,8 @@
 #include <string_view>
 #include <utility>
 #include <vector>
-#include "Account.hpp"
-#include "AccountCredentials.hpp"
-#include "AccountRole.hpp"
 #include "CreatedServer.hpp"
+#include "CreatedSession.hpp"
 #include "DatedStatus.hpp"
 #include "EndpointText.hpp"
 #include "FinishedGame.hpp"
@@ -35,7 +33,6 @@
 #include "MasterRouteConstants.hpp"
 #include "NetworkConstants.hpp"
 #include "NetworkException.hpp"
-#include "OpenedSession.hpp"
 #include "ProtocolConstants.hpp"
 #include "SampleListing.hpp"
 #include "ServerCreation.hpp"
@@ -46,6 +43,9 @@
 #include "ServerSample.hpp"
 #include "ServerStatus.hpp"
 #include "StatusListing.hpp"
+#include "User.hpp"
+#include "UserCredentials.hpp"
+#include "UserRole.hpp"
 #include "WireTypes.hpp"
 
 namespace rtype::network {
@@ -182,11 +182,11 @@ std::string passwordOf(const JsonField& field) {
   return password;
 }
 
-nlohmann::json accountDocument(const Account& account) {
+nlohmann::json userDocument(const User& account) {
   nlohmann::json document;
   document[ID_MEMBER] = account.id;
   document[NICKNAME_MEMBER] = account.nickname;
-  document[ROLE_MEMBER] = accountRoleText(account.role);
+  document[ROLE_MEMBER] = userRoleText(account.role);
   return document;
 }
 
@@ -902,38 +902,38 @@ std::string statusListingText(const StatusListing& listing) {
   return listingText(STATUSES_MEMBER, listing.statuses, statusChangeDocument);
 }
 
-std::string credentialsText(const AccountCredentials& credentials) {
+std::string userCredentialsText(const UserCredentials& credentials) {
   nlohmann::json document;
   document[NICKNAME_MEMBER] = credentials.nickname;
   document[PASSWORD_MEMBER] = credentials.password;
   return textOf(document);
 }
 
-AccountCredentials credentialsFromText(std::string_view text) {
+UserCredentials userCredentialsFromText(std::string_view text) {
   const nlohmann::json document = parsedObject(text);
   const JsonField credentials = wholeMessage(document);
-  return AccountCredentials{
+  return UserCredentials{
       .nickname = nicknameOf(memberOf(credentials, NICKNAME_MEMBER)),
       .password = passwordOf(memberOf(credentials, PASSWORD_MEMBER))};
 }
 
-std::string_view accountRoleText(AccountRole role) {
-  return ACCOUNT_ROLE_TEXTS.at(static_cast<std::size_t>(role));
+std::string_view userRoleText(UserRole role) {
+  return USER_ROLE_TEXTS.at(static_cast<std::size_t>(role));
 }
 
-std::optional<AccountRole> accountRoleOf(std::string_view text) {
-  return valueOfText<AccountRole>(ACCOUNT_ROLE_TEXTS, text);
+std::optional<UserRole> userRoleOf(std::string_view text) {
+  return valueOfText<UserRole>(USER_ROLE_TEXTS, text);
 }
 
-std::string accountText(const Account& account) {
-  return textOf(accountDocument(account));
+std::string userText(const User& account) {
+  return textOf(userDocument(account));
 }
 
-std::string openedSessionText(const OpenedSession& session) {
+std::string createdSessionText(const CreatedSession& session) {
   nlohmann::json document;
   document[TOKEN_MEMBER] = session.token;
   document[EXPIRES_AT_MEMBER] = session.expiresAt.time_since_epoch().count();
-  document[ACCOUNT_MEMBER] = accountDocument(session.account);
+  document[USER_MEMBER] = userDocument(session.user);
   return textOf(document);
 }
 

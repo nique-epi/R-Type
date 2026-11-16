@@ -4,9 +4,9 @@
 #include <chrono>
 #include <optional>
 #include <string>
-#include "Account.hpp"
 #include "AccountsService.hpp"
 #include "MasterDatabaseFile.hpp"
+#include "User.hpp"
 
 /** @brief The accounts of the master on a database of their own, keyed with
  * TEST_PASSWORD_KEY, holding the account ACE. */
@@ -18,7 +18,7 @@ class AccountsServiceFixture : public ::testing::Test {
   [[nodiscard]] std::string aceToken();
 
   /** @returns The account of the session of @p token at @p date. */
-  [[nodiscard]] std::optional<rtype::network::Account> accountAt(
+  [[nodiscard]] std::optional<rtype::network::User> accountAt(
       const std::string& token, std::chrono::sys_seconds date);
 
   /** @returns What the database keeps of the password of ACE, its bytes as
