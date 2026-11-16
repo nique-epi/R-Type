@@ -36,6 +36,7 @@ constexpr int LINK_OK_STATUS = 200;
 constexpr int LINK_CREATED_STATUS = 201;
 constexpr int LINK_UNAUTHORIZED_STATUS = 401;
 constexpr int LINK_CONFLICT_STATUS = 409;
+constexpr int LINK_UNPROCESSABLE_STATUS = 422;
 constexpr int LINK_SERVER_ERROR_STATUS = 500;
 
 /** @brief The account of the token, its balances, before and after a

@@ -30,6 +30,7 @@ using rtype::client::testing::LINK_OK_STATUS;
 using rtype::client::testing::LINK_SERVER_ERROR_STATUS;
 using rtype::client::testing::LINK_TOKEN;
 using rtype::client::testing::LINK_UNAUTHORIZED_STATUS;
+using rtype::client::testing::LINK_UNPROCESSABLE_STATUS;
 using rtype::client::testing::LINK_WALLET;
 using rtype::client::testing::LINK_WALLET_AFTER;
 using rtype::client::testing::MasterAccountLinkFixture;
@@ -178,4 +179,40 @@ TEST_F(MasterAccountLinkFixture, AnExchangeAnswersWithTheBalancesLeft) {
 
   ASSERT_TRUE(answer.has_value());
   EXPECT_EQ(answer->wallet, LINK_WALLET_AFTER);
+}
+
+/**
+ * Given a master whose cashier refuses an amount of none with 422
+ * When the link asks that exchange
+ * Then its answer says the amount was refused, not a look
+ */
+TEST_F(MasterAccountLinkFixture, AnExchangeOfNoAmountIsRefusedForItsAmount) {
+  master().answer(
+      std::string{OWN_EXCHANGES_ROUTE},
+      CannedAnswer{.status = LINK_UNPROCESSABLE_STATUS, .body = {}});
+
+  const std::optional<WalletChangeReading> answer = answerSoon(
+      [this] { return link().exchange(); },
+      link().askExchange(std::string{LINK_TOKEN}, LINK_BUY_500_CHIPS));
+
+  ASSERT_TRUE(answer.has_value());
+  EXPECT_EQ(answer->refusal, WalletRefusal::InvalidAmount);
+}
+
+/**
+ * Given a master whose shop refuses the crown with 422
+ * When the link buys the crown
+ * Then its answer says the look is not for sale
+ */
+TEST_F(MasterAccountLinkFixture, APurchaseOfALookNotSoldSaysSo) {
+  master().answer(
+      std::string{BUY_CROWN_ROUTE},
+      CannedAnswer{.status = LINK_UNPROCESSABLE_STATUS, .body = {}});
+
+  const std::optional<WalletChangeReading> answer =
+      answerSoon([this] { return link().purchase(); },
+                 link().askPurchase(std::string{LINK_TOKEN}, LINK_CROWN));
+
+  ASSERT_TRUE(answer.has_value());
+  EXPECT_EQ(answer->refusal, WalletRefusal::NotForSale);
 }

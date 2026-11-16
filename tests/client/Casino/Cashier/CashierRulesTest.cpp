@@ -2,10 +2,13 @@
 #include "CashierRules.hpp"
 #include "CashierRulesTestConstants.hpp"
 #include "CashierWay.hpp"
+#include "WalletRefusal.hpp"
 
 using rtype::client::cashierLineOf;
+using rtype::client::cashierRefusalLineOf;
 using rtype::client::CashierWay;
 using rtype::client::exchangeAt;
+using rtype::client::WalletRefusal;
 using rtype::client::testing::A_PURSE;
 using rtype::client::testing::CHOOSE_AN_AMOUNT;
 using rtype::client::testing::FULL_CHIPS;
@@ -60,4 +63,14 @@ TEST(CashierRules, AnExchangeTheCashierMakesHasNoLine) {
   EXPECT_TRUE(cashierLineOf(exchangeAt(A_PURSE, CashierWay::BuyChips, ONE_CHIP),
                             CashierWay::BuyChips, ONE_CHIP)
                   .empty());
+}
+
+/**
+ * Given the master refusing an exchange for its amount
+ * When the cashier says why
+ * Then it asks for an amount
+ */
+TEST(CashierRules, AnAmountTheMasterRefusesAsksForOne) {
+  EXPECT_EQ(cashierRefusalLineOf(WalletRefusal::InvalidAmount),
+            CHOOSE_AN_AMOUNT);
 }

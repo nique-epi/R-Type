@@ -32,20 +32,39 @@ SignInRefusal signInRefusalOf(int status) {
 }
 
 /** @returns Why the master refused a purchase or an exchange with
- * @p status. */
+ * @p status, a status both routes answer alike. */
 WalletRefusal walletRefusalOf(int status) {
   switch (status) {
     case network::CONFLICT_STATUS:
       return WalletRefusal::BalanceRefused;
-    case network::UNPROCESSABLE_CONTENT_STATUS:
-      return WalletRefusal::NotForSale;
-    case network::NOT_FOUND_STATUS:
-      return WalletRefusal::UnknownItem;
     case network::UNAUTHORIZED_STATUS:
       return WalletRefusal::SignedOut;
     default:
       return WalletRefusal::MasterRefused;
   }
+}
+
+/** @returns Why the master refused a purchase as @p refused says: 422 for a
+ * look the shop does not sell, 404 for a name no look has. */
+WalletRefusal purchaseRefusalOf(
+    const network::MasterRefusedException& refused) {
+  switch (refused.status()) {
+    case network::UNPROCESSABLE_CONTENT_STATUS:
+      return WalletRefusal::NotForSale;
+    case network::NOT_FOUND_STATUS:
+      return WalletRefusal::UnknownItem;
+    default:
+      return walletRefusalOf(refused.status());
+  }
+}
+
+/** @returns Why the master refused an exchange as @p refused says: 422 for
+ * an amount of none. */
+WalletRefusal exchangeRefusalOf(
+    const network::MasterRefusedException& refused) {
+  return refused.status() == network::UNPROCESSABLE_CONTENT_STATUS
+             ? WalletRefusal::InvalidAmount
+             : walletRefusalOf(refused.status());
 }
 
 /** @returns The account @p client reads for the ask of @p asks, or why it
@@ -64,15 +83,13 @@ UserReading userReadingOf(network::MasterAccountClient& client,
 }
 
 /** @returns The balances @p change leaves, numbered @p ask, or why it was
- * refused. */
-template <typename Change>
-WalletChangeReading walletChangeOf(std::uint64_t ask, Change change) {
+ * refused, as @p refusedOf reads a refusal of its route. */
+template <typename Change, typename RefusedOf>
+WalletChangeReading walletChangeOf(std::uint64_t ask, Change change,
+                                   RefusedOf refusedOf) {
   WalletChangeReading reading{.ask = ask, .wallet = {}, .refusal = {}};
   reading.refusal = masterRefusalOf<WalletRefusal>(
-      [&change, &reading] { reading.wallet = change(); },
-      [](const network::MasterRefusedException& refused) {
-        return walletRefusalOf(refused.status());
-      });
+      [&change, &reading] { reading.wallet = change(); }, refusedOf);
   return reading;
 }
 
@@ -106,19 +123,23 @@ void serveWallet(network::MasterAccountClient& client, const AccountAsks& asks,
                  AccountLinkState& state) {
   bool changed = false;
   if (asks.purchaseAsk > state.served.purchaseAsk) {
-    const WalletChangeReading bought =
-        walletChangeOf(asks.purchaseAsk, [&client, &asks] {
+    const WalletChangeReading bought = walletChangeOf(
+        asks.purchaseAsk,
+        [&client, &asks] {
           return client.buyOwnLook(asks.token, asks.purchaseItem).wallet;
-        });
+        },
+        purchaseRefusalOf);
     state.purchase.publish(bought);
     state.served.purchaseAsk = asks.purchaseAsk;
     changed = changed || bought.wallet.has_value();
   }
   if (asks.exchangeAsk > state.served.exchangeAsk) {
-    const WalletChangeReading exchanged =
-        walletChangeOf(asks.exchangeAsk, [&client, &asks] {
+    const WalletChangeReading exchanged = walletChangeOf(
+        asks.exchangeAsk,
+        [&client, &asks] {
           return client.exchange(asks.token, asks.exchangeRequest).wallet;
-        });
+        },
+        exchangeRefusalOf);
     state.exchange.publish(exchanged);
     state.served.exchangeAsk = asks.exchangeAsk;
     changed = changed || exchanged.wallet.has_value();

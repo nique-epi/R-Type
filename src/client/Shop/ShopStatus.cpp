@@ -50,6 +50,7 @@ std::string masterRefusalLineOf(WalletRefusal refusal) {
       return std::string(NOT_FOR_SALE_STATUS);
     case WalletRefusal::SignedOut:
       return std::string(SESSION_ENDED_STATUS);
+    case WalletRefusal::InvalidAmount:
     case WalletRefusal::MasterRefused:
       return std::string(MASTER_REFUSED_STATUS);
     case WalletRefusal::MasterUnreachable:
@@ -65,6 +66,7 @@ std::optional<PurchaseRefusal> purchaseRefusalOf(WalletRefusal refusal) {
     case WalletRefusal::NotForSale:
     case WalletRefusal::UnknownItem:
       return PurchaseRefusal::NotForSale;
+    case WalletRefusal::InvalidAmount:
     case WalletRefusal::SignedOut:
     case WalletRefusal::MasterRefused:
     case WalletRefusal::MasterUnreachable:

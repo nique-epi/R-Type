@@ -65,6 +65,8 @@ std::string cashierRefusalLineOf(WalletRefusal refusal) {
       return SIGN_IN_AGAIN_LINE;
     case WalletRefusal::MasterUnreachable:
       return MASTER_SILENT_LINE;
+    case WalletRefusal::InvalidAmount:
+      return NOTHING_TO_EXCHANGE_LINE;
     case WalletRefusal::NotForSale:
     case WalletRefusal::UnknownItem:
     case WalletRefusal::MasterRefused:
