@@ -356,11 +356,10 @@ std::string ignoredLine(std::size_t number, LineOutcome outcome) {
   return text;
 }
 
-/** @brief Writes a line for each of @p numbers, a list of NamedNumber. */
-template <typename NamedSettings>
+/** @brief Writes a line for each of @p numbers. */
 void writeNumbers(std::string& text, const PlayerSettings& settings,
-                  const NamedSettings& numbers) {
-  for (const auto& number : numbers) {
+                  std::span<const NamedNumber> numbers) {
+  for (const NamedNumber& number : numbers) {
     writeLine(text, number.name,
               std::to_string(settings.*number.setting->member));
   }
