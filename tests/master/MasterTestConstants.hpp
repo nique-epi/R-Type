@@ -12,6 +12,7 @@ constexpr int EXPECTED_UNAUTHORIZED = 401;
 constexpr int EXPECTED_FORBIDDEN = 403;
 constexpr int EXPECTED_NOT_FOUND = 404;
 constexpr int EXPECTED_CONFLICT = 409;
+constexpr int EXPECTED_UNPROCESSABLE_CONTENT = 422;
 constexpr int EXPECTED_TOO_MANY_REQUESTS = 429;
 
 /** @brief The headers, the method and the media type the tests use. */

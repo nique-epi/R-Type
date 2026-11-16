@@ -1,14 +1,13 @@
 #include <gtest/gtest.h>
 #include "ChipSettlement.hpp"
 #include "ChipSettlementTestConstants.hpp"
+#include "KopecksConstants.hpp"
 #include "PlayerSettings.hpp"
 #include "RecordingCasinoChannel.hpp"
 #include "RecordingSettingsStorage.hpp"
-#include "SettingsConstants.hpp"
 #include "SettingsService.hpp"
 
 using rtype::client::chipsAfter;
-using rtype::client::MAXIMUM_CHIPS;
 using rtype::client::PlayerSettings;
 using rtype::client::SettingsService;
 using rtype::client::settleChipMoves;
@@ -20,6 +19,7 @@ using rtype::client::testing::CHIPS_AFTER_THE_ROUND_WON;
 using rtype::client::testing::FIFTY_CHIPS;
 using rtype::client::testing::TEN_CHIPS_UNDER_THE_LARGEST;
 using rtype::client::testing::THE_LARGEST_PAYOUT;
+using rtype::network::MAXIMUM_CHIPS;
 
 /**
  * Given a player with a thousand chips and a round that took 100 and paid 350

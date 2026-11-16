@@ -17,6 +17,7 @@
 #include "InterfacePixel.hpp"
 #include "KeyChipParts.hpp"
 #include "LookItemPurchase.hpp"
+#include "LookItems.hpp"
 #include "MenuBuilder.hpp"
 #include "MotionPreference.hpp"
 #include "PlayerPurse.hpp"
@@ -225,7 +226,7 @@ bool ShopScreen::buy() {
   const Purse purse = purseOf(settings_->settings());
   const Purchase bought = buyLookItem(purse, item);
   if (bought.refusal.has_value()) {
-    const std::uint32_t price = lookItemPrice(item);
+    const std::uint32_t price = network::lookItemPrice(item);
     message_ = refusalLineOf(*bought.refusal,
                              price > purse.kopecks ? price - purse.kopecks : 0);
     speech_.refused(*bought.refusal, item);

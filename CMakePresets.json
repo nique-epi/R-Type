@@ -53,7 +53,8 @@
         "RTYPE_MODULE_CASINO": "OFF",
         "RTYPE_MODULE_PLUGINS": "OFF",
         "RTYPE_MODULE_GAME_STATISTICS": "OFF",
-        "RTYPE_MODULE_ACCOUNTS": "OFF"
+        "RTYPE_MODULE_ACCOUNTS": "OFF",
+        "RTYPE_MODULE_WALLET": "OFF"
       }
     }
   ],

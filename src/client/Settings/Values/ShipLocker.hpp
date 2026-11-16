@@ -1,8 +1,8 @@
 #pragma once
 
 #include <bitset>
-#include "ShipLockerConstants.hpp"
 #include "ShipLookConstants.hpp"
+#include "StarterLookConstants.hpp"
 
 namespace rtype::client {
 
@@ -10,7 +10,8 @@ namespace rtype::client {
  * item, in the order of identifiers::SHIP_LOOK_ITEM_NAMES. A first launch
  * holds the starter kit. */
 struct ShipLocker {
-  std::bitset<identifiers::SHIP_LOOK_ITEM_COUNT> items{STARTER_LOCKER_ITEMS};
+  std::bitset<identifiers::SHIP_LOOK_ITEM_COUNT> items{
+      network::STARTER_LOCKER_ITEMS};
 
   bool operator==(const ShipLocker& other) const = default;
 };

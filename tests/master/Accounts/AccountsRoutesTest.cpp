@@ -255,8 +255,7 @@ TEST(AccountsRoutes, AMasterWithAKeyThatIsNoKeyDoesNotStart) {
  * Then it runs, and no route of the accounts answers
  */
 TEST(AccountsRoutes, AMasterWithItsAccountsOffStartsWithoutKey) {
-  const RunningMaster master(
-      std::vector<std::string>{std::string{ACCOUNTS_OFF_LINE}}, std::string{});
+  const RunningMaster master(accountsOffLines(), std::string{});
 
   const httplib::Result refused = sendRouteCall(
       master.port(), credentialsCall(USERS_URL, aceCredentials()));

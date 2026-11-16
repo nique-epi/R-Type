@@ -7,6 +7,7 @@ target_include_directories(rtype_master_accounts_services PUBLIC ${CMAKE_CURRENT
 target_link_libraries(rtype_master_accounts_services
   PUBLIC
     rtype_logging
+    rtype_master_accounts_contract
     rtype_master_accounts_models
     rtype_master_accounts_repositories
   PRIVATE

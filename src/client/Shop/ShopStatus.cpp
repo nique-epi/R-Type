@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <string>
 #include "Kopecks.hpp"
-#include "LookItemPurchase.hpp"
+#include "LookItems.hpp"
 #include "PurchaseRefusal.hpp"
 #include "Purse.hpp"
 #include "ShipLooks.hpp"
@@ -17,7 +17,7 @@ std::string wareLineOf(std::size_t item, const Purse& purse) {
     return line.append(OWNED_HINT);
   }
   return line.append(BUY_HINT_START)
-      .append(kopecksText(lookItemPrice(item)))
+      .append(kopecksText(network::lookItemPrice(item)))
       .append(BUY_HINT_END);
 }
 

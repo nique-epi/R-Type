@@ -11,6 +11,7 @@
 #include "CommandDefinition.hpp"
 #include "CommandInterpreter.hpp"
 #include "EngineException.hpp"
+#include "ISessionAccounts.hpp"
 #include "InstallContext.hpp"
 #include "MasterConstants.hpp"
 #include "MasterDatabase.hpp"
@@ -51,8 +52,10 @@ std::vector<std::string> AccountsModule::dependencies() const {
 void AccountsModule::install(engine::InstallContext& context) {
   const network::PasswordKey key = passwordKeyFromText(passwordKeyText_);
   addAdminCommand(context.require<engine::CommandInterpreter>());
-  AccountsController& controller = controller_.emplace(
-      service_.emplace(context.require<MasterDatabase>(), key));
+  AccountsService& service =
+      service_.emplace(context.require<MasterDatabase>(), key);
+  context.provide<ISessionAccounts>(service);
+  AccountsController& controller = controller_.emplace(service);
   addRoutes(context.require<MasterHttpServer>(), controller);
 }
 

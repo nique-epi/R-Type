@@ -214,12 +214,63 @@ CREATE INDEX sign_in_failures_by_date ON sign_in_failures (failed_at);
 )sql";
 
 /**
+ * @brief The seventh version: the wallets of the accounts, the journal of what
+ * moved their balances, the looks they own, and the results of games already
+ * credited.
+ *
+ * A wallet holds two balances, 0 to network::MAXIMUM_KOPECKS (999999) each;
+ * the CHECK refuses a write that would leave one out of them. Each change of a
+ * balance writes a line of the journal in the same transaction, and a line is
+ * never changed: the sum of the lines of a currency is its balance. The
+ * reference of a line names the fact that moved it (a game, a round of the
+ * casino, an exchange), so a fact that must apply once is looked up before.
+ * A result of a game is credited once: its reference is the key of
+ * credited_results. The tables are created even when the module wallet is
+ * off, as those of the accounts are.
+ */
+constexpr std::string_view WALLET_MIGRATION = R"sql(
+CREATE TABLE wallets (
+  user_id   INTEGER PRIMARY KEY REFERENCES users (id),
+  kopecks   INTEGER NOT NULL CHECK (kopecks BETWEEN 0 AND 999999),
+  chips     INTEGER NOT NULL CHECK (chips BETWEEN 0 AND 999999),
+  opened_at INTEGER NOT NULL
+) STRICT;
+
+CREATE TABLE wallet_movements (
+  id        INTEGER PRIMARY KEY,
+  user_id   INTEGER NOT NULL REFERENCES users (id),
+  currency  TEXT    NOT NULL,
+  amount    INTEGER NOT NULL,
+  reason    TEXT    NOT NULL,
+  reference TEXT    NOT NULL,
+  made_at   INTEGER NOT NULL
+) STRICT;
+
+CREATE INDEX wallet_movements_by_user ON wallet_movements (user_id, id);
+
+CREATE TABLE owned_looks (
+  user_id     INTEGER NOT NULL REFERENCES users (id),
+  item        TEXT    NOT NULL,
+  origin      TEXT    NOT NULL,
+  acquired_at INTEGER NOT NULL,
+  PRIMARY KEY (user_id, item)
+) STRICT, WITHOUT ROWID;
+
+CREATE TABLE credited_results (
+  reference   TEXT    PRIMARY KEY,
+  user_id     INTEGER NOT NULL REFERENCES users (id),
+  credited_at INTEGER NOT NULL
+) STRICT, WITHOUT ROWID;
+)sql";
+
+/**
  * @brief The migrations of the database of the master, in order:
  * MASTER_MIGRATIONS[0] is version 1. A change adds a migration at the end and
  * never edits one a master already applied.
  */
-constexpr std::array<std::string_view, 6> MASTER_MIGRATIONS{
+constexpr std::array<std::string_view, 7> MASTER_MIGRATIONS{
     SERVERS_MIGRATION, STATUSES_MIGRATION,     PROBES_MIGRATION,
-    RESULTS_MIGRATION, MACHINE_LOAD_MIGRATION, ACCOUNTS_MIGRATION};
+    RESULTS_MIGRATION, MACHINE_LOAD_MIGRATION, ACCOUNTS_MIGRATION,
+    WALLET_MIGRATION};
 
 }  // namespace rtype::master

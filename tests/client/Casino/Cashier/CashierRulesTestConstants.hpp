@@ -2,8 +2,8 @@
 
 #include <cstdint>
 #include <string_view>
+#include "KopecksConstants.hpp"
 #include "Purse.hpp"
-#include "SettingsConstants.hpp"
 
 namespace rtype::client::testing {
 
@@ -14,7 +14,7 @@ constexpr Purse A_PURSE{.kopecks = 4'250, .chips = 1'250, .locker = {}};
 constexpr std::uint32_t NO_AMOUNT = 0;
 constexpr std::uint32_t TWO_HUNDRED_FIFTY_CHIPS_TOO_MANY = 1'500;
 constexpr Purse FULL_CHIPS{
-    .kopecks = 4'250, .chips = rtype::client::MAXIMUM_CHIPS, .locker = {}};
+    .kopecks = 4'250, .chips = rtype::network::MAXIMUM_CHIPS, .locker = {}};
 constexpr std::uint32_t ONE_CHIP = 1;
 
 /** @brief What the cashier says of each. */

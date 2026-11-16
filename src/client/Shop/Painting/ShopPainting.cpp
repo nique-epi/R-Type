@@ -11,7 +11,7 @@
 #include "InterfaceConstants.hpp"
 #include "KopecksLabel.hpp"
 #include "KopecksPainting.hpp"
-#include "LookItemPurchase.hpp"
+#include "LookItems.hpp"
 #include "Outline.hpp"
 #include "PixelShapes.hpp"
 #include "PriceTag.hpp"
@@ -78,7 +78,7 @@ void paintLookCell(IInterfaceCanvas& canvas, sf::IntRect cell, std::size_t item,
   paintPriceTag(canvas,
                 {cell.position.x + cell.size.x - SHOP_CELL_TAG_INSET,
                  cell.position.y + SHOP_CELL_TAG_TOP},
-                lookItemPrice(item));
+                network::lookItemPrice(item));
 }
 
 /** @brief Paints the hull @p item in the stall @p stall: its ship in the
@@ -96,11 +96,11 @@ void paintHullStall(IInterfaceCanvas& canvas, sf::IntRect stall,
     paintRibbon(canvas, stall);
     return;
   }
-  const int width = priceTagWidth(lookItemPrice(item));
+  const int width = priceTagWidth(network::lookItemPrice(item));
   paintPriceTag(canvas,
                 {stall.position.x + ((stall.size.x + width) / HALF_DIVISOR),
                  stall.position.y + SHOP_STALL_TAG_TOP},
-                lookItemPrice(item));
+                network::lookItemPrice(item));
 }
 
 /** @brief Paints the looks of the rows the locker shows, and its scroll

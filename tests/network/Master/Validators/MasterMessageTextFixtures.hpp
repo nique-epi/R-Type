@@ -11,6 +11,8 @@
 #include "ServerHeartbeat.hpp"
 #include "ServerListing.hpp"
 #include "ServerRegistration.hpp"
+#include "Wallet.hpp"
+#include "WalletExchange.hpp"
 
 namespace rtype::network::testing {
 
@@ -147,5 +149,17 @@ namespace rtype::network::testing {
 
 /** @returns @p pointer between the quotes a refusal writes around it. */
 [[nodiscard]] std::string quoted(std::string_view pointer);
+
+/** @returns A wallet of A_WALLET_KOPECKS kopecks and A_WALLET_CHIPS chips. */
+[[nodiscard]] Wallet aWallet();
+
+/** @returns An exchange of AN_EXCHANGE_AMOUNT kopecks into chips. */
+[[nodiscard]] WalletExchange anExchange();
+
+/** @returns What exchangeRequestFromText() says of @p text, as above. */
+[[nodiscard]] std::string exchangeRequestRefusal(std::string_view text);
+
+/** @returns What ownedLooksFromText() says of @p text, as above. */
+[[nodiscard]] std::string ownedLooksRefusal(std::string_view text);
 
 }  // namespace rtype::network::testing

@@ -6,6 +6,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include "Currency.hpp"
 #include "FinishedGame.hpp"
 #include "FinishedGamePlayer.hpp"
 #include "GameListing.hpp"
@@ -27,6 +28,8 @@
 #include "ServerSample.hpp"
 #include "ServerStatus.hpp"
 #include "ShipLookConstants.hpp"
+#include "Wallet.hpp"
+#include "WalletExchange.hpp"
 
 namespace rtype::network::testing {
 
@@ -343,6 +346,35 @@ std::string finishedGameRefusal(std::string_view text) {
 std::string quoted(std::string_view pointer) {
   return std::string{POINTER_QUOTE} + std::string{pointer} +
          std::string{POINTER_QUOTE};
+}
+
+Wallet aWallet() {
+  return Wallet{.kopecks = A_WALLET_KOPECKS, .chips = A_WALLET_CHIPS};
+}
+
+WalletExchange anExchange() {
+  return WalletExchange{.id = AN_EXCHANGE_ID,
+                        .from = Currency::Kopecks,
+                        .amount = AN_EXCHANGE_AMOUNT,
+                        .madeAt = AN_EXCHANGE_DATE};
+}
+
+std::string exchangeRequestRefusal(std::string_view text) {
+  try {
+    static_cast<void>(exchangeRequestFromText(text));
+  } catch (const InvalidMasterMessageException& refusal) {
+    return refusal.what();
+  }
+  return {};
+}
+
+std::string ownedLooksRefusal(std::string_view text) {
+  try {
+    static_cast<void>(ownedLooksFromText(text));
+  } catch (const InvalidMasterMessageException& refusal) {
+    return refusal.what();
+  }
+  return {};
 }
 
 }  // namespace rtype::network::testing

@@ -3,6 +3,7 @@
 #include "LookItemPurchase.hpp"
 #include "LookItemPurchaseFixtures.hpp"
 #include "LookItemPurchaseTestConstants.hpp"
+#include "LookItems.hpp"
 #include "NamedPrice.hpp"
 #include "Purchase.hpp"
 #include "PurchaseRefusal.hpp"
@@ -10,7 +11,6 @@
 #include "ShipLookConstants.hpp"
 
 using rtype::client::buyLookItem;
-using rtype::client::lookItemPrice;
 using rtype::client::Purchase;
 using rtype::client::PurchaseRefusal;
 using rtype::client::Purse;
@@ -25,6 +25,7 @@ using rtype::client::testing::purseWithAnEmptyLocker;
 using rtype::client::testing::RICH_BALANCE;
 using rtype::client::testing::TOP_HAT_NAME;
 using rtype::identifiers::SHIP_LOOK_ITEM_COUNT;
+using rtype::network::lookItemPrice;
 
 /**
  * Given the catalogue of thirty items

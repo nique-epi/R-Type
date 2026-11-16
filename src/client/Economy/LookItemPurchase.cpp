@@ -2,11 +2,11 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
-#include "EconomyConstants.hpp"
+#include "KopecksConstants.hpp"
+#include "LookItems.hpp"
 #include "Purchase.hpp"
 #include "PurchaseRefusal.hpp"
 #include "Purse.hpp"
-#include "ShipLookPriceConstants.hpp"
 
 namespace rtype::client {
 
@@ -19,8 +19,8 @@ std::optional<PurchaseRefusal> purchaseRefusalOf(const Purse& purse,
   if (purse.locker.items.test(item)) {
     return PurchaseRefusal::AlreadyOwned;
   }
-  const std::uint32_t price = SHIP_LOOK_ITEM_PRICES.at(item);
-  if (price == NOT_FOR_SALE) {
+  const std::uint32_t price = network::lookItemPrice(item);
+  if (price == network::NOT_FOR_SALE) {
     return PurchaseRefusal::NotForSale;
   }
   if (price > purse.kopecks) {
@@ -31,17 +31,13 @@ std::optional<PurchaseRefusal> purchaseRefusalOf(const Purse& purse,
 
 }  // namespace
 
-std::uint32_t lookItemPrice(std::size_t item) {
-  return SHIP_LOOK_ITEM_PRICES.at(item);
-}
-
 Purchase buyLookItem(const Purse& purse, std::size_t item) {
   if (const std::optional<PurchaseRefusal> refusal =
           purchaseRefusalOf(purse, item)) {
     return Purchase{.refusal = refusal, .purse = purse};
   }
   Purse after = purse;
-  after.kopecks -= lookItemPrice(item);
+  after.kopecks -= network::lookItemPrice(item);
   after.locker.items.set(item);
   return Purchase{.refusal = std::nullopt, .purse = after};
 }

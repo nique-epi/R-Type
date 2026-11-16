@@ -1,5 +1,5 @@
 #include "AccountsController.hpp"
-#include <chrono>
+#include <functional>
 #include <optional>
 #include <string>
 #include <variant>
@@ -10,28 +10,25 @@
 #include "CreatedSession.hpp"
 #include "CredentialsAttempt.hpp"
 #include "CredentialsRefusal.hpp"
+#include "DatedRequest.hpp"
 #include "HttpConstants.hpp"
 #include "HttpHeader.hpp"
 #include "MasterMessageText.hpp"
 #include "MasterRouteConstants.hpp"
 #include "MasterRoutePath.hpp"
 #include "RouteAnswers.hpp"
+#include "ServersControllerConstants.hpp"
 #include "User.hpp"
 
 namespace rtype::master {
 
 namespace {
 
-std::chrono::sys_seconds now() {
-  return std::chrono::floor<std::chrono::seconds>(
-      std::chrono::system_clock::now());
-}
-
 CredentialsAttempt credentialsAttemptOf(const network::ApiRequest& request) {
   return CredentialsAttempt{
       .credentials = network::userCredentialsFromText(request.body),
       .address = request.remoteAddress,
-      .requestedAt = now()};
+      .requestedAt = currentSecond()};
 }
 
 network::ApiResponse refusalOf(CredentialsRefusal reason) {
@@ -95,13 +92,13 @@ network::ApiResponse AccountsController::createUser(
 
 network::ApiResponse AccountsController::readOwnUser(
     const network::ApiRequest& request) {
-  const std::optional<network::User> user =
-      service_.userOfToken(request.bearerToken.value_or(std::string{}), now());
-  if (!user.has_value()) {
-    return unauthorizedResponse(NO_SESSION_DETAIL);
-  }
-  return network::ApiResponse{.status = OK_STATUS,
-                              .body = network::userText(*user)};
+  return answerAsAccountOf(
+      service_,
+      DatedRequest{.request = std::cref(request), .now = currentSecond()},
+      [](const network::User& user) {
+        return network::ApiResponse{.status = OK_STATUS,
+                                    .body = network::userText(user)};
+      });
 }
 
 network::ApiResponse AccountsController::createSession(

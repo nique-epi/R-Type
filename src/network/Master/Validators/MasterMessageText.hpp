@@ -5,9 +5,16 @@
 #include <string_view>
 #include "CreatedServer.hpp"
 #include "CreatedSession.hpp"
+#include "Currency.hpp"
+#include "ExchangeReceipt.hpp"
+#include "ExchangeRequest.hpp"
 #include "FinishedGame.hpp"
 #include "GameListing.hpp"
 #include "GlobalLeaderboard.hpp"
+#include "LookPurchase.hpp"
+#include "MovementListing.hpp"
+#include "MovementReason.hpp"
+#include "OwnedLooks.hpp"
 #include "SampleListing.hpp"
 #include "ServerCreation.hpp"
 #include "ServerHeartbeat.hpp"
@@ -18,6 +25,8 @@
 #include "User.hpp"
 #include "UserCredentials.hpp"
 #include "UserRole.hpp"
+#include "Wallet.hpp"
+#include "WalletExchange.hpp"
 
 namespace rtype::network {
 
@@ -225,5 +234,82 @@ namespace rtype::network {
  * an empty text when @p text is no JSON object or has no `detail` text.
  */
 [[nodiscard]] std::string problemDetailOf(std::string_view text);
+
+/** @returns @p wallet as the JSON answer of `GET /api/users/me/wallet`. */
+[[nodiscard]] std::string walletText(const Wallet& wallet);
+
+/**
+ * @returns The wallet the master answered as @p text.
+ * @throws InvalidMasterMessageException naming the first member that is
+ * missing or out of its bounds.
+ */
+[[nodiscard]] Wallet walletFromText(std::string_view text);
+
+/** @returns @p listing as the JSON answer of
+ * `GET /api/users/me/wallet/movements`, newest first. */
+[[nodiscard]] std::string movementListingText(const MovementListing& listing);
+
+/** @returns @p request as the JSON body of
+ * `POST /api/users/me/wallet/exchanges`. */
+[[nodiscard]] std::string exchangeRequestText(const ExchangeRequest& request);
+
+/**
+ * @returns The request of the cashier a player sent as @p text; a member it
+ * does not know is ignored.
+ * @throws InvalidMasterMessageException naming the first member that is
+ * missing, of an unknown currency, or no whole number of 32 bits.
+ */
+[[nodiscard]] ExchangeRequest exchangeRequestFromText(std::string_view text);
+
+/** @returns @p exchange as the JSON answer of
+ * `GET /api/users/me/wallet/exchanges/{id}`. */
+[[nodiscard]] std::string walletExchangeText(const WalletExchange& exchange);
+
+/** @returns @p receipt as the JSON answer of
+ * `POST /api/users/me/wallet/exchanges`: the exchange and its `wallet`. */
+[[nodiscard]] std::string exchangeReceiptText(const ExchangeReceipt& receipt);
+
+/**
+ * @returns The receipt the master answered as @p text.
+ * @throws InvalidMasterMessageException naming the first member that is
+ * missing or out of its bounds.
+ */
+[[nodiscard]] ExchangeReceipt exchangeReceiptFromText(std::string_view text);
+
+/** @returns @p looks as the JSON answer of `GET /api/users/me/looks`. */
+[[nodiscard]] std::string ownedLooksText(const OwnedLooks& looks);
+
+/**
+ * @returns The looks the master answered as @p text.
+ * @throws InvalidMasterMessageException naming the first item that is no
+ * name of identifiers::SHIP_LOOK_ITEM_NAMES, or a list longer than it.
+ */
+[[nodiscard]] OwnedLooks ownedLooksFromText(std::string_view text);
+
+/** @returns @p purchase as the JSON answer of
+ * `PUT /api/users/me/looks/{item}`. */
+[[nodiscard]] std::string lookPurchaseText(const LookPurchase& purchase);
+
+/**
+ * @returns The purchase the master answered as @p text.
+ * @throws InvalidMasterMessageException naming the first member that is
+ * missing or out of its bounds.
+ */
+[[nodiscard]] LookPurchase lookPurchaseFromText(std::string_view text);
+
+/** @returns How @p reason is written: one of MOVEMENT_REASON_TEXTS. */
+[[nodiscard]] std::string_view movementReasonText(MovementReason reason);
+
+/** @returns The reason @p text writes, nothing when it is none of
+ * MOVEMENT_REASON_TEXTS. */
+[[nodiscard]] std::optional<MovementReason> movementReasonOf(
+    std::string_view text);
+
+/** @returns How @p currency is written: one of CURRENCY_TEXTS. */
+[[nodiscard]] std::string_view currencyText(Currency currency);
+
+/** @returns The currency @p text writes, nothing when it is none of
+ * CURRENCY_TEXTS. */
+[[nodiscard]] std::optional<Currency> currencyOf(std::string_view text);
 
 }  // namespace rtype::network

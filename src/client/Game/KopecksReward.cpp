@@ -4,7 +4,7 @@
 #include <span>
 #include "FinalPilot.hpp"
 #include "GameEnded.hpp"
-#include "Kopecks.hpp"
+#include "GameKopecks.hpp"
 #include "PlayerSettings.hpp"
 #include "SettingDefinitionConstants.hpp"
 #include "SettingsService.hpp"
@@ -17,17 +17,18 @@ std::uint32_t kopecksEarnedBy(std::span<const FinalPilot> pilots,
   if (own == pilots.end()) {
     return 0;
   }
-  const std::uint32_t earned = kopecksFor(own->score);
-  return outcome == network::WireGameOutcome::Victory ? withVictoryBonus(earned)
-                                                      : earned;
+  const std::uint32_t earned = network::kopecksFor(own->score);
+  return outcome == network::WireGameOutcome::Victory
+             ? network::withVictoryBonus(earned)
+             : earned;
 }
 
 void creditKopecks(SettingsService& settings, std::uint32_t gain) {
   if (gain == 0) {
     return;
   }
-  const std::uint32_t balance =
-      boundedKopecks(std::uint64_t{settings.settings().kopecks} + gain);
+  const std::uint32_t balance = network::boundedKopecks(
+      std::uint64_t{settings.settings().kopecks} + gain);
   static_cast<void>(settings.apply(KOPECKS_SETTING, balance));
   static_cast<void>(settings.saveIfChanged());
 }

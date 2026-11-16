@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include "ChipSelectorConstants.hpp"
-#include "SettingsConstants.hpp"
+#include "KopecksConstants.hpp"
 
 namespace rtype::client {
 
@@ -13,7 +13,7 @@ std::size_t CashierAmount::step() const { return step_; }
 
 void CashierAmount::raise() {
   amount_ = static_cast<std::uint32_t>(std::min<std::uint64_t>(
-      MAXIMUM_CHIPS, std::uint64_t{amount_} + CHIP_VALUES.at(step_)));
+      network::MAXIMUM_CHIPS, std::uint64_t{amount_} + CHIP_VALUES.at(step_)));
 }
 
 void CashierAmount::lower() {

@@ -1,3 +1,5 @@
+add_subdirectory(Contract)
+
 if(NOT RTYPE_MODULE_ACCOUNTS)
   return()
 endif()
