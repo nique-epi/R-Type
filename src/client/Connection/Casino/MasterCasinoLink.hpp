@@ -22,8 +22,10 @@ namespace rtype::client {
  * The frame loop publishes its asks; the thread sleeps until a newer one, and
  * serves the newest of each kind only: the seat first, so bets follow a seat
  * taken, then the bets, the state of the room, the bets of a round drawn and
- * the rooms. A master that does not answer, refuses or writes what cannot be
- * read gives a reading that says so, never no reading.
+ * the rooms. The state of the room the master answers a seat taken or renewed
+ * with is published as the answer to the newest read of that room. A master
+ * that does not answer, refuses or writes what cannot be read gives a reading
+ * that says so, never no reading.
  *
  * Building it opens nothing; start() builds the client of the master, which
  * checks its url, and starts the thread, which owns it; stop() ends the

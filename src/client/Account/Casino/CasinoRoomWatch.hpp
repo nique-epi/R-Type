@@ -46,7 +46,8 @@ class CasinoRoomWatch {
 
  private:
   /** @brief Keeps the state of @p reading when it answers the newest read
-   * and is newer than the state kept. */
+   * and is newer than the state kept: a seat renewed may answer that read
+   * again with a newer state. */
   void keep(const std::optional<CasinoRoomReading>& reading);
 
   ICasinoLink* link_;

@@ -59,8 +59,23 @@ CasinoRefusal betsRefusalOf(const network::MasterRefusedException& refused) {
   }
 }
 
+/** @brief Publishes @p taken, the state of the room a seat was taken or
+ * renewed in, as the answer to the newest read of that room @p asks asks,
+ * which needs no call then. */
+void publishSeatRoom(const CasinoAsks& asks,
+                     const network::CasinoRoomState& taken,
+                     CasinoLinkState& state) {
+  if (asks.roomAsk == 0 || asks.room != asks.seat.room) {
+    return;
+  }
+  state.room.publish(CasinoRoomReading{
+      .ask = asks.roomAsk, .room = asks.room, .state = taken});
+  state.served.roomAsk = asks.roomAsk;
+}
+
 /** @brief Takes, renews or leaves the seat of @p asks when the ask is newer
- * than the one @p state served. */
+ * than the one @p state served; the state of the room the master answers a
+ * seat taken with is published as a read of that room. */
 void serveSeat(network::MasterCasinoClient& client, const CasinoAsks& asks,
                CasinoLinkState& state) {
   if (asks.seatAsk <= state.served.seatAsk) {
@@ -68,9 +83,10 @@ void serveSeat(network::MasterCasinoClient& client, const CasinoAsks& asks,
   }
   SeatReading reading{.ask = asks.seatAsk, .seat = asks.seat, .refusal = {}};
   reading.refusal = masterRefusalOf<CasinoRefusal>(
-      [&client, &asks] {
+      [&client, &asks, &state] {
         if (asks.seat.seated) {
-          static_cast<void>(client.takeSeat(asks.token, asks.seat.room));
+          publishSeatRoom(asks, client.takeSeat(asks.token, asks.seat.room),
+                          state);
         } else {
           client.leaveSeat(asks.token, asks.seat.room);
         }

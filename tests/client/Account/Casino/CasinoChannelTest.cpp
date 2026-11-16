@@ -135,6 +135,24 @@ TEST_F(CasinoChannelFixture, TheBetsCloseOnTheClockOfTheMaster) {
 }
 
 /**
+ * Given the room read, and the next read not due yet
+ * When the seat renewed answers that read again with a state 3 s later
+ * Then the room shows the newer state at once
+ */
+TEST_F(CasinoChannelFixture, KeepsANewerStateASeatAnswersBetweenTwoReads) {
+  channel().enter(CHANNEL_ROOM);
+  answerTheRead(roomAt(CHANNEL_MASTER_TIME));
+  wait(CHANNEL_FRAME);
+
+  answerTheRead(roomAt(CHANNEL_MASTER_TIME + THREE_SECONDS));
+  wait(std::chrono::milliseconds::zero());
+
+  ASSERT_EQ(link().roomsRead.size(), 1U);
+  EXPECT_EQ(channel().room().value_or(CasinoRoomState{}).serverTime,
+            MillisecondDate{CHANNEL_MASTER_TIME + THREE_SECONDS});
+}
+
+/**
  * Given the room read, then read again
  * When the master answers the second read with an earlier time
  * Then the earlier answer is dropped: the room keeps the clock of the first

@@ -85,11 +85,13 @@ std::optional<network::CasinoRoomState> CasinoRoomWatch::shown() const {
 std::optional<std::uint8_t> CasinoRoomWatch::room() const { return room_; }
 
 void CasinoRoomWatch::keep(const std::optional<CasinoRoomReading>& reading) {
-  if (answered_ || !reading.has_value() || reading->ask != ask_) {
+  if (!reading.has_value() || reading->ask != ask_) {
     return;
   }
-  answered_ = true;
-  sinceAnswer_ = engine::Duration::zero();
+  if (!answered_) {
+    answered_ = true;
+    sinceAnswer_ = engine::Duration::zero();
+  }
   if (!reading->state.has_value() || reading->state->id != room_ ||
       (state_.has_value() && !isNewer(*reading->state, *state_))) {
     return;
