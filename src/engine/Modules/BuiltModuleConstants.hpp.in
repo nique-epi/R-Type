@@ -45,9 +45,6 @@ constexpr bool MASTER_LINK_MODULE_BUILT = RTYPE_MODULE_MASTER_LINK == 1;
 constexpr bool ADMIN_CONSOLE_MODULE_BUILT = RTYPE_MODULE_ADMIN_CONSOLE == 1;
 /** @brief Whether each game holds its `chat` module. */
 constexpr bool CHAT_MODULE_BUILT = RTYPE_MODULE_CHAT == 1;
-/** @brief Whether each game holds its `casino` module, the roulette table of
- * its waiting room. */
-constexpr bool CASINO_MODULE_BUILT = RTYPE_MODULE_CASINO == 1;
 /** @brief Whether an Application runs the `plugin` and `plugin-folder` lines
  * and loads the shared libraries they name. */
 constexpr bool PLUGINS_BUILT = RTYPE_MODULE_PLUGINS == 1;
@@ -59,5 +56,8 @@ constexpr bool ACCOUNTS_MODULE_BUILT = RTYPE_MODULE_ACCOUNTS == 1;
 /** @brief Whether the master holds its `wallet` module, which needs the
  * `accounts` module and is left out without it. */
 constexpr bool WALLET_MODULE_BUILT = RTYPE_MODULE_WALLET == 1;
+/** @brief Whether the master holds its `casino` module, which needs the
+ * `wallet` module and is left out without it. */
+constexpr bool CASINO_MODULE_BUILT = RTYPE_MODULE_CASINO == 1;
 
 }  // namespace rtype::engine

@@ -18,12 +18,15 @@ MissingPasswordKeyException::MissingPasswordKeyException(
                       "of its accounts (`openssl rand -hex 32`), or turn them "
                       "off with `module accounts off` in master.cfg, after "
                       "the modules that need them, such as "
-                      "`module wallet off`") {}
+                      "`module casino off` and `module wallet off`") {}
 
 InvalidPasswordKeyException::InvalidPasswordKeyException(
     std::string_view variable)
     : MasterException(std::string{variable} +
                       " holds no key: 64 hexadecimal digits are expected, as "
                       "`openssl rand -hex 32` draws them") {}
+
+CasinoStakeRefusedException::CasinoStakeRefusedException()
+    : MasterException("the wallet refused the stake of the bets") {}
 
 }  // namespace rtype::master

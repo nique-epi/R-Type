@@ -229,8 +229,7 @@ TEST_F(WalletRoutesFixture, PaginatesTheJournal) {
  * Then the accounts answer, and no route of the wallets does
  */
 TEST(WalletRoutes, AMasterWithItsWalletsOffStarts) {
-  const RunningMaster master(
-      std::vector<std::string>{std::string{WALLET_MODULE_OFF_LINE}});
+  const RunningMaster master(walletOffLines());
 
   const httplib::Result created = sendRouteCall(
       master.port(), credentialsCall(USERS_URL, aceCredentials()));

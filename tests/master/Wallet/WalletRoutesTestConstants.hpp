@@ -21,13 +21,11 @@ constexpr std::string_view ONE_LINE_QUERY = "?limit=1";
 constexpr std::string_view NO_LINE_QUERY = "?limit=0";
 
 /** @brief The line that gives the wallets of the tests 1000 kopecks when they
- * open, the chips keeping their default of 500, and the line that turns the
- * wallets off. */
+ * open, the chips keeping their default of 500. */
 constexpr std::string_view STARTING_KOPECKS_LINE =
     "set wallet-starting-kopecks 1000";
 constexpr std::int64_t STARTING_KOPECKS_SET = 1'000;
 constexpr std::int64_t DEFAULT_STARTING_CHIPS_READ = 500;
-constexpr std::string_view WALLET_MODULE_OFF_LINE = "module wallet off";
 
 /** @brief Bodies of the cashier: 200 kopecks into chips, more kopecks than the
  * wallet holds, none, and a currency the cashier does not know. */

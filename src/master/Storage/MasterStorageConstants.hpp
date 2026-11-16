@@ -264,13 +264,48 @@ CREATE TABLE credited_results (
 )sql";
 
 /**
+ * @brief The tables of the casino (migration 8): the seats taken in each room,
+ * the bets of each player on a round, and the number each round drew, written
+ * once, when its bets close. A seat counts while it was seen in the last
+ * network::CASINO_SEAT_LIFETIME; a bet holds its kind as text, as JSON writes
+ * it.
+ */
+constexpr std::string_view CASINO_MIGRATION = R"sql(
+CREATE TABLE casino_seats (
+  room    INTEGER NOT NULL,
+  user_id INTEGER NOT NULL REFERENCES users (id),
+  seen_at INTEGER NOT NULL,
+  PRIMARY KEY (room, user_id)
+) STRICT, WITHOUT ROWID;
+
+CREATE TABLE casino_bets (
+  room         INTEGER NOT NULL,
+  round        INTEGER NOT NULL,
+  user_id      INTEGER NOT NULL REFERENCES users (id),
+  position     INTEGER NOT NULL,
+  kind         TEXT    NOT NULL,
+  first_number INTEGER NOT NULL,
+  amount       INTEGER NOT NULL CHECK (amount > 0),
+  PRIMARY KEY (room, round, user_id, position)
+) STRICT, WITHOUT ROWID;
+
+CREATE TABLE casino_rounds (
+  room           INTEGER NOT NULL,
+  round          INTEGER NOT NULL,
+  winning_number INTEGER NOT NULL,
+  drawn_at       INTEGER NOT NULL,
+  PRIMARY KEY (room, round)
+) STRICT, WITHOUT ROWID;
+)sql";
+
+/**
  * @brief The migrations of the database of the master, in order:
  * MASTER_MIGRATIONS[0] is version 1. A change adds a migration at the end and
  * never edits one a master already applied.
  */
-constexpr std::array<std::string_view, 7> MASTER_MIGRATIONS{
+constexpr std::array<std::string_view, 8> MASTER_MIGRATIONS{
     SERVERS_MIGRATION, STATUSES_MIGRATION,     PROBES_MIGRATION,
     RESULTS_MIGRATION, MACHINE_LOAD_MIGRATION, ACCOUNTS_MIGRATION,
-    WALLET_MIGRATION};
+    WALLET_MIGRATION,  CASINO_MIGRATION};
 
 }  // namespace rtype::master

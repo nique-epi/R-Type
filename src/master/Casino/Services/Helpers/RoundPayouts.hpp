@@ -1,0 +1,28 @@
+#pragma once
+
+#include <cstdint>
+#include <map>
+#include <vector>
+#include "PlayerBet.hpp"
+#include "RouletteBet.hpp"
+
+namespace rtype::master {
+
+/** @returns The chips @p bets hold. */
+[[nodiscard]] std::uint32_t stakeOf(
+    const std::vector<network::RouletteBet>& bets);
+
+/** @returns The chips each account staked in @p bets. */
+[[nodiscard]] std::map<std::int64_t, std::uint32_t> stakesOf(
+    const std::vector<PlayerBet>& bets);
+
+/** @returns What @p bets return when @p drawn comes out, by account
+ * (network::payoutOf()); an account all of whose bets lost has 0. */
+[[nodiscard]] std::map<std::int64_t, std::uint32_t> payoutsOf(
+    const std::vector<PlayerBet>& bets, std::uint8_t drawn);
+
+/** @returns What @p bets of one account return when @p drawn comes out. */
+[[nodiscard]] std::uint32_t payoutOfBets(
+    const std::vector<network::RouletteBet>& bets, std::uint8_t drawn);
+
+}  // namespace rtype::master
