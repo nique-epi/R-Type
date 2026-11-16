@@ -3,6 +3,8 @@ find_package(nlohmann_json CONFIG REQUIRED)
 add_library(rtype_master_http_module STATIC
   MasterHttpModule.cpp
   MasterHttpServer.cpp
+  SiteVisitorAddress.cpp
+  SiteVisitors.cpp
 )
 
 target_include_directories(rtype_master_http_module PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
@@ -19,6 +21,8 @@ target_link_libraries(rtype_master_http_module
     nlohmann_json::nlohmann_json
     rtype_master_constants
     rtype_network_constants
+    rtype_network_exceptions
+    rtype_network_hashing
 )
 
 rtype_enable_warnings(rtype_master_http_module)
