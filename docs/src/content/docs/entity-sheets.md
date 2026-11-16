@@ -417,7 +417,7 @@ The 22 look items are bodies of side `look_item` that float to the left, `steady
 | `look_monocle` | `monocle` | 24 × 32 | 6 × 8 at 414 |
 | `look_long_beard` | `long_beard` | 48 × 36 | 12 × 9 at 432 |
 
-The top hat, the cool shades and the mustache are in the locker from the first launch and have no sheet.
+The top hat, the cool shades and the mustache are the starter kit: every account of the master owns them from the first read of its wallet, and a guest wears them. They have no sheet.
 
 ## The shipped sheets and vanilla games
 

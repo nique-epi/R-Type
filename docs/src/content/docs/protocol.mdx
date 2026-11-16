@@ -104,7 +104,7 @@ A datagram is a 22-byte header followed by one or more messages. The header, byt
 | Offset | Size | Field | In version 18 |
 |---|---|---|---|
 | 0 | 4 | `protocolId` | `0x52545950`, `RTYP` in ASCII |
-| 4 | 1 | `version` | 16 |
+| 4 | 1 | `version` | 18 |
 | 5 | 1 | `flags` | `ACKNOWLEDGES` 0x01, `GUARANTEED` 0x02, `COMPRESSED` 0x04, every other bit 0 |
 | 6 | 8 | `sessionToken` | 0 until the connection is accepted, then the token given by the server |
 | 14 | 2 | `sequence` | number of the datagram for its sender |
@@ -262,7 +262,7 @@ A player dresses its ship in the hangar with items of a catalog of 30: 20 for th
 - **Copies.** A look equal to the one the server keeps for the player is a copy: the server answers it to its sender alone, so a client whose confirmation was lost still gets it, and writes to no other player. A changed look goes to every player.
 - **Rate.** The server takes at most one `ShipLookChoice` per player every 100 ms (6 ticks). A choice sooner is ignored and not kept, so its next copy goes through.
 - **Arrival.** The server sends a `PlayerLooks` to every player each time a player arrives, so a newcomer sees the others and the others see its empty look. A seat freed by a departure forgets its look, so the next player on it wears nothing.
-- **Winning.** A look item is an entity whose sheet has the side `look_item`. When a ship touches it, the server records the touch, and at the start of the next tick it gives the item to the lowest `playerNumber` among the pilots who touched it and still fly the ship that touched it, removes it (`EntityDestroyed`, `Removed`) and sends that player alone a `LookItemWon`. An item no such pilot is left for stays. The client keeps the number in its locker.
+- **Winning.** A look item is an entity whose sheet has the side `look_item`. When a ship touches it, the server records the touch, and at the start of the next tick it gives the item to the lowest `playerNumber` among the pilots who touched it and still fly the ship that touched it, removes it (`EntityDestroyed`, `Removed`) and sends that player alone a `LookItemWon`. An item no such pilot is left for stays. The server also keeps the item among the looks the player won in the game, and the master gives it to the account of a signed-in player once the server reports the game, a vanilla one only (see [Master](/R-Type/master/#crediting-the-games)); the client decodes `LookItemWon` and does nothing with it.
 
 Alternative considered: a `GameEvent` kind for the item won. It needs no new type, but a decoder refuses a kind it does not know, so an older client would count the whole message malformed, and the numbers of the events are global to a game.
 
@@ -743,7 +743,7 @@ Only the messages of [Ordered messages](#ordered-messages) are sent again until 
 | every send of an `EnemyAction` | not corrected: the enemy keeps its idle animation for that step; its position and health stay right through the state messages | — |
 | every send of a `GameEvent` or a `PlayerLeft` | not corrected: the sound, effect or message on screen is missed; lives, scores and players stay right through the state messages | — |
 | every send of a `PlayerLooks` | not corrected: the look of a pilot is missed until the next `PlayerLooks`; the client sends its own look again until one shows it | — |
-| every send of a `LookItemWon` | not corrected: the item is gone from the sky and not in the locker | — |
+| every send of a `LookItemWon` | nothing to correct: the client does nothing with it, and the item reaches the account of the player through the result of the game | — |
 | every send of an `EffectPlayed` | not corrected: that effect is missed; the look of the body stays right through the state messages | — |
 | every send of a `LevelStatus` | the next `LevelStatus`, which holds the whole state: until then the client keeps the biome and the scroll speed of the last one it got | the next change of the level |
 | every send of a `PlayerChatLine` | not corrected: that player misses the line; when it is the writer, it sends the line again until it gives up after 5 s, and the server ignores those copies | — |
@@ -894,7 +894,7 @@ Version 17 gives a ship look a fourth byte, `hull`, after `face`: `ShipLookChoic
 
 ## Version 18
 
-Version 18 lets a player who signed in to the master earn from its games: `ConnectionRequest` carries `accountId`, a `u64` after `nickname`, 0 for a guest. The server reads any value and proves none: it only passes the account on with the results it reports to the master. A peer of version 17 would read the account as the kind and the number of the game, so `version` became 18, and the server answers a client of version 17 with `ConnectionRefused` (`IncompatibleVersion`). The smallest request grows from 38 to 46 bytes, so every answer to a sender that did not prove its address stays smaller than it. The layout of the header and of every other message is the same as in version 17.
+Version 18 lets a player who signed in to the master earn from its games: `ConnectionRequest` carries `accountId`, a `u64` after `nickname`, 0 for a guest. The server reads any value and proves none: it only passes the account on with the results it reports to the master. A peer of version 17 would read the account as the kind and the number of the game, so `version` became 18, and the server answers a client of version 17 with `ConnectionRefused` (`IncompatibleVersion`). The smallest request grows from 38 to 46 bytes, so every answer to a sender that did not prove its address stays smaller than it. The layout of the header and of every other message is the same as in version 17. The client of version 18 no longer adds the item of a `LookItemWon` to a locker of its own: the looks an account owns live on the master (see [Ship looks](#ship-looks)).
 
 ## Implementation status
 

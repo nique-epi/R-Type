@@ -21,7 +21,7 @@ cmake --workflow --preset build
 ./r-type_client
 ```
 
-Run the last two commands in two terminals. In the client, PLAY then SERVER opens the server map, which needs the master; to join a server directly, launch the client with `-h <address>`, so SERVER joins it at once, or open the connection screen with D (ADDRESS) and press CONNECT. The sections below give the prerequisites for each system, every option, and a game of four.
+Run the last two commands in two terminals. In the client, PLAY opens the server map, which needs the master; to join a server directly, launch the client with `-h <address>`, so PLAY joins it at once, or open the connection screen with D (ADDRESS) and press CONNECT. The sections below give the prerequisites for each system, every option, and a game of four.
 
 ### A game of four players
 
@@ -40,7 +40,7 @@ On each of the four machines, or four terminals of one machine, with a different
 ./r-type_client -h 192.168.1.20 -p 4242 -n DASH
 ```
 
-Each client is given its server with `-h`, so PLAY then SERVER joins it at once, its connection screen filled with these values; without `-h`, SERVER opens the server map, and D (ADDRESS) there opens the connection screen, where CONNECT joins. The supervisor sends the four pilots to the same game, where each gets a number from 1 to 4. A fifth player lands in a second game, and is refused only when the eight games are full. Once every connected pilot says it is ready in the waiting room, the game starts; the arrows move the ship and the space bar shoots, until the player changes the keys in SETTINGS. When it ends, the end screen ranks the four pilots.
+Each client is given its server with `-h`, so PLAY on the title joins it at once, its connection screen filled with these values; without `-h`, PLAY opens the server map, and D (ADDRESS) there opens the connection screen, where CONNECT joins. The supervisor sends the four pilots to the same game, where each gets a number from 1 to 4. A fifth player lands in a second game, and is refused only when the eight games are full. Once every connected pilot says it is ready in the waiting room, the game starts; the arrows move the ship and the space bar shoots, until the player changes the keys in SETTINGS. When it ends, the end screen ranks the four pilots.
 
 ## Features
 
@@ -92,6 +92,8 @@ Each optional module has a CMake option, on by default. Off, its folder is not c
 | `RTYPE_MODULE_PLUGINS` | the loading of plugins | `plugin` and `plugin-folder` are unknown commands |
 | `RTYPE_MODULE_GAME_STATISTICS` | the `game-statistics` plugin; off whenever `RTYPE_MODULE_PLUGINS` is | no `game-statistics` file in `plugins/` |
 | `RTYPE_MODULE_ACCOUNTS` | the accounts and sessions of the master | the master answers 404 to `/api/users` and `/api/sessions`, and `admin` is an unknown command of `master.cfg` |
+| `RTYPE_MODULE_WALLET` | the wallets of the accounts of the master: kopecks, chips and owned looks; off whenever `RTYPE_MODULE_ACCOUNTS` is | the master answers 404 to `/api/users/me/wallet` and `/api/users/me/looks`, credits no game, and refuses `set wallet-starting-kopecks` and `set wallet-starting-chips` |
+| `RTYPE_MODULE_CASINO` | the casino of the master: roulette rooms whose rounds follow the clock; off whenever `RTYPE_MODULE_WALLET` is | the master answers 404 to `/api/casino/rooms`, and refuses the `casino-*` settings |
 
 ```bash
 cmake --preset default -DRTYPE_MODULE_AUDIO=OFF
@@ -186,7 +188,7 @@ The server reads the waves of Bydos from `assets/waves/waves.toml`, in the `asse
 ./r-type_client -h 192.168.1.20 -p 4243 -n ACE
 ```
 
-Without `-h`, PLAY then SERVER opens the server map: the servers the master lists, `https://master.rtype.app` unless `set master-url` (in `client.cfg`, or `--set master-url=<url>`) names another, around the planet of the player by the ping the client measures, and the games of each; Enter or a click joins one, asking only for the callsign. The GLOBAL tab of the leaderboard reads the same master. Start the master and a server registered with it first (see [the master page](https://nique-epi.github.io/R-Type/master/)): without the master, the map shows `MASTER UNREACHABLE`.
+Without `-h`, PLAY opens the server map: the servers the master lists, `https://master.rtype.app` unless `set master-url` (in `client.cfg`, or `--set master-url=<url>`) names another, around the planet of the player by the ping the client measures, and the games of each; Enter or a click joins one, asking only for the callsign. The GLOBAL tab of the leaderboard reads the same master. Start the master and a server registered with it first (see [the master page](https://nique-epi.github.io/R-Type/master/)): without the master, the map shows `MASTER UNREACHABLE`.
 
 The client is given the IPv4 address and the port of the server, `127.0.0.1` and 4242 by default, and the nickname of the player, `PILOT` by default; the connection screen, which D (ADDRESS) opens from the map, starts with them. CONNECT on that screen joins any server, without the master: without a server, the screen shows `SERVER UNREACHABLE` after 5 seconds.
 
@@ -198,6 +200,12 @@ The client is given the IPv4 address and the port of the server, `127.0.0.1` and
 `--game new` asks the server for a game of its own, which other players may join; `--game <n>` joins the game the server numbers `n` (`GAME 2` in the list of the master), and the connection screen says `REFUSED: NO SUCH GAME` when there is none. Without `--game` the client takes any game with a free seat. A game starts once all its connected players are ready, whoever opened it.
 
 `--no-sound` starts the client without sound: the screens and the volumes work as usual, and nothing plays.
+
+```bash
+./r-type_client --session rts_<64 hexadecimal digits>
+```
+
+`--session` signs the client in to the account of a session of the master, the token `POST /api/sessions` answers (see [the master page](https://nique-epi.github.io/R-Type/master/#accounts-and-sessions-accountsmodule)): its games then credit kopecks and looks to that account, and the shop, the hangar and the casino read and spend what it holds on the master. The token stays in memory, never in a file or the journal. Without it the player is a guest: it wears the starter kit, earns nothing, and the shop and the casino ask it to sign in. The routes of an account answer over HTTPS only, so the master is one behind Caddy, as `https://master.rtype.app` is.
 
 ```bash
 ./r-type_client --network bad

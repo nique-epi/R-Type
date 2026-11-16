@@ -69,6 +69,8 @@ Each optional module has a CMake option, on by default. Turned off, its folder i
 | `RTYPE_MODULE_PLUGINS` | the loading of plugins |
 | `RTYPE_MODULE_GAME_STATISTICS` | the `game-statistics` plugin; off whenever `RTYPE_MODULE_PLUGINS` is |
 | `RTYPE_MODULE_ACCOUNTS` | the accounts and sessions of the master |
+| `RTYPE_MODULE_WALLET` | the wallets of the accounts of the master; off whenever `RTYPE_MODULE_ACCOUNTS` is |
+| `RTYPE_MODULE_CASINO` | the casino of the master; off whenever `RTYPE_MODULE_WALLET` is |
 
 ```bash
 cmake --preset default -DRTYPE_MODULE_AUDIO=OFF
