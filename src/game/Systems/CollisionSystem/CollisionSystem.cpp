@@ -1,6 +1,8 @@
 #include "CollisionSystem.hpp"
 #include <algorithm>
 #include <cstddef>
+#include <optional>
+#include "BodyMasks.hpp"
 #include "Bounds.hpp"
 #include "BoundsOf.hpp"
 #include "CandidatePair.hpp"
@@ -11,12 +13,14 @@
 #include "CollisionFiltering.hpp"
 #include "CollisionSystemConstants.hpp"
 #include "ComponentRegistry.hpp"
+#include "ContactShape.hpp"
 #include "Entity.hpp"
-#include "EntityBounds.hpp"
+#include "EntityShape.hpp"
 #include "EventBus.hpp"
 #include "HitboxParts.hpp"
-#include "Overlaps.hpp"
+#include "PlacedMask.hpp"
 #include "Position.hpp"
+#include "ShapeContacts.hpp"
 #include "Summoning.hpp"
 #include "TimeConstants.hpp"
 
@@ -43,11 +47,15 @@ void CollisionSystem::gatherCandidates(engine::ComponentRegistry& components) {
         if (filter == nullptr || components.has<Summoning>(entity)) {
           return;
         }
+        const std::optional<engine::PlacedMask> mask =
+            bodyMaskAt(components, entity, position);
         for (const CollisionBox& part :
              collidingBoxesOf(box, components.get<HitboxParts>(entity))) {
           const engine::Bounds bounds = boundsOf(position, part);
-          candidates_.push_back(EntityBounds{
-              .entity = entity, .bounds = bounds, .filter = *filter});
+          candidates_.push_back(
+              EntityShape{.entity = entity,
+                          .shape = ContactShape{.bounds = bounds, .mask = mask},
+                          .filter = *filter});
           grid_.insert(bounds);
         }
       });
@@ -71,11 +79,11 @@ void CollisionSystem::publishOverlaps() {
 }
 
 bool CollisionSystem::touch(const engine::CandidatePair& pair) const {
-  const EntityBounds& first = candidates_[pair.first];
-  const EntityBounds& second = candidates_[pair.second];
+  const EntityShape& first = candidates_[pair.first];
+  const EntityShape& second = candidates_[pair.second];
   return first.entity != second.entity &&
          engine::mayCollide(first.filter, second.filter) &&
-         engine::overlaps(first.bounds, second.bounds);
+         shapesTouch(first.shape, second.shape);
 }
 
 bool CollisionSystem::hasSeveralBoxes(std::size_t candidate) const {

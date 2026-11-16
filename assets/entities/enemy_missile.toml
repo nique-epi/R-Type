@@ -26,6 +26,9 @@ top_speed = 360
 [gameplay.behaviour]
 heading = -1
 
+[gameplay.mask]
+file = "masks/enemy_missile.txt"
+
 [appearance]
 sheet = "sprites/entities.png"
 

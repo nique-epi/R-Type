@@ -10,6 +10,9 @@ namespace rtype::client::testing {
 /** @returns The files of the pack of the lancer, by path. */
 [[nodiscard]] std::vector<identifiers::ContentFile> lancerFiles();
 
+/** @returns The files of the lancer with its mask file, by path. */
+[[nodiscard]] std::vector<identifiers::ContentFile> lancerFilesWithAMask();
+
 /** @returns The files of the lancer, its sheet naming a sprite sheet outside
  * the pack. */
 [[nodiscard]] std::vector<identifiers::ContentFile>

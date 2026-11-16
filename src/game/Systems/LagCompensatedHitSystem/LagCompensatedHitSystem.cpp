@@ -8,6 +8,7 @@
 #include "ActiveHurtsLaying.hpp"
 #include "BeamLine.hpp"
 #include "BeamOverlap.hpp"
+#include "BodyMasks.hpp"
 #include "Bounds.hpp"
 #include "BoundsOf.hpp"
 #include "CollidingBoxes.hpp"
@@ -16,9 +17,10 @@
 #include "CollisionFilter.hpp"
 #include "CollisionFiltering.hpp"
 #include "ComponentRegistry.hpp"
+#include "ContactShape.hpp"
 #include "CurrentAction.hpp"
 #include "Entity.hpp"
-#include "EntityBounds.hpp"
+#include "EntityShape.hpp"
 #include "EntityType.hpp"
 #include "EventBus.hpp"
 #include "HitboxParts.hpp"
@@ -27,12 +29,13 @@
 #include "Intent.hpp"
 #include "LagCompensationConstants.hpp"
 #include "MissileHit.hpp"
-#include "Overlaps.hpp"
 #include "PastBeam.hpp"
 #include "PastEnemy.hpp"
 #include "PastTick.hpp"
+#include "PlacedMask.hpp"
 #include "Position.hpp"
 #include "PreHitCheck.hpp"
+#include "ShapeContacts.hpp"
 #include "ShipContact.hpp"
 #include "Shootable.hpp"
 #include "SteadyMotion.hpp"
@@ -85,17 +88,17 @@ auto shootableIn(const engine::ComponentRegistry& components) {
 }
 
 /** @returns The first box of @p enemies whose filter and the one of
- * @p tester engine::mayCollide() keeps, that overlaps the box of @p tester
- * and that @p kept keeps (see stillIn() and shootableIn()); nothing when
- * none is. */
+ * @p tester engine::mayCollide() keeps, whose shape touches the shape of
+ * @p tester (shapesTouch(): the boxes, then the masks) and that @p kept keeps
+ * (see stillIn() and shootableIn()); nothing when none is. */
 template <typename Kept>
 std::optional<PastEnemy> firstHitAmong(const std::vector<PastEnemy>& enemies,
-                                       const EntityBounds& tester,
+                                       const EntityShape& tester,
                                        const Kept& kept) {
   const auto hit =
       std::ranges::find_if(enemies, [&tester, &kept](const PastEnemy& enemy) {
         return engine::mayCollide(tester.filter, enemy.filter) &&
-               engine::overlaps(tester.bounds, enemy.bounds) && kept(enemy);
+               shapesTouch(tester.shape, enemy.shape) && kept(enemy);
       });
   if (hit == enemies.end()) {
     return std::nullopt;
@@ -104,16 +107,16 @@ std::optional<PastEnemy> firstHitAmong(const std::vector<PastEnemy>& enemies,
 }
 
 /** @returns The enemy of the first beam of @p beams whose filter and the one
- * of @p tester engine::mayCollide() keeps, that overlaps the box of @p tester
- * and is still an entity of @p components, as a threat of kind HurtBeam;
- * nothing when none is. */
+ * of @p tester engine::mayCollide() keeps, that touches the shape of @p tester
+ * (beamTouchesShape()) and is still an entity of @p components, as a threat
+ * of kind HurtBeam; nothing when none is. */
 std::optional<PastEnemy> firstBeamAmong(
-    const std::vector<PastBeam>& beams, const EntityBounds& tester,
+    const std::vector<PastBeam>& beams, const EntityShape& tester,
     const engine::ComponentRegistry& components) {
   const auto hit =
       std::ranges::find_if(beams, [&tester, &components](const PastBeam& beam) {
         return engine::mayCollide(tester.filter, beam.filter) &&
-               beamOverlaps(beam.line, tester.bounds) &&
+               beamTouchesShape(beam.line, tester.shape) &&
                components.has<EntityType>(beam.entity);
       });
   if (hit == beams.end()) {
@@ -126,7 +129,7 @@ std::optional<PastEnemy> firstBeamAmong(
  * firstHitAmong() and firstBeamAmong() tell it: a missile or a hurt box, then
  * a beam, before a body; nothing when none does. */
 std::optional<PastEnemy> firstThreatTo(
-    const PastTick& past, const EntityBounds& tester,
+    const PastTick& past, const EntityShape& tester,
     const engine::ComponentRegistry& components) {
   if (std::optional<PastEnemy> threat =
           firstHitAmong(past.threats, tester, stillIn(components))) {
@@ -139,16 +142,16 @@ std::optional<PastEnemy> firstThreatTo(
   return firstHitAmong(past.bodies, tester, stillIn(components));
 }
 
-/** @returns @p entity with the box @p bounds and its collision filter;
+/** @returns @p entity with the shape @p shape and its collision filter;
  * nothing for an entity without a filter, which touches nothing. */
-std::optional<EntityBounds> testerOf(engine::ComponentRegistry& components,
-                                     engine::Entity entity,
-                                     const engine::Bounds& bounds) {
+std::optional<EntityShape> testerOf(engine::ComponentRegistry& components,
+                                    engine::Entity entity,
+                                    const ContactShape& shape) {
   const auto* const filter = components.get<engine::CollisionFilter>(entity);
   if (filter == nullptr) {
     return std::nullopt;
   }
-  return EntityBounds{.entity = entity, .bounds = bounds, .filter = *filter};
+  return EntityShape{.entity = entity, .shape = shape, .filter = *filter};
 }
 
 /** @brief Adds to @p tick every active box and beam of the HurtZone of each
@@ -171,7 +174,7 @@ void recordHurts(engine::ComponentRegistry& components, PastTick& tick,
             hurts);
         for (const engine::Bounds& box : hurts.boxes) {
           tick.threats.push_back(PastEnemy{.entity = enemy,
-                                           .bounds = box,
+                                           .shape = ContactShape{.bounds = box},
                                            .kind = ThreatKind::HurtBox,
                                            .filter = *filter});
         }
@@ -184,7 +187,8 @@ void recordHurts(engine::ComponentRegistry& components, PastTick& tick,
 
 /** @brief Adds to @p tick each box (collidingBoxesOf()) of every enemy that
  * is not summoning and the box of every missile of an enemy of @p components,
- * of those that have a collision filter. */
+ * of those that have a collision filter, each with its CollisionMask laid
+ * where it stands now, so a rewound test reads the mask where it was. */
 void recordBodiesAndMissiles(engine::ComponentRegistry& components,
                              PastTick& tick) {
   components.forEach<EntityType, Position>(
@@ -201,12 +205,15 @@ void recordBodiesAndMissiles(engine::ComponentRegistry& components,
         if (box == nullptr || filter == nullptr) {
           return;
         }
+        const std::optional<engine::PlacedMask> mask =
+            bodyMaskAt(components, entity, position);
         for (const CollisionBox& part :
              collidingBoxesOf(*box, components.get<HitboxParts>(entity))) {
           (isABody ? tick.bodies : tick.threats)
               .push_back(PastEnemy{
                   .entity = entity,
-                  .bounds = boundsOf(position, part),
+                  .shape = ContactShape{.bounds = boundsOf(position, part),
+                                        .mask = mask},
                   .kind = isABody ? ThreatKind::Body : ThreatKind::Missile,
                   .filter = *filter});
         }
@@ -240,10 +247,11 @@ void LagCompensatedHitSystem::testPlayerMissiles(
             *side != EntityType::PlayerMissile) {
           return;
         }
-        const std::optional<EntityBounds> swept =
+        const std::optional<EntityShape> swept =
             testerOf(components, missile,
-                     sweptBack(boundsOf(position, *box),
-                               travelOf(components, missile, elapsed)));
+                     ContactShape{.bounds = sweptBack(
+                                      boundsOf(position, *box),
+                                      travelOf(components, missile, elapsed))});
         if (!swept.has_value()) {
           return;
         }
@@ -273,8 +281,10 @@ void LagCompensatedHitSystem::testShips(engine::ComponentRegistry& components) {
     if (box == nullptr || side == nullptr || *side != EntityType::Player) {
       return;
     }
-    const std::optional<EntityBounds> tester =
-        testerOf(components, ship, boundsOf(position, *box));
+    const std::optional<EntityShape> tester =
+        testerOf(components, ship,
+                 ContactShape{.bounds = boundsOf(position, *box),
+                              .mask = bodyMaskAt(components, ship, position)});
     if (!tester.has_value()) {
       return;
     }

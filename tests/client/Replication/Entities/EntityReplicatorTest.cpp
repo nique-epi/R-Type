@@ -7,6 +7,7 @@
 #include "AllEntityTypes.hpp"
 #include "AppearanceReference.hpp"
 #include "CollisionBox.hpp"
+#include "CollisionMask.hpp"
 #include "EffectConstants.hpp"
 #include "Entity.hpp"
 #include "EntityAnnouncements.hpp"
@@ -59,6 +60,8 @@ using rtype::client::testing::FIRST_POSITION;
 using rtype::client::testing::frozenPictureCount;
 using rtype::client::testing::HALFWAY_BETWEEN_THE_POSITIONS;
 using rtype::client::testing::historyPositionAt;
+using rtype::client::testing::HOLLOW_ENEMY_SIDE;
+using rtype::client::testing::HOLLOW_ENEMY_TYPE_NUMBER;
 using rtype::client::testing::isArriving;
 using rtype::client::testing::isFlashed;
 using rtype::client::testing::isInvulnerable;
@@ -67,6 +70,7 @@ using rtype::client::testing::LAST_KEPT_TICK;
 using rtype::client::testing::listed;
 using rtype::client::testing::LISTING_TICK;
 using rtype::client::testing::LOOK_ITEM_ID;
+using rtype::client::testing::maskOfThe;
 using rtype::client::testing::NAMED_LOOK;
 using rtype::client::testing::NEWER_TICK;
 using rtype::client::testing::NO_HISTORY_POSITION;
@@ -104,6 +108,7 @@ using rtype::client::testing::UNANNOUNCED_ID;
 using rtype::client::testing::WEAVER_TYPE_NUMBER;
 using rtype::engine::Entity;
 using rtype::game::CollisionBox;
+using rtype::game::CollisionMask;
 using rtype::game::EntityType;
 using rtype::game::HitboxParts;
 using rtype::game::NetworkIdentity;
@@ -1030,4 +1035,33 @@ TEST_F(EntityReplicatorFixture, HandsTheRemovalOfAClaimedMissileOn) {
 
   EXPECT_EQ(announcedEntityCount(components()), 0U);
   EXPECT_EQ(ownMissiles().destroyed().size(), 1U);
+}
+
+/**
+ * Given a replicator that has applied nothing
+ * When an enemy whose type has a collision mask is announced
+ * Then it carries the mask of its type, which the missiles of the player are
+ * tested against
+ */
+TEST_F(EntityReplicatorFixture, GivesAnEntityTheMaskOfItsType) {
+  replicator().apply(spawned(BYDO_ID, HOLLOW_ENEMY_TYPE_NUMBER, BYDO_POSITION));
+
+  const std::optional<CollisionMask> mask =
+      maskOfThe(components(), EntityType::Enemy);
+  ASSERT_TRUE(mask.has_value());
+  const CollisionMask found = mask.value_or(CollisionMask{});
+  ASSERT_NE(found.pixels, nullptr);
+  EXPECT_EQ(found.pixels->width(), HOLLOW_ENEMY_SIDE);
+  EXPECT_EQ(found.pixels->height(), HOLLOW_ENEMY_SIDE);
+}
+
+/**
+ * Given a replicator that has applied nothing
+ * When a Bydo, whose type has no collision mask, is announced
+ * Then it carries no CollisionMask: it is touched anywhere in its box
+ */
+TEST_F(EntityReplicatorFixture, GivesAnEntityWithoutAMaskNoCollisionMask) {
+  replicator().apply(spawned(BYDO_ID, DRIFTER_TYPE_NUMBER, BYDO_POSITION));
+
+  EXPECT_FALSE(maskOfThe(components(), EntityType::Enemy).has_value());
 }

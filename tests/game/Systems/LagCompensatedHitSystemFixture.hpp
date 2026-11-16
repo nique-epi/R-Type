@@ -25,6 +25,11 @@ class LagCompensatedHitSystemFixture : public ::testing::Test {
   /** @returns An enemy at @p position, with the box of an enemy. */
   engine::Entity enemyAt(Position position);
 
+  /** @returns An enemy at @p position with the box of an enemy and a
+   * CollisionMask of HOLLOW_ENEMY_SIDE pixels a side, its
+   * HOLLOW_ENEMY_DRAWN_ROWS top rows alone drawn. */
+  engine::Entity hollowEnemyAt(Position position);
+
   /** @returns An enemy at @p position that collides with TALL_ENEMY_PARTS. */
   engine::Entity tallEnemyAt(Position position);
 
