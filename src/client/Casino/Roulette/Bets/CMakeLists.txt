@@ -1,4 +1,5 @@
 add_library(rtype_client_casino_roulette_bets STATIC
+  ChipsAtHand.cpp
   RouletteMemory.cpp
   RouletteSlip.cpp
 )

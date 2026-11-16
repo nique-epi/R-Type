@@ -6,6 +6,7 @@
 #include <optional>
 #include <string>
 #include <vector>
+#include "ChipsAtHand.hpp"
 #include "ClothPlace.hpp"
 #include "RouletteBand.hpp"
 #include "RouletteBarStates.hpp"
@@ -40,21 +41,26 @@ std::uint64_t stakeOf(const std::vector<network::RouletteBet>& bets) {
   return stake;
 }
 
+/** @returns The chips the master holds on the cloth for the bets of
+ * @p reading it took; 0 before it took any. */
+std::uint32_t acceptedStakeOf(const RouletteReading& reading) {
+  return reading.accepted.has_value() ? reading.accepted->stake : 0;
+}
+
 /** @returns The chips the band shows for @p reading. */
 std::uint32_t chipsShownOf(const RouletteReading& reading) {
   if (!reading.room.has_value() ||
       reading.room->phase == RoulettePhase::Result) {
     return reading.walletChips;
   }
+  const std::uint32_t atHand =
+      chipsAtHandOf(reading.walletChips, reading.accepted);
   if (reading.room->phase == RoulettePhase::Spinning) {
-    return reading.chipsAtHand > reading.acceptedStake
-               ? reading.chipsAtHand - reading.acceptedStake
-               : 0;
+    const std::uint32_t staked = acceptedStakeOf(reading);
+    return atHand > staked ? atHand - staked : 0;
   }
   const std::uint64_t stake = stakeOf(reading.bets);
-  return reading.chipsAtHand > stake
-             ? static_cast<std::uint32_t>(reading.chipsAtHand - stake)
-             : 0;
+  return atHand > stake ? static_cast<std::uint32_t>(atHand - stake) : 0;
 }
 
 /** @returns What the wheel shows for @p reading: until the number is known,
@@ -115,7 +121,8 @@ RouletteBarStates barStatesOf(const RouletteReading& reading) {
   return RouletteBarStates{
       .clearOpen = open && !reading.bets.empty(),
       .rebetOpen = open && !reading.previousBets.empty() &&
-                   stakeOf(reading.previousBets) <= reading.chipsAtHand};
+                   stakeOf(reading.previousBets) <=
+                       chipsAtHandOf(reading.walletChips, reading.accepted)};
 }
 
 RouletteView rouletteViewOf(const RouletteReading& reading) {
@@ -133,7 +140,7 @@ RouletteView rouletteViewOf(const RouletteReading& reading) {
           .chips = chipsShownOf(reading),
           .stake = betsOpen(reading)
                        ? static_cast<std::uint32_t>(stakeOf(reading.bets))
-                       : reading.acceptedStake,
+                       : acceptedStakeOf(reading),
           .status = statusLineOf(reading),
           .chosenChip = reading.chosenChip}};
 }

@@ -5,6 +5,7 @@
 #include <optional>
 #include <string>
 #include <vector>
+#include "BetsReceipt.hpp"
 #include "CasinoRefusal.hpp"
 #include "CasinoRoomState.hpp"
 #include "ClothPlace.hpp"
@@ -26,15 +27,13 @@ struct RouletteReading {
   std::optional<network::CasinoRoomState> room = std::nullopt;
   /** @brief The nickname of the player, as the room lists it. */
   std::string ownNickname;
-  /** @brief The chips of the wallet, and those the player may lay on the
-   * round in progress: the chips left and those the master holds on the
-   * cloth. */
+  /** @brief The chips of the wallet. */
   std::uint32_t walletChips{};
-  std::uint32_t chipsAtHand{};
-  /** @brief The bets of the player for the round, and the chips of those the
-   * master took. */
+  /** @brief The bets of the player for the round, and the answer of the
+   * master to the newest of them it took, which holds the chips it left and
+   * those it holds on the cloth (chipsAtHandOf()). */
   std::vector<network::RouletteBet> bets;
-  std::uint32_t acceptedStake{};
+  std::optional<network::BetsReceipt> accepted = std::nullopt;
   /** @brief The bets the player held on the round, and what they paid, once
    * the master answered. */
   std::optional<network::RoundBets> ownBets = std::nullopt;

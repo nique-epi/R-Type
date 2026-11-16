@@ -7,6 +7,8 @@
 #include <cstddef>
 #include <memory>
 #include <optional>
+#include "BetsReading.hpp"
+#include "CasinoRoomState.hpp"
 #include "ClothConstants.hpp"
 #include "ClothPlace.hpp"
 #include "IAccountSession.hpp"
@@ -82,8 +84,13 @@ class RouletteScreen final : public IScreen {
   void layChip();
   /** @brief Sends every bet of the round. */
   void send();
-  [[nodiscard]] RouletteReading readTable() const;
-  void repaint();
+  /** @returns What the table shows of @p room and @p bets, the newest
+   * state of the room and answer to the bets, read once per frame. */
+  [[nodiscard]] RouletteReading readTable(
+      const std::optional<network::CasinoRoomState>& room,
+      const std::optional<BetsReading>& bets) const;
+  /** @brief Paints the table as @p reading shows it. */
+  void repaint(const RouletteReading& reading);
 
   IScreenNavigator* navigator_;
   ISoundPlayer* sounds_;

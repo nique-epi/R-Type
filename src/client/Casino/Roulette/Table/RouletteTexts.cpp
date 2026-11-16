@@ -10,6 +10,7 @@
 #include "CasinoPlayer.hpp"
 #include "CasinoRefusal.hpp"
 #include "CasinoRoomState.hpp"
+#include "ChipsAtHand.hpp"
 #include "Kopecks.hpp"
 #include "PocketColors.hpp"
 #include "RouletteColorConstants.hpp"
@@ -61,7 +62,8 @@ std::string bettingLineOf(const RouletteReading& reading) {
   if (reading.refusal.has_value()) {
     return refusalLineOf(*reading.refusal);
   }
-  if (reading.chipsAtHand == 0 && reading.bets.empty()) {
+  if (chipsAtHandOf(reading.walletChips, reading.accepted) == 0 &&
+      reading.bets.empty()) {
     return NO_CHIPS_LINE;
   }
   return BETS_CLOSE_IN_START +
