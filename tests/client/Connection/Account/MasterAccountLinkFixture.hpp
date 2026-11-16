@@ -28,10 +28,9 @@ class MasterAccountLinkFixture : public ::testing::Test {
    * it within LINK_READING_DEADLINE; nothing otherwise. */
   [[nodiscard]] std::optional<UserReading> userSoon(std::uint64_t ask) const;
 
-  /** @returns The wallet the link read for the ask @p ask, as soon as one
-   * holds balances within LINK_READING_DEADLINE; nothing otherwise. */
-  [[nodiscard]] std::optional<WalletReading> walletSoon(
-      std::uint64_t ask) const;
+  /** @returns The wallet the link read, as soon as one holds balances
+   * within LINK_READING_DEADLINE; nothing otherwise. */
+  [[nodiscard]] std::optional<WalletReading> walletSoon() const;
 
   /** @returns The answer @p read gives to the ask @p ask, once it gave one
    * within LINK_READING_DEADLINE; nothing otherwise. */

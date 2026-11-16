@@ -19,7 +19,7 @@
 class RecordingAccountLink final : public rtype::client::IAccountLink {
  public:
   std::uint64_t askUser(const std::string& token) override;
-  std::uint64_t askWallet(const std::string& token) override;
+  void askWallet(const std::string& token) override;
   std::uint64_t askPurchase(const std::string& token,
                             std::string_view item) override;
   std::uint64_t askExchange(

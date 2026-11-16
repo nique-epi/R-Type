@@ -47,7 +47,7 @@ class MasterCasinoLink final : public ICasinoLink {
   /** @brief Ends the thread, and with it its client. */
   void stop();
 
-  std::uint64_t askRooms() override;
+  void askRooms() override;
   std::uint64_t askRoom(std::uint8_t room) override;
   std::uint64_t askSeat(const std::string& token, CasinoSeat seat) override;
   std::uint64_t askBets(const std::string& token, network::RoomRound round,

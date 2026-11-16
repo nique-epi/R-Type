@@ -81,7 +81,6 @@ WalletChangeReading walletChangeOf(std::uint64_t ask, Change change) {
 void readWallet(network::MasterAccountClient& client, const AccountAsks& asks,
                 AccountLinkState& state) {
   state.wallet.publish(WalletReading{
-      .ask = asks.walletAsk,
       .token = asks.token,
       .wallet = readingOrNothing(
           [&client, &asks] { return client.readOwnWallet(asks.token); }),
@@ -152,11 +151,10 @@ std::uint64_t MasterAccountLink::askUser(const std::string& token) {
   return asked_.userAsk;
 }
 
-std::uint64_t MasterAccountLink::askWallet(const std::string& token) {
+void MasterAccountLink::askWallet(const std::string& token) {
   ++asked_.walletAsk;
   asked_.token = token;
   state_.asks.publish(asked_);
-  return asked_.walletAsk;
 }
 
 std::uint64_t MasterAccountLink::askPurchase(const std::string& token,

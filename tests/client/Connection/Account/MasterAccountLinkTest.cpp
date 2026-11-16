@@ -105,8 +105,9 @@ TEST_F(MasterAccountLinkFixture, ReadsTheBalancesAndTheLooks) {
       CannedAnswer{.status = LINK_OK_STATUS,
                    .body = rtype::network::ownedLooksText(LINK_LOOKS)});
 
-  const std::optional<WalletReading> reading =
-      walletSoon(link().askWallet(std::string{LINK_TOKEN}));
+  link().askWallet(std::string{LINK_TOKEN});
+
+  const std::optional<WalletReading> reading = walletSoon();
 
   ASSERT_TRUE(reading.has_value());
   EXPECT_EQ(reading->wallet, LINK_WALLET);
@@ -149,7 +150,7 @@ TEST_F(MasterAccountLinkFixture, APurchaseMadeReadsTheWalletAgain) {
 
   static_cast<void>(link().askPurchase(std::string{LINK_TOKEN}, LINK_CROWN));
 
-  const std::optional<WalletReading> reading = walletSoon(0);
+  const std::optional<WalletReading> reading = walletSoon();
   ASSERT_TRUE(reading.has_value());
   EXPECT_EQ(reading->wallet, LINK_WALLET_AFTER);
 }

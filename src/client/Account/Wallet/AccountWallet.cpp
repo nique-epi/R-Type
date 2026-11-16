@@ -62,7 +62,7 @@ std::optional<ShipLocker> AccountWallet::ownedLooks() const {
 
 void AccountWallet::askWallet() {
   if (session_->signedIn()) {
-    static_cast<void>(link_->askWallet(session_->token()));
+    link_->askWallet(session_->token());
   }
 }
 
@@ -98,7 +98,7 @@ void AccountWallet::followSession() {
   }
   followedToken_ = std::move(token);
   if (!followedToken_.empty()) {
-    static_cast<void>(link_->askWallet(followedToken_));
+    link_->askWallet(followedToken_);
   }
 }
 

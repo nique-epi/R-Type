@@ -127,7 +127,6 @@ void serveReads(network::MasterCasinoClient& client, const CasinoAsks& asks,
   }
   if (asks.roomsAsk > state.served.roomsAsk) {
     state.rooms.publish(CasinoRoomsReading{
-        .ask = asks.roomsAsk,
         .listing = readingOrNothing([&client] { return client.listRooms(); })});
     state.served.roomsAsk = asks.roomsAsk;
   }
@@ -150,10 +149,9 @@ void MasterCasinoLink::start(const std::string& url) {
 
 void MasterCasinoLink::stop() { thread_ = std::jthread{}; }
 
-std::uint64_t MasterCasinoLink::askRooms() {
+void MasterCasinoLink::askRooms() {
   ++asked_.roomsAsk;
   state_.asks.publish(asked_);
-  return asked_.roomsAsk;
 }
 
 std::uint64_t MasterCasinoLink::askRoom(std::uint8_t room) {

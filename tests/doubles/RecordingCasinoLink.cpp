@@ -6,7 +6,7 @@
 #include "RoomRound.hpp"
 #include "RouletteBets.hpp"
 
-std::uint64_t RecordingCasinoLink::askRooms() { return ++roomsAsks; }
+void RecordingCasinoLink::askRooms() { ++roomsAsks; }
 
 std::uint64_t RecordingCasinoLink::askRoom(std::uint8_t room) {
   roomsRead.push_back(room);

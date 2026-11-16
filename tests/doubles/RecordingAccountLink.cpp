@@ -13,9 +13,9 @@ std::uint64_t RecordingAccountLink::askUser(const std::string& token) {
   return ++asked.userAsk;
 }
 
-std::uint64_t RecordingAccountLink::askWallet(const std::string& token) {
+void RecordingAccountLink::askWallet(const std::string& token) {
   asked.token = token;
-  return ++asked.walletAsk;
+  ++asked.walletAsk;
 }
 
 std::uint64_t RecordingAccountLink::askPurchase(const std::string& token,

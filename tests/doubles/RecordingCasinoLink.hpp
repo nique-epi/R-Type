@@ -17,7 +17,7 @@
  */
 class RecordingCasinoLink final : public rtype::client::ICasinoLink {
  public:
-  std::uint64_t askRooms() override;
+  void askRooms() override;
   std::uint64_t askRoom(std::uint8_t room) override;
   std::uint64_t askSeat(const std::string& token,
                         rtype::client::CasinoSeat seat) override;

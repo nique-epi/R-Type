@@ -32,7 +32,7 @@ std::optional<network::CasinoRoomListing> CasinoChannel::rooms() const {
   return readings.rooms->listing;
 }
 
-void CasinoChannel::askRooms() { static_cast<void>(link_->askRooms()); }
+void CasinoChannel::askRooms() { link_->askRooms(); }
 
 void CasinoChannel::enter(std::uint8_t room) {
   if (watch_.room() == room) {

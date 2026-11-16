@@ -27,9 +27,9 @@ class IAccountLink {
   /** @returns The number of this ask for the account of @p token. */
   virtual std::uint64_t askUser(const std::string& token) = 0;
 
-  /** @returns The number of this ask for the balances and the looks of the
-   * account of @p token. */
-  virtual std::uint64_t askWallet(const std::string& token) = 0;
+  /** @brief Asks the balances and the looks of the account of @p token;
+   * wallet() answers it, with the token it was read with. */
+  virtual void askWallet(const std::string& token) = 0;
 
   /** @returns The number of this purchase of the look @p item by the account
    * of @p token. */

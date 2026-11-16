@@ -22,8 +22,8 @@ class ICasinoLink {
  public:
   virtual ~ICasinoLink() = default;
 
-  /** @returns The number of this ask for the rooms of the casino. */
-  virtual std::uint64_t askRooms() = 0;
+  /** @brief Asks the rooms of the casino; readings() answers it. */
+  virtual void askRooms() = 0;
 
   /** @returns The number of this ask for the state of @p room. */
   virtual std::uint64_t askRoom(std::uint8_t room) = 0;

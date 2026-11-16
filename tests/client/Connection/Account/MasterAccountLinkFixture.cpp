@@ -52,13 +52,10 @@ std::optional<UserReading> MasterAccountLinkFixture::userSoon(
       [ask](const UserReading& reading) { return reading.ask == ask; });
 }
 
-std::optional<WalletReading> MasterAccountLinkFixture::walletSoon(
-    std::uint64_t ask) const {
-  return readingSoon<WalletReading>([this] { return link_.wallet(); },
-                                    [ask](const WalletReading& reading) {
-                                      return reading.ask == ask &&
-                                             reading.wallet.has_value();
-                                    });
+std::optional<WalletReading> MasterAccountLinkFixture::walletSoon() const {
+  return readingSoon<WalletReading>(
+      [this] { return link_.wallet(); },
+      [](const WalletReading& reading) { return reading.wallet.has_value(); });
 }
 
 std::optional<WalletChangeReading> MasterAccountLinkFixture::answerSoon(
