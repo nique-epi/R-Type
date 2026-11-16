@@ -214,4 +214,10 @@ CasinoReadings MasterCasinoLink::readings() const {
                         .ownBets = state_.ownBets.value()};
 }
 
+std::uint64_t MasterCasinoLink::revision() const {
+  return state_.rooms.revision() + state_.room.revision() +
+         state_.seat.revision() + state_.bets.revision() +
+         state_.ownBets.revision();
+}
+
 }  // namespace rtype::client

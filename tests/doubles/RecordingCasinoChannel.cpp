@@ -38,8 +38,8 @@ void RecordingCasinoChannel::placeBets(
   sentBets.push_back(bets);
 }
 
-std::optional<rtype::client::BetsReading> RecordingCasinoChannel::lastBets()
-    const {
+const std::optional<rtype::client::BetsReading>&
+RecordingCasinoChannel::lastBets() const {
   return betsAnswer;
 }
 

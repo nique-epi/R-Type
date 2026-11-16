@@ -27,8 +27,13 @@ class RecordingCasinoLink final : public rtype::client::ICasinoLink {
   std::uint64_t askOwnBets(const std::string& token,
                            rtype::network::RoomRound round) override;
   [[nodiscard]] rtype::client::CasinoReadings readings() const override;
+  /** @returns A new number at each call, since a test sets the answers
+   * without telling it: a reader copies them every time. */
+  [[nodiscard]] std::uint64_t revision() const override;
 
   rtype::client::CasinoReadings answers;
+  /** @brief How many times revision() was called. */
+  mutable std::uint64_t revisionsRead{};
 
   std::uint64_t roomsAsks{};
   std::vector<std::uint8_t> roomsRead;

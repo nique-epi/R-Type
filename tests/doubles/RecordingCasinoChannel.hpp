@@ -35,7 +35,7 @@ class RecordingCasinoChannel final : public rtype::client::ICasinoChannel {
   /** @brief Writes the round and the bets down. */
   void placeBets(std::uint64_t round,
                  const std::vector<rtype::network::RouletteBet>& bets) override;
-  [[nodiscard]] std::optional<rtype::client::BetsReading> lastBets()
+  [[nodiscard]] const std::optional<rtype::client::BetsReading>& lastBets()
       const override;
   [[nodiscard]] std::optional<rtype::network::RoundBets> ownBets(
       std::uint64_t round) const override;

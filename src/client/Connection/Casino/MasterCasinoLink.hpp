@@ -57,6 +57,7 @@ class MasterCasinoLink final : public ICasinoLink {
   std::uint64_t askOwnBets(const std::string& token,
                            network::RoomRound round) override;
   [[nodiscard]] CasinoReadings readings() const override;
+  [[nodiscard]] std::uint64_t revision() const override;
 
  private:
   CasinoAsks asked_;

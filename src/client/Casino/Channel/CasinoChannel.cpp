@@ -25,11 +25,10 @@ CasinoChannel::CasinoChannel(ICasinoLink& link, const IAccountSession& session,
       desk_(link, session, wallet) {}
 
 std::optional<network::CasinoRoomListing> CasinoChannel::rooms() const {
-  const CasinoReadings readings = link_->readings();
-  if (!readings.rooms.has_value()) {
+  if (!readings_.rooms.has_value()) {
     return std::nullopt;
   }
-  return readings.rooms->listing;
+  return readings_.rooms->listing;
 }
 
 void CasinoChannel::askRooms() { link_->askRooms(); }
@@ -64,7 +63,7 @@ void CasinoChannel::placeBets(std::uint64_t round,
   }
 }
 
-std::optional<BetsReading> CasinoChannel::lastBets() const {
+const std::optional<BetsReading>& CasinoChannel::lastBets() const {
   return desk_.lastBets();
 }
 
@@ -74,10 +73,14 @@ std::optional<network::RoundBets> CasinoChannel::ownBets(
 }
 
 void CasinoChannel::update(engine::Duration elapsed) {
-  const CasinoReadings readings = link_->readings();
-  watch_.follow(readings.room, elapsed);
-  seat_.follow(readings.seat, elapsed);
-  desk_.follow(readings, watch_.shown());
+  if (const std::uint64_t revision = link_->revision();
+      revision != readRevision_) {
+    readings_ = link_->readings();
+    readRevision_ = revision;
+  }
+  watch_.follow(readings_.room, elapsed);
+  seat_.follow(readings_.seat, elapsed);
+  desk_.follow(readings_, watch_.shown());
 }
 
 }  // namespace rtype::client

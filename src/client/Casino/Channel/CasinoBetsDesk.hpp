@@ -43,7 +43,7 @@ class CasinoBetsDesk {
               const std::optional<network::CasinoRoomState>& room);
 
   /** @returns The answer to the newest place(); nothing until it came. */
-  [[nodiscard]] std::optional<BetsReading> lastBets() const;
+  [[nodiscard]] const std::optional<BetsReading>& lastBets() const;
 
   /** @returns The bets read on @p round; nothing until they were. */
   [[nodiscard]] std::optional<network::RoundBets> ownBets(

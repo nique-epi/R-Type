@@ -60,7 +60,7 @@ class ICasinoChannel {
 
   /** @returns The answer to the newest placeBets(): the receipt, or why the
    * master refused, at once SignedOut for a guest; nothing until it came. */
-  [[nodiscard]] virtual std::optional<BetsReading> lastBets() const = 0;
+  [[nodiscard]] virtual const std::optional<BetsReading>& lastBets() const = 0;
 
   /** @returns The bets the player held on @p round of the room followed, and
    * what they paid, once the number of a round it bet on was drawn and the

@@ -37,3 +37,5 @@ std::uint64_t RecordingCasinoLink::askOwnBets(
 rtype::client::CasinoReadings RecordingCasinoLink::readings() const {
   return answers;
 }
+
+std::uint64_t RecordingCasinoLink::revision() const { return ++revisionsRead; }

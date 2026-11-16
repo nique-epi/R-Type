@@ -45,6 +45,9 @@ class ICasinoLink {
 
   /** @returns The newest answer of each kind. */
   [[nodiscard]] virtual CasinoReadings readings() const = 0;
+  /** @returns A number that changes each time an answer of any kind is
+   * published, so a reader copies readings() only when it changed. */
+  [[nodiscard]] virtual std::uint64_t revision() const = 0;
 };
 
 }  // namespace rtype::client

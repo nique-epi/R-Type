@@ -43,7 +43,7 @@ void CasinoBetsDesk::follow(
   settleOwnBets(readings.ownBets);
 }
 
-std::optional<BetsReading> CasinoBetsDesk::lastBets() const {
+const std::optional<BetsReading>& CasinoBetsDesk::lastBets() const {
   return lastBets_;
 }
 

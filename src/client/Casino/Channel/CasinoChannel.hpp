@@ -5,6 +5,7 @@
 #include <vector>
 #include "BetsReading.hpp"
 #include "CasinoBetsDesk.hpp"
+#include "CasinoReadings.hpp"
 #include "CasinoRefusal.hpp"
 #include "CasinoRoomListing.hpp"
 #include "CasinoRoomState.hpp"
@@ -47,16 +48,21 @@ class CasinoChannel final : public ICasinoChannel {
   [[nodiscard]] std::optional<CasinoRefusal> seatRefusal() const override;
   void placeBets(std::uint64_t round,
                  const std::vector<network::RouletteBet>& bets) override;
-  [[nodiscard]] std::optional<BetsReading> lastBets() const override;
+  [[nodiscard]] const std::optional<BetsReading>& lastBets() const override;
   [[nodiscard]] std::optional<network::RoundBets> ownBets(
       std::uint64_t round) const override;
 
-  /** @brief Reads the answers of the link, counts @p elapsed on the clocks of
-   * the room and the seat, and asks what is due. */
+  /** @brief Reads the answers of the link, copied only when it published
+   * one since, counts @p elapsed on the clocks of the room and the seat, and
+   * asks what is due. */
   void update(engine::Duration elapsed);
 
  private:
   ICasinoLink* link_;
+  /** @brief The answers of the link as update() copied them last, and the
+   * revision of the link they were copied at. */
+  CasinoReadings readings_;
+  std::uint64_t readRevision_{};
   CasinoRoomWatch watch_;
   CasinoSeatKeeper seat_;
   CasinoBetsDesk desk_;
