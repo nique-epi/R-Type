@@ -13,6 +13,9 @@ struct MasterRoute {
   RouteMethod method{RouteMethod::Get};
   /** @brief Its path below MASTER_API_PREFIX, such as `/servers/me`. */
   std::string_view path;
+  /** @brief Whether the master answers it over HTTPS only, so a password or a
+   * token never crosses the network in clear. */
+  bool httpsOnly{false};
 };
 
 }  // namespace rtype::network

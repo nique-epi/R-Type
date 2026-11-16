@@ -16,6 +16,7 @@
 #include "ConfigurationSource.hpp"
 #include "ConfigurationStep.hpp"
 #include "EnsureLines.hpp"
+#include "EnvironmentVariable.hpp"
 #include "GameLaunchOptions.hpp"
 #include "GameLineRule.hpp"
 #include "GameProcessModules.hpp"
@@ -188,6 +189,12 @@ int runSupervisor(std::span<const std::string_view> options) {
       }});
 }
 
+/** @returns The value of PASSWORD_KEY_VARIABLE, empty when it is unset. */
+std::string passwordKeyText() {
+  return rtype::logging::readEnvironment(rtype::master::PASSWORD_KEY_VARIABLE)
+      .value_or(std::string{});
+}
+
 /**
  * @brief Runs the master with @p options, or prints its usage.
  * @returns the exit code of the master.
@@ -214,7 +221,8 @@ int runMaster(std::span<const std::string_view> options) {
             launchOptions->logOptions(),
             [&stopRequest](const std::string& reason) {
               stopRequest.fail(reason);
-            });
+            },
+            passwordKeyText());
       }});
 }
 

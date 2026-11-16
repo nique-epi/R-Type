@@ -5,6 +5,7 @@
 #include "RouteCall.hpp"
 
 /** @returns The answer of the master listening on @p port to @p call, sent as
- * JSON, with its key as Bearer when it has one. */
+ * JSON, with its key as Bearer when it has one, and as forwarded from a client
+ * over HTTPS when it says so. */
 [[nodiscard]] httplib::Result sendRouteCall(std::uint16_t port,
                                             const RouteCall& call);

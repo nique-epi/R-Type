@@ -23,6 +23,13 @@ constexpr std::string_view LISTENING_LOST_TEXT =
 /** @brief The header a reverse proxy names the client of a request in. */
 constexpr std::string_view FORWARDED_FOR_HEADER = "X-Forwarded-For";
 
+/**
+ * @brief The header a reverse proxy names the scheme a client reached it with
+ * in, and the value it writes for a client that came over TLS.
+ */
+constexpr std::string_view FORWARDED_PROTO_HEADER = "X-Forwarded-Proto";
+constexpr std::string_view HTTPS_SCHEME = "https";
+
 /** @brief What separates two addresses of FORWARDED_FOR_HEADER, the last one
  * written by the proxy nearest the server. */
 constexpr char FORWARDED_ADDRESS_SEPARATOR = ',';

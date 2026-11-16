@@ -311,4 +311,25 @@ constexpr std::string_view RANK_ZERO_LEADERBOARD_TEXT =
     R"("score":12000,"serverId":7,"serverName":"Paris 1"}]})";
 constexpr std::string_view FIRST_SCORE_RANK_POINTER = "/scores/0/rank";
 
+/** @brief Credentials at the bounds of a password, and a nickname past the
+ * 16 bytes of the protocol. */
+constexpr std::string_view ACCOUNT_NICKNAME = "ACE";
+constexpr std::size_t SHORTEST_PASSWORD_SIZE = 8;
+constexpr std::size_t LONGEST_PASSWORD_SIZE = 128;
+constexpr char PASSWORD_LETTER = 'p';
+constexpr std::string_view NICKNAME_PAST_THE_PROTOCOL = "SEVENTEEN_LETTERS";
+constexpr std::string_view PASSWORD_POINTER = "/password";
+constexpr std::string_view ACCOUNT_NICKNAME_POINTER = "/nickname";
+
+/** @brief A token of a session as the master issues them, and tokens shaped
+ * almost like one. */
+constexpr std::string_view ACCOUNT_SESSION_TOKEN =
+    "rts_0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+constexpr std::string_view TOKEN_WITH_A_KEY_PREFIX =
+    "rtk_0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+constexpr std::string_view UPPERCASE_TOKEN =
+    "rts_0123456789ABCDEF0123456789abcdef0123456789abcdef0123456789abcdef";
+constexpr std::string_view SHORT_TOKEN =
+    "rts_0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcde";
+
 }  // namespace rtype::network::testing

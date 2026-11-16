@@ -44,9 +44,13 @@ examples (see [A silent master](#a-silent-master)). To see real data, start a
 master and tell the site where it is:
 
 ```bash
-./r-type_server --mode master -p 8081      # from the root of the repository
+RT_PASSWORD_KEY=$(openssl rand -hex 32) ./r-type_server --mode master -p 8081   # from the root of the repository
 echo 'MASTER_URL=http://localhost:8081' > web/.env.local
 ```
+
+The master does not start without `RT_PASSWORD_KEY`, the key of the passwords
+of its accounts. A new key at each launch makes the accounts of the launch
+before unreadable: keep one in a file to keep them.
 
 | Command                           | Does                                                                                  |
 | --------------------------------- | ------------------------------------------------------------------------------------- |
