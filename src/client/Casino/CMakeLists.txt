@@ -1,3 +1,4 @@
+add_subdirectory(Channel)
 add_subdirectory(Painting)
 add_subdirectory(Entrance)
 add_subdirectory(Cashier)
@@ -11,9 +12,8 @@ target_include_directories(rtype_client_casino_module PUBLIC ${CMAKE_CURRENT_SOU
 
 target_link_libraries(rtype_client_casino_module
   PUBLIC
+    rtype_client_casino_channel
     rtype_client_casino_roulette_bets
-    rtype_client_connection_casino
-    rtype_client_account_wallet
     rtype_engine_modules
   PRIVATE
     rtype_client_casino_cashier

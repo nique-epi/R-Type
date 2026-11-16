@@ -9,8 +9,11 @@
 #include "CasinoEntranceScreenParts.hpp"
 #include "CasinoScreenIdConstants.hpp"
 #include "ClientConstants.hpp"
+#include "IAccountSession.hpp"
 #include "ICasinoChannel.hpp"
+#include "ICasinoLink.hpp"
 #include "IScreen.hpp"
+#include "IWallet.hpp"
 #include "InstallContext.hpp"
 #include "ModuleConstants.hpp"
 #include "PlayerPreferences.hpp"
@@ -90,10 +93,12 @@ std::vector<std::string> ClientCasinoModule::dependencies() const {
 }
 
 void ClientCasinoModule::install(engine::InstallContext& context) {
-  casino_ = &context.require<ICasinoChannel>();
+  casino_.emplace(context.require<ICasinoLink>(),
+                  context.require<IAccountSession>(),
+                  context.require<IWallet>());
   context.require<ScreenRegistry>().add(
-      CASINO_SCREEN, [casino = casino_](const ScreenContext& screens) {
-        return buildCasinoScreen(screens, *casino);
+      CASINO_SCREEN, [this](const ScreenContext& screens) {
+        return buildCasinoScreen(screens, *casino_);
       });
   context.require<ScreenRegistry>().add(
       CASINO_BUY_CHIPS_SCREEN, [](const ScreenContext& screens) {
@@ -107,10 +112,10 @@ void ClientCasinoModule::install(engine::InstallContext& context) {
       ROULETTE_SCREEN, [this](const ScreenContext& screens) {
         return buildRouletteScreen(screens, *casino_, roulette_);
       });
-  context.addWork(UPDATE_STAGE,
-                  [this]([[maybe_unused]] engine::Duration elapsed) {
-                    roulette_.follow(casino_->room(), casino_->lastBets());
-                  });
+  context.addWork(UPDATE_STAGE, [this](engine::Duration elapsed) {
+    casino_->update(elapsed);
+    roulette_.follow(casino_->room(), casino_->lastBets());
+  });
 }
 
 void ClientCasinoModule::start() {}

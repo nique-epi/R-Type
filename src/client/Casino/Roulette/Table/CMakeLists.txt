@@ -24,7 +24,7 @@ target_link_libraries(rtype_client_casino_roulette_table
     rtype_client_casino_roulette_bets
     rtype_client_casino_roulette_cloth
     rtype_client_casino_roulette_wheel
-    rtype_client_connection_casino
+    rtype_client_casino_channel
     rtype_client_interface
     rtype_client_key_chip
     rtype_client_screens_module

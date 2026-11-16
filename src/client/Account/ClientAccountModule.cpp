@@ -6,8 +6,6 @@
 #include "ClientConstants.hpp"
 #include "IAccountLink.hpp"
 #include "IAccountSession.hpp"
-#include "ICasinoChannel.hpp"
-#include "ICasinoLink.hpp"
 #include "IWallet.hpp"
 #include "InstallContext.hpp"
 #include "ModuleConstants.hpp"
@@ -30,14 +28,12 @@ void ClientAccountModule::install(engine::InstallContext& context) {
   IAccountLink& link = context.require<IAccountLink>();
   session_.emplace(link);
   wallet_.emplace(*session_, link);
-  casino_.emplace(context.require<ICasinoLink>(), *session_, *wallet_);
   context.provide<IAccountSession>(*session_);
   context.provide<IWallet>(*wallet_);
-  context.provide<ICasinoChannel>(*casino_);
-  context.addWork(UPDATE_STAGE, [this](engine::Duration elapsed) {
-    wallet_->followSession();
-    casino_->update(elapsed);
-  });
+  context.addWork(UPDATE_STAGE,
+                  [this]([[maybe_unused]] engine::Duration elapsed) {
+                    wallet_->followSession();
+                  });
 }
 
 void ClientAccountModule::start() {

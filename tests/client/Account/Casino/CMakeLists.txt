@@ -1,2 +1,0 @@
-target_sources(client_account_tests PRIVATE CasinoChannelTest.cpp CasinoChannelFixture.cpp)
-target_include_directories(client_account_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

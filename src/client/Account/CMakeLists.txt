@@ -1,6 +1,5 @@
 add_subdirectory(Session)
 add_subdirectory(Wallet)
-add_subdirectory(Casino)
 
 add_library(rtype_client_account_module STATIC ClientAccountModule.cpp)
 
@@ -8,7 +7,6 @@ target_include_directories(rtype_client_account_module PUBLIC ${CMAKE_CURRENT_SO
 
 target_link_libraries(rtype_client_account_module
   PUBLIC
-    rtype_client_account_casino
     rtype_client_account_session
     rtype_client_account_wallet
     rtype_engine_install_context
