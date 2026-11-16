@@ -30,13 +30,10 @@ namespace rtype::client {
 
 namespace {
 
-/** @returns The casino, its doors then its hall, for a player signed in; the
- * dialog that says a sign-in is needed for a guest. */
+/** @returns The casino, its doors then its hall, for a player signed in
+ * only. */
 std::unique_ptr<IScreen> buildCasinoScreen(const ScreenContext& context,
                                            ICasinoChannel& casino) {
-  if (!context.services.account.get().signedIn()) {
-    return signInNeededScreenOf(context);
-  }
   return std::make_unique<CasinoEntranceScreen>(
       CasinoEntranceScreenParts{.navigator = context.navigator.get(),
                                 .sounds = soundsOf(context),
@@ -48,12 +45,9 @@ std::unique_ptr<IScreen> buildCasinoScreen(const ScreenContext& context,
 }
 
 /** @returns The cashier, changing kopecks and chips @p way, for a player
- * signed in; the dialog that says a sign-in is needed for a guest. */
+ * signed in only. */
 std::unique_ptr<IScreen> buildCashierScreen(const ScreenContext& context,
                                             CashierWay way) {
-  if (!context.services.account.get().signedIn()) {
-    return signInNeededScreenOf(context);
-  }
   return std::make_unique<CashierScreen>(
       CashierScreenParts{.navigator = context.navigator.get(),
                          .sounds = soundsOf(context),
@@ -97,17 +91,17 @@ void ClientCasinoModule::install(engine::InstallContext& context) {
                   context.require<IAccountSession>(),
                   context.require<IWallet>());
   context.require<ScreenRegistry>().add(
-      CASINO_SCREEN, [this](const ScreenContext& screens) {
+      CASINO_SCREEN, signedInOnly([this](const ScreenContext& screens) {
         return buildCasinoScreen(screens, *casino_);
-      });
+      }));
   context.require<ScreenRegistry>().add(
-      CASINO_BUY_CHIPS_SCREEN, [](const ScreenContext& screens) {
+      CASINO_BUY_CHIPS_SCREEN, signedInOnly([](const ScreenContext& screens) {
         return buildCashierScreen(screens, CashierWay::BuyChips);
-      });
+      }));
   context.require<ScreenRegistry>().add(
-      CASINO_CASH_OUT_SCREEN, [](const ScreenContext& screens) {
+      CASINO_CASH_OUT_SCREEN, signedInOnly([](const ScreenContext& screens) {
         return buildCashierScreen(screens, CashierWay::CashOut);
-      });
+      }));
   context.require<ScreenRegistry>().add(
       ROULETTE_SCREEN, [this](const ScreenContext& screens) {
         return buildRouletteScreen(screens, *casino_, roulette_);

@@ -6,6 +6,7 @@
 #include "AssetList.hpp"
 #include "DialogScreen.hpp"
 #include "GameWindow.hpp"
+#include "IAccountSession.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "IScreen.hpp"
 #include "IScreenNavigator.hpp"
@@ -21,6 +22,7 @@
 #include "ScreenConstants.hpp"
 #include "ScreenContext.hpp"
 #include "ScreenId.hpp"
+#include "ScreenRegistry.hpp"
 
 namespace rtype::client {
 
@@ -59,6 +61,15 @@ std::unique_ptr<IScreen> signInNeededScreenOf(const ScreenContext& context) {
           .message(SIGN_IN_MESSAGE)
           .cancelButton({.label = OK_LABEL}, [&navigator] { navigator.pop(); })
           .build());
+}
+
+ScreenRegistry::Builder signedInOnly(ScreenRegistry::Builder builder) {
+  return [builder = std::move(builder)](const ScreenContext& context) {
+    if (!context.services.account.get().signedIn()) {
+      return signInNeededScreenOf(context);
+    }
+    return builder(context);
+  };
 }
 
 std::unique_ptr<IScreen> loadingScreenUnlessLoaded(const ScreenContext& context,

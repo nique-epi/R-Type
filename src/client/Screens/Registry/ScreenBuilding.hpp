@@ -10,6 +10,7 @@
 #include "PlayfieldMapping.hpp"
 #include "ScreenContext.hpp"
 #include "ScreenId.hpp"
+#include "ScreenRegistry.hpp"
 
 namespace rtype::client {
 
@@ -36,6 +37,12 @@ namespace rtype::client {
  * MENU_CANCEL_KEY answers too, closes it. */
 [[nodiscard]] std::unique_ptr<IScreen> signInNeededScreenOf(
     const ScreenContext& context);
+
+/** @returns A builder of what @p builder builds for a player signed in, and
+ * of the dialog that tells a guest a sign-in is needed
+ * (signInNeededScreenOf()) in its place. */
+[[nodiscard]] ScreenRegistry::Builder signedInOnly(
+    ScreenRegistry::Builder builder);
 
 /**
  * @brief The loading screen of a list while some of its assets are not
