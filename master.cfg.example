@@ -45,7 +45,8 @@ set casino-result-seconds 5
 
 # Turn a module off (it is never installed). Refused when a module
 # that stays on depends on it: storage, probe and http need logger; servers
-# needs storage, probe and http; leaderboard needs storage, http and servers;
+# needs storage, probe and http; leaderboard needs logger, storage, http and
+# servers, and credits the games through the wallet when it is on;
 # accounts needs logger, storage and http; wallet needs logger, storage, http
 # and accounts, so it goes off before the accounts; casino needs logger,
 # storage, http, accounts and wallet, so it goes off before the wallet.
