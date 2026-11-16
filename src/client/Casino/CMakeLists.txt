@@ -4,7 +4,6 @@ add_subdirectory(Cashier)
 add_subdirectory(Roulette)
 
 add_library(rtype_client_casino_module STATIC
-  ChipSettlement.cpp
   ClientCasinoModule.cpp
 )
 
@@ -14,7 +13,7 @@ target_link_libraries(rtype_client_casino_module
   PUBLIC
     rtype_client_casino_roulette_bets
     rtype_client_connection_casino
-    rtype_client_settings_module
+    rtype_client_account_wallet
     rtype_engine_modules
   PRIVATE
     rtype_client_casino_cashier

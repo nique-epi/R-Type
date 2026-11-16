@@ -67,6 +67,7 @@ std::unique_ptr<IScreen> TitleInTheStackFixture::build(ScreenId screen) {
         TitleScreenParts{.navigator = titleNavigator_,
                          .sounds = sounds_,
                          .settings = settings_,
+                         .wallet = wallet_,
                          .playfieldPointAt = samePlayfieldPoint,
                          .motion = MotionPreference::Full,
                          .seed = rtype::client::testing::TITLE_SEED},

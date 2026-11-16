@@ -4,6 +4,8 @@
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <memory>
+#include "FakeAccountSession.hpp"
+#include "FakeWallet.hpp"
 #include "HangarScreen.hpp"
 #include "PlayerSettings.hpp"
 #include "RecordingAudioService.hpp"
@@ -40,6 +42,8 @@ class HangarScrollFixture : public ::testing::Test {
   PlayerSettings settings_;
   RecordingSettingsStorage storage_;
   SettingsService service_;
+  FakeAccountSession account_;
+  FakeWallet wallet_;
   RecordingNavigator navigator_;
   RecordingSoundPlayer sounds_;
   RecordingAudioService audio_{sounds_};

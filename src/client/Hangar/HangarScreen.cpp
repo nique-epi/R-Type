@@ -18,7 +18,9 @@
 #include "HangarScreenConstants.hpp"
 #include "HangarScreenIdConstants.hpp"
 #include "HangarScreenParts.hpp"
+#include "IAccountSession.hpp"
 #include "IInterfaceCanvas.hpp"
+#include "IWallet.hpp"
 #include "InterfaceColorConstants.hpp"
 #include "InterfacePixel.hpp"
 #include "KeyChipParts.hpp"
@@ -27,6 +29,7 @@
 #include "LockerPainting.hpp"
 #include "LockerView.hpp"
 #include "MenuBuilder.hpp"
+#include "MenuScreenIdConstants.hpp"
 #include "MotionPreference.hpp"
 #include "PlayerSettings.hpp"
 #include "PlayfieldMapping.hpp"
@@ -34,6 +37,7 @@
 #include "SettingDefinitionConstants.hpp"
 #include "ShipLocker.hpp"
 #include "ShipLook.hpp"
+#include "ShipLookConstants.hpp"
 #include "ShipLookNumbers.hpp"
 #include "ShipLooks.hpp"
 #include "SoundConstants.hpp"
@@ -58,19 +62,40 @@ Button::Text backText() {
   return {.label = BACK_LABEL, .keyName = CANCEL_KEY_NAME};
 }
 
-/** @returns The status line: how to get @p item when the locker does not
- * hold it, else its name, then what Enter does with it, or that an arm is
- * fitting an item. */
-std::string statusOf(std::size_t item, const PlayerSettings& settings,
-                     bool fitting) {
-  if (!settings.shipLocker.items.test(item)) {
-    return identifiers::isHullItem(item) ? LOCKED_HULL_STATUS : LOCKED_STATUS;
+/** @returns The status line of the chosen item of @p view: how to get it
+ * when the locker does not hold it, else its name, then what Enter does with
+ * it, or that an arm is fitting an item. */
+std::string statusOf(const LockerView& view, bool fitting) {
+  if (!view.locker.items.test(view.chosen)) {
+    return identifiers::isHullItem(view.chosen) ? LOCKED_HULL_STATUS
+                                                : LOCKED_STATUS;
   }
-  const std::string status(lookItemLabelOf(item));
+  const std::string status(lookItemLabelOf(view.chosen));
   if (fitting) {
     return status + FITTING_HINT;
   }
-  return status + (wears(settings.shipLook, item) ? TAKE_OFF_HINT : WEAR_HINT);
+  return status + (wears(view.worn, view.chosen) ? TAKE_OFF_HINT : WEAR_HINT);
+}
+
+/** @returns The looks the player may wear, once known: the starter kit for a
+ * guest, the looks the master read for an account; nothing until it read
+ * them. */
+std::optional<ShipLocker> knownLockerOf(const IAccountSession& account,
+                                        const IWallet& wallet) {
+  if (!account.signedIn()) {
+    return ShipLocker{};
+  }
+  return wallet.ownedLooks();
+}
+
+/** @returns @p worn without every item @p locker does not hold. */
+ShipLook ownedPartOf(ShipLook worn, const ShipLocker& locker) {
+  for (std::size_t item = 0; item < identifiers::SHIP_LOOK_ITEM_COUNT; ++item) {
+    if (!locker.items.test(item) && wears(worn, item)) {
+      worn = without(worn, item);
+    }
+  }
+  return worn;
 }
 
 }  // namespace
@@ -81,6 +106,8 @@ HangarScreen::HangarScreen(HangarScreenParts parts,
       ambience_(parts.audio.get(), Ambience::Hangar),
       sounds_(&parts.sounds.get()),
       settings_(&parts.settings.get()),
+      account_(&parts.account.get()),
+      wallet_(&parts.wallet.get()),
       canvas_(std::move(canvas)),
       playfieldPointAt_(std::move(parts.playfieldPointAt)),
       palette_(parts.palette),
@@ -92,6 +119,7 @@ HangarScreen::HangarScreen(HangarScreenParts parts,
                              .action = [this] { navigator_->pop(); },
                              .sounds = parts.sounds}),
       rows_(LOCKER_ROWS_AT_OPENING) {
+  wallet_->askWallet();
   repaint();
 }
 
@@ -124,6 +152,7 @@ void HangarScreen::update(engine::Duration elapsed) {
   if (fitting_.has_value() && fittingProgressOf(*fitting_, elapsed_) >= 1.0F) {
     fitting_.reset();
   }
+  takeOffWhatIsNotOwned();
   static_cast<void>(settings_->saveIfChanged());
   repaint();
 }
@@ -163,7 +192,13 @@ void HangarScreen::choose() {
   if (fitting_.has_value()) {
     return;
   }
-  if (!settings_->settings().shipLocker.items.test(chosen_)) {
+  if (!knownLockerOf(*account_, *wallet_)
+           .value_or(ShipLocker{})
+           .items.test(chosen_)) {
+    if (!account_->signedIn()) {
+      confirmHeld_ = false;
+      navigator_->push(SIGN_IN_NEEDED_SCREEN);
+    }
     return;
   }
   sounds_->play(CLICK_SOUND_ID);
@@ -181,16 +216,28 @@ void HangarScreen::choose() {
   }
 }
 
+void HangarScreen::takeOffWhatIsNotOwned() {
+  const std::optional<ShipLocker> locker = knownLockerOf(*account_, *wallet_);
+  if (!locker.has_value() || fitting_.has_value()) {
+    return;
+  }
+  const ShipLook worn = settings_->settings().shipLook;
+  const ShipLook owned = ownedPartOf(worn, *locker);
+  if (owned != worn) {
+    static_cast<void>(settings_->apply(SHIP_LOOK_SETTING, owned));
+  }
+}
+
 void HangarScreen::repaint() {
   const ShipLook worn = settings_->settings().shipLook;
-  const ShipLocker& locker = settings_->settings().shipLocker;
+  const ShipLocker locker =
+      knownLockerOf(*account_, *wallet_).value_or(ShipLocker{});
+  const LockerView view{
+      .chosen = chosen_, .worn = worn, .locker = locker, .rows = rows_};
   canvas_->clear();
   canvas_->write(HANGAR_LABEL, HANGAR_TITLE_ANCHOR, HANGAR_TITLE_STYLE);
   canvas_->fill(HANGAR_RULE, EDGE_BLUE);
-  paintLocker(
-      *canvas_,
-      LockerView{
-          .chosen = chosen_, .worn = worn, .locker = locker, .rows = rows_});
+  paintLocker(*canvas_, view);
   paintDockWall(*canvas_, litBeaconOf(elapsed_, motion_));
   paintBlueprint(*canvas_, chosen_);
   paintDock(*canvas_, DockScene{.palette = palette_,
@@ -199,8 +246,8 @@ void HangarScreen::repaint() {
                                 .fitting = fitting_,
                                 .elapsed = elapsed_,
                                 .motion = motion_});
-  canvas_->write(statusOf(chosen_, settings_->settings(), fitting_.has_value()),
-                 HANGAR_STATUS_ANCHOR, HANGAR_STATUS_STYLE);
+  canvas_->write(statusOf(view, fitting_.has_value()), HANGAR_STATUS_ANCHOR,
+                 HANGAR_STATUS_STYLE);
   backChip_.paint(*canvas_);
   canvas_->display();
 }

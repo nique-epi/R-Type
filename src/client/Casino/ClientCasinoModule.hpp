@@ -4,9 +4,9 @@
 #include <vector>
 #include "ICasinoChannel.hpp"
 #include "IModule.hpp"
+#include "IWallet.hpp"
 #include "InstallContext.hpp"
 #include "RouletteMemory.hpp"
-#include "SettingsService.hpp"
 
 namespace rtype::client {
 
@@ -24,10 +24,10 @@ class ClientCasinoModule final : public engine::IModule {
   /** @returns CASINO_MODULE_NAME. */
   [[nodiscard]] std::string name() const override;
   /** @returns The modules that provide the registry of the screens, the
-   * table and the settings. */
+   * table and the account. */
   [[nodiscard]] std::vector<std::string> dependencies() const override;
   /** @throws MissingServiceException if no module provides the registry, the
-   * table or the settings.
+   * table or the wallet.
    * @throws DuplicateScreenException if another module registered one of its
    * screens. */
   void install(engine::InstallContext& context) override;
@@ -36,7 +36,7 @@ class ClientCasinoModule final : public engine::IModule {
 
  private:
   ICasinoChannel* casino_{nullptr};
-  SettingsService* settings_{nullptr};
+  IWallet* wallet_{nullptr};
   /** @brief The bets and the numbers drawn, kept while the table screen is
    * closed. */
   RouletteMemory roulette_;

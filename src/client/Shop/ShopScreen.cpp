@@ -10,23 +10,24 @@
 #include <optional>
 #include <string>
 #include <utility>
+#include "AccountLinkConstants.hpp"
 #include "Ambience.hpp"
 #include "Button.hpp"
 #include "IAudioService.hpp"
 #include "IInterfaceCanvas.hpp"
+#include "IWallet.hpp"
 #include "InterfacePixel.hpp"
 #include "KeyChipParts.hpp"
 #include "LookItemPurchase.hpp"
 #include "LookItems.hpp"
 #include "MenuBuilder.hpp"
 #include "MotionPreference.hpp"
-#include "PlayerPurse.hpp"
 #include "Purchase.hpp"
 #include "PurchaseRefusal.hpp"
 #include "PurchaseTicket.hpp"
 #include "Purse.hpp"
-#include "SettingDefinitionConstants.hpp"
 #include "ShelfSizes.hpp"
+#include "ShipLocker.hpp"
 #include "ShopCatalogue.hpp"
 #include "ShopPainting.hpp"
 #include "ShopPaintingConstants.hpp"
@@ -42,6 +43,8 @@
 #include "SoundConstants.hpp"
 #include "TicketAnswer.hpp"
 #include "TimeConstants.hpp"
+#include "WalletChangeReading.hpp"
+#include "WalletPurse.hpp"
 #include "WidgetConstants.hpp"
 
 namespace rtype::client {
@@ -86,6 +89,21 @@ std::optional<sf::Keyboard::Key> heldKeyAfter(
   return held;
 }
 
+/** @returns The chosen ware of @p selection among @p wares, a position in
+ * SHIP_LOOK_ITEM_NAMES. */
+std::size_t chosenItemOf(const ShopWares& wares,
+                         const ShopSelection& selection) {
+  const ShopSpot spot = selection.spot();
+  return spot.shelf == ShopShelf::HullCase ? wares.hulls.at(spot.place)
+                                           : wares.looks.at(spot.place);
+}
+
+/** @returns The looks @p wallet owns; the starter kit before the master
+ * answered them. */
+ShipLocker ownedLooksOf(const IWallet& wallet) {
+  return wallet.ownedLooks().value_or(ShipLocker{});
+}
+
 static_assert(SHOP_RADIO_KEY == sf::Keyboard::Key::R,
               "SHOPKEEPER_RADIO_HINT shows the keycap of R");
 
@@ -97,7 +115,7 @@ ShopScreen::ShopScreen(ShopScreenParts parts,
       sounds_(&parts.sounds.get()),
       audio_(&parts.audio.get()),
       music_(parts.audio.get(), Ambience::Shop),
-      settings_(&parts.settings.get()),
+      wallet_(&parts.wallet.get()),
       motion_(parts.motion),
       speech_(parts.sounds.get(), parts.motion),
       canvas_(std::move(canvas)),
@@ -111,17 +129,20 @@ ShopScreen::ShopScreen(ShopScreenParts parts,
       selection_(ShelfSizes{.looks = wares_.looks.size(),
                             .hulls = wares_.hulls.size()}),
       ticket_(parts.sounds.get()) {
-  speech_.greet(settings_->settings().shipLocker.items.count());
+  speech_.greet(ownedLooksOf(*wallet_).items.count());
+  wallet_->askWallet();
   repaint();
 }
 
 void ShopScreen::handleEvent(const sf::Event& event) {
   if (ticket_.isOpen()) {
     heldKey_ = heldKeyAfter(event, heldKey_);
+    if (purchaseAsk_ != NO_ACCOUNT_ASK) {
+      return;
+    }
     const TicketAnswer answer = ticket_.handleEvent(event, playfieldPointAt_);
-    if (answer == TicketAnswer::Buy && buy()) {
-      ticket_.paid();
-    } else if (answer != TicketAnswer::None) {
+    if ((answer == TicketAnswer::Buy && !buy()) ||
+        (answer != TicketAnswer::Buy && answer != TicketAnswer::None)) {
       ticket_.close();
     }
     return;
@@ -148,7 +169,7 @@ void ShopScreen::handleEvent(const sf::Event& event) {
 
 void ShopScreen::update(engine::Duration elapsed) {
   elapsed_ += elapsed;
-  static_cast<void>(settings_->saveIfChanged());
+  settle();
   speech_.advance(elapsed);
   ticket_.advance(elapsed);
   repaint();
@@ -211,8 +232,13 @@ void ShopScreen::pointed(sf::Vector2i position, bool clicked) {
 }
 
 void ShopScreen::offer() {
-  const std::size_t item = chosenItem();
-  const Purchase trial = buyLookItem(purseOf(settings_->settings()), item);
+  const std::size_t item = chosenItemOf(wares_, selection_);
+  const std::optional<Purse> purse = walletPurse(*wallet_);
+  if (!purse.has_value()) {
+    message_ = std::string{READING_WALLET_STATUS};
+    return;
+  }
+  const Purchase trial = buyLookItem(*purse, item);
   if (trial.refusal.has_value() &&
       *trial.refusal != PurchaseRefusal::TooExpensive) {
     static_cast<void>(buy());
@@ -222,50 +248,77 @@ void ShopScreen::offer() {
 }
 
 bool ShopScreen::buy() {
-  const std::size_t item = chosenItem();
-  const Purse purse = purseOf(settings_->settings());
-  const Purchase bought = buyLookItem(purse, item);
-  if (bought.refusal.has_value()) {
-    const std::uint32_t price = network::lookItemPrice(item);
-    message_ = refusalLineOf(*bought.refusal,
-                             price > purse.kopecks ? price - purse.kopecks : 0);
-    speech_.refused(*bought.refusal, item);
+  const std::size_t item = chosenItemOf(wares_, selection_);
+  const std::optional<Purse> purse = walletPurse(*wallet_);
+  if (!purse.has_value()) {
+    message_ = std::string{READING_WALLET_STATUS};
     return false;
   }
-  static_cast<void>(settings_->apply(KOPECKS_SETTING, bought.purse.kopecks));
-  static_cast<void>(settings_->apply(SHIP_LOCKER_SETTING, bought.purse.locker));
+  const Purchase trial = buyLookItem(*purse, item);
+  if (trial.refusal.has_value()) {
+    const std::uint32_t price = network::lookItemPrice(item);
+    message_ = refusalLineOf(
+        *trial.refusal, price > purse->kopecks ? price - purse->kopecks : 0);
+    speech_.refused(*trial.refusal, item);
+    return false;
+  }
+  purchaseAsk_ = wallet_->buy(item);
+  purchaseItem_ = item;
+  message_ = std::string{purchaseAsk_ == NO_ACCOUNT_ASK ? SESSION_ENDED_STATUS
+                                                        : BUYING_STATUS};
+  return purchaseAsk_ != NO_ACCOUNT_ASK;
+}
+
+void ShopScreen::settle() {
+  if (purchaseAsk_ == NO_ACCOUNT_ASK) {
+    return;
+  }
+  const std::optional<WalletChangeReading> answer =
+      wallet_->purchase(purchaseAsk_);
+  if (!answer.has_value()) {
+    return;
+  }
+  purchaseAsk_ = NO_ACCOUNT_ASK;
+  if (answer->refusal.has_value()) {
+    message_ = masterRefusalLineOf(*answer->refusal);
+    if (const std::optional<PurchaseRefusal> refusal =
+            purchaseRefusalOf(*answer->refusal)) {
+      speech_.refused(*refusal, purchaseItem_);
+    }
+    ticket_.close();
+    return;
+  }
   sounds_->play(PURCHASE_SOUND_ID);
-  message_ = boughtLineOf(item);
-  speech_.bought(item);
-  return true;
+  message_ = boughtLineOf(purchaseItem_);
+  speech_.bought(purchaseItem_);
+  ticket_.paid();
 }
 
 void ShopScreen::repaint() {
-  const Purse purse = purseOf(settings_->settings());
+  const std::optional<Purse> purse = walletPurse(*wallet_);
+  const ShipLocker owned = ownedLooksOf(*wallet_);
   const std::string status =
       radioPointed_ ? std::string(SHOP_RADIO_HINT)
-                    : message_.value_or(wareLineOf(chosenItem(), purse));
+                    : message_.value_or(wareLineOf(
+                          chosenItemOf(wares_, selection_),
+                          Purse{.kopecks = 0, .chips = 0, .locker = owned}));
   canvas_->clear();
-  paintShop(*canvas_, wares_,
-            ShopView{.chosen = selection_.spot(),
-                     .rows = selection_.window(),
-                     .owned = purse.locker,
-                     .kopecks = purse.kopecks,
-                     .status = status,
-                     .keeper = motion_ == MotionPreference::Full
-                                   ? shopkeeperPoseAt(elapsed_)
-                                   : SHOPKEEPER_AT_REST,
-                     .radioPointed = radioPointed_});
+  paintShop(
+      *canvas_, wares_,
+      ShopView{.chosen = selection_.spot(),
+               .rows = selection_.window(),
+               .owned = owned,
+               .kopecks = purse.has_value() ? std::optional{purse->kopecks}
+                                            : std::nullopt,
+               .status = status,
+               .keeper = motion_ == MotionPreference::Full
+                             ? shopkeeperPoseAt(elapsed_)
+                             : SHOPKEEPER_AT_REST,
+               .radioPointed = radioPointed_});
   speech_.paint(*canvas_);
   backChip_.paint(*canvas_);
   ticket_.paint(*canvas_);
   canvas_->display();
-}
-
-std::size_t ShopScreen::chosenItem() const {
-  const ShopSpot spot = selection_.spot();
-  return spot.shelf == ShopShelf::HullCase ? wares_.hulls.at(spot.place)
-                                           : wares_.looks.at(spot.place);
 }
 
 }  // namespace rtype::client

@@ -38,6 +38,10 @@ constexpr sf::Vector2i KOPECKS_FRAME_SIZE(
     (SIDES_PER_AXIS * KOPECKS_FRAME_PADDING.y) + KOPECKS_LABEL_HEIGHT +
         KOPECKS_CAPTION_GAP + TEXT_LINE_HEIGHT);
 constexpr const char* KOPECKS_CAPTION = "KOPECKS";
+
+/** @brief What stands for an amount the client does not know: the balance of
+ * a guest, or one the master has not answered yet. */
+constexpr std::string_view UNKNOWN_KOPECKS_TEXT = "--";
 constexpr sf::Color KOPECKS_FRAME_BORDER_COLOR = EDGE_BLUE;
 constexpr sf::Color KOPECKS_FRAME_INSIDE_COLOR = SKY_COLOR;
 constexpr sf::Color KOPECKS_CAPTION_COLOR = PALE_BLUE;

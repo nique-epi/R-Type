@@ -82,6 +82,14 @@ constexpr const char* CASHIER_AMOUNT_WORD_GAP = " ";
  * NOT_ENOUGH_START, its name, MISSING_SEPARATOR and the number missing before
  * MISSING_END, or a balance that cannot hold more, after FULL_START. */
 constexpr const char* NOTHING_TO_EXCHANGE_LINE = "CHOOSE AN AMOUNT";
+/** @brief What the cashier says while the master reads the wallet or makes
+ * the exchange, and when it refuses it. */
+constexpr const char* READING_WALLET_LINE = "READING YOUR WALLET...";
+constexpr const char* EXCHANGING_LINE = "CHANGING...";
+constexpr const char* BALANCES_REFUSED_LINE = "THE BALANCES REFUSE IT";
+constexpr const char* SIGN_IN_AGAIN_LINE = "SIGN IN AGAIN";
+constexpr const char* MASTER_REFUSED_LINE = "THE MASTER REFUSED";
+constexpr const char* MASTER_SILENT_LINE = "NO ANSWER FROM THE MASTER";
 constexpr const char* NOT_ENOUGH_START = "NOT ENOUGH ";
 constexpr const char* MISSING_SEPARATOR = ": ";
 constexpr const char* MISSING_END = " MISSING";

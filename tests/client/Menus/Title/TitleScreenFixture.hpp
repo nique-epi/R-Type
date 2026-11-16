@@ -4,6 +4,7 @@
 #include <SFML/Window/Keyboard.hpp>
 #include <memory>
 #include "FakeUpdateNotice.hpp"
+#include "FakeWallet.hpp"
 #include "PlayStart.hpp"
 #include "PlayerSettings.hpp"
 #include "RecordingInterfaceCanvas.hpp"
@@ -43,5 +44,6 @@ class TitleScreenFixture : public ::testing::Test {
   RecordingSoundPlayer sounds_;
   FakeUpdateNotice notice_;
   rtype::client::PlayerSettings settings_;
+  FakeWallet wallet_;
   std::unique_ptr<rtype::client::TitleScreen> title_;
 };

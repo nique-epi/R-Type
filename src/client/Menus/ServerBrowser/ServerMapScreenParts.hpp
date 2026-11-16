@@ -7,13 +7,12 @@
 #include "IServerCatalog.hpp"
 #include "IServerConnection.hpp"
 #include "ISoundPlayer.hpp"
+#include "IWallet.hpp"
 #include "MotionPreference.hpp"
 #include "PlayfieldMapping.hpp"
 #include "ServerChoice.hpp"
 
 namespace rtype::client {
-
-struct PlayerSettings;
 
 /**
  * @brief What a server map is built from, but the canvas it owns.
@@ -44,9 +43,9 @@ struct ServerMapScreenParts {
    * games are read again once the player came back; it must outlive the
    * screen. */
   std::reference_wrapper<const IServerConnection> connection;
-  /** @brief The settings of the player, whose kopecks the map shows; they
-   * must outlive the screen. */
-  std::reference_wrapper<const PlayerSettings> settings;
+  /** @brief The wallet of the account signed in, whose kopecks the map
+   * shows and reads again with the list; it must outlive the screen. */
+  std::reference_wrapper<IWallet> wallet;
   /** @brief Gives the point of the playfield under a pixel of the window. */
   PlayfieldMapping playfieldPointAt;
   /** @brief Whether the planet turns. */

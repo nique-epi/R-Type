@@ -170,10 +170,15 @@ void paintShop(IInterfaceCanvas& canvas, const ShopWares& wares,
   if (view.radioPointed) {
     paintChosenFrame(canvas, SHOP_RADIO_AREA);
   }
-  paintKopecks(canvas, KopecksLabel{.topRight = SHOP_BALANCE_TOP_RIGHT,
-                                    .amount = view.kopecks,
-                                    .prefix = {},
-                                    .outlined = true});
+  const KopecksLabel balance{.topRight = SHOP_BALANCE_TOP_RIGHT,
+                             .amount = view.kopecks.value_or(0),
+                             .prefix = {},
+                             .outlined = true};
+  if (view.kopecks.has_value()) {
+    paintKopecks(canvas, balance);
+  } else {
+    paintUnknownKopecks(canvas, balance);
+  }
   canvas.write(view.status, SHOP_STATUS_ANCHOR, SHOP_STATUS_STYLE);
 }
 

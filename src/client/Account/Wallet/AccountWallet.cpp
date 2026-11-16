@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <utility>
 #include "AccountLinkConstants.hpp"
 #include "ExchangeRequest.hpp"
 #include "IAccountLink.hpp"
@@ -88,6 +89,17 @@ std::uint64_t AccountWallet::exchange(const network::ExchangeRequest& request) {
 std::optional<WalletChangeReading> AccountWallet::exchanged(
     std::uint64_t ask) const {
   return answerTo(link_->exchange(), ask);
+}
+
+void AccountWallet::followSession() {
+  std::string token = session_->token();
+  if (token == followedToken_) {
+    return;
+  }
+  followedToken_ = std::move(token);
+  if (!followedToken_.empty()) {
+    static_cast<void>(link_->askWallet(followedToken_));
+  }
 }
 
 std::optional<WalletReading> AccountWallet::reading() const {

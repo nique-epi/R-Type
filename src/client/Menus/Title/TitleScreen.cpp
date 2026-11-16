@@ -22,6 +22,7 @@
 #include "TimeConstants.hpp"
 #include "TitleScreenParts.hpp"
 #include "UpdateScreenIdConstants.hpp"
+#include "WalletPurse.hpp"
 
 namespace rtype::client {
 
@@ -42,6 +43,7 @@ TitleScreen::TitleScreen(TitleScreenParts parts,
     : canvas_(std::move(canvas)),
       playfieldPointAt_(std::move(parts.playfieldPointAt)),
       settings_(&parts.settings.get()),
+      wallet_(&parts.wallet.get()),
       navigator_(&parts.navigator.get()),
       notice_(parts.notice),
       menu_(buildMenu(parts.navigator.get(), parts.sounds.get(),
@@ -109,7 +111,8 @@ void TitleScreen::repaint() {
     squadron_.paint(*canvas_, squadronBox->position,
                     playerPaletteOf(*settings_));
   }
-  paintKopecksBalance(*canvas_, KOPECKS_BALANCE_TOP_RIGHT, settings_->kopecks);
+  paintKopecksBalance(*canvas_, KOPECKS_BALANCE_TOP_RIGHT,
+                      walletKopecks(*wallet_));
   canvas_->display();
 }
 

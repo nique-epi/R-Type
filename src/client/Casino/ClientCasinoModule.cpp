@@ -8,7 +8,6 @@
 #include "CasinoEntranceScreen.hpp"
 #include "CasinoEntranceScreenParts.hpp"
 #include "CasinoScreenIdConstants.hpp"
-#include "ChipSettlement.hpp"
 #include "ClientConstants.hpp"
 #include "ICasinoChannel.hpp"
 #include "IScreen.hpp"
@@ -22,8 +21,8 @@
 #include "ScreenBuilding.hpp"
 #include "ScreenContext.hpp"
 #include "ScreenRegistry.hpp"
-#include "SettingsService.hpp"
 #include "TimeConstants.hpp"
+#include "WalletPurse.hpp"
 
 namespace rtype::client {
 
@@ -35,19 +34,23 @@ std::unique_ptr<IScreen> buildCasinoScreen(const ScreenContext& context,
       CasinoEntranceScreenParts{.navigator = context.navigator.get(),
                                 .sounds = soundsOf(context),
                                 .casino = casino,
-                                .settings = context.services.settings.get(),
+                                .wallet = context.services.wallet.get(),
                                 .playfieldPointAt = playfieldMappingOf(context),
                                 .motion = motionPreference()},
       interfaceCanvasOf(context));
 }
 
-/** @returns The cashier, changing kopecks and chips @p way. */
+/** @returns The cashier, changing kopecks and chips @p way, for a player
+ * signed in; the dialog that says a sign-in is needed for a guest. */
 std::unique_ptr<IScreen> buildCashierScreen(const ScreenContext& context,
                                             CashierWay way) {
+  if (!context.services.account.get().signedIn()) {
+    return signInNeededScreenOf(context);
+  }
   return std::make_unique<CashierScreen>(
       CashierScreenParts{.navigator = context.navigator.get(),
                          .sounds = soundsOf(context),
-                         .settings = context.services.settingsService.get(),
+                         .wallet = context.services.wallet.get(),
                          .playfieldPointAt = playfieldMappingOf(context),
                          .way = way},
       interfaceCanvasOf(context));
@@ -63,7 +66,7 @@ std::unique_ptr<IScreen> buildRouletteScreen(const ScreenContext& context,
                           .sounds = soundsOf(context),
                           .casino = casino,
                           .memory = memory,
-                          .settings = settings,
+                          .wallet = context.services.wallet.get(),
                           .connection = context.services.connection.get(),
                           .waitingRoom = context.services.waitingRoom.get(),
                           .playfieldPointAt = playfieldMappingOf(context),
@@ -80,12 +83,12 @@ std::string ClientCasinoModule::name() const {
 
 std::vector<std::string> ClientCasinoModule::dependencies() const {
   return {std::string{SCREENS_MODULE_NAME}, std::string{CONNECTION_MODULE_NAME},
-          std::string{SETTINGS_MODULE_NAME}};
+          std::string{ACCOUNT_MODULE_NAME}};
 }
 
 void ClientCasinoModule::install(engine::InstallContext& context) {
   casino_ = &context.require<ICasinoChannel>();
-  settings_ = &context.require<SettingsService>();
+  wallet_ = &context.require<IWallet>();
   context.require<ScreenRegistry>().add(
       CASINO_SCREEN, [casino = casino_](const ScreenContext& screens) {
         return buildCasinoScreen(screens, *casino);
@@ -104,8 +107,7 @@ void ClientCasinoModule::install(engine::InstallContext& context) {
       });
   context.addWork(
       UPDATE_STAGE, [this]([[maybe_unused]] engine::Duration elapsed) {
-        roulette_.follow(casino_->round(), settings_->settings().chips);
-        settleChipMoves(*casino_, *settings_);
+        roulette_.follow(casino_->round(), walletChips(*wallet_).value_or(0));
       });
 }
 

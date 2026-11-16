@@ -16,9 +16,9 @@
 #include "IServerConnection.hpp"
 #include "ISoundPlayer.hpp"
 #include "IWaitingRoom.hpp"
+#include "IWallet.hpp"
 #include "MotionPreference.hpp"
 #include "PlayerPalette.hpp"
-#include "PlayerSettings.hpp"
 #include "PlayfieldMapping.hpp"
 #include "RouletteBars.hpp"
 #include "RouletteMemory.hpp"
@@ -41,7 +41,7 @@ namespace rtype::client {
  * (RouletteSlip). CLEAR takes the bets of the round off, REBET lays again
  * those of the round before, SPIN asks to spin; each change sends every bet
  * with the vote (ICasinoChannel::placeBets()). The chips of the bets are
- * settled by ChipSettlement, never here.
+ * settled by the master, never here.
  *
  * The wheel turns once the bets close and stops on the number drawn; the
  * result lights it on the cloth. BACK, MENU_CANCEL_KEY, closes the table,
@@ -88,7 +88,7 @@ class RouletteScreen final : public IScreen {
   ISoundPlayer* sounds_;
   ICasinoChannel* casino_;
   RouletteMemory* memory_;
-  const PlayerSettings* settings_;
+  const IWallet* wallet_;
   const IServerConnection* connection_;
   const IWaitingRoom* waitingRoom_;
   std::unique_ptr<IInterfaceCanvas> canvas_;

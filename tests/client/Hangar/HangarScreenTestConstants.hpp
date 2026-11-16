@@ -49,4 +49,9 @@ constexpr std::uint8_t WEARS_WAR_SHARK = 26;
 constexpr std::string_view LOCKED_HULL_STATUS_TEXT =
     "LOCKED: BUY IT AT THE SHOP";
 
+/** @brief The account the hangar tests sign in to, and its token. */
+constexpr std::uint64_t HANGAR_ACCOUNT_ID = 9;
+constexpr std::string_view HANGAR_TOKEN =
+    "rt_9999999999999999999999999999999999999999999999999999999999999999";
+
 }  // namespace rtype::client::testing

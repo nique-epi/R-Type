@@ -7,13 +7,11 @@
 #include <string>
 #include <vector>
 #include "Ambience.hpp"
-#include "PlayerSettings.hpp"
+#include "FakeWallet.hpp"
 #include "RecordingAudioService.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
-#include "RecordingSettingsStorage.hpp"
 #include "RecordingSoundPlayer.hpp"
-#include "SettingsService.hpp"
 #include "ShopScreen.hpp"
 #include "TimeConstants.hpp"
 
@@ -53,9 +51,7 @@ class ShopBoothFixture : public ::testing::Test {
   [[nodiscard]] const std::vector<std::string>& played() const;
 
  private:
-  PlayerSettings settings_;
-  RecordingSettingsStorage storage_;
-  SettingsService service_;
+  FakeWallet wallet_;
   RecordingNavigator navigator_;
   RecordingSoundPlayer sounds_;
   RecordingAudioService audio_;

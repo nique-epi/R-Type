@@ -4,6 +4,7 @@
 #include <memory>
 #include "BlankRenderTarget.hpp"
 #include "EntitySpriteConstants.hpp"
+#include "FakeWallet.hpp"
 #include "KeyPress.hpp"
 #include "MenuScreenIdConstants.hpp"
 #include "MotionPreference.hpp"
@@ -72,11 +73,13 @@ TEST(TitleScreen, ASquadronInPlaceShowsItsShipsOnTheFirstFrame) {
   RecordingSoundPlayer sounds;
   InterfaceCanvasRecord canvas;
   const PlayerSettings settings;
+  const FakeWallet wallet;
 
   const TitleScreen title(
       TitleScreenParts{.navigator = navigator,
                        .sounds = sounds,
                        .settings = settings,
+                       .wallet = wallet,
                        .playfieldPointAt = samePlayfieldPoint,
                        .motion = MotionPreference::Full,
                        .seed = TITLE_SEED,

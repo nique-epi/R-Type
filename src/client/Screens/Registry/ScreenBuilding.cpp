@@ -8,14 +8,17 @@
 #include "GameWindow.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "IScreen.hpp"
+#include "IScreenNavigator.hpp"
 #include "ISoundPlayer.hpp"
 #include "InterfaceCanvas.hpp"
 #include "LoadingScreen.hpp"
 #include "LoadingScreenParts.hpp"
 #include "Menu.hpp"
+#include "MenuBuilder.hpp"
 #include "MotionPreference.hpp"
 #include "PlayfieldMapping.hpp"
 #include "ReducedMotion.hpp"
+#include "ScreenConstants.hpp"
 #include "ScreenContext.hpp"
 #include "ScreenId.hpp"
 
@@ -45,6 +48,17 @@ std::unique_ptr<IScreen> dialogScreenOf(const ScreenContext& context,
                                         Menu menu) {
   return std::make_unique<DialogScreen>(
       std::move(menu), playfieldMappingOf(context), interfaceCanvasOf(context));
+}
+
+std::unique_ptr<IScreen> signInNeededScreenOf(const ScreenContext& context) {
+  IScreenNavigator& navigator = context.navigator.get();
+  return dialogScreenOf(
+      context,
+      MenuBuilder(MenuBuilder::Frame::Dialog, &soundsOf(context))
+          .heading(SIGN_IN_HEADING)
+          .message(SIGN_IN_MESSAGE)
+          .cancelButton({.label = OK_LABEL}, [&navigator] { navigator.pop(); })
+          .build());
 }
 
 std::unique_ptr<IScreen> loadingScreenUnlessLoaded(const ScreenContext& context,

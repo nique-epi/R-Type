@@ -5,7 +5,7 @@
 #include <SFML/Window/Keyboard.hpp>
 #include <cstdint>
 #include <memory>
-#include "PlayerSettings.hpp"
+#include "FakeWallet.hpp"
 #include "RecordingCasinoChannel.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
@@ -26,7 +26,7 @@ class RouletteScreenFixture : public ::testing::Test {
 
   /** @brief Has the table send @p round, then lets a frame pass. */
   void showRound(const rtype::network::RouletteRound& round);
-  /** @brief Gives the player @p chips in the settings, then lets a frame
+  /** @brief Gives the player @p chips in the wallet, then lets a frame
    * pass. */
   void holdChips(std::uint32_t chips);
   /** @brief Presses and releases a key, then lets a frame pass. */
@@ -52,7 +52,7 @@ class RouletteScreenFixture : public ::testing::Test {
   RecordingServerConnection connection_;
   InterfaceCanvasRecord canvas_;
   RecordingSoundPlayer sounds_;
-  rtype::client::PlayerSettings settings_;
+  FakeWallet wallet_;
   rtype::client::RouletteMemory memory_;
   std::unique_ptr<rtype::client::RouletteScreen> screen_;
 };

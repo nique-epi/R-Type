@@ -19,7 +19,8 @@ namespace rtype::client {
  * The token lives in memory only: neither the settings nor the journal ever
  * hold it. install() builds the session and the wallet; start() signs in with
  * the token given at launch (`--session`), if any; stop() does nothing, the
- * connection module ending the link.
+ * connection module ending the link. In UPDATE_STAGE, the wallet is asked as
+ * soon as the session signs in to another account.
  */
 class ClientAccountModule final : public engine::IModule {
  public:

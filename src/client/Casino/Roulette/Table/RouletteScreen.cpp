@@ -27,6 +27,7 @@
 #include "RouletteScreenParts.hpp"
 #include "SoundConstants.hpp"
 #include "TimeConstants.hpp"
+#include "WalletPurse.hpp"
 
 namespace rtype::client {
 
@@ -62,35 +63,36 @@ RouletteScreen::RouletteScreen(RouletteScreenParts parts,
       sounds_(&parts.sounds.get()),
       casino_(&parts.casino.get()),
       memory_(&parts.memory.get()),
-      settings_(&parts.settings.get()),
+      wallet_(&parts.wallet.get()),
       connection_(&parts.connection.get()),
       waitingRoom_(&parts.waitingRoom.get()),
       canvas_(std::move(canvas)),
       playfieldPointAt_(std::move(parts.playfieldPointAt)),
       palette_(parts.palette),
       motion_(parts.motion),
-      bars_(RouletteBarActions{.spin =
-                                   [this] {
-                                     memory_->askSpin();
+      bars_(
+          RouletteBarActions{.spin =
+                                 [this] {
+                                   memory_->askSpin();
+                                   send();
+                                 },
+                             .clear =
+                                 [this] {
+                                   memory_->slip().clear();
+                                   send();
+                                 },
+                             .rebet =
+                                 [this] {
+                                   if (memory_->slip().replaceWith(
+                                           memory_->previousBets(),
+                                           walletChips(*wallet_).value_or(0))) {
                                      send();
-                                   },
-                               .clear =
-                                   [this] {
-                                     memory_->slip().clear();
-                                     send();
-                                   },
-                               .rebet =
-                                   [this] {
-                                     if (memory_->slip().replaceWith(
-                                             memory_->previousBets(),
-                                             settings_->chips)) {
-                                       send();
-                                     }
-                                   },
-                               .back = [this] { navigator_->pop(); }},
-            parts.sounds) {
+                                   }
+                                 },
+                             .back = [this] { navigator_->pop(); }},
+          parts.sounds) {
   seenRound_ = casino_->round();
-  memory_->follow(seenRound_, settings_->chips);
+  memory_->follow(seenRound_, walletChips(*wallet_).value_or(0));
   repaint();
 }
 
@@ -110,7 +112,7 @@ void RouletteScreen::handleEvent(const sf::Event& event) {
 
 void RouletteScreen::update(engine::Duration elapsed) {
   std::optional<network::RouletteRound> round = casino_->round();
-  memory_->follow(round, settings_->chips);
+  memory_->follow(round, walletChips(*wallet_).value_or(0));
   if (round != seenRound_) {
     seenRound_ = std::move(round);
     sinceRound_ = engine::Duration::zero();
@@ -154,13 +156,13 @@ void RouletteScreen::pointerPressed(sf::Vector2i pixel) {
 
 void RouletteScreen::layChip() {
   const std::optional<network::RouletteRound> round = casino_->round();
-  memory_->follow(round, settings_->chips);
+  memory_->follow(round, walletChips(*wallet_).value_or(0));
   if (!betsOpenIn(round)) {
     return;
   }
   network::RouletteBet bet = betAt(cursor_);
   bet.amount = CHIP_VALUES.at(chosenChip_);
-  if (memory_->slip().lay(bet, settings_->chips)) {
+  if (memory_->slip().lay(bet, walletChips(*wallet_).value_or(0))) {
     sounds_->play(CLICK_SOUND_ID);
     send();
   }
@@ -178,7 +180,7 @@ RouletteReading RouletteScreen::readTable() const {
                       : engine::Duration::zero(),
       .ownPlayerNumber = connection_->status().playerNumber,
       .players = waitingRoom_->lobbyPlayers(),
-      .chipsHeld = settings_->chips,
+      .chipsHeld = walletChips(*wallet_).value_or(0),
       .chipsBeforeDraw = memory_->chipsBeforeDraw(),
       .bets = memory_->slip().bets(),
       .spinAsked = memory_->spinAsked(),

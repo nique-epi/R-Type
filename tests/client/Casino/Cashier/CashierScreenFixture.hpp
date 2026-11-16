@@ -6,15 +6,13 @@
 #include <memory>
 #include "CashierScreen.hpp"
 #include "CashierWay.hpp"
-#include "PlayerSettings.hpp"
+#include "FakeWallet.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
-#include "RecordingSettingsStorage.hpp"
 #include "RecordingSoundPlayer.hpp"
-#include "SettingsService.hpp"
 
-/** @brief A cashier that buys chips, over settings saved to a recording
- * storage, with a recording navigator, canvas and sound player; the player
+/** @brief A cashier that buys chips, over a wallet the test answers for the
+ * master, with a recording navigator, canvas and sound player; the player
  * holds KOPECKS_HELD kopecks and CHIPS_HELD chips. */
 class CashierScreenFixture : public ::testing::Test {
  protected:
@@ -32,16 +30,15 @@ class CashierScreenFixture : public ::testing::Test {
   /** @brief Presses and releases the left button over @p interfacePixel, a
    * pixel of the interface picture, then lets a frame pass. */
   void clickAt(sf::Vector2i interfacePixel);
+  /** @brief Lets a frame pass. */
+  void wait();
 
-  [[nodiscard]] const rtype::client::PlayerSettings& settings() const;
-  [[nodiscard]] const RecordingSettingsStorage& storage() const;
+  [[nodiscard]] FakeWallet& wallet();
   [[nodiscard]] const RecordingNavigator& navigator() const;
   [[nodiscard]] const InterfaceCanvasRecord& canvas() const;
 
  private:
-  rtype::client::PlayerSettings settings_;
-  RecordingSettingsStorage storage_;
-  rtype::client::SettingsService service_;
+  FakeWallet wallet_;
   RecordingNavigator navigator_;
   RecordingSoundPlayer sounds_;
   InterfaceCanvasRecord canvas_;

@@ -9,7 +9,8 @@ namespace rtype::client {
 
 /**
  * @brief The module of the shop: install() adds SHOP_SCREEN to the
- * ScreenRegistry. It opens nothing, so start() and stop() do nothing.
+ * ScreenRegistry, which a guest finds as a dialog that asks to sign in. It
+ * opens nothing, so start() and stop() do nothing.
  */
 class ClientShopModule final : public engine::IModule {
  public:

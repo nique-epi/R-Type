@@ -2,6 +2,9 @@
 #include <SFML/Graphics/Color.hpp>
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
+#include <cstdint>
+#include <optional>
+#include <string>
 #include <string_view>
 #include "ButlerLine.hpp"
 #include "CasinoBalances.hpp"
@@ -9,6 +12,7 @@
 #include "CutCornerBox.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "Kopecks.hpp"
+#include "KopecksLabelConstants.hpp"
 #include "WidgetConstants.hpp"
 
 namespace rtype::client {
@@ -77,6 +81,17 @@ void paintNameTag(IInterfaceCanvas& canvas, sf::Vector2i topLeft,
   canvas.write(name, topLeft + CASINO_TAG_PADDING, CASINO_TAG_STYLE);
 }
 
+namespace {
+
+/** @returns @p balance as the casino writes it, thousands apart, or
+ * UNKNOWN_KOPECKS_TEXT when there is none. */
+std::string balanceText(std::optional<std::uint32_t> balance) {
+  return balance.has_value() ? kopecksText(*balance)
+                             : std::string{UNKNOWN_KOPECKS_TEXT};
+}
+
+}  // namespace
+
 void paintCasinoBalances(IInterfaceCanvas& canvas, CasinoBalances balances) {
   const sf::IntRect area = CASINO_BALANCES_AREA;
   CutCornerBox(area, {.border = CASINO_BALANCES_BORDER_COLOR,
@@ -84,11 +99,11 @@ void paintCasinoBalances(IInterfaceCanvas& canvas, CasinoBalances balances) {
       .paint(canvas);
   const int right = area.position.x + area.size.x - CASINO_BALANCES_PADDING;
   const int top = area.position.y;
-  canvas.write(kopecksText(balances.kopecks), {right, top + CASINO_KOPECKS_TOP},
+  canvas.write(balanceText(balances.kopecks), {right, top + CASINO_KOPECKS_TOP},
                CASINO_KOPECKS_STYLE);
   canvas.write(CASINO_KOPECKS_CAPTION,
                {right, top + CASINO_KOPECKS_CAPTION_TOP}, CASINO_CAPTION_STYLE);
-  canvas.write(kopecksText(balances.chips), {right, top + CASINO_CHIPS_TOP},
+  canvas.write(balanceText(balances.chips), {right, top + CASINO_CHIPS_TOP},
                CASINO_CHIPS_STYLE);
   canvas.write(CASINO_CHIPS_CAPTION, {right, top + CASINO_CHIPS_CAPTION_TOP},
                CASINO_CAPTION_STYLE);

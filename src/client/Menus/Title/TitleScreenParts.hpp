@@ -5,6 +5,7 @@
 #include "IScreenNavigator.hpp"
 #include "ISoundPlayer.hpp"
 #include "IUpdateNotice.hpp"
+#include "IWallet.hpp"
 #include "MotionPreference.hpp"
 #include "PlayStart.hpp"
 #include "PlayfieldMapping.hpp"
@@ -32,6 +33,9 @@ struct TitleScreenParts {
   /** @brief Settings of the player, read at every repaint: the squadron is
    * painted in the palette of its color mode. They must outlive the screen. */
   std::reference_wrapper<const PlayerSettings> settings;
+  /** @brief The wallet of the account signed in, whose kopecks the title
+   * shows; it must outlive the screen. */
+  std::reference_wrapper<const IWallet> wallet;
   /** @brief Gives the point of the playfield under a pixel of the window. */
   PlayfieldMapping playfieldPointAt;
   /** @brief MotionPreference::Reduced shows the squadron at rest. */

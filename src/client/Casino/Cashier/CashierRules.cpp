@@ -8,6 +8,7 @@
 #include "ExchangeRefusal.hpp"
 #include "Kopecks.hpp"
 #include "Purse.hpp"
+#include "WalletRefusal.hpp"
 
 namespace rtype::client {
 
@@ -54,6 +55,22 @@ std::string cashierLineOf(const Exchange& tried, CashierWay way,
       break;
   }
   return FULL_START + destinationWordOf(way);
+}
+
+std::string cashierRefusalLineOf(WalletRefusal refusal) {
+  switch (refusal) {
+    case WalletRefusal::BalanceRefused:
+      return BALANCES_REFUSED_LINE;
+    case WalletRefusal::SignedOut:
+      return SIGN_IN_AGAIN_LINE;
+    case WalletRefusal::MasterUnreachable:
+      return MASTER_SILENT_LINE;
+    case WalletRefusal::NotForSale:
+    case WalletRefusal::UnknownItem:
+    case WalletRefusal::MasterRefused:
+      return MASTER_REFUSED_LINE;
+  }
+  return MASTER_REFUSED_LINE;
 }
 
 }  // namespace rtype::client

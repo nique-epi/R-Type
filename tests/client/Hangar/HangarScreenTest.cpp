@@ -10,14 +10,18 @@
 #include "HangarScreenFixture.hpp"
 #include "HangarScreenFixtures.hpp"
 #include "HangarScreenTestConstants.hpp"
+#include "MenuScreenIdConstants.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "ReducedMotionHangarFixture.hpp"
+#include "ShipLocker.hpp"
 #include "SoundConstants.hpp"
 
 using rtype::client::Ambience;
 using rtype::client::FITTING_DURATION;
 using rtype::client::ROBOT_ARM_SOUND_ID;
+using rtype::client::ShipLocker;
+using rtype::client::SIGN_IN_NEEDED_SCREEN;
 using rtype::client::testing::CROWN_CELL_MIDDLE;
 using rtype::client::testing::CROWN_ICON_LEFT_ON_THE_SHEET;
 using rtype::client::testing::HangarScreenFixture;
@@ -31,6 +35,7 @@ using rtype::client::testing::WEARS_CROWN;
 using rtype::client::testing::WEARS_NOTHING;
 using rtype::client::testing::WEARS_TOP_HAT;
 using ::testing::Contains;
+using ::testing::ElementsAre;
 using ::testing::Not;
 using Key = sf::Keyboard::Key;
 
@@ -234,4 +239,37 @@ TEST_F(HangarScreenFixture, TheStatusOfALockedItemSaysHowToGetIt) {
   press(Key::Right);
 
   EXPECT_NE(writingOf(painting(), LOCKED_STATUS_TEXT), nullptr);
+}
+
+/**
+ * Given a hangar for a guest, the crown chosen
+ * When Enter is pressed
+ * Then the dialog that asks to sign in opens over the hangar
+ */
+TEST_F(HangarScreenFixture, AGuestOnALockedItemIsAskedToSignIn) {
+  press(Key::Right);
+  press(Key::Right);
+
+  press(Key::Enter);
+
+  EXPECT_THAT(navigator().calls(),
+              ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
+                                        .screen = SIGN_IN_NEEDED_SCREEN}));
+}
+
+/**
+ * Given a hangar where the ship wears the crown, which the account owned
+ * When the master reads the looks of the account without the crown
+ * Then the ship takes the crown off
+ */
+TEST_F(ReducedMotionHangarFixture, ALookTheAccountDoesNotOwnIsTakenOff) {
+  holdEveryItem();
+  press(Key::Right);
+  press(Key::Right);
+  press(Key::Enter);
+
+  wallet_.looks = ShipLocker{};
+  update(rtype::engine::Duration::zero());
+
+  EXPECT_EQ(settings().shipLook.head, 0);
 }

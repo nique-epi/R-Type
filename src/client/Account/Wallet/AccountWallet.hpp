@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
+#include <string>
 #include "ExchangeRequest.hpp"
 #include "IAccountLink.hpp"
 #include "IAccountSession.hpp"
@@ -33,6 +34,11 @@ class AccountWallet final : public IWallet {
   [[nodiscard]] std::optional<WalletChangeReading> exchanged(
       std::uint64_t ask) const override;
 
+  /** @brief Asks the wallet as soon as the session signs in to another
+   * account, so the balances show without a screen asking them. Called once
+   * per frame. */
+  void followSession();
+
  private:
   /** @returns The newest wallet the link read with the token signed in;
    * nothing signed out, or before it read one. */
@@ -40,6 +46,8 @@ class AccountWallet final : public IWallet {
 
   const IAccountSession* session_;
   IAccountLink* link_;
+  /** @brief The token the wallet was last asked for by followSession(). */
+  std::string followedToken_;
 };
 
 }  // namespace rtype::client

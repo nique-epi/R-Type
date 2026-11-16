@@ -3,11 +3,13 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "ClientConstants.hpp"
 #include "IAccountLink.hpp"
 #include "IAccountSession.hpp"
 #include "IWallet.hpp"
 #include "InstallContext.hpp"
 #include "ModuleConstants.hpp"
+#include "TimeConstants.hpp"
 
 namespace rtype::client {
 
@@ -28,6 +30,10 @@ void ClientAccountModule::install(engine::InstallContext& context) {
   wallet_.emplace(*session_, link);
   context.provide<IAccountSession>(*session_);
   context.provide<IWallet>(*wallet_);
+  context.addWork(UPDATE_STAGE,
+                  [this]([[maybe_unused]] engine::Duration elapsed) {
+                    wallet_->followSession();
+                  });
 }
 
 void ClientAccountModule::start() {

@@ -5,6 +5,7 @@
 #include "CashierWay.hpp"
 #include "Exchange.hpp"
 #include "Purse.hpp"
+#include "WalletRefusal.hpp"
 
 namespace rtype::client {
 
@@ -28,5 +29,8 @@ namespace rtype::client {
  */
 [[nodiscard]] std::string cashierLineOf(const Exchange& tried, CashierWay way,
                                         std::uint32_t amount);
+
+/** @returns Why the master did not make an exchange, in words. */
+[[nodiscard]] std::string cashierRefusalLineOf(WalletRefusal refusal);
 
 }  // namespace rtype::client

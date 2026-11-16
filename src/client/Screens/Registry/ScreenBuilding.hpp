@@ -32,6 +32,11 @@ namespace rtype::client {
 [[nodiscard]] std::unique_ptr<IScreen> dialogScreenOf(
     const ScreenContext& context, Menu menu);
 
+/** @returns The dialog that tells a guest a sign-in is needed: OK, which
+ * MENU_CANCEL_KEY answers too, closes it. */
+[[nodiscard]] std::unique_ptr<IScreen> signInNeededScreenOf(
+    const ScreenContext& context);
+
 /**
  * @brief The loading screen of a list while some of its assets are not
  * loaded; nothing once they all are, after releasing the loaded assets the

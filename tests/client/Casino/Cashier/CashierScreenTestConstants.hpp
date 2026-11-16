@@ -12,6 +12,8 @@ namespace rtype::client::testing {
 constexpr std::uint32_t KOPECKS_HELD = 4'250;
 constexpr std::uint32_t CHIPS_HELD = 1'250;
 constexpr std::uint32_t KOPECKS_AFTER_BUYING_500 = 3'750;
+/** @brief The amount a cashier offers when it opens. */
+constexpr std::uint32_t AMOUNT_OFFERED = 500;
 constexpr std::uint32_t CHIPS_AFTER_BUYING_500 = 1'750;
 constexpr std::uint32_t KOPECKS_AFTER_CASHING_OUT_500 = 4'750;
 constexpr std::uint32_t CHIPS_AFTER_CASHING_OUT_500 = 750;

@@ -16,12 +16,17 @@ namespace rtype::client {
 
 namespace {
 
+/** @returns The shop for a player signed in; the dialog that says a sign-in
+ * is needed for a guest, since the kopecks live on the account. */
 std::unique_ptr<IScreen> buildShopScreen(const ScreenContext& context) {
+  if (!context.services.account.get().signedIn()) {
+    return signInNeededScreenOf(context);
+  }
   return std::make_unique<ShopScreen>(
       ShopScreenParts{.navigator = context.navigator.get(),
                       .sounds = soundsOf(context),
                       .audio = context.services.audio.get(),
-                      .settings = context.services.settingsService.get(),
+                      .wallet = context.services.wallet.get(),
                       .playfieldPointAt = playfieldMappingOf(context),
                       .motion = motionPreference()},
       interfaceCanvasOf(context));

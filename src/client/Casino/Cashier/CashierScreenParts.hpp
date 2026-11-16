@@ -4,8 +4,8 @@
 #include "CashierWay.hpp"
 #include "IScreenNavigator.hpp"
 #include "ISoundPlayer.hpp"
+#include "IWallet.hpp"
 #include "PlayfieldMapping.hpp"
-#include "SettingsService.hpp"
 
 namespace rtype::client {
 
@@ -23,9 +23,9 @@ struct CashierScreenParts {
   std::reference_wrapper<IScreenNavigator> navigator;
   /** @brief Plays the clicks, which must outlive the screen. */
   std::reference_wrapper<ISoundPlayer> sounds;
-  /** @brief Holds and saves the kopecks and the chips of the player; it must
-   * outlive the screen. */
-  std::reference_wrapper<SettingsService> settings;
+  /** @brief The kopecks and the chips of the account signed in, which the
+   * cashier of the master changes; it must outlive the screen. */
+  std::reference_wrapper<IWallet> wallet;
   /** @brief Gives the point of the playfield under a pixel of the window. */
   PlayfieldMapping playfieldPointAt;
   /** @brief Whether it changes kopecks into chips, or chips back. */

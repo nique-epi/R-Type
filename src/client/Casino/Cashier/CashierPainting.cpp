@@ -108,10 +108,11 @@ void paintAfter(IInterfaceCanvas& canvas, const CashierView& view) {
       view.way == CashierWay::BuyChips ? BUY_CHIPS_RATE : CASH_OUT_RATE,
       {CASHIER_MIDDLE, CASHIER_AFTER_TOP},
       smallStyle(PALE_BLUE, TextAlignment::Center));
-  if (view.tried.refusal.has_value()) {
-    canvas.write(cashierLineOf(view.tried, view.way, view.amount),
-                 {CASHIER_MIDDLE, CASHIER_RESULT_TOP},
-                 smallStyle(HUD_CYAN, TextAlignment::Center));
+  if (view.notice.has_value() || view.tried.refusal.has_value()) {
+    canvas.write(
+        view.notice.value_or(cashierLineOf(view.tried, view.way, view.amount)),
+        {CASHIER_MIDDLE, CASHIER_RESULT_TOP},
+        smallStyle(HUD_CYAN, TextAlignment::Center));
     return;
   }
   for (const bool source : {true, false}) {
@@ -130,8 +131,7 @@ void paintAfter(IInterfaceCanvas& canvas, const CashierView& view) {
 
 void paintCashier(IInterfaceCanvas& canvas, const CashierView& view) {
   canvas.fill(INTERFACE_AREA, DIM_LAYER_COLOR);
-  paintCasinoBalances(canvas, CasinoBalances{.kopecks = view.purse.kopecks,
-                                             .chips = view.purse.chips});
+  paintCasinoBalances(canvas, view.balances);
   paintGoldPanel(canvas, CASHIER_PANEL_AREA);
   paintNameTag(
       canvas, CASHIER_TAG_TOP_LEFT,

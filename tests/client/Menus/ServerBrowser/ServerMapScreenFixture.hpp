@@ -4,7 +4,7 @@
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <memory>
-#include "PlayerSettings.hpp"
+#include "FakeWallet.hpp"
 #include "RecordingAudioService.hpp"
 #include "RecordingGameCatalog.hpp"
 #include "RecordingInterfaceCanvas.hpp"
@@ -43,6 +43,10 @@ class ServerMapScreenFixture : public ::testing::Test {
   [[nodiscard]] const ServerChoice& choice() const;
   [[nodiscard]] const InterfaceCanvasRecord& painting() const;
 
+  /** @brief The wallet whose kopecks the map shows: 20 of them, until a test
+   * changes it. */
+  FakeWallet wallet_;
+
  private:
   RecordingNavigator navigator_;
   RecordingSoundPlayer sounds_;
@@ -51,7 +55,6 @@ class ServerMapScreenFixture : public ::testing::Test {
   RecordingGameCatalog games_;
   ServerChoice choice_;
   RecordingServerConnection connection_;
-  PlayerSettings settings_;
   InterfaceCanvasRecord painting_;
   std::unique_ptr<ServerMapScreen> screen_;
 };

@@ -2,23 +2,29 @@
 #include <gtest/gtest.h>
 #include <SFML/Window/Keyboard.hpp>
 #include <optional>
+#include "CashierConstants.hpp"
 #include "CashierScreenFixture.hpp"
 #include "CashierScreenTestConstants.hpp"
 #include "CashierWay.hpp"
+#include "Currency.hpp"
+#include "ExchangeRequest.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
+#include "Wallet.hpp"
+#include "WalletChangeReading.hpp"
+#include "WalletRefusal.hpp"
 
 using rtype::client::CashierWay;
+using rtype::client::MASTER_SILENT_LINE;
+using rtype::client::WalletChangeReading;
+using rtype::client::WalletRefusal;
+using rtype::client::testing::AMOUNT_OFFERED;
 using rtype::client::testing::CHIPS_AFTER_BUYING;
 using rtype::client::testing::CHIPS_AFTER_BUYING_500;
-using rtype::client::testing::CHIPS_AFTER_CASHING_OUT_500;
-using rtype::client::testing::CHIPS_HELD;
 using rtype::client::testing::FIRST_AMOUNT;
 using rtype::client::testing::INSIDE_THE_CHIP_OF_ONE;
 using rtype::client::testing::INSIDE_THE_RAISE_MARK;
 using rtype::client::testing::KOPECKS_AFTER_BUYING_500;
-using rtype::client::testing::KOPECKS_AFTER_CASHING_OUT_500;
-using rtype::client::testing::KOPECKS_HELD;
 using rtype::client::testing::KOPECKS_LEFT_AFTER_BUYING;
 using rtype::client::testing::ONE_LARGEST_STEP_HIGHER;
 using rtype::client::testing::ONE_STEP_HIGHER;
@@ -28,6 +34,9 @@ using rtype::client::testing::STEP_OF_1;
 using rtype::client::testing::STEP_OF_100;
 using rtype::client::testing::STEP_OF_500;
 using rtype::client::testing::STEPS_TO_FIVE_THOUSAND;
+using rtype::network::Currency;
+using rtype::network::ExchangeRequest;
+using rtype::network::Wallet;
 using ::testing::ElementsAre;
 using ::testing::IsEmpty;
 using Key = sf::Keyboard::Key;
@@ -106,46 +115,82 @@ TEST_F(CashierScreenFixture, AClickOnTheRaiseMarkRaisesTheAmount) {
 /**
  * Given a cashier that buys chips, 500 offered
  * When Enter is pressed and released
- * Then 500 kopecks become 500 chips, the settings are saved once, and the
- * cashier closes
+ * Then the master is asked to change 500 kopecks into chips, and the cashier
+ * waits for its answer
  */
-TEST_F(CashierScreenFixture, EnterBuysTheChipsAndSaves) {
+TEST_F(CashierScreenFixture, EnterAsksTheMasterForTheChips) {
   press(Key::Enter);
 
-  EXPECT_EQ(settings().kopecks, KOPECKS_AFTER_BUYING_500);
-  EXPECT_EQ(settings().chips, CHIPS_AFTER_BUYING_500);
-  ASSERT_EQ(storage().saves().size(), 1U);
-  EXPECT_EQ(storage().saves().back().chips, CHIPS_AFTER_BUYING_500);
+  EXPECT_THAT(wallet().exchangesAsked,
+              ElementsAre(ExchangeRequest{.from = Currency::Kopecks,
+                                          .amount = AMOUNT_OFFERED}));
+  EXPECT_THAT(navigator().calls(), IsEmpty());
+}
+
+/**
+ * Given a cashier that asked the master for 500 chips
+ * When the master answers that it made the exchange
+ * Then the cashier closes
+ */
+TEST_F(CashierScreenFixture, ClosesOnceTheMasterMadeTheExchange) {
+  press(Key::Enter);
+
+  wallet().exchangeAnswer =
+      WalletChangeReading{.ask = wallet().exchangesAsked.size(),
+                          .wallet = Wallet{.kopecks = KOPECKS_AFTER_BUYING_500,
+                                           .chips = CHIPS_AFTER_BUYING_500},
+                          .refusal = std::nullopt};
+  wait();
+
   EXPECT_THAT(navigator().calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::Pop,
                                         .screen = std::nullopt}));
 }
 
 /**
+ * Given a cashier that asked the master for 500 chips
+ * When the master answers that it could not be reached
+ * Then the cashier stays open and says no answer came
+ */
+TEST_F(CashierScreenFixture, AnExchangeTheMasterDidNotMakeSaysWhy) {
+  press(Key::Enter);
+
+  wallet().exchangeAnswer =
+      WalletChangeReading{.ask = wallet().exchangesAsked.size(),
+                          .wallet = std::nullopt,
+                          .refusal = WalletRefusal::MasterUnreachable};
+  wait();
+
+  EXPECT_THAT(navigator().calls(), IsEmpty());
+  EXPECT_NE(writingOf(canvas(), MASTER_SILENT_LINE), nullptr);
+}
+
+/**
  * Given a cashier that cashes out, 500 offered
  * When Enter is pressed and released
- * Then 500 chips become 500 kopecks
+ * Then the master is asked to change 500 chips back into kopecks
  */
 TEST_F(CashierScreenFixture, EnterCashesTheChipsOut) {
   reopenWith(CashierWay::CashOut);
 
   press(Key::Enter);
 
-  EXPECT_EQ(settings().kopecks, KOPECKS_AFTER_CASHING_OUT_500);
-  EXPECT_EQ(settings().chips, CHIPS_AFTER_CASHING_OUT_500);
+  EXPECT_THAT(wallet().exchangesAsked,
+              ElementsAre(ExchangeRequest{.from = Currency::Chips,
+                                          .amount = AMOUNT_OFFERED}));
 }
 
 /**
  * Given a cashier that buys chips
  * When Enter is held down, its press repeated by the system, then released
- * Then the chips are bought once
+ * Then the master is asked once
  */
 TEST_F(CashierScreenFixture, AHeldEnterBuysOnce) {
   hold(Key::Enter);
   hold(Key::Enter);
   release(Key::Enter);
 
-  EXPECT_EQ(settings().kopecks, KOPECKS_AFTER_BUYING_500);
+  EXPECT_EQ(wallet().exchangesAsked.size(), 1U);
 }
 
 /**
@@ -165,7 +210,7 @@ TEST_F(CashierScreenFixture, AnAmountPastTheKopecksSaysWhatIsMissing) {
 /**
  * Given a cashier asked for 5 000 chips, 750 more than the kopecks held
  * When Enter is pressed and released
- * Then nothing is changed nor saved, and the cashier stays open
+ * Then nothing is asked of the master, and the cashier stays open
  */
 TEST_F(CashierScreenFixture, ARefusedAmountChangesNothing) {
   press(Key::Num5);
@@ -175,9 +220,7 @@ TEST_F(CashierScreenFixture, ARefusedAmountChangesNothing) {
 
   press(Key::Enter);
 
-  EXPECT_EQ(settings().kopecks, KOPECKS_HELD);
-  EXPECT_EQ(settings().chips, CHIPS_HELD);
-  EXPECT_TRUE(storage().saves().empty());
+  EXPECT_TRUE(wallet().exchangesAsked.empty());
   EXPECT_THAT(navigator().calls(), IsEmpty());
 }
 
@@ -189,7 +232,7 @@ TEST_F(CashierScreenFixture, ARefusedAmountChangesNothing) {
 TEST_F(CashierScreenFixture, BackClosesWithoutExchanging) {
   press(Key::Escape);
 
-  EXPECT_EQ(settings().kopecks, KOPECKS_HELD);
+  EXPECT_TRUE(wallet().exchangesAsked.empty());
   EXPECT_THAT(navigator().calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::Pop,
                                         .screen = std::nullopt}));

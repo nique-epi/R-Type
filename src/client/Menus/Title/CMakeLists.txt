@@ -11,6 +11,7 @@ target_include_directories(rtype_client_title PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
 target_link_libraries(rtype_client_title
   PUBLIC
     SFML::Graphics
+    rtype_client_account_wallet
     rtype_client_account_session
     rtype_client_audio_contract_music
     rtype_client_audio_contract_sounds

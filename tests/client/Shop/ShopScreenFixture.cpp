@@ -2,35 +2,42 @@
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <algorithm>
+#include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <optional>
+#include "FakeWallet.hpp"
 #include "KeyPress.hpp"
+#include "LookItems.hpp"
 #include "MotionPreference.hpp"
-#include "PlayerSettings.hpp"
 #include "PointerEvents.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
-#include "RecordingSettingsStorage.hpp"
 #include "RecordingSoundPlayer.hpp"
 #include "ScreenTestConstants.hpp"
+#include "ShipLocker.hpp"
 #include "ShopScreen.hpp"
 #include "ShopScreenParts.hpp"
 #include "ShopScreenTestConstants.hpp"
 #include "TimeConstants.hpp"
+#include "Wallet.hpp"
+#include "WalletChangeReading.hpp"
 
 namespace rtype::client::testing {
 
 ShopScreenFixture::ShopScreenFixture()
-    : service_(settings_, storage_),
-      audio_(sounds_),
+    : audio_(sounds_),
       screen_(std::make_unique<ShopScreen>(
           ShopScreenParts{.navigator = navigator_,
                           .sounds = sounds_,
                           .audio = audio_,
-                          .settings = service_,
+                          .wallet = wallet_,
                           .playfieldPointAt = samePlayfieldPoint,
                           .motion = MotionPreference::Reduced},
-          std::make_unique<RecordingInterfaceCanvas>(painting_))) {}
+          std::make_unique<RecordingInterfaceCanvas>(painting_))) {
+  wallet_.balances = network::Wallet{};
+  wallet_.looks = ShipLocker{};
+}
 
 void ShopScreenFixture::press(sf::Keyboard::Key key) {
   screen_->handleEvent(keyPress(key));
@@ -57,6 +64,16 @@ void ShopScreenFixture::pointAt(sf::Vector2i pixel, bool clicked) {
 void ShopScreenFixture::buyChosen() {
   press(sf::Keyboard::Key::Enter);
   press(sf::Keyboard::Key::Enter);
+  if (!wallet_.boughtItems.empty() && wallet_.balances.has_value() &&
+      wallet_.looks.has_value()) {
+    const std::size_t item = wallet_.boughtItems.back();
+    wallet_.balances->kopecks -= network::lookItemPrice(item);
+    wallet_.looks->items.set(item);
+    wallet_.purchaseAnswer =
+        WalletChangeReading{.ask = wallet_.boughtItems.size(),
+                            .wallet = wallet_.balances,
+                            .refusal = std::nullopt};
+  }
   wait(THE_STAMP_TIME);
 }
 
@@ -65,15 +82,11 @@ void ShopScreenFixture::wait(engine::Duration elapsed) {
 }
 
 void ShopScreenFixture::give(std::uint32_t kopecks) {
-  settings_.kopecks = kopecks;
+  wallet_.balances = network::Wallet{.kopecks = kopecks, .chips = 0};
   screen_->update(ONE_FRAME);
 }
 
-const PlayerSettings& ShopScreenFixture::settings() const { return settings_; }
-
-const RecordingSettingsStorage& ShopScreenFixture::storage() const {
-  return storage_;
-}
+FakeWallet& ShopScreenFixture::wallet() { return wallet_; }
 
 const RecordingNavigator& ShopScreenFixture::navigator() const {
   return navigator_;

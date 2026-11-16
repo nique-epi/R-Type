@@ -18,6 +18,7 @@
 #include "RouletteScreenParts.hpp"
 #include "RouletteScreenTestConstants.hpp"
 #include "ScreenTestConstants.hpp"
+#include "Wallet.hpp"
 
 using rtype::client::ConnectionStatus;
 using rtype::client::MotionPreference;
@@ -34,7 +35,8 @@ using rtype::client::testing::LUNA_NUMBER;
 using rtype::network::LobbyPlayer;
 
 RouletteScreenFixture::RouletteScreenFixture() {
-  settings_.chips = CHIPS_OF_ACE;
+  wallet_.balances =
+      rtype::network::Wallet{.kopecks = 0, .chips = CHIPS_OF_ACE};
   connection_.setStatus(ConnectionStatus{.playerNumber = ACE_NUMBER});
   waitingRoom_.setLobbyPlayers(
       {LobbyPlayer{.playerNumber = ACE_NUMBER,
@@ -47,7 +49,7 @@ RouletteScreenFixture::RouletteScreenFixture() {
                           .sounds = sounds_,
                           .casino = casino_,
                           .memory = memory_,
-                          .settings = settings_,
+                          .wallet = wallet_,
                           .connection = connection_,
                           .waitingRoom = waitingRoom_,
                           .playfieldPointAt = samePlayfieldPoint,
@@ -63,7 +65,7 @@ void RouletteScreenFixture::showRound(
 }
 
 void RouletteScreenFixture::holdChips(std::uint32_t chips) {
-  settings_.chips = chips;
+  wallet_.balances = rtype::network::Wallet{.kopecks = 0, .chips = chips};
   screen_->update(ONE_FRAME);
 }
 

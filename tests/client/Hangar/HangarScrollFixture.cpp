@@ -4,6 +4,7 @@
 #include <SFML/Window/Keyboard.hpp>
 #include <SFML/Window/Mouse.hpp>
 #include <memory>
+#include <string>
 #include "HangarScreen.hpp"
 #include "HangarScreenParts.hpp"
 #include "HangarScreenTestConstants.hpp"
@@ -15,6 +16,7 @@
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingSoundPlayer.hpp"
 #include "ScreenTestConstants.hpp"
+#include "ShipLocker.hpp"
 
 namespace rtype::client::testing {
 
@@ -25,6 +27,8 @@ HangarScrollFixture::HangarScrollFixture()
                             .sounds = sounds_,
                             .audio = audio_,
                             .settings = service_,
+                            .account = account_,
+                            .wallet = wallet_,
                             .playfieldPointAt = samePlayfieldPoint,
                             .palette = PLAYER_COLORS,
                             .shipColor = FIRST_PILOT_COLOR,
@@ -53,7 +57,12 @@ void HangarScrollFixture::clickAt(sf::Vector2i pixel) {
   screen_->update(ONE_FRAME);
 }
 
-void HangarScrollFixture::holdEveryItem() { settings_.shipLocker.items.set(); }
+void HangarScrollFixture::holdEveryItem() {
+  account_.signInAs(HANGAR_ACCOUNT_ID, std::string{HANGAR_TOKEN});
+  ShipLocker everyItem;
+  everyItem.items.set();
+  wallet_.looks = everyItem;
+}
 
 const PlayerSettings& HangarScrollFixture::settings() const {
   return settings_;

@@ -4,8 +4,8 @@
 #include <SFML/Window/Keyboard.hpp>
 #include <memory>
 #include "CasinoEntranceScreen.hpp"
+#include "FakeWallet.hpp"
 #include "MotionPreference.hpp"
-#include "PlayerSettings.hpp"
 #include "RecordingCasinoChannel.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
@@ -43,6 +43,6 @@ class CasinoEntranceScreenFixture : public ::testing::Test {
   RecordingCasinoChannel casino_;
   InterfaceCanvasRecord canvas_;
   RecordingSoundPlayer sounds_;
-  rtype::client::PlayerSettings settings_;
+  FakeWallet wallet_;
   std::unique_ptr<rtype::client::CasinoEntranceScreen> screen_;
 };

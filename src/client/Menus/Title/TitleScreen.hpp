@@ -6,6 +6,7 @@
 #include "IScreenNavigator.hpp"
 #include "ISoundPlayer.hpp"
 #include "IUpdateNotice.hpp"
+#include "IWallet.hpp"
 #include "Menu.hpp"
 #include "PlayStart.hpp"
 #include "PlayfieldMapping.hpp"
@@ -55,6 +56,7 @@ class TitleScreen : public IScreen {
   std::unique_ptr<IInterfaceCanvas> canvas_;
   PlayfieldMapping playfieldPointAt_;
   const PlayerSettings* settings_;
+  const IWallet* wallet_;
   IScreenNavigator* navigator_;
   const IUpdateNotice* notice_;
   bool updateAsked_{};

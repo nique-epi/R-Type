@@ -2,7 +2,10 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <optional>
+#include <string>
 #include "CashierWay.hpp"
+#include "CasinoBalances.hpp"
 #include "Exchange.hpp"
 #include "Purse.hpp"
 
@@ -19,6 +22,12 @@ struct CashierView {
   std::size_t step{};
   /** @brief What changing the amount would give, or why it is refused. */
   Exchange tried;
+  /** @brief The balances shown top right, nothing for one the master has
+   * not answered. */
+  CasinoBalances balances;
+  /** @brief What the cashier says in place of the result: the master asked
+   * or refusing; nothing otherwise. */
+  std::optional<std::string> notice;
 };
 
 }  // namespace rtype::client

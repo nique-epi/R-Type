@@ -17,10 +17,10 @@
 #include "IInterfaceCanvas.hpp"
 #include "KeyChip.hpp"
 #include "MotionPreference.hpp"
-#include "PlayerSettings.hpp"
 #include "PlayfieldMapping.hpp"
 #include "TablePlace.hpp"
 #include "TimeConstants.hpp"
+#include "WalletPurse.hpp"
 
 namespace rtype::client {
 
@@ -48,7 +48,7 @@ CasinoEntranceScreen::CasinoEntranceScreen(
     CasinoEntranceScreenParts parts, std::unique_ptr<IInterfaceCanvas> canvas)
     : navigator_(&parts.navigator.get()),
       casino_(&parts.casino.get()),
-      settings_(&parts.settings.get()),
+      wallet_(&parts.wallet.get()),
       canvas_(std::move(canvas)),
       playfieldPointAt_(std::move(parts.playfieldPointAt)),
       motion_(parts.motion),
@@ -135,8 +135,8 @@ void CasinoEntranceScreen::repaint() {
                    .butlerLeft = butlerLeftAt(stage_),
                    .line = inHall ? HALL_LINE : WELCOME_LINE,
                    .hall = inHall ? std::optional(CasinoBalances{
-                                        .kopecks = settings_->kopecks,
-                                        .chips = settings_->chips})
+                                        .kopecks = walletKopecks(*wallet_),
+                                        .chips = walletChips(*wallet_)})
                                   : std::nullopt});
   if (inHall) {
     for (const KeyChip* chip :

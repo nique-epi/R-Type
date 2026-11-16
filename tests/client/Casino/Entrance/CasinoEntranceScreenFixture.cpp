@@ -6,13 +6,13 @@
 #include "CasinoEntranceScreenTestConstants.hpp"
 #include "KeyPress.hpp"
 #include "MotionPreference.hpp"
-#include "PlayerSettings.hpp"
 #include "PointerEvents.hpp"
 #include "RecordingCasinoChannel.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "ScreenTestConstants.hpp"
 #include "TimeConstants.hpp"
+#include "Wallet.hpp"
 
 using rtype::client::CasinoEntranceScreen;
 using rtype::client::CasinoEntranceScreenParts;
@@ -22,8 +22,8 @@ using rtype::client::testing::DOORS_OPENING_TIME;
 using rtype::client::testing::KOPECKS_HELD;
 
 CasinoEntranceScreenFixture::CasinoEntranceScreenFixture() {
-  settings_.kopecks = KOPECKS_HELD;
-  settings_.chips = CHIPS_HELD;
+  wallet_.balances =
+      rtype::network::Wallet{.kopecks = KOPECKS_HELD, .chips = CHIPS_HELD};
   reopenWith(MotionPreference::Full);
 }
 
@@ -32,7 +32,7 @@ void CasinoEntranceScreenFixture::reopenWith(MotionPreference motion) {
       CasinoEntranceScreenParts{.navigator = navigator_,
                                 .sounds = sounds_,
                                 .casino = casino_,
-                                .settings = settings_,
+                                .wallet = wallet_,
                                 .playfieldPointAt = samePlayfieldPoint,
                                 .motion = motion},
       std::make_unique<RecordingInterfaceCanvas>(canvas_));

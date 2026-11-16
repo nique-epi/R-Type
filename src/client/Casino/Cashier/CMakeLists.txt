@@ -18,7 +18,7 @@ target_link_libraries(rtype_client_casino_cashier
     rtype_client_interface
     rtype_client_key_chip
     rtype_client_screens_module
-    rtype_client_settings_module
+    rtype_client_account_wallet
     rtype_client_window_display
     rtype_engine_time
   PRIVATE

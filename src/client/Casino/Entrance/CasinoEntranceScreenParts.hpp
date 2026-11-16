@@ -4,8 +4,8 @@
 #include "ICasinoChannel.hpp"
 #include "IScreenNavigator.hpp"
 #include "ISoundPlayer.hpp"
+#include "IWallet.hpp"
 #include "MotionPreference.hpp"
-#include "PlayerSettings.hpp"
 #include "PlayfieldMapping.hpp"
 
 namespace rtype::client {
@@ -27,9 +27,9 @@ struct CasinoEntranceScreenParts {
   /** @brief The table the player sits at once inside, and leaves with LEAVE;
    * it must outlive the screen. */
   std::reference_wrapper<ICasinoChannel> casino;
-  /** @brief Settings of the player, read at every repaint for the balances;
-   * they must outlive the screen. */
-  std::reference_wrapper<const PlayerSettings> settings;
+  /** @brief The wallet of the account signed in, read at every repaint for
+   * the balances; it must outlive the screen. */
+  std::reference_wrapper<const IWallet> wallet;
   /** @brief Gives the point of the playfield under a pixel of the window. */
   PlayfieldMapping playfieldPointAt;
   /** @brief Whether the butler moves and the doors open slowly. */

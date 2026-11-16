@@ -9,9 +9,9 @@
 #include "IInterfaceCanvas.hpp"
 #include "IScreen.hpp"
 #include "IScreenNavigator.hpp"
+#include "IWallet.hpp"
 #include "KeyChip.hpp"
 #include "MotionPreference.hpp"
-#include "PlayerSettings.hpp"
 #include "PlayfieldMapping.hpp"
 #include "ScreenId.hpp"
 #include "TimeConstants.hpp"
@@ -73,7 +73,7 @@ class CasinoEntranceScreen final : public IScreen {
 
   IScreenNavigator* navigator_;
   ICasinoChannel* casino_;
-  const PlayerSettings* settings_;
+  const IWallet* wallet_;
   std::unique_ptr<IInterfaceCanvas> canvas_;
   PlayfieldMapping playfieldPointAt_;
   MotionPreference motion_;

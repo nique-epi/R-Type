@@ -6,24 +6,26 @@
 #include "CashierScreenParts.hpp"
 #include "CashierScreenTestConstants.hpp"
 #include "CashierWay.hpp"
+#include "FakeWallet.hpp"
 #include "KeyPress.hpp"
-#include "PlayerSettings.hpp"
 #include "PointerEvents.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
-#include "RecordingSettingsStorage.hpp"
 #include "ScreenTestConstants.hpp"
+#include "ShipLocker.hpp"
+#include "Wallet.hpp"
 
 using rtype::client::CashierScreen;
 using rtype::client::CashierScreenParts;
 using rtype::client::CashierWay;
-using rtype::client::PlayerSettings;
+using rtype::client::ShipLocker;
 using rtype::client::testing::CHIPS_HELD;
 using rtype::client::testing::KOPECKS_HELD;
 
-CashierScreenFixture::CashierScreenFixture() : service_(settings_, storage_) {
-  settings_.kopecks = KOPECKS_HELD;
-  settings_.chips = CHIPS_HELD;
+CashierScreenFixture::CashierScreenFixture() {
+  wallet_.balances =
+      rtype::network::Wallet{.kopecks = KOPECKS_HELD, .chips = CHIPS_HELD};
+  wallet_.looks = ShipLocker{};
   reopenWith(CashierWay::BuyChips);
 }
 
@@ -31,7 +33,7 @@ void CashierScreenFixture::reopenWith(CashierWay way) {
   screen_ = std::make_unique<CashierScreen>(
       CashierScreenParts{.navigator = navigator_,
                          .sounds = sounds_,
-                         .settings = service_,
+                         .wallet = wallet_,
                          .playfieldPointAt = samePlayfieldPoint,
                          .way = way},
       std::make_unique<RecordingInterfaceCanvas>(canvas_));
@@ -60,13 +62,9 @@ void CashierScreenFixture::clickAt(sf::Vector2i interfacePixel) {
   screen_->update(ONE_FRAME);
 }
 
-const PlayerSettings& CashierScreenFixture::settings() const {
-  return settings_;
-}
+void CashierScreenFixture::wait() { screen_->update(ONE_FRAME); }
 
-const RecordingSettingsStorage& CashierScreenFixture::storage() const {
-  return storage_;
-}
+FakeWallet& CashierScreenFixture::wallet() { return wallet_; }
 
 const RecordingNavigator& CashierScreenFixture::navigator() const {
   return navigator_;

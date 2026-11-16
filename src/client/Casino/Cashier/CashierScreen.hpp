@@ -3,7 +3,11 @@
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Event.hpp>
+#include <cstdint>
 #include <memory>
+#include <optional>
+#include <string>
+#include "AccountLinkConstants.hpp"
 #include "CashierAmount.hpp"
 #include "CashierScreenParts.hpp"
 #include "CashierWay.hpp"
@@ -12,9 +16,9 @@
 #include "IScreen.hpp"
 #include "IScreenNavigator.hpp"
 #include "ISoundPlayer.hpp"
+#include "IWallet.hpp"
 #include "KeyChip.hpp"
 #include "PlayfieldMapping.hpp"
-#include "SettingsService.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -63,6 +67,9 @@ class CashierScreen final : public IScreen {
   /** @brief Makes the exchange, saves the settings, then closes the cashier;
    * a refused exchange does nothing. */
   void confirm();
+  /** @brief Closes the cashier once the master made the exchange asked, or
+   * says why it did not. */
+  void settle();
   /** @returns The exchange the amount would make with the purse of the
    * settings. */
   [[nodiscard]] Exchange tried() const;
@@ -70,13 +77,18 @@ class CashierScreen final : public IScreen {
 
   IScreenNavigator* navigator_;
   ISoundPlayer* sounds_;
-  SettingsService* settings_;
+  IWallet* wallet_;
   std::unique_ptr<IInterfaceCanvas> canvas_;
   PlayfieldMapping playfieldPointAt_;
   CashierWay way_;
   CashierAmount amount_;
   KeyChip confirmChip_;
   KeyChip backChip_;
+  /** @brief The exchange the master has not answered yet, NO_ACCOUNT_ASK
+   * when none. */
+  std::uint64_t exchangeAsk_{NO_ACCOUNT_ASK};
+  /** @brief What the cashier says in place of the result, if anything. */
+  std::optional<std::string> notice_;
 };
 
 }  // namespace rtype::client

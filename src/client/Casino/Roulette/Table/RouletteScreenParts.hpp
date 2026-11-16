@@ -6,9 +6,9 @@
 #include "IServerConnection.hpp"
 #include "ISoundPlayer.hpp"
 #include "IWaitingRoom.hpp"
+#include "IWallet.hpp"
 #include "MotionPreference.hpp"
 #include "PlayerPalette.hpp"
-#include "PlayerSettings.hpp"
 #include "PlayfieldMapping.hpp"
 #include "RouletteMemory.hpp"
 
@@ -33,9 +33,9 @@ struct RouletteScreenParts {
   /** @brief The bets of the round and the numbers drawn, which outlive the
    * screen, so the player finds them when it comes back. */
   std::reference_wrapper<RouletteMemory> memory;
-  /** @brief Settings of the player, read at every update for the chips; they
-   * must outlive the screen. */
-  std::reference_wrapper<const PlayerSettings> settings;
+  /** @brief The wallet of the account signed in, read at every update for
+   * the chips; it must outlive the screen. */
+  std::reference_wrapper<const IWallet> wallet;
   /** @brief Tells the number of the player; it must outlive the screen. */
   std::reference_wrapper<const IServerConnection> connection;
   /** @brief Tells the names of the pilots; it must outlive the screen. */

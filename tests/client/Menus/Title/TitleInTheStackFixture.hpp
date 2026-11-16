@@ -4,6 +4,7 @@
 #include <SFML/System/Vector2.hpp>
 #include <memory>
 #include <vector>
+#include "FakeWallet.hpp"
 #include "IScreen.hpp"
 #include "PlayerSettings.hpp"
 #include "RecordingInterfaceCanvas.hpp"
@@ -48,5 +49,6 @@ class TitleInTheStackFixture : public ::testing::Test {
   std::vector<JournalEntry> journal_;
   RecordingSoundPlayer sounds_;
   rtype::client::PlayerSettings settings_;
+  FakeWallet wallet_;
   rtype::client::ScreenStack screens_;
 };

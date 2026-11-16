@@ -9,10 +9,12 @@
 #include "AmbienceScope.hpp"
 #include "FittingRun.hpp"
 #include "HangarScreenParts.hpp"
+#include "IAccountSession.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "IScreen.hpp"
 #include "IScreenNavigator.hpp"
 #include "ISoundPlayer.hpp"
+#include "IWallet.hpp"
 #include "KeyChip.hpp"
 #include "MotionPreference.hpp"
 #include "PlayerPalette.hpp"
@@ -27,6 +29,11 @@ namespace rtype::client {
  * @brief The hangar, as the design system "R-Type Hangar" draws it: the
  * glass locker of the items on the left, the ship held by four white arms on
  * the right, the reference card of the chosen item above it.
+ *
+ * The locker holds the looks the account signed in owns on the master, the
+ * starter kit for a guest, whose confirm on another look opens
+ * SIGN_IN_NEEDED_SCREEN. A look the ship wears and the account does not own
+ * is taken off as soon as the owned looks are known.
  *
  * The arrows, or the pointer, choose an item; MENU_CONFIRM_KEY, or a click,
  * wears it, or takes it off when the ship wears it. Wearing changes the
@@ -62,12 +69,17 @@ class HangarScreen : public IScreen {
   /** @brief Scrolls the locker one row with the vertical wheel, then chooses
    * the item under the pointer, or keeps the choice among the rows shown. */
   void scrolled(const sf::Event::MouseWheelScrolled& wheel);
+  /** @brief Takes off what the ship wears and the account does not own,
+   * once the looks it owns are known. */
+  void takeOffWhatIsNotOwned();
   void repaint();
 
   IScreenNavigator* navigator_;
   AmbienceScope ambience_;
   ISoundPlayer* sounds_;
   SettingsService* settings_;
+  const IAccountSession* account_;
+  IWallet* wallet_;
   std::unique_ptr<IInterfaceCanvas> canvas_;
   PlayfieldMapping playfieldPointAt_;
   std::reference_wrapper<const PlayerPalette> palette_;

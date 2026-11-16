@@ -4,9 +4,9 @@
 #include "IAudioService.hpp"
 #include "IScreenNavigator.hpp"
 #include "ISoundPlayer.hpp"
+#include "IWallet.hpp"
 #include "MotionPreference.hpp"
 #include "PlayfieldMapping.hpp"
-#include "SettingsService.hpp"
 
 namespace rtype::client {
 
@@ -27,9 +27,9 @@ struct ShopScreenParts {
   /** @brief Plays the music of the shop, or of its radio, while the shop
    * shows; it must outlive the screen. */
   std::reference_wrapper<IAudioService> audio;
-  /** @brief Holds and saves the kopecks and the locker of the player; it
-   * must outlive the screen. */
-  std::reference_wrapper<SettingsService> settings;
+  /** @brief The kopecks and the looks of the account signed in, which buys
+   * through it; it must outlive the screen. */
+  std::reference_wrapper<IWallet> wallet;
   /** @brief Gives the point of the playfield under a pixel of the window. */
   PlayfieldMapping playfieldPointAt;
   /** @brief Whether the shopkeeper may move, or the player asked the system

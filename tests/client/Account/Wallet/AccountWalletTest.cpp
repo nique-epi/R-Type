@@ -121,3 +121,31 @@ TEST_F(AccountWalletFixture, AsksTheCashierWithTheToken) {
   EXPECT_EQ(link().asked.exchangeRequest, FIVE_HUNDRED_CHIPS);
   EXPECT_EQ(link().asked.token, ACE_TOKEN);
 }
+
+/**
+ * Given the session signs in
+ * When the wallet follows it
+ * Then the wallet of the account is asked, with its token
+ */
+TEST_F(AccountWalletFixture, AsksTheWalletOnceTheSessionSignsIn) {
+  session().signInAs(ACE_ACCOUNT_ID, std::string{ACE_TOKEN});
+
+  wallet().followSession();
+
+  EXPECT_EQ(link().asked.walletAsk, FIRST_ASK);
+  EXPECT_EQ(link().asked.token, ACE_TOKEN);
+}
+
+/**
+ * Given the session signed in, and the wallet followed it once
+ * When it follows it again, the account unchanged
+ * Then nothing more is asked
+ */
+TEST_F(AccountWalletFixture, AsksTheWalletOncePerSignIn) {
+  session().signInAs(ACE_ACCOUNT_ID, std::string{ACE_TOKEN});
+  wallet().followSession();
+
+  wallet().followSession();
+
+  EXPECT_EQ(link().asked.walletAsk, FIRST_ASK);
+}

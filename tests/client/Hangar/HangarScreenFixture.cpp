@@ -3,6 +3,7 @@
 #include <SFML/Window/Event.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <memory>
+#include <string>
 #include "HangarScreen.hpp"
 #include "HangarScreenParts.hpp"
 #include "HangarScreenTestConstants.hpp"
@@ -15,6 +16,7 @@
 #include "RecordingSettingsStorage.hpp"
 #include "RecordingSoundPlayer.hpp"
 #include "ScreenTestConstants.hpp"
+#include "ShipLocker.hpp"
 
 namespace rtype::client::testing {
 
@@ -28,13 +30,20 @@ HangarScreenFixture::HangarScreenFixture(MotionPreference motion)
                             .sounds = sounds_,
                             .audio = audio_,
                             .settings = service_,
+                            .account = account_,
+                            .wallet = wallet_,
                             .playfieldPointAt = samePlayfieldPoint,
                             .palette = PLAYER_COLORS,
                             .shipColor = FIRST_PILOT_COLOR,
                             .motion = motion},
           std::make_unique<RecordingInterfaceCanvas>(painting_))) {}
 
-void HangarScreenFixture::holdEveryItem() { settings_.shipLocker.items.set(); }
+void HangarScreenFixture::holdEveryItem() {
+  account_.signInAs(HANGAR_ACCOUNT_ID, std::string{HANGAR_TOKEN});
+  ShipLocker everyItem;
+  everyItem.items.set();
+  wallet_.looks = everyItem;
+}
 
 void HangarScreenFixture::press(sf::Keyboard::Key key) {
   screen_->handleEvent(sf::Event::KeyPressed{.code = key});

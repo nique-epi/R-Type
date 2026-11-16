@@ -70,6 +70,7 @@ std::unique_ptr<IScreen> buildTitleScreen(const ScreenContext& context,
       TitleScreenParts{.navigator = context.navigator.get(),
                        .sounds = soundsOf(context),
                        .settings = context.services.settings.get(),
+                       .wallet = context.services.wallet.get(),
                        .playfieldPointAt = playfieldMappingOf(context),
                        .motion = motionPreference(),
                        .seed = std::random_device{}(),
@@ -137,7 +138,7 @@ std::unique_ptr<IScreen> buildServerMapScreen(const ScreenContext& context) {
                            .games = context.services.gameCatalog.get(),
                            .choice = context.serverChoice.get(),
                            .connection = context.services.connection.get(),
-                           .settings = context.services.settings.get(),
+                           .wallet = context.services.wallet.get(),
                            .playfieldPointAt = playfieldMappingOf(context),
                            .motion = motionPreference()},
       interfaceCanvasOf(context));
@@ -250,6 +251,7 @@ void ClientMenusModule::install(engine::InstallContext& context) {
   registry.add(NEW_GAME_SCREEN, buildNewGameScreen);
   registry.add(LEADERBOARD_SCREEN, buildLeaderboardScreen);
   registry.add(CONNECTION_LOST_SCREEN, buildConnectionLostScreen);
+  registry.add(SIGN_IN_NEEDED_SCREEN, signInNeededScreenOf);
 }
 
 void ClientMenusModule::start() {}

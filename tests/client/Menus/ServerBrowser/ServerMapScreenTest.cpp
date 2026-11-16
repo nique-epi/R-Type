@@ -11,11 +11,13 @@
 #include "GameRequest.hpp"
 #include "GameRules.hpp"
 #include "HangarScreenIdConstants.hpp"
+#include "KopecksLabelConstants.hpp"
 #include "MenuScreenIdConstants.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "ServerListPhase.hpp"
 #include "ServerListSnapshot.hpp"
+#include "ServerMapScreenConstants.hpp"
 #include "ServerMapScreenFixture.hpp"
 #include "ServerMapScreenFixtures.hpp"
 #include "ServerMapScreenTestConstants.hpp"
@@ -27,9 +29,11 @@ using rtype::client::CONNECTION_TO_MAP_SERVER_SCREEN;
 using rtype::client::GameRequest;
 using rtype::client::HANGAR_SCREEN;
 using rtype::client::NEW_GAME_SCREEN;
+using rtype::client::SERVER_LIST_REFRESH_INTERVAL;
 using rtype::client::ServerListPhase;
 using rtype::client::ServerListSnapshot;
 using rtype::client::SHOP_SCREEN;
+using rtype::client::UNKNOWN_KOPECKS_TEXT;
 using rtype::client::testing::BETWEEN_SECTORS_AND_HANGAR;
 using rtype::client::testing::COLUMN_HEADINGS_ON_THE_PANEL;
 using rtype::client::testing::HANGAR_HOUSE_SOURCE;
@@ -666,6 +670,44 @@ TEST_F(ServerMapScreenFixture, TheMapShowsTheKopecksOfThePlayer) {
   openOn(readyList());
 
   EXPECT_NE(writingOf(painting(), PLAYER_KOPECKS_TEXT), nullptr);
+}
+
+/**
+ * Given the map, open
+ * When the wallet holds no balance, as for a guest, and a frame passes
+ * Then it writes that the balance is unknown, never a balance of none
+ */
+TEST_F(ServerMapScreenFixture, AGuestSeesNoBalance) {
+  openOn(readyList());
+
+  wallet_.balances.reset();
+  update(ONE_FRAME);
+
+  EXPECT_NE(writingOf(painting(), UNKNOWN_KOPECKS_TEXT), nullptr);
+}
+
+/**
+ * Given the map
+ * When it opens
+ * Then it asks the wallet of the account again
+ */
+TEST_F(ServerMapScreenFixture, ReadsTheWalletWhenItOpens) {
+  openOn(readyList());
+
+  EXPECT_EQ(wallet_.walletAsks, 1U);
+}
+
+/**
+ * Given the map, open
+ * When the list is read again, after SERVER_LIST_REFRESH_INTERVAL
+ * Then the wallet is read again with it, so a game credited shows
+ */
+TEST_F(ServerMapScreenFixture, ReadsTheWalletAgainWithTheList) {
+  openOn(readyList());
+
+  update(SERVER_LIST_REFRESH_INTERVAL);
+
+  EXPECT_EQ(wallet_.walletAsks, 2U);
 }
 
 /**

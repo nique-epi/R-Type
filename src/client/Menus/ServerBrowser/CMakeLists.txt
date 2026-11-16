@@ -14,6 +14,7 @@ target_include_directories(rtype_client_menus_server_browser PUBLIC ${CMAKE_CURR
 target_link_libraries(rtype_client_menus_server_browser
   PUBLIC
     SFML::Graphics
+    rtype_client_account_wallet
     SFML::Window
     rtype_client_application
     rtype_client_audio_contract_service
