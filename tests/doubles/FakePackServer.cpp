@@ -6,28 +6,22 @@
 #include <mutex>
 #include <optional>
 #include <string>
-#include <thread>
 #include <utility>
 #include "FakePackServerConstants.hpp"
+#include "LoopbackListener.hpp"
 #include "ServedPack.hpp"
 
-// NOLINTBEGIN(clang-analyzer-cplusplus.NewDeleteLeaks)
 FakePackServer::FakePackServer(ServedPack pack) : body_(std::move(pack.body)) {
   server_.Get(pack.path, [this](const httplib::Request& request,
                                 httplib::Response& response) {
     answer(request, response);
   });
-  port_ = server_.bind_to_any_port(LOOPBACK);
-  listener_ = std::thread{[this] { server_.listen_after_bind(); }};
-  server_.wait_until_ready();
+  listener_.emplace(server_, LOOPBACK);
 }
-
-// NOLINTEND(clang-analyzer-cplusplus.NewDeleteLeaks)
 
 FakePackServer::~FakePackServer() {
   releaseTheAnswers();
-  server_.stop();
-  listener_.join();
+  listener_.reset();
 }
 
 void FakePackServer::cutTheFirstAnswerAfter(std::size_t bytes) {
@@ -54,7 +48,7 @@ void FakePackServer::releaseTheAnswers() {
 }
 
 std::uint16_t FakePackServer::port() const {
-  return static_cast<std::uint16_t>(port_);
+  return static_cast<std::uint16_t>(listener_->port());
 }
 
 std::size_t FakePackServer::requests() const {

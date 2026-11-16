@@ -22,8 +22,7 @@ constexpr std::uint8_t EMPTY_LEADERBOARD_PILOTS = 2;
 constexpr std::int64_t EMPTY_LEADERBOARD_ROWS = 10;
 
 /** @brief How long a test waits for the thread of the link to read, longer
- * than the timeouts of MasterClient, and how often it looks. */
+ * than the timeouts of MasterClient. */
 constexpr std::chrono::seconds READING_DEADLINE{12};
-constexpr std::chrono::milliseconds POLL_STEP{10};
 
 }  // namespace rtype::client::testing

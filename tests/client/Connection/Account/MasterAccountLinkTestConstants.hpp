@@ -11,10 +11,9 @@
 
 namespace rtype::client::testing {
 
-/** @brief How long a test waits for the thread of the link to answer, and
- * how often it looks: far more than a call to the loopback takes. */
+/** @brief How long a test waits for the thread of the link to answer: far
+ * more than a call to the loopback takes. */
 constexpr std::chrono::seconds LINK_READING_DEADLINE{10};
-constexpr std::chrono::milliseconds LINK_POLL_STEP{10};
 
 /** @brief The token the tests sign in with. */
 constexpr std::string_view LINK_TOKEN =

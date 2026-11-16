@@ -10,10 +10,9 @@
 
 namespace rtype::client::testing {
 
-/** @brief How long a test waits for the thread of the casino link to answer,
- * and how often it looks: far more than a call to the loopback takes. */
+/** @brief How long a test waits for the thread of the casino link to answer:
+ * far more than a call to the loopback takes. */
 constexpr std::chrono::seconds CASINO_LINK_DEADLINE{10};
-constexpr std::chrono::milliseconds CASINO_LINK_POLL_STEP{10};
 
 /** @brief The token the tests play with. */
 constexpr std::string_view CASINO_LINK_TOKEN =

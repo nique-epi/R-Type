@@ -3,10 +3,11 @@
 #include <httplib.h>
 #include <map>
 #include <mutex>
+#include <optional>
 #include <string>
-#include <thread>
 #include <vector>
 #include "CannedAnswer.hpp"
+#include "LoopbackListener.hpp"
 #include "RecordedRequest.hpp"
 
 /**
@@ -21,7 +22,7 @@
 class FakeAccountMaster {
  public:
   FakeAccountMaster();
-  ~FakeAccountMaster();
+  ~FakeAccountMaster() = default;
   FakeAccountMaster(const FakeAccountMaster&) = delete;
   FakeAccountMaster& operator=(const FakeAccountMaster&) = delete;
   FakeAccountMaster(FakeAccountMaster&&) = delete;
@@ -44,6 +45,5 @@ class FakeAccountMaster {
   std::map<std::string, CannedAnswer> answers_;
   std::vector<RecordedRequest> requests_;
   httplib::Server server_;
-  int port_{};
-  std::thread listener_;
+  std::optional<LoopbackListener> listener_;
 };

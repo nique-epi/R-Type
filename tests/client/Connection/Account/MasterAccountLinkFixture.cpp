@@ -1,13 +1,12 @@
 #include "MasterAccountLinkFixture.hpp"
-#include <chrono>
 #include <cstdint>
 #include <functional>
 #include <optional>
-#include <thread>
 #include "FakeAccountMaster.hpp"
 #include "MasterAccountLink.hpp"
 #include "MasterAccountLinkTestConstants.hpp"
 #include "UserReading.hpp"
+#include "ValueSoon.hpp"
 #include "WalletChangeReading.hpp"
 #include "WalletReading.hpp"
 
@@ -21,16 +20,10 @@ template <typename Reading>
 std::optional<Reading> readingSoon(
     const std::function<std::optional<Reading>()>& read,
     const std::function<bool(const Reading&)>& accepted) {
-  const auto deadline =
-      std::chrono::steady_clock::now() + LINK_READING_DEADLINE;
-  while (std::chrono::steady_clock::now() < deadline) {
-    const std::optional<Reading> reading = read();
-    if (reading.has_value() && accepted(*reading)) {
-      return reading;
-    }
-    std::this_thread::sleep_for(LINK_POLL_STEP);
-  }
-  return std::nullopt;
+  return valueSoon(LINK_READING_DEADLINE, [&read, &accepted] {
+    std::optional<Reading> reading = read();
+    return reading.has_value() && accepted(*reading) ? reading : std::nullopt;
+  });
 }
 
 }  // namespace

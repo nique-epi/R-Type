@@ -2,14 +2,13 @@
 #include <httplib.h>
 #include <mutex>
 #include <string>
-#include <thread>
 #include <utility>
 #include <vector>
 #include "CannedAnswer.hpp"
 #include "FakeAccountMasterConstants.hpp"
+#include "LoopbackListener.hpp"
 #include "RecordedRequest.hpp"
 
-// NOLINTBEGIN(clang-analyzer-cplusplus.NewDeleteLeaks)
 FakeAccountMaster::FakeAccountMaster() {
   const auto serve = [this](const httplib::Request& request,
                             httplib::Response& response) {
@@ -20,16 +19,7 @@ FakeAccountMaster::FakeAccountMaster() {
   server_.Put(everyPath, serve);
   server_.Post(everyPath, serve);
   server_.Delete(everyPath, serve);
-  port_ = server_.bind_to_any_port(std::string{ACCOUNT_MASTER_HOST});
-  listener_ = std::thread{[this] { server_.listen_after_bind(); }};
-  server_.wait_until_ready();
-}
-
-// NOLINTEND(clang-analyzer-cplusplus.NewDeleteLeaks)
-
-FakeAccountMaster::~FakeAccountMaster() {
-  server_.stop();
-  listener_.join();
+  listener_.emplace(server_, std::string{ACCOUNT_MASTER_HOST});
 }
 
 void FakeAccountMaster::answer(const std::string& route, CannedAnswer answer) {
@@ -39,7 +29,8 @@ void FakeAccountMaster::answer(const std::string& route, CannedAnswer answer) {
 
 std::string FakeAccountMaster::url() const {
   return std::string{ACCOUNT_MASTER_SCHEME} + std::string{ACCOUNT_MASTER_HOST} +
-         std::string{ACCOUNT_MASTER_PORT_SEPARATOR} + std::to_string(port_);
+         std::string{ACCOUNT_MASTER_PORT_SEPARATOR} +
+         std::to_string(listener_->port());
 }
 
 std::vector<RecordedRequest> FakeAccountMaster::requests() const {

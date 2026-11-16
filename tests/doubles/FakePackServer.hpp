@@ -7,7 +7,7 @@
 #include <mutex>
 #include <optional>
 #include <string>
-#include <thread>
+#include "LoopbackListener.hpp"
 #include "ServedPack.hpp"
 
 /**
@@ -61,6 +61,5 @@ class FakePackServer {
   bool held_{false};
   std::condition_variable released_;
   httplib::Server server_;
-  int port_{};
-  std::thread listener_;
+  std::optional<LoopbackListener> listener_;
 };

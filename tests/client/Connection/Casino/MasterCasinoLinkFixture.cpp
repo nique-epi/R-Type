@@ -3,7 +3,6 @@
 #include <functional>
 #include <optional>
 #include <string>
-#include <thread>
 #include "CasinoReadings.hpp"
 #include "CasinoRoomState.hpp"
 #include "FakeAccountMaster.hpp"
@@ -11,6 +10,7 @@
 #include "MasterCasinoLinkTestConstants.hpp"
 #include "RouletteBets.hpp"
 #include "RoulettePhase.hpp"
+#include "ValueSoon.hpp"
 
 namespace rtype::client::testing {
 
@@ -32,15 +32,14 @@ MasterCasinoLink& MasterCasinoLinkFixture::link() { return link_; }
 
 std::optional<CasinoReadings> MasterCasinoLinkFixture::readingsSoon(
     const std::function<bool(const CasinoReadings&)>& accepted) const {
-  const auto deadline = std::chrono::steady_clock::now() + CASINO_LINK_DEADLINE;
-  while (std::chrono::steady_clock::now() < deadline) {
-    const CasinoReadings readings = link_.readings();
-    if (accepted(readings)) {
-      return readings;
-    }
-    std::this_thread::sleep_for(CASINO_LINK_POLL_STEP);
-  }
-  return std::nullopt;
+  return valueSoon(CASINO_LINK_DEADLINE,
+                   [this, &accepted]() -> std::optional<CasinoReadings> {
+                     CasinoReadings readings = link_.readings();
+                     if (!accepted(readings)) {
+                       return std::nullopt;
+                     }
+                     return readings;
+                   });
 }
 
 network::CasinoRoomState MasterCasinoLinkFixture::linkRoomState() {
