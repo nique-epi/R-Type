@@ -36,11 +36,6 @@ struct ServerChoice {
    * Empty for any other choice of the map, which writes it each time, and
    * read only by the screen the map opens. */
   std::vector<network::Endpoint> nextServers;
-  /** @brief Whether the next connection accepted opens the casino over the
-   * waiting room: set by CASINO of the destination screen, cleared by its
-   * other cards, and by the connection screen once it opened the room, so a
-   * RETRY after a lost game lands in the room. */
-  bool towardsTheCasino = false;
 };
 
 }  // namespace rtype::client

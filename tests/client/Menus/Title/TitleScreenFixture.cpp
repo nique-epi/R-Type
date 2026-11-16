@@ -4,6 +4,7 @@
 #include "FakeUpdateNotice.hpp"
 #include "KeyPress.hpp"
 #include "MotionPreference.hpp"
+#include "PlayStart.hpp"
 #include "PointerEvents.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
@@ -14,18 +15,23 @@
 #include "WidgetConstants.hpp"
 
 using rtype::client::MotionPreference;
+using rtype::client::PlayStart;
 using rtype::client::PRESS_DURATION;
 using rtype::client::TitleScreen;
 using rtype::client::TitleScreenParts;
 
-TitleScreenFixture::TitleScreenFixture() {
+TitleScreenFixture::TitleScreenFixture() { reopenWith(PlayStart::ServerMap); }
+
+void TitleScreenFixture::reopenWith(PlayStart playStart) {
+  title_.reset();
   title_ = std::make_unique<TitleScreen>(
       TitleScreenParts{.navigator = navigator_,
                        .sounds = sounds_,
                        .settings = settings_,
                        .playfieldPointAt = samePlayfieldPoint,
                        .motion = MotionPreference::Full,
-                       .seed = rtype::client::testing::TITLE_SEED},
+                       .seed = rtype::client::testing::TITLE_SEED,
+                       .playStart = playStart},
       std::make_unique<RecordingInterfaceCanvas>(canvas_));
 }
 
@@ -38,6 +44,7 @@ void TitleScreenFixture::reopenAskingTheNotice() {
                        .playfieldPointAt = samePlayfieldPoint,
                        .motion = MotionPreference::Full,
                        .seed = rtype::client::testing::TITLE_SEED,
+                       .playStart = PlayStart::ServerMap,
                        .notice = &notice_},
       std::make_unique<RecordingInterfaceCanvas>(canvas_));
 }

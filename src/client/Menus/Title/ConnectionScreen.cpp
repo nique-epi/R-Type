@@ -8,7 +8,6 @@
 #include <string>
 #include <string_view>
 #include <utility>
-#include "CasinoScreenIdConstants.hpp"
 #include "ConnectionGoal.hpp"
 #include "ConnectionPhase.hpp"
 #include "ConnectionRefused.hpp"
@@ -152,15 +151,6 @@ bool movesToTheNextServer(const ConnectionStatus& status, ServerChoice& choice,
   return true;
 }
 
-/** @brief Opens the waiting room over the connection screen, and the casino
- * over the room when @p choice is marked for it, a mark it then clears. */
-void openWaitingRoom(IScreenNavigator& navigator, ServerChoice& choice) {
-  navigator.push(LOBBY_SCREEN);
-  if (std::exchange(choice.towardsTheCasino, false)) {
-    navigator.push(CASINO_SCREEN);
-  }
-}
-
 }  // namespace
 
 ConnectionScreen::ConnectionScreen(ConnectionScreenParts parts,
@@ -264,7 +254,7 @@ void ConnectionScreen::followConnection(const ConnectionStatus& status,
     if (goal_ == ConnectionGoal::ScreenBelow) {
       navigator_->pop();
     } else {
-      openWaitingRoom(*navigator_, *choice_);
+      navigator_->push(LOBBY_SCREEN);
     }
   }
 }

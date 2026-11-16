@@ -7,6 +7,7 @@
 #include "KeyPress.hpp"
 #include "MenuScreenIdConstants.hpp"
 #include "MotionPreference.hpp"
+#include "PlayStart.hpp"
 #include "PlayerSettings.hpp"
 #include "PointerEvents.hpp"
 #include "RecordingInterfaceCanvas.hpp"
@@ -24,14 +25,16 @@
 #include "UpdateScreenIdConstants.hpp"
 
 using rtype::client::CLICK_SOUND_ID;
-using rtype::client::DESTINATION_SCREEN;
+using rtype::client::CONNECTION_TO_CHOSEN_SERVER_SCREEN;
 using rtype::client::ENTITY_SHEET_ID;
 using rtype::client::LEADERBOARD_SCREEN;
 using rtype::client::LOGO_ID;
 using rtype::client::MotionPreference;
 using rtype::client::OPTIONS_SCREEN;
 using rtype::client::PlayerSettings;
+using rtype::client::PlayStart;
 using rtype::client::QUIT_CONFIRMATION_SCREEN;
+using rtype::client::SERVER_MAP_SCREEN;
 using rtype::client::SquadronStart;
 using rtype::client::TitleScreen;
 using rtype::client::TitleScreenParts;
@@ -87,14 +90,30 @@ TEST(TitleScreen, ASquadronInPlaceShowsItsShipsOnTheFirstFrame) {
 /**
  * Given the title screen, PLAY selected
  * When Enter is pressed and released, and the press lasts
- * Then the destination screen is asked for over the title
+ * Then the map of the servers is asked for over the title
  */
-TEST_F(TitleScreenFixture, PlayOpensTheDestinations) {
+TEST_F(TitleScreenFixture, PlayOpensTheServerMap) {
   choose(sf::Keyboard::Key::Enter);
 
   EXPECT_THAT(navigator().calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
-                                        .screen = DESTINATION_SCREEN}));
+                                        .screen = SERVER_MAP_SCREEN}));
+}
+
+/**
+ * Given the title of a client launched with -h, PLAY selected
+ * When Enter is pressed and released, and the press lasts
+ * Then the connection to the server given at launch is asked for, not the map
+ */
+TEST_F(TitleScreenFixture, PlayJoinsTheServerGivenAtLaunch) {
+  reopenWith(PlayStart::GivenServer);
+
+  choose(sf::Keyboard::Key::Enter);
+
+  EXPECT_THAT(
+      navigator().calls(),
+      ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
+                                .screen = CONNECTION_TO_CHOSEN_SERVER_SCREEN}));
 }
 
 /**
@@ -217,7 +236,7 @@ TEST_F(TitleInTheStackFixture,
  * Given the options opened over the title, then closed
  * When the left button is pressed and released on the bar of PLAY, and the
  * press lasts
- * Then the title asks for the destination screen
+ * Then the title asks for the map of the servers
  */
 TEST_F(TitleInTheStackFixture, OnceTheOptionsAreClosedAClickReachesTheTitle) {
   open(OPTIONS_SCREEN);
@@ -227,7 +246,7 @@ TEST_F(TitleInTheStackFixture, OnceTheOptionsAreClosedAClickReachesTheTitle) {
 
   EXPECT_THAT(titleNavigator().calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
-                                        .screen = DESTINATION_SCREEN}));
+                                        .screen = SERVER_MAP_SCREEN}));
 }
 
 /**

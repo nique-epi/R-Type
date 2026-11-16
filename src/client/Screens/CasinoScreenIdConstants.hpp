@@ -19,8 +19,4 @@ constexpr ScreenId CASINO_CASH_OUT_SCREEN{"casino cash out"};
 /** @brief The roulette table, pushed over the hall by ROULETTE. */
 constexpr ScreenId ROULETTE_SCREEN{"roulette"};
 
-/** @brief The name of the card of the destination screen that opens the
- * casino. */
-constexpr const char* CASINO_LABEL = "CASINO";
-
 }  // namespace rtype::client

@@ -4,7 +4,7 @@
 
 namespace rtype::client {
 
-/** @brief Where SERVER leads from the destination screen PLAY opens. */
+/** @brief Where PLAY leads from the title. */
 enum class PlayStart : std::uint8_t {
   /** @brief The server map, which lists the servers of the master. */
   ServerMap,

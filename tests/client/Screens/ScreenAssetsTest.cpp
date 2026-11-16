@@ -9,7 +9,6 @@
 #include "AssetLibrary.hpp"
 #include "AssetLoadingStep.hpp"
 #include "CasinoSpriteConstants.hpp"
-#include "DestinationSpriteConstants.hpp"
 #include "EffectConstants.hpp"
 #include "EntityAppearances.hpp"
 #include "EntitySpriteConstants.hpp"
@@ -30,7 +29,6 @@
 using rtype::client::AssetLibrary;
 using rtype::client::AssetLoadingStep;
 using rtype::client::CASINO_TEXTURES;
-using rtype::client::DESTINATION_SHEET_ID;
 using rtype::client::EFFECT_SHEET_ID;
 using rtype::client::ENTITY_SHEET_ID;
 using rtype::client::EntityAppearances;
@@ -177,16 +175,6 @@ TEST(ScreenAssets, TheTitleLoadsTheSheetsOfTheHelpOfTheWaitingRoom) {
 }
 
 /**
- * Given the assets of the title screen
- * When their textures are listed
- * Then they hold the sheet of the destination screen, which PLAY pushes over
- * the title without loading
- */
-TEST(ScreenAssets, TheTitleLoadsTheSheetOfTheDestinations) {
-  EXPECT_THAT(titleAssets().textures, Contains(DESTINATION_SHEET_ID));
-}
-
-/**
  * Given the assets of a game
  * When their textures are listed
  * Then they hold the professor sheet, so the help of the waiting room after
@@ -225,7 +213,6 @@ TEST(ScreenAssets, TheIntroLoadsTheTitleAndTheEffectSheet) {
                                     SHOP_KEEPER_SHEET_ID,
                                     SHOP_FRONT_ID,
                                     SHOP_TICKET_SHEET_ID,
-                                    DESTINATION_SHEET_ID,
                                     EFFECT_SHEET_ID};
   expected.insert(expected.end(), CASINO_TEXTURES.begin(),
                   CASINO_TEXTURES.end());
@@ -237,7 +224,7 @@ TEST(ScreenAssets, TheIntroLoadsTheTitleAndTheEffectSheet) {
  * Given the assets of the title screen
  * When their textures are listed
  * Then they hold every picture of the casino, the turns of the rotor
- * included, so the casino opens over the waiting room without loading
+ * included, so the casino opens without loading
  */
 TEST(ScreenAssets, TheTitleLoadsThePicturesOfTheCasino) {
   const std::vector<std::string> textures = titleAssets().textures;
