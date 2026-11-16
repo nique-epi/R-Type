@@ -3,8 +3,8 @@
 #include <optional>
 #include "Exchange.hpp"
 #include "ExchangeRefusal.hpp"
+#include "KopecksConstants.hpp"
 #include "Purse.hpp"
-#include "SettingsConstants.hpp"
 
 namespace rtype::client {
 
@@ -59,7 +59,7 @@ Exchange buyChips(const Purse& purse, std::uint32_t amount) {
                   ExchangeWay{.from = &Purse::kopecks,
                               .to = &Purse::chips,
                               .shortOf = ExchangeRefusal::NotEnoughKopecks,
-                              .largest = MAXIMUM_CHIPS});
+                              .largest = network::MAXIMUM_CHIPS});
 }
 
 Exchange cashOutChips(const Purse& purse, std::uint32_t amount) {
@@ -67,7 +67,7 @@ Exchange cashOutChips(const Purse& purse, std::uint32_t amount) {
                   ExchangeWay{.from = &Purse::chips,
                               .to = &Purse::kopecks,
                               .shortOf = ExchangeRefusal::NotEnoughChips,
-                              .largest = MAXIMUM_KOPECKS});
+                              .largest = network::MAXIMUM_KOPECKS});
 }
 
 }  // namespace rtype::client

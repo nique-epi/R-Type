@@ -1,16 +1,16 @@
 #include <gtest/gtest.h>
 #include "CashierAmount.hpp"
 #include "CashierAmountTestConstants.hpp"
-#include "SettingsConstants.hpp"
+#include "KopecksConstants.hpp"
 
 using rtype::client::CashierAmount;
-using rtype::client::MAXIMUM_CHIPS;
 using rtype::client::testing::MORE_STEPS_THAN_THE_LARGEST_BALANCE;
 using rtype::client::testing::OPENING_AMOUNT;
 using rtype::client::testing::OPENING_STEP_PLACE;
 using rtype::client::testing::PAST_THE_LAST_STEP;
 using rtype::client::testing::STEP_OF_FIVE_HUNDRED_PLACE;
 using rtype::client::testing::STEP_OF_ONE_PLACE;
+using rtype::network::MAXIMUM_CHIPS;
 
 /**
  * Given an amount at 500, by steps of 500

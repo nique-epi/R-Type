@@ -5,11 +5,11 @@
 #include <string_view>
 #include "ShipLookConstants.hpp"
 
-namespace rtype::client {
+namespace rtype::network {
 
-/** @brief The items of a first launch: the top hat, the cool shades and the
- * mustache, one per slot, as bits of the locker (bit n is the item at place
- * n of identifiers::SHIP_LOOK_ITEM_NAMES). */
+/** @brief The items every player holds from the start: the top hat, the cool
+ * shades and the mustache, one per slot, as bits of a locker (bit n is the
+ * item at place n of identifiers::SHIP_LOOK_ITEM_NAMES). */
 constexpr std::size_t STARTER_TOP_HAT = 0;
 constexpr std::size_t STARTER_COOL_SHADES = 8;
 constexpr std::size_t STARTER_MUSTACHE = 9;
@@ -28,4 +28,4 @@ static_assert(identifiers::SHIP_LOOK_ITEM_NAMES.at(STARTER_MUSTACHE) ==
                   std::string_view{"mustache"},
               "the third starter item is the mustache");
 
-}  // namespace rtype::client
+}  // namespace rtype::network

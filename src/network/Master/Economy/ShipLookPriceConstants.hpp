@@ -2,10 +2,10 @@
 
 #include <array>
 #include <cstdint>
-#include "EconomyConstants.hpp"
+#include "KopecksConstants.hpp"
 #include "ShipLookConstants.hpp"
 
-namespace rtype::client {
+namespace rtype::network {
 
 /** @brief The price of each item, in kopecks. The starter kit is not sold. */
 constexpr std::uint32_t TOP_HAT_PRICE = NOT_FOR_SALE;
@@ -53,4 +53,4 @@ constexpr std::array<std::uint32_t, identifiers::SHIP_LOOK_ITEM_COUNT>
         LONG_BEARD_PRICE,    WAR_SHARK_PRICE,    VOSTOK_PRICE,
         BYDO_HUSK_PRICE,     GOLDEN_ACE_PRICE,   GOLDEN_BYDO_PRICE};
 
-}  // namespace rtype::client
+}  // namespace rtype::network

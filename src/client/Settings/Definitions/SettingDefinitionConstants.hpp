@@ -5,6 +5,7 @@
 #include <optional>
 #include "ColorMode.hpp"
 #include "DisplayMode.hpp"
+#include "KopecksConstants.hpp"
 #include "PixelSize.hpp"
 #include "PlayerSettings.hpp"
 #include "Setting.hpp"
@@ -123,15 +124,15 @@ constexpr Setting<ShipLocker> SHIP_LOCKER_SETTING{
 
 /** @brief The balance of the player: none to MAXIMUM_KOPECKS. */
 constexpr SettingRange KOPECKS_RANGE{
-    .minimum = 0, .maximum = static_cast<int>(MAXIMUM_KOPECKS)};
+    .minimum = 0, .maximum = static_cast<int>(network::MAXIMUM_KOPECKS)};
 constexpr Setting<std::uint32_t> KOPECKS_SETTING{
     .member = &PlayerSettings::kopecks,
     .id = SettingId::Kopecks,
     .range = KOPECKS_RANGE};
 
 /** @brief The chips of the player: none to MAXIMUM_CHIPS. */
-constexpr SettingRange CHIPS_RANGE{.minimum = 0,
-                                   .maximum = static_cast<int>(MAXIMUM_CHIPS)};
+constexpr SettingRange CHIPS_RANGE{
+    .minimum = 0, .maximum = static_cast<int>(network::MAXIMUM_CHIPS)};
 constexpr Setting<std::uint32_t> CHIPS_SETTING{.member = &PlayerSettings::chips,
                                                .id = SettingId::Chips,
                                                .range = CHIPS_RANGE};

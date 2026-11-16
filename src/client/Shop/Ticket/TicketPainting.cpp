@@ -14,7 +14,7 @@
 #include "InterfaceColorConstants.hpp"
 #include "InterfaceConstants.hpp"
 #include "LookItemDescriptionConstants.hpp"
-#include "LookItemPurchase.hpp"
+#include "LookItems.hpp"
 #include "PurchaseTicketConstants.hpp"
 #include "RenderingConstants.hpp"
 #include "ShipHulls.hpp"
@@ -147,7 +147,8 @@ void paintWords(IInterfaceCanvas& canvas, std::size_t item) {
 
 /** @returns The price of @p item as the ticket types it. */
 std::string priceTextOf(std::size_t item) {
-  return std::to_string(lookItemPrice(item)) + std::string(TICKET_PRICE_SUFFIX);
+  return std::to_string(network::lookItemPrice(item)) +
+         std::string(TICKET_PRICE_SUFFIX);
 }
 
 /** @brief Types the quantity and the price of @p item. */

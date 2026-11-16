@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <limits>
 #include "ChipMoves.hpp"
-#include "SettingsConstants.hpp"
+#include "KopecksConstants.hpp"
 
 namespace rtype::client::testing {
 
@@ -20,7 +20,7 @@ constexpr ChipMoves A_STAKE_OF_A_HUNDRED_LOST{.staked = 100, .won = 0};
 /** @brief A player ten chips under the largest balance, and a round that pays
  * a hundred, ninety more than room is left for. */
 constexpr std::uint32_t TEN_CHIPS_UNDER_THE_LARGEST =
-    rtype::client::MAXIMUM_CHIPS - 10;
+    rtype::network::MAXIMUM_CHIPS - 10;
 constexpr ChipMoves A_HUNDRED_WON{.staked = 0, .won = 100};
 
 /** @brief A payout as large as the count of the server can be. */
