@@ -82,7 +82,6 @@ constexpr std::string_view CREDITED_AT_PARAMETER = ":credited_at";
 /** @brief The columns the queries of the wallets read. */
 constexpr int KOPECKS_COLUMN = 0;
 constexpr int CHIPS_COLUMN = 1;
-constexpr int FIRST_COLUMN = 0;
 constexpr int MOVEMENT_ID_COLUMN = 0;
 constexpr int MOVEMENT_CURRENCY_COLUMN = 1;
 constexpr int MOVEMENT_AMOUNT_COLUMN = 2;

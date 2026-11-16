@@ -10,8 +10,6 @@ namespace rtype::master {
  * refuse; the refusals a client tells apart are in CasinoRefusalConstants.hpp.
  */
 constexpr std::string_view UNKNOWN_ROOM_DETAIL = "the casino has no such room";
-constexpr std::string_view UNKNOWN_ROUND_DETAIL =
-    "a round is a whole number from 0";
 constexpr std::string_view ROOM_FULL_DETAIL = "every seat of the room is taken";
 constexpr std::string_view INVALID_BET_DETAIL =
     "a bet lies off the cloth or holds no chip";

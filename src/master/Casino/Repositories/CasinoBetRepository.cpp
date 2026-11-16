@@ -11,9 +11,11 @@
 #include "EpochSeconds.hpp"
 #include "MasterMessageText.hpp"
 #include "PlayerBet.hpp"
+#include "ResultColumnConstants.hpp"
 #include "RoomRound.hpp"
 #include "RouletteBet.hpp"
 #include "RouletteBetKind.hpp"
+#include "StatementParts.hpp"
 
 namespace rtype::master {
 
@@ -42,24 +44,19 @@ std::vector<network::RouletteBet> CasinoBetRepository::betsOf(
   SQLite::Statement query{connection_, std::string{PLAYER_BETS_QUERY}};
   bindPlace(query, place);
   query.bind(std::string{CASINO_USER_ID_PARAMETER}, userId);
-  std::vector<network::RouletteBet> bets;
-  while (query.executeStep()) {
-    bets.push_back(betIn(query, PLAYER_BET_KIND_COLUMN));
-  }
-  return bets;
+  return rowsOf(query, [](const SQLite::Statement& row) {
+    return betIn(row, PLAYER_BET_KIND_COLUMN);
+  });
 }
 
 std::vector<PlayerBet> CasinoBetRepository::roundBetsOf(
     network::RoomRound place) {
   SQLite::Statement query{connection_, std::string{ROUND_BETS_QUERY}};
   bindPlace(query, place);
-  std::vector<PlayerBet> bets;
-  while (query.executeStep()) {
-    bets.push_back(
-        PlayerBet{.userId = query.getColumn(ROUND_BET_USER_COLUMN).getInt64(),
-                  .bet = betIn(query, ROUND_BET_KIND_COLUMN)});
-  }
-  return bets;
+  return rowsOf(query, [](const SQLite::Statement& row) {
+    return PlayerBet{.userId = row.getColumn(ROUND_BET_USER_COLUMN).getInt64(),
+                     .bet = betIn(row, ROUND_BET_KIND_COLUMN)};
+  });
 }
 
 void CasinoBetRepository::removeOf(network::RoomRound place,
@@ -74,11 +71,12 @@ void CasinoBetRepository::removeOf(network::RoomRound place,
 void CasinoBetRepository::insert(
     network::RoomRound place, std::int64_t userId,
     const std::vector<network::RouletteBet>& bets) {
+  SQLite::Statement insert{connection_, std::string{INSERT_BET_STATEMENT}};
+  bindPlace(insert, place);
+  insert.bind(std::string{CASINO_USER_ID_PARAMETER}, userId);
   for (std::size_t position = 0; position < bets.size(); ++position) {
     const network::RouletteBet& bet = bets.at(position);
-    SQLite::Statement insert{connection_, std::string{INSERT_BET_STATEMENT}};
-    bindPlace(insert, place);
-    insert.bind(std::string{CASINO_USER_ID_PARAMETER}, userId);
+    insert.reset();
     insert.bind(std::string{POSITION_PARAMETER},
                 static_cast<std::int64_t>(position));
     insert.bind(std::string{KIND_PARAMETER},
@@ -94,15 +92,12 @@ std::vector<network::RoomRound> CasinoBetRepository::undrawnBefore(
     std::uint64_t round) {
   SQLite::Statement query{connection_, std::string{UNDRAWN_ROUNDS_QUERY}};
   query.bind(std::string{ROUND_PARAMETER}, static_cast<std::int64_t>(round));
-  std::vector<network::RoomRound> rounds;
-  while (query.executeStep()) {
-    rounds.push_back(network::RoomRound{
-        .room = static_cast<std::uint8_t>(
-            query.getColumn(CASINO_FIRST_COLUMN).getInt()),
+  return rowsOf(query, [](const SQLite::Statement& row) {
+    return network::RoomRound{
+        .room = static_cast<std::uint8_t>(row.getColumn(FIRST_COLUMN).getInt()),
         .round = static_cast<std::uint64_t>(
-            query.getColumn(CASINO_SECOND_COLUMN).getInt64())});
-  }
-  return rounds;
+            row.getColumn(SECOND_COLUMN).getInt64())};
+  });
 }
 
 void CasinoBetRepository::removeDrawnBefore(std::chrono::sys_seconds before) {

@@ -108,14 +108,8 @@ constexpr std::string_view BEFORE_PARAMETER = ":before";
 constexpr std::string_view KEPT_PARAMETER = ":kept";
 
 /** @brief The columns the queries of the casino read. */
-constexpr int CASINO_FIRST_COLUMN = 0;
-constexpr int CASINO_SECOND_COLUMN = 1;
 constexpr int PLAYER_BET_KIND_COLUMN = 0;
-constexpr int PLAYER_BET_FIRST_NUMBER_COLUMN = 1;
-constexpr int PLAYER_BET_AMOUNT_COLUMN = 2;
 constexpr int ROUND_BET_USER_COLUMN = 0;
 constexpr int ROUND_BET_KIND_COLUMN = 1;
-constexpr int ROUND_BET_FIRST_NUMBER_COLUMN = 2;
-constexpr int ROUND_BET_AMOUNT_COLUMN = 3;
 
 }  // namespace rtype::master
