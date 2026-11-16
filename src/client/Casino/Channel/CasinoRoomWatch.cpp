@@ -7,27 +7,12 @@
 #include "CasinoRoomReading.hpp"
 #include "CasinoRoomState.hpp"
 #include "ICasinoLink.hpp"
-#include "RoulettePhase.hpp"
+#include "RoulettePhaseDates.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
 
 namespace {
-
-using MillisecondDate = std::chrono::sys_time<std::chrono::milliseconds>;
-
-/** @returns The phase the dates of @p state give at @p now: the bets open
- * until closesAt, the wheel turning until resultAt, the result after. */
-network::RoulettePhase phaseAt(const network::CasinoRoomState& state,
-                               MillisecondDate now) {
-  if (now < state.closesAt) {
-    return network::RoulettePhase::Betting;
-  }
-  if (now < state.resultAt) {
-    return network::RoulettePhase::Spinning;
-  }
-  return network::RoulettePhase::Result;
-}
 
 /** @returns Whether @p read is a later look at the room than @p kept: a
  * later round, or the same round at a later time of the master. */
@@ -78,7 +63,8 @@ std::optional<network::CasinoRoomState> CasinoRoomWatch::shown() const {
   network::CasinoRoomState shown = *state_;
   shown.serverTime +=
       std::chrono::duration_cast<std::chrono::milliseconds>(sinceState_);
-  shown.phase = phaseAt(shown, shown.serverTime);
+  shown.phase = network::roulettePhaseAt(shown.serverTime, shown.closesAt,
+                                         shown.resultAt);
   return shown;
 }
 

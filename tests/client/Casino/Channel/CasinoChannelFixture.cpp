@@ -10,6 +10,7 @@
 #include "CasinoRoomState.hpp"
 #include "FakeAccountSession.hpp"
 #include "FakeWallet.hpp"
+#include "MillisecondDate.hpp"
 #include "RecordingCasinoLink.hpp"
 #include "RoomRound.hpp"
 #include "RoulettePhase.hpp"
@@ -19,7 +20,7 @@ namespace rtype::client::testing {
 
 namespace {
 
-using MillisecondDate = std::chrono::sys_time<std::chrono::milliseconds>;
+using network::MillisecondDate;
 
 }  // namespace
 

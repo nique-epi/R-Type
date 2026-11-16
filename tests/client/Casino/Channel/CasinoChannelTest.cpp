@@ -8,6 +8,7 @@
 #include "CasinoChannelTestConstants.hpp"
 #include "CasinoRefusal.hpp"
 #include "CasinoRoomState.hpp"
+#include "MillisecondDate.hpp"
 #include "OwnBetsReading.hpp"
 #include "RoomRound.hpp"
 #include "RoulettePhase.hpp"
@@ -35,12 +36,12 @@ using rtype::client::testing::TEN_ON_BLACK_PAID;
 using rtype::client::testing::THREE_SECONDS;
 using rtype::client::testing::UP_FROM_CHANNEL_ROOM;
 using rtype::network::CasinoRoomState;
+using rtype::network::MillisecondDate;
 using rtype::network::RoomRound;
 using rtype::network::RoulettePhase;
 using rtype::network::RoundBets;
 using ::testing::ElementsAre;
 using ::testing::IsEmpty;
-using MillisecondDate = std::chrono::sys_time<std::chrono::milliseconds>;
 
 /**
  * Given a player signed in

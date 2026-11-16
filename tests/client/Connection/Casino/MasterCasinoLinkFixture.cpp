@@ -1,5 +1,4 @@
 #include "MasterCasinoLinkFixture.hpp"
-#include <chrono>
 #include <functional>
 #include <optional>
 #include <string>
@@ -8,6 +7,7 @@
 #include "FakeAccountMaster.hpp"
 #include "MasterCasinoLink.hpp"
 #include "MasterCasinoLinkTestConstants.hpp"
+#include "MillisecondDate.hpp"
 #include "RouletteBets.hpp"
 #include "RoulettePhase.hpp"
 #include "ValueSoon.hpp"
@@ -16,7 +16,7 @@ namespace rtype::client::testing {
 
 namespace {
 
-using MillisecondDate = std::chrono::sys_time<std::chrono::milliseconds>;
+using network::MillisecondDate;
 
 }  // namespace
 

@@ -3,28 +3,17 @@
 #include <cstdint>
 #include <vector>
 #include "RouletteBet.hpp"
-#include "RouletteConstants.hpp"
+#include "RouletteRules.hpp"
 
 namespace rtype::client {
 
 namespace {
 
-/** @returns The chips of @p bets added up, wide enough never to wrap. */
-std::uint64_t stakeOf(const std::vector<network::RouletteBet>& bets) {
-  std::uint64_t stake = 0;
-  for (const network::RouletteBet& bet : bets) {
-    stake += bet.amount;
-  }
-  return stake;
-}
-
 /** @returns Whether @p bets may lie on the cloth for a player holding
  * @p chipsHeld chips. */
 bool fits(const std::vector<network::RouletteBet>& bets,
           std::uint32_t chipsHeld) {
-  const std::uint64_t stake = stakeOf(bets);
-  return bets.size() <= network::MAXIMUM_ROULETTE_BETS &&
-         stake <= network::MAXIMUM_ROUND_STAKE && stake <= chipsHeld;
+  return network::fitsRoundCaps(bets) && network::stakeOf(bets) <= chipsHeld;
 }
 
 /** @returns Whether @p laid lies on the same place as @p bet. */
@@ -40,7 +29,7 @@ const std::vector<network::RouletteBet>& RouletteSlip::bets() const {
 }
 
 std::uint32_t RouletteSlip::stake() const {
-  return static_cast<std::uint32_t>(stakeOf(bets_));
+  return static_cast<std::uint32_t>(network::stakeOf(bets_));
 }
 
 bool RouletteSlip::lay(const network::RouletteBet& bet,

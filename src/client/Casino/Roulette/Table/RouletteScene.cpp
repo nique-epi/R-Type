@@ -10,9 +10,9 @@
 #include "ClothPlace.hpp"
 #include "RouletteBand.hpp"
 #include "RouletteBarStates.hpp"
-#include "RouletteBet.hpp"
 #include "RoulettePhase.hpp"
 #include "RouletteReading.hpp"
+#include "RouletteRules.hpp"
 #include "RouletteScreenConstants.hpp"
 #include "RouletteTexts.hpp"
 #include "RouletteView.hpp"
@@ -30,15 +30,6 @@ using network::RoulettePhase;
 bool betsOpen(const RouletteReading& reading) {
   return reading.room.has_value() &&
          reading.room->phase == RoulettePhase::Betting;
-}
-
-/** @returns The chips of @p bets added up. */
-std::uint64_t stakeOf(const std::vector<network::RouletteBet>& bets) {
-  std::uint64_t stake = 0;
-  for (const network::RouletteBet& bet : bets) {
-    stake += bet.amount;
-  }
-  return stake;
 }
 
 /** @returns The chips the master holds on the cloth for the bets of
@@ -59,7 +50,7 @@ std::uint32_t chipsShownOf(const RouletteReading& reading) {
     const std::uint32_t staked = acceptedStakeOf(reading);
     return atHand > staked ? atHand - staked : 0;
   }
-  const std::uint64_t stake = stakeOf(reading.bets);
+  const std::uint64_t stake = network::stakeOf(reading.bets);
   return atHand > stake ? static_cast<std::uint32_t>(atHand - stake) : 0;
 }
 
@@ -121,7 +112,7 @@ RouletteBarStates barStatesOf(const RouletteReading& reading) {
   return RouletteBarStates{
       .clearOpen = open && !reading.bets.empty(),
       .rebetOpen = open && !reading.previousBets.empty() &&
-                   stakeOf(reading.previousBets) <=
+                   network::stakeOf(reading.previousBets) <=
                        chipsAtHandOf(reading.walletChips, reading.accepted)};
 }
 
@@ -136,13 +127,13 @@ RouletteView rouletteViewOf(const RouletteReading& reading) {
       .roomName = roomNameOf(reading),
       .roster = rosterRowsOf(reading),
       .lastNumbers = lastNumbersOf(reading),
-      .band = RouletteBand{
-          .chips = chipsShownOf(reading),
-          .stake = betsOpen(reading)
-                       ? static_cast<std::uint32_t>(stakeOf(reading.bets))
-                       : acceptedStakeOf(reading),
-          .status = statusLineOf(reading),
-          .chosenChip = reading.chosenChip}};
+      .band = RouletteBand{.chips = chipsShownOf(reading),
+                           .stake = betsOpen(reading)
+                                        ? static_cast<std::uint32_t>(
+                                              network::stakeOf(reading.bets))
+                                        : acceptedStakeOf(reading),
+                           .status = statusLineOf(reading),
+                           .chosenChip = reading.chosenChip}};
 }
 
 }  // namespace rtype::client

@@ -1,5 +1,4 @@
 #include "RouletteScreenFixtures.hpp"
-#include <chrono>
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -9,6 +8,7 @@
 #include "CasinoPlayer.hpp"
 #include "CasinoRefusal.hpp"
 #include "CasinoRoomState.hpp"
+#include "MillisecondDate.hpp"
 #include "RoomRound.hpp"
 #include "RouletteBet.hpp"
 #include "RoulettePhase.hpp"
@@ -19,7 +19,7 @@ namespace rtype::client::testing {
 
 namespace {
 
-using MillisecondDate = std::chrono::sys_time<std::chrono::milliseconds>;
+using network::MillisecondDate;
 
 /** @returns ACE with @p stake on the cloth that paid @p payout, then LUNA,
  * seated in the room. */
