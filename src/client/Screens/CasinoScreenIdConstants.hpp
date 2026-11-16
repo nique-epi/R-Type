@@ -4,7 +4,7 @@
 
 namespace rtype::client {
 
-/** @brief The casino, pushed over the waiting room: the front of the Bydo
+/** @brief The casino, pushed over the server map: the front of the Bydo
  * Palace and its butler, then, once the player entered, the hall. */
 constexpr ScreenId CASINO_SCREEN{"casino"};
 

@@ -34,10 +34,10 @@ namespace rtype::client {
  * Under it, what both balances would hold after the exchange, or why the
  * cashier refuses it (cashierLineOf()); BUY, or CASH OUT, is disabled then.
  *
- * BUY, MENU_CONFIRM_KEY, makes the exchange whole (buyChips() or
- * cashOutChips()), saves the settings, and closes the cashier, back to the
- * hall; BACK, MENU_CANCEL_KEY, closes it without exchanging. Both act once
- * per hold of their key, on its release.
+ * BUY, MENU_CONFIRM_KEY, asks the master for the exchange (IWallet::exchange())
+ * and closes the cashier, back to the hall, once the master answered; BACK,
+ * MENU_CANCEL_KEY, closes it without exchanging. Both act once per hold of
+ * their key, on its release.
  */
 class CashierScreen final : public IScreen {
  public:
