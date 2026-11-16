@@ -1,8 +1,8 @@
 #include "RouletteRulesFixtures.hpp"
 #include <ostream>
-#include "RouletteBets.hpp"
+#include "RouletteBet.hpp"
 
-namespace rtype::server::testing {
+namespace rtype::network::testing {
 
 void PrintTo(const PayoutCase& payoutCase, std::ostream* output) {
   *output << "kind " << static_cast<unsigned int>(payoutCase.bet.kind)
@@ -12,4 +12,4 @@ void PrintTo(const PayoutCase& payoutCase, std::ostream* output) {
           << payoutCase.payout;
 }
 
-}  // namespace rtype::server::testing
+}  // namespace rtype::network::testing

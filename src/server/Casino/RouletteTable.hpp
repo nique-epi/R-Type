@@ -40,7 +40,7 @@ class RouletteTable {
    * @param roster The players of the game; it must outlive the table.
    * @param draw Where the numbers come from; it must outlive the table.
    */
-  RouletteTable(PlayerRoster& roster, IRouletteDraw& draw);
+  RouletteTable(PlayerRoster& roster, network::IRouletteDraw& draw);
 
   /** @brief Seats @p player at the table or takes it back to the room, as
    * @p place says; a seated player is not ready. */
@@ -79,7 +79,7 @@ class RouletteTable {
   [[nodiscard]] bool hasSeatedPlayer() const;
 
   PlayerRoster& roster_;
-  IRouletteDraw& draw_;
+  network::IRouletteDraw& draw_;
   std::array<TableSeat, network::MAXIMUM_PLAYERS> seats_{};
   std::uint16_t round_{0};
   network::RoulettePhase phase_{network::RoulettePhase::Betting};

@@ -4,7 +4,7 @@
 #include <random>
 #include "IRouletteDraw.hpp"
 
-namespace rtype::server {
+namespace rtype::network {
 
 /**
  * @brief Draws each number from the random source of the system, with no
@@ -25,4 +25,4 @@ class SystemRouletteDraw final : public IRouletteDraw {
   std::random_device random_;
 };
 
-}  // namespace rtype::server
+}  // namespace rtype::network

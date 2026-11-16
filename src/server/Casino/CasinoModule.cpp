@@ -21,9 +21,9 @@
 namespace rtype::server {
 
 CasinoModule::CasinoModule()
-    : CasinoModule(std::make_unique<SystemRouletteDraw>()) {}
+    : CasinoModule(std::make_unique<network::SystemRouletteDraw>()) {}
 
-CasinoModule::CasinoModule(std::unique_ptr<IRouletteDraw> draw)
+CasinoModule::CasinoModule(std::unique_ptr<network::IRouletteDraw> draw)
     : draw_(std::move(draw)), logger_(std::string{CASINO_LOGGER_NAME}) {}
 
 std::string CasinoModule::name() const {

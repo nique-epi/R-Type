@@ -4,6 +4,7 @@ target_include_directories(rtype_network_roulette_bets PUBLIC ${CMAKE_CURRENT_SO
 
 target_link_libraries(rtype_network_roulette_bets
   PUBLIC
+    rtype_network_master_casino_cloth
     rtype_network_protocol
   PRIVATE
     rtype_network_wire_types

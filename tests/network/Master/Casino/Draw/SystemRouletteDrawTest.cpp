@@ -2,11 +2,11 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
-#include "ProtocolConstants.hpp"
+#include "RouletteConstants.hpp"
 #include "SystemRouletteDraw.hpp"
 #include "SystemRouletteDrawTestConstants.hpp"
 
-namespace rtype::server::testing {
+namespace rtype::network::testing {
 
 /**
  * Given the draw of the system
@@ -15,11 +15,11 @@ namespace rtype::server::testing {
  */
 TEST(SystemRouletteDraw, DrawsEveryNumberOfTheWheelAndNoOther) {
   SystemRouletteDraw draw;
-  std::array<bool, network::HIGHEST_ROULETTE_NUMBER + 1> seen{};
+  std::array<bool, HIGHEST_ROULETTE_NUMBER + 1> seen{};
 
   for (std::size_t index = 0; index < DRAWS_FOR_EVERY_NUMBER; ++index) {
     const std::uint8_t number = draw.drawNumber();
-    ASSERT_LE(number, network::HIGHEST_ROULETTE_NUMBER);
+    ASSERT_LE(number, HIGHEST_ROULETTE_NUMBER);
     seen.at(number) = true;
   }
 
@@ -28,4 +28,4 @@ TEST(SystemRouletteDraw, DrawsEveryNumberOfTheWheelAndNoOther) {
   }
 }
 
-}  // namespace rtype::server::testing
+}  // namespace rtype::network::testing

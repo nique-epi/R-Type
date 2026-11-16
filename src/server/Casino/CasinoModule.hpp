@@ -35,7 +35,7 @@ class CasinoModule final : public IGameModule {
 
   /** @brief A casino whose numbers come from @p draw, which must not be null.
    */
-  explicit CasinoModule(std::unique_ptr<IRouletteDraw> draw);
+  explicit CasinoModule(std::unique_ptr<network::IRouletteDraw> draw);
 
   [[nodiscard]] std::string name() const override;
   void install(GameContext& game, engine::InstallContext& install) override;
@@ -47,7 +47,7 @@ class CasinoModule final : public IGameModule {
   void onTick();
 
   GameContext* game_{nullptr};
-  std::unique_ptr<IRouletteDraw> draw_;
+  std::unique_ptr<network::IRouletteDraw> draw_;
   std::unique_ptr<RouletteTable> table_;
   std::unique_ptr<RouletteRoundAnnouncer> announcer_;
   engine::SubscriptionHandle stateSubscription_{};

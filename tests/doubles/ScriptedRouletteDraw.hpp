@@ -12,7 +12,7 @@ namespace rtype::server::testing {
  * last one again, and counts the numbers asked of it: the only way to make a
  * round of a test come out on a known number.
  */
-class ScriptedRouletteDraw final : public IRouletteDraw {
+class ScriptedRouletteDraw final : public network::IRouletteDraw {
  public:
   /** @param numbers The numbers to give, in order; must not be empty. */
   explicit ScriptedRouletteDraw(std::vector<std::uint8_t> numbers);

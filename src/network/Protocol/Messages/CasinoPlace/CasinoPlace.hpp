@@ -6,17 +6,9 @@
 #include <type_traits>
 #include "ByteWriter.hpp"
 #include "MessageType.hpp"
+#include "TablePlace.hpp"
 
 namespace rtype::network {
-
-/**
- * @brief Where a player of the waiting room stands: in the room, where it may
- * be ready, or at the roulette table of the casino.
- */
-enum class TablePlace : std::uint8_t {
-  InRoom = 0,
-  AtTable = 1,
-};
 
 /**
  * @brief The place the player chose: the client sends it when the player sits

@@ -1,20 +1,13 @@
 #include "RouletteRules.hpp"
 #include <algorithm>
 #include <cstdint>
-#include "CasinoConstants.hpp"
-#include "ProtocolConstants.hpp"
-#include "RouletteBets.hpp"
+#include "RouletteBet.hpp"
+#include "RouletteBetKind.hpp"
+#include "RouletteConstants.hpp"
 
-namespace rtype::server {
+namespace rtype::network {
 
 namespace {
-
-using network::LAST_LOW_NUMBER;
-using network::LOWEST_CLOTH_NUMBER;
-using network::NUMBERS_PER_DOZEN;
-using network::NUMBERS_PER_STREET;
-using network::RED_ROULETTE_NUMBERS;
-using network::RouletteBetKind;
 
 /** @returns The mask holding @p count numbers from @p first on, one bit per
  * number of the wheel. */
@@ -24,14 +17,14 @@ constexpr std::uint64_t runOf(unsigned int first, unsigned int count) {
 
 /** @returns The mask of every number of the cloth, the zero left out. */
 constexpr std::uint64_t CLOTH_MASK =
-    runOf(LOWEST_CLOTH_NUMBER, network::HIGHEST_ROULETTE_NUMBER);
+    runOf(LOWEST_CLOTH_NUMBER, HIGHEST_ROULETTE_NUMBER);
 
 /** @returns The mask of the numbers @p keep says yes to, the zero left out. */
 template <typename Keep>
 constexpr std::uint64_t maskOf(Keep keep) {
   std::uint64_t mask = 0;
   for (unsigned int number = LOWEST_CLOTH_NUMBER;
-       number <= network::HIGHEST_ROULETTE_NUMBER; ++number) {
+       number <= HIGHEST_ROULETTE_NUMBER; ++number) {
     if (keep(number)) {
       mask |= std::uint64_t{1} << number;
     }
@@ -68,12 +61,12 @@ bool hasNextInStreet(unsigned int number) {
 
 /** @returns Whether the @p count numbers from @p first on stay on the cloth. */
 bool fitsOnCloth(unsigned int first, unsigned int count) {
-  return first + count - 1 <= network::HIGHEST_ROULETTE_NUMBER;
+  return first + count - 1 <= HIGHEST_ROULETTE_NUMBER;
 }
 
 /** @returns The numbers @p bet covers, one bit per number of the wheel; the
  * bet is placeable. */
-std::uint64_t coverageOf(const network::RouletteBet& bet) {
+std::uint64_t coverageOf(const RouletteBet& bet) {
   const unsigned int first = bet.firstNumber;
   switch (bet.kind) {
     case RouletteBetKind::Straight:
@@ -139,11 +132,11 @@ std::uint32_t returnOf(RouletteBetKind kind) {
 
 }  // namespace
 
-bool isPlaceableBet(const network::RouletteBet& bet) {
+bool isPlaceableBet(const RouletteBet& bet) {
   const unsigned int first = bet.firstNumber;
   switch (bet.kind) {
     case RouletteBetKind::Straight:
-      return first <= network::HIGHEST_ROULETTE_NUMBER;
+      return first <= HIGHEST_ROULETTE_NUMBER;
     case RouletteBetKind::Split:
       return hasNextInStreet(first) && fitsOnCloth(first, 2);
     case RouletteBetKind::SplitAcross:
@@ -173,12 +166,12 @@ bool isPlaceableBet(const network::RouletteBet& bet) {
   return false;
 }
 
-std::uint64_t payoutOf(const network::RouletteBet& bet, std::uint8_t drawn) {
-  if (drawn > network::HIGHEST_ROULETTE_NUMBER || !isPlaceableBet(bet) ||
+std::uint64_t payoutOf(const RouletteBet& bet, std::uint8_t drawn) {
+  if (drawn > HIGHEST_ROULETTE_NUMBER || !isPlaceableBet(bet) ||
       ((coverageOf(bet) >> drawn) & 1U) == 0) {
     return 0;
   }
   return static_cast<std::uint64_t>(bet.amount) * returnOf(bet.kind);
 }
 
-}  // namespace rtype::server
+}  // namespace rtype::network

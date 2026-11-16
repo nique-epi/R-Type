@@ -7,31 +7,10 @@
 #include <vector>
 #include "ByteWriter.hpp"
 #include "MessageType.hpp"
+#include "RoulettePhase.hpp"
+#include "RouletteSeat.hpp"
 
 namespace rtype::network {
-
-/**
- * @brief The steps of a round of roulette: the bets are open, then the wheel
- * spins with the number already drawn, then the result shows.
- */
-enum class RoulettePhase : std::uint8_t {
-  Betting = 0,
-  Spinning = 1,
-  Result = 2,
-};
-
-/**
- * @brief One player seated at the table: the chips of its bets this round,
- * and the chips the table hands back once the number is drawn (0 until then,
- * and for a lost round).
- */
-struct RouletteSeat {
-  std::uint8_t playerNumber{};
-  std::uint32_t stake{};
-  std::uint32_t payout{};
-
-  bool operator==(const RouletteSeat&) const = default;
-};
 
 /**
  * @brief The state of the roulette table of the waiting room: its round,

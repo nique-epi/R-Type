@@ -1,10 +1,11 @@
 #include <gtest/gtest.h>
-#include "RouletteBets.hpp"
+#include "RouletteBet.hpp"
+#include "RouletteBetKind.hpp"
 #include "RouletteRules.hpp"
 #include "RouletteRulesFixtures.hpp"
 #include "RouletteRulesTestConstants.hpp"
 
-namespace rtype::server::testing {
+namespace rtype::network::testing {
 
 /**
  * Given a bet of ten chips and a number drawn
@@ -26,7 +27,7 @@ INSTANTIATE_TEST_SUITE_P(EveryKind, RouletteRulesPayout,
  * Then it is not placeable, and pays nothing
  */
 TEST_P(RouletteRulesRefused, RefusesABetOffTheCloth) {
-  const network::RouletteBet& bet = GetParam();
+  const RouletteBet& bet = GetParam();
 
   EXPECT_FALSE(isPlaceableBet(bet));
   EXPECT_EQ(payoutOf(bet, bet.firstNumber), 0U);
@@ -53,12 +54,11 @@ INSTANTIATE_TEST_SUITE_P(EveryKind, RouletteRulesPlaced,
  * Then it is 0
  */
 TEST(RouletteRules, PaysNothingOnANumberPastTheWheel) {
-  EXPECT_EQ(
-      payoutOf(network::RouletteBet{.kind = network::RouletteBetKind::Straight,
-                                    .firstNumber = 0,
-                                    .amount = TEN_CHIPS},
-               NUMBER_PAST_THE_WHEEL),
-      0U);
+  EXPECT_EQ(payoutOf(RouletteBet{.kind = RouletteBetKind::Straight,
+                                 .firstNumber = 0,
+                                 .amount = TEN_CHIPS},
+                     NUMBER_PAST_THE_WHEEL),
+            0U);
 }
 
-}  // namespace rtype::server::testing
+}  // namespace rtype::network::testing

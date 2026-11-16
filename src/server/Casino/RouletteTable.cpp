@@ -30,7 +30,7 @@ std::uint64_t stakeOf(const network::RouletteBets& bets) {
 
 /** @returns Whether @p bets may lie on the cloth for one round. */
 bool isTakeable(const network::RouletteBets& bets) {
-  return std::ranges::all_of(bets.bets, isPlaceableBet) &&
+  return std::ranges::all_of(bets.bets, network::isPlaceableBet) &&
          stakeOf(bets) <= network::MAXIMUM_ROUND_STAKE;
 }
 
@@ -38,14 +38,14 @@ bool isTakeable(const network::RouletteBets& bets) {
 std::uint32_t payoutOfSeat(const TableSeat& seat, std::uint8_t drawn) {
   std::uint64_t payout = 0;
   for (const network::RouletteBet& bet : seat.bets) {
-    payout += payoutOf(bet, drawn);
+    payout += network::payoutOf(bet, drawn);
   }
   return static_cast<std::uint32_t>(payout);
 }
 
 }  // namespace
 
-RouletteTable::RouletteTable(PlayerRoster& roster, IRouletteDraw& draw)
+RouletteTable::RouletteTable(PlayerRoster& roster, network::IRouletteDraw& draw)
     : roster_(roster), draw_(draw), ticksLeft_(ROULETTE_BETTING_TICKS) {}
 
 void RouletteTable::onPlace(ConnectedPlayer& player,

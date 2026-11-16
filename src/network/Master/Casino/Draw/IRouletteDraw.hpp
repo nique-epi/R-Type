@@ -2,10 +2,10 @@
 
 #include <cstdint>
 
-namespace rtype::server {
+namespace rtype::network {
 
 /**
- * @brief Where the roulette table takes the number of a round.
+ * @brief Where a roulette table takes the number of a round.
  */
 class IRouletteDraw {
  public:
@@ -15,4 +15,4 @@ class IRouletteDraw {
   [[nodiscard]] virtual std::uint8_t drawNumber() = 0;
 };
 
-}  // namespace rtype::server
+}  // namespace rtype::network

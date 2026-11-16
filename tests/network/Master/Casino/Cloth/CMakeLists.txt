@@ -1,0 +1,2 @@
+target_sources(network_master_tests PRIVATE RouletteRulesTest.cpp RouletteRulesFixtures.cpp)
+target_include_directories(network_master_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

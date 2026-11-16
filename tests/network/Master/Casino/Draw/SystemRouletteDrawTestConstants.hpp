@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-namespace rtype::server::testing {
+namespace rtype::network::testing {
 
 /**
  * @brief Draws enough for every number of the wheel to come out: a number is
@@ -10,4 +10,4 @@ namespace rtype::server::testing {
  */
 constexpr std::size_t DRAWS_FOR_EVERY_NUMBER = 37000;
 
-}  // namespace rtype::server::testing
+}  // namespace rtype::network::testing
