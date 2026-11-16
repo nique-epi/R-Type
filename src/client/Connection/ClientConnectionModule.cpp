@@ -11,6 +11,7 @@
 #include "ContentPlaces.hpp"
 #include "ExecutablePath.hpp"
 #include "IAccountLink.hpp"
+#include "ICasinoLink.hpp"
 #include "IGameCatalog.hpp"
 #include "IServerCatalog.hpp"
 #include "InstallContext.hpp"
@@ -71,6 +72,7 @@ void ClientConnectionModule::install(engine::InstallContext& context) {
   context.provide<IGameCatalog>(games_);
   context.provide(globalLeaderboard_);
   context.provide<IAccountLink>(accountLink_);
+  context.provide<ICasinoLink>(casinoLink_);
   context.addWork(NETWORK_STAGE, [this](engine::Duration elapsed) {
     connection_.update(elapsed);
     servers_.update(elapsed);
@@ -85,7 +87,9 @@ void ClientConnectionModule::start() {
     masterLink_.start(
         network::MasterAccess{.url = masterUrl_->text(), .key = std::string{}});
     accountLink_.start(masterUrl_->text());
+    casinoLink_.start(masterUrl_->text());
   } catch (const std::exception&) {
+    accountLink_.stop();
     masterLink_.stop();
     connection_.network().close();
     throw;
@@ -93,6 +97,7 @@ void ClientConnectionModule::start() {
 }
 
 void ClientConnectionModule::stop() {
+  casinoLink_.stop();
   accountLink_.stop();
   masterLink_.stop();
   try {
