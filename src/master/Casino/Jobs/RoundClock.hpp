@@ -10,7 +10,7 @@ namespace rtype::master {
  * two passes: the system clock and CASINO_ROUND_INTERVAL, a driven clock in
  * the tests. */
 struct RoundClock {
-  std::function<MillisecondDate()> now;
+  std::function<network::MillisecondDate()> now;
   std::chrono::milliseconds interval{};
 };
 

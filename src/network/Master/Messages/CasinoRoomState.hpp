@@ -1,11 +1,11 @@
 #pragma once
 
-#include <chrono>
 #include <cstdint>
 #include <optional>
 #include <string>
 #include <vector>
 #include "CasinoPlayer.hpp"
+#include "MillisecondDate.hpp"
 #include "RoulettePhase.hpp"
 
 namespace rtype::network {
@@ -23,13 +23,13 @@ struct CasinoRoomState {
   std::uint64_t round{};
   RoulettePhase phase{RoulettePhase::Betting};
   /** @brief When the bets of the round close and the wheel spins. */
-  std::chrono::sys_time<std::chrono::milliseconds> closesAt;
+  MillisecondDate closesAt;
   /** @brief When the wheel stops and the result shows. */
-  std::chrono::sys_time<std::chrono::milliseconds> resultAt;
+  MillisecondDate resultAt;
   /** @brief When the round ends and the next one opens its bets. */
-  std::chrono::sys_time<std::chrono::milliseconds> endsAt;
+  MillisecondDate endsAt;
   /** @brief The clock of the master when it answered. */
-  std::chrono::sys_time<std::chrono::milliseconds> serverTime;
+  MillisecondDate serverTime;
   /** @brief The number of the round, once drawn: never while the bets are
    * open. */
   std::optional<std::uint8_t> winningNumber = std::nullopt;

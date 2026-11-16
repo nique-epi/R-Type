@@ -38,13 +38,13 @@ class RouletteDealer {
    * network::CASINO_HISTORY_LENGTH that no kept bet names.
    * @returns The rounds it drew, oldest first.
    */
-  std::vector<DrawnRound> drawDueRounds(MillisecondDate now,
+  std::vector<DrawnRound> drawDueRounds(network::MillisecondDate now,
                                         const CasinoSettings& settings);
 
  private:
   /** @returns The rounds due at @p now that were never drawn. */
   [[nodiscard]] std::vector<network::RoomRound> dueRounds(
-      MillisecondDate now, const CasinoSettings& settings);
+      network::MillisecondDate now, const CasinoSettings& settings);
 
   /** @brief Draws @p place at @p now and pays its winners.
    * @returns The round drawn; nothing when it was drawn already. */

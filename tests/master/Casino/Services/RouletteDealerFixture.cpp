@@ -62,7 +62,7 @@ rtype::master::RouletteDealer& RouletteDealerFixture::dealer() {
 }
 
 std::variant<rtype::network::BetsReceipt, rtype::master::BetRefusal>
-RouletteDealerFixture::aceBetsAt(rtype::master::MillisecondDate sentAt) {
+RouletteDealerFixture::aceBetsAt(rtype::network::MillisecondDate sentAt) {
   static_cast<void>(
       casino_.takeSeat(rtype::master::SeatKey{.room = BET_ROOM, .userId = ace_},
                        std::chrono::floor<std::chrono::seconds>(sentAt)));
@@ -86,7 +86,7 @@ RouletteDealerFixture::aceBetsAt(rtype::master::MillisecondDate sentAt) {
 }
 
 std::vector<rtype::master::DrawnRound> RouletteDealerFixture::drawAt(
-    rtype::master::MillisecondDate now) {
+    rtype::network::MillisecondDate now) {
   return dealer_.drawDueRounds(now, DEALER_TEST_SETTINGS);
 }
 

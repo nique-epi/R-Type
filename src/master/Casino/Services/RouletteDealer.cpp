@@ -58,7 +58,7 @@ RouletteDealer::RouletteDealer(MasterDatabase& database, IAccountWallet& wallet,
     : database_(database), wallet_(wallet), draw_(draw) {}
 
 std::vector<DrawnRound> RouletteDealer::drawDueRounds(
-    MillisecondDate now, const CasinoSettings& settings) {
+    network::MillisecondDate now, const CasinoSettings& settings) {
   const auto second = std::chrono::floor<std::chrono::seconds>(now);
   std::vector<DrawnRound> drawnRounds;
   for (const network::RoomRound& place : dueRounds(now, settings)) {
@@ -73,7 +73,7 @@ std::vector<DrawnRound> RouletteDealer::drawDueRounds(
 }
 
 std::vector<network::RoomRound> RouletteDealer::dueRounds(
-    MillisecondDate now, const CasinoSettings& settings) {
+    network::MillisecondDate now, const CasinoSettings& settings) {
   const ScheduledRound scheduled = scheduledRoundAt(now, settings.durations);
   return database_.run([&scheduled, &settings](SQLite::Database& connection) {
     std::vector<network::RoomRound> due =

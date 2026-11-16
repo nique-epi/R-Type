@@ -48,7 +48,7 @@ namespace rtype::master {
 
 namespace {
 
-std::chrono::sys_seconds secondOf(MillisecondDate date) {
+std::chrono::sys_seconds secondOf(network::MillisecondDate date) {
   return std::chrono::floor<std::chrono::seconds>(date);
 }
 
@@ -225,7 +225,7 @@ network::RoundBets CasinoService::betsOf(network::RoomRound place,
   });
 }
 
-network::CasinoRoomListing CasinoService::rooms(MillisecondDate now) {
+network::CasinoRoomListing CasinoService::rooms(network::MillisecondDate now) {
   const CasinoSettings settings = settings_();
   const ScheduledRound scheduled = scheduledRoundAt(now, settings.durations);
   const std::map<std::uint8_t, std::int64_t> counts =
@@ -250,8 +250,8 @@ network::CasinoRoomListing CasinoService::rooms(MillisecondDate now) {
   return listing;
 }
 
-network::CasinoRoomState CasinoService::roomState(std::uint8_t room,
-                                                  MillisecondDate now) {
+network::CasinoRoomState CasinoService::roomState(
+    std::uint8_t room, network::MillisecondDate now) {
   const CasinoSettings settings = settings_();
   const ScheduledRound scheduled = scheduledRoundAt(now, settings.durations);
   network::CasinoRoomState state{.id = room,

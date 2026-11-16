@@ -8,9 +8,9 @@
 #include "ScheduledRound.hpp"
 
 using rtype::master::firstOpenRound;
-using rtype::master::MillisecondDate;
 using rtype::master::ScheduledRound;
 using rtype::master::scheduledRoundAt;
+using rtype::network::MillisecondDate;
 using rtype::network::RoulettePhase;
 
 /**

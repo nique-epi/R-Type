@@ -44,6 +44,7 @@
 #include "MasterHttpConstants.hpp"
 #include "MasterMessageConstants.hpp"
 #include "MasterRouteConstants.hpp"
+#include "MillisecondDate.hpp"
 #include "MovementListing.hpp"
 #include "MovementReason.hpp"
 #include "NetworkConstants.hpp"
@@ -1214,8 +1215,6 @@ std::optional<Currency> currencyOf(std::string_view text) {
 }
 
 namespace {
-
-using MillisecondDate = std::chrono::sys_time<std::chrono::milliseconds>;
 
 std::int64_t millisecondsOf(MillisecondDate date) {
   return date.time_since_epoch().count();
