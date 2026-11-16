@@ -23,10 +23,10 @@ class AccountsRoutesFixture : public ::testing::Test {
   [[nodiscard]] httplib::Result signInAsAce(std::string_view password) const;
 
   /** @returns The answer to the account of the session of @p token. */
-  [[nodiscard]] httplib::Result readOwnAccount(std::string_view token) const;
+  [[nodiscard]] httplib::Result readOwnUser(std::string_view token) const;
 
   /** @returns The answer to the closing of the session of @p token. */
-  [[nodiscard]] httplib::Result closeSession(std::string_view token) const;
+  [[nodiscard]] httplib::Result deleteSession(std::string_view token) const;
 
  private:
   RunningMaster master_;

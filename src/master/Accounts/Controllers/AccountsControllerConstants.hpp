@@ -10,7 +10,7 @@ constexpr std::string_view ACCOUNTS_CLOSED_DETAIL =
     "this master runs without accounts";
 constexpr std::string_view NICKNAME_TAKEN_DETAIL =
     "another account has this nickname";
-constexpr std::string_view ACCOUNT_QUOTA_DETAIL =
+constexpr std::string_view USER_QUOTA_DETAIL =
     "this address created too many accounts in the last hour";
 constexpr std::string_view WRONG_CREDENTIALS_DETAIL =
     "wrong nickname or password";

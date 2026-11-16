@@ -22,12 +22,12 @@ httplib::Result AccountsRoutesFixture::signInAsAce(
   return send(credentialsCall(SESSIONS_URL, aceWith(password)));
 }
 
-httplib::Result AccountsRoutesFixture::readOwnAccount(
+httplib::Result AccountsRoutesFixture::readOwnUser(
     std::string_view token) const {
-  return send(readOwnAccountCall(token));
+  return send(readOwnUserCall(token));
 }
 
-httplib::Result AccountsRoutesFixture::closeSession(
+httplib::Result AccountsRoutesFixture::deleteSession(
     std::string_view token) const {
-  return send(closeSessionCall(token));
+  return send(deleteSessionCall(token));
 }

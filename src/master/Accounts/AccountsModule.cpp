@@ -96,7 +96,7 @@ void AccountsModule::makeAdmin(AccountsService& service,
     logger_.info(nickname, ADMIN_GIVEN_TEXT);
     return;
   }
-  logger_.warn(NO_ACCOUNT_NAMED_TEXT, nickname, ADMIN_LATER_TEXT);
+  logger_.warn(NO_USER_NAMED_TEXT, nickname, ADMIN_LATER_TEXT);
 }
 
 }  // namespace rtype::master

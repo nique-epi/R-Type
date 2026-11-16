@@ -7,12 +7,12 @@
 namespace rtype::master {
 
 /**
- * @brief How many accounts one address may create in ACCOUNT_CREATION_WINDOW,
+ * @brief How many accounts one address may create in USER_CREATION_WINDOW,
  * as many as the servers it may create: every creation hashes a password, so
  * the quota also bounds the work a client can ask for.
  */
-constexpr std::int64_t MAXIMUM_ACCOUNTS_PER_ADDRESS = 5;
-constexpr std::chrono::seconds ACCOUNT_CREATION_WINDOW = std::chrono::hours{1};
+constexpr std::int64_t MAXIMUM_USERS_PER_ADDRESS = 5;
+constexpr std::chrono::seconds USER_CREATION_WINDOW = std::chrono::hours{1};
 
 /**
  * @brief How many sign-ins from one address may fail in SIGN_IN_FAILURE_WINDOW:

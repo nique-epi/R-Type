@@ -27,12 +27,12 @@ class AccountsController {
    * account, and the account; 409 for a nickname taken, 429 when the address
    * created too many accounts.
    */
-  [[nodiscard]] network::ApiResponse createAccount(
+  [[nodiscard]] network::ApiResponse createUser(
       const network::ApiRequest& request);
 
   /** @returns The answer of `GET /api/users/me`: 200 and the account of the
    * session of the token; 401 for no session. */
-  [[nodiscard]] network::ApiResponse readOwnAccount(
+  [[nodiscard]] network::ApiResponse readOwnUser(
       const network::ApiRequest& request);
 
   /**
@@ -41,12 +41,12 @@ class AccountsController {
    * for a wrong nickname or password, 429 when the address failed too many
    * sign-ins.
    */
-  [[nodiscard]] network::ApiResponse openSession(
+  [[nodiscard]] network::ApiResponse createSession(
       const network::ApiRequest& request);
 
   /** @returns The answer of `DELETE /api/sessions/me`: 204 whether a session
    * had the token or not, 401 without a token. */
-  [[nodiscard]] network::ApiResponse closeOwnSession(
+  [[nodiscard]] network::ApiResponse deleteOwnSession(
       const network::ApiRequest& request);
 
   /** @returns The answer of every route of the accounts on a master started

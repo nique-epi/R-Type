@@ -4,33 +4,32 @@
 #include <nlohmann/json_fwd.hpp>
 #include <string>
 #include <string_view>
-#include "AccountCredentials.hpp"
 #include "AccountsRoutesTestConstants.hpp"
 #include "AccountsTestConstants.hpp"
 #include "MasterMessageText.hpp"
 #include "RouteCall.hpp"
 #include "ServersRoutesTestConstants.hpp"
+#include "UserCredentials.hpp"
 
-rtype::network::AccountCredentials aceCredentials() {
+rtype::network::UserCredentials aceCredentials() {
   return aceWith(ACE_PASSWORD);
 }
 
-rtype::network::AccountCredentials aceWith(std::string_view password) {
-  return rtype::network::AccountCredentials{
-      .nickname = std::string{ACE_NICKNAME}, .password = std::string{password}};
+rtype::network::UserCredentials aceWith(std::string_view password) {
+  return rtype::network::UserCredentials{.nickname = std::string{ACE_NICKNAME},
+                                         .password = std::string{password}};
 }
 
-RouteCall credentialsCall(
-    std::string_view path,
-    const rtype::network::AccountCredentials& credentials) {
+RouteCall credentialsCall(std::string_view path,
+                          const rtype::network::UserCredentials& credentials) {
   return RouteCall{.method = POST_METHOD,
                    .path = path,
                    .key = {},
-                   .body = rtype::network::credentialsText(credentials),
+                   .body = rtype::network::userCredentialsText(credentials),
                    .overHttps = true};
 }
 
-RouteCall readOwnAccountCall(std::string_view token) {
+RouteCall readOwnUserCall(std::string_view token) {
   return RouteCall{.method = GET_METHOD_TEXT,
                    .path = OWN_ACCOUNT_URL,
                    .key = token,
@@ -38,7 +37,7 @@ RouteCall readOwnAccountCall(std::string_view token) {
                    .overHttps = true};
 }
 
-RouteCall closeSessionCall(std::string_view token) {
+RouteCall deleteSessionCall(std::string_view token) {
   return RouteCall{.method = DELETE_METHOD_TEXT,
                    .path = OWN_SESSION_URL,
                    .key = token,

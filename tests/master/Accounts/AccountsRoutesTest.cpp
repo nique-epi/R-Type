@@ -3,7 +3,6 @@
 #include <cstddef>
 #include <string>
 #include <vector>
-#include "AccountCredentials.hpp"
 #include "AccountsRoutesFixture.hpp"
 #include "AccountsRoutesFixtures.hpp"
 #include "AccountsRoutesTestConstants.hpp"
@@ -12,6 +11,7 @@
 #include "RouteCall.hpp"
 #include "RouteCallFixtures.hpp"
 #include "RunningMaster.hpp"
+#include "UserCredentials.hpp"
 
 /**
  * Given a master with its key of the passwords
@@ -25,7 +25,7 @@ TEST_F(AccountsRoutesFixture, CreatesAnAccountOverHttps) {
   EXPECT_EQ(created->status, EXPECTED_CREATED);
   EXPECT_EQ(memberIn(created, ROLE_MEMBER_NAME), PLAYER_ROLE_NAME);
   EXPECT_TRUE(created->get_header_value(std::string{LOCATION_HEADER_NAME})
-                  .starts_with(ACCOUNT_LOCATION_START));
+                  .starts_with(USER_LOCATION_START));
 }
 
 /**
@@ -50,7 +50,7 @@ TEST_F(AccountsRoutesFixture, RefusesAnAccountInPlainHttp) {
  */
 TEST_F(AccountsRoutesFixture, ANicknameNamesOneAccountWhateverItsCase) {
   ASSERT_TRUE(createAce());
-  rtype::network::AccountCredentials lowercase = aceCredentials();
+  rtype::network::UserCredentials lowercase = aceCredentials();
   lowercase.nickname = std::string{ACE_IN_LOWERCASE};
 
   const httplib::Result refused = send(credentialsCall(USERS_URL, lowercase));
@@ -80,7 +80,7 @@ TEST_F(AccountsRoutesFixture, RefusesAPasswordShorterThanEightBytes) {
  */
 TEST_F(AccountsRoutesFixture, LimitsTheAccountsOneAddressCreates) {
   for (std::size_t index = 0; index < ALLOWED_ACCOUNT_CREATIONS; ++index) {
-    rtype::network::AccountCredentials credentials = aceCredentials();
+    rtype::network::UserCredentials credentials = aceCredentials();
     credentials.nickname += std::to_string(index);
     const httplib::Result created =
         send(credentialsCall(USERS_URL, credentials));
@@ -181,11 +181,11 @@ TEST_F(AccountsRoutesFixture, TheTokenReadsItsAccount) {
   const std::string token =
       memberIn(signInAsAce(ACE_PASSWORD), TOKEN_MEMBER_NAME);
 
-  const httplib::Result account = readOwnAccount(token);
+  const httplib::Result account = readOwnUser(token);
 
   ASSERT_TRUE(account);
   EXPECT_EQ(account->status, EXPECTED_OK);
-  EXPECT_EQ(memberIn(account, ACCOUNT_NICKNAME_MEMBER_NAME), ACE_NICKNAME);
+  EXPECT_EQ(memberIn(account, USER_NICKNAME_MEMBER_NAME), ACE_NICKNAME);
 }
 
 /**
@@ -197,11 +197,11 @@ TEST_F(AccountsRoutesFixture, AClosedSessionReadsNoAccount) {
   ASSERT_TRUE(createAce());
   const std::string token =
       memberIn(signInAsAce(ACE_PASSWORD), TOKEN_MEMBER_NAME);
-  const httplib::Result closed = closeSession(token);
+  const httplib::Result closed = deleteSession(token);
   ASSERT_TRUE(closed);
   ASSERT_EQ(closed->status, EXPECTED_NO_CONTENT);
 
-  const httplib::Result account = readOwnAccount(token);
+  const httplib::Result account = readOwnUser(token);
 
   ASSERT_TRUE(account);
   EXPECT_EQ(account->status, EXPECTED_UNAUTHORIZED);
@@ -216,9 +216,9 @@ TEST_F(AccountsRoutesFixture, ClosingAClosedSessionSucceeds) {
   ASSERT_TRUE(createAce());
   const std::string token =
       memberIn(signInAsAce(ACE_PASSWORD), TOKEN_MEMBER_NAME);
-  ASSERT_TRUE(closeSession(token));
+  ASSERT_TRUE(deleteSession(token));
 
-  const httplib::Result closedAgain = closeSession(token);
+  const httplib::Result closedAgain = deleteSession(token);
 
   ASSERT_TRUE(closedAgain);
   EXPECT_EQ(closedAgain->status, EXPECTED_NO_CONTENT);
@@ -255,7 +255,7 @@ TEST(AccountsRoutes, AnAdminLineMakesTheAccountAnAdmin) {
                TOKEN_MEMBER_NAME);
 
   const httplib::Result account =
-      sendRouteCall(master.port(), readOwnAccountCall(token));
+      sendRouteCall(master.port(), readOwnUserCall(token));
 
   EXPECT_EQ(memberIn(account, ROLE_MEMBER_NAME), ADMIN_ROLE_NAME);
 }

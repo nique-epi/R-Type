@@ -19,7 +19,7 @@ namespace rtype::master {
 /**
  * @brief The module of the accounts of the players and of their sessions,
  * `POST /api/users`, `GET /api/users/me`, `POST /api/sessions` and
- * `DELETE /api/sessions/me`, kept in the tables `accounts`, `sessions` and
+ * `DELETE /api/sessions/me`, kept in the tables `users`, `sessions` and
  * `sign_in_failures`. The routes answer over HTTPS only.
  *
  * It is built with the text of PASSWORD_KEY_VARIABLE, which install() reads:

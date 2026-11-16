@@ -57,22 +57,22 @@ constexpr MasterRoute LIST_SERVER_STATUSES_ROUTE{
  * @brief Creates an account, named by its nickname, with its password. The
  * routes of the accounts are answered over HTTPS only.
  */
-constexpr MasterRoute CREATE_ACCOUNT_ROUTE{
+constexpr MasterRoute CREATE_USER_ROUTE{
     .method = RouteMethod::Post, .path = "/users", .httpsOnly = true};
 
 /** @brief The account of the session of the token. */
-constexpr MasterRoute READ_OWN_ACCOUNT_ROUTE{
+constexpr MasterRoute READ_OWN_USER_ROUTE{
     .method = RouteMethod::Get, .path = "/users/me", .httpsOnly = true};
 
 /**
  * @brief Opens a session for a nickname and its password; the answer holds
  * its token, the only time it is shown.
  */
-constexpr MasterRoute OPEN_SESSION_ROUTE{
+constexpr MasterRoute CREATE_SESSION_ROUTE{
     .method = RouteMethod::Post, .path = "/sessions", .httpsOnly = true};
 
 /** @brief Closes the session of the token; closing it again succeeds. */
-constexpr MasterRoute CLOSE_OWN_SESSION_ROUTE{
+constexpr MasterRoute DELETE_OWN_SESSION_ROUTE{
     .method = RouteMethod::Delete, .path = "/sessions/me", .httpsOnly = true};
 
 /** @brief The parameter of a path that names a game of a server. */

@@ -3,20 +3,20 @@
 #include <optional>
 #include <string>
 #include <variant>
-#include "Account.hpp"
-#include "AccountRefusal.hpp"
 #include "AccountsControllerConstants.hpp"
 #include "AccountsService.hpp"
 #include "ApiRequest.hpp"
 #include "ApiResponse.hpp"
-#include "CredentialsRequest.hpp"
+#include "CreatedSession.hpp"
+#include "CredentialsAttempt.hpp"
+#include "CredentialsRefusal.hpp"
 #include "HttpConstants.hpp"
 #include "HttpHeader.hpp"
 #include "MasterMessageText.hpp"
 #include "MasterRouteConstants.hpp"
 #include "MasterRoutePath.hpp"
-#include "OpenedSession.hpp"
 #include "RouteAnswers.hpp"
+#include "User.hpp"
 
 namespace rtype::master {
 
@@ -27,22 +27,22 @@ std::chrono::sys_seconds now() {
       std::chrono::system_clock::now());
 }
 
-CredentialsRequest credentialsRequestOf(const network::ApiRequest& request) {
-  return CredentialsRequest{
-      .credentials = network::credentialsFromText(request.body),
+CredentialsAttempt credentialsAttemptOf(const network::ApiRequest& request) {
+  return CredentialsAttempt{
+      .credentials = network::userCredentialsFromText(request.body),
       .address = request.remoteAddress,
       .requestedAt = now()};
 }
 
-network::ApiResponse refusalOf(AccountRefusal reason) {
+network::ApiResponse refusalOf(CredentialsRefusal reason) {
   switch (reason) {
-    case AccountRefusal::NicknameTaken:
+    case CredentialsRefusal::NicknameTaken:
       return refusal(CONFLICT_STATUS, NICKNAME_TAKEN_DETAIL);
-    case AccountRefusal::TooManyCreations:
-      return refusal(TOO_MANY_REQUESTS_STATUS, ACCOUNT_QUOTA_DETAIL);
-    case AccountRefusal::WrongCredentials:
+    case CredentialsRefusal::TooManyCreations:
+      return refusal(TOO_MANY_REQUESTS_STATUS, USER_QUOTA_DETAIL);
+    case CredentialsRefusal::WrongCredentials:
       return unauthorizedResponse(WRONG_CREDENTIALS_DETAIL);
-    case AccountRefusal::TooManyFailures:
+    case CredentialsRefusal::TooManyFailures:
       return refusal(TOO_MANY_REQUESTS_STATUS, SIGN_IN_QUOTA_DETAIL);
   }
   return unauthorizedResponse(WRONG_CREDENTIALS_DETAIL);
@@ -52,33 +52,32 @@ network::ApiResponse refusalOf(AccountRefusal reason) {
  * it holds. */
 template <typename Value, typename Answer>
 network::ApiResponse answerOf(
-    const std::variant<Value, AccountRefusal>& outcome, Answer answer) {
+    const std::variant<Value, CredentialsRefusal>& outcome, Answer answer) {
   if (const auto* value = std::get_if<Value>(&outcome)) {
     return answer(*value);
   }
-  return refusalOf(std::get<AccountRefusal>(outcome));
+  return refusalOf(std::get<CredentialsRefusal>(outcome));
 }
 
-network::ApiResponse createdAccountResponse(const network::Account& account) {
+network::ApiResponse createdUserResponse(const network::User& user) {
   return network::ApiResponse{
       .status = CREATED_STATUS,
-      .body = network::accountText(account),
-      .detail = std::nullopt,
-      .header =
-          network::HttpHeader{.name = std::string{LOCATION_HEADER},
-                              .value = network::memberPathOf(
-                                  network::CREATE_ACCOUNT_ROUTE, account.id)}};
-}
-
-network::ApiResponse openedSessionResponse(
-    const network::OpenedSession& session) {
-  return network::ApiResponse{
-      .status = CREATED_STATUS,
-      .body = network::openedSessionText(session),
+      .body = network::userText(user),
       .detail = std::nullopt,
       .header = network::HttpHeader{
           .name = std::string{LOCATION_HEADER},
-          .value = network::apiPathOf(network::CLOSE_OWN_SESSION_ROUTE)}};
+          .value = network::memberPathOf(network::CREATE_USER_ROUTE, user.id)}};
+}
+
+network::ApiResponse createdSessionResponse(
+    const network::CreatedSession& session) {
+  return network::ApiResponse{
+      .status = CREATED_STATUS,
+      .body = network::createdSessionText(session),
+      .detail = std::nullopt,
+      .header = network::HttpHeader{
+          .name = std::string{LOCATION_HEADER},
+          .value = network::apiPathOf(network::DELETE_OWN_SESSION_ROUTE)}};
 }
 
 }  // namespace
@@ -86,39 +85,39 @@ network::ApiResponse openedSessionResponse(
 AccountsController::AccountsController(AccountsService& service)
     : service_(service) {}
 
-network::ApiResponse AccountsController::createAccount(
+network::ApiResponse AccountsController::createUser(
     const network::ApiRequest& request) {
   return answerOrRefuse([this, &request] {
-    return answerOf(service_.createAccount(credentialsRequestOf(request)),
-                    createdAccountResponse);
+    return answerOf(service_.createUser(credentialsAttemptOf(request)),
+                    createdUserResponse);
   });
 }
 
-network::ApiResponse AccountsController::readOwnAccount(
+network::ApiResponse AccountsController::readOwnUser(
     const network::ApiRequest& request) {
-  const std::optional<network::Account> account = service_.accountOfToken(
-      request.bearerToken.value_or(std::string{}), now());
-  if (!account.has_value()) {
+  const std::optional<network::User> user =
+      service_.userOfToken(request.bearerToken.value_or(std::string{}), now());
+  if (!user.has_value()) {
     return unauthorizedResponse(NO_SESSION_DETAIL);
   }
   return network::ApiResponse{.status = OK_STATUS,
-                              .body = network::accountText(*account)};
+                              .body = network::userText(*user)};
 }
 
-network::ApiResponse AccountsController::openSession(
+network::ApiResponse AccountsController::createSession(
     const network::ApiRequest& request) {
   return answerOrRefuse([this, &request] {
-    return answerOf(service_.openSession(credentialsRequestOf(request)),
-                    openedSessionResponse);
+    return answerOf(service_.createSession(credentialsAttemptOf(request)),
+                    createdSessionResponse);
   });
 }
 
-network::ApiResponse AccountsController::closeOwnSession(
+network::ApiResponse AccountsController::deleteOwnSession(
     const network::ApiRequest& request) {
   if (!request.bearerToken.has_value()) {
     return unauthorizedResponse(NO_SESSION_DETAIL);
   }
-  service_.closeSession(*request.bearerToken);
+  service_.deleteSession(*request.bearerToken);
   return network::ApiResponse{.status = NO_CONTENT_STATUS, .body = {}};
 }
 

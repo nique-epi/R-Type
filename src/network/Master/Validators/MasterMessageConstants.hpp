@@ -176,7 +176,7 @@ constexpr std::string_view PASSWORD_MEMBER = "password";
 constexpr std::string_view ROLE_MEMBER = "role";
 constexpr std::string_view TOKEN_MEMBER = "token";
 constexpr std::string_view EXPIRES_AT_MEMBER = "expiresAt";
-constexpr std::string_view ACCOUNT_MEMBER = "account";
+constexpr std::string_view USER_MEMBER = "account";
 
 /**
  * @brief The bounds of a password, in bytes of printable UTF-8: the bounds
@@ -186,10 +186,10 @@ constexpr std::string_view ACCOUNT_MEMBER = "account";
 constexpr std::size_t MINIMUM_PASSWORD_SIZE = 8;
 constexpr std::size_t MAXIMUM_PASSWORD_SIZE = 128;
 
-/** @brief How each AccountRole is written, in the order of the enum. */
+/** @brief How each UserRole is written, in the order of the enum. */
 constexpr std::string_view PLAYER_ROLE_TEXT = "player";
 constexpr std::string_view ADMIN_ROLE_TEXT = "admin";
-constexpr auto ACCOUNT_ROLE_TEXTS =
+constexpr auto USER_ROLE_TEXTS =
     std::to_array<std::string_view>({PLAYER_ROLE_TEXT, ADMIN_ROLE_TEXT});
 
 /**

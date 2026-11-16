@@ -3,9 +3,9 @@
 #include <chrono>
 #include <optional>
 #include <string>
+#include "ActiveSession.hpp"
 #include "MasterDatabase.hpp"
 #include "NewSession.hpp"
-#include "SessionOwner.hpp"
 
 namespace rtype::master {
 
@@ -21,7 +21,7 @@ class SessionRepository {
 
   /** @returns The account of the session whose token has @p fingerprint and
    * that has not expired at @p now, with its expiry; nothing otherwise. */
-  [[nodiscard]] std::optional<SessionOwner> ownerOf(
+  [[nodiscard]] std::optional<ActiveSession> ownerOf(
       const std::string& fingerprint, std::chrono::sys_seconds now);
 
   /** @brief Moves the expiry of the session whose token has @p fingerprint to

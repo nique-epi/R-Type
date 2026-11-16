@@ -160,8 +160,8 @@ The storage module opens its file with `rtype_storage` (`openDatabaseFile()`, se
 | 2 | `status_changes` | each change of status of each server, at most one per server and per second, kept 7 days |
 | 3 | `servers` | the secret each server registered with, which its probes carry, and the second of its last valid answer to a probe; both empty for a server registered before |
 | 5 | `heartbeat_samples` | the load of the machine of the server in each sample: the share of its processors that is busy, its memory in use and all its memory; empty in the samples kept before, and for a server that does not measure them |
-| 6 | `accounts` | each account: its nickname, unique without case, the 128 bytes kept of its password, its role, the address and the date of its creation |
-| 6 | `sessions` | each open session: the fingerprint of its token, its account, the address it was opened from, when it opened and when it expires |
+| 6 | `users` | each account: its nickname, unique without case, the 128 bytes kept of its password, its role, the address and the date of its creation |
+| 6 | `sessions` | each open session: the fingerprint of its token, its user, the address it was opened from, when it opened and when it expires |
 | 6 | `sign_in_failures` | each failed sign-in: its address and its second, forgotten once it no longer counts |
 | 4 | `game_results` | a row per player of each vanilla game a server reported: its server, the id of the game, the nickname, the account, the score, the date, the difficulty and the number of players; the key is the server, the game and the nickname, compared without case |
 
@@ -360,7 +360,7 @@ A player creates an account named by its nickname, then opens sessions with its 
 | Route | Does | Answers |
 |---|---|---|
 | `POST /api/users` | creates an account from `{"nickname":"ACE","password":"…"}` | 201, `Location: /api/users/<id>`, and `{"id":1,"nickname":"ACE","role":"player"}`; 409 for a nickname taken, 429 over the quota of creations |
-| `POST /api/sessions` | opens a session for the same body | 201, `Location: /api/sessions/me`, and `{"token":"rts_<64 hexadecimal digits>","expiresAt":1800604800,"account":{…}}`; 401 for a wrong nickname or password, 429 after too many failures |
+| `POST /api/sessions` | opens a session for the same body | 201, `Location: /api/sessions/me`, and `{"token":"rts_<64 hexadecimal digits>","expiresAt":1800604800,"user":{…}}`; 401 for a wrong nickname or password, 429 after too many failures |
 | `GET /api/users/me` | reads the account of the token sent as `Authorization: Bearer <token>` | 200 and the account; 401 without a session |
 | `DELETE /api/sessions/me` | closes the session of the token | 204, for a session already closed too; 401 without a token |
 
@@ -371,11 +371,11 @@ A body the master cannot read answers 400 naming the member. The token is sent a
 - **A nickname** is a nickname of the protocol, 1 to 16 bytes of printable UTF-8, and names one account, compared as a game server compares nicknames: `ACE` and `ace` are one account. **A password** is `MINIMUM_PASSWORD_SIZE` to `MAXIMUM_PASSWORD_SIZE` bytes of printable UTF-8 (8 to 128, the defaults of Better Auth).
 - **The database keeps 128 bytes per password**: `hydro_pwhash_create()` of libhydrogen, with a salt of its own and `PASSWORD_HASH_ROUNDS` (200 000, about 60 ms in a release build on an Apple M4 Pro), encrypted with the key (`passwordHashOf()`, `src/network/Hashing/`). A stolen database tests no password without the key. A password never reaches the journal.
 - **A session** lives `SESSION_LIFETIME` (7 days). A use more than `SESSION_REFRESH_AGE` (1 day) after its expiry last moved moves it to 7 days after that use, so a player who plays every week never signs in again, and a session read often is written once a day: the defaults of Better Auth. The token is `rts_` and 32 random bytes in hexadecimal, shown once; the database keeps its fingerprint (`sessionFingerprintOf()`), so a copy of the file opens no session. Opening a session removes the expired ones.
-- **Quotas, per address.** An address creates `MAXIMUM_ACCOUNTS_PER_ADDRESS` (5) accounts per `ACCOUNT_CREATION_WINDOW` (1 hour) at most. That quota and a nickname taken are checked before the password is hashed, then again in the transaction of the insert. After `MAXIMUM_SIGN_IN_FAILURES` (5) failed sign-ins in `SIGN_IN_FAILURE_WINDOW` (15 minutes), every sign-in from that address answers 429 before its password is checked.
+- **Quotas, per address.** An address creates `MAXIMUM_USERS_PER_ADDRESS` (5) accounts per `USER_CREATION_WINDOW` (1 hour) at most. That quota and a nickname taken are checked before the password is hashed, then again in the transaction of the insert. After `MAXIMUM_SIGN_IN_FAILURES` (5) failed sign-ins in `SIGN_IN_FAILURE_WINDOW` (15 minutes), every sign-in from that address answers 429 before its password is checked.
 - **The journal** names each sign-in, `ACE signed in from 203.0.113.7`, and each refusal, `sign-in as ACE from 203.0.113.7 refused: wrong nickname or password`.
 - **Roles.** An account is a `player` when it is created. A line `admin <nickname>` of `master.cfg` makes that account an `admin` when the master starts, and the journal says so; a line that names no account yet is written in the journal and applies at the next start after the account exists. Removing the line takes the role from nobody. Nothing reads the role yet: the administration is not written.
 
-The module is laid out as `ServersModule`: `AccountsController`, `AccountsService` (the quotas and the sessions; `Services/Helpers/`, the token and the key), one repository per table (`accounts`, `sessions`, `sign_in_failures`), and the plain structs of `Models/`.
+The module is laid out as `ServersModule`: `AccountsController`, `AccountsService` (the quotas and the sessions; `Services/Helpers/`, the token and the key), one repository per table (`UserRepository` for `users`, `SessionRepository`, `SignInFailureRepository`), and the plain structs of `Models/`.
 
 ## The client of the master: `MasterClient`
 

@@ -23,7 +23,7 @@ constexpr std::string_view SERVICE_CLIENT_ADDRESS = "203.0.113.7";
 
 /** @brief How a test reads what the database keeps of a password. */
 constexpr std::string_view KEPT_PASSWORD_QUERY =
-    "SELECT password_hash FROM accounts WHERE nickname = :nickname";
+    "SELECT password_hash FROM users WHERE nickname = :nickname";
 constexpr std::string_view KEPT_PASSWORD_NICKNAME_PARAMETER = ":nickname";
 constexpr int KEPT_PASSWORD_COLUMN = 0;
 constexpr std::size_t KEPT_PASSWORD_BYTES = 128;
