@@ -57,11 +57,16 @@ require_password_key() {
   fi
 }
 
-# Another key makes every password the master keeps unreadable, so a
-# deployment never replaces the key the master has: a different one stops it
-# before anything changed. The key is changed by hand, by removing the file
-# first (see the page deploy-master of the documentation).
-require_same_password_key() {
+# The master stops at its start without a key, and another key makes every
+# password it keeps unreadable. So a deployment stops before anything changed
+# when the master has no key and none is given, and never replaces the key
+# the master has. The key is changed by hand, by removing the file first (see
+# the page deploy-master of the documentation).
+require_usable_password_key() {
+  if [ -z "$PASSWORD_KEY" ] && [ ! -f "$key_file" ]; then
+    echo "no MASTER_PASSWORD_KEY, and the master has no key in $key_file: it would not start" >&2
+    exit 1
+  fi
   if [ -n "$PASSWORD_KEY" ] && [ -f "$key_file" ] &&
     [ "$(cat "$key_file")" != "RT_PASSWORD_KEY=$PASSWORD_KEY" ]; then
     echo "MASTER_PASSWORD_KEY differs from the key the master has in $key_file, which is kept" >&2
@@ -71,15 +76,12 @@ require_same_password_key() {
 
 # Writes the key, once, in a file only root reads, which systemd reads when it
 # starts the master; never in the unit, which every user of the machine
-# reads. Without a key and without the file, the master runs without
-# accounts.
+# reads.
 install_password_key() {
   if [ -f "$key_file" ]; then
     chmod 700 "$key_folder"
     chmod 600 "$key_file"
     echo 'the master keeps its key of the passwords'
-  elif [ -z "$PASSWORD_KEY" ]; then
-    echo 'no MASTER_PASSWORD_KEY: the master runs without accounts'
   else
     install -d -m 700 "$key_folder"
     (
@@ -176,7 +178,7 @@ main() {
   require_version
   require_domain
   require_password_key
-  require_same_password_key
+  require_usable_password_key
   name=R-Type-server-$VERSION-Linux
   previous=$(readlink "$current" 2>/dev/null || true)
 

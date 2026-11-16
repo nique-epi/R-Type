@@ -48,7 +48,7 @@ The workflow `deploy-master` runs in the GitHub environment `production`, so it 
 
 `deploy.sh` runs as root on the instance:
 
-1. It checks the key of the passwords it was given against the one the master has: a different key stops the script here, before anything changed (see [Giving the master its key of the passwords](#giving-the-master-its-key-of-the-passwords)).
+1. It checks the key of the passwords it was given against the one the master has: a different key, or no key at all for a master that has none, stops the script here, before anything changed (see [Giving the master its key of the passwords](#giving-the-master-its-key-of-the-passwords)).
 2. It downloads `R-Type-server-<version>-Linux.tar.gz` from the public release, and unpacks it in `/opt/rtype/releases/`. A release that does not exist stops the script here, before anything changed.
 3. It writes the unit, and `/etc/rtype/master.env` when the master has no key yet and the job gave one, points `/opt/rtype/current` at the new release and restarts the service.
 4. It waits up to 20 seconds for `GET /api/health` to answer 200. When it does not, it prints the last 30 lines of the journal, points `current` back at the previous release, restarts and fails.
@@ -89,11 +89,11 @@ The secret is in neither GitHub nor Terraform. To change it, do the three steps 
 
 ## Giving the master its key of the passwords
 
-A player who creates an account on the master chooses a password. The master keeps a hash of it in its database, encrypted with one key, `RT_PASSWORD_KEY`, so a copy of the database alone tests no password (see [Master](/R-Type/master/#accounts-and-sessions-accountsmodule)). The master reads that key from its environment when it starts; without it, it runs and refuses every route of the accounts with 503.
+A player who creates an account on the master chooses a password. The master keeps a hash of it in its database, encrypted with one key, `RT_PASSWORD_KEY`, so a copy of the database alone tests no password (see [Master](/R-Type/master/#accounts-and-sessions-accountsmodule)). The master reads that key from its environment when it starts, and stops there without it.
 
 The key is kept in two places, and nowhere else: the secret `MASTER_PASSWORD_KEY` of the GitHub environment `production`, which nobody can read back, and `/etc/rtype/master.env` on the instance, owned by root, mode 0600, which systemd reads before it starts the master as the user `rtype`. It is never written in the unit, which every user of the machine reads, nor on the command line, the journal, the repository or Terraform.
 
-Create it once, before the first deployment that should open the accounts; it never goes through your screen or your shell history:
+Create it once, before the next deployment, since a deployment without a key stops; it never goes through your screen or your shell history:
 
 ```bash
 openssl rand -hex 32 | gh secret set MASTER_PASSWORD_KEY --env production
@@ -103,7 +103,7 @@ What a deployment does then:
 
 | The secret | `/etc/rtype/master.env` on the instance | The deployment |
 |---|---|---|
-| empty or missing | missing | runs the master without accounts, and says so in its output |
+| empty or missing | missing | stops before it installs anything, since the master would not start; the master in place keeps running |
 | set | missing | writes the file, then restarts the master with its accounts |
 | set, the same key | present | changes nothing to the key |
 | empty or missing | present | keeps the file: the master keeps its key and its accounts |

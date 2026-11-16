@@ -165,7 +165,7 @@ Keep it out of GitHub and of Terraform, and never give it with `--set` on the co
 
 ### 8. The key of the passwords, so the master opens its accounts
 
-The master keeps the password of each account as a hash encrypted with one key, `RT_PASSWORD_KEY`, read from its environment when it starts. Without it, every route of the accounts answers 503. Create it once, as a secret of the environment `production`; it never goes through your screen or your shell history:
+The master keeps the password of each account as a hash encrypted with one key, `RT_PASSWORD_KEY`, read from its environment when it starts; without it, the master does not start. Create it once, as a secret of the environment `production`, before the next deployment, since a deployment without a key stops; it never goes through your screen or your shell history:
 
 ```bash
 openssl rand -hex 32 | gh secret set MASTER_PASSWORD_KEY --env production
@@ -175,7 +175,7 @@ The next deployment writes it in `/etc/rtype/master.env` on the instance (root, 
 
 | The secret | `/etc/rtype/master.env` | The deployment |
 |---|---|---|
-| empty or missing | missing | runs the master without accounts, and says so |
+| empty or missing | missing | stops before it installs anything; the master in place keeps running |
 | set | missing | writes the file |
 | set, the same key | present | changes nothing to the key |
 | empty or missing | present | keeps the file and the accounts |
@@ -212,7 +212,7 @@ The players and the hosts need a release of the game that speaks HTTPS: an older
 | The check from outside fails but the script succeeded | the A record does not point at the Elastic IP yet, or Let's Encrypt refused the certificate: `journalctl -u caddy` says which; ports 80 and 443 must be open |
 | The job stops at "Check the key of the passwords" | `MASTER_PASSWORD_KEY` is not 64 lowercase hexadecimal digits: set it again with `openssl rand -hex 32` |
 | The script prints "MASTER_PASSWORD_KEY differs from the key the master has" | the secret was changed: set the key the master has again, or follow the change of step 8 |
-| The accounts answer 503 after a deployment | the master has no key: the secret is empty, or `release.yaml` does not pass it to `deploy-master`; the output of the deployment says "no MASTER_PASSWORD_KEY" |
+| The script prints "no MASTER_PASSWORD_KEY, and the master has no key" | the secret is empty, or `release.yaml` does not pass it to `deploy-master`: create it (step 8) |
 | Going back does not restore the master | the new master migrated the database, and the older one cannot read the newer schema |
 
 ## Limits
