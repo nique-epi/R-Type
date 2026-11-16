@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstdint>
-#include <memory>
 #include <string>
 #include "CreatedServer.hpp"
 #include "FinishedGame.hpp"
@@ -10,13 +9,13 @@
 #include "GlobalLeaderboardQuery.hpp"
 #include "MasterAccess.hpp"
 #include "MasterRoute.hpp"
+#include "MasterTransport.hpp"
 #include "ServerCreation.hpp"
 #include "ServerHeartbeat.hpp"
 #include "ServerListing.hpp"
 #include "ServerRegistration.hpp"
 
 namespace httplib {
-class Client;
 struct Request;
 }  // namespace httplib
 
@@ -123,7 +122,7 @@ class MasterClient {
   [[nodiscard]] std::string send(httplib::Request request);
 
   std::string key_;
-  std::unique_ptr<httplib::Client> client_;
+  MasterTransport transport_;
 };
 
 }  // namespace rtype::network
