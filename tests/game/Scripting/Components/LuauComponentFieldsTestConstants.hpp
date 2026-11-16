@@ -69,6 +69,11 @@ end)
 constexpr float WRITTEN_WIDTH = 40.0F;
 constexpr float WRITTEN_HEIGHT = 30.0F;
 
+/** @brief The side, in pixels, of the collision mask a body whose box a script
+ * writes starts with: any size will do, the test reads whether it is
+ * emptied. */
+constexpr int MASK_OF_THE_BOX_PIXELS = 4;
+
 /** @brief A script that sets the top speed of its body to 250. */
 constexpr std::string_view TOP_SPEED_WRITING_SCRIPT = R"(
 behaviours.register("fields", {}, function(e)

@@ -8,10 +8,10 @@
 #include <optional>
 #include <vector>
 #include "BackgroundConstants.hpp"
+#include "BarrelRoll.hpp"
 #include "Caption.hpp"
 #include "ComponentRegistry.hpp"
 #include "DrawCall.hpp"
-#include "Easing.hpp"
 #include "Entity.hpp"
 #include "HitFlash.hpp"
 #include "IDrawSurface.hpp"
@@ -21,6 +21,8 @@
 #include "Position.hpp"
 #include "RenderingConstants.hpp"
 #include "Reveal.hpp"
+#include "RollMoment.hpp"
+#include "RolledRows.hpp"
 #include "ShipFlight.hpp"
 #include "ShipFlightConstants.hpp"
 #include "ShipLookConstants.hpp"
@@ -140,40 +142,6 @@ game::Position centerOfRows(game::Position center, int height, RowSpan span) {
                                          BACKGROUND_PIXEL_SIZE)};
 }
 
-/** @brief The rows a roll shows of a frame: its height, how many it shows,
- * and whether they are upside down. */
-struct RolledFrame {
-  int height{};
-  int count{};
-  bool belly{false};
-};
-
-/** @returns The angle of the roll @p flight draws, a whole turn over its
- * share; nothing without a ShipFlight or a roll. */
-std::optional<float> rollAngleOf(const ShipFlight* flight) {
-  if (flight == nullptr || !flight->rollShare.has_value()) {
-    return std::nullopt;
-  }
-  return FULL_TURN * *flight->rollShare;
-}
-
-/** @returns The rows of @p frame a roll at @p angle shows: round(height x
- * |cos|), ROLL_THINNEST_ROWS at least, upside down past a quarter turn. */
-RolledFrame rolledFrameOf(game::SpriteFrame frame, float angle) {
-  const float cosine = std::cos(angle);
-  const int count = pixelsOf(frame.height, std::abs(cosine));
-  return RolledFrame{.height = frame.height,
-                     .count = std::max(ROLL_THINNEST_ROWS, count),
-                     .belly = cosine < 0.0F};
-}
-
-/** @returns The row of the frame that row @p row of @p rolled shows: the
- * nearest, counted from the bottom while the belly shows. */
-int sourceRowOf(RolledFrame rolled, int row) {
-  const int nearest = (((2 * row) + 1) * rolled.height) / (2 * rolled.count);
-  return rolled.belly ? rolled.height - 1 - nearest : nearest;
-}
-
 /** @returns The draw call of an afterimage of @p sprite, the sprite of
  * @p entity, at @p position: the sprite lit one pixel in two. */
 DrawCall afterimageAt(engine::Entity entity, const game::Sprite& sprite,
@@ -187,7 +155,7 @@ DrawCall afterimageAt(engine::Entity entity, const game::Sprite& sprite,
                                            .offset = {},
                                            .shownRows = std::nullopt,
                                            .leadingLine = false,
-                                           .rollAngle = std::nullopt}};
+                                           .rollShare = std::nullopt}};
 }
 
 /** @returns The sprite of @p item on the sheet of the looks: its drawing, cut
@@ -280,7 +248,7 @@ void RenderSystem::collectLooks(engine::ComponentRegistry& components) {
         }
         const SpriteAppearance look =
             lookOf(components, entity, ship.frame.height);
-        if (look.shownRows.has_value() || look.rollAngle.has_value()) {
+        if (look.shownRows.has_value() || look.rollShare.has_value()) {
           return;
         }
         for (std::size_t item = 0;
@@ -298,7 +266,7 @@ void RenderSystem::collectLooks(engine::ComponentRegistry& components) {
                                         .offset = look.offset,
                                         .shownRows = std::nullopt,
                                         .leadingLine = false,
-                                        .rollAngle = std::nullopt}});
+                                        .rollShare = std::nullopt}});
         }
       });
 }
@@ -325,6 +293,7 @@ SpriteAppearance RenderSystem::lookOf(engine::ComponentRegistry& components,
   const Invulnerability* invulnerability =
       components.get<Invulnerability>(entity);
   const Reveal* reveal = components.get<Reveal>(entity);
+  const ShipFlight* const flight = components.get<ShipFlight>(entity);
   return SpriteAppearance{
       .tone = toneOf(components.get<HitFlash>(entity), invulnerability),
       .outline = outlineOf(invulnerability),
@@ -332,7 +301,7 @@ SpriteAppearance RenderSystem::lookOf(engine::ComponentRegistry& components,
                 anchorOf(components.get<SpriteAnimation>(entity)),
       .shownRows = shownRowsOf(reveal, frameHeight),
       .leadingLine = reveal != nullptr && reveal->leadingLine,
-      .rollAngle = rollAngleOf(components.get<ShipFlight>(entity))};
+      .rollShare = flight == nullptr ? std::nullopt : flight->rollShare};
 }
 
 void RenderSystem::draw(IDrawSurface& surface, const DrawCall& call) {
@@ -349,7 +318,7 @@ void RenderSystem::drawSprite(IDrawSurface& surface, const DrawCall& call) {
     drawRevealed(surface, call, center);
     return;
   }
-  if (call.look.rollAngle.has_value()) {
+  if (call.look.rollShare.has_value()) {
     drawRolled(surface, call, center);
     return;
   }
@@ -407,13 +376,14 @@ void RenderSystem::collectAfterimages(engine::ComponentRegistry& components) {
 void RenderSystem::drawRolled(IDrawSurface& surface, const DrawCall& call,
                               game::Position center) {
   const game::SpriteFrame frame = call.sprite->frame;
-  const RolledFrame rolled =
-      rolledFrameOf(frame, call.look.rollAngle.value_or(0.0F));
+  const game::RolledRows rolled = game::rolledRowsOf(
+      game::RollMoment{.frameHeight = frame.height,
+                       .share = call.look.rollShare.value_or(0.0F)});
   for (int row = 0; row < rolled.count; ++row) {
     surface.draw(SpriteDrawing{
         .assetId = call.sprite->assetId,
-        .frame = rowsOf(frame,
-                        RowSpan{.first = sourceRowOf(rolled, row), .count = 1}),
+        .frame = rowsOf(frame, RowSpan{.first = game::sourceRowOf(rolled, row),
+                                       .count = 1}),
         .center = centerOfRows(center, rolled.count,
                                RowSpan{.first = row, .count = 1}),
         .tone = rolled.belly && call.look.tone == SpriteTone::Normal

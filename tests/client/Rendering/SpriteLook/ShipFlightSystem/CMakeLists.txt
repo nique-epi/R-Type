@@ -1,0 +1,3 @@
+target_sources(client_animation_tests PRIVATE ShipFlightSystemTest.cpp)
+target_include_directories(client_animation_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(client_animation_tests PRIVATE rtype_client_ship_flight_system)

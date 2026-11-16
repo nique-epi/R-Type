@@ -4,9 +4,11 @@
 #include "CurrentAction.hpp"
 #include "Entity.hpp"
 #include "EntityType.hpp"
+#include "EntityTypesTestConstants.hpp"
 #include "HurtZoneBeamTestConstants.hpp"
 #include "HurtZoneSystemFixtures.hpp"
 #include "ShipContact.hpp"
+#include "ShippedEntitySheets.hpp"
 
 using rtype::engine::Entity;
 using rtype::game::CurrentAction;
@@ -19,11 +21,15 @@ using rtype::game::testing::EARLY_IN_THE_SWEEP;
 using rtype::game::testing::enemyWithBeam;
 using rtype::game::testing::HALFWAY_THROUGH_THE_SWEEP;
 using rtype::game::testing::SHIP_ABOVE_THE_BEAM_Y;
+using rtype::game::testing::SHIP_GRAZED_ON_ITS_CLEAR_TOP;
+using rtype::game::testing::SHIP_GRAZED_ON_ITS_FIN;
 using rtype::game::testing::SHIP_HALFWAY_DOWN_THE_SWEEP_X;
 using rtype::game::testing::SHIP_HALFWAY_DOWN_THE_SWEEP_Y;
 using rtype::game::testing::SHIP_ON_THE_BEAM_X;
 using rtype::game::testing::SHIP_PAST_THE_BEAM_X;
+using rtype::game::testing::SHIP_SHEET;
 using rtype::game::testing::SHIP_TOUCHING_THE_END_X;
+using rtype::game::testing::shippedEntitySheets;
 using rtype::game::testing::STRAIGHT_BEAM;
 using rtype::game::testing::SWEEP_STRIKE;
 using rtype::game::testing::SWEEPING_BEAM;
@@ -133,4 +139,37 @@ TEST(HurtZoneSystem, ABeamThatOnlyTouchesAShipSparesIt) {
   scene.spawn(EntityType::Player, SHIP_TOUCHING_THE_END_X, 0.0F);
 
   EXPECT_TRUE(contactsOf(scene).empty());
+}
+
+/**
+ * Given the ship of the shipped sheet whose box the straight beam crosses
+ * over its two top rows, which its mask leaves clear
+ * When the hurt zone system updates and the bus dispatches
+ * Then no ShipContact is delivered: the beam misses the pixels of the ship
+ */
+TEST(HurtZoneSystem, ABeamGrazingTheClearTopOfTheShipSparesIt) {
+  CollisionScene scene;
+  enemyWithBeam(scene, STRAIGHT_BEAM, CurrentAction{.key = BEAM_STRIKE});
+  scene.spawnFromSheet(shippedEntitySheets().named(SHIP_SHEET),
+                       SHIP_GRAZED_ON_ITS_CLEAR_TOP);
+
+  EXPECT_TRUE(contactsOf(scene).empty());
+}
+
+/**
+ * Given the ship of the shipped sheet a little higher, the straight beam
+ * crossing the rows of its top fin
+ * When the hurt zone system updates and the bus dispatches
+ * Then one ShipContact names the ship
+ */
+TEST(HurtZoneSystem, ABeamOnTheFinOfTheShipHurtsIt) {
+  CollisionScene scene;
+  enemyWithBeam(scene, STRAIGHT_BEAM, CurrentAction{.key = BEAM_STRIKE});
+  const Entity ship = scene.spawnFromSheet(
+      shippedEntitySheets().named(SHIP_SHEET), SHIP_GRAZED_ON_ITS_FIN);
+
+  const std::vector<ShipContact> received = contactsOf(scene);
+
+  ASSERT_EQ(received.size(), 1U);
+  EXPECT_EQ(received.front().player, ship);
 }

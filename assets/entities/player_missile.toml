@@ -26,6 +26,9 @@ top_speed = 960
 [gameplay.behaviour]
 heading = 1
 
+[gameplay.mask]
+file = "masks/player_missile.txt"
+
 [appearance]
 sheet = "sprites/entities.png"
 

@@ -31,6 +31,7 @@ constexpr std::size_t CHAT_TAB = 4;
 /** @brief Order of the rows whose description changes, in their tab. */
 constexpr std::size_t MUSIC_ROW = 0;
 constexpr std::size_t EFFECTS_ROW = 1;
+constexpr std::size_t VOICES_ROW = 2;
 constexpr std::size_t FIRST_KEY_ROW = 0;
 constexpr std::size_t DISPLAY_MODE_ROW = 0;
 constexpr std::size_t WINDOW_SIZE_ROW = 1;
@@ -58,6 +59,7 @@ constexpr Slider::Range VOLUME_RANGE{.minimum = MINIMUM_VOLUME,
 constexpr const char* PERCENT_UNIT = "%";
 constexpr const char* MUSIC_LABEL = "MUSIC";
 constexpr const char* EFFECTS_LABEL = "EFFECTS";
+constexpr const char* VOICES_LABEL = "VOICES";
 constexpr std::string_view VOLUME_DESCRIPTION_STEP = "> BY ";
 constexpr std::string_view VOLUME_DESCRIPTION_DEFAULT = " %, DEFAULT ";
 constexpr std::string_view VOLUME_DESCRIPTION_END = " %";

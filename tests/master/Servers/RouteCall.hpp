@@ -10,4 +10,7 @@ struct RouteCall {
   /** @brief The key sent as Bearer, none when it is empty. */
   std::string_view key;
   std::string body;
+  /** @brief Whether the call comes as Caddy forwards a client that came over
+   * HTTPS: it then carries `X-Forwarded-Proto: https`. */
+  bool overHttps{false};
 };

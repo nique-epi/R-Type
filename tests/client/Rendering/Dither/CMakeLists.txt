@@ -1,0 +1,1 @@
+rtype_add_test(NAME client_dither_tests SOURCES BayerThresholdTest.cpp LIBS rtype_client_dither)

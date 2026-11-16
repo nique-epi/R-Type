@@ -47,7 +47,7 @@ AssetList titleAssets() {
       .textures = {LOGO_ID, ENTITY_SHEET_ID, HUD_SHEET_ID, PROFESSOR_SHEET_ID,
                    LEADERBOARD_SHEET_ID, SHIP_LOOK_SHEET_ID, SHIP_HULL_SHEET_ID,
                    SECTOR_MAP_SHEET_ID, SHOP_SCENE_ID, SHOP_KEEPER_SHEET_ID,
-                   SHOP_FRONT_ID, DESTINATION_SHEET_ID}};
+                   SHOP_FRONT_ID, SHOP_TICKET_SHEET_ID, DESTINATION_SHEET_ID}};
   for (const char* texture : CASINO_TEXTURES) {
     assets.textures.emplace_back(texture);
   }
@@ -61,7 +61,7 @@ AssetList gameAssets() {
   assets.textures.emplace_back(FLIGHT_LOG_SHEET_ID);
   for (const Biome& biome : BIOMES) {
     for (const BiomeLayer& layer : biome.layers) {
-      assets.textures.emplace_back(layer.image);
+      assets.textures.emplace_back(layer.tileset);
     }
   }
   return assets;

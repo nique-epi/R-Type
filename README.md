@@ -44,7 +44,7 @@ Each client is given its server with `-h`, so PLAY then SERVER joins it at once,
 
 ## Features
 
-The client opens on a second of black and an intro set to the beats of its theme, which a key or a click skips, then on its title screen over a scrolling starfield: PLAY opens the destination screen, whose SERVER opens the server map, then the game, SHOP the shop, CASINO the server map towards the casino of the waiting room, where the cashier changes kopecks into chips and the pilots bet them at a shared roulette table, and HANGAR the hangar, RANKING opens the best scores of a server, SETTINGS opens the options (sound, keys, display mode and window size, accessibility), QUIT asks before closing the client; the hangar, opened from the destination screen or from the own bay of the waiting room, dresses the ship with the items of a catalog of thirty, 25 accessories set on it by robotic arms and 5 hulls that replace it (three accessories are in the locker at first, the others are won by picking up look items in a game, the hulls are not, and every pilot sees the items and the hull of the others); Escape during a game opens the options over it. It plays a theme, the sounds of the intro and of the game, and a click on its menus. The server answers each connection request with a challenge, an acceptance with a player number from 1 to 4, or a refusal when the game is full, and logs the datagrams of the players it admitted at the `debug` level.
+The client opens on a second of black and an intro set to the beats of its theme, which a key or a click skips, then on its title screen over a scrolling starfield: PLAY opens the server map, then the game, and the tabs over the map open the hangar and the shop, the casino shown locked until it exists, RANKING opens the best scores of a server, SETTINGS opens the options (sound, keys, display mode and window size, accessibility), QUIT asks before closing the client; the hangar, opened from the tabs of the server map or from the own bay of the waiting room, dresses the ship with the items of a catalog of thirty, 25 accessories set on it by robotic arms and 5 hulls that replace it (three accessories are in the locker at first, the others are won by picking up look items in a game, the hulls are not, and every pilot sees the items and the hull of the others); Escape during a game opens the options over it. It plays a theme, the sounds of the intro and of the game, and a click on its menus. The server answers each connection request with a challenge, an acceptance with a player number from 1 to 4, or a refusal when the game is full, and logs the datagrams of the players it admitted at the `debug` level.
 
 ## Requirements
 
@@ -53,7 +53,7 @@ The client opens on a second of black and an intro set to the beats of its theme
 - Git
 - For the web site only: bun 1.3 and Node.js 22.12 or newer
 
-Third-party libraries (SFML, Asio, toml++, SQLiteCpp, Luau, GoogleTest) are built by [vcpkg](https://vcpkg.io), pinned as a Git submodule and bootstrapped automatically on the first configure.
+Third-party libraries (SFML, Asio, toml++, SQLiteCpp, Luau, LDtkLoader, GoogleTest) are built by [vcpkg](https://vcpkg.io), pinned as a Git submodule and bootstrapped automatically on the first configure.
 
 On Linux, SFML and vcpkg need a few system packages. On Ubuntu:
 
@@ -91,6 +91,7 @@ Each optional module has a CMake option, on by default. Off, its folder is not c
 | `RTYPE_MODULE_CHAT` | the chat of the games | a chat line reaches nobody |
 | `RTYPE_MODULE_PLUGINS` | the loading of plugins | `plugin` and `plugin-folder` are unknown commands |
 | `RTYPE_MODULE_GAME_STATISTICS` | the `game-statistics` plugin; off whenever `RTYPE_MODULE_PLUGINS` is | no `game-statistics` file in `plugins/` |
+| `RTYPE_MODULE_ACCOUNTS` | the accounts and sessions of the master | the master answers 404 to `/api/users` and `/api/sessions`, and `admin` is an unknown command of `master.cfg` |
 
 ```bash
 cmake --preset default -DRTYPE_MODULE_AUDIO=OFF

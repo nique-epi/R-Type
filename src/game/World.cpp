@@ -3,11 +3,14 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <memory>
 #include <optional>
+#include <utility>
 #include "BodyPlacement.hpp"
 #include "Boss.hpp"
 #include "CollisionBox.hpp"
 #include "CollisionFilter.hpp"
+#include "CollisionMask.hpp"
 #include "ComponentRegistry.hpp"
 #include "CurrentAction.hpp"
 #include "Entity.hpp"
@@ -33,10 +36,13 @@
 #include "Pilot.hpp"
 #include "PilotSheet.hpp"
 #include "Position.hpp"
+#include "RolledMaskCatalog.hpp"
+#include "RolledMasks.hpp"
 #include "ScoreValue.hpp"
 #include "ShardBurst.hpp"
 #include "ShipMotion.hpp"
 #include "ShipPilot.hpp"
+#include "ShipRollMasks.hpp"
 #include "Shootable.hpp"
 #include "ShownLook.hpp"
 #include "SteadyMotion.hpp"
@@ -58,9 +64,9 @@ struct BodyStart {
 };
 
 /** @brief Gives @p start what every entity of a sheet has: where it is, its
- * side, its box, the boxes its sheet lists, its collision filter, the number of
- * its sheet, the names of its effects and looks, the look it shows, its own
- * idle loop at first, and an Intent that wants nothing. */
+ * side, its box, the boxes or the collision mask its sheet gives, its collision
+ * filter, the number of its sheet, the names of its effects and looks, the look
+ * it shows, its own idle loop at first, and an Intent that wants nothing. */
 void addPlace(engine::ComponentRegistry& components, const BodyStart& start) {
   const EntitySheet& sheet = start.sheet.get();
   components.add(start.body, start.position);
@@ -68,6 +74,9 @@ void addPlace(engine::ComponentRegistry& components, const BodyStart& start) {
   components.add(start.body, sheet.hitbox);
   if (!sheet.hitboxParts.empty()) {
     components.add(start.body, HitboxParts{.boxes = sheet.hitboxParts});
+  }
+  if (sheet.mask.has_value()) {
+    components.add(start.body, CollisionMask{.pixels = sheet.mask->pixels});
   }
   components.add(start.body, sheet.collision.filter);
   components.add(start.body, EntityTypeNumber{.number = sheet.number});
@@ -84,6 +93,21 @@ void addMotion(engine::ComponentRegistry& components, const BodyStart& start) {
     return;
   }
   components.add(start.body, SteadyMotion{.topSpeed = motion.topSpeed});
+}
+
+/** @brief Gives @p start, a ship whose sheet gives a collision mask, the
+ * masks it shows through its barrel roll, taken from @p catalog. */
+void addRollMasks(engine::ComponentRegistry& components, const BodyStart& start,
+                  RolledMaskCatalog& catalog) {
+  const EntitySheet& sheet = start.sheet.get();
+  if (sheet.motion.kind != MotionKind::Ship || !sheet.mask.has_value()) {
+    return;
+  }
+  std::shared_ptr<const RolledMasks> masks =
+      catalog.rolledOf(*sheet.mask->pixels);
+  if (masks != nullptr) {
+    components.add(start.body, ShipRollMasks{.masks = std::move(masks)});
+  }
 }
 
 /** @brief Gives @p start the Pilot of its behaviour, when one pilots it. */
@@ -212,6 +236,7 @@ std::uint32_t World::spawnFrom(const EntitySheet& sheet,
                         .origin = placement.origin};
   addPlace(components_, start);
   addMotion(components_, start);
+  addRollMasks(components_, start, rolledMasks_);
   addPilot(components_, start);
   addCombat(components_, start);
   addContactParts(components_, start);

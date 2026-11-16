@@ -35,7 +35,8 @@ namespace rtype::network {
 [[nodiscard]] std::string gamePathOf(MasterRoute route,
                                      std::string_view gameId);
 
-/** @returns How HTTP names @p method: GET_METHOD, POST_METHOD or PUT_METHOD. */
+/** @returns How HTTP names @p method: GET_METHOD, POST_METHOD, PUT_METHOD or
+ * DELETE_METHOD. */
 [[nodiscard]] std::string_view methodNameOf(RouteMethod method);
 
 }  // namespace rtype::network

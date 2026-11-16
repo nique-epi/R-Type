@@ -25,6 +25,7 @@ option(RTYPE_MODULE_ADMIN_CONSOLE "Build the administration console of the super
 option(RTYPE_MODULE_CHAT "Build the chat module of the games" ON)
 option(RTYPE_MODULE_CASINO "Build the casino module of the games: the roulette table of the waiting room" ON)
 option(RTYPE_MODULE_PLUGINS "Build the loading of plugins: the plugin and plugin-folder commands" ON)
+option(RTYPE_MODULE_ACCOUNTS "Build the accounts and sessions of the master" ON)
 cmake_dependent_option(RTYPE_MODULE_GAME_STATISTICS "Build the game-statistics plugin" ON "RTYPE_MODULE_PLUGINS" OFF)
 
 add_feature_info(audio RTYPE_MODULE_AUDIO "the sound of the client")
@@ -36,6 +37,7 @@ add_feature_info(admin-console RTYPE_MODULE_ADMIN_CONSOLE "the administration co
 add_feature_info(chat RTYPE_MODULE_CHAT "the chat of the games")
 add_feature_info(casino RTYPE_MODULE_CASINO "the roulette table of the waiting rooms")
 add_feature_info(plugins RTYPE_MODULE_PLUGINS "the loading of plugins")
+add_feature_info(accounts RTYPE_MODULE_ACCOUNTS "the accounts and sessions of the master")
 add_feature_info(game-statistics RTYPE_MODULE_GAME_STATISTICS "the game-statistics plugin")
 
 if(NOT CMAKE_RUNTIME_OUTPUT_DIRECTORY)

@@ -150,6 +150,7 @@ std::unique_ptr<IScreen> buildServerMapScreen(const ScreenContext& context) {
                            .games = context.services.gameCatalog.get(),
                            .choice = context.serverChoice.get(),
                            .connection = context.services.connection.get(),
+                           .settings = context.services.settings.get(),
                            .playfieldPointAt = playfieldMappingOf(context),
                            .motion = motionPreference()},
       interfaceCanvasOf(context));

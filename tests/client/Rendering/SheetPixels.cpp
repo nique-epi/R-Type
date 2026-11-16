@@ -12,8 +12,6 @@
 
 using rtype::game::SpriteFrame;
 
-namespace {
-
 bool isVisible(const sf::Image& image, int column, int row) {
   const sf::Vector2u size = image.getSize();
   if (column < 0 || row < 0 || std::cmp_greater_equal(column, size.x) ||
@@ -24,8 +22,6 @@ bool isVisible(const sf::Image& image, int column, int row) {
                            static_cast<unsigned int>(row)};
   return image.getPixel(pixel).a != TRANSPARENT_ALPHA;
 }
-
-}  // namespace
 
 sf::Image shippedSheet(std::string_view assetId) {
   return sf::Image(std::filesystem::path(RTYPE_SOURCE_ASSETS_FOLDER) /

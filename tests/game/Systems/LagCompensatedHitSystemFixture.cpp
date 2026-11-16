@@ -4,13 +4,16 @@
 #include <utility>
 #include <vector>
 #include "CollisionBox.hpp"
+#include "CollisionMask.hpp"
 #include "CollisionTestConstants.hpp"
 #include "ComponentRegistry.hpp"
 #include "Entity.hpp"
 #include "EntityType.hpp"
 #include "HitboxParts.hpp"
 #include "LagCompensatedHitSystemTestConstants.hpp"
+#include "MaskPixel.hpp"
 #include "MissileHit.hpp"
+#include "PixelMask.hpp"
 #include "Position.hpp"
 #include "TimeConstants.hpp"
 #include "ViewDelay.hpp"
@@ -28,6 +31,20 @@ engine::Entity LagCompensatedHitSystemFixture::enemyAt(Position position) {
   components_->add(enemy, EntityType::Enemy);
   components_->add(enemy, ENEMY_BOX);
   components_->add(enemy, ENEMY_FILTER);
+  return enemy;
+}
+
+engine::Entity LagCompensatedHitSystemFixture::hollowEnemyAt(
+    Position position) {
+  auto mask =
+      std::make_shared<engine::PixelMask>(HOLLOW_ENEMY_SIDE, HOLLOW_ENEMY_SIDE);
+  for (int row = 0; row < HOLLOW_ENEMY_DRAWN_ROWS; ++row) {
+    for (int column = 0; column < HOLLOW_ENEMY_SIDE; ++column) {
+      mask->markDrawn(engine::MaskPixel{.x = column, .y = row});
+    }
+  }
+  const engine::Entity enemy = enemyAt(position);
+  components_->add(enemy, CollisionMask{.pixels = std::move(mask)});
   return enemy;
 }
 

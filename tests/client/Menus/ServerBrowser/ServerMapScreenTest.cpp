@@ -10,6 +10,7 @@
 #include "Endpoint.hpp"
 #include "GameRequest.hpp"
 #include "GameRules.hpp"
+#include "HangarScreenIdConstants.hpp"
 #include "MenuScreenIdConstants.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
@@ -18,17 +19,21 @@
 #include "ServerMapScreenFixture.hpp"
 #include "ServerMapScreenFixtures.hpp"
 #include "ServerMapScreenTestConstants.hpp"
+#include "ShopScreenIdConstants.hpp"
 
 using rtype::client::Ambience;
 using rtype::client::CONNECTION_SCREEN;
 using rtype::client::CONNECTION_TO_MAP_SERVER_SCREEN;
 using rtype::client::GameRequest;
-using rtype::client::LEADERBOARD_SCREEN;
+using rtype::client::HANGAR_SCREEN;
 using rtype::client::NEW_GAME_SCREEN;
 using rtype::client::ServerListPhase;
 using rtype::client::ServerListSnapshot;
+using rtype::client::SHOP_SCREEN;
+using rtype::client::testing::BETWEEN_SECTORS_AND_HANGAR;
 using rtype::client::testing::COLUMN_HEADINGS_ON_THE_PANEL;
 using rtype::client::testing::HANGAR_HOUSE_SOURCE;
+using rtype::client::testing::IN_THE_HANGAR_TAB;
 using rtype::client::testing::listWithLyonHolding;
 using rtype::client::testing::listWithNoSeatOfThisVersion;
 using rtype::client::testing::LYON_SERVER_ADDRESS;
@@ -36,12 +41,14 @@ using rtype::client::testing::LYON_SERVER_ID;
 using rtype::client::testing::lyonGames;
 using rtype::client::testing::MAP_SHEET;
 using rtype::client::testing::NEW_GAME_ROW_ON_THE_PANEL;
+using rtype::client::testing::ON_THE_CASINO_TAB;
 using rtype::client::testing::ONE_FRAME;
 using rtype::client::testing::ONE_PLANET_TURN_FRAME;
 using rtype::client::testing::ONE_SEAT_LEFT;
 using rtype::client::testing::PARIS_SERVER_ADDRESS;
 using rtype::client::testing::PARIS_SERVER_ID;
 using rtype::client::testing::parisOnTheWholeMap;
+using rtype::client::testing::PLAYER_KOPECKS_TEXT;
 using rtype::client::testing::PLAYING_GAME_ROW_ON_THE_PANEL;
 using rtype::client::testing::readyList;
 using rtype::client::testing::REFRESH_INTERVAL;
@@ -523,21 +530,6 @@ TEST_F(ServerMapScreenFixture, TabChoosesTheNextServerByPing) {
 }
 
 /**
- * Given the map
- * When L is pressed and released
- * Then the leaderboard opens over it
- */
-TEST_F(ServerMapScreenFixture, RankingOpensTheLeaderboard) {
-  openOn(readyList());
-
-  press(sf::Keyboard::Key::L);
-
-  EXPECT_THAT(navigator().calls(),
-              ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
-                                        .screen = LEADERBOARD_SCREEN}));
-}
-
-/**
  * Given a master that did not answer
  * When D is pressed and released
  * Then the form of a direct connection opens: it stays a way out
@@ -583,17 +575,97 @@ TEST_F(ServerMapScreenFixture, EnterWithoutAServerDoesNothing) {
 
 /**
  * Given the map
- * When S, then G, is pressed and released
- * Then nothing opens: the shop and the hangar are reached from the
- * destination screen now
+ * When G is pressed and released
+ * Then the hangar opens over the map, so its BACK comes back to it
  */
-TEST_F(ServerMapScreenFixture, SAndGOpenNothingOnTheMap) {
+TEST_F(ServerMapScreenFixture, GOpensTheHangar) {
+  openOn(readyList());
+
+  press(sf::Keyboard::Key::G);
+
+  EXPECT_THAT(navigator().calls(),
+              ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
+                                        .screen = HANGAR_SCREEN}));
+}
+
+/**
+ * Given the map
+ * When S is pressed and released
+ * Then the shop opens over the map
+ */
+TEST_F(ServerMapScreenFixture, SOpensTheShop) {
   openOn(readyList());
 
   press(sf::Keyboard::Key::S);
-  press(sf::Keyboard::Key::G);
+
+  EXPECT_THAT(navigator().calls(),
+              ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
+                                        .screen = SHOP_SCREEN}));
+}
+
+/**
+ * Given the map, whose CASINO tab is locked
+ * When C is pressed and released
+ * Then nothing opens
+ */
+TEST_F(ServerMapScreenFixture, TheLockedCasinoOpensNothing) {
+  openOn(readyList());
+
+  press(sf::Keyboard::Key::C);
 
   EXPECT_TRUE(navigator().calls().empty());
+}
+
+/**
+ * Given the map
+ * When the left button is pressed and released on the HANGAR tab
+ * Then the hangar opens over the map
+ */
+TEST_F(ServerMapScreenFixture, AClickOnTheHangarTabOpensTheHangar) {
+  openOn(readyList());
+
+  pointAt(IN_THE_HANGAR_TAB, true);
+
+  EXPECT_THAT(navigator().calls(),
+              ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
+                                        .screen = HANGAR_SCREEN}));
+}
+
+/**
+ * Given the map
+ * When the left button is pressed and released between SECTORS and HANGAR
+ * Then nothing opens
+ */
+TEST_F(ServerMapScreenFixture, AClickBetweenTwoTabsOpensNothing) {
+  openOn(readyList());
+
+  pointAt(BETWEEN_SECTORS_AND_HANGAR, true);
+
+  EXPECT_TRUE(navigator().calls().empty());
+}
+
+/**
+ * Given the map, whose CASINO tab is locked
+ * When the left button is pressed and released on it
+ * Then nothing opens
+ */
+TEST_F(ServerMapScreenFixture, AClickOnTheLockedCasinoOpensNothing) {
+  openOn(readyList());
+
+  pointAt(ON_THE_CASINO_TAB, true);
+
+  EXPECT_TRUE(navigator().calls().empty());
+}
+
+/**
+ * Given the map, for a player who holds 20 kopecks
+ * When it is painted
+ * Then it writes the balance of the player
+ */
+TEST_F(ServerMapScreenFixture, TheMapShowsTheKopecksOfThePlayer) {
+  openOn(readyList());
+
+  EXPECT_NE(writingOf(painting(), PLAYER_KOPECKS_TEXT), nullptr);
 }
 
 /**
@@ -622,9 +694,10 @@ TEST_F(ServerMapScreenFixture, WithLessMotionThePlanetsStandStill) {
 
   update(ONE_PLANET_TURN_FRAME);
 
-  ASSERT_TRUE(std::ranges::any_of(
-      painting().images,
-      [](const RecordedImage& image) { return image.assetId == MAP_SHEET; }));
+  ASSERT_TRUE(std::ranges::any_of(painting().images,
+                                  [](const RecordedImage& image) noexcept {
+                                    return image.assetId == MAP_SHEET;
+                                  }));
   for (const RecordedImage& image : painting().images) {
     if (image.assetId == MAP_SHEET) {
       EXPECT_EQ(image.source.position.x, 0);

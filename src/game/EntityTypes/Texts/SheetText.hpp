@@ -1,6 +1,8 @@
 #pragma once
 
+#include <optional>
 #include <string>
+#include "SheetMaskText.hpp"
 
 namespace rtype::game {
 
@@ -12,6 +14,10 @@ struct SheetText {
   std::string source;
   /** @brief Everything the file holds. */
   std::string text;
+  /** @brief The mask file next to the sheet, MASK_FOLDER_OF_SHEETS/<name>
+   * MASK_FILE_EXTENSION, when there is one: the sheet reads its pixels from
+   * it, and the fingerprint of the sheets covers it. */
+  std::optional<SheetMaskText> mask = std::nullopt;
 };
 
 }  // namespace rtype::game

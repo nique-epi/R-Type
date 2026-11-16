@@ -57,6 +57,8 @@ std::string_view methodNameOf(RouteMethod method) {
       return POST_METHOD;
     case RouteMethod::Put:
       return PUT_METHOD;
+    case RouteMethod::Delete:
+      return DELETE_METHOD;
   }
   return GET_METHOD;
 }

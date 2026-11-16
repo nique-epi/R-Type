@@ -43,6 +43,10 @@ class OwnMissilesFixture : public ::testing::Test {
   /** @brief Puts an enemy drawn at @p position, with the box of a Bydo. */
   void enemyAt(game::Position position);
 
+  /** @brief Puts an enemy drawn at @p position, with the box of a Bydo and
+   * the collision mask the double gives the hollow enemy. */
+  void hollowEnemyAt(game::Position position);
+
   /** @brief Puts an enemy drawn at @p position that collides with
    * TWO_BOX_ENEMY_PARTS. */
   void enemyOfTwoBoxesAt(game::Position position);

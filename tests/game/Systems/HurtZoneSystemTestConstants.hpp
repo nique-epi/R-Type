@@ -6,6 +6,7 @@
 #include "EnemyPhase.hpp"
 #include "HurtBox.hpp"
 #include "HurtWindow.hpp"
+#include "Position.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::game::testing {
@@ -75,5 +76,30 @@ constexpr HurtBox OPEN_ENDED_STRIKE_BOX{
 constexpr engine::Duration JUST_BEFORE_THE_WINDOW =
     WINDOW_START - engine::SIMULATION_TICK_DURATION;
 constexpr engine::Duration A_SECOND_INTO_THE_PHASE = std::chrono::seconds(1);
+
+/**
+ * @brief The ship of the shipped sheet laid with its mask (32 by 16 pixels) on
+ * cell 0, 0: 64 / 4 - 16 = 0 and 32 / 4 - 8 = 0, its box from 0 to 128 and 0
+ * to 64 units.
+ */
+constexpr Position MASKED_SHIP_ON_CELL_ZERO{.x = 64.0F, .y = 32.0F};
+
+/** @brief A box that hurts all the time, 8 units wide on an enemy at the
+ * origin: from -4 to 4, it overlaps the box of that ship over cell 0, 0 only,
+ * which masks/ship.txt leaves clear. */
+constexpr float CORNER_BOX_SIDE = 8.0F;
+constexpr HurtBox BOX_OVER_THE_CLEAR_CORNER{.offsetX = 0.0F,
+                                            .offsetY = 0.0F,
+                                            .width = CORNER_BOX_SIDE,
+                                            .height = CORNER_BOX_SIDE,
+                                            .activeIn = std::nullopt};
+
+/** @brief The same box on the middle of that ship, where the hull is
+ * drawn. */
+constexpr HurtBox BOX_ON_THE_HULL{.offsetX = MASKED_SHIP_ON_CELL_ZERO.x,
+                                  .offsetY = MASKED_SHIP_ON_CELL_ZERO.y,
+                                  .width = CORNER_BOX_SIDE,
+                                  .height = CORNER_BOX_SIDE,
+                                  .activeIn = std::nullopt};
 
 }  // namespace rtype::game::testing

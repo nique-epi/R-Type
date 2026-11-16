@@ -24,10 +24,8 @@ constexpr int RADIUS_TWO = 2;
 constexpr std::size_t RADIUS_TWO_PIXELS = 21;
 constexpr int NO_RADIUS = -1;
 
-/** @brief A patch of four by four pixels, and the threshold of the dither at
- * the origin: the lowest level, half a level up, out of sixteen. */
+/** @brief A patch of four by four pixels. */
 constexpr sf::IntRect FOUR_BY_FOUR{{0, 0}, {4, 4}};
 constexpr std::size_t FOUR_BY_FOUR_PIXELS = 16;
-constexpr double LOWEST_THRESHOLD = 0.5 / 16.0;
 
 }  // namespace rtype::client::testing

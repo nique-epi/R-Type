@@ -13,6 +13,7 @@ constexpr const char* FIRST_LAUNCH_FILE =
     "version=1\n"
     "music_volume=70\n"
     "effects_volume=80\n"
+    "voices_volume=80\n"
     "mute_all=off\n"
     "display_mode=windowed\n"
     "key_move_up=UP\n"
@@ -95,6 +96,7 @@ constexpr const char* EARLIER_PREDICTION_LINE = "client_prediction=off";
 /** @brief The music volume of a first launch, and the lowest and the highest
  * volumes a file may hold. */
 constexpr int FIRST_LAUNCH_MUSIC_VOLUME = 70;
+constexpr int FIRST_LAUNCH_VOICES_VOLUME = 80;
 constexpr int LOWEST_VOLUME = 0;
 constexpr int HIGHEST_VOLUME = 100;
 

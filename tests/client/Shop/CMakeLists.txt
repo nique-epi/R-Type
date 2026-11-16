@@ -11,3 +11,5 @@ target_link_libraries(client_module_tests PRIVATE rtype_client_shop_module)
 
 add_subdirectory(Shelves)
 add_subdirectory(Painting)
+add_subdirectory(Speech)
+add_subdirectory(Ticket)

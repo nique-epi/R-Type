@@ -9,6 +9,7 @@ enum class RouteMethod : std::uint8_t {
   Get,
   Post,
   Put,
+  Delete,
 };
 
 }  // namespace rtype::network

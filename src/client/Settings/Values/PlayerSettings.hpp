@@ -18,10 +18,11 @@ namespace rtype::client {
  *
  * A default-built value holds the settings of a first launch, except
  * reduceFlashes, which the client then takes from the system. Volumes are in
- * percent, MINIMUM_VOLUME to MAXIMUM_VOLUME. windowSize stays empty until the
- * player picks a size: the window then opens at the largest one that fits. The
- * window opens windowed until the player picks another display mode.
- * pilotNames is on: the nickname of each pilot is written over its ship.
+ * percent, MINIMUM_VOLUME to MAXIMUM_VOLUME: the music, the effects, and the
+ * voices of the characters who speak, such as the shopkeeper. windowSize stays
+ * empty until the player picks a size: the window then opens at the largest one
+ * that fits. The window opens windowed until the player picks another display
+ * mode. pilotNames is on: the nickname of each pilot is written over its ship.
  * chatShown is on: the chat of the session shows, and its key opens it.
  * chatLetters, chatClosedLines, chatOpenLines: the letters of a line of the
  * chat, and its lines while closed and while open. chatSeconds: how long a
@@ -35,6 +36,7 @@ namespace rtype::client {
 struct PlayerSettings {
   int musicVolume = DEFAULT_MUSIC_VOLUME;
   int effectsVolume = DEFAULT_EFFECTS_VOLUME;
+  int voicesVolume = DEFAULT_VOICES_VOLUME;
   bool muted = false;
   std::optional<PixelSize> windowSize;
   DisplayMode displayMode = DisplayMode::Windowed;

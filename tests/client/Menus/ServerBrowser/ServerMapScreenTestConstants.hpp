@@ -49,6 +49,23 @@ constexpr std::string_view MAP_SHEET = "sprites/sector_map.png";
 constexpr sf::IntRect HANGAR_HOUSE_SOURCE{{0, 47}, {9, 9}};
 constexpr sf::IntRect SHOP_KIOSK_SOURCE{{0, 58}, {9, 9}};
 
+/**
+ * @brief The tabs over the map, as the code lays them out: centred on x 194,
+ * halfway between the safe margin (24) and the kopecks frame (84 wide, ending
+ * at 456) less a gap of 8; SECTORS from x 56 to 112, HANGAR from 132 to 180,
+ * SHOP from 200 to 232, CASINO and its badge from 252 to 332; the labels at
+ * row 12, half the safe margin, a tab answers from row 8 to row 25. A point
+ * inside HANGAR, one in the gap between SECTORS and HANGAR, one on CASINO.
+ */
+constexpr sf::Vector2i IN_THE_HANGAR_TAB{150, 16};
+constexpr sf::Vector2i BETWEEN_SECTORS_AND_HANGAR{120, 16};
+constexpr sf::Vector2i ON_THE_CASINO_TAB{270, 16};
+
+/** @brief The kopecks of the player of the tests, and how the balance writes
+ * them. */
+constexpr std::uint32_t PLAYER_KOPECKS = 20;
+constexpr std::string_view PLAYER_KOPECKS_TEXT = "20";
+
 /** @brief One frame of the turn of a planet. */
 constexpr std::chrono::milliseconds ONE_PLANET_TURN_FRAME{150};
 constexpr std::chrono::seconds REFRESH_INTERVAL{15};
@@ -65,14 +82,14 @@ constexpr std::uint16_t SEVENTH_GAME_NUMBER = 7;
 constexpr int SEVEN_ROWS_DOWN = 7;
 constexpr int PLAYING_GAME_ROW = 2;
 
-/** @brief Pixels of the panel of the games of Lyon, which lies from (184, 52),
+/** @brief Pixels of the panel of the games of Lyon, which lies from (184, 56),
  * its first row 37 pixels under its top and its rows 15 pixels apart: on
  * + NEW GAME, on the waiting game, on the game in progress, and on the
  * headings of its columns, 24 pixels under its top, above every row. */
-constexpr sf::Vector2i NEW_GAME_ROW_ON_THE_PANEL{220, 89};
-constexpr sf::Vector2i WAITING_GAME_ROW_ON_THE_PANEL{220, 104};
-constexpr sf::Vector2i PLAYING_GAME_ROW_ON_THE_PANEL{220, 119};
-constexpr sf::Vector2i COLUMN_HEADINGS_ON_THE_PANEL{220, 76};
+constexpr sf::Vector2i NEW_GAME_ROW_ON_THE_PANEL{220, 93};
+constexpr sf::Vector2i WAITING_GAME_ROW_ON_THE_PANEL{220, 108};
+constexpr sf::Vector2i PLAYING_GAME_ROW_ON_THE_PANEL{220, 123};
+constexpr sf::Vector2i COLUMN_HEADINGS_ON_THE_PANEL{220, 80};
 
 /** @brief The lines under the rows a player must read: on + NEW GAME, and on
  * the waiting game of Lyon, played by the default rules. */

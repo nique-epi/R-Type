@@ -5,6 +5,7 @@ add_library(rtype_client_menus_server_browser STATIC
   ServerMapChoice.cpp
   ServerMapPainting.cpp
   ServerMapScreen.cpp
+  ServerMapTabs.cpp
   SessionEndWatch.cpp
 )
 
@@ -25,6 +26,7 @@ target_link_libraries(rtype_client_menus_server_browser
     rtype_client_sector_map_interfaces
     rtype_client_server_list
     rtype_client_star_navigation
+    rtype_client_tab_rail
     rtype_client_widgets
     rtype_client_window_display
     rtype_engine_time
@@ -36,6 +38,7 @@ target_link_libraries(rtype_client_menus_server_browser
     rtype_client_entity_sprites
     rtype_client_ink_tag
     rtype_client_interface_pixel
+    rtype_client_kopecks_painting
     rtype_client_label_placement
     rtype_client_menu_builder
     rtype_client_ringed_planet

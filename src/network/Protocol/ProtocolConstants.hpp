@@ -707,6 +707,7 @@ constexpr std::string_view PLACE_FIELD = "place";
 constexpr std::string_view FIRST_NUMBER_FIELD = "firstNumber";
 constexpr std::string_view AMOUNT_FIELD = "amount";
 constexpr std::string_view WINNING_NUMBER_FIELD = "winningNumber";
+constexpr std::string_view BIOME_SINCE_FIELD = "biomeSince";
 
 /**
  * @brief Wire steps in one logical unit: a coordinate is sent in eighths of a

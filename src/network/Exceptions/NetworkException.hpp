@@ -416,4 +416,10 @@ class MasterUnreachableException : public NetworkException {
   explicit MasterUnreachableException(const std::string& reason);
 };
 
+/** @brief libhydrogen failed to hash a password; the password is not named. */
+class PasswordHashingException : public NetworkException {
+ public:
+  PasswordHashingException();
+};
+
 }  // namespace rtype::network

@@ -24,6 +24,7 @@ using rtype::client::MUSIC_VOLUME_SETTING;
 using rtype::client::MUTED_SETTING;
 using rtype::client::PlayerSettings;
 using rtype::client::SettingId;
+using rtype::client::VOICES_VOLUME_SETTING;
 using rtype::client::WINDOW_SIZE_SETTING;
 
 /**
@@ -154,23 +155,26 @@ TEST_F(SettingsServiceFixture, ARefusedSaveIsReportedAndNotRetried) {
  * Given a service with a listener and sound settings away from their defaults
  * When the sound is reset
  * Then the settings are those of a first launch and the listener is told the
- * music, the effects and MUTE ALL changed
+ * music, the effects, the voices and MUTE ALL changed
  */
-TEST_F(SettingsServiceFixture, ResettingTheSoundTellsTheThreeSoundSettings) {
+TEST_F(SettingsServiceFixture, ResettingTheSoundTellsTheFourSoundSettings) {
   const bool music = service().apply(MUSIC_VOLUME_SETTING, A_VOLUME);
+  const bool voices = service().apply(VOICES_VOLUME_SETTING, A_VOLUME);
   const bool muted = service().apply(MUTED_SETTING, true);
   listener().forgetChanges();
 
   service().resetSound();
 
   EXPECT_TRUE(music);
+  EXPECT_TRUE(voices);
   EXPECT_TRUE(muted);
   EXPECT_EQ(settings().musicVolume, PlayerSettings{}.musicVolume);
+  EXPECT_EQ(settings().voicesVolume, PlayerSettings{}.voicesVolume);
   EXPECT_FALSE(settings().muted);
   EXPECT_EQ(
       listener().changes(),
       (std::vector<SettingId>{SettingId::MusicVolume, SettingId::EffectsVolume,
-                              SettingId::Muted}));
+                              SettingId::VoicesVolume, SettingId::Muted}));
 }
 
 /**
@@ -212,6 +216,7 @@ TEST_F(SettingsServiceFixture, RestoringTakesTheSettingsAndTellsEveryOne) {
   EXPECT_EQ(listener().changes(),
             (std::vector<SettingId>{SettingId::MusicVolume,
                                     SettingId::EffectsVolume,
+                                    SettingId::VoicesVolume,
                                     SettingId::Muted,
                                     SettingId::WindowSize,
                                     SettingId::DisplayMode,

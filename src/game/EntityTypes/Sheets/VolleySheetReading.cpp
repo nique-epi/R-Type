@@ -14,22 +14,11 @@ namespace rtype::game {
 
 namespace {
 
-/** @returns The whole number @p key of @p table holds, 0 when it holds
- * none. */
-std::int64_t wholeOrZeroAt(const engine::DataFileTable& table,
-                           std::string_view key,
-                           engine::WholeNumberRange range) {
-  if (!table.table.get().contains(key)) {
-    return 0;
-  }
-  return engine::wholeNumberAt(table, key, range);
-}
-
 /** @returns The value of @p key of @p table in logical units or degrees, 0
  * when it holds none. */
 float floatOrZeroAt(const engine::DataFileTable& table, std::string_view key,
                     engine::WholeNumberRange range) {
-  return static_cast<float>(wholeOrZeroAt(table, key, range));
+  return static_cast<float>(engine::wholeNumberOrZeroAt(table, key, range));
 }
 
 /** @returns The chance of the volley of @p table, VOLLEY_SURE_CHANCE when
@@ -62,9 +51,9 @@ VolleySheet volleyFrom(const engine::DataFileTable& table) {
       .jitterX = floatOrZeroAt(table, JITTER_X_KEY, VOLLEY_JITTER_RANGE),
       .jitterY = floatOrZeroAt(table, JITTER_Y_KEY, VOLLEY_JITTER_RANGE),
       .gapFrom = static_cast<std::uint8_t>(
-          wholeOrZeroAt(table, GAP_FROM_KEY, VOLLEY_GAP_RANGE)),
+          engine::wholeNumberOrZeroAt(table, GAP_FROM_KEY, VOLLEY_GAP_RANGE)),
       .gapCount = static_cast<std::uint8_t>(
-          wholeOrZeroAt(table, GAP_COUNT_KEY, VOLLEY_GAP_RANGE)),
+          engine::wholeNumberOrZeroAt(table, GAP_COUNT_KEY, VOLLEY_GAP_RANGE)),
       .chancePercent = chanceAt(table),
       .body = engine::textAt(table, BODY_KEY),
       .bodyPlace = engine::placeOfKey(table, BODY_KEY)};

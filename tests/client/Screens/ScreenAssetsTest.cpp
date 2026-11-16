@@ -51,6 +51,7 @@ using rtype::client::SHIP_LOOK_SHEET_ID;
 using rtype::client::SHOP_FRONT_ID;
 using rtype::client::SHOP_KEEPER_SHEET_ID;
 using rtype::client::SHOP_SCENE_ID;
+using rtype::client::SHOP_TICKET_SHEET_ID;
 using rtype::client::SMALL_FONT_ID;
 using rtype::client::titleAssets;
 using rtype::client::WHEEL_ROTOR_TURN_ID;
@@ -223,6 +224,7 @@ TEST(ScreenAssets, TheIntroLoadsTheTitleAndTheEffectSheet) {
                                     SHOP_SCENE_ID,
                                     SHOP_KEEPER_SHEET_ID,
                                     SHOP_FRONT_ID,
+                                    SHOP_TICKET_SHEET_ID,
                                     DESTINATION_SHEET_ID,
                                     EFFECT_SHEET_ID};
   expected.insert(expected.end(), CASINO_TEXTURES.begin(),
@@ -270,6 +272,20 @@ TEST(ScreenAssets, TheRotorSheetFitsEveryGraphicsCard) {
 
   EXPECT_LE(sheet.getSize().x, LARGEST_TEXTURE_SIDE);
   EXPECT_LE(sheet.getSize().y, LARGEST_TEXTURE_SIDE);
+}
+
+/**
+ * Given the ticket sheet of the repository
+ * When it is read
+ * Then it is 176 by 272 pixels: the paper and its shadow, 175 by 219, its
+ * torn edge, rows 224 to 231, and its stamp, rows 236 to 269, all fit in it
+ */
+TEST(ScreenAssets, TheTicketSheetHoldsItsPictures) {
+  sf::Image sheet;
+
+  ASSERT_TRUE(sheet.loadFromFile(repositoryAssets() / SHOP_TICKET_SHEET_ID));
+
+  EXPECT_EQ(sf::Vector2i(sheet.getSize()), TICKET_SHEET_SIZE);
 }
 
 /**

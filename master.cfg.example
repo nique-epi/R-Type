@@ -3,7 +3,8 @@
 # a comment. Every value below is the default, so this file changes nothing as
 # it is. A launch option (-p, --database, --set <name>=<value>) wins over it.
 
-# The TCP port the HTTP API listens on, from 1 to 65535.
+# The TCP port the HTTP API listens on, from 0 to 65535; 0 lets the system
+# choose a free one.
 set port 8080
 
 # The SQLite file the master keeps its data in, on a local disk; a name with a
@@ -17,7 +18,16 @@ set database ""
 # site the same value (MASTER_SITE_KEY), and keep this file private.
 set site-key ""
 
+# Make the account of a nickname an admin when the master starts (module
+# accounts). The account must exist; a line that names none waits for the next
+# start. The key of the passwords is no setting: give it in the environment
+# variable RT_PASSWORD_KEY (openssl rand -hex 32, drawn once and kept); without
+# it the master does not start, unless the accounts are off (module accounts
+# off, below).
+# admin ACE
+
 # Turn a module off (it is never installed). Refused when a module
-# that stays on depends on it: storage and http need logger, servers needs
-# storage and http.
+# that stays on depends on it: storage, probe and http need logger; servers
+# needs storage, probe and http; leaderboard needs storage, http and servers;
+# accounts needs logger, storage and http.
 # module http off

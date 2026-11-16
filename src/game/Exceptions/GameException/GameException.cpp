@@ -7,6 +7,7 @@
 #include <vector>
 #include "DataFilePlace.hpp"
 #include "ErrorText.hpp"
+#include "LdtkRefusal.hpp"
 
 namespace rtype::game {
 
@@ -79,5 +80,9 @@ SharedContentFileException::SharedContentFileException(
     : GameException(
           "The content file " + path +
           " is in more than one folder: " + engine::listText(folders)) {}
+
+InvalidLdtkFileException::InvalidLdtkFileException(const LdtkRefusal& refusal)
+    : GameException("The level file " + refusal.file +
+                    " is refused: " + refusal.reason) {}
 
 }  // namespace rtype::game
