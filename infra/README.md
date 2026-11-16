@@ -42,7 +42,7 @@ From the root of the repository, with the tools of the list above installed and 
 infra/bootstrap.sh --domain <domain of the master> --bucket rtype-tfstate-<suffix>
 ```
 
-It asks which AWS account and repository it is about, creates the bucket, applies Terraform after you read the plan, sets the six variables, creates the environment `production` with you as its required reviewer, then waits for the A record of the domain (it prints the address to give it) and polls until it answers, for up to 30 minutes. `--deploy v0.3.0` also starts `deploy-master` for that release once the record answers, and `--yes` skips the two questions. Every step first looks at what exists, so after a failure you run the same command again. It does not publish a release, and it does not set the address in Vercel, the game servers or the client (step 6 below), nor the key of the site (step 7).
+It asks which AWS account and repository it is about, creates the bucket, applies Terraform after you read the plan, sets the six variables, creates the environment `production` with you as its required reviewer, then waits for the A record of the domain (it prints the address to give it) and polls until it answers, for up to 30 minutes. `--deploy v0.3.0` also starts `deploy-master` for that release once the record answers, and `--yes` skips the two questions. Every step first looks at what exists, so after a failure you run the same command again. It does not publish a release, and it does not set the address in Vercel, the game servers or the client (step 6 below), nor the key of the site (step 7), nor the key of the passwords (step 8).
 
 ## Setting it up by hand, in this order
 
@@ -96,7 +96,7 @@ must print the address of the output.
 
 ### 3. The variables of the repository
 
-Create them in Settings, Secrets and variables, Actions, tab **Variables** (not Secrets: none is sensitive, and the workflow reads them as `vars.*`). No secret is needed in GitHub.
+Create them in Settings, Secrets and variables, Actions, tab **Variables** (not Secrets: none is sensitive, and the workflow reads them as `vars.*`). The only secret is the key of the passwords, a secret of the environment `production` (step 8).
 
 | Variable | Value | Read by | If it is missing |
 |---|---|---|---|
@@ -163,6 +163,28 @@ openssl rand -hex 32
 
 Keep it out of GitHub and of Terraform, and never give it with `--set` on the command line of the service, which every user of the machine can read. Whoever holds it creates servers without limit.
 
+### 8. The key of the passwords, so the master opens its accounts
+
+The master keeps the password of each account as a hash encrypted with one key, `RT_PASSWORD_KEY`, read from its environment when it starts. Without it, every route of the accounts answers 503. Create it once, as a secret of the environment `production`; it never goes through your screen or your shell history:
+
+```bash
+openssl rand -hex 32 | gh secret set MASTER_PASSWORD_KEY --env production
+```
+
+The next deployment writes it in `/etc/rtype/master.env` on the instance (root, mode 0600), which systemd reads before it starts the master, and restarts the master with its accounts. From then on a deployment never changes it:
+
+| The secret | `/etc/rtype/master.env` | The deployment |
+|---|---|---|
+| empty or missing | missing | runs the master without accounts, and says so |
+| set | missing | writes the file |
+| set, the same key | present | changes nothing to the key |
+| empty or missing | present | keeps the file and the accounts |
+| set, another key | present | stops before it installs anything; the master keeps its key |
+
+The key lives in that secret, which nobody can read back, and in that file, nowhere else: not in the unit, the journal, the repository or Terraform.
+
+**Changing it loses every password**: the master cannot encrypt the stored hashes again under a new key yet, so every sign-in of an existing account then answers 401, and its nickname stays taken. Change it only when it leaked: set the new secret with the command above, remove `/etc/rtype/master.env` in an SSM session on the instance, then run `deploy-master` by hand with the tag in use.
+
 The players and the hosts need a release of the game that speaks HTTPS: an older client or game server refuses an `https://` address. If the Elastic IP is ever replaced, only the A record changes: everything else holds the domain.
 
 ## Day to day
@@ -171,6 +193,7 @@ The players and the hosts need a release of the game that speaks HTTPS: an older
 |---|---|
 | Deploy a release | publish its tag; the `deploy-master` job waits for the approval |
 | Deploy an older release, or redeploy | Actions, `deploy-master`, Run workflow, with its tag |
+| Change the key of the passwords, after a leak | step 8: new secret, `rm /etc/rtype/master.env` on the instance, `deploy-master` by hand; every password is lost |
 | Read the log of the master | `aws ssm start-session --target <instance id>` (it needs the Session Manager plugin of the AWS CLI), then `journalctl -u rtype-master` |
 | Change the size of the machine | `instance_type` in `terraform/variables.tf`, then `terraform apply` |
 | Check the memory and the CPU of the machine | on the machine, `free -m`; the credits left are `CPUCreditBalance` in CloudWatch: a balance that stays near 0 means the CPU is slowed down, so use a bigger machine |
@@ -187,12 +210,16 @@ The players and the hosts need a release of the game that speaks HTTPS: an older
 | The job stops at "Read the domain of the master" | `MASTER_URL` is not `https://<domain>`: no `http://`, no port, no path |
 | The script fails at `caddy validate` or Caddy does not start | read `journalctl -u caddy` on the machine |
 | The check from outside fails but the script succeeded | the A record does not point at the Elastic IP yet, or Let's Encrypt refused the certificate: `journalctl -u caddy` says which; ports 80 and 443 must be open |
+| The job stops at "Check the key of the passwords" | `MASTER_PASSWORD_KEY` is not 64 lowercase hexadecimal digits: set it again with `openssl rand -hex 32` |
+| The script prints "MASTER_PASSWORD_KEY differs from the key the master has" | the secret was changed: set the key the master has again, or follow the change of step 8 |
+| The accounts answer 503 after a deployment | the master has no key: the secret is empty, or `release.yaml` does not pass it to `deploy-master`; the output of the deployment says "no MASTER_PASSWORD_KEY" |
 | Going back does not restore the master | the new master migrated the database, and the older one cannot read the newer schema |
 
 ## Limits
 
 - **HTTPS ends at Caddy.** Between Caddy and the master, on the machine itself, requests go in plain HTTP to 127.0.0.1:8080. The master reads the address of each client in the `X-Forwarded-For` header Caddy writes, and trusts that header only from 127.0.0.1.
 - **The key of the site is set by hand** (step 7), on the instance and in Vercel: no script writes it, and a machine made again from Terraform starts without it.
+- **The key of the passwords travels through Run Command**: the job writes it in the script it sends, so `aws ssm list-commands` shows it to whoever may call that action in the AWS account (the role of the deployments may not).
 - **One machine, one database, no backup.** A restart cuts the master for a few seconds; the games in progress go on, since no datagram of a game goes through the master.
 - **The role of the deployments runs any script on the machine**, because SSM's `AWS-RunShellScript` does. The role reaches only that machine, and only from the approved environment.
 - **The first deployment has not run yet**, and the return to the previous release when the master does not answer has not been tested end to end.
