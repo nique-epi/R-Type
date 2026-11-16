@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <limits>
 #include <nlohmann/json.hpp>
 #include <nlohmann/json_fwd.hpp>
 #include <optional>
@@ -16,8 +17,11 @@
 #include <vector>
 #include "CreatedServer.hpp"
 #include "CreatedSession.hpp"
+#include "Currency.hpp"
 #include "DatedStatus.hpp"
 #include "EndpointText.hpp"
+#include "ExchangeReceipt.hpp"
+#include "ExchangeRequest.hpp"
 #include "FinishedGame.hpp"
 #include "FinishedGamePlayer.hpp"
 #include "GameListing.hpp"
@@ -25,14 +29,20 @@
 #include "GlobalLeaderboardRow.hpp"
 #include "HostedGame.hpp"
 #include "HostedGameState.hpp"
+#include "KopecksConstants.hpp"
 #include "ListedGame.hpp"
 #include "ListedGameState.hpp"
 #include "ListedServer.hpp"
+#include "LookItems.hpp"
+#include "LookPurchase.hpp"
 #include "MasterHttpConstants.hpp"
 #include "MasterMessageConstants.hpp"
 #include "MasterRouteConstants.hpp"
+#include "MovementListing.hpp"
+#include "MovementReason.hpp"
 #include "NetworkConstants.hpp"
 #include "NetworkException.hpp"
+#include "OwnedLooks.hpp"
 #include "ProtocolConstants.hpp"
 #include "SampleListing.hpp"
 #include "ServerCreation.hpp"
@@ -42,10 +52,14 @@
 #include "ServerRegistration.hpp"
 #include "ServerSample.hpp"
 #include "ServerStatus.hpp"
+#include "ShipLookConstants.hpp"
 #include "StatusListing.hpp"
 #include "User.hpp"
 #include "UserCredentials.hpp"
 #include "UserRole.hpp"
+#include "Wallet.hpp"
+#include "WalletExchange.hpp"
+#include "WalletMovement.hpp"
 #include "WireTypes.hpp"
 
 namespace rtype::network {
@@ -954,6 +968,181 @@ std::string problemDetailOf(std::string_view text) {
     return std::string{};
   }
   return detail->get<std::string>();
+}
+
+namespace {
+
+nlohmann::json walletDocument(const Wallet& wallet) {
+  nlohmann::json document;
+  document[KOPECKS_MEMBER] = wallet.kopecks;
+  document[CHIPS_MEMBER] = wallet.chips;
+  return document;
+}
+
+Wallet walletOf(const JsonField& wallet) {
+  requireObject(wallet);
+  return Wallet{.kopecks = static_cast<std::uint32_t>(integerOf(
+                    memberOf(wallet, KOPECKS_MEMBER),
+                    IntegerBounds{.lowest = 0, .highest = MAXIMUM_KOPECKS})),
+                .chips = static_cast<std::uint32_t>(integerOf(
+                    memberOf(wallet, CHIPS_MEMBER),
+                    IntegerBounds{.lowest = 0, .highest = MAXIMUM_CHIPS}))};
+}
+
+Currency currencyIn(const JsonField& field) {
+  const std::optional<Currency> currency = currencyOf(stringOf(field));
+  if (!currency.has_value()) {
+    refuse(field);
+  }
+  return *currency;
+}
+
+std::uint32_t exchangedAmountOf(const JsonField& field) {
+  return static_cast<std::uint32_t>(integerOf(
+      field, IntegerBounds{.lowest = 0, .highest = MAXIMUM_EXCHANGE_AMOUNT}));
+}
+
+/** @returns The name of a look @p field holds: a name of
+ * identifiers::SHIP_LOOK_ITEM_NAMES. */
+std::string lookNameOf(const JsonField& field) {
+  std::string name = stringOf(field);
+  if (!lookItemOfName(name).has_value()) {
+    refuse(field);
+  }
+  return name;
+}
+
+nlohmann::json movementDocument(const WalletMovement& movement) {
+  nlohmann::json document;
+  document[ID_MEMBER] = movement.id;
+  document[CURRENCY_MEMBER] = currencyText(movement.currency);
+  document[AMOUNT_MEMBER] = movement.amount;
+  document[REASON_MEMBER] = movementReasonText(movement.reason);
+  document[MADE_AT_MEMBER] = movement.madeAt.time_since_epoch().count();
+  return document;
+}
+
+nlohmann::json walletExchangeDocument(const WalletExchange& exchange) {
+  nlohmann::json document;
+  document[ID_MEMBER] = exchange.id;
+  document[FROM_MEMBER] = currencyText(exchange.from);
+  document[AMOUNT_MEMBER] = exchange.amount;
+  document[MADE_AT_MEMBER] = exchange.madeAt.time_since_epoch().count();
+  return document;
+}
+
+/** @returns The whole number @p field holds, 0 to the largest of 64 signed
+ * bits: a number of the journal, or a date in seconds since 1970. */
+std::int64_t nonNegativeIntegerOf(const JsonField& field) {
+  return static_cast<std::int64_t>(integerOf(
+      field, IntegerBounds{.lowest = 0,
+                           .highest = static_cast<std::uint64_t>(
+                               std::numeric_limits<std::int64_t>::max())}));
+}
+
+WalletExchange walletExchangeOf(const JsonField& exchange) {
+  return WalletExchange{
+      .id = nonNegativeIntegerOf(memberOf(exchange, ID_MEMBER)),
+      .from = currencyIn(memberOf(exchange, FROM_MEMBER)),
+      .amount = exchangedAmountOf(memberOf(exchange, AMOUNT_MEMBER)),
+      .madeAt = std::chrono::sys_seconds{std::chrono::seconds{
+          nonNegativeIntegerOf(memberOf(exchange, MADE_AT_MEMBER))}}};
+}
+
+}  // namespace
+
+std::string walletText(const Wallet& wallet) {
+  return textOf(walletDocument(wallet));
+}
+
+Wallet walletFromText(std::string_view text) {
+  const nlohmann::json document = parsedObject(text);
+  return walletOf(wholeMessage(document));
+}
+
+std::string movementListingText(const MovementListing& listing) {
+  return listingText(MOVEMENTS_MEMBER, listing.movements, movementDocument);
+}
+
+std::string exchangeRequestText(const ExchangeRequest& request) {
+  nlohmann::json document;
+  document[FROM_MEMBER] = currencyText(request.from);
+  document[AMOUNT_MEMBER] = request.amount;
+  return textOf(document);
+}
+
+ExchangeRequest exchangeRequestFromText(std::string_view text) {
+  const nlohmann::json document = parsedObject(text);
+  const JsonField request = wholeMessage(document);
+  return ExchangeRequest{
+      .from = currencyIn(memberOf(request, FROM_MEMBER)),
+      .amount = exchangedAmountOf(memberOf(request, AMOUNT_MEMBER))};
+}
+
+std::string walletExchangeText(const WalletExchange& exchange) {
+  return textOf(walletExchangeDocument(exchange));
+}
+
+std::string exchangeReceiptText(const ExchangeReceipt& receipt) {
+  nlohmann::json document = walletExchangeDocument(receipt.exchange);
+  document[WALLET_MEMBER] = walletDocument(receipt.wallet);
+  return textOf(document);
+}
+
+ExchangeReceipt exchangeReceiptFromText(std::string_view text) {
+  const nlohmann::json document = parsedObject(text);
+  const JsonField receipt = wholeMessage(document);
+  return ExchangeReceipt{.exchange = walletExchangeOf(receipt),
+                         .wallet = walletOf(memberOf(receipt, WALLET_MEMBER))};
+}
+
+std::string ownedLooksText(const OwnedLooks& looks) {
+  nlohmann::json document;
+  document[ITEMS_MEMBER] = looks.items;
+  return textOf(document);
+}
+
+OwnedLooks ownedLooksFromText(std::string_view text) {
+  const nlohmann::json document = parsedObject(text);
+  const JsonField items = memberOf(wholeMessage(document), ITEMS_MEMBER);
+  const std::size_t count =
+      arraySizeOf(items, identifiers::SHIP_LOOK_ITEM_COUNT);
+  OwnedLooks looks;
+  looks.items.reserve(count);
+  for (std::size_t index = 0; index < count; ++index) {
+    looks.items.push_back(lookNameOf(elementOf(items, index)));
+  }
+  return looks;
+}
+
+std::string lookPurchaseText(const LookPurchase& purchase) {
+  nlohmann::json document;
+  document[ITEM_MEMBER] = purchase.item;
+  document[WALLET_MEMBER] = walletDocument(purchase.wallet);
+  return textOf(document);
+}
+
+LookPurchase lookPurchaseFromText(std::string_view text) {
+  const nlohmann::json document = parsedObject(text);
+  const JsonField purchase = wholeMessage(document);
+  return LookPurchase{.item = lookNameOf(memberOf(purchase, ITEM_MEMBER)),
+                      .wallet = walletOf(memberOf(purchase, WALLET_MEMBER))};
+}
+
+std::string_view movementReasonText(MovementReason reason) {
+  return MOVEMENT_REASON_TEXTS.at(static_cast<std::size_t>(reason));
+}
+
+std::optional<MovementReason> movementReasonOf(std::string_view text) {
+  return valueOfText<MovementReason>(MOVEMENT_REASON_TEXTS, text);
+}
+
+std::string_view currencyText(Currency currency) {
+  return CURRENCY_TEXTS.at(static_cast<std::size_t>(currency));
+}
+
+std::optional<Currency> currencyOf(std::string_view text) {
+  return valueOfText<Currency>(CURRENCY_TEXTS, text);
 }
 
 }  // namespace rtype::network

@@ -74,6 +74,44 @@ constexpr MasterRoute CREATE_SESSION_ROUTE{
 /** @brief Closes the session of the token; closing it again succeeds. */
 constexpr MasterRoute DELETE_OWN_SESSION_ROUTE{
     .method = RouteMethod::Delete, .path = "/sessions/me", .httpsOnly = true};
+/**
+ * @brief The balances of the wallet of the account of the token, opened at
+ * its first read. The routes of the wallet are answered over HTTPS only, to
+ * the account of a session.
+ */
+constexpr MasterRoute READ_OWN_WALLET_ROUTE{
+    .method = RouteMethod::Get, .path = "/users/me/wallet", .httpsOnly = true};
+/** @brief The journal of the wallet of the account of the token, a page at a
+ * time, newest first. */
+constexpr MasterRoute LIST_OWN_MOVEMENTS_ROUTE{
+    .method = RouteMethod::Get,
+    .path = "/users/me/wallet/movements",
+    .httpsOnly = true};
+/** @brief Changes kopecks into chips, or chips into kopecks, one for one, at
+ * the cashier. */
+constexpr MasterRoute CREATE_OWN_EXCHANGE_ROUTE{
+    .method = RouteMethod::Post,
+    .path = "/users/me/wallet/exchanges",
+    .httpsOnly = true};
+/** @brief The parameter of a path that names an exchange of the cashier. */
+constexpr std::string_view EXCHANGE_ID_PATH_PARAMETER = "exchange";
+/** @brief An exchange the cashier made for the account of the token. */
+constexpr MasterRoute READ_OWN_EXCHANGE_ROUTE{
+    .method = RouteMethod::Get,
+    .path = "/users/me/wallet/exchanges/:exchange",
+    .httpsOnly = true};
+/** @brief The looks the account of the token owns. */
+constexpr MasterRoute LIST_OWN_LOOKS_ROUTE{
+    .method = RouteMethod::Get, .path = "/users/me/looks", .httpsOnly = true};
+/** @brief The parameter of a path that names a look by its name. */
+constexpr std::string_view LOOK_ITEM_PATH_PARAMETER = "item";
+/**
+ * @brief Makes the look named in the path one the account of the token owns,
+ * buying it at its price; sent again, it buys nothing more.
+ */
+constexpr MasterRoute BUY_OWN_LOOK_ROUTE{.method = RouteMethod::Put,
+                                         .path = "/users/me/looks/:item",
+                                         .httpsOnly = true};
 
 /** @brief The parameter of a path that names a game of a server. */
 constexpr std::string_view GAME_ID_PATH_PARAMETER = "gameId";

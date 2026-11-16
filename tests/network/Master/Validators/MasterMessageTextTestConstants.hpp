@@ -332,4 +332,20 @@ constexpr std::string_view UPPERCASE_TOKEN =
 constexpr std::string_view SHORT_TOKEN =
     "rts_0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcde";
 
+/** @brief A wallet, an exchange of the cashier and a look bought, as the
+ * master answers them; a request of the cashier in a currency it does not
+ * know, and looks one of which no look has, with the pointers refused. */
+constexpr std::uint32_t A_WALLET_KOPECKS = 1'250;
+constexpr std::uint32_t A_WALLET_CHIPS = 500;
+constexpr std::int64_t AN_EXCHANGE_ID = 42;
+constexpr std::uint32_t AN_EXCHANGE_AMOUNT = 200;
+constexpr std::chrono::sys_seconds AN_EXCHANGE_DATE{
+    std::chrono::seconds{1'800'000'000}};
+constexpr std::string_view A_LOOK_BOUGHT = "party_hat";
+constexpr std::string_view GOLD_EXCHANGE_TEXT = R"({"from":"gold","amount":1})";
+constexpr std::string_view EXCHANGE_FROM_POINTER = "/from";
+constexpr std::string_view LOOKS_WITH_AN_UNKNOWN_TEXT =
+    R"({"items":["top_hat","no_such_look"]})";
+constexpr std::string_view SECOND_ITEM_POINTER = "/items/1";
+
 }  // namespace rtype::network::testing

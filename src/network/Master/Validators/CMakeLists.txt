@@ -10,6 +10,7 @@ target_link_libraries(rtype_network_master_validators
     rtype_network_exceptions
     rtype_network_master_messages
   PRIVATE
+    rtype_network_master_economy
     nlohmann_json::nlohmann_json
     rtype_network_master_routes
     rtype_network_transport

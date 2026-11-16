@@ -255,4 +255,34 @@ constexpr std::chrono::milliseconds MASTER_HEARTBEAT_INTERVAL{5'000};
  */
 constexpr std::chrono::milliseconds MINIMUM_NOTICE_GAP{1'000};
 
+/** @brief The members of a wallet, of a line of its journal, of an exchange
+ * and of the looks an account owns. */
+constexpr std::string_view KOPECKS_MEMBER = "kopecks";
+constexpr std::string_view CHIPS_MEMBER = "chips";
+constexpr std::string_view MOVEMENTS_MEMBER = "movements";
+constexpr std::string_view CURRENCY_MEMBER = "currency";
+constexpr std::string_view AMOUNT_MEMBER = "amount";
+constexpr std::string_view REASON_MEMBER = "reason";
+constexpr std::string_view MADE_AT_MEMBER = "madeAt";
+constexpr std::string_view FROM_MEMBER = "from";
+constexpr std::string_view WALLET_MEMBER = "wallet";
+constexpr std::string_view ITEMS_MEMBER = "items";
+constexpr std::string_view ITEM_MEMBER = "item";
+
+/** @brief How each Currency is written, in the order of the enum. */
+constexpr std::string_view KOPECKS_CURRENCY_TEXT = "kopecks";
+constexpr std::string_view CHIPS_CURRENCY_TEXT = "chips";
+constexpr auto CURRENCY_TEXTS = std::to_array<std::string_view>(
+    {KOPECKS_CURRENCY_TEXT, CHIPS_CURRENCY_TEXT});
+
+/** @brief How each MovementReason is written, in the order of the enum. */
+constexpr auto MOVEMENT_REASON_TEXTS = std::to_array<std::string_view>(
+    {"opening", "game", "exchange", "purchase", "stake", "refund", "payout"});
+
+/** @brief The largest amount a request of the cashier may name: any amount
+ * the wire carries; the master refuses one of none, or one past the largest
+ * balance, as an amount it cannot change. */
+constexpr std::uint64_t MAXIMUM_EXCHANGE_AMOUNT =
+    std::numeric_limits<std::uint32_t>::max();
+
 }  // namespace rtype::network
