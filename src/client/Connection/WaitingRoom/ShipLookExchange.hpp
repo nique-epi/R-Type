@@ -23,10 +23,9 @@ namespace rtype::client {
  * chooseLook() sends a ShipLookChoice at once, then again every
  * SHIP_LOOK_CHOICE_INTERVAL until a PlayerLooks lists the look on the player:
  * a lost message is made up by the next, and the server answers a copy.
- * Nothing is sent once the game started. The items won are kept across the
- * close of a session, so an item won just before a disconnection still reaches
- * the locker. Not thread-safe: use it from the thread that updates the
- * session.
+ * Nothing is sent once the game started. The items a game hands out are the
+ * master's to credit: a LookItemWon is left to the dispatcher, which skips
+ * it. Not thread-safe: use it from the thread that updates the session.
  */
 class ShipLookExchange final : public IShipLookExchange,
                                public ISessionObserver {
@@ -42,7 +41,6 @@ class ShipLookExchange final : public IShipLookExchange,
   void chooseLook(identifiers::ShipLook look) override;
   [[nodiscard]] std::span<const network::PlayerLook> playerLooks()
       const override;
-  [[nodiscard]] std::vector<std::uint8_t> takeWonItems() override;
 
   void sessionOpened(const network::LobbyPlayer& ownPlayer,
                      ISessionOutbox& outbox) override;
@@ -57,7 +55,6 @@ class ShipLookExchange final : public IShipLookExchange,
   std::uint8_t ownPlayerNumber_{0};
   std::optional<identifiers::ShipLook> requestedLook_;
   std::vector<network::PlayerLook> looks_;
-  std::vector<std::uint8_t> wonItems_;
   engine::Duration sinceChoice_{};
 };
 
