@@ -49,11 +49,6 @@ class AccountsController {
   [[nodiscard]] network::ApiResponse deleteOwnSession(
       const network::ApiRequest& request);
 
-  /** @returns The answer of every route of the accounts on a master started
-   * without a key of the passwords: 503. */
-  [[nodiscard]] static network::ApiResponse closedAnswer(
-      const network::ApiRequest& request);
-
  private:
   AccountsService& service_;
 };

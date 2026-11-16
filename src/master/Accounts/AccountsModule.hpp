@@ -4,15 +4,12 @@
 #include <span>
 #include <string>
 #include <vector>
-#include "AccountRoute.hpp"
 #include "AccountsController.hpp"
 #include "AccountsService.hpp"
-#include "ApiHandler.hpp"
 #include "CommandInterpreter.hpp"
 #include "IModule.hpp"
 #include "InstallContext.hpp"
 #include "Logger.hpp"
-#include "MasterHttpServer.hpp"
 
 namespace rtype::master {
 
@@ -23,8 +20,9 @@ namespace rtype::master {
  * `sign_in_failures`. The routes answer over HTTPS only.
  *
  * It is built with the text of PASSWORD_KEY_VARIABLE, which install() reads:
- * an empty text runs the master without accounts, every route answering 503;
- * a text that is no key stops the master. install() also adds the command
+ * an empty text, or a text that is no key, stops the master before its port
+ * opens; a master that must run without accounts turns the module off with
+ * `module accounts off`. install() also adds the command
  * `admin <nickname>`, which master.cfg runs before the modules start; start()
  * makes each account it names an admin, once the storage opened the database.
  * The module runs no thread.
@@ -41,8 +39,8 @@ class AccountsModule final : public engine::IModule {
   /**
    * @brief Adds the routes of the accounts and the command `admin`; opens
    * nothing.
-   * @throws InvalidPasswordKeyException when the text of the key is not empty
-   * and is no key.
+   * @throws MissingPasswordKeyException when the text of the key is empty.
+   * @throws InvalidPasswordKeyException when it is no key.
    */
   void install(engine::InstallContext& context) override;
 
@@ -53,10 +51,6 @@ class AccountsModule final : public engine::IModule {
   void stop() override;
 
  private:
-  /** @brief Adds every route of ACCOUNT_ROUTES, each answered by the
-   * controller, or by AccountsController::closedAnswer() without one. */
-  void addRoutes(MasterHttpServer& server);
-  [[nodiscard]] network::ApiHandler handlerOf(const AccountRoute& accountRoute);
   void addAdminCommand(engine::CommandInterpreter& interpreter);
   void nameAdmin(std::span<const std::string> words);
   void makeAdmin(AccountsService& service, const std::string& nickname);

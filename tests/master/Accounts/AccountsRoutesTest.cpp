@@ -7,6 +7,7 @@
 #include "AccountsRoutesFixtures.hpp"
 #include "AccountsRoutesTestConstants.hpp"
 #include "AccountsTestConstants.hpp"
+#include "MasterException.hpp"
 #include "MasterTestConstants.hpp"
 #include "RouteCall.hpp"
 #include "RouteCallFixtures.hpp"
@@ -225,18 +226,43 @@ TEST_F(AccountsRoutesFixture, ClosingAClosedSessionSucceeds) {
 }
 
 /**
- * Given a master started without a key of the passwords
- * When ACE creates an account over HTTPS
- * Then the master answers 503: it runs without accounts
+ * Given a master launched without a key of the passwords
+ * When it starts
+ * Then it stops before its port opens, naming the missing key
  */
-TEST(AccountsRoutes, AMasterWithoutKeyRunsWithoutAccounts) {
-  const RunningMaster master{std::vector<std::string>{}, std::string{}};
+TEST(AccountsRoutes, AMasterWithoutKeyDoesNotStart) {
+  EXPECT_THROW(
+      const RunningMaster master(std::vector<std::string>{}, std::string{}),
+      rtype::master::MissingPasswordKeyException);
+}
+
+/**
+ * Given a master launched with a key one byte short
+ * When it starts
+ * Then it stops before its port opens
+ */
+TEST(AccountsRoutes, AMasterWithAKeyThatIsNoKeyDoesNotStart) {
+  EXPECT_THROW(
+      const RunningMaster master(std::vector<std::string>{},
+                                 std::string{PASSWORD_KEY_ONE_BYTE_SHORT}),
+      rtype::master::InvalidPasswordKeyException);
+}
+
+/**
+ * Given a master launched without a key, whose master.cfg turns its accounts
+ * off
+ * When it starts and a client creates an account over HTTPS
+ * Then it runs, and no route of the accounts answers
+ */
+TEST(AccountsRoutes, AMasterWithItsAccountsOffStartsWithoutKey) {
+  const RunningMaster master(
+      std::vector<std::string>{std::string{ACCOUNTS_OFF_LINE}}, std::string{});
 
   const httplib::Result refused = sendRouteCall(
       master.port(), credentialsCall(USERS_URL, aceCredentials()));
 
   ASSERT_TRUE(refused);
-  EXPECT_EQ(refused->status, EXPECTED_SERVICE_UNAVAILABLE);
+  EXPECT_EQ(refused->status, EXPECTED_NOT_FOUND);
 }
 
 /**

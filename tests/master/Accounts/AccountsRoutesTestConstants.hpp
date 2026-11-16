@@ -32,8 +32,14 @@ constexpr std::string_view PASSWORD_POINTER_TEXT = "/password";
 constexpr std::size_t ALLOWED_SIGN_IN_FAILURES = 5;
 constexpr std::size_t ALLOWED_ACCOUNT_CREATIONS = 5;
 
-/** @brief The line of master.cfg that makes ACE an admin. */
+/** @brief The line of master.cfg that makes ACE an admin, and the one that
+ * turns the accounts off. */
 constexpr std::string_view ACE_ADMIN_LINE = "admin ACE";
+constexpr std::string_view ACCOUNTS_OFF_LINE = "module accounts off";
+
+/** @brief A key of the passwords one byte short: 62 hexadecimal digits. */
+constexpr std::string_view PASSWORD_KEY_ONE_BYTE_SHORT =
+    "00112233445566778899aabbccddeeff00112233445566778899aabbccddee";
 
 /** @brief What the journal writes of a refused sign-in. */
 constexpr std::string_view REFUSED_SIGN_IN_TEXT = "sign-in as ACE from ";

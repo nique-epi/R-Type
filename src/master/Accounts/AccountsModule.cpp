@@ -1,6 +1,5 @@
 #include "AccountsModule.hpp"
 #include <functional>
-#include <optional>
 #include <span>
 #include <string>
 #include <utility>
@@ -9,7 +8,6 @@
 #include "AccountsController.hpp"
 #include "AccountsModuleConstants.hpp"
 #include "AccountsService.hpp"
-#include "ApiHandler.hpp"
 #include "CommandDefinition.hpp"
 #include "CommandInterpreter.hpp"
 #include "EngineException.hpp"
@@ -23,6 +21,19 @@
 #include "WireTypes.hpp"
 
 namespace rtype::master {
+
+namespace {
+
+/** @brief Adds every route of ACCOUNT_ROUTES to @p server, answered by
+ * @p controller. */
+void addRoutes(MasterHttpServer& server, AccountsController& controller) {
+  for (const AccountRoute& accountRoute : ACCOUNT_ROUTES) {
+    server.add(accountRoute.route,
+               std::bind_front(accountRoute.answer, &controller));
+  }
+}
+
+}  // namespace
 
 AccountsModule::AccountsModule(std::string passwordKeyText)
     : passwordKeyText_(std::move(passwordKeyText)),
@@ -38,19 +49,15 @@ std::vector<std::string> AccountsModule::dependencies() const {
 }
 
 void AccountsModule::install(engine::InstallContext& context) {
-  const std::optional<network::PasswordKey> key =
-      passwordKeyFromText(passwordKeyText_);
+  const network::PasswordKey key = passwordKeyFromText(passwordKeyText_);
   addAdminCommand(context.require<engine::CommandInterpreter>());
-  if (key.has_value()) {
-    controller_.emplace(
-        service_.emplace(context.require<MasterDatabase>(), *key));
-  }
-  addRoutes(context.require<MasterHttpServer>());
+  AccountsController& controller = controller_.emplace(
+      service_.emplace(context.require<MasterDatabase>(), key));
+  addRoutes(context.require<MasterHttpServer>(), controller);
 }
 
 void AccountsModule::start() {
   if (!service_.has_value()) {
-    logger_.warn(ACCOUNTS_OFF_TEXT, PASSWORD_KEY_VARIABLE);
     return;
   }
   AccountsService& service = *service_;
@@ -60,20 +67,6 @@ void AccountsModule::start() {
 }
 
 void AccountsModule::stop() {}
-
-void AccountsModule::addRoutes(MasterHttpServer& server) {
-  for (const AccountRoute& accountRoute : ACCOUNT_ROUTES) {
-    server.add(accountRoute.route, handlerOf(accountRoute));
-  }
-}
-
-network::ApiHandler AccountsModule::handlerOf(
-    const AccountRoute& accountRoute) {
-  if (!controller_.has_value()) {
-    return &AccountsController::closedAnswer;
-  }
-  return std::bind_front(accountRoute.answer, &controller_.value());
-}
 
 void AccountsModule::addAdminCommand(engine::CommandInterpreter& interpreter) {
   interpreter.add(

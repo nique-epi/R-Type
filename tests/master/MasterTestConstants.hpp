@@ -13,7 +13,6 @@ constexpr int EXPECTED_FORBIDDEN = 403;
 constexpr int EXPECTED_NOT_FOUND = 404;
 constexpr int EXPECTED_CONFLICT = 409;
 constexpr int EXPECTED_TOO_MANY_REQUESTS = 429;
-constexpr int EXPECTED_SERVICE_UNAVAILABLE = 503;
 
 /** @brief The headers, the method and the media type the tests use. */
 constexpr std::string_view AUTHORIZATION_HEADER_NAME = "Authorization";

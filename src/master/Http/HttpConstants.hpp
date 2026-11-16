@@ -19,7 +19,6 @@ constexpr int FORBIDDEN_STATUS = network::FORBIDDEN_STATUS;
 constexpr int NOT_FOUND_STATUS = network::NOT_FOUND_STATUS;
 constexpr int CONFLICT_STATUS = network::CONFLICT_STATUS;
 constexpr int TOO_MANY_REQUESTS_STATUS = network::TOO_MANY_REQUESTS_STATUS;
-constexpr int SERVICE_UNAVAILABLE_STATUS = network::SERVICE_UNAVAILABLE_STATUS;
 
 /** @brief What a route answered over HTTPS only says to a request in clear.
  */

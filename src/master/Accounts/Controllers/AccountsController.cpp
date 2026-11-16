@@ -121,9 +121,4 @@ network::ApiResponse AccountsController::deleteOwnSession(
   return network::ApiResponse{.status = NO_CONTENT_STATUS, .body = {}};
 }
 
-network::ApiResponse AccountsController::closedAnswer(
-    [[maybe_unused]] const network::ApiRequest& request) {
-  return refusal(SERVICE_UNAVAILABLE_STATUS, ACCOUNTS_CLOSED_DETAIL);
-}
-
 }  // namespace rtype::master

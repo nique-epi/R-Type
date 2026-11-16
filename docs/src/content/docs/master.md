@@ -22,7 +22,7 @@ This page tells you where to look when you need to change something. It describe
 | The results of the games and the global leaderboard, `PUT /api/servers/me/results/{gameId}` and `GET /api/leaderboard` | Available; a game server sends its vanilla games after its heartbeats | `src/master/Leaderboard/`, `src/network/Master/` |
 | The master on AWS, installed from each release | Available; see [Deploying the master](/R-Type/deploy-master/) | `infra/`, `.github/workflows/deploy-master.yaml` |
 | A machine of game servers created for a LAN | Available; see [Game servers for a LAN](/R-Type/deploy-game-servers/) | `infra/game-servers/`, `infra/terraform-game/` |
-| Accounts and sessions, over HTTPS only, `POST /api/users` and `POST /api/sessions` | Available; optional module `accounts`, which needs the key `RT_PASSWORD_KEY`; the client and the web site do not sign in yet | `src/master/Accounts/`, `src/network/Master/`, `src/network/Hashing/` |
+| Accounts and sessions, over HTTPS only, `POST /api/users` and `POST /api/sessions` | Available; optional module `accounts`, without whose key `RT_PASSWORD_KEY` the master does not start; the client and the web site do not sign in yet | `src/master/Accounts/`, `src/network/Master/`, `src/network/Hashing/` |
 | Administration | Not yet written | |
 
 ## Starting the master
@@ -30,8 +30,10 @@ This page tells you where to look when you need to change something. It describe
 `--mode master` comes first, before every other option; `r-type_server` alone, or `--mode supervisor`, runs the game server, its supervisor, and `--mode game` is the game process a supervisor starts (see [Server](/R-Type/server/#the-three-roles-supervisor-game-and-master)). `chooseServerMode()` (`src/server/LaunchOptions/`) reads the mode, then `MasterLaunchOptions` (`src/master/LaunchOptions/`) reads the rest in one pass, the logging options included (see [Logging](/R-Type/logging/#choosing-the-level-and-the-output-at-launch)).
 
 ```bash
-./r-type_server --mode master -p 8081
+RT_PASSWORD_KEY=$(cat ~/.rtype-password-key) ./r-type_server --mode master -p 8081
 ```
+
+The master stops at its start without the key of the passwords of its accounts, `RT_PASSWORD_KEY`: draw it once with `openssl rand -hex 32` and keep it, since another key makes every stored password unreadable. A master that needs no accounts, such as one for a LAN, runs without a key once its `master.cfg` holds `module accounts off` (see [Accounts and sessions](#accounts-and-sessions-accountsmodule)).
 
 | Option | Effect |
 |---|---|
@@ -367,7 +369,7 @@ A player creates an account named by its nickname, then opens sessions with its 
 A body the master cannot read answers 400 naming the member. The token is sent as a Bearer header, never as a cookie: the callers are the game client and the server of the web site, so there is no CORS and no form to forge.
 
 - **Over HTTPS only.** Each route is `MasterRoute::httpsOnly`, and `MasterHttpServer` answers 403 to a request that did not come over HTTPS (`ApiRequest::overHttps`, see [Network](/R-Type/network/#http-server-httpserver)): the master speaks no TLS, so only a request Caddy forwards from the machine counts. A master on a LAN, without Caddy, answers 403 to every route of the accounts.
-- **The key of the passwords** is read from the environment variable `RT_PASSWORD_KEY` when the master starts (`PASSWORD_KEY_VARIABLE`): 64 hexadecimal digits, as `openssl rand -hex 32` draws them. It is never in the database, the repository or the journal. Unset or empty, the master runs without accounts: every route answers 503, and the journal says so at the start. Any other text stops the master at its start with an error naming the variable, never its value. Another key makes every stored password unreadable.
+- **The key of the passwords** is read from the environment variable `RT_PASSWORD_KEY` when the master starts (`PASSWORD_KEY_VARIABLE`): 64 hexadecimal digits, as `openssl rand -hex 32` draws them. It is never in the database, the repository or the journal. Unset or empty, the master stops at its start, before its port opens (`MissingPasswordKeyException`), and so does any other text that is no key (`InvalidPasswordKeyException`); the error names the variable, never its value. A master that must run without accounts turns them off with `module accounts off`. Another key makes every stored password unreadable.
 - **A nickname** is a nickname of the protocol, 1 to 16 bytes of printable UTF-8, and names one account, compared as a game server compares nicknames: `ACE` and `ace` are one account. **A password** is `MINIMUM_PASSWORD_SIZE` to `MAXIMUM_PASSWORD_SIZE` bytes of printable UTF-8 (8 to 128, the defaults of Better Auth).
 - **The database keeps 128 bytes per password**: `hydro_pwhash_create()` of libhydrogen, with a salt of its own and `PASSWORD_HASH_ROUNDS` (200 000, about 60 ms in a release build on an Apple M4 Pro), encrypted with the key (`passwordHashOf()`, `src/network/Hashing/`). A stolen database tests no password without the key. A password never reaches the journal.
 - **A session** lives `SESSION_LIFETIME` (7 days). A use more than `SESSION_REFRESH_AGE` (1 day) after its expiry last moved moves it to 7 days after that use, so a player who plays every week never signs in again, and a session read often is written once a day: the defaults of Better Auth. The token is `rts_` and 32 random bytes in hexadecimal, shown once; the database keeps its fingerprint (`sessionFingerprintOf()`), so a copy of the file opens no session. Opening a session removes the expired ones.

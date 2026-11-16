@@ -8,8 +8,7 @@
 
 namespace rtype::master {
 
-/** @brief The routes of the accounts and what answers each; on a master
- * started without a key of the passwords, each answers 503 instead. */
+/** @brief The routes of the accounts and what answers each. */
 constexpr std::array ACCOUNT_ROUTES{
     AccountRoute{.route = network::CREATE_USER_ROUTE,
                  .answer = &AccountsController::createUser},
@@ -30,8 +29,6 @@ constexpr std::string_view ADMIN_HELP =
  * with. */
 constexpr std::string_view NOT_ONE_NICKNAME_TEXT =
     "admin takes exactly one nickname";
-constexpr std::string_view ACCOUNTS_OFF_TEXT =
-    "accounts are off: no key of the passwords in ";
 constexpr std::string_view ADMIN_GIVEN_TEXT = " is an admin";
 constexpr std::string_view NO_USER_NAMED_TEXT = "no user is named ";
 constexpr std::string_view ADMIN_LATER_TEXT =
