@@ -1,4 +1,5 @@
 #include "RouteAnswersFixtures.hpp"
+#include <chrono>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -23,7 +24,8 @@ rtype::network::ApiRequest requestWithToken(std::string_view token) {
   return request;
 }
 
-rtype::network::ApiResponse answerNaming(const rtype::network::User& user) {
+rtype::network::ApiResponse answerNaming(const rtype::network::User& user,
+                                         std::chrono::sys_seconds /*now*/) {
   return rtype::network::ApiResponse{.status = ANSWER_OF_THE_ACCOUNT_STATUS,
                                      .body = user.nickname};
 }

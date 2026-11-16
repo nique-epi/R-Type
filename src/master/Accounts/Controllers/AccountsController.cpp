@@ -1,5 +1,5 @@
 #include "AccountsController.hpp"
-#include <functional>
+#include <chrono>
 #include <optional>
 #include <string>
 #include <variant>
@@ -10,7 +10,6 @@
 #include "CreatedSession.hpp"
 #include "CredentialsAttempt.hpp"
 #include "CredentialsRefusal.hpp"
-#include "DatedRequest.hpp"
 #include "HttpConstants.hpp"
 #include "HttpHeader.hpp"
 #include "MasterMessageText.hpp"
@@ -93,11 +92,9 @@ network::ApiResponse AccountsController::createUser(
 network::ApiResponse AccountsController::readOwnUser(
     const network::ApiRequest& request) {
   return answerAsAccountOf(
-      service_,
-      DatedRequest{.request = std::cref(request), .now = currentSecond()},
-      [](const network::User& user) {
-        return network::ApiResponse{.status = OK_STATUS,
-                                    .body = network::userText(user)};
+      service_, request,
+      [](const network::User& user, std::chrono::sys_seconds /*now*/) {
+        return okResponse(network::userText(user));
       });
 }
 

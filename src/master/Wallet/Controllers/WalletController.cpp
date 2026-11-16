@@ -1,14 +1,12 @@
 #include "WalletController.hpp"
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
-#include <functional>
 #include <optional>
 #include <string>
-#include <utility>
 #include <variant>
 #include "ApiRequest.hpp"
 #include "ApiResponse.hpp"
-#include "DatedRequest.hpp"
 #include "ExchangeReceipt.hpp"
 #include "ExchangeRequest.hpp"
 #include "HttpConstants.hpp"
@@ -34,10 +32,6 @@
 namespace rtype::master {
 
 namespace {
-
-network::ApiResponse okResponse(std::string body) {
-  return network::ApiResponse{.status = OK_STATUS, .body = std::move(body)};
-}
 
 network::ApiResponse exchangeRefusalOf(network::WalletExchangeRefusal reason) {
   switch (reason) {
@@ -75,14 +69,10 @@ network::ApiResponse exchangeResponseOf(
 /** @returns The number of the exchange the path of @p request names, nothing
  * when it is no number of a line of the journal. */
 std::optional<std::int64_t> exchangeIdOf(const network::ApiRequest& request) {
-  const std::optional<std::string> text =
-      pathTextOf(request, network::EXCHANGE_ID_PATH_PARAMETER);
-  if (!text.has_value()) {
-    return std::nullopt;
-  }
-  return boundedNumberIn(*text, QueryBounds{.lowest = FIRST_EXCHANGE_ID,
-                                            .highest = LAST_EXCHANGE_ID,
-                                            .absent = FIRST_EXCHANGE_ID});
+  return pathNumberOf(request, network::EXCHANGE_ID_PATH_PARAMETER,
+                      QueryBounds{.lowest = FIRST_EXCHANGE_ID,
+                                  .highest = LAST_EXCHANGE_ID,
+                                  .absent = FIRST_EXCHANGE_ID});
 }
 
 /** @returns The look the path of @p request names, nothing when it names
@@ -115,10 +105,6 @@ network::ApiResponse purchaseResponseOf(std::size_t item,
   return refusal(CONFLICT_STATUS, NOT_ENOUGH_KOPECKS_DETAIL);
 }
 
-DatedRequest datedNow(const network::ApiRequest& request) {
-  return DatedRequest{.request = std::cref(request), .now = currentSecond()};
-}
-
 }  // namespace
 
 WalletController::WalletController(ISessionAccounts& accounts,
@@ -127,47 +113,47 @@ WalletController::WalletController(ISessionAccounts& accounts,
 
 network::ApiResponse WalletController::readOwnWallet(
     const network::ApiRequest& request) {
-  const DatedRequest dated = datedNow(request);
   return answerAsAccountOf(
-      accounts_, dated, [this, &dated](const network::User& user) {
-        return okResponse(
-            network::walletText(service_.walletOf(user.id, dated.now)));
+      accounts_, request,
+      [this](const network::User& user, std::chrono::sys_seconds now) {
+        return okResponse(network::walletText(service_.walletOf(user.id, now)));
       });
 }
 
 network::ApiResponse WalletController::listOwnMovements(
     const network::ApiRequest& request) {
-  const DatedRequest dated = datedNow(request);
-  return answerAsAccountOf(
-      accounts_, dated, [this, &dated](const network::User& user) {
-        const std::optional<PageRequest> page = pageOf(dated.request.get());
-        if (!page.has_value()) {
-          return invalidPageRefusal();
-        }
-        return okResponse(network::movementListingText(
-            service_.movementsOf(user.id, *page, dated.now)));
-      });
+  return answerAsAccountOf(accounts_, request,
+                           [this, &request](const network::User& user,
+                                            std::chrono::sys_seconds now) {
+                             const std::optional<PageRequest> page =
+                                 pageOf(request);
+                             if (!page.has_value()) {
+                               return invalidPageRefusal();
+                             }
+                             return okResponse(network::movementListingText(
+                                 service_.movementsOf(user.id, *page, now)));
+                           });
 }
 
 network::ApiResponse WalletController::createOwnExchange(
     const network::ApiRequest& request) {
-  const DatedRequest dated = datedNow(request);
   return answerAsAccountOf(
-      accounts_, dated, [this, &dated](const network::User& user) {
+      accounts_, request,
+      [this, &request](const network::User& user,
+                       std::chrono::sys_seconds now) {
         const network::ExchangeRequest exchange =
-            network::exchangeRequestFromText(dated.request.get().body);
-        return exchangeResponseOf(
-            service_.exchange(user.id, exchange, dated.now));
+            network::exchangeRequestFromText(request.body);
+        return exchangeResponseOf(service_.exchange(user.id, exchange, now));
       });
 }
 
 network::ApiResponse WalletController::readOwnExchange(
     const network::ApiRequest& request) {
-  const DatedRequest dated = datedNow(request);
   return answerAsAccountOf(
-      accounts_, dated, [this, &dated](const network::User& user) {
-        const std::optional<std::int64_t> exchangeId =
-            exchangeIdOf(dated.request.get());
+      accounts_, request,
+      [this, &request](const network::User& user,
+                       std::chrono::sys_seconds /*now*/) {
+        const std::optional<std::int64_t> exchangeId = exchangeIdOf(request);
         const std::optional<network::WalletExchange> exchange =
             exchangeId.has_value() ? service_.exchangeOf(user.id, *exchangeId)
                                    : std::nullopt;
@@ -180,25 +166,25 @@ network::ApiResponse WalletController::readOwnExchange(
 
 network::ApiResponse WalletController::listOwnLooks(
     const network::ApiRequest& request) {
-  const DatedRequest dated = datedNow(request);
   return answerAsAccountOf(
-      accounts_, dated, [this, &dated](const network::User& user) {
+      accounts_, request,
+      [this](const network::User& user, std::chrono::sys_seconds now) {
         return okResponse(
-            network::ownedLooksText(service_.ownedLooksOf(user.id, dated.now)));
+            network::ownedLooksText(service_.ownedLooksOf(user.id, now)));
       });
 }
 
 network::ApiResponse WalletController::buyOwnLook(
     const network::ApiRequest& request) {
-  const DatedRequest dated = datedNow(request);
   return answerAsAccountOf(
-      accounts_, dated, [this, &dated](const network::User& user) {
-        const std::optional<std::size_t> item = lookItemOf(dated.request.get());
+      accounts_, request,
+      [this, &request](const network::User& user,
+                       std::chrono::sys_seconds now) {
+        const std::optional<std::size_t> item = lookItemOf(request);
         if (!item.has_value()) {
           return refusal(NOT_FOUND_STATUS, UNKNOWN_LOOK_DETAIL);
         }
-        return purchaseResponseOf(*item,
-                                  service_.buyLook(user.id, *item, dated.now));
+        return purchaseResponseOf(*item, service_.buyLook(user.id, *item, now));
       });
 }
 
