@@ -27,6 +27,7 @@ option(RTYPE_MODULE_CASINO "Build the casino module of the games: the roulette t
 option(RTYPE_MODULE_PLUGINS "Build the loading of plugins: the plugin and plugin-folder commands" ON)
 option(RTYPE_MODULE_ACCOUNTS "Build the accounts and sessions of the master" ON)
 cmake_dependent_option(RTYPE_MODULE_GAME_STATISTICS "Build the game-statistics plugin" ON "RTYPE_MODULE_PLUGINS" OFF)
+cmake_dependent_option(RTYPE_MODULE_WALLET "Build the wallet of the accounts of the master: kopecks, chips and owned looks" ON "RTYPE_MODULE_ACCOUNTS" OFF)
 
 add_feature_info(audio RTYPE_MODULE_AUDIO "the sound of the client")
 add_feature_info(metrics RTYPE_MODULE_METRICS "the metrics of the client and of the game processes")
@@ -39,6 +40,7 @@ add_feature_info(casino RTYPE_MODULE_CASINO "the roulette table of the waiting r
 add_feature_info(plugins RTYPE_MODULE_PLUGINS "the loading of plugins")
 add_feature_info(accounts RTYPE_MODULE_ACCOUNTS "the accounts and sessions of the master")
 add_feature_info(game-statistics RTYPE_MODULE_GAME_STATISTICS "the game-statistics plugin")
+add_feature_info(wallet RTYPE_MODULE_WALLET "the wallets and owned looks of the accounts of the master")
 
 if(NOT CMAKE_RUNTIME_OUTPUT_DIRECTORY)
   set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR})

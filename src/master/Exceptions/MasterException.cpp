@@ -16,7 +16,9 @@ MissingPasswordKeyException::MissingPasswordKeyException(
     : MasterException(std::string{variable} +
                       " is not set: give the master the key of the passwords "
                       "of its accounts (`openssl rand -hex 32`), or turn them "
-                      "off with `module accounts off` in master.cfg") {}
+                      "off with `module accounts off` in master.cfg, after "
+                      "the modules that need them, such as "
+                      "`module wallet off`") {}
 
 InvalidPasswordKeyException::InvalidPasswordKeyException(
     std::string_view variable)

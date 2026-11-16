@@ -1,4 +1,5 @@
 #include "RouteAnswers.hpp"
+#include <chrono>
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -30,6 +31,20 @@ network::ApiResponse unauthorizedResponse(std::string_view detail) {
       .header =
           network::HttpHeader{.name = std::string{WWW_AUTHENTICATE_HEADER},
                               .value = std::string{network::BEARER_SCHEME}}};
+}
+
+std::chrono::sys_seconds currentSecond() {
+  return std::chrono::floor<std::chrono::seconds>(
+      std::chrono::system_clock::now());
+}
+
+std::optional<std::string> pathTextOf(const network::ApiRequest& request,
+                                      std::string_view name) {
+  const auto parameter = request.pathParameters.find(std::string{name});
+  if (parameter == request.pathParameters.end()) {
+    return std::nullopt;
+  }
+  return parameter->second;
 }
 
 std::optional<std::string> queryTextOf(const network::ApiRequest& request,

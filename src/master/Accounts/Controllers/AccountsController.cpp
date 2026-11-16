@@ -1,5 +1,4 @@
 #include "AccountsController.hpp"
-#include <chrono>
 #include <functional>
 #include <optional>
 #include <string>
@@ -25,16 +24,11 @@ namespace rtype::master {
 
 namespace {
 
-std::chrono::sys_seconds now() {
-  return std::chrono::floor<std::chrono::seconds>(
-      std::chrono::system_clock::now());
-}
-
 CredentialsAttempt credentialsAttemptOf(const network::ApiRequest& request) {
   return CredentialsAttempt{
       .credentials = network::userCredentialsFromText(request.body),
       .address = request.remoteAddress,
-      .requestedAt = now()};
+      .requestedAt = currentSecond()};
 }
 
 network::ApiResponse refusalOf(CredentialsRefusal reason) {
@@ -99,7 +93,8 @@ network::ApiResponse AccountsController::createUser(
 network::ApiResponse AccountsController::readOwnUser(
     const network::ApiRequest& request) {
   return answerAsAccountOf(
-      service_, DatedRequest{.request = std::cref(request), .now = now()},
+      service_,
+      DatedRequest{.request = std::cref(request), .now = currentSecond()},
       [](const network::User& user) {
         return network::ApiResponse{.status = OK_STATUS,
                                     .body = network::userText(user)};

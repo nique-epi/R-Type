@@ -24,6 +24,7 @@
 #cmakedefine01 RTYPE_MODULE_PLUGINS
 #cmakedefine01 RTYPE_MODULE_GAME_STATISTICS
 #cmakedefine01 RTYPE_MODULE_ACCOUNTS
+#cmakedefine01 RTYPE_MODULE_WALLET
 
 namespace rtype::engine {
 
@@ -55,5 +56,8 @@ constexpr bool PLUGINS_BUILT = RTYPE_MODULE_PLUGINS == 1;
 constexpr bool GAME_STATISTICS_MODULE_BUILT = RTYPE_MODULE_GAME_STATISTICS == 1;
 /** @brief Whether the master holds its `accounts` module. */
 constexpr bool ACCOUNTS_MODULE_BUILT = RTYPE_MODULE_ACCOUNTS == 1;
+/** @brief Whether the master holds its `wallet` module, which needs the
+ * `accounts` module and is left out without it. */
+constexpr bool WALLET_MODULE_BUILT = RTYPE_MODULE_WALLET == 1;
 
 }  // namespace rtype::engine

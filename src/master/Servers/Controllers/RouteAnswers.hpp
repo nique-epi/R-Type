@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -27,6 +28,15 @@ namespace rtype::master {
  * issued: 401, with `WWW-Authenticate: Bearer`, whose detail is @p detail. */
 [[nodiscard]] network::ApiResponse unauthorizedResponse(
     std::string_view detail);
+
+/** @returns The second the master answers at: the clock of the system, its
+ * part of a second dropped. */
+[[nodiscard]] std::chrono::sys_seconds currentSecond();
+
+/** @returns The text of the parameter @p name of the path of @p request,
+ * nothing when the path names none. */
+[[nodiscard]] std::optional<std::string> pathTextOf(
+    const network::ApiRequest& request, std::string_view name);
 
 /** @returns The text of the parameter @p name of the query of @p request,
  * nothing when the request leaves it out. A parameter given twice keeps its

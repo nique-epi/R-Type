@@ -34,6 +34,13 @@ constexpr std::string_view PORT_SETTING_NAME = "port";
 constexpr std::string_view DATABASE_SETTING_NAME = "database";
 constexpr std::string_view SITE_KEY_SETTING_NAME = "site-key";
 
+/** @brief The settings of the module wallet: what a wallet holds when it
+ * opens, at the first read of an account. */
+constexpr std::string_view WALLET_STARTING_KOPECKS_SETTING_NAME =
+    "wallet-starting-kopecks";
+constexpr std::string_view WALLET_STARTING_CHIPS_SETTING_NAME =
+    "wallet-starting-chips";
+
 /** @brief Every setting of the master, in the order its usage lists them. */
 constexpr std::array MASTER_SETTING_NAMES{
     PORT_SETTING_NAME, DATABASE_SETTING_NAME, SITE_KEY_SETTING_NAME};

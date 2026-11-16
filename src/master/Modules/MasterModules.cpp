@@ -16,6 +16,9 @@
 #if RTYPE_MODULE_ACCOUNTS
 #include "AccountsModule.hpp"
 #endif
+#if RTYPE_MODULE_WALLET
+#include "WalletModule.hpp"
+#endif
 
 namespace rtype::master {
 
@@ -32,6 +35,9 @@ std::vector<std::unique_ptr<engine::IModule>> masterModules(
   modules.push_back(std::make_unique<LeaderboardModule>());
 #if RTYPE_MODULE_ACCOUNTS
   modules.push_back(std::make_unique<AccountsModule>(passwordKeyText));
+#endif
+#if RTYPE_MODULE_WALLET
+  modules.push_back(std::make_unique<WalletModule>());
 #endif
   return modules;
 }
