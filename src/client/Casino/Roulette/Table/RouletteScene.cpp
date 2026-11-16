@@ -6,7 +6,7 @@
 #include "ClothPlace.hpp"
 #include "RouletteBand.hpp"
 #include "RouletteBarStates.hpp"
-#include "RouletteBets.hpp"
+#include "RouletteBet.hpp"
 #include "RouletteReading.hpp"
 #include "RouletteRound.hpp"
 #include "RouletteTexts.hpp"

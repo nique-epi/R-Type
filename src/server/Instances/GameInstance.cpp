@@ -7,7 +7,6 @@
 #include <span>
 #include <utility>
 #include <vector>
-#include "CasinoPlace.hpp"
 #include "ChatLine.hpp"
 #include "ConnectedPlayer.hpp"
 #include "DelayedInputs.hpp"
@@ -28,8 +27,6 @@
 #include "PlayerArrival.hpp"
 #include "PlayerInput.hpp"
 #include "PlayerRoster.hpp"
-#include "RoomChoiceHandlers.hpp"
-#include "RouletteBets.hpp"
 #include "SessionHooks.hpp"
 #include "ShipLookChoice.hpp"
 #include "SystemScheduler.hpp"
@@ -55,26 +52,6 @@ struct GameOwnParts {
 };
 
 /** @returns What the sessions of a game are built from. */
-/** @returns What hands each choice of the waiting room to the functions the
- * modules added to @p hooks. */
-RoomChoiceHandlers roomChoicesOf(SessionHooks& hooks) {
-  return RoomChoiceHandlers{
-      .onShipLookChoice =
-          [&hooks](ConnectedPlayer& player,
-                   const network::ShipLookChoice& choice) {
-            callAll(hooks.shipLookChosen, player, choice);
-          },
-      .onCasinoPlace =
-          [&hooks](ConnectedPlayer& player, const network::CasinoPlace& place) {
-            callAll(hooks.casinoPlaceChosen, player, place);
-          },
-      .onRouletteBets =
-          [&hooks](const ConnectedPlayer& player,
-                   const network::RouletteBets& bets) {
-            callAll(hooks.rouletteBetsSent, player, bets);
-          }};
-}
-
 GameSessionsParts sessionPartsOf(const GameInstanceParts& parts,
                                  GameOwnParts own,
                                  std::function<bool()> readyAccepted) {
@@ -102,7 +79,11 @@ GameSessionsParts sessionPartsOf(const GameInstanceParts& parts,
           [own](const ConnectedPlayer& player, const network::ChatLine& line) {
             callAll(own.hooks.get().chatLineSent, player, line);
           },
-      .roomChoices = roomChoicesOf(own.hooks.get())};
+      .onShipLookChoice =
+          [own](ConnectedPlayer& player,
+                const network::ShipLookChoice& choice) {
+            callAll(own.hooks.get().shipLookChosen, player, choice);
+          }};
 }
 
 /** @returns What a game gives the modules it installs. */

@@ -3,7 +3,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <vector>
-#include "RouletteBets.hpp"
+#include "RouletteBet.hpp"
+#include "RouletteBetKind.hpp"
 #include "RouletteSlip.hpp"
 #include "RouletteSlipTestConstants.hpp"
 

@@ -3,10 +3,10 @@
 #include <optional>
 #include <utility>
 #include <vector>
-#include "CasinoPlace.hpp"
 #include "ChipMoves.hpp"
-#include "RouletteBets.hpp"
+#include "RouletteBet.hpp"
 #include "RouletteRound.hpp"
+#include "TablePlace.hpp"
 
 void RecordingCasinoChannel::chooseTable(rtype::network::TablePlace place) {
   chosenPlaces_.push_back(place);

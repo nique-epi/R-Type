@@ -5,7 +5,8 @@
 #include <chrono>
 #include <cstdint>
 #include <string_view>
-#include "RouletteBets.hpp"
+#include "RouletteBet.hpp"
+#include "RouletteBetKind.hpp"
 
 namespace rtype::client::testing {
 

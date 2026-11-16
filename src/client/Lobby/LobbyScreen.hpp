@@ -15,6 +15,7 @@
 #include "IShipLookExchange.hpp"
 #include "ISoundPlayer.hpp"
 #include "IWaitingRoom.hpp"
+#include "KeyChip.hpp"
 #include "LobbyPlace.hpp"
 #include "LobbyScreenParts.hpp"
 #include "LobbyState.hpp"
@@ -22,7 +23,6 @@
 #include "MotionPreference.hpp"
 #include "PlayerPalette.hpp"
 #include "PlayfieldMapping.hpp"
-#include "RoomShortcuts.hpp"
 #include "ShipLook.hpp"
 #include "TimeConstants.hpp"
 
@@ -65,10 +65,7 @@ struct HangarBay;
  *
  * HANGAR, a chip beside RANKING, HANGAR_KEY, or a click on the bay of the
  * local player opens the hangar over the room the same way; the bay of the
- * local player shows what its ship wears. CASINO, a bar beside READY, or
- * CASINO_KEY opens the casino over the room the same way: the server shows
- * a pilot at its table not ready, and the status line says it is at the
- * casino when it is the only pilot not ready.
+ * local player shows what its ship wears.
  * The chat of the session shows at the bottom left, and its key opens it over
  * the room (ChatWindow): while it is open it takes every key, so READY, HELP
  * and BACK wait until it closes.
@@ -143,8 +140,9 @@ class LobbyScreen : public IScreen {
   bool gameAsked_ = false;
   Menu menu_;
   HelpWalkthrough help_;
-  RoomShortcuts shortcuts_;
+  KeyChip leaderboardChip_;
   const identifiers::ShipLook* look_;
+  KeyChip hangarChip_;
   ChatWindow chat_;
 };
 

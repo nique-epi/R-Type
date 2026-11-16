@@ -20,7 +20,7 @@
 #include "InterfaceConstants.hpp"
 #include "PocketColors.hpp"
 #include "PocketShades.hpp"
-#include "RouletteBets.hpp"
+#include "RouletteBet.hpp"
 #include "RouletteScreenConstants.hpp"
 #include "TextStyle.hpp"
 #include "TextureArea.hpp"

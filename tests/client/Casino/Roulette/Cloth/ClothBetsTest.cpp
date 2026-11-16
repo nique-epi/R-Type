@@ -7,7 +7,8 @@
 #include "ClothBetsFixtures.hpp"
 #include "ClothBetsTestConstants.hpp"
 #include "ClothPlace.hpp"
-#include "RouletteBets.hpp"
+#include "RouletteBet.hpp"
+#include "RouletteBetKind.hpp"
 
 using rtype::client::betAt;
 using rtype::client::ClothBand;

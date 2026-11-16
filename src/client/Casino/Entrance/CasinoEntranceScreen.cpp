@@ -11,7 +11,6 @@
 #include "CasinoEntranceConstants.hpp"
 #include "CasinoEntrancePainting.hpp"
 #include "CasinoEntranceScreenParts.hpp"
-#include "CasinoPlace.hpp"
 #include "CasinoScreenIdConstants.hpp"
 #include "EntranceStage.hpp"
 #include "EntranceView.hpp"
@@ -20,6 +19,7 @@
 #include "MotionPreference.hpp"
 #include "PlayerSettings.hpp"
 #include "PlayfieldMapping.hpp"
+#include "TablePlace.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {

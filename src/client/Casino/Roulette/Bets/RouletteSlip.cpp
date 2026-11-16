@@ -2,8 +2,8 @@
 #include <algorithm>
 #include <cstdint>
 #include <vector>
-#include "ProtocolConstants.hpp"
-#include "RouletteBets.hpp"
+#include "RouletteBet.hpp"
+#include "RouletteConstants.hpp"
 
 namespace rtype::client {
 

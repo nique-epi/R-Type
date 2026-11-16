@@ -9,11 +9,9 @@
 #include <string>
 #include <vector>
 #include "BackgroundColorConstants.hpp"
-#include "CasinoScreenIdConstants.hpp"
 #include "GameRules.hpp"
 #include "GameRulesTestConstants.hpp"
 #include "GameScreenIdConstants.hpp"
-#include "HangarBayConstants.hpp"
 #include "HangarScreenIdConstants.hpp"
 #include "HelpWalkthroughConstants.hpp"
 #include "HelpWalkthroughTestConstants.hpp"
@@ -21,7 +19,6 @@
 #include "LobbyAfterGameFixture.hpp"
 #include "LobbyRulesFixture.hpp"
 #include "LobbyScreen.hpp"
-#include "LobbyScreenConstants.hpp"
 #include "LobbyScreenFixture.hpp"
 #include "LobbyScreenFixtures.hpp"
 #include "LobbyScreenTestConstants.hpp"
@@ -36,16 +33,12 @@
 #include "SoundConstants.hpp"
 #include "WidgetConstants.hpp"
 
-using rtype::client::CASINO_LABEL;
-using rtype::client::CASINO_SCREEN;
 using rtype::client::CLICK_SOUND_ID;
 using rtype::client::GAME_SCREEN;
 using rtype::client::HANGAR_SCREEN;
 using rtype::client::HELP_STEPS;
 using rtype::client::LEADERBOARD_SCREEN;
-using rtype::client::NOT_READY_TEXT;
 using rtype::client::PRESS_DURATION;
-using rtype::client::READY_LABEL;
 using rtype::client::STAR_GOLD;
 using rtype::client::TITLE_SCREEN;
 using rtype::client::testing::ASK_NOT_READY;
@@ -684,102 +677,4 @@ TEST_F(LobbyScreenFixture, TheLobbySendsTheLookOfTheSettings) {
 
   EXPECT_EQ(shipLooks().chosenLooks().back(),
             (rtype::identifiers::ShipLook{.head = WEARS_TOP_HAT}));
-}
-
-/**
- * Given another pilot ready and the local player at the casino
- * When a frame goes by
- * Then the status says YOU ARE AT THE CASINO
- */
-TEST_F(LobbyScreenFixture, TheLocalPlayerAloneAtTheCasinoIsToldSo) {
-  list({pilotAtTheCasino(OWN_NUMBER, OWN_NICKNAME),
-        pilot(OTHER_NUMBER, OTHER_NICKNAME, true)});
-
-  EXPECT_NE(writingOf(canvas(), "YOU ARE AT THE CASINO"), nullptr);
-}
-
-/**
- * Given the local player ready and another pilot at the casino
- * When a frame goes by
- * Then the status names the other pilot at the casino
- */
-TEST_F(LobbyScreenFixture, ASinglePilotAtTheCasinoIsNamedThere) {
-  list({pilot(OWN_NUMBER, OWN_NICKNAME, true),
-        pilotAtTheCasino(OTHER_NUMBER, OTHER_NICKNAME)});
-
-  EXPECT_NE(writingOf(canvas(), "CAPTAIN_STARDUST IS AT THE CASINO"), nullptr);
-}
-
-/**
- * Given the local player ready and another pilot at the casino
- * When a frame goes by
- * Then the bay of the pilot at the casino shows it not ready
- */
-TEST_F(LobbyScreenFixture, TheBayOfAPilotAtTheCasinoShowsItNotReady) {
-  list({pilot(OWN_NUMBER, OWN_NICKNAME, true),
-        pilotAtTheCasino(OTHER_NUMBER, OTHER_NICKNAME)});
-
-  EXPECT_NE(writingOf(canvas(), NOT_READY_TEXT), nullptr);
-}
-
-/**
- * Given the room
- * When K is pressed and released
- * Then the casino opens over the room
- */
-TEST_F(LobbyScreenFixture, TheCasinoKeyOpensTheCasino) {
-  tap(sf::Keyboard::Key::K, sf::Keyboard::Scan::K);
-
-  EXPECT_THAT(navigator().calls(),
-              ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
-                                        .screen = CASINO_SCREEN}));
-}
-
-/**
- * Given the room
- * When K is held down, its press repeated by the system, then released
- * Then the casino opens once
- */
-TEST_F(LobbyScreenFixture, AHeldCasinoKeyOpensTheCasinoOnce) {
-  screen().handleEvent(keyPress(sf::Keyboard::Key::K));
-  screen().handleEvent(keyPress(sf::Keyboard::Key::K));
-  screen().handleEvent(keyRelease(sf::Keyboard::Key::K));
-
-  EXPECT_THAT(navigator().calls(),
-              ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
-                                        .screen = CASINO_SCREEN}));
-}
-
-/**
- * Given the room
- * When the CASINO bar, right of READY, is clicked on its label
- * Then the casino opens over the room
- */
-TEST_F(LobbyScreenFixture, TheCasinoBarOpensTheCasino) {
-  const sf::Vector2i label =
-      anchorOf(canvas(), CASINO_LABEL).value_or(sf::Vector2i());
-  ASSERT_GT(label.x,
-            anchorOf(canvas(), READY_LABEL).value_or(sf::Vector2i()).x);
-
-  screen().handleEvent(leftPress(label * INTERFACE_PIXEL));
-  screen().handleEvent(leftRelease(label * INTERFACE_PIXEL));
-
-  EXPECT_THAT(navigator().calls(),
-              ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
-                                        .screen = CASINO_SCREEN}));
-}
-
-/**
- * Given the key of READY held down when K opens the casino, its release going
- * to that screen
- * When the key of READY is pressed again, once back in the room
- * Then it asks again: nothing stayed held
- */
-TEST_F(LobbyScreenFixture, AKeyHeldAcrossTheCasinoDoesNotStick) {
-  screen().handleEvent(keyPress(sf::Keyboard::Key::R, READY_KEY));
-  tap(sf::Keyboard::Key::K, sf::Keyboard::Scan::K);
-
-  screen().handleEvent(keyPress(sf::Keyboard::Key::R, READY_KEY));
-
-  EXPECT_THAT(readyRequests(), ElementsAre(ASK_READY, ASK_NOT_READY));
 }

@@ -6,7 +6,6 @@ target_link_libraries(rtype_network_protocol
   INTERFACE
     rtype_identifiers
     rtype_network_content
-    rtype_network_master_casino_cloth
     rtype_network_serialization
     rtype_network_transport
 )

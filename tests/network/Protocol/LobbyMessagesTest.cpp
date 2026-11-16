@@ -9,7 +9,6 @@
 #include "GameEnded.hpp"
 #include "GameLoaded.hpp"
 #include "GameStarted.hpp"
-#include "LobbyMessagesFixtures.hpp"
 #include "LobbyState.hpp"
 #include "MessagePayload.hpp"
 #include "NetworkException.hpp"
@@ -18,17 +17,27 @@
 #include "ReadyState.hpp"
 
 namespace rtype::network {
+namespace {
 
 using testing::ACCENTED_LETTER;
 using testing::byteSequence;
-using testing::fullLobby;
 using testing::LARGEST_LOBBY_DATAGRAM_SIZE;
 using testing::LAST_PLAYER_NUMBER;
-using testing::lobbyPlayer;
 using testing::ONE_BYTE_NICKNAME;
 using testing::PLAYER_NUMBER_ABOVE_THE_LAST;
 using testing::SIXTEEN_BYTE_NICKNAME;
 using testing::SOME_SCORE_OF_DISTINCT_BYTES;
+
+LobbyPlayer lobbyPlayer(std::uint8_t playerNumber) {
+  return LobbyPlayer{.playerNumber = playerNumber,
+                     .ready = false,
+                     .nickname = std::string{SIXTEEN_BYTE_NICKNAME}};
+}
+
+LobbyState fullLobby() {
+  return LobbyState{.players = {lobbyPlayer(1), lobbyPlayer(2), lobbyPlayer(3),
+                                lobbyPlayer(4)}};
+}
 
 /**
  * Given a player who is ready
@@ -96,10 +105,10 @@ TEST(ReadyState, RefusesBytesAfterTheReadyByte) {
 TEST(LobbyState, EncodesThePlayersInOrder) {
   const LobbyState lobby{
       .players = {{.playerNumber = 1,
-                   .place = network::PilotPlace::Ready,
+                   .ready = true,
                    .nickname = std::string{ONE_BYTE_NICKNAME}},
                   {.playerNumber = 2,
-                   .place = network::PilotPlace::NotReady,
+                   .ready = false,
                    .nickname = std::string{ACCENTED_LETTER}}}};
   const auto expected = byteSequence(
       {0x02, 0x01, 0x01, 0x01, 0x41, 0x02, 0x00, 0x02, 0xC3, 0xA9});
@@ -220,42 +229,14 @@ TEST(LobbyState, RefusesToReadAnEmptyNickname) {
 }
 
 /**
- * Given a payload whose place byte is 3, past AtCasino
+ * Given a payload whose ready byte is 2
  * When it is decoded
- * Then an InvalidFieldValueException is raised
+ * Then an InvalidBoolException is raised
  */
-TEST(LobbyState, RefusesToReadAPlaceItDoesNotList) {
-  const auto bytes = byteSequence({0x01, 0x01, 0x03, 0x01, 0x41});
+TEST(LobbyState, RefusesToReadAReadyByteOtherThanZeroOrOne) {
+  const auto bytes = byteSequence({0x01, 0x01, 0x02, 0x01, 0x41});
 
-  EXPECT_THROW((void)decodeMessage<LobbyState>(bytes),
-               InvalidFieldValueException);
-}
-
-/**
- * Given a pilot at the casino
- * When the LobbyState is encoded
- * Then the place byte of that pilot is 2
- */
-TEST(LobbyState, WritesAPilotAtTheCasinoAsTwo) {
-  const LobbyState lobby{
-      .players = {LobbyPlayer{.playerNumber = 1,
-                              .place = PilotPlace::AtCasino,
-                              .nickname = std::string{ONE_BYTE_NICKNAME}}}};
-
-  EXPECT_EQ(encodeMessage(lobby), byteSequence({0x01, 0x01, 0x02, 0x01, 0x41}));
-}
-
-/**
- * Given pilots ready, not ready and at the casino
- * When the LobbyState is encoded then decoded
- * Then each pilot keeps its place
- */
-TEST(LobbyState, DecodesEveryPlace) {
-  LobbyState lobby = fullLobby();
-  lobby.players[0].place = PilotPlace::Ready;
-  lobby.players[1].place = PilotPlace::AtCasino;
-
-  EXPECT_EQ(decodeMessage<LobbyState>(encodeMessage(lobby)), lobby);
+  EXPECT_THROW((void)decodeMessage<LobbyState>(bytes), InvalidBoolException);
 }
 
 /**
@@ -490,4 +471,5 @@ TEST(GameEnded, RefusesToWriteAnUnknownOutcome) {
   EXPECT_THROW((void)encodeMessage(ended), InvalidFieldValueException);
 }
 
+}  // namespace
 }  // namespace rtype::network

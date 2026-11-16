@@ -30,22 +30,6 @@ TEST(ReadyKeeper, MarksThePlayerReady) {
 }
 
 /**
- * Given a keeper that accepts a ReadyState and a player at the roulette table
- * When the player says ready
- * Then the player stays not ready: it must come back to the room first
- */
-TEST(ReadyKeeper, KeepsAPlayerAtTheCasinoNotReady) {
-  PlayerRoster roster;
-  ConnectedPlayer& player = addPlayer(roster, 0);
-  player.atCasino = true;
-  ReadyKeeper keeper(roster, [] { return true; });
-
-  keeper.apply(originOf(0, SOME_SEQUENCE), network::ReadyState{.ready = true});
-
-  EXPECT_FALSE(player.ready);
-}
-
-/**
  * Given a keeper that does not accept a ReadyState right now
  * When a player says ready
  * Then the player is not ready

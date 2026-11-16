@@ -7,7 +7,8 @@
 #include "ClothDirection.hpp"
 #include "ClothMoves.hpp"
 #include "ClothPlace.hpp"
-#include "RouletteBets.hpp"
+#include "RouletteBet.hpp"
+#include "RouletteBetKind.hpp"
 
 namespace rtype::client::testing {
 

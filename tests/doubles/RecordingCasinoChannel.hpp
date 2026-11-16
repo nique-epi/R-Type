@@ -3,11 +3,11 @@
 #include <cstddef>
 #include <optional>
 #include <vector>
-#include "CasinoPlace.hpp"
 #include "ChipMoves.hpp"
 #include "ICasinoChannel.hpp"
-#include "RouletteBets.hpp"
+#include "RouletteBet.hpp"
 #include "RouletteRound.hpp"
+#include "TablePlace.hpp"
 
 /**
  * @brief Casino channel double that writes down every place chosen and every

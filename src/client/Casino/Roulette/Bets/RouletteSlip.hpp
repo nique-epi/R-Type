@@ -2,7 +2,7 @@
 
 #include <cstdint>
 #include <vector>
-#include "RouletteBets.hpp"
+#include "RouletteBet.hpp"
 
 namespace rtype::client {
 

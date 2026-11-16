@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ClothPlace.hpp"
-#include "RouletteBets.hpp"
+#include "RouletteBet.hpp"
 
 namespace rtype::client {
 

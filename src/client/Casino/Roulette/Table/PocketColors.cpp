@@ -2,8 +2,8 @@
 #include <algorithm>
 #include <cstdint>
 #include "PocketShades.hpp"
-#include "ProtocolConstants.hpp"
 #include "RouletteColorConstants.hpp"
+#include "RouletteConstants.hpp"
 #include "RouletteScreenConstants.hpp"
 
 namespace rtype::client {

@@ -21,7 +21,6 @@ target_include_directories(rtype_client_connection_module PUBLIC ${CMAKE_CURRENT
 
 target_link_libraries(rtype_client_connection_module
   PUBLIC
-    rtype_client_connection_casino
     rtype_client_connection_chat
     rtype_client_connection_entity_types
     rtype_client_content_pack

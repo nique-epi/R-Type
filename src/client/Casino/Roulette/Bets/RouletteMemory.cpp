@@ -2,7 +2,7 @@
 #include <cstdint>
 #include <optional>
 #include <vector>
-#include "RouletteBets.hpp"
+#include "RouletteBet.hpp"
 #include "RouletteMemoryConstants.hpp"
 #include "RouletteRound.hpp"
 #include "RouletteSlip.hpp"

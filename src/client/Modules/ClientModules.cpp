@@ -4,7 +4,6 @@
 #include "AssetLoad.hpp"
 #include "BuiltModuleConstants.hpp"
 #include "ClientAssetsModule.hpp"
-#include "ClientCasinoModule.hpp"
 #include "ClientConnectionModule.hpp"
 #include "ClientGameModule.hpp"
 #include "ClientHangarModule.hpp"
@@ -71,7 +70,6 @@ std::vector<std::unique_ptr<engine::IModule>> clientModules(
   modules.push_back(std::make_unique<ClientLobbyModule>());
   modules.push_back(std::make_unique<ClientHangarModule>());
   modules.push_back(std::make_unique<ClientShopModule>());
-  modules.push_back(std::make_unique<ClientCasinoModule>());
   modules.push_back(std::make_unique<ClientGameModule>());
 #if RTYPE_MODULE_DEBUG
   modules.push_back(std::make_unique<ClientDebugModule>());

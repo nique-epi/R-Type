@@ -5,11 +5,11 @@
 #include <optional>
 #include "CasinoEntranceScreenFixture.hpp"
 #include "CasinoEntranceScreenTestConstants.hpp"
-#include "CasinoPlace.hpp"
 #include "CasinoScreenIdConstants.hpp"
 #include "MotionPreference.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
+#include "TablePlace.hpp"
 
 using rtype::client::CASINO_BUY_CHIPS_SCREEN;
 using rtype::client::CASINO_CASH_OUT_SCREEN;

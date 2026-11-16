@@ -2,7 +2,8 @@
 
 #include <cstddef>
 #include <cstdint>
-#include "RouletteBets.hpp"
+#include "RouletteBet.hpp"
+#include "RouletteBetKind.hpp"
 
 namespace rtype::client::testing {
 

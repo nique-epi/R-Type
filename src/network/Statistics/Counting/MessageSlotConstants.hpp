@@ -33,12 +33,11 @@ constexpr auto MESSAGE_TYPE_NAMES = std::to_array<std::string_view>(
      "ExpulsionOrder",    "Expulsion",
      "ShipLookChoice",    "PlayerLooks",
      "LookItemWon",       "EffectPlayed",
-     "LevelStatus",       "CasinoPlace",
-     "RouletteBets",      "RouletteRound"});
+     "LevelStatus"});
 
 static_assert(FIRST_NAMED_MESSAGE_TYPE + MESSAGE_TYPE_NAMES.size() - 1 ==
-                  static_cast<std::size_t>(MessageType::RouletteRound),
-              "every message up to RouletteRound has its name");
+                  static_cast<std::size_t>(MessageType::LevelStatus),
+              "every message up to LevelStatus has its name");
 
 /**
  * @brief The figures a DirectionTraffic keeps per type of message: one slot per

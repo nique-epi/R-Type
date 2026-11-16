@@ -4,8 +4,9 @@
 #include "ClothBand.hpp"
 #include "ClothConstants.hpp"
 #include "ClothPlace.hpp"
-#include "ProtocolConstants.hpp"
-#include "RouletteBets.hpp"
+#include "RouletteBet.hpp"
+#include "RouletteBetKind.hpp"
+#include "RouletteConstants.hpp"
 
 namespace rtype::client {
 

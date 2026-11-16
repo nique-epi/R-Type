@@ -29,8 +29,7 @@ class ReadyKeeper {
 
   /**
    * @brief Records @p message for the player who sent it, when readyAccepted
-   * says it counts and the sender is a player. A player at the roulette table
-   * stays not ready.
+   * says it counts and the sender is a player.
    */
   void apply(const network::MessageOrigin& origin,
              const network::ReadyState& message);

@@ -25,8 +25,7 @@ bool roomShowsReady(std::span<const network::LobbyPlayer> players,
                     std::uint8_t number, bool ready) {
   const auto own =
       std::ranges::find(players, number, &network::LobbyPlayer::playerNumber);
-  return own != players.end() &&
-         (own->place == network::PilotPlace::Ready) == ready;
+  return own != players.end() && own->ready == ready;
 }
 
 }  // namespace

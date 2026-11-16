@@ -5,7 +5,7 @@
 #include <vector>
 #include "ClothPlace.hpp"
 #include "RouletteBand.hpp"
-#include "RouletteBets.hpp"
+#include "RouletteBet.hpp"
 #include "TableRosterRow.hpp"
 #include "WheelPicture.hpp"
 

@@ -7,8 +7,8 @@ target_link_libraries(rtype_client_casino_roulette_wheel
     SFML::System
     rtype_client_interface
     rtype_engine_time
-    rtype_network_protocol
-    rtype_network_roulette_round
+    rtype_network_master_casino_cloth
+    rtype_network_master_casino_table
   PRIVATE
     rtype_client_widgets
 )

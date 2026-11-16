@@ -18,7 +18,7 @@
 #include "IInterfaceCanvas.hpp"
 #include "InterfacePixel.hpp"
 #include "RouletteBarActions.hpp"
-#include "RouletteBets.hpp"
+#include "RouletteBet.hpp"
 #include "RoulettePainting.hpp"
 #include "RouletteReading.hpp"
 #include "RouletteRound.hpp"

@@ -2,10 +2,10 @@
 
 #include <optional>
 #include <vector>
-#include "CasinoPlace.hpp"
 #include "ChipMoves.hpp"
-#include "RouletteBets.hpp"
+#include "RouletteBet.hpp"
 #include "RouletteRound.hpp"
+#include "TablePlace.hpp"
 
 namespace rtype::client {
 

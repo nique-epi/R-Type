@@ -9,8 +9,7 @@ target_include_directories(rtype_client_casino_roulette_cloth PUBLIC ${CMAKE_CUR
 target_link_libraries(rtype_client_casino_roulette_cloth
   PUBLIC
     SFML::Graphics
-    rtype_network_protocol
-    rtype_network_roulette_bets
+    rtype_network_master_casino_cloth
   PRIVATE
     rtype_client_widgets
 )

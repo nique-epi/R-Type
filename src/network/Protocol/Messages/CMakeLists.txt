@@ -35,9 +35,6 @@ add_subdirectory(RoundTrips)
 add_subdirectory(ServerInformation)
 add_subdirectory(ServerInformationRequest)
 add_subdirectory(ShipLookChoice)
-add_subdirectory(CasinoPlace)
-add_subdirectory(RouletteBets)
-add_subdirectory(RouletteRound)
 
 add_library(rtype_network_messages INTERFACE)
 
@@ -45,7 +42,6 @@ target_link_libraries(rtype_network_messages
   INTERFACE
     rtype_network_chat_line
     rtype_network_boss_status
-    rtype_network_casino_place
     rtype_network_connection_accepted
     rtype_network_connection_challenge
     rtype_network_connection_redirect
@@ -77,8 +73,6 @@ target_link_libraries(rtype_network_messages
     rtype_network_player_left
     rtype_network_player_looks
     rtype_network_ready_state
-    rtype_network_roulette_bets
-    rtype_network_roulette_round
     rtype_network_round_trips
     rtype_network_server_information
     rtype_network_server_information_request

@@ -8,9 +8,7 @@
 
 rtype::network::LobbyPlayer waiting(std::uint8_t number, const char* nickname) {
   return rtype::network::LobbyPlayer{
-      .playerNumber = number,
-      .place = rtype::network::PilotPlace::NotReady,
-      .nickname = nickname};
+      .playerNumber = number, .ready = false, .nickname = nickname};
 }
 
 rtype::network::PlayerState listedPlayer(std::uint8_t number,

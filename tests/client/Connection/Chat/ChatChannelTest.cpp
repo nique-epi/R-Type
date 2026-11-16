@@ -159,10 +159,9 @@ TEST_F(ChatChannelFixture, AFifthLineIsRefused) {
  */
 TEST_F(ChatChannelFixture, ARelayedLineIsNamedByTheWaitingRoom) {
   connectAndGetAccepted();
-  room().setLobbyPlayers(
-      {network::LobbyPlayer{.playerNumber = NOVA_NUMBER,
-                            .place = network::PilotPlace::NotReady,
-                            .nickname = std::string{NOVA}}});
+  room().setLobbyPlayers({network::LobbyPlayer{.playerNumber = NOVA_NUMBER,
+                                               .ready = false,
+                                               .nickname = std::string{NOVA}}});
 
   relayLine(NOVA_LINE, SECOND_TEXT, NOVA_NUMBER);
 

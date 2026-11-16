@@ -32,6 +32,7 @@
 #include "IWaitingRoom.hpp"
 #include "InterfaceConstants.hpp"
 #include "InterfacePixel.hpp"
+#include "KeyChipParts.hpp"
 #include "LobbyPartAreas.hpp"
 #include "LobbyPlace.hpp"
 #include "LobbyScreenConstants.hpp"
@@ -43,8 +44,6 @@
 #include "PilotColor.hpp"
 #include "PlayerLooks.hpp"
 #include "PlayfieldMapping.hpp"
-#include "RoomShortcuts.hpp"
-#include "RoomShortcutsParts.hpp"
 #include "ScreenConstants.hpp"
 #include "ScreenId.hpp"
 #include "ShipLook.hpp"
@@ -69,43 +68,37 @@ const network::LobbyPlayer* playerNumbered(
   return found == players.end() ? nullptr : &*found;
 }
 
-/** @returns Whether @p player waits in the room, ready to start. */
-bool isReady(const network::LobbyPlayer& player) {
-  return player.place == network::PilotPlace::Ready;
-}
-
 /** @returns What the bay of a player shows: what the server lists, or what
  * the local player asked while the server lists another value. */
 BayReadiness readinessOf(const network::LobbyPlayer& player,
                          std::optional<bool> requested) {
-  if (requested.has_value() && *requested != isReady(player)) {
+  if (requested.has_value() && *requested != player.ready) {
     return *requested ? BayReadiness::ReadyAsked : BayReadiness::NotReadyAsked;
   }
-  return isReady(player) ? BayReadiness::Ready : BayReadiness::NotReady;
+  return player.ready ? BayReadiness::Ready : BayReadiness::NotReady;
 }
 
 /** @returns The status line: none without players; who is not ready, by name
- * when a single pilot is not, and that it is at the casino when it is there;
- * or that every listed pilot is ready. */
+ * when a single pilot is not; or that every listed pilot is ready. */
 std::string statusLine(std::span<const network::LobbyPlayer> players,
                        std::uint8_t ownNumber) {
   if (players.empty()) {
     return {};
   }
-  const auto notReady = std::ranges::count(players, false, isReady);
+  const auto notReady =
+      std::ranges::count(players, false, &network::LobbyPlayer::ready);
   if (notReady == 0) {
     return ALL_READY_STATUS;
   }
   if (notReady > 1) {
     return std::to_string(notReady) + PILOTS_NOT_READY_STATUS;
   }
-  const auto waiting = std::ranges::find(players, false, isReady);
-  const bool atCasino = waiting->place == network::PilotPlace::AtCasino;
+  const auto waiting =
+      std::ranges::find(players, false, &network::LobbyPlayer::ready);
   if (waiting->playerNumber == ownNumber) {
-    return atCasino ? YOU_AT_THE_CASINO_STATUS : YOU_NOT_READY_STATUS;
+    return YOU_NOT_READY_STATUS;
   }
-  return waiting->nickname +
-         (atCasino ? PILOT_AT_THE_CASINO_STATUS : PILOT_NOT_READY_STATUS);
+  return waiting->nickname + PILOT_NOT_READY_STATUS;
 }
 
 /** @returns Whether @p event presses (true) or releases (false) @p key;
@@ -178,6 +171,21 @@ sf::IntRect helpChipArea() {
                                backChipArea().position.x - BUTTON_GAP);
 }
 
+/** @returns Where the room paints RANKING, BUTTON_GAP to the left of HELP. */
+sf::IntRect leaderboardChipArea() {
+  return MenuBuilder::chipArea(
+      {.label = LEADERBOARD_LABEL, .keyName = LEADERBOARD_KEY_NAME},
+      helpChipArea().position.x - BUTTON_GAP);
+}
+
+/** @returns Where the room paints HANGAR, BUTTON_GAP to the left of
+ * RANKING. */
+sf::IntRect hangarChipArea() {
+  return MenuBuilder::chipArea(
+      {.label = HANGAR_LABEL, .keyName = HANGAR_KEY_NAME},
+      leaderboardChipArea().position.x - BUTTON_GAP);
+}
+
 /** @returns Whether @p event presses the left button inside @p area, read on
  * the grid of the interface. */
 bool clicksInside(const sf::Event& event, std::optional<sf::IntRect> area,
@@ -219,23 +227,6 @@ std::optional<sf::IntRect> ownBayAreaIn(const Menu& menu,
       ownSlotOf(waitingRoom.lobbyPlayers(), connection.status().playerNumber));
 }
 
-/** @returns Where MenuBuilder lays READY, the only bar of the room: centered
- * SPACE_ABOVE_ROOM_BARS under @p bays. Menu gives no area of a bar, so it is
- * placed by the same arithmetic as MenuBuilder::placeRoom. */
-sf::IntRect readyBarArea(sf::IntRect bays) {
-  return {{(INTERFACE_AREA.size.x - BUTTON_SIZE.x) / SIDES_PER_AXIS,
-           bays.position.y + bays.size.y + SPACE_ABOVE_ROOM_BARS},
-          BUTTON_SIZE};
-}
-
-/** @returns Where CASINO starts in the room of @p menu: BUTTON_GAP right of
- * READY, on its row. */
-sf::Vector2i casinoTopLeftIn(const Menu& menu) {
-  const sf::IntRect ready =
-      readyBarArea(menu.illustrationArea().value_or(sf::IntRect()));
-  return {ready.position.x + ready.size.x + BUTTON_GAP, ready.position.y};
-}
-
 /** @returns Where the room paints the parts its help explains, as
  * MenuBuilder lays a room: the bays, where the menu lays its illustration;
  * READY, its only bar, centered SPACE_ABOVE_ROOM_BARS under them; the status
@@ -244,7 +235,10 @@ sf::Vector2i casinoTopLeftIn(const Menu& menu) {
  * MenuBuilder::placeRoom. */
 LobbyPartAreas partAreasOf(sf::IntRect bays, std::optional<int> ownSlot,
                            int statusWidth) {
-  const sf::IntRect ready = readyBarArea(bays);
+  const sf::IntRect ready(
+      {(INTERFACE_AREA.size.x - BUTTON_SIZE.x) / SIDES_PER_AXIS,
+       bays.position.y + bays.size.y + SPACE_ABOVE_ROOM_BARS},
+      BUTTON_SIZE);
   const int statusShown = std::max(statusWidth, BUTTON_SIZE.x);
   return {.bays = bays,
           .ownBay = ownBayArea(bays, ownSlot).value_or(bays),
@@ -287,25 +281,39 @@ LobbyScreen::LobbyScreen(LobbyScreenParts parts,
                                  .palette = parts.palette,
                                  .motion = parts.motion,
                                  .chipArea = helpChipArea()}),
-      shortcuts_(RoomShortcutsParts{
-          .navigator = parts.navigator,
-          .sounds = parts.sounds,
-          .beforeOpening = [this] { handleEvent(sf::Event::FocusLost{}); },
-          .right = helpChipArea().position.x - BUTTON_GAP,
-          .casinoTopLeft = casinoTopLeftIn(menu_)}),
+      leaderboardChip_(KeyChipParts{
+          .text = {.label = LEADERBOARD_LABEL, .keyName = LEADERBOARD_KEY_NAME},
+          .area = leaderboardChipArea(),
+          .key = LEADERBOARD_KEY,
+          .action =
+              [this] {
+                handleEvent(sf::Event::FocusLost{});
+                navigator_->push(LEADERBOARD_SCREEN);
+              },
+          .sounds = parts.sounds}),
       look_(&parts.look.get()),
+      hangarChip_(KeyChipParts{
+          .text = {.label = HANGAR_LABEL, .keyName = HANGAR_KEY_NAME},
+          .area = hangarChipArea(),
+          .key = HANGAR_KEY,
+          .action =
+              [this] {
+                handleEvent(sf::Event::FocusLost{});
+                navigator_->push(HANGAR_SCREEN);
+              },
+          .sounds = parts.sounds}),
       chat_(parts.chat.get(), parts.settings.get()) {
   repaint();
 }
 
 void LobbyScreen::handleEvent(const sf::Event& event) {
   if (!chat_.isOpen() && help_.handleEvent(event, playfieldPointAt_)) {
-    dropHeldInput(playfieldPointAt_, shortcuts_);
+    dropHeldInput(playfieldPointAt_, leaderboardChip_, hangarChip_);
     return;
   }
   if (chat_.handleEvent(event)) {
     readyKeyHeld_ = false;
-    dropHeldInput(playfieldPointAt_, shortcuts_, menu_);
+    dropHeldInput(playfieldPointAt_, leaderboardChip_, hangarChip_, menu_);
     return;
   }
   if (const std::optional<bool> down = readyKeyDownOf(event, readyKey_)) {
@@ -317,13 +325,14 @@ void LobbyScreen::handleEvent(const sf::Event& event) {
     return;
   }
   readyKeyHeld_ = readyKeyHeld_ && !event.is<sf::Event::FocusLost>();
-  if (shortcuts_.handleEvent(event, playfieldPointAt_)) {
+  if (leaderboardChip_.handleEvent(event, playfieldPointAt_) ||
+      hangarChip_.handleEvent(event, playfieldPointAt_)) {
     return;
   }
   if (clicksInside(event, ownBayAreaIn(menu_, *waitingRoom_, *connection_),
                    playfieldPointAt_)) {
     readyKeyHeld_ = false;
-    dropHeldInput(playfieldPointAt_, shortcuts_, menu_);
+    dropHeldInput(playfieldPointAt_, leaderboardChip_, hangarChip_, menu_);
     navigator_->push(HANGAR_SCREEN);
     return;
   }
@@ -376,7 +385,7 @@ bool LobbyScreen::wantsReady() const {
   }
   const network::LobbyPlayer* own = playerNumbered(
       waitingRoom_->lobbyPlayers(), connection_->status().playerNumber);
-  return own != nullptr && isReady(*own);
+  return own != nullptr && own->ready;
 }
 
 void LobbyScreen::repaint() {
@@ -400,7 +409,8 @@ void LobbyScreen::repaint() {
       canvas_->write(*rulesLine_, rulesAnchorOf(*canvas_, pilots),
                      GAME_RULES_STYLE);
     }
-    shortcuts_.paint(*canvas_);
+    leaderboardChip_.paint(*canvas_);
+    hangarChip_.paint(*canvas_);
   }
   help_.paint(*canvas_, parts);
   chat_.paint(*canvas_, palette_.get(), LOBBY_CHAT_BOTTOM);

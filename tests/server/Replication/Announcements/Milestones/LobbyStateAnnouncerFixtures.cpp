@@ -13,8 +13,7 @@ namespace rtype::server::testing {
 network::LobbyPlayer lobbyPlayer(std::size_t index, bool ready) {
   return network::LobbyPlayer{.playerNumber = static_cast<std::uint8_t>(
                                   network::FIRST_PLAYER_NUMBER + index),
-                              .place = ready ? network::PilotPlace::Ready
-                                             : network::PilotPlace::NotReady,
+                              .ready = ready,
                               .nickname = std::string{PLAYER_NICKNAME}};
 }
 

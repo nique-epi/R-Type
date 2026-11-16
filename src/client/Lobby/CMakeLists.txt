@@ -1,7 +1,6 @@
 add_library(rtype_client_lobby_module STATIC
   ClientLobbyModule.cpp
   LobbyScreen.cpp
-  RoomShortcuts.cpp
 )
 
 target_include_directories(rtype_client_lobby_module PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

@@ -53,29 +53,6 @@ TEST_F(LobbyStateAnnouncerFixture, SendsAChangeOfReadinessAtOnce) {
 }
 
 /**
- * Given one ready player, sent the room
- * When the player sits at the roulette table and the next tick passes
- * Then the player is sent the room again, showing it at the casino, not ready
- */
-TEST_F(LobbyStateAnnouncerFixture, SendsAPlayerAtTheCasinoAtOnce) {
-  ConnectedPlayer& player = join(0);
-  player.ready = true;
-  runWaitingTicks(1);
-
-  player.ready = false;
-  player.atCasino = true;
-  runWaitingTicks(1);
-
-  const std::vector<network::OutgoingDatagram> toPlayer = sentTo(0);
-  ASSERT_EQ(toPlayer.size(), 2U);
-  ASSERT_EQ(onlyMessageIn<network::LobbyState>(toPlayer.back()).players.size(),
-            1U);
-  EXPECT_EQ(
-      onlyMessageIn<network::LobbyState>(toPlayer.back()).players.front().place,
-      network::PilotPlace::AtCasino);
-}
-
-/**
  * Given one player, sent the room
  * When a second player joins and the next tick passes
  * Then both players are sent the room listing the two of them

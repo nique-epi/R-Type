@@ -6,7 +6,7 @@
 #include <cstdint>
 #include <numbers>
 #include "CasinoSpriteConstants.hpp"
-#include "ProtocolConstants.hpp"
+#include "RouletteConstants.hpp"
 #include "TimeConstants.hpp"
 #include "WheelSlowdownStep.hpp"
 

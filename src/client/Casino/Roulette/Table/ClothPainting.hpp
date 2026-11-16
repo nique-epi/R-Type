@@ -4,7 +4,7 @@
 #include <vector>
 #include "ClothPlace.hpp"
 #include "IInterfaceCanvas.hpp"
-#include "RouletteBets.hpp"
+#include "RouletteBet.hpp"
 
 namespace rtype::client {
 

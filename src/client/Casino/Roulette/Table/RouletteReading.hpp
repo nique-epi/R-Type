@@ -9,7 +9,7 @@
 #include "LobbyState.hpp"
 #include "MotionPreference.hpp"
 #include "PlayerPalette.hpp"
-#include "RouletteBets.hpp"
+#include "RouletteBet.hpp"
 #include "RouletteRound.hpp"
 #include "TimeConstants.hpp"
 
