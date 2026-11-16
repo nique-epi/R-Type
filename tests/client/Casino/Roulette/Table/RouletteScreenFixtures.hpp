@@ -1,21 +1,40 @@
 #pragma once
 
 #include <cstdint>
-#include "RouletteRound.hpp"
+#include <vector>
+#include "BetsReading.hpp"
+#include "CasinoRefusal.hpp"
+#include "CasinoRoomState.hpp"
+#include "RouletteBet.hpp"
+#include "RoundBets.hpp"
 
 namespace rtype::client::testing {
 
-/** @returns Round @p number with its bets open for TWELVE_SECONDS_OF_TICKS,
- * ACE and LUNA seated, ACE with @p aceStake on the cloth. */
-[[nodiscard]] network::RouletteRound bettingRound(std::uint16_t number,
-                                                  std::uint32_t aceStake);
+/** @returns NEBULA_LOUNGE at round @p round, its bets open for twelve
+ * seconds on the clock of the master, ACE and LUNA seated, no number drawn
+ * before. */
+[[nodiscard]] network::CasinoRoomState bettingRoom(std::uint64_t round);
 
-/** @returns A_ROUND, the wheel turning to SEVENTEEN_WINS, ACE with
- * STAKE_OF_ACE on the cloth. */
-[[nodiscard]] network::RouletteRound spinningRound();
+/** @returns A_ROUND a second after its bets closed, the wheel turning to
+ * SEVENTEEN_WINS, five seconds before it stops, ACE with STAKE_OF_ACE on the
+ * cloth. */
+[[nodiscard]] network::CasinoRoomState spinningRoom();
 
 /** @returns A_ROUND at its result, SEVENTEEN_WINS drawn, ACE with
  * STAKE_OF_ACE on the cloth handed back @p acePayout. */
-[[nodiscard]] network::RouletteRound resultRound(std::uint32_t acePayout);
+[[nodiscard]] network::CasinoRoomState resultRoom(std::uint32_t acePayout);
+
+/** @returns The bets of ACE on A_ROUND, STAKE_OF_ACE on 17, and what they
+ * paid, @p payout. */
+[[nodiscard]] network::RoundBets betsOfAce(std::uint32_t payout);
+
+/** @returns The answer of a master that took @p bets on A_ROUND, the wallet
+ * holding CHIPS_LEFT_TO_ACE once staked. */
+[[nodiscard]] BetsReading betsTaken(
+    const std::vector<network::RouletteBet>& bets);
+
+/** @returns The answer of a master that refused bets on A_ROUND for
+ * @p refusal. */
+[[nodiscard]] BetsReading betsRefused(CasinoRefusal refusal);
 
 }  // namespace rtype::client::testing

@@ -54,6 +54,6 @@ constexpr std::uint32_t EVEN_CHANCE_RETURN = 2;
 static_assert(static_cast<std::uint64_t>(MAXIMUM_ROUND_STAKE) *
                       STRAIGHT_RETURN <=
                   std::numeric_limits<std::uint32_t>::max(),
-              "the payout of a round fits the four bytes of a RouletteSeat");
+              "the payout of a round fits the four bytes of a CasinoPlayer");
 
 }  // namespace rtype::network

@@ -9,13 +9,12 @@
 #include <optional>
 #include "ClothConstants.hpp"
 #include "ClothPlace.hpp"
+#include "IAccountSession.hpp"
 #include "ICasinoChannel.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "IScreen.hpp"
 #include "IScreenNavigator.hpp"
-#include "IServerConnection.hpp"
 #include "ISoundPlayer.hpp"
-#include "IWaitingRoom.hpp"
 #include "IWallet.hpp"
 #include "MotionPreference.hpp"
 #include "PlayerPalette.hpp"
@@ -23,7 +22,6 @@
 #include "RouletteBars.hpp"
 #include "RouletteMemory.hpp"
 #include "RouletteReading.hpp"
-#include "RouletteRound.hpp"
 #include "RouletteScreenConstants.hpp"
 #include "RouletteScreenParts.hpp"
 #include "TimeConstants.hpp"
@@ -31,17 +29,20 @@
 namespace rtype::client {
 
 /**
- * @brief The roulette table of the waiting room, pushed over the hall, which
- * it hides: the wheel, the cloth, the pilots seated and the band.
+ * @brief The roulette table of a room of the casino of the master, pushed over
+ * the hall, which it hides: the wheel, the cloth, the players seated and the
+ * band. The master times the rounds and spins the wheel once the bets close;
+ * the table counts down to it, then to the result.
  *
  * While the bets are open, the arrows move a cursor over every place of the
  * cloth (placeAfter()), and LAY_CHIP_KEY lays there a chip of the value
  * chosen, by its key 1 to 5 or a click on it; the table takes no chip past
- * the chips held, MAXIMUM_ROUND_STAKE or MAXIMUM_ROULETTE_BETS
+ * the chips at hand, MAXIMUM_ROUND_STAKE or MAXIMUM_ROULETTE_BETS
  * (RouletteSlip). CLEAR takes the bets of the round off, REBET lays again
- * those of the round before, SPIN asks to spin; each change sends every bet
- * with the vote (ICasinoChannel::placeBets()). The chips of the bets are
- * settled by the master, never here.
+ * those of the round before; each change sends every bet
+ * (ICasinoChannel::placeBets()), and bets the master refuses leave the cloth
+ * as it holds it, the status line saying why. The chips are staked and paid
+ * by the master, never here.
  *
  * The wheel turns once the bets close and stops on the number drawn; the
  * result lights it on the cloth. BACK, MENU_CANCEL_KEY, closes the table,
@@ -79,7 +80,7 @@ class RouletteScreen final : public IScreen {
   /** @brief Lays a chip of the value chosen under the cursor, while the bets
    * are open, then sends the bets. */
   void layChip();
-  /** @brief Sends every bet of the round with the vote. */
+  /** @brief Sends every bet of the round. */
   void send();
   [[nodiscard]] RouletteReading readTable() const;
   void repaint();
@@ -89,15 +90,11 @@ class RouletteScreen final : public IScreen {
   ICasinoChannel* casino_;
   RouletteMemory* memory_;
   const IWallet* wallet_;
-  const IServerConnection* connection_;
-  const IWaitingRoom* waitingRoom_;
+  const IAccountSession* account_;
   std::unique_ptr<IInterfaceCanvas> canvas_;
   PlayfieldMapping playfieldPointAt_;
   PlayerPalette palette_;
   MotionPreference motion_;
-  /** @brief The state of the table seen last, and how long ago it came. */
-  std::optional<network::RouletteRound> seenRound_;
-  engine::Duration sinceRound_{};
   ClothPlace cursor_{FIRST_CLOTH_PLACE};
   std::size_t chosenChip_{FIRST_CHOSEN_CHIP};
   /** @brief The key pressed last, which acts no more until released. */

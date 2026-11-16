@@ -2,30 +2,28 @@
 #include <cstdint>
 #include <optional>
 #include <vector>
+#include "BetsReading.hpp"
+#include "BetsReceipt.hpp"
+#include "CasinoRoomState.hpp"
 #include "RouletteBet.hpp"
-#include "RouletteMemoryConstants.hpp"
-#include "RouletteRound.hpp"
 #include "RouletteSlip.hpp"
 
 namespace rtype::client {
 
-void RouletteMemory::follow(const std::optional<network::RouletteRound>& round,
-                            std::uint32_t chipsHeld) {
-  if (!round.has_value()) {
+void RouletteMemory::follow(const std::optional<network::CasinoRoomState>& room,
+                            const std::optional<BetsReading>& bets) {
+  if (!room.has_value()) {
     round_.reset();
-    recordedRound_.reset();
     slip_.clear();
-    spinAsked_ = false;
+    accepted_.reset();
     return;
   }
-  if (round_ != round->round) {
-    startRound(round->round);
+  if (round_ != room->round) {
+    startRound(room->round);
   }
-  if (round->phase == network::RoulettePhase::Betting) {
-    chipsBeforeDraw_ =
-        chipsHeld > slip_.stake() ? chipsHeld - slip_.stake() : 0;
-  } else if (round->phase == network::RoulettePhase::Result) {
-    record(*round);
+  if (bets.has_value() && (bets->ask == 0 || bets->ask != readBetsAsk_)) {
+    readBetsAsk_ = bets->ask;
+    take(*bets);
   }
 }
 
@@ -37,35 +35,31 @@ const std::vector<network::RouletteBet>& RouletteMemory::previousBets() const {
   return previousBets_;
 }
 
-bool RouletteMemory::spinAsked() const { return spinAsked_; }
-
-void RouletteMemory::askSpin() { spinAsked_ = true; }
-
-const std::vector<std::uint8_t>& RouletteMemory::lastNumbers() const {
-  return lastNumbers_;
+const std::optional<network::BetsReceipt>& RouletteMemory::accepted() const {
+  return accepted_;
 }
 
-std::optional<std::uint32_t> RouletteMemory::chipsBeforeDraw() const {
-  return chipsBeforeDraw_;
-}
-
-void RouletteMemory::startRound(std::uint16_t number) {
+void RouletteMemory::startRound(std::uint64_t round) {
   if (!slip_.bets().empty()) {
     previousBets_ = slip_.bets();
   }
   slip_.clear();
-  spinAsked_ = false;
-  round_ = number;
+  accepted_.reset();
+  round_ = round;
 }
 
-void RouletteMemory::record(const network::RouletteRound& round) {
-  if (recordedRound_ == round.round) {
+void RouletteMemory::take(const BetsReading& bets) {
+  if (bets.round.round != round_) {
     return;
   }
-  recordedRound_ = round.round;
-  lastNumbers_.insert(lastNumbers_.begin(), round.winningNumber);
-  if (lastNumbers_.size() > LAST_NUMBERS_KEPT) {
-    lastNumbers_.resize(LAST_NUMBERS_KEPT);
+  if (bets.receipt.has_value()) {
+    accepted_ = bets.receipt;
+    return;
+  }
+  slip_.clear();
+  if (accepted_.has_value()) {
+    static_cast<void>(slip_.replaceWith(accepted_->bets,
+                                        accepted_->chips + accepted_->stake));
   }
 }
 

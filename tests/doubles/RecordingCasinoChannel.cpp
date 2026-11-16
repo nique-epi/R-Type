@@ -1,54 +1,52 @@
 #include "RecordingCasinoChannel.hpp"
-#include <cstddef>
+#include <cstdint>
 #include <optional>
-#include <utility>
 #include <vector>
-#include "ChipMoves.hpp"
+#include "BetsReading.hpp"
+#include "CasinoRefusal.hpp"
+#include "CasinoRoomListing.hpp"
+#include "CasinoRoomState.hpp"
 #include "RouletteBet.hpp"
-#include "RouletteRound.hpp"
-#include "TablePlace.hpp"
+#include "RoundBets.hpp"
 
-void RecordingCasinoChannel::chooseTable(rtype::network::TablePlace place) {
-  chosenPlaces_.push_back(place);
+std::optional<rtype::network::CasinoRoomListing> RecordingCasinoChannel::rooms()
+    const {
+  return listedRooms;
+}
+
+void RecordingCasinoChannel::askRooms() { ++roomsAsks; }
+
+void RecordingCasinoChannel::enter(std::uint8_t room) {
+  enteredRooms.push_back(room);
+}
+
+void RecordingCasinoChannel::leave() { ++leaves; }
+
+std::optional<rtype::network::CasinoRoomState> RecordingCasinoChannel::room()
+    const {
+  return roomState;
+}
+
+std::optional<rtype::client::CasinoRefusal>
+RecordingCasinoChannel::seatRefusal() const {
+  return refusedSeat;
 }
 
 void RecordingCasinoChannel::placeBets(
-    std::vector<rtype::network::RouletteBet> bets, bool spinVote) {
-  ++betsLaid_;
-  sentBets_.push_back(std::move(bets));
-  spinVotes_.push_back(spinVote);
+    std::uint64_t round, const std::vector<rtype::network::RouletteBet>& bets) {
+  betRounds.push_back(round);
+  sentBets.push_back(bets);
 }
 
-std::optional<rtype::network::RouletteRound> RecordingCasinoChannel::round()
+std::optional<rtype::client::BetsReading> RecordingCasinoChannel::lastBets()
     const {
-  return round_;
+  return betsAnswer;
 }
 
-rtype::client::ChipMoves RecordingCasinoChannel::takeChipMoves() {
-  return std::exchange(chipMoves_, {});
-}
-
-void RecordingCasinoChannel::setRound(
-    std::optional<rtype::network::RouletteRound> round) {
-  round_ = std::move(round);
-}
-
-void RecordingCasinoChannel::setChipMoves(rtype::client::ChipMoves moves) {
-  chipMoves_ = moves;
-}
-
-const std::vector<rtype::network::TablePlace>&
-RecordingCasinoChannel::chosenPlaces() const {
-  return chosenPlaces_;
-}
-
-std::size_t RecordingCasinoChannel::betsLaid() const { return betsLaid_; }
-
-const std::vector<std::vector<rtype::network::RouletteBet>>&
-RecordingCasinoChannel::sentBets() const {
-  return sentBets_;
-}
-
-const std::vector<bool>& RecordingCasinoChannel::spinVotes() const {
-  return spinVotes_;
+std::optional<rtype::network::RoundBets> RecordingCasinoChannel::ownBets(
+    std::uint64_t round) const {
+  if (!roundBets.has_value() || roundBets->round != round) {
+    return std::nullopt;
+  }
+  return roundBets;
 }

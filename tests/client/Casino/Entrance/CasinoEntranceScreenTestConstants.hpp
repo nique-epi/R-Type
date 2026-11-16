@@ -26,6 +26,15 @@ constexpr std::string_view WELCOME_FIRST_LINE =
     "WELCOME TO THE BYDO PALACE, PILOT.";
 constexpr std::string_view HALL_FIRST_LINE = "WHAT SHALL IT BE TONIGHT, PILOT?";
 
+/** @brief The rooms the master lists: the first full, the second with a
+ * seat free, both of ROOM_SEATS seats. */
+constexpr std::uint8_t FULL_ROOM = 1;
+constexpr std::uint8_t FREE_ROOM = 2;
+constexpr std::uint8_t ROOM_SEATS = 8;
+
+/** @brief How often the hall asks the rooms again: every 5 s. */
+constexpr std::chrono::seconds ROOMS_ASKED_AGAIN_AFTER{5};
+
 /** @brief The label of the first bar of the hall. */
 constexpr std::string_view ROULETTE_WORD = "ROULETTE";
 

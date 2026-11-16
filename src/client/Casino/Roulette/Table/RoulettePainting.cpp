@@ -86,7 +86,7 @@ void paintRoulette(IInterfaceCanvas& canvas, const RouletteView& view) {
     paintResultPlaque(canvas, *view.drawn);
   }
   paintLastNumbers(canvas, view.lastNumbers);
-  paintTableRoster(canvas, view.roster);
+  paintTableRoster(canvas, view.roster, view.roomName);
   paintRouletteBand(canvas, view.band);
 }
 

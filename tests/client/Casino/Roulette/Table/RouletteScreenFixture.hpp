@@ -3,32 +3,25 @@
 #include <gtest/gtest.h>
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Keyboard.hpp>
-#include <cstdint>
 #include <memory>
+#include "FakeAccountSession.hpp"
 #include "FakeWallet.hpp"
 #include "RecordingCasinoChannel.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
-#include "RecordingServerConnection.hpp"
 #include "RecordingSoundPlayer.hpp"
-#include "RecordingWaitingRoom.hpp"
 #include "RouletteMemory.hpp"
-#include "RouletteRound.hpp"
 #include "RouletteScreen.hpp"
 #include "TimeConstants.hpp"
 
-/** @brief A roulette table alone, ACE seated beside LUNA, its bets of A_ROUND
- * open, ACE holding CHIPS_OF_ACE chips, with a recording navigator, table,
- * canvas and sound player. */
+/** @brief A roulette table alone, ACE signed in and seated beside LUNA in
+ * NEBULA_LOUNGE, the bets of A_ROUND open, ACE holding CHIPS_OF_ACE chips,
+ * with a recording navigator, casino, canvas and sound player. A test changes
+ * the casino or the wallet, then lets a frame pass. */
 class RouletteScreenFixture : public ::testing::Test {
  protected:
   RouletteScreenFixture();
 
-  /** @brief Has the table send @p round, then lets a frame pass. */
-  void showRound(const rtype::network::RouletteRound& round);
-  /** @brief Gives the player @p chips in the wallet, then lets a frame
-   * pass. */
-  void holdChips(std::uint32_t chips);
   /** @brief Presses and releases a key, then lets a frame pass. */
   void press(sf::Keyboard::Key key);
   /** @brief Presses a key without releasing it, then lets a frame pass. */
@@ -41,15 +34,15 @@ class RouletteScreenFixture : public ::testing::Test {
    * pixel of the interface picture, then lets a frame pass. */
   void clickAt(sf::Vector2i interfacePixel);
 
-  [[nodiscard]] const RecordingCasinoChannel& casino() const;
+  [[nodiscard]] RecordingCasinoChannel& casino();
+  [[nodiscard]] FakeWallet& wallet();
   [[nodiscard]] const RecordingNavigator& navigator() const;
   [[nodiscard]] const InterfaceCanvasRecord& canvas() const;
 
  private:
   RecordingNavigator navigator_;
   RecordingCasinoChannel casino_;
-  RecordingWaitingRoom waitingRoom_;
-  RecordingServerConnection connection_;
+  FakeAccountSession account_;
   InterfaceCanvasRecord canvas_;
   RecordingSoundPlayer sounds_;
   FakeWallet wallet_;

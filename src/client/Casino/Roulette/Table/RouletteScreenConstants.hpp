@@ -4,7 +4,6 @@
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <cstddef>
-#include "BarState.hpp"
 #include "CasinoBar.hpp"
 #include "CasinoSpriteConstants.hpp"
 #include "WidgetConstants.hpp"
@@ -65,24 +64,15 @@ constexpr sf::Vector2i BAND_FIRST_CHIP(150, 235);
 constexpr const char* BAND_CHIPS_CAPTION_TEXT = "CHIPS";
 constexpr const char* BAND_STAKE_CAPTION_TEXT = "STAKE";
 
-/** @brief The bars of the band: SPIN, CLEAR, REBET and BACK. */
-constexpr CasinoBar SPIN_BAR{.label = "SPIN",
-                             .keyName = "SPACE",
-                             .area = sf::IntRect({312, 234}, {78, 16}),
-                             .key = sf::Keyboard::Key::Space,
-                             .restState = BarState::Selected};
-constexpr CasinoBar SPIN_ASKED_BAR{.label = SPIN_BAR.label,
-                                   .keyName = SPIN_BAR.keyName,
-                                   .area = SPIN_BAR.area,
-                                   .key = SPIN_BAR.key,
-                                   .restState = BarState::Pressed};
+/** @brief The bars of the band: CLEAR and REBET side by side, BACK under
+ * REBET. */
 constexpr CasinoBar CLEAR_BAR{.label = "CLEAR",
                               .keyName = "C",
-                              .area = sf::IntRect({396, 234}, {78, 16}),
+                              .area = sf::IntRect({312, 234}, {78, 16}),
                               .key = sf::Keyboard::Key::C};
 constexpr CasinoBar REBET_BAR{.label = "REBET",
                               .keyName = "R",
-                              .area = sf::IntRect({312, 253}, {78, 14}),
+                              .area = sf::IntRect({396, 234}, {78, 16}),
                               .key = sf::Keyboard::Key::R};
 constexpr CasinoBar TABLE_BACK_BAR{.label = BACK_LABEL,
                                    .keyName = CANCEL_KEY_NAME,
@@ -90,13 +80,15 @@ constexpr CasinoBar TABLE_BACK_BAR{.label = BACK_LABEL,
                                    .key = MENU_CANCEL_KEY};
 
 /**
- * @brief What the status line says: the table closed, no chip held, the bets
- * open with the seconds before they close, the wheel turning; at the result,
+ * @brief What the status line says: the table closed before the first state
+ * of the room, no chip held, the bets open with the seconds before they
+ * close, the wheel turning with the seconds before it stops; at the result,
  * the number and its color, then the gain or the loss of the player.
  */
 constexpr const char* TABLE_CLOSED_LINE = "THE TABLE IS CLOSED";
 constexpr const char* NO_CHIPS_LINE = "NO CHIPS - SEE THE CASHIER";
 constexpr const char* BETS_CLOSE_IN_START = "PLACE YOUR BETS - CLOSE IN ";
+constexpr const char* RESULT_IN_START = "NO MORE BETS - RESULT IN ";
 constexpr const char* NO_MORE_BETS_LINE = "NO MORE BETS";
 constexpr const char* RESULT_GAP = " ";
 constexpr const char* GAIN_GAP = "  ";
@@ -106,11 +98,24 @@ constexpr const char* RED_WORD = "RED";
 constexpr const char* BLACK_WORD = "BLACK";
 constexpr const char* GREEN_WORD = "GREEN";
 
+/** @brief What the status line says while the bets are open when the master
+ * refused the newest bets or the seat, by CasinoRefusal. */
+constexpr const char* BETS_CLOSED_LINE = "TOO LATE - THE BETS ARE CLOSED";
+constexpr const char* NOT_SEATED_LINE = "NO SEAT AT THIS TABLE YET";
+constexpr const char* RULE_BROKEN_LINE = "THE TABLE REFUSES THESE BETS";
+constexpr const char* NOT_ENOUGH_CHIPS_LINE =
+    "NOT ENOUGH CHIPS - SEE THE CASHIER";
+constexpr const char* ROOM_FULL_LINE = "THE TABLE IS FULL";
+constexpr const char* SIGNED_OUT_LINE = "SIGN IN TO PLAY";
+constexpr const char* CASINO_REFUSED_LINE = "THE CASINO REFUSED THE BETS";
+constexpr const char* CASINO_SILENT_LINE = "THE CASINO DOES NOT ANSWER";
+
 /**
- * @brief The pilots seated at the table, in a gold panel named TABLE: a row
- * per pilot, ROSTER_ROW_HEIGHT apart from ROSTER_FIRST_ROW, its color in a
- * square, its name, SPIN when it asked to spin, then its stake, or its gain
- * once the number is drawn, on the right.
+ * @brief The players seated in the room, in a gold panel its name tags: a row
+ * per player, ROSTER_ROW_HEIGHT apart from ROSTER_FIRST_ROW, its color in a
+ * square, its name, then its stake, or its gain once the number is drawn, on
+ * the right. The player comes first, and the panel lists ROSTER_MAXIMUM_ROWS
+ * at most, as many as fit above the table: (78 - 10 - 18) / 11, so 4.
  */
 constexpr sf::Vector2i ROSTER_TOP_LEFT(8, 10);
 constexpr int ROSTER_WIDTH = 176;
@@ -118,15 +123,14 @@ constexpr int ROSTER_EMPTY_HEIGHT = 18;
 constexpr int ROSTER_FIRST_ROW = 11;
 constexpr int ROSTER_ROW_HEIGHT = 11;
 constexpr sf::Vector2i ROSTER_TAG_OFFSET(8, -6);
-constexpr const char* ROSTER_TAG = "TABLE";
 constexpr int ROSTER_SQUARE_LEFT = 8;
 constexpr int ROSTER_SQUARE_SIZE = 6;
 constexpr int ROSTER_NAME_LEFT = 18;
-constexpr int ROSTER_SPIN_LEFT = 124;
 constexpr int ROSTER_VALUE_MARGIN = 8;
-constexpr const char* ROSTER_SPIN_MARK = "SPIN";
 constexpr const char* OWN_NAME_END = " (YOU)";
-constexpr const char* UNNAMED_PILOT_START = "PILOT ";
+constexpr std::size_t ROSTER_MAXIMUM_ROWS = static_cast<std::size_t>(
+    (ROULETTE_TABLE_TOP_LEFT.y - ROSTER_TOP_LEFT.y - ROSTER_EMPTY_HEIGHT) /
+    ROSTER_ROW_HEIGHT);
 
 /** @brief The plaque of the number drawn, under the wheel: its box, its
  * frames, the number twice as large, then its color and WINS beside it. */
@@ -138,8 +142,10 @@ constexpr sf::Vector2i RESULT_COLOR_WORD(206, 193);
 constexpr sf::Vector2i RESULT_WINS_WORD(206, 204);
 constexpr const char* WINS_WORD = "WINS";
 
-/** @brief The numbers drawn, newest first: LAST, then a box per number,
- * LAST_NUMBER_STEP apart from LAST_FIRST_BOX, the newest framed in gold. */
+/** @brief The numbers drawn, newest first, LAST_NUMBERS_KEPT at most: LAST,
+ * then a box per number, LAST_NUMBER_STEP apart from LAST_FIRST_BOX, the
+ * newest framed in gold. */
+constexpr std::size_t LAST_NUMBERS_KEPT = 7;
 constexpr sf::Vector2i LAST_CAPTION(300, 200);
 constexpr const char* LAST_CAPTION_TEXT = "LAST";
 constexpr sf::Vector2i LAST_FIRST_BOX(330, 198);

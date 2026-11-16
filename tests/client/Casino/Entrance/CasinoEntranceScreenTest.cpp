@@ -9,7 +9,6 @@
 #include "MotionPreference.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
-#include "TablePlace.hpp"
 
 using rtype::client::CASINO_BUY_CHIPS_SCREEN;
 using rtype::client::CASINO_CASH_OUT_SCREEN;
@@ -20,12 +19,13 @@ using rtype::client::testing::DOORS_AJAR_PICTURE;
 using rtype::client::testing::DOORS_CLOSED_PICTURE;
 using rtype::client::testing::DOORS_OPEN_PICTURE;
 using rtype::client::testing::DURING_THE_GREETING;
+using rtype::client::testing::FREE_ROOM;
 using rtype::client::testing::HALL_FIRST_LINE;
 using rtype::client::testing::JUST_BEFORE_THE_HALL;
 using rtype::client::testing::KOPECKS_HELD_TEXT;
+using rtype::client::testing::ROOMS_ASKED_AGAIN_AFTER;
 using rtype::client::testing::ROULETTE_WORD;
 using rtype::client::testing::WELCOME_FIRST_LINE;
-using rtype::network::TablePlace;
 using ::testing::ElementsAre;
 using ::testing::IsEmpty;
 using Key = sf::Keyboard::Key;
@@ -33,44 +33,49 @@ using Key = sf::Keyboard::Key;
 /**
  * Given a casino just opened
  * When it is painted
- * Then its doors are closed, the butler welcomes the player, and the player
- * is not seated at the table yet
+ * Then its doors are closed, and the butler welcomes the player
  */
 TEST_F(CasinoEntranceScreenFixture, OpensBeforeTheClosedDoors) {
   ASSERT_FALSE(canvas().images.empty());
   EXPECT_EQ(canvas().images.front().assetId, DOORS_CLOSED_PICTURE);
   EXPECT_NE(writingOf(canvas(), WELCOME_FIRST_LINE), nullptr);
-  EXPECT_THAT(casino().chosenPlaces(), IsEmpty());
+}
+
+/**
+ * Given a casino just opened
+ * When nothing is pressed
+ * Then the master was asked the rooms once
+ */
+TEST_F(CasinoEntranceScreenFixture, AsksTheRoomsAsItOpens) {
+  EXPECT_EQ(casino().roomsAsks, 1U);
+}
+
+/**
+ * Given a casino just opened
+ * When 5 s pass
+ * Then the master is asked the rooms again
+ */
+TEST_F(CasinoEntranceScreenFixture, AsksTheRoomsAgainEveryFiveSeconds) {
+  wait(ROOMS_ASKED_AGAIN_AFTER);
+
+  EXPECT_EQ(casino().roomsAsks, 2U);
 }
 
 /**
  * Given a casino before its doors
  * When Enter is pressed and released
- * Then the player is seated at the table of the room
+ * Then the doors open, and the player sits in no room yet
  */
-TEST_F(CasinoEntranceScreenFixture, EnterSeatsThePlayerAtTheTable) {
+TEST_F(CasinoEntranceScreenFixture, EnterSeatsThePlayerNowhere) {
   press(Key::Enter);
 
-  EXPECT_THAT(casino().chosenPlaces(), ElementsAre(TablePlace::AtTable));
-}
-
-/**
- * Given a casino before its doors
- * When Enter is held down, its press repeated by the system, then released
- * Then the player is seated once
- */
-TEST_F(CasinoEntranceScreenFixture, AHeldEnterSeatsThePlayerOnce) {
-  hold(Key::Enter);
-  hold(Key::Enter);
-  release(Key::Enter);
-
-  EXPECT_THAT(casino().chosenPlaces(), ElementsAre(TablePlace::AtTable));
+  EXPECT_THAT(casino().enteredRooms, IsEmpty());
 }
 
 /**
  * Given a casino before its doors
  * When Escape is pressed and released
- * Then the casino closes, back to the waiting room, the player never seated
+ * Then the casino closes, back to the map, the player never seated
  */
 TEST_F(CasinoEntranceScreenFixture, BackClosesTheCasinoWithoutSeating) {
   press(Key::Escape);
@@ -78,7 +83,7 @@ TEST_F(CasinoEntranceScreenFixture, BackClosesTheCasinoWithoutSeating) {
   EXPECT_THAT(navigator().calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::Pop,
                                         .screen = std::nullopt}));
-  EXPECT_THAT(casino().chosenPlaces(), IsEmpty());
+  EXPECT_THAT(casino().enteredRooms, IsEmpty());
 }
 
 /**
@@ -181,6 +186,34 @@ TEST_F(CasinoEntranceScreenFixture, EnterInTheHallOpensTheRoulette) {
 }
 
 /**
+ * Given the hall, the master listing a full room then a room with a seat free
+ * When Enter is pressed and released
+ * Then the player enters the room with a seat free
+ */
+TEST_F(CasinoEntranceScreenFixture, TheRouletteSeatsThePlayerInAFreeRoom) {
+  enterTheHall();
+
+  press(Key::Enter);
+
+  EXPECT_THAT(casino().enteredRooms, ElementsAre(FREE_ROOM));
+}
+
+/**
+ * Given the hall, every room of the master full
+ * When Enter is pressed and released
+ * Then the roulette does not open, and the player enters no room
+ */
+TEST_F(CasinoEntranceScreenFixture, TheRouletteWaitsForASeatFree) {
+  enterTheHall();
+  fillEveryRoom();
+
+  press(Key::Enter);
+
+  EXPECT_THAT(navigator().calls(), IsEmpty());
+  EXPECT_THAT(casino().enteredRooms, IsEmpty());
+}
+
+/**
  * Given the hall
  * When B is pressed and released
  * Then the cashier opens over the hall, to buy chips
@@ -232,16 +265,14 @@ TEST_F(CasinoEntranceScreenFixture, AHeldKeyOfTheHallActsOnce) {
 /**
  * Given the hall
  * When Escape is pressed and released
- * Then the player goes back to the room, after being seated, and the casino
- * closes
+ * Then the player gets up from its room, and the casino closes
  */
-TEST_F(CasinoEntranceScreenFixture, LeaveTakesThePlayerBackToTheRoom) {
+TEST_F(CasinoEntranceScreenFixture, LeaveGetsThePlayerUp) {
   enterTheHall();
 
   press(Key::Escape);
 
-  EXPECT_THAT(casino().chosenPlaces(),
-              ElementsAre(TablePlace::AtTable, TablePlace::InRoom));
+  EXPECT_EQ(casino().leaves, 1U);
   EXPECT_THAT(navigator().calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::Pop,
                                         .screen = std::nullopt}));

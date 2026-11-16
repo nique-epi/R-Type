@@ -2,6 +2,8 @@
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Window/Event.hpp>
 #include <SFML/Window/Mouse.hpp>
+#include <algorithm>
+#include <cstdint>
 #include <memory>
 #include <optional>
 #include <utility>
@@ -11,6 +13,8 @@
 #include "CasinoEntranceConstants.hpp"
 #include "CasinoEntrancePainting.hpp"
 #include "CasinoEntranceScreenParts.hpp"
+#include "CasinoRoom.hpp"
+#include "CasinoRoomListing.hpp"
 #include "CasinoScreenIdConstants.hpp"
 #include "EntranceStage.hpp"
 #include "EntranceView.hpp"
@@ -18,7 +22,6 @@
 #include "KeyChip.hpp"
 #include "MotionPreference.hpp"
 #include "PlayfieldMapping.hpp"
-#include "TablePlace.hpp"
 #include "TimeConstants.hpp"
 #include "WalletPurse.hpp"
 
@@ -42,6 +45,23 @@ bool skipsOpening(const sf::Event& event) {
          (click != nullptr && click->button == sf::Mouse::Button::Left);
 }
 
+/** @returns The first room of @p rooms with a seat free; nothing before the
+ * master listed them, or when every one is full. */
+std::optional<std::uint8_t> freeRoomOf(
+    const std::optional<network::CasinoRoomListing>& rooms) {
+  if (!rooms.has_value()) {
+    return std::nullopt;
+  }
+  const auto free = std::ranges::find_if(
+      rooms->rooms, [](const network::CasinoRoom& room) noexcept {
+        return room.seated < room.seats;
+      });
+  if (free == rooms->rooms.end()) {
+    return std::nullopt;
+  }
+  return free->id;
+}
+
 }  // namespace
 
 CasinoEntranceScreen::CasinoEntranceScreen(
@@ -57,7 +77,7 @@ CasinoEntranceScreen::CasinoEntranceScreen(
       doorsBackChip_(chipOf(
           DOORS_BACK_BAR, [this] { navigator_->pop(); }, parts.sounds)),
       rouletteChip_(chipOf(
-          ROULETTE_BAR, [this] { openOver(ROULETTE_SCREEN); }, parts.sounds)),
+          ROULETTE_BAR, [this] { playRoulette(); }, parts.sounds)),
       buyChipsChip_(chipOf(
           BUY_CHIPS_BAR, [this] { openOver(CASINO_BUY_CHIPS_SCREEN); },
           parts.sounds)),
@@ -65,6 +85,7 @@ CasinoEntranceScreen::CasinoEntranceScreen(
           CASH_OUT_BAR, [this] { openOver(CASINO_CASH_OUT_SCREEN); },
           parts.sounds)),
       leaveChip_(chipOf(LEAVE_BAR, [this] { leave(); }, parts.sounds)) {
+  casino_->askRooms();
   repaint();
 }
 
@@ -88,6 +109,12 @@ void CasinoEntranceScreen::handleEvent(const sf::Event& event) {
 
 void CasinoEntranceScreen::update(engine::Duration elapsed) {
   sinceStage_ += elapsed;
+  sinceRoomsAsked_ += elapsed;
+  if (sinceRoomsAsked_ >= HALL_ROOMS_REFRESH) {
+    sinceRoomsAsked_ = engine::Duration::zero();
+    casino_->askRooms();
+  }
+  rouletteChip_.setEnabled(freeRoomOf(casino_->rooms()).has_value());
   if (stage_ == EntranceStage::Opening && sinceStage_ >= OPENING_DURATION) {
     reach(EntranceStage::Hall);
   }
@@ -101,14 +128,20 @@ void CasinoEntranceScreen::draw(sf::RenderTarget& target) const {
 bool CasinoEntranceScreen::hidesScreensBelow() const { return true; }
 
 void CasinoEntranceScreen::enter() {
-  casino_->chooseTable(network::TablePlace::AtTable);
   reach(motion_ == MotionPreference::Full ? EntranceStage::Opening
                                           : EntranceStage::Hall);
 }
 
 void CasinoEntranceScreen::leave() {
-  casino_->chooseTable(network::TablePlace::InRoom);
+  casino_->leave();
   navigator_->pop();
+}
+
+void CasinoEntranceScreen::playRoulette() {
+  if (const std::optional<std::uint8_t> room = freeRoomOf(casino_->rooms())) {
+    casino_->enter(*room);
+    openOver(ROULETTE_SCREEN);
+  }
 }
 
 void CasinoEntranceScreen::openOver(ScreenId screen) {

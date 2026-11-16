@@ -14,32 +14,28 @@ class Event;
 namespace rtype::client {
 
 /**
- * @brief The four bars of the band of the table: SPIN, its key Space, CLEAR,
- * C, REBET, R, and BACK, MENU_CANCEL_KEY. Each acts once per hold of its key,
- * on its release. Once the player asked to spin, SPIN shows pressed.
+ * @brief The three bars of the band of the table: CLEAR, its key C, REBET, R,
+ * and BACK, MENU_CANCEL_KEY. Each acts once per hold of its key, on its
+ * release.
  */
 class RouletteBars {
  public:
   /** @param sounds Plays the clicks; it must outlive the bars. */
   RouletteBars(const RouletteBarActions& actions, ISoundPlayer& sounds);
 
-  /** @returns Whether one of the bars shown took @p event. */
+  /** @returns Whether one of the bars took @p event. */
   bool handleEvent(const sf::Event& event,
                    const PlayfieldMapping& playfieldPointAt);
 
-  /** @brief Enables the bars @p states opens, disables the others, and shows
-   * SPIN pressed when the player asked to spin. */
+  /** @brief Enables the bars @p states opens, disables the others. */
   void show(const RouletteBarStates& states);
 
   void paint(IInterfaceCanvas& canvas) const;
 
  private:
-  KeyChip spinChip_;
-  KeyChip spinAskedChip_;
   KeyChip clearChip_;
   KeyChip rebetChip_;
   KeyChip backChip_;
-  bool spinAsked_ = false;
 };
 
 }  // namespace rtype::client

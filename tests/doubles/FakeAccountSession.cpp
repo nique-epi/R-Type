@@ -17,7 +17,9 @@ std::uint64_t FakeAccountSession::accountId() const {
   return accountId_.value_or(rtype::network::GUEST_ACCOUNT_ID);
 }
 
-std::string FakeAccountSession::nickname() const { return {}; }
+std::string FakeAccountSession::nickname() const {
+  return signedIn() ? accountNickname : std::string{};
+}
 
 std::string FakeAccountSession::token() const {
   return signedIn() ? token_ : std::string{};

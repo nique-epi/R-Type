@@ -1,47 +1,39 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include <cstddef>
-#include <cstdint>
 #include <optional>
+#include "BetsReceipt.hpp"
 #include "RouletteMemory.hpp"
 #include "RouletteMemoryFixtures.hpp"
 #include "RouletteMemoryTestConstants.hpp"
-#include "RouletteRound.hpp"
 
 using rtype::client::RouletteMemory;
+using rtype::client::testing::A_CHIP_ON_RED;
 using rtype::client::testing::A_CHIP_ON_SEVENTEEN;
+using rtype::client::testing::CHIPS_LEFT;
 using rtype::client::testing::CHIPS_OF_THE_PLAYER;
-using rtype::client::testing::CHIPS_ONCE_LAID;
-using rtype::client::testing::COPIES_OF_A_RESULT;
+using rtype::client::testing::FIRST_ANSWER;
 using rtype::client::testing::FIRST_ROUND;
-using rtype::client::testing::LAST_SEVEN_NEWEST_FIRST;
+using rtype::client::testing::NEXT_ANSWER;
 using rtype::client::testing::NEXT_ROUND;
-using rtype::client::testing::NUMBERS_DRAWN;
-using rtype::client::testing::roundAt;
-using rtype::client::testing::SEVENTEEN_DRAWN;
-using rtype::network::RoulettePhase;
+using rtype::client::testing::refusedBets;
+using rtype::client::testing::roomAtRound;
+using rtype::client::testing::takenBets;
 using ::testing::ElementsAre;
-using ::testing::ElementsAreArray;
 using ::testing::IsEmpty;
 
 /**
- * Given a chip on 17 in a round, and the spin asked
+ * Given a chip on 17 in a round
  * When the next round opens
- * Then the slip is empty, the spin no longer asked, and the chip is among
- * the bets of the round before
+ * Then the slip is empty, and the chip is among the bets of the round before
  */
 TEST(RouletteMemory, ANewRoundPutsTheBetsAside) {
   RouletteMemory memory;
-  memory.follow(roundAt(FIRST_ROUND, RoulettePhase::Betting, 0),
-                CHIPS_OF_THE_PLAYER);
+  memory.follow(roomAtRound(FIRST_ROUND), std::nullopt);
   ASSERT_TRUE(memory.slip().lay(A_CHIP_ON_SEVENTEEN, CHIPS_OF_THE_PLAYER));
-  memory.askSpin();
 
-  memory.follow(roundAt(NEXT_ROUND, RoulettePhase::Betting, 0),
-                CHIPS_OF_THE_PLAYER);
+  memory.follow(roomAtRound(NEXT_ROUND), std::nullopt);
 
   EXPECT_THAT(memory.slip().bets(), IsEmpty());
-  EXPECT_FALSE(memory.spinAsked());
   EXPECT_THAT(memory.previousBets(), ElementsAre(A_CHIP_ON_SEVENTEEN));
 }
 
@@ -53,98 +45,94 @@ TEST(RouletteMemory, ANewRoundPutsTheBetsAside) {
  */
 TEST(RouletteMemory, ARoundWithoutBetsKeepsTheBetsBefore) {
   RouletteMemory memory;
-  memory.follow(roundAt(FIRST_ROUND, RoulettePhase::Betting, 0),
-                CHIPS_OF_THE_PLAYER);
+  memory.follow(roomAtRound(FIRST_ROUND), std::nullopt);
   ASSERT_TRUE(memory.slip().lay(A_CHIP_ON_SEVENTEEN, CHIPS_OF_THE_PLAYER));
-  memory.follow(roundAt(NEXT_ROUND, RoulettePhase::Betting, 0),
-                CHIPS_OF_THE_PLAYER);
+  memory.follow(roomAtRound(NEXT_ROUND), std::nullopt);
 
-  memory.follow(roundAt(NEXT_ROUND + 1, RoulettePhase::Betting, 0),
-                CHIPS_OF_THE_PLAYER);
+  memory.follow(roomAtRound(NEXT_ROUND + 1), std::nullopt);
 
   EXPECT_THAT(memory.previousBets(), ElementsAre(A_CHIP_ON_SEVENTEEN));
 }
 
 /**
- * Given a round at its result, seen three times
- * When the numbers drawn are read
- * Then its number is there once
+ * Given a chip on the slip
+ * When the room is left
+ * Then the slip is empty
  */
-TEST(RouletteMemory, AResultCountsOnce) {
+TEST(RouletteMemory, NoRoomDropsTheBets) {
   RouletteMemory memory;
-
-  for (int copy = 0; copy < COPIES_OF_A_RESULT; ++copy) {
-    memory.follow(roundAt(FIRST_ROUND, RoulettePhase::Result, SEVENTEEN_DRAWN),
-                  CHIPS_OF_THE_PLAYER);
-  }
-
-  EXPECT_THAT(memory.lastNumbers(), ElementsAre(SEVENTEEN_DRAWN));
-}
-
-/**
- * Given eight rounds drawn one after another
- * When the numbers drawn are read
- * Then the last seven show, the newest first
- */
-TEST(RouletteMemory, KeepsTheLastSevenNumbersNewestFirst) {
-  RouletteMemory memory;
-
-  for (std::size_t round = 0; round < NUMBERS_DRAWN.size(); ++round) {
-    memory.follow(roundAt(static_cast<std::uint16_t>(FIRST_ROUND + round),
-                          RoulettePhase::Result, NUMBERS_DRAWN.at(round)),
-                  CHIPS_OF_THE_PLAYER);
-  }
-
-  EXPECT_THAT(memory.lastNumbers(), ElementsAreArray(LAST_SEVEN_NEWEST_FIRST));
-}
-
-/**
- * Given a round whose number is drawn while the wheel turns
- * When it is followed while the wheel turns
- * Then its number is not among the numbers drawn yet
- */
-TEST(RouletteMemory, TheWheelTurningKeepsTheNumberSecret) {
-  RouletteMemory memory;
-
-  memory.follow(roundAt(FIRST_ROUND, RoulettePhase::Spinning, SEVENTEEN_DRAWN),
-                CHIPS_OF_THE_PLAYER);
-
-  EXPECT_THAT(memory.lastNumbers(), IsEmpty());
-}
-
-/**
- * Given a chip of 25 laid while the bets are open
- * When the wheel turns, the settings showing other chips
- * Then the chips held before the draw stay those once the chip was laid
- */
-TEST(RouletteMemory, KeepsTheChipsHeldWhenTheBetsClosed) {
-  RouletteMemory memory;
-  memory.follow(roundAt(FIRST_ROUND, RoulettePhase::Betting, 0),
-                CHIPS_OF_THE_PLAYER);
+  memory.follow(roomAtRound(FIRST_ROUND), std::nullopt);
   ASSERT_TRUE(memory.slip().lay(A_CHIP_ON_SEVENTEEN, CHIPS_OF_THE_PLAYER));
-  memory.follow(roundAt(FIRST_ROUND, RoulettePhase::Betting, 0),
-                CHIPS_OF_THE_PLAYER);
 
-  memory.follow(roundAt(FIRST_ROUND, RoulettePhase::Spinning, SEVENTEEN_DRAWN),
-                0);
-
-  EXPECT_EQ(memory.chipsBeforeDraw(), CHIPS_ONCE_LAID);
-}
-
-/**
- * Given a chip laid and the spin asked
- * When the table goes away, the session closed
- * Then the slip is empty and the spin no longer asked
- */
-TEST(RouletteMemory, NoTableDropsTheBetsOfTheRound) {
-  RouletteMemory memory;
-  memory.follow(roundAt(FIRST_ROUND, RoulettePhase::Betting, 0),
-                CHIPS_OF_THE_PLAYER);
-  ASSERT_TRUE(memory.slip().lay(A_CHIP_ON_SEVENTEEN, CHIPS_OF_THE_PLAYER));
-  memory.askSpin();
-
-  memory.follow(std::nullopt, CHIPS_OF_THE_PLAYER);
+  memory.follow(std::nullopt, std::nullopt);
 
   EXPECT_THAT(memory.slip().bets(), IsEmpty());
-  EXPECT_FALSE(memory.spinAsked());
+}
+
+/**
+ * Given a round in progress
+ * When the master answers it took a chip on 17
+ * Then the memory keeps its receipt, the chips left included
+ */
+TEST(RouletteMemory, KeepsTheReceiptOfTheBetsTaken) {
+  RouletteMemory memory;
+
+  memory.follow(roomAtRound(FIRST_ROUND),
+                takenBets(FIRST_ANSWER, FIRST_ROUND, {A_CHIP_ON_SEVENTEEN}));
+
+  ASSERT_TRUE(memory.accepted().has_value());
+  EXPECT_EQ(memory.accepted().value_or(rtype::network::BetsReceipt{}).chips,
+            CHIPS_LEFT);
+}
+
+/**
+ * Given a chip on 17 the master took, then a chip on red laid
+ * When the master refuses the bets with the chip on red
+ * Then the slip holds the chip on 17 alone, as the master does
+ */
+TEST(RouletteMemory, RefusedBetsLeaveTheBetsTakenOnTheCloth) {
+  RouletteMemory memory;
+  memory.follow(roomAtRound(FIRST_ROUND), std::nullopt);
+  ASSERT_TRUE(memory.slip().lay(A_CHIP_ON_SEVENTEEN, CHIPS_OF_THE_PLAYER));
+  memory.follow(roomAtRound(FIRST_ROUND),
+                takenBets(FIRST_ANSWER, FIRST_ROUND, {A_CHIP_ON_SEVENTEEN}));
+  ASSERT_TRUE(memory.slip().lay(A_CHIP_ON_RED, CHIPS_OF_THE_PLAYER));
+
+  memory.follow(roomAtRound(FIRST_ROUND),
+                refusedBets(NEXT_ANSWER, FIRST_ROUND));
+
+  EXPECT_THAT(memory.slip().bets(), ElementsAre(A_CHIP_ON_SEVENTEEN));
+}
+
+/**
+ * Given a refusal already read, then a chip laid again
+ * When the same refusal is read once more
+ * Then the chip stays: an answer is read once
+ */
+TEST(RouletteMemory, AnAnswerIsReadOnce) {
+  RouletteMemory memory;
+  memory.follow(roomAtRound(FIRST_ROUND),
+                refusedBets(FIRST_ANSWER, FIRST_ROUND));
+  ASSERT_TRUE(memory.slip().lay(A_CHIP_ON_SEVENTEEN, CHIPS_OF_THE_PLAYER));
+
+  memory.follow(roomAtRound(FIRST_ROUND),
+                refusedBets(FIRST_ANSWER, FIRST_ROUND));
+
+  EXPECT_THAT(memory.slip().bets(), ElementsAre(A_CHIP_ON_SEVENTEEN));
+}
+
+/**
+ * Given a chip laid on the next round
+ * When a refusal of the round before arrives late
+ * Then the chip stays
+ */
+TEST(RouletteMemory, AnAnswerOfAnotherRoundIsIgnored) {
+  RouletteMemory memory;
+  memory.follow(roomAtRound(NEXT_ROUND), std::nullopt);
+  ASSERT_TRUE(memory.slip().lay(A_CHIP_ON_SEVENTEEN, CHIPS_OF_THE_PLAYER));
+
+  memory.follow(roomAtRound(NEXT_ROUND),
+                refusedBets(FIRST_ANSWER, FIRST_ROUND));
+
+  EXPECT_THAT(memory.slip().bets(), ElementsAre(A_CHIP_ON_SEVENTEEN));
 }

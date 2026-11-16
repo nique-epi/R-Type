@@ -7,8 +7,8 @@ target_include_directories(rtype_client_casino_roulette_bets PUBLIC ${CMAKE_CURR
 
 target_link_libraries(rtype_client_casino_roulette_bets
   PUBLIC
+    rtype_client_connection_casino
     rtype_network_master_casino_cloth
-    rtype_network_master_casino_table
 )
 
 rtype_enable_warnings(rtype_client_casino_roulette_bets)

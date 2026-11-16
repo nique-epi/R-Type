@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cstdint>
-#include "RouletteRound.hpp"
+#include "RoulettePhase.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {

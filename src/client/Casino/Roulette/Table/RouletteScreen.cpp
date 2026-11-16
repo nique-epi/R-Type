@@ -5,9 +5,13 @@
 #include <SFML/Window/Keyboard.hpp>
 #include <SFML/Window/Mouse.hpp>
 #include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <optional>
 #include <utility>
+#include "BetsReading.hpp"
+#include "CasinoRefusal.hpp"
+#include "CasinoRoomState.hpp"
 #include "ChipRow.hpp"
 #include "ChipSelector.hpp"
 #include "ChipSelectorConstants.hpp"
@@ -15,13 +19,14 @@
 #include "ClothDirection.hpp"
 #include "ClothMoves.hpp"
 #include "HeldKey.hpp"
+#include "ICasinoChannel.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "InterfacePixel.hpp"
 #include "RouletteBarActions.hpp"
 #include "RouletteBet.hpp"
 #include "RoulettePainting.hpp"
+#include "RoulettePhase.hpp"
 #include "RouletteReading.hpp"
-#include "RouletteRound.hpp"
 #include "RouletteScene.hpp"
 #include "RouletteScreenConstants.hpp"
 #include "RouletteScreenParts.hpp"
@@ -50,9 +55,33 @@ std::optional<ClothDirection> directionOfKey(sf::Keyboard::Key key) {
   return std::nullopt;
 }
 
-/** @returns Whether @p round takes bets. */
-bool betsOpenIn(const std::optional<network::RouletteRound>& round) {
-  return round.has_value() && round->phase == network::RoulettePhase::Betting;
+/** @returns Whether @p room takes bets. */
+bool betsOpenIn(const std::optional<network::CasinoRoomState>& room) {
+  return room.has_value() && room->phase == network::RoulettePhase::Betting;
+}
+
+/** @returns The chips the player may lay on the round in progress: those the
+ * master left and those it holds on the cloth once it took bets of the round,
+ * those of @p wallet before. */
+std::uint32_t chipsAtHandOf(const RouletteMemory& memory,
+                            const IWallet& wallet) {
+  if (memory.accepted().has_value()) {
+    return memory.accepted()->chips + memory.accepted()->stake;
+  }
+  return walletChips(wallet).value_or(0);
+}
+
+/** @returns Why @p casino refused the newest bets on the round of @p room,
+ * or else the seat in it. */
+std::optional<CasinoRefusal> refusalOf(
+    const ICasinoChannel& casino,
+    const std::optional<network::CasinoRoomState>& room) {
+  const std::optional<BetsReading> bets = casino.lastBets();
+  if (room.has_value() && bets.has_value() && bets->refusal.has_value() &&
+      bets->round.round == room->round) {
+    return bets->refusal;
+  }
+  return casino.seatRefusal();
 }
 
 }  // namespace
@@ -64,19 +93,13 @@ RouletteScreen::RouletteScreen(RouletteScreenParts parts,
       casino_(&parts.casino.get()),
       memory_(&parts.memory.get()),
       wallet_(&parts.wallet.get()),
-      connection_(&parts.connection.get()),
-      waitingRoom_(&parts.waitingRoom.get()),
+      account_(&parts.account.get()),
       canvas_(std::move(canvas)),
       playfieldPointAt_(std::move(parts.playfieldPointAt)),
       palette_(parts.palette),
       motion_(parts.motion),
       bars_(
-          RouletteBarActions{.spin =
-                                 [this] {
-                                   memory_->askSpin();
-                                   send();
-                                 },
-                             .clear =
+          RouletteBarActions{.clear =
                                  [this] {
                                    memory_->slip().clear();
                                    send();
@@ -85,14 +108,13 @@ RouletteScreen::RouletteScreen(RouletteScreenParts parts,
                                  [this] {
                                    if (memory_->slip().replaceWith(
                                            memory_->previousBets(),
-                                           walletChips(*wallet_).value_or(0))) {
+                                           chipsAtHandOf(*memory_, *wallet_))) {
                                      send();
                                    }
                                  },
                              .back = [this] { navigator_->pop(); }},
           parts.sounds) {
-  seenRound_ = casino_->round();
-  memory_->follow(seenRound_, walletChips(*wallet_).value_or(0));
+  memory_->follow(casino_->room(), casino_->lastBets());
   repaint();
 }
 
@@ -110,15 +132,8 @@ void RouletteScreen::handleEvent(const sf::Event& event) {
   }
 }
 
-void RouletteScreen::update(engine::Duration elapsed) {
-  std::optional<network::RouletteRound> round = casino_->round();
-  memory_->follow(round, walletChips(*wallet_).value_or(0));
-  if (round != seenRound_) {
-    seenRound_ = std::move(round);
-    sinceRound_ = engine::Duration::zero();
-  } else {
-    sinceRound_ += elapsed;
-  }
+void RouletteScreen::update([[maybe_unused]] engine::Duration elapsed) {
+  memory_->follow(casino_->room(), casino_->lastBets());
   repaint();
 }
 
@@ -155,37 +170,39 @@ void RouletteScreen::pointerPressed(sf::Vector2i pixel) {
 }
 
 void RouletteScreen::layChip() {
-  const std::optional<network::RouletteRound> round = casino_->round();
-  memory_->follow(round, walletChips(*wallet_).value_or(0));
-  if (!betsOpenIn(round)) {
+  const std::optional<network::CasinoRoomState> room = casino_->room();
+  memory_->follow(room, casino_->lastBets());
+  if (!betsOpenIn(room)) {
     return;
   }
   network::RouletteBet bet = betAt(cursor_);
   bet.amount = CHIP_VALUES.at(chosenChip_);
-  if (memory_->slip().lay(bet, walletChips(*wallet_).value_or(0))) {
+  if (memory_->slip().lay(bet, chipsAtHandOf(*memory_, *wallet_))) {
     sounds_->play(CLICK_SOUND_ID);
     send();
   }
 }
 
 void RouletteScreen::send() {
-  casino_->placeBets(memory_->slip().bets(), memory_->spinAsked());
+  if (const std::optional<network::CasinoRoomState> room = casino_->room()) {
+    casino_->placeBets(room->round, memory_->slip().bets());
+  }
 }
 
 RouletteReading RouletteScreen::readTable() const {
+  const std::optional<network::CasinoRoomState> room = casino_->room();
   return RouletteReading{
-      .round = seenRound_,
-      .timeLeft = seenRound_.has_value()
-                      ? phaseTimeLeft(seenRound_->ticksLeft, sinceRound_)
-                      : engine::Duration::zero(),
-      .ownPlayerNumber = connection_->status().playerNumber,
-      .players = waitingRoom_->lobbyPlayers(),
-      .chipsHeld = walletChips(*wallet_).value_or(0),
-      .chipsBeforeDraw = memory_->chipsBeforeDraw(),
+      .room = room,
+      .ownNickname = account_->nickname(),
+      .walletChips = walletChips(*wallet_).value_or(0),
+      .chipsAtHand = chipsAtHandOf(*memory_, *wallet_),
       .bets = memory_->slip().bets(),
-      .spinAsked = memory_->spinAsked(),
+      .acceptedStake =
+          memory_->accepted().has_value() ? memory_->accepted()->stake : 0,
+      .ownBets =
+          room.has_value() ? casino_->ownBets(room->round) : std::nullopt,
+      .refusal = refusalOf(*casino_, room),
       .previousBets = memory_->previousBets(),
-      .lastNumbers = memory_->lastNumbers(),
       .cursor = cursor_,
       .chosenChip = chosenChip_,
       .palette = palette_,

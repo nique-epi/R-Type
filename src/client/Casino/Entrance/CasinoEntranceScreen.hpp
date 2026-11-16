@@ -19,22 +19,23 @@
 namespace rtype::client {
 
 /**
- * @brief The casino, the Bydo Palace, pushed over the waiting room, which it
+ * @brief The casino, the Bydo Palace, pushed over the server map, which it
  * hides.
  *
  * Before its closed doors, Balthazar, the Bydo butler, welcomes the player:
- * ENTER, its key MENU_CONFIRM_KEY, seats the player at the table of the room
- * (ICasinoChannel::chooseTable() with TablePlace::AtTable), then the doors
- * open while he greets and bows; any key or a click skips it. BACK,
- * MENU_CANCEL_KEY, closes the screen, back to the waiting room, the player
- * never seated.
+ * ENTER, its key MENU_CONFIRM_KEY, opens the doors while he greets and bows;
+ * any key or a click skips it. BACK, MENU_CANCEL_KEY, closes the screen, back
+ * to the map.
  *
  * Inside, the hall shows its menu in a gold panel and the balances of kopecks
- * and chips top right: ROULETTE, MENU_CONFIRM_KEY, pushes ROULETTE_SCREEN;
- * BUY CHIPS, BUY_CHIPS_KEY, and CASH OUT, CASH_OUT_KEY, push the cashier;
- * LEAVE, MENU_CANCEL_KEY, takes the player back to the room
- * (TablePlace::InRoom) and closes the screen. Each bar acts once per hold of
- * its key, on its release; before a screen is pushed over the hall, its bars
+ * and chips top right: ROULETTE, MENU_CONFIRM_KEY, seats the player in the
+ * first room of the master with a seat free (ICasinoChannel::enter()) and
+ * pushes ROULETTE_SCREEN, the bar waiting until the master listed such a
+ * room; the rooms are asked as the casino opens, then every
+ * HALL_ROOMS_REFRESH. BUY CHIPS, BUY_CHIPS_KEY, and CASH OUT, CASH_OUT_KEY,
+ * push the cashier; LEAVE, MENU_CANCEL_KEY, gets the player up from its room
+ * (ICasinoChannel::leave()) and closes the screen. Each bar acts once per hold
+ * of its key, on its release; before a screen is pushed over the hall, its bars
  * drop what they held, since the events stop reaching them.
  *
  * With MotionPreference::Reduced, ENTER opens the hall at once and the butler
@@ -60,11 +61,14 @@ class CasinoEntranceScreen final : public IScreen {
   [[nodiscard]] bool hidesScreensBelow() const override;
 
  private:
-  /** @brief Seats the player at the table, then opens the doors, or the hall
-   * at once with MotionPreference::Reduced. */
+  /** @brief Opens the doors, or the hall at once with
+   * MotionPreference::Reduced. */
   void enter();
-  /** @brief Takes the player back to the room, then closes the screen. */
+  /** @brief Gets the player up from its room, then closes the screen. */
   void leave();
+  /** @brief Seats the player in the first room with a seat free, then pushes
+   * the table; nothing before such a room is known. */
+  void playRoulette();
   /** @brief Drops what the bars of the hall held, then pushes @p screen. */
   void openOver(ScreenId screen);
   /** @brief Shows @p stage from its start. */
@@ -81,6 +85,8 @@ class CasinoEntranceScreen final : public IScreen {
   /** @brief How long the casino has shown its stage: where the doors and the
    * butler are. */
   engine::Duration sinceStage_{};
+  /** @brief How long ago the rooms were asked last. */
+  engine::Duration sinceRoomsAsked_{};
   KeyChip enterChip_;
   KeyChip doorsBackChip_;
   KeyChip rouletteChip_;

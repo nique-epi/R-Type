@@ -24,8 +24,8 @@ struct CasinoEntranceScreenParts {
   std::reference_wrapper<IScreenNavigator> navigator;
   /** @brief Plays the clicks of its bars, which must outlive the screen. */
   std::reference_wrapper<ISoundPlayer> sounds;
-  /** @brief The table the player sits at once inside, and leaves with LEAVE;
-   * it must outlive the screen. */
+  /** @brief The casino whose rooms the hall lists, which ROULETTE enters
+   * and LEAVE leaves; it must outlive the screen. */
   std::reference_wrapper<ICasinoChannel> casino;
   /** @brief The wallet of the account signed in, read at every repaint for
    * the balances; it must outlive the screen. */

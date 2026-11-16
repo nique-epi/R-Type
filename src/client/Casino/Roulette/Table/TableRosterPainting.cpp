@@ -1,11 +1,11 @@
 #include "TableRosterPainting.hpp"
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
+#include <string>
 #include <vector>
 #include "BackgroundColorConstants.hpp"
 #include "CasinoPainting.hpp"
 #include "IInterfaceCanvas.hpp"
-#include "InterfaceColorConstants.hpp"
 #include "RouletteScreenConstants.hpp"
 #include "TableRosterRow.hpp"
 #include "TextStyle.hpp"
@@ -23,10 +23,6 @@ void paintRow(IInterfaceCanvas& canvas, const TableRosterRow& row, int top) {
   paintEdges(canvas, square, row.colors.dark);
   canvas.write(row.name, {left + ROSTER_NAME_LEFT, top},
                TextStyle{.font = TextFont::Small, .color = STAR_WHITE});
-  if (row.spinAsked) {
-    canvas.write(ROSTER_SPIN_MARK, {left + ROSTER_SPIN_LEFT, top},
-                 TextStyle{.font = TextFont::Small, .color = HUD_CYAN});
-  }
   canvas.write(row.value, {left + ROSTER_WIDTH - ROSTER_VALUE_MARGIN, top},
                TextStyle{.font = TextFont::Small,
                          .color = row.valueColor,
@@ -36,14 +32,15 @@ void paintRow(IInterfaceCanvas& canvas, const TableRosterRow& row, int top) {
 }  // namespace
 
 void paintTableRoster(IInterfaceCanvas& canvas,
-                      const std::vector<TableRosterRow>& rows) {
-  if (rows.empty()) {
+                      const std::vector<TableRosterRow>& rows,
+                      const std::string& roomName) {
+  if (roomName.empty()) {
     return;
   }
   const int height =
       ROSTER_EMPTY_HEIGHT + (ROSTER_ROW_HEIGHT * static_cast<int>(rows.size()));
   paintGoldPanel(canvas, {ROSTER_TOP_LEFT, {ROSTER_WIDTH, height}});
-  paintNameTag(canvas, ROSTER_TOP_LEFT + ROSTER_TAG_OFFSET, ROSTER_TAG);
+  paintNameTag(canvas, ROSTER_TOP_LEFT + ROSTER_TAG_OFFSET, roomName);
   int top = ROSTER_TOP_LEFT.y + ROSTER_FIRST_ROW;
   for (const TableRosterRow& row : rows) {
     paintRow(canvas, row, top);

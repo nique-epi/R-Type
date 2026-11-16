@@ -1,51 +1,54 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <optional>
 #include <vector>
-#include "ChipMoves.hpp"
+#include "BetsReading.hpp"
+#include "CasinoRefusal.hpp"
+#include "CasinoRoomListing.hpp"
+#include "CasinoRoomState.hpp"
 #include "ICasinoChannel.hpp"
 #include "RouletteBet.hpp"
-#include "RouletteRound.hpp"
-#include "TablePlace.hpp"
+#include "RoundBets.hpp"
 
 /**
- * @brief Casino channel double that writes down every place chosen and every
- * set of bets sent with its vote, in order, and whose round and chip moves the
- * test sets: a real channel changes them on its own, at any time between two
- * updates.
+ * @brief Casino double that writes down every room entered, every leave, every
+ * ask for the rooms and every set of bets placed, in order, and whose rooms,
+ * room, refusal and answers the test sets: a real casino changes them on its
+ * own, at any time between two updates. Public so a test sets and reads them.
  */
-class RecordingCasinoChannel : public rtype::client::ICasinoChannel {
+class RecordingCasinoChannel final : public rtype::client::ICasinoChannel {
  public:
-  /** @brief Writes the place down. */
-  void chooseTable(rtype::network::TablePlace place) override;
-  /** @brief Writes the bets and the vote of the spin down. */
-  void placeBets(std::vector<rtype::network::RouletteBet> bets,
-                 bool spinVote) override;
-  [[nodiscard]] std::optional<rtype::network::RouletteRound> round()
+  [[nodiscard]] std::optional<rtype::network::CasinoRoomListing> rooms()
       const override;
-  /** @brief Hands over the moves set with setChipMoves(), once. */
-  [[nodiscard]] rtype::client::ChipMoves takeChipMoves() override;
+  /** @brief Counts the ask. */
+  void askRooms() override;
+  /** @brief Writes the room down. */
+  void enter(std::uint8_t room) override;
+  /** @brief Counts the leave. */
+  void leave() override;
+  [[nodiscard]] std::optional<rtype::network::CasinoRoomState> room()
+      const override;
+  [[nodiscard]] std::optional<rtype::client::CasinoRefusal> seatRefusal()
+      const override;
+  /** @brief Writes the round and the bets down. */
+  void placeBets(std::uint64_t round,
+                 const std::vector<rtype::network::RouletteBet>& bets) override;
+  [[nodiscard]] std::optional<rtype::client::BetsReading> lastBets()
+      const override;
+  [[nodiscard]] std::optional<rtype::network::RoundBets> ownBets(
+      std::uint64_t round) const override;
 
-  void setRound(std::optional<rtype::network::RouletteRound> round);
-  void setChipMoves(rtype::client::ChipMoves moves);
+  std::optional<rtype::network::CasinoRoomListing> listedRooms;
+  std::optional<rtype::network::CasinoRoomState> roomState;
+  std::optional<rtype::client::CasinoRefusal> refusedSeat;
+  std::optional<rtype::client::BetsReading> betsAnswer;
+  std::optional<rtype::network::RoundBets> roundBets;
 
-  /** @returns The places chooseTable() was called with, in order. */
-  [[nodiscard]] const std::vector<rtype::network::TablePlace>& chosenPlaces()
-      const;
-  /** @returns How many times placeBets() was called. */
-  [[nodiscard]] std::size_t betsLaid() const;
-  /** @returns The bets placeBets() was called with, in order. */
-  [[nodiscard]] const std::vector<std::vector<rtype::network::RouletteBet>>&
-  sentBets() const;
-  /** @returns The votes of the spin placeBets() was called with, in order. */
-  [[nodiscard]] const std::vector<bool>& spinVotes() const;
-
- private:
-  std::optional<rtype::network::RouletteRound> round_;
-  rtype::client::ChipMoves chipMoves_{};
-  std::vector<rtype::network::TablePlace> chosenPlaces_;
-  std::size_t betsLaid_{0};
-  std::vector<std::vector<rtype::network::RouletteBet>> sentBets_;
-  std::vector<bool> spinVotes_;
+  std::vector<std::uint8_t> enteredRooms;
+  std::size_t leaves{};
+  std::size_t roomsAsks{};
+  std::vector<std::uint64_t> betRounds;
+  std::vector<std::vector<rtype::network::RouletteBet>> sentBets;
 };

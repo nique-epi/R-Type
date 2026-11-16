@@ -37,6 +37,9 @@ constexpr engine::Duration DOORS_OPEN_AFTER =
 constexpr engine::Duration OPENING_DURATION =
     DOORS_OPEN_AFTER * OPENING_POSE_COUNT;
 
+/** @brief How often the hall asks the master its rooms again. */
+constexpr engine::Duration HALL_ROOMS_REFRESH = std::chrono::seconds(5);
+
 /** @brief What the butler says before the doors, then in the hall. */
 constexpr ButlerLine WELCOME_LINE{.first = "WELCOME TO THE BYDO PALACE, PILOT.",
                                   .second = "THE TABLES ARE OPEN TONIGHT."};
@@ -44,7 +47,7 @@ constexpr ButlerLine HALL_LINE{.first = "WHAT SHALL IT BE TONIGHT, PILOT?",
                                .second = "THE CASHIER CHANGES BOTH WAYS."};
 
 /** @brief The two bars before the doors, on the bottom edge of the panel of
- * the butler: ENTER, which opens them, and BACK, to the waiting room. */
+ * the butler: ENTER, which opens them, and BACK, to the map. */
 constexpr CasinoBar ENTER_BAR{.label = "ENTER",
                               .keyName = CONFIRM_KEY_NAME,
                               .area = sf::IntRect({216, 254}, {104, 14}),

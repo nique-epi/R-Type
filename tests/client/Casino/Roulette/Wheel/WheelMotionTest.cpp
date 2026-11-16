@@ -2,7 +2,7 @@
 #include <SFML/System/Vector2.hpp>
 #include <cmath>
 #include "MotionPreference.hpp"
-#include "RouletteRound.hpp"
+#include "RoulettePhase.hpp"
 #include "TimeConstants.hpp"
 #include "WheelMoment.hpp"
 #include "WheelMotion.hpp"
