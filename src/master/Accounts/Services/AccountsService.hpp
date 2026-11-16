@@ -8,6 +8,7 @@
 #include "CreatedSession.hpp"
 #include "CredentialsAttempt.hpp"
 #include "CredentialsRefusal.hpp"
+#include "ISessionAccounts.hpp"
 #include "Logger.hpp"
 #include "MasterDatabase.hpp"
 #include "NewUser.hpp"
@@ -26,7 +27,7 @@ namespace rtype::master {
  * only when its account exists: a nickname is public anyway, on every
  * leaderboard, and a creation says whether it is taken.
  */
-class AccountsService {
+class AccountsService final : public ISessionAccounts {
  public:
   /** @param key The key every password hash is encrypted with. */
   AccountsService(MasterDatabase& database, const network::PasswordKey& key);
@@ -61,8 +62,8 @@ class AccountsService {
    * a token not well formed, unknown or expired. A session last moved more
    * than SESSION_REFRESH_AGE ago expires SESSION_LIFETIME after @p now.
    */
-  std::optional<network::User> userOfToken(std::string_view token,
-                                           std::chrono::sys_seconds now);
+  [[nodiscard]] std::optional<network::User> userOfToken(
+      std::string_view token, std::chrono::sys_seconds now) override;
 
   /** @brief Closes the session of @p token; nothing for a token no session
    * has. */

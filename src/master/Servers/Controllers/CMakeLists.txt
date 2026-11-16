@@ -10,6 +10,7 @@ target_include_directories(rtype_master_servers_controllers PUBLIC ${CMAKE_CURRE
 target_link_libraries(rtype_master_servers_controllers
   PUBLIC
     rtype_engine_commands
+    rtype_master_accounts_contract
     rtype_master_http_module
     rtype_master_probe_module
     rtype_master_servers_services
