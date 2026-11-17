@@ -5,9 +5,10 @@
 namespace rtype::server {
 
 /**
- * @brief Why the network thread rejected a datagram, one value per count of the
- * rejection report. The values are fixed by the code, never by what a sender
- * writes, so no sender can make the server count anything else.
+ * @brief Why a datagram was rejected, by the network thread, or refused, by the
+ * lobby, one value per count of the rejection report. The values are fixed by
+ * the code, never by what a sender writes, so no sender can make the server
+ * count anything else.
  */
 enum class RejectionCause : std::uint8_t {
   /** @brief Shorter than the packet header. */
@@ -42,6 +43,12 @@ enum class RejectionCause : std::uint8_t {
   InformationQueueFull,
   /** @brief Made the probe queue discard its oldest datagram. */
   ProbeQueueFull,
+  /**
+   * @brief A connection request the lobby refused: the game was full or in
+   * progress, the nickname taken, the version another. Counted here rather
+   * than written one line each, since any sender can repeat it.
+   */
+  RefusedConnection,
 };
 
 }  // namespace rtype::server

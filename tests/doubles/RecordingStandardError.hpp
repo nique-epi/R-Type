@@ -18,7 +18,8 @@ class RecordingStandardError {
   RecordingStandardError(RecordingStandardError&&) = delete;
   RecordingStandardError& operator=(RecordingStandardError&&) = delete;
 
-  /** @returns The lines received so far, in order. */
+  /** @returns The lines received so far, in order, once the journal wrote
+   * every line queued before the call. */
   [[nodiscard]] std::vector<std::string> lines() const;
 
  private:

@@ -9,6 +9,7 @@ export const enPages: PageCopy = {
     ranking: 'Leaderboard',
     wiki: 'Wiki',
     team: 'Team',
+    signUp: 'Sign up',
   },
   site: {
     metaDescription:
@@ -349,6 +350,63 @@ export const enPages: PageCopy = {
       notCopiedYet: 'The key is not copied yet.',
       copiedLine: 'Key copied to the clipboard.',
       copyFailed: 'The browser refused the copy: select the key by hand.',
+    },
+  },
+  signUpPage: {
+    eyebrow: 'Pilot account',
+    title: 'Sign up',
+    lede: 'Create your pilot account: your nickname is yours, on every server.',
+    home: 'Back to the home page',
+    download: 'Download the game',
+    form: {
+      title: 'New account',
+      nickname: 'Nickname',
+      nicknamePlaceholder: 'ACE',
+      counter: '{length} / {maximum}',
+      password: 'Password',
+      passwordHelp: '{minimum} characters at least',
+      confirmation: 'Confirm the password',
+      noEmailTitle: 'No e-mail',
+      noEmail:
+        'An account has no e-mail address: a forgotten password cannot be recovered, so keep it safe. The master limits how many accounts one address creates per hour.',
+      submit: 'Create the account',
+      pending: 'Creating...',
+      problems: {
+        nicknameRequired: 'Choose a nickname',
+        nicknameTooLong:
+          'This nickname is too long: {maximum} characters at most, an accented letter counts as two',
+        nicknameUnprintable:
+          'This nickname holds a character the game cannot show',
+        passwordTooShort:
+          'This password is too short: {minimum} characters at least',
+        passwordTooLong:
+          'This password is too long: {maximum} characters at most',
+        passwordUnprintable:
+          'This password holds a character the master refuses',
+        confirmationDifferent: 'The two passwords differ',
+      },
+    },
+    problems: {
+      taken: {
+        title: 'Nickname taken',
+        text: 'Another pilot already has this nickname, whatever its case. Choose another one.',
+      },
+      quota: {
+        title: 'Quota reached',
+        text: 'Too many accounts were created from your address in the last hour. Try again later: what you typed is kept.',
+      },
+      refused: {
+        title: 'Account refused',
+        text: 'The master does not take this nickname or this password. Check them and try again.',
+      },
+      unreachable: {
+        title: 'Master unreachable',
+        text: 'The master does not answer. Try again in a moment: what you typed is kept.',
+      },
+    },
+    created: {
+      title: 'Account created',
+      welcome: 'Welcome, {nickname}. Your nickname is reserved.',
     },
   },
   teamPage: {

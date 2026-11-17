@@ -2,6 +2,7 @@
 
 #include <string>
 #include <string_view>
+#include "SiteClaim.hpp"
 
 /** @brief A call a test makes to a route of the master. */
 struct RouteCall {
@@ -13,4 +14,7 @@ struct RouteCall {
   /** @brief Whether the call comes as Caddy forwards a client that came over
    * HTTPS: it then carries `X-Forwarded-Proto: https`. */
   bool overHttps{false};
+  /** @brief The site key and the visitor it names, each sent when it is not
+   * empty. */
+  rtype::master::SiteClaim site{};
 };

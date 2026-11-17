@@ -1,23 +1,51 @@
 #include "GameSpawner.hpp"
+#include <array>
 #include <cstdint>
 #include <exception>
 #include <limits>
 #include <memory>
 #include <optional>
 #include <random>
+#include <sstream>
 #include <string>
 #include <utility>
 #include "Endpoint.hpp"
+#include "EventField.hpp"
 #include "GameCommand.hpp"
 #include "GameLaunch.hpp"
 #include "GameOpening.hpp"
 #include "GameRules.hpp"
 #include "GameSpawnerParts.hpp"
 #include "IChildProcess.hpp"
+#include "LogEvent.hpp"
+#include "LogLevel.hpp"
+#include "Logger.hpp"
 #include "NetworkConstants.hpp"
+#include "ServerConstants.hpp"
 #include "SupervisedGamesConstants.hpp"
 
 namespace rtype::server {
+
+namespace {
+
+/** @brief Writes the info event of the game @p launch started: its number and
+ * the port it listens on. */
+void writeStarted(const logging::Logger& logger, const GameLaunch& launch) {
+  std::ostringstream message;
+  message << "game " << launch.number << " started on port " << launch.port;
+  const std::string text = message.str();
+  const std::array fields{
+      logging::EventField{.name = GAME_FIELD,
+                          .value = std::int64_t{launch.number}},
+      logging::EventField{.name = PORT_FIELD,
+                          .value = std::int64_t{launch.port}}};
+  logger.event(logging::LogEvent{.level = logging::LogLevel::Info,
+                                 .name = GAME_STARTED_EVENT,
+                                 .message = text,
+                                 .fields = fields});
+}
+
+}  // namespace
 
 GameSpawner::GameSpawner(GameSpawnerParts parts)
     : parts_(std::move(parts)), logger_(std::string{SUPERVISOR_LOGGER_NAME}) {}
@@ -46,7 +74,7 @@ bool GameSpawner::openGame(std::optional<network::Endpoint> creator,
             .address = std::string{network::LOOPBACK_IPV4_ADDRESS},
             .port = launch.port},
         launch.linkToken);
-    logger_.info("game ", launch.number, " started on port ", launch.port);
+    writeStarted(logger_, launch);
   } catch (const std::exception& error) {
     logger_.error("cannot start game ", number, ": ", error.what());
     return false;
