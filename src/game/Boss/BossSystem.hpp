@@ -27,7 +27,8 @@ struct Health;
  * - Created: the players are warned with a BossArrival, and the boss gets a
  *   Summoning of BOSS_ARRIVAL_WARNING_TICKS ticks, which keeps it harmless
  *   and unsteered, where it appeared, while the warning lasts
- *   (SummoningSystem counts it down);
+ *   (SummoningSystem counts it down), and an Armored for its arrival attack,
+ *   so no hit takes anything from it while it arrives;
  * - Warned: once nothing summons it any more, its health is scaled for the
  *   players and the difficulty (see scaledBossHealth()), and its behaviour
  *   brings it in;
@@ -60,8 +61,9 @@ class BossSystem final : public engine::ISystem {
               engine::Duration elapsed) override;
 
  private:
-  /** @brief Warns the players of @p boss and keeps it harmless for the
-   * warning. Never called while the components are visited. */
+  /** @brief Warns the players of @p boss, keeps it harmless for the warning
+   * and armors it for its arrival. Never called while the components are
+   * visited. */
   void warn(engine::ComponentRegistry& components, engine::Entity boss) const;
 
   /** @brief Scales @p health, the health of a boss whose warning just ended,

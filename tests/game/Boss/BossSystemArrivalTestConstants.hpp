@@ -10,6 +10,9 @@ namespace rtype::game::testing {
 constexpr std::uint32_t ARRIVING_BOSS_ID = 61;
 constexpr std::uint8_t ARRIVING_BOSS_SHEET_NUMBER = 7;
 
+/** @brief The attack of its arrival, during which no hit hurts it. */
+constexpr std::uint8_t ARRIVAL_ATTACK_OF_THE_BOSS = 4;
+
 /** @brief The players are warned of a boss 4400 ms before anything steers
  * it, which is 264 ticks of a game at 60 ticks a second. */
 constexpr std::uint32_t MILLISECONDS_OF_A_BOSS_WARNING = 4400;

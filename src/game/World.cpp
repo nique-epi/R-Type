@@ -6,7 +6,6 @@
 #include <memory>
 #include <optional>
 #include <utility>
-#include "Armored.hpp"
 #include "BodyPlacement.hpp"
 #include "Boss.hpp"
 #include "CollisionBox.hpp"
@@ -168,8 +167,8 @@ bool isShootable(const EntitySheet& sheet) {
 
 /** @brief Gives @p start the parts that decide what its contact with a ship
  * or a missile does, or what leaving the playfield does: the CurrentAction of
- * an enemy, then the HurtZone, the SurvivesContact, the Fragile, the Armored
- * and the StaysOutside its sheet declares, the Shootable of a missile
+ * an enemy, then the HurtZone, the SurvivesContact, the Fragile and the
+ * StaysOutside its sheet declares, the Shootable of a missile
  * SHOOTABLE_MISSILE_SHEETS names, and the LookItem of a look item. */
 void addContactParts(engine::ComponentRegistry& components,
                      const BodyStart& start) {
@@ -185,9 +184,6 @@ void addContactParts(engine::ComponentRegistry& components,
   }
   if (sheet.fragileIn.has_value()) {
     components.add(start.body, Fragile{.in = *sheet.fragileIn});
-  }
-  if (sheet.armoredIn.has_value()) {
-    components.add(start.body, Armored{.attack = *sheet.armoredIn});
   }
   if (sheet.staysOutside) {
     components.add(start.body, StaysOutside{});
