@@ -1,6 +1,5 @@
 #include "PlayfieldExitSystemFixture.hpp"
 #include <vector>
-#include "Boss.hpp"
 #include "CollisionBox.hpp"
 #include "Direction.hpp"
 #include "Entity.hpp"
@@ -11,6 +10,7 @@
 #include "NetworkIdentity.hpp"
 #include "PlayfieldExitSystemTestConstants.hpp"
 #include "Position.hpp"
+#include "StaysOutside.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::game::testing {
@@ -59,10 +59,11 @@ engine::Entity PlayfieldExitSystemFixture::addSteeredMissile(
   return missile;
 }
 
-engine::Entity PlayfieldExitSystemFixture::addBoss(float positionX) {
-  const engine::Entity boss = add(EntityType::Enemy, positionX);
-  components_.add(boss, Boss{});
-  return boss;
+engine::Entity PlayfieldExitSystemFixture::addEnemyThatStaysOutside(
+    float positionX) {
+  const engine::Entity enemy = add(EntityType::Enemy, positionX);
+  components_.add(enemy, StaysOutside{});
+  return enemy;
 }
 
 void PlayfieldExitSystemFixture::updateAndDispatch() {

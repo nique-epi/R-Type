@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <span>
 #include <vector>
-#include "Bounds.hpp"
+#include "ContactShape.hpp"
 #include "EntityDestroyed.hpp"
 #include "EntitySpawned.hpp"
 #include "IOwnMissileListener.hpp"
@@ -88,7 +88,7 @@ class OwnMissiles final : public IOwnMissileListener {
   OwnMissilesParts parts_;
   PredictedGun gun_;
   std::vector<OwnMissile> missiles_;
-  std::vector<engine::Bounds> enemyBoxes_;
+  std::vector<game::ContactShape> enemyShapes_;
   std::uint32_t newestInput_{0};
   bool active_{false};
 };

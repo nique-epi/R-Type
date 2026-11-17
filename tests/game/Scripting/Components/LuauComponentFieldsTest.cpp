@@ -1,12 +1,15 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <memory>
 #include "CollisionBox.hpp"
+#include "CollisionMask.hpp"
 #include "Entity.hpp"
 #include "Gun.hpp"
 #include "Health.hpp"
 #include "Intent.hpp"
 #include "LuauComponentFieldsTestConstants.hpp"
 #include "LuauScriptedBodies.hpp"
+#include "PixelMask.hpp"
 #include "Position.hpp"
 #include "ScoreValue.hpp"
 #include "SteadyMotion.hpp"
@@ -348,4 +351,27 @@ TEST(LuauComponentFields, ARefusedWriteNamesItsLine) {
   static_cast<void>(bodies.steer(FIELD_BEHAVIOUR, body));
 
   EXPECT_THAT(bodies.failures().messages, ElementsAre(HasSubstr(WRITING_LINE)));
+}
+
+/**
+ * Given a script that makes the box of its body 40 by 30
+ * When a body with a collision mask steers with it
+ * Then its mask is emptied: it is touched anywhere in the box it wrote
+ */
+TEST(LuauComponentFields, AWrittenBoxForgetsTheMaskOfItsBody) {
+  LuauScriptedBodies bodies;
+  bodies.load(BOX_WRITING_SCRIPT);
+  const Entity body = bodies.addBody();
+  bodies.components().add(body, BOX_OFF_CENTER);
+  bodies.components().add(
+      body, rtype::game::CollisionMask{
+                .pixels = std::make_shared<rtype::engine::PixelMask>(
+                    MASK_OF_THE_BOX_PIXELS, MASK_OF_THE_BOX_PIXELS)});
+
+  static_cast<void>(bodies.steer(FIELD_BEHAVIOUR, body));
+
+  const auto* const mask =
+      bodies.components().get<rtype::game::CollisionMask>(body);
+  ASSERT_NE(mask, nullptr);
+  EXPECT_EQ(mask->pixels, nullptr);
 }

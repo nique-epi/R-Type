@@ -82,6 +82,9 @@ rage_below_percent = 50
 rage_attack = 9
 arrival_attack = 0
 
+# Its charge takes it past the left edge and back: leaving never removes it.
+[gameplay.stays_outside]
+
 [gameplay.survives_contact]
 
 # Burst: 5 missiles fanned over 48 degrees from the mouth; enraged, 7.
@@ -324,6 +327,9 @@ attack = 15
 phase = "strike"
 from_ms = 0
 until_ms = 1200
+
+[gameplay.mask]
+file = "masks/bydo_tyrant.txt"
 
 [appearance]
 sheet = "sprites/mobs/bydo_tyrant.png"

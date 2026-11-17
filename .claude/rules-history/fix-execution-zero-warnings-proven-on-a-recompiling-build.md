@@ -146,3 +146,7 @@ The Windows job of the pull request failed: `SettingsFileTest.cpp(147,1): warnin
 
 1. **A body that leaves early on one platform puts the rest in the `#else` branch**: `#ifdef _WIN32` then `GTEST_SKIP()`, `return` or `throw`, `#else` the rest, `#endif`. MSVC compiles with `/W4`, which reports the code after the exit as unreachable (`C4702`), and `/WX` makes it an error. Clang and GCC, with `-Wall -Wextra -Wpedantic`, never warn on it, and they do not even compile the `_WIN32` branch, so no local build can show it.
 2. **Before pushing an `#ifdef` that exits on one platform, read what follows its `#endif` in the same body**: any statement there is unreachable on that platform.
+
+## Update (2026-11-15) — A JSON value compared with a string view
+
+`JournalLineTest.cpp` compared `nlohmann::json::parse(line).at("message")` with `std::string_view` constants. AppleClang compiled it, the Windows job of PR 363 stopped on `C2666` (`operator ==`: overloaded functions have similar conversions) in `gtest.h`. Root cause: the JSON overload and the synthesized `std::basic_string_view` comparison are equally good conversions for MSVC. Fix: `.get<std::string>()` before the comparison, as the neighbouring launch option tests did.

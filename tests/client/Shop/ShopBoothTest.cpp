@@ -6,18 +6,38 @@
 #include "RecordingInterfaceCanvas.hpp"
 #include "ShopBoothFixture.hpp"
 #include "ShopScreenTestConstants.hpp"
+#include "SoundConstants.hpp"
+#include "SpokenLineConstants.hpp"
+#include "TimeConstants.hpp"
 
 using rtype::client::Ambience;
+using rtype::client::BOTTLES_CLINK_SOUND_ID;
+using rtype::client::BYDO_VOICE_FIRST_SOUND_ID;
+using rtype::client::SPOKEN_LINGER_TIME;
 using rtype::client::testing::A_QUARTER_OF_HIS_BREATH;
+using rtype::client::testing::ABACUS_MIDDLE;
+using rtype::client::testing::BESIDE_THE_BOTTLES;
 using rtype::client::testing::BESIDE_THE_RADIO;
+using rtype::client::testing::BORDER_RADIO_WORD;
+using rtype::client::testing::BOTTLES_MIDDLE;
+using rtype::client::testing::DANCE_RADIO_WORD;
 using rtype::client::testing::FAR_FROM_THE_RADIO;
+using rtype::client::testing::FIRST_BOTTLES_WORD;
+using rtype::client::testing::FIRST_COUNTER_WORD;
 using rtype::client::testing::KEEPER_AT_HIS_LOWEST;
 using rtype::client::testing::KEEPER_AT_REST;
+using rtype::client::testing::LAST_COUNTER_WORD;
 using rtype::client::testing::RADIO_FRAME_CORNER;
 using rtype::client::testing::RADIO_HINT_LINE;
+using rtype::client::testing::RADIO_HINT_WORD;
 using rtype::client::testing::RADIO_MIDDLE;
+using rtype::client::testing::SECOND_BOTTLES_WORD;
+using rtype::client::testing::SECOND_COUNTER_WORD;
 using rtype::client::testing::SHOP_KEEPER_SHEET;
+using rtype::client::testing::SHOP_MUSIC_WORD;
 using rtype::client::testing::ShopBoothFixture;
+using rtype::client::testing::TEA_MIDDLE;
+using rtype::engine::Duration;
 using Key = sf::Keyboard::Key;
 
 namespace {
@@ -77,11 +97,25 @@ TEST_F(ShopBoothFixture, RTunesTheRadio) {
 }
 
 /**
- * Given the radio playing its own music
+ * Given the radio playing the theme of Papers, Please
+ * When R is pressed and released again
+ * Then the radio plays Kavorka
+ */
+TEST_F(ShopBoothFixture, ASecondRTunesTheRadioToKavorka) {
+  press(Key::R);
+
+  press(Key::R);
+
+  EXPECT_EQ(ambience(), Ambience::ShopDance);
+}
+
+/**
+ * Given the radio playing Kavorka
  * When R is pressed and released again
  * Then the music of the shop comes back
  */
-TEST_F(ShopBoothFixture, ASecondRBringsTheMusicOfTheShopBack) {
+TEST_F(ShopBoothFixture, AThirdRBringsTheMusicOfTheShopBack) {
+  press(Key::R);
   press(Key::R);
 
   press(Key::R);
@@ -173,4 +207,133 @@ TEST_F(ShopBoothFixture, TheFrameOfTheRadioGoesWithThePointer) {
 
   EXPECT_FALSE(litPixelsOf(painting()).contains(RADIO_FRAME_CORNER));
   EXPECT_EQ(writingOf(painting(), RADIO_HINT_LINE), nullptr);
+}
+
+/**
+ * Given a shop opened over the server map
+ * When it shows
+ * Then the shopkeeper speaks at once, with the first sound of his voice
+ */
+TEST_F(ShopBoothFixture, TheShopkeeperGreetsThePlayer) {
+  EXPECT_NE(std::ranges::find(played(), BYDO_VOICE_FIRST_SOUND_ID),
+            played().end());
+}
+
+/**
+ * Given a shop that shows lines whole, its greeting said
+ * When the greeting lingered its time
+ * Then the shopkeeper says where his radio is
+ */
+TEST_F(ShopBoothFixture, TheRadioHintFollowsTheGreeting) {
+  reopenWithLessMotion();
+  wait(Duration::zero());
+  ASSERT_EQ(writingOf(painting(), RADIO_HINT_WORD), nullptr);
+
+  wait(SPOKEN_LINGER_TIME);
+
+  EXPECT_NE(writingOf(painting(), RADIO_HINT_WORD), nullptr);
+}
+
+/**
+ * Given a shop that shows lines whole
+ * When the bottles are clicked, then clicked again
+ * Then the shopkeeper says his first line on them, then his second
+ */
+TEST_F(ShopBoothFixture, AClickOnTheBottlesHasTheShopkeeperGuardThem) {
+  reopenWithLessMotion();
+
+  click(BOTTLES_MIDDLE);
+  wait(Duration::zero());
+  EXPECT_NE(writingOf(painting(), FIRST_BOTTLES_WORD), nullptr);
+
+  click(BOTTLES_MIDDLE);
+  wait(Duration::zero());
+  EXPECT_NE(writingOf(painting(), SECOND_BOTTLES_WORD), nullptr);
+}
+
+/**
+ * Given a shop that shows lines whole
+ * When the wood just left of the bottles is clicked
+ * Then the shopkeeper says nothing of them
+ */
+TEST_F(ShopBoothFixture, AClickBesideTheBottlesLeavesThemUnguarded) {
+  reopenWithLessMotion();
+
+  click(BESIDE_THE_BOTTLES);
+  wait(Duration::zero());
+
+  EXPECT_EQ(writingOf(painting(), FIRST_BOTTLES_WORD), nullptr);
+}
+
+/**
+ * Given a shop that shows lines whole, its greeting said
+ * When the bottles are clicked, then the line lingers its time
+ * Then the radio hint, which was to follow the greeting, never comes
+ */
+TEST_F(ShopBoothFixture, ANewLineCutsTheRadioHint) {
+  reopenWithLessMotion();
+  click(BOTTLES_MIDDLE);
+
+  wait(SPOKEN_LINGER_TIME);
+
+  EXPECT_EQ(writingOf(painting(), RADIO_HINT_WORD), nullptr);
+}
+
+/**
+ * Given a shop that shows lines whole
+ * When R tunes the radio to Papers, Please, to Kavorka, then back
+ * Then the shopkeeper speaks of Arstotzka, of a fast music, then of Moscow
+ */
+TEST_F(ShopBoothFixture, TheRadioTunedHasTheShopkeeperSpeakOfIt) {
+  reopenWithLessMotion();
+
+  press(Key::R);
+  wait(Duration::zero());
+  EXPECT_NE(writingOf(painting(), BORDER_RADIO_WORD), nullptr);
+
+  press(Key::R);
+  wait(Duration::zero());
+  EXPECT_NE(writingOf(painting(), DANCE_RADIO_WORD), nullptr);
+
+  press(Key::R);
+  wait(Duration::zero());
+  EXPECT_NE(writingOf(painting(), SHOP_MUSIC_WORD), nullptr);
+}
+
+/**
+ * Given a shop
+ * When the bottles are clicked, then the wood just left of them
+ * Then the bottles clink once, for the click on them only
+ */
+TEST_F(ShopBoothFixture, AClickOnTheBottlesMakesThemClink) {
+  click(BOTTLES_MIDDLE);
+  click(BESIDE_THE_BOTTLES);
+
+  EXPECT_EQ(std::ranges::count(played(), BOTTLES_CLINK_SOUND_ID), 1);
+}
+
+/**
+ * Given a shop that shows lines whole
+ * When the abacus is clicked, then the tea, then the abacus twice more
+ * Then the shopkeeper says his first line on them, his second, then his
+ * last, and his last again: the abacus and the tea count together
+ */
+TEST_F(ShopBoothFixture, TheAbacusAndTheTeaHaveThreeLinesThenTheLast) {
+  reopenWithLessMotion();
+
+  click(ABACUS_MIDDLE);
+  wait(Duration::zero());
+  EXPECT_NE(writingOf(painting(), FIRST_COUNTER_WORD), nullptr);
+
+  click(TEA_MIDDLE);
+  wait(Duration::zero());
+  EXPECT_NE(writingOf(painting(), SECOND_COUNTER_WORD), nullptr);
+
+  click(ABACUS_MIDDLE);
+  wait(Duration::zero());
+  EXPECT_NE(writingOf(painting(), LAST_COUNTER_WORD), nullptr);
+
+  click(ABACUS_MIDDLE);
+  wait(Duration::zero());
+  EXPECT_NE(writingOf(painting(), LAST_COUNTER_WORD), nullptr);
 }

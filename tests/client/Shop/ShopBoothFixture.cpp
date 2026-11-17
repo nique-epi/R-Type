@@ -2,6 +2,8 @@
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <memory>
+#include <string>
+#include <vector>
 #include "Ambience.hpp"
 #include "KeyPress.hpp"
 #include "MotionPreference.hpp"
@@ -67,5 +69,9 @@ void ShopBoothFixture::click(sf::Vector2i pixel) {
 void ShopBoothFixture::close() { screen_.reset(); }
 
 Ambience ShopBoothFixture::ambience() const { return audio_.ambience(); }
+
+const std::vector<std::string>& ShopBoothFixture::played() const {
+  return sounds_.played();
+}
 
 }  // namespace rtype::client::testing

@@ -1,10 +1,9 @@
 #pragma once
 
 #include <gtest/gtest.h>
-#include <sstream>
-#include <streambuf>
 #include <string>
-#include "Logger.hpp"
+#include "CerrCapture.hpp"
+#include "LogLevel.hpp"
 
 /** @brief Starts each test at the warn level with no output, keeps what reaches
  * standard error, and puts the Logger back afterwards. */
@@ -17,6 +16,5 @@ class LogLaunchOptionsFixture : public ::testing::Test {
 
  private:
   rtype::logging::LogLevel savedLevel_{rtype::logging::LogLevel::Info};
-  std::ostringstream standardError_;
-  std::streambuf* originalBuffer_{nullptr};
+  CerrCapture standardError_;
 };

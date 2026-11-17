@@ -9,6 +9,7 @@ target_link_libraries(rtype_game_hurt_zone_system
     rtype_engine_event_bus
     rtype_engine_collision
     rtype_game_components
+    rtype_game_contacts
     rtype_game_events
 )
 

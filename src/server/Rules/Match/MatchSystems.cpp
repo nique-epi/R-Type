@@ -46,20 +46,15 @@ void runWorldSystems(GameContext& game, game::World& world) {
   game.systems.get().run(world.components(), engine::SIMULATION_TICK_DURATION);
 }
 
-/** @returns The boss stage of the level played in @p world; nullptr in a
- * game that plays a level a script directs. */
-std::unique_ptr<BossStage> bossStageFor(GameContext& game, game::World& world) {
+/** @returns The boss stage of the level played in @p world, its boss created
+ * through @p orders; nullptr in a game that plays a level a script directs. */
+std::unique_ptr<BossStage> bossStageFor(GameContext& game, game::World& world,
+                                        game::IEntityOrders& orders) {
   if (game.settings.level.has_value()) {
     return nullptr;
   }
-  return std::make_unique<BossStage>(
-      BossStageParts{.world = world,
-                     .roster = game.roster.get(),
-                     .send = game.send,
-                     .events = game.events.get(),
-                     .types = game.settings.types,
-                     .boss = game.settings.waves.boss,
-                     .healthPercent = game.settings.waves.bossHealthPercent});
+  return std::make_unique<BossStage>(BossStageParts{
+      .world = world, .orders = orders, .boss = game.settings.waves.boss});
 }
 
 /** @returns The spawner of the Bydos of @p world, its draws from @p seed;
@@ -183,7 +178,7 @@ MatchSystems::MatchSystems(const MatchSystemsParts& parts)
       volleySystem_(volleySystemFor(game_, world_)),
       entityOrders_(entityOrdersFor(game_, world_)),
       levelDirector_(levelDirectorFor(game_, world_, *entityOrders_)),
-      bossStage_(bossStageFor(game_, world_)),
+      bossStage_(bossStageFor(game_, world_, *entityOrders_)),
       lifeKeeper_(lifeKeeperFor(parts)),
       lookItemKeeper_(lookItemKeeperFor(game_, world_)) {}
 

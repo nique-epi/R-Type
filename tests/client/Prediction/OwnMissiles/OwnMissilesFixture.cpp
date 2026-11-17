@@ -1,9 +1,12 @@
 #include "OwnMissilesFixture.hpp"
 #include <cstdint>
+#include <optional>
 #include <vector>
+#include "CollisionMask.hpp"
 #include "ComponentRegistry.hpp"
 #include "Entity.hpp"
 #include "EntityType.hpp"
+#include "EntityTypeLook.hpp"
 #include "FixedEntityTypeSourceConstants.hpp"
 #include "HitboxParts.hpp"
 #include "OwnMissiles.hpp"
@@ -67,6 +70,19 @@ void OwnMissilesFixture::enemyAt(game::Position position) {
   components_.add(enemy, game::EntityType::Enemy);
   components_.add(enemy, BYDO_BOX);
   components_.add(enemy, game::Sprite{});
+}
+
+void OwnMissilesFixture::hollowEnemyAt(game::Position position) {
+  const engine::Entity enemy = entities_.create();
+  components_.add(enemy, position);
+  components_.add(enemy, game::EntityType::Enemy);
+  components_.add(enemy, BYDO_BOX);
+  components_.add(enemy, game::Sprite{});
+  const std::optional<EntityTypeLook> look =
+      types_.lookOf(HOLLOW_ENEMY_TYPE_NUMBER);
+  if (look.has_value()) {
+    components_.add(enemy, game::CollisionMask{.pixels = look->mask});
+  }
 }
 
 void OwnMissilesFixture::enemyOfTwoBoxesAt(game::Position position) {

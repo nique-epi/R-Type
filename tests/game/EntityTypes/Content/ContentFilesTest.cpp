@@ -12,6 +12,8 @@
 #include "EngineException.hpp"
 #include "EntitySheet.hpp"
 #include "GameException.hpp"
+#include "SheetMaskText.hpp"
+#include "SheetText.hpp"
 #include "ShippedEntitySheets.hpp"
 #include "TemporaryFolder.hpp"
 
@@ -21,6 +23,9 @@ using rtype::game::contentFilesIn;
 using rtype::game::DuplicateEntityTypeException;
 using rtype::game::EntitySheet;
 using rtype::game::SharedContentFileException;
+using rtype::game::SheetMaskText;
+using rtype::game::SheetText;
+using rtype::game::sheetTextsOf;
 using rtype::game::testing::ART_SPRITE_SHEET;
 using rtype::game::testing::ASSETS_OF_THE_STACK;
 using rtype::game::testing::BYDO_PIXELS;
@@ -31,6 +36,7 @@ using rtype::game::testing::DRIFTER_SHEET_FILE;
 using rtype::game::testing::EXAMPLE_RESOURCE;
 using rtype::game::testing::EXAMPLE_RESOURCE_SHEET;
 using rtype::game::testing::EXAMPLE_RESOURCE_SPRITES;
+using rtype::game::testing::FILES_OF_A_SHEET_ITS_MASK_AND_ITS_IMAGE;
 using rtype::game::testing::FILES_OF_ONE_SHEET_AND_ITS_IMAGE;
 using rtype::game::testing::FILES_OF_THE_STACK;
 using rtype::game::testing::FILES_OF_TWO_SHEETS_AND_ONE_IMAGE;
@@ -50,6 +56,8 @@ using rtype::game::testing::SHIPPED_ENTITY_SPRITES;
 using rtype::game::testing::shippedAssetFolder;
 using rtype::game::testing::shippedEntitySheets;
 using rtype::game::testing::UNNAMED_SPRITE_SHEET;
+using rtype::game::testing::WEAVER_MASK;
+using rtype::game::testing::WEAVER_MASK_FILE;
 using rtype::game::testing::WEAVER_SHEET_FILE;
 using rtype::identifiers::ContentFile;
 
@@ -72,6 +80,48 @@ TEST(ContentFiles, ListsTheSheetsAndTheSpriteSheetsTheyName) {
   EXPECT_EQ(files[0].path, DRIFTER_SHEET_FILE);
   EXPECT_EQ(files[1].path, WEAVER_SHEET_FILE);
   EXPECT_EQ(files[2].path, SHARED_SPRITE_SHEET);
+}
+
+/**
+ * Given a sheet, its mask file and the sprite sheet it names
+ * When the content of their folder is listed
+ * Then the mask file is listed with every byte it holds, so a client reads
+ * the mask of a sheet it was sent
+ */
+TEST(ContentFiles, ListsTheMaskFileOfASheet) {
+  const TemporaryFolder assets;
+  assets.write(WEAVER_SHEET_FILE, SHEET_NAMING_THE_BYDOS);
+  assets.write(WEAVER_MASK_FILE, WEAVER_MASK);
+  assets.write(SHARED_SPRITE_SHEET, BYDO_PIXELS);
+
+  const std::vector<ContentFile> files =
+      contentFilesIn(std::array{assets.path()});
+
+  ASSERT_EQ(files.size(), FILES_OF_A_SHEET_ITS_MASK_AND_ITS_IMAGE);
+  EXPECT_EQ(files[0].path, WEAVER_MASK_FILE);
+  EXPECT_EQ(files[0].bytes, WEAVER_MASK);
+}
+
+/**
+ * Given the files of a pack: a sheet, its mask file and its sprite sheet
+ * When the sheets among them are read
+ * Then there is one sheet, carrying the mask file: a mask file is no sheet
+ */
+TEST(ContentFiles, GivesASheetOfAPackItsMaskFile) {
+  const std::vector<ContentFile> files{
+      ContentFile{.path = std::string{WEAVER_MASK_FILE},
+                  .bytes = std::string{WEAVER_MASK}},
+      ContentFile{.path = std::string{WEAVER_SHEET_FILE},
+                  .bytes = std::string{SHEET_NAMING_THE_BYDOS}},
+      ContentFile{.path = std::string{SHARED_SPRITE_SHEET},
+                  .bytes = std::string{BYDO_PIXELS}}};
+
+  const std::vector<SheetText> sheets =
+      sheetTextsOf(files, std::filesystem::path{});
+
+  ASSERT_EQ(sheets.size(), 1U);
+  ASSERT_TRUE(sheets.front().mask.has_value());
+  EXPECT_EQ(sheets.front().mask.value_or(SheetMaskText{}).text, WEAVER_MASK);
 }
 
 /**

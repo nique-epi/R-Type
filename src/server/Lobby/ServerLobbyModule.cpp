@@ -17,6 +17,8 @@
 #include "IPlayerAdmission.hpp"
 #include "InstallContext.hpp"
 #include "ModuleConstants.hpp"
+#include "RejectionCause.hpp"
+#include "RejectionLedger.hpp"
 #include "RunningGame.hpp"
 #include "ServerConstants.hpp"
 #include "TickDatagrams.hpp"
@@ -42,6 +44,7 @@ void ServerLobbyModule::install(engine::InstallContext& context) {
   sender_ = &context.require<IDatagramSender>();
   admission_ = &context.require<IPlayerAdmission>();
   tickDatagrams_ = &context.require<TickDatagrams>();
+  rejections_ = &context.require<RejectionLedger>();
   content_ = contentAnnouncementOf(contentFolders_, contentPort_);
   context.addWork(SIMULATION_STAGE,
                   [this]([[maybe_unused]] engine::Duration elapsed) {
@@ -63,6 +66,10 @@ void ServerLobbyModule::start() {
       .onPlayerJoined =
           [seating](ConnectedPlayer& player) {
             seating->onPlayerJoined(player);
+          },
+      .onRefused =
+          [rejections = rejections_](const network::Endpoint& sender) {
+            rejections->record(RejectionCause::RefusedConnection, sender);
           },
       .content = content_});
 }

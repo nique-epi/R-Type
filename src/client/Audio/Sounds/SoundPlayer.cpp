@@ -2,6 +2,7 @@
 #include <SFML/Audio/Sound.hpp>
 #include <SFML/Audio/SoundBuffer.hpp>
 #include <SFML/Audio/SoundSource.hpp>
+#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <span>
@@ -11,31 +12,49 @@
 #include "SettingId.hpp"
 #include "SettingsService.hpp"
 #include "SoundBank.hpp"
+#include "SoundConstants.hpp"
 #include "VoiceChoice.hpp"
 #include "VoiceState.hpp"
 
 namespace rtype::client {
 
+namespace {
+
+/** @returns Whether @p soundId is the voice of a character, of
+ * VOICE_SOUND_IDS. */
+bool isVoiceSound(std::string_view soundId) {
+  return std::ranges::any_of(
+      VOICE_SOUND_IDS,
+      [soundId](std::string_view voice) noexcept { return voice == soundId; });
+}
+
+}  // namespace
+
 SoundPlayer::SoundPlayer(const SoundBank& bank, const SettingsService& settings)
     : bank_(&bank),
       settings_(&settings),
-      volume_(effectsVolumeOf(settings.settings())) {
+      volume_(effectsVolumeOf(settings.settings())),
+      voicesVolume_(voicesVolumeOf(settings.settings())) {
   voices_.reserve(SOUND_VOICE_LIMIT);
   startRanks_.reserve(SOUND_VOICE_LIMIT);
 }
 
 void SoundPlayer::play(std::string_view soundId) {
-  if (volume_ <= 0.0F) {
+  const float volume = isVoiceSound(soundId) ? voicesVolume_ : volume_;
+  if (volume <= 0.0F) {
     return;
   }
   sf::Sound& voice = voiceFor(bank_->sound(soundId));
-  voice.setVolume(volume_);
+  voice.setVolume(volume);
   voice.play();
 }
 
 void SoundPlayer::settingChanged(SettingId changed) {
   if (changesEffectsVolume(changed)) {
     volume_ = effectsVolumeOf(settings_->settings());
+  }
+  if (changesVoicesVolume(changed)) {
+    voicesVolume_ = voicesVolumeOf(settings_->settings());
   }
 }
 

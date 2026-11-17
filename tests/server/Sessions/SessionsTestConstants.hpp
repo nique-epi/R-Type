@@ -3,6 +3,7 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <string_view>
 
 namespace rtype::server::testing {
 
@@ -98,5 +99,12 @@ constexpr std::uint32_t CLIENT_SHOWN_TICK = 300;
  * no tick ran for 3 s.
  */
 constexpr std::chrono::seconds SOME_STALL{3};
+
+/** @brief The events the journal names for a player who left, was expelled,
+ * went away or timed out. */
+constexpr std::string_view LEFT_EVENT_NAME = "player.left";
+constexpr std::string_view EXPELLED_EVENT_NAME = "player.expelled";
+constexpr std::string_view AWAY_EVENT_NAME = "player.away";
+constexpr std::string_view TIMED_OUT_EVENT_NAME = "player.timed_out";
 
 }  // namespace rtype::server::testing

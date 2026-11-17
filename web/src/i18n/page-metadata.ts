@@ -7,6 +7,7 @@ import { readLocale } from './read-locale';
 type TitledPage =
   | 'serversPage'
   | 'hostPage'
+  | 'signUpPage'
   | 'rankingPage'
   | 'teamPage'
   | 'downloadPage';

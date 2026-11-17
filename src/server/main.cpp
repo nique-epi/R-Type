@@ -1,3 +1,4 @@
+#include <array>
 #include <exception>
 #include <filesystem>
 #include <functional>
@@ -16,12 +17,16 @@
 #include "ConfigurationSource.hpp"
 #include "ConfigurationStep.hpp"
 #include "EnsureLines.hpp"
+#include "EnvironmentVariable.hpp"
+#include "EventField.hpp"
 #include "GameLaunchOptions.hpp"
 #include "GameLineRule.hpp"
 #include "GameProcessModules.hpp"
 #include "IModule.hpp"
 #include "LaunchArguments.hpp"
 #include "LaunchOptions.hpp"
+#include "LogEvent.hpp"
+#include "LogLevel.hpp"
 #include "Logger.hpp"
 #include "LoopStages.hpp"
 #include "MasterConstants.hpp"
@@ -69,7 +74,15 @@ struct ProgramRun {
  */
 void reportFailure(const ProgramRun& program, const std::string& text) {
   const rtype::logging::Logger logger{std::string{program.loggerName}};
-  logger.error(program.label, " stopped: ", text);
+  const std::string message = std::string{program.label} + " stopped: " + text;
+  const std::array fields{rtype::logging::EventField{
+      .name = rtype::server::PROGRAM_FIELD, .value = program.label}};
+  logger.event(
+      rtype::logging::LogEvent{.level = rtype::logging::LogLevel::Error,
+                               .name = rtype::server::PROGRAM_STOPPED_EVENT,
+                               .message = message,
+                               .fields = fields});
+  rtype::logging::flushJournal();
   std::cerr << program.label << " stopped: " << text << '\n';
 }
 
@@ -77,7 +90,8 @@ void reportFailure(const ProgramRun& program, const std::string& text) {
  * @brief Runs the modules of @p program until Ctrl-C, SIGTERM or a failure
  * asks it to stop, then stops them.
  * @returns the exit code: 0 once the program stopped when asked, 1 after an
- *          error, which is logged and printed. No exception leaves it.
+ *          error, which is logged and printed. No exception leaves it. The
+ *          journal is written to its end before it returns.
  */
 int runUntilStopped(const ProgramRun& program) {
   rtype::server::StopRequest stopRequest;
@@ -107,6 +121,7 @@ int runUntilStopped(const ProgramRun& program) {
     exitCode = 1;
   }
   stopRequest.announceStopped();
+  rtype::logging::closeJournal();
   return exitCode;
 }
 
@@ -188,6 +203,12 @@ int runSupervisor(std::span<const std::string_view> options) {
       }});
 }
 
+/** @returns The value of PASSWORD_KEY_VARIABLE, empty when it is unset. */
+std::string passwordKeyText() {
+  return rtype::logging::readEnvironment(rtype::master::PASSWORD_KEY_VARIABLE)
+      .value_or(std::string{});
+}
+
 /**
  * @brief Runs the master with @p options, or prints its usage.
  * @returns the exit code of the master.
@@ -214,7 +235,8 @@ int runMaster(std::span<const std::string_view> options) {
             launchOptions->logOptions(),
             [&stopRequest](const std::string& reason) {
               stopRequest.fail(reason);
-            });
+            },
+            passwordKeyText());
       }});
 }
 

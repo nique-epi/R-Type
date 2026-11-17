@@ -58,6 +58,13 @@ static_assert(TIME_BETWEEN_HEARTBEATS > engine::Duration::zero(),
  */
 constexpr std::string_view SESSIONS_LOGGER_NAME = "Sessions";
 
+/** @brief The events of a player who went silent, left, was expelled by the
+ * host, or stayed silent past the limit of its session. */
+constexpr std::string_view PLAYER_AWAY_EVENT = "player.away";
+constexpr std::string_view PLAYER_LEFT_EVENT = "player.left";
+constexpr std::string_view PLAYER_EXPELLED_EVENT = "player.expelled";
+constexpr std::string_view PLAYER_TIMED_OUT_EVENT = "player.timed_out";
+
 /**
  * @brief Why a game drops a datagram whose sender is not one of its players,
  * as its lines say; a header it does not speak is dropped for

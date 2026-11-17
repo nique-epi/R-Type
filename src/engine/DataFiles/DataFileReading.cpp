@@ -185,6 +185,14 @@ std::int64_t wholeNumberAt(const DataFileTable& table, std::string_view key,
   return *number;
 }
 
+std::int64_t wholeNumberOrZeroAt(const DataFileTable& table,
+                                 std::string_view key, WholeNumberRange range) {
+  if (!table.table.get().contains(key)) {
+    return 0;
+  }
+  return wholeNumberAt(table, key, range);
+}
+
 Duration millisecondsAt(const DataFileTable& table, std::string_view key,
                         WholeNumberRange range) {
   return std::chrono::milliseconds{wholeNumberAt(table, key, range)};

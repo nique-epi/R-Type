@@ -85,6 +85,59 @@ TEST_F(BossPresentationFixture, AGameEndedAfterTheFightBringsTheMusicBack) {
 }
 
 /**
+ * Given a game that plays a level, its boss fighting, its music playing
+ * When it is defeated, while the level goes on
+ * Then the music of the game is played again
+ */
+TEST_F(BossPresentationFixture, ADefeatedBossOfALevelBringsTheMusicBack) {
+  presentation().followLevel();
+  presentation().apply(PRESENTED_BOSS_ARRIVING);
+  presentation().apply(PRESENTED_BOSS_FIGHTING);
+
+  presentation().apply(PRESENTED_BOSS_DEFEATED);
+
+  EXPECT_EQ(audio().musicCalls(),
+            (std::vector<MusicCall>{MusicCall::Silence, MusicCall::BossMusic,
+                                    MusicCall::GameMusic}));
+}
+
+/**
+ * Given a game of waves, its boss fighting, its music playing
+ * When it is defeated
+ * Then the music of the boss goes on until the game ends
+ */
+TEST_F(BossPresentationFixture, ADefeatedBossOfTheWavesKeepsItsMusic) {
+  presentation().apply(PRESENTED_BOSS_ARRIVING);
+  presentation().apply(PRESENTED_BOSS_FIGHTING);
+
+  presentation().apply(PRESENTED_BOSS_DEFEATED);
+
+  EXPECT_EQ(audio().musicCalls(),
+            (std::vector<MusicCall>{MusicCall::Silence, MusicCall::BossMusic}));
+}
+
+/**
+ * Given a game that plays a level, a first boss defeated
+ * When a second boss arrives
+ * Then the alarm plays again, and its music is asked for again
+ */
+TEST_F(BossPresentationFixture, ASecondBossOfALevelSoundsTheAlarmAgain) {
+  presentation().followLevel();
+  presentation().apply(PRESENTED_BOSS_ARRIVING);
+  presentation().apply(PRESENTED_BOSS_FIGHTING);
+  presentation().apply(PRESENTED_BOSS_DEFEATED);
+
+  presentation().apply(PRESENTED_BOSS_ARRIVING);
+
+  EXPECT_EQ(sounds().played(), (std::vector<std::string>{BOSS_ALARM_SOUND_ID,
+                                                         BOSS_ALARM_SOUND_ID}));
+  EXPECT_EQ(audio().musicCalls(),
+            (std::vector<MusicCall>{MusicCall::Silence, MusicCall::BossMusic,
+                                    MusicCall::GameMusic, MusicCall::Silence,
+                                    MusicCall::BossMusic}));
+}
+
+/**
  * Given the boss arriving, the music silenced
  * When the game ends
  * Then the music of the game is played again
@@ -152,4 +205,51 @@ TEST_F(BossPresentationFixture, TheBarShowsOnceTheBossFights) {
   presentation().apply(PRESENTED_BOSS_FIGHTING);
 
   EXPECT_TRUE(presentation().look(FlashPreference::Full).bar.shown);
+}
+
+/**
+ * Given a game that plays a level, its boss fighting, its music playing
+ * When a restart from a checkpoint removes the boss
+ * Then its bar goes
+ */
+TEST_F(BossPresentationFixture, ARemovedBossLeavesNoBar) {
+  presentation().followLevel();
+  presentation().apply(PRESENTED_BOSS_ARRIVING);
+  presentation().apply(PRESENTED_BOSS_FIGHTING);
+
+  presentation().apply(PRESENTED_BOSS_REMOVED);
+
+  EXPECT_FALSE(presentation().look(FlashPreference::Full).bar.shown);
+}
+
+/**
+ * Given a game that plays a level, its boss fighting, its music playing
+ * When a restart from a checkpoint removes the boss
+ * Then the music of the game is played again
+ */
+TEST_F(BossPresentationFixture, ARemovedBossBringsTheMusicOfTheGameBack) {
+  presentation().followLevel();
+  presentation().apply(PRESENTED_BOSS_ARRIVING);
+  presentation().apply(PRESENTED_BOSS_FIGHTING);
+
+  presentation().apply(PRESENTED_BOSS_REMOVED);
+
+  EXPECT_EQ(audio().musicCalls(),
+            (std::vector<MusicCall>{MusicCall::Silence, MusicCall::BossMusic,
+                                    MusicCall::GameMusic}));
+}
+
+/**
+ * Given a game of waves, its boss fighting, its music playing
+ * When the body of the boss is destroyed by a kill
+ * Then the music of the boss goes on until the game ends
+ */
+TEST_F(BossPresentationFixture, AKilledBossKeepsItsMusicInTheWaves) {
+  presentation().apply(PRESENTED_BOSS_ARRIVING);
+  presentation().apply(PRESENTED_BOSS_FIGHTING);
+
+  presentation().apply(PRESENTED_BOSS_KILLED);
+
+  EXPECT_EQ(audio().musicCalls(),
+            (std::vector<MusicCall>{MusicCall::Silence, MusicCall::BossMusic}));
 }

@@ -22,6 +22,10 @@ class BossTracker {
   /** @returns The fight as known so far. */
   [[nodiscard]] const BossFight& fight() const;
 
+  /** @brief Forgets the boss, as if no status had come: no bar, no
+   * arrival. */
+  void forget();
+
   /** @returns The time since the boss stage started, or nothing when no
    * Arriving status came. */
   [[nodiscard]] std::optional<engine::Duration> sinceArrival(

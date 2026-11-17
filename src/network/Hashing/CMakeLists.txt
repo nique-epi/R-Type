@@ -8,6 +8,7 @@ target_link_libraries(rtype_network_hashing
   PUBLIC
     rtype_network_constants
   PRIVATE
+    rtype_network_exceptions
     hydrogen::hydrogen
 )
 

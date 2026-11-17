@@ -67,6 +67,9 @@ attack = 0
 phase = "strike"
 from_ms = 70
 
+[gameplay.mask]
+file = "masks/reaper.txt"
+
 [appearance]
 sheet = "sprites/mobs/reaper.png"
 

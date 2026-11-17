@@ -9,6 +9,7 @@ target_link_libraries(rtype_game_pilot_system
     rtype_engine_event_bus
     rtype_game_behaviours_piloting
     rtype_game_components
+    rtype_game_contacts
     rtype_game_enemy_actions
     rtype_game_entity_content
     rtype_game_events

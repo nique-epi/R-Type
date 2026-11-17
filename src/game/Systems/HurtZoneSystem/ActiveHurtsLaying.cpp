@@ -8,6 +8,7 @@
 #include "BeamLine.hpp"
 #include "BeamOverlap.hpp"
 #include "Bounds.hpp"
+#include "ContactShape.hpp"
 #include "CurrentAction.hpp"
 #include "Direction.hpp"
 #include "DirectionConstants.hpp"
@@ -15,8 +16,8 @@
 #include "HurtBox.hpp"
 #include "HurtWindow.hpp"
 #include "HurtingEnemy.hpp"
-#include "Overlaps.hpp"
 #include "Position.hpp"
+#include "ShapeContacts.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::game {
@@ -91,15 +92,15 @@ void layActiveHurts(const HurtingEnemy& enemy, ActiveHurts& hurts) {
   }
 }
 
-bool hurtsBounds(const ActiveHurts& hurts, const engine::Bounds& ship) {
+bool hurtsShape(const ActiveHurts& hurts, const ContactShape& ship) {
   return std::ranges::any_of(hurts.boxes,
-                             [&ship](const engine::Bounds& box) noexcept {
-                               return engine::overlaps(box, ship);
+                             [&ship](const engine::Bounds& box) {
+                               return shapesTouch(ContactShape{.bounds = box},
+                                                  ship);
                              }) ||
-         std::ranges::any_of(hurts.beams,
-                             [&ship](const BeamLine& line) noexcept {
-                               return beamOverlaps(line, ship);
-                             });
+         std::ranges::any_of(hurts.beams, [&ship](const BeamLine& line) {
+           return beamTouchesShape(line, ship);
+         });
 }
 
 }  // namespace rtype::game

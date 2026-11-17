@@ -3,7 +3,7 @@
 #include <optional>
 #include <span>
 #include "BehaviourView.hpp"
-#include "Boss.hpp"
+#include "BodyMasks.hpp"
 #include "CollisionBox.hpp"
 #include "ComponentRegistry.hpp"
 #include "CurrentAction.hpp"
@@ -19,6 +19,7 @@
 #include "Pilot.hpp"
 #include "PilotConstants.hpp"
 #include "Position.hpp"
+#include "Rage.hpp"
 #include "SheetVisualNames.hpp"
 #include "ShownLook.hpp"
 #include "SteadyMotion.hpp"
@@ -79,8 +80,9 @@ float healthShareOf(const Health* health) {
 }
 
 /** @brief Applies to @p body what @p intent asks of its body: a jump to a
- * position, the size of its collision box (its offset stays), a top speed;
- * each only when asked and when the body has the component. */
+ * position, the size of its collision box (its offset stays, and its collision
+ * mask is emptied: it is touched on the box it asked for), a top speed; each
+ * only when asked and when the body has the component. */
 void reshapeAsAsked(engine::ComponentRegistry& components, engine::Entity body,
                     const Intent& intent) {
   auto* const position = components.get<Position>(body);
@@ -91,15 +93,13 @@ void reshapeAsAsked(engine::ComponentRegistry& components, engine::Entity body,
   if (intent.resizesTo.has_value() && box != nullptr) {
     box->width = intent.resizesTo->width;
     box->height = intent.resizesTo->height;
+    forgetMaskOf(components, body);
   }
   auto* const motion = components.get<SteadyMotion>(body);
   if (intent.topSpeedTo.has_value() && motion != nullptr) {
     motion->topSpeed = *intent.topSpeedTo;
   }
 }
-
-/** @returns Whether @p boss enraged; false for a body that is no boss. */
-bool isEnraged(const Boss* boss) { return boss != nullptr && boss->enraged; }
 
 /** @returns @p view with what the components of @p body tell of it: its
  * health, its rage, the actions it ended and its network id, and with the
@@ -110,7 +110,7 @@ BehaviourView withConditionOf(BehaviourView view,
   const Health* const health = components.get<Health>(body);
   view.wounded = isWounded(health);
   view.healthShare = healthShareOf(health);
-  view.enraged = isEnraged(components.get<Boss>(body));
+  view.enraged = components.has<Rage>(body);
   const CurrentAction* const current = components.get<CurrentAction>(body);
   view.actionsEnded = current == nullptr ? 0U : current->ended;
   const NetworkIdentity* const identity = components.get<NetworkIdentity>(body);
