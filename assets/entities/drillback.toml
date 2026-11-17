@@ -50,6 +50,9 @@ points = 300
 # A ram: a ship that touches it is lost, and the beetle goes on.
 [gameplay.survives_contact]
 
+[gameplay.mask]
+file = "masks/drillback.txt"
+
 [appearance]
 sheet = "sprites/mobs/drillback.png"
 

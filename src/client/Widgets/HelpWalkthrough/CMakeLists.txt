@@ -9,6 +9,7 @@ target_link_libraries(rtype_client_help_walkthrough
     rtype_client_button
     rtype_client_input_keys
     rtype_client_widgets
+    rtype_client_speech_lines
     rtype_client_window_display
   PRIVATE
     rtype_client_animation

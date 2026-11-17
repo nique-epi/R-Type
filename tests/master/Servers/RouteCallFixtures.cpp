@@ -18,5 +18,9 @@ httplib::Result sendRouteCall(std::uint16_t port, const RouteCall& call) {
     request.set_header(std::string{AUTHORIZATION_HEADER_NAME},
                        std::string{BEARER_PREFIX_TEXT} + std::string{call.key});
   }
+  if (call.overHttps) {
+    request.set_header(std::string{FORWARDED_PROTO_HEADER_NAME},
+                       std::string{HTTPS_SCHEME_NAME});
+  }
   return httpSend(port, request);
 }

@@ -7,11 +7,13 @@
 #include <utility>
 #include <vector>
 #include "AnimatedSprite.hpp"
+#include "BodyMasks.hpp"
 #include "Bounds.hpp"
 #include "BoundsOf.hpp"
 #include "CollidingBoxes.hpp"
 #include "CollisionBox.hpp"
 #include "ComponentRegistry.hpp"
+#include "ContactShape.hpp"
 #include "EffectSpawner.hpp"
 #include "Entity.hpp"
 #include "EntityCues.hpp"
@@ -24,13 +26,14 @@
 #include "HitboxParts.hpp"
 #include "IEntityTypeSource.hpp"
 #include "Muzzle.hpp"
-#include "Overlaps.hpp"
 #include "OwnMissile.hpp"
 #include "OwnMissilesConstants.hpp"
 #include "OwnMissilesParts.hpp"
+#include "PlacedMask.hpp"
 #include "Position.hpp"
 #include "PredictedCommand.hpp"
 #include "ProjectileStartPosition.hpp"
+#include "ShapeContacts.hpp"
 #include "ShipGun.hpp"
 #include "Sprite.hpp"
 #include "TimeConstants.hpp"
@@ -168,22 +171,27 @@ void takeAwayIf(std::vector<OwnMissile>& missiles,
   });
 }
 
-/** @brief Fills @p boxes with each box (game::collidingBoxesOf()) of every
- * enemy drawn on screen. */
-void collectEnemyBoxes(engine::ComponentRegistry& components,
-                       std::vector<engine::Bounds>& boxes) {
-  boxes.clear();
+/** @brief Fills @p shapes with each box (game::collidingBoxesOf()) of every
+ * enemy drawn on screen, with its collision mask laid where it is drawn
+ * (game::bodyMaskAt()), as the server tests a missile against it. */
+void collectEnemyShapes(engine::ComponentRegistry& components,
+                        std::vector<game::ContactShape>& shapes) {
+  shapes.clear();
   components.forEach<game::EntityType, game::Position>(
-      [&components, &boxes](engine::Entity entity, const game::EntityType& side,
-                            const game::Position& position) {
+      [&components, &shapes](engine::Entity entity,
+                             const game::EntityType& side,
+                             const game::Position& position) {
         const auto* const box = components.get<game::CollisionBox>(entity);
         if (side != game::EntityType::Enemy || box == nullptr ||
             !components.has<game::Sprite>(entity)) {
           return;
         }
+        const std::optional<engine::PlacedMask> mask =
+            game::bodyMaskAt(components, entity, position);
         for (const game::CollisionBox& part : game::collidingBoxesOf(
                  *box, components.get<game::HitboxParts>(entity))) {
-          boxes.push_back(game::boundsOf(position, part));
+          shapes.push_back(game::ContactShape{
+              .bounds = game::boundsOf(position, part), .mask = mask});
         }
       });
 }
@@ -199,12 +207,15 @@ std::optional<engine::Bounds> boundsOf(engine::ComponentRegistry& components,
   return game::boundsOf(*position, *box);
 }
 
-/** @returns Whether @p missile overlaps one of @p enemies. */
+/** @returns Whether the box of @p missile touches one of @p enemies: its
+ * box, then its mask when it has one (game::shapesTouch()). The missile counts
+ * as its box, as the server tests it. */
 bool touchesAnEnemy(const engine::Bounds& missile,
-                    const std::vector<engine::Bounds>& enemies) {
-  return std::ranges::any_of(enemies, [&missile](const engine::Bounds& enemy) {
-    return engine::overlaps(missile, enemy);
-  });
+                    const std::vector<game::ContactShape>& enemies) {
+  return std::ranges::any_of(
+      enemies, [&missile](const game::ContactShape& enemy) {
+        return game::shapesTouch(game::ContactShape{.bounds = missile}, enemy);
+      });
 }
 
 }  // namespace
@@ -253,14 +264,14 @@ void OwnMissiles::touchEnemies() {
       })) {
     return;
   }
-  collectEnemyBoxes(components, enemyBoxes_);
+  collectEnemyShapes(components, enemyShapes_);
   for (OwnMissile& missile : missiles_) {
     if (!missile.entity.has_value()) {
       continue;
     }
     const std::optional<engine::Bounds> bounds =
         boundsOf(components, *missile.entity);
-    if (bounds.has_value() && touchesAnEnemy(*bounds, enemyBoxes_)) {
+    if (bounds.has_value() && touchesAnEnemy(*bounds, enemyShapes_)) {
       parts_.feedback.effects.get().playExplosion(
           game::EntityType::PlayerMissile,
           game::Position{.x = bounds->centerX, .y = bounds->centerY});

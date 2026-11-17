@@ -51,7 +51,8 @@
         "RTYPE_MODULE_ADMIN_CONSOLE": "OFF",
         "RTYPE_MODULE_CHAT": "OFF",
         "RTYPE_MODULE_PLUGINS": "OFF",
-        "RTYPE_MODULE_GAME_STATISTICS": "OFF"
+        "RTYPE_MODULE_GAME_STATISTICS": "OFF",
+        "RTYPE_MODULE_ACCOUNTS": "OFF"
       }
     }
   ],

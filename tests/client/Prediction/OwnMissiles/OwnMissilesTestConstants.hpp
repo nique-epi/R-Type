@@ -47,6 +47,16 @@ constexpr std::uint32_t NOTHING_ACKNOWLEDGED = 0;
 
 /** @brief Where an enemy of TWO_BOX_ENEMY_PARTS stands to have its lower box
  * on the missile at the muzzle: 200 units above it. */
+/**
+ * @brief Where the hollow enemy of the double stands to cross the missile at
+ * the muzzle (rows 72 to 77 of the grid, y 288 to 312) with its clear middle,
+ * and with its drawn top. On MISSILE_AT_THE_MUZZLE its mask lies on rows 63 to
+ * 86 (300 / 4 - 12), its drawn rows on 63 to 66; 40 units lower it lies on
+ * rows 73 to 96 (340 / 4 - 12), its drawn rows on 73 to 76.
+ */
+constexpr game::Position HOLLOW_ENEMY_WITH_ITS_TOP_AT_THE_MUZZLE{
+    .x = MISSILE_AT_THE_MUZZLE.x, .y = 340.0F};
+
 constexpr game::Position ENEMY_WHOSE_LOWER_BOX_IS_AT_THE_MUZZLE{
     .x = MISSILE_AT_THE_MUZZLE.x,
     .y = MISSILE_AT_THE_MUZZLE.y - TWO_BOX_ENEMY_PART_DISTANCE};

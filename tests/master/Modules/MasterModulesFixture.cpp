@@ -11,6 +11,7 @@
 #include "Application.hpp"
 #include "ConfigurationReader.hpp"
 #include "HttpPortProbe.hpp"
+#include "HttpPortRecordingModule.hpp"
 #include "IModule.hpp"
 #include "LogLaunchOptions.hpp"
 #include "LogLaunchOptionsFixtures.hpp"
@@ -21,15 +22,15 @@
 #include "MasterTestConstants.hpp"
 #include "SettingLine.hpp"
 
-MasterModulesFixture::MasterModulesFixture() : port_(freeHttpPort()) {}
-
 std::unique_ptr<rtype::engine::Application>
 MasterModulesFixture::masterApplication(
     std::vector<std::unique_ptr<rtype::engine::IModule>> extra,
     std::vector<std::string> lines) {
   std::vector<std::unique_ptr<rtype::engine::IModule>> modules =
       rtype::master::masterModules(
-          journalOptions(), []([[maybe_unused]] const std::string& reason) {});
+          journalOptions(), []([[maybe_unused]] const std::string& reason) {},
+          std::string{TEST_PASSWORD_KEY});
+  modules.push_back(std::make_unique<HttpPortRecordingModule>(port_));
   for (std::unique_ptr<rtype::engine::IModule>& module : extra) {
     modules.push_back(std::move(module));
   }
@@ -61,6 +62,11 @@ const std::filesystem::path& MasterModulesFixture::folder() const {
 }
 
 std::uint16_t MasterModulesFixture::port() const { return port_; }
+
+std::vector<std::string> MasterModulesFixture::journalLinesHolding(
+    std::string_view text) const {
+  return journal_.linesHolding(text);
+}
 
 rtype::logging::LogLaunchOptions MasterModulesFixture::journalOptions() const {
   const std::array<std::string_view, 1> quiet{rtype::logging::NO_STDERR_OPTION};

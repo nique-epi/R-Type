@@ -37,10 +37,14 @@ constexpr sf::Vector2i ALONG_THE_TRACK(80, 0);
 
 /** @brief QUIT over a game: its bar, 80 wide, ends at the right end of the
  * panel, x 456, so it starts at 376 and its label, 12 in and 6 down from the
- * bar at y 224, at (388, 230). Down from MUSIC passes EFFECTS, MUTE ALL,
- * DEFAULT SOUND and BACK before it: 5 presses. */
+ * bar at y 224, at (388, 230). Down from MUSIC passes EFFECTS, VOICES,
+ * MUTE ALL, DEFAULT SOUND and BACK before it: 6 presses. */
 constexpr sf::Vector2i QUIT_LABEL_OVER_A_GAME(388, 230);
-constexpr int DOWN_PRESSES_TO_QUIT = 5;
+constexpr int DOWN_PRESSES_TO_QUIT = 6;
+
+/** @brief Down from MUSIC passes EFFECTS, VOICES and MUTE ALL before DEFAULT
+ * SOUND: 4 presses. */
+constexpr int DOWN_PRESSES_TO_DEFAULT_SOUND = 4;
 
 /** @brief The MUSIC volume of a first launch, one step of 5 above it, and a
  * quiet volume away from it. */

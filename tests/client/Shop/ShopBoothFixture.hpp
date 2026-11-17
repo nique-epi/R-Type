@@ -4,6 +4,8 @@
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <memory>
+#include <string>
+#include <vector>
 #include "Ambience.hpp"
 #include "PlayerSettings.hpp"
 #include "RecordingAudioService.hpp"
@@ -46,6 +48,9 @@ class ShopBoothFixture : public ::testing::Test {
 
   /** @returns The ambience the audio service plays now. */
   [[nodiscard]] Ambience ambience() const;
+
+  /** @returns The ids of the sounds played, the first played first. */
+  [[nodiscard]] const std::vector<std::string>& played() const;
 
  private:
   PlayerSettings settings_;

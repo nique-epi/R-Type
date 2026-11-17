@@ -1,13 +1,15 @@
 #include "HurtZoneSystem.hpp"
 #include "ActiveHurtsLaying.hpp"
+#include "BodyMasks.hpp"
 #include "BoundsOf.hpp"
 #include "CollisionBox.hpp"
 #include "CollisionFilter.hpp"
 #include "CollisionFiltering.hpp"
 #include "ComponentRegistry.hpp"
+#include "ContactShape.hpp"
 #include "CurrentAction.hpp"
 #include "Entity.hpp"
-#include "EntityBounds.hpp"
+#include "EntityShape.hpp"
 #include "EntityType.hpp"
 #include "EventBus.hpp"
 #include "HurtZone.hpp"
@@ -24,22 +26,25 @@ HurtZoneSystem::HurtZoneSystem(engine::EventBus& events) : events_(events) {}
 
 void HurtZoneSystem::collectShips(engine::ComponentRegistry& components) {
   ships_.clear();
-  components.forEach<EntityType, CollisionBox>(
-      [this, &components](engine::Entity entity, const EntityType& type,
-                          const CollisionBox& box) {
-        if (type != EntityType::Player) {
-          return;
-        }
-        const Position* const position = components.get<Position>(entity);
-        const auto* const filter =
-            components.get<engine::CollisionFilter>(entity);
-        if (position != nullptr && filter != nullptr &&
-            !components.has<ViewDelay>(entity)) {
-          ships_.push_back(EntityBounds{.entity = entity,
-                                        .bounds = boundsOf(*position, box),
-                                        .filter = *filter});
-        }
-      });
+  components.forEach<EntityType, CollisionBox>([this, &components](
+                                                   engine::Entity entity,
+                                                   const EntityType& type,
+                                                   const CollisionBox& box) {
+    if (type != EntityType::Player) {
+      return;
+    }
+    const Position* const position = components.get<Position>(entity);
+    const auto* const filter = components.get<engine::CollisionFilter>(entity);
+    if (position != nullptr && filter != nullptr &&
+        !components.has<ViewDelay>(entity)) {
+      ships_.push_back(EntityShape{
+          .entity = entity,
+          .shape =
+              ContactShape{.bounds = boundsOf(*position, box),
+                           .mask = bodyMaskAt(components, entity, *position)},
+          .filter = *filter});
+    }
+  });
 }
 
 void HurtZoneSystem::publishContacts(engine::ComponentRegistry& components) {
@@ -55,9 +60,9 @@ void HurtZoneSystem::publishContacts(engine::ComponentRegistry& components) {
                                .position = position,
                                .current = components.get<CurrentAction>(enemy)};
     layActiveHurts(hurting, hurts_);
-    for (const EntityBounds& ship : ships_) {
+    for (const EntityShape& ship : ships_) {
       if (engine::mayCollide(*filter, ship.filter) &&
-          hurtsBounds(hurts_, ship.bounds)) {
+          hurtsShape(hurts_, ship.shape)) {
         events_.publish(ShipContact{.player = ship.entity, .enemy = enemy});
       }
     }

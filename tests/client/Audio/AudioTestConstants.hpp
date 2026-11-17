@@ -25,6 +25,7 @@ constexpr std::size_t MANY_SOUNDS = 40;
  * (70 and 80), so a field read for the other is seen. */
 constexpr int A_MUSIC_VOLUME = 35;
 constexpr int AN_EFFECTS_VOLUME = 55;
+constexpr int A_VOICES_VOLUME = 25;
 
 /** @brief A position of the music far ahead of the time of the frames, past
  * the snap of 100 ms. */

@@ -19,7 +19,9 @@ namespace rtype::master {
  *
  * install() declares the `port` setting. start() listens on every IPv4
  * interface (network::ANY_IPV4_ADDRESS), as the server does, and on that port,
- * network::DEFAULT_MASTER_PORT until a `set` changes it.
+ * network::DEFAULT_MASTER_PORT until a `set` changes it; on a port the system
+ * chooses when the setting is network::ANY_PORT, which MasterHttpServer::port()
+ * then gives.
  */
 class MasterHttpModule final : public engine::IModule {
  public:

@@ -16,7 +16,9 @@ namespace rtype::client {
  * towards the thrust asked for, counts how long its pilot pushes forward,
  * starts a roll drawn when a world state starts saying the ship rolls and ends
  * it after game::ROLL_DURATION, and keeps where the ship was at its last
- * AFTERIMAGE_TRAIL_LENGTH frames.
+ * AFTERIMAGE_TRAIL_LENGTH frames. The game screen runs it before it places
+ * the own ship of the player, whose roll its prediction then writes over
+ * (placePredictedShip()).
  */
 class ShipFlightSystem final : public engine::ISystem {
  public:

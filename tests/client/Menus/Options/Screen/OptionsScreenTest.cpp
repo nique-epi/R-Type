@@ -42,6 +42,7 @@ using rtype::client::testing::CONTROLS_TAB;
 using rtype::client::testing::DESCRIPTION_LEFT;
 using rtype::client::testing::DESCRIPTION_RIGHT;
 using rtype::client::testing::DESKTOP_SIZE_TEXT;
+using rtype::client::testing::DOWN_PRESSES_TO_DEFAULT_SOUND;
 using rtype::client::testing::DOWN_PRESSES_TO_QUIT;
 using rtype::client::testing::INDEX_OF_1280_BY_720;
 using rtype::client::testing::LARGEST_FIT;
@@ -190,9 +191,9 @@ TEST_F(OptionsScreenFixture, AMutedVolumeSaysWhy) {
  */
 TEST_F(OptionsScreenFixture, DefaultSoundAsksFirst) {
   settings().musicVolume = QUIET_MUSIC;
-  tap(Key::Down);
-  tap(Key::Down);
-  tap(Key::Down);
+  for (int step = 0; step < DOWN_PRESSES_TO_DEFAULT_SOUND; ++step) {
+    tap(Key::Down);
+  }
   tap(Key::Enter);
   EXPECT_NE(writingOf(canvas(), "PUT BACK THE DEFAULT SOUND?"), nullptr);
   EXPECT_EQ(settings().musicVolume, QUIET_MUSIC);
@@ -205,9 +206,9 @@ TEST_F(OptionsScreenFixture, DefaultSoundAsksFirst) {
  */
 TEST_F(OptionsScreenFixture, YesPutsTheVolumesBack) {
   settings().musicVolume = QUIET_MUSIC;
-  tap(Key::Down);
-  tap(Key::Down);
-  tap(Key::Down);
+  for (int step = 0; step < DOWN_PRESSES_TO_DEFAULT_SOUND; ++step) {
+    tap(Key::Down);
+  }
   tap(Key::Enter);
   tap(Key::Right);
   tap(Key::Enter);
@@ -224,9 +225,9 @@ TEST_F(OptionsScreenFixture, YesPutsTheVolumesBack) {
  */
 TEST_F(OptionsScreenFixture, EscapeOnTheQuestionKeepsTheVolumes) {
   settings().musicVolume = QUIET_MUSIC;
-  tap(Key::Down);
-  tap(Key::Down);
-  tap(Key::Down);
+  for (int step = 0; step < DOWN_PRESSES_TO_DEFAULT_SOUND; ++step) {
+    tap(Key::Down);
+  }
   tap(Key::Enter);
   tap(Key::Escape);
   EXPECT_EQ(settings().musicVolume, QUIET_MUSIC);

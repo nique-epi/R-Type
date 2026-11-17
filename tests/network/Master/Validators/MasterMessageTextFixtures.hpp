@@ -86,6 +86,9 @@ namespace rtype::network::testing {
  */
 [[nodiscard]] std::string registrationRefusal(std::string_view text);
 
+/** @returns What userCredentialsFromText() says of @p text, as above. */
+[[nodiscard]] std::string userCredentialsRefusal(std::string_view text);
+
 /** @returns What createdServerFromText() says of @p text, as above. */
 [[nodiscard]] std::string createdServerRefusal(std::string_view text);
 

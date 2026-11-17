@@ -4,6 +4,7 @@
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <memory>
+#include "PlayerSettings.hpp"
 #include "RecordingAudioService.hpp"
 #include "RecordingGameCatalog.hpp"
 #include "RecordingInterfaceCanvas.hpp"
@@ -50,6 +51,7 @@ class ServerMapScreenFixture : public ::testing::Test {
   RecordingGameCatalog games_;
   ServerChoice choice_;
   RecordingServerConnection connection_;
+  PlayerSettings settings_;
   InterfaceCanvasRecord painting_;
   std::unique_ptr<ServerMapScreen> screen_;
 };

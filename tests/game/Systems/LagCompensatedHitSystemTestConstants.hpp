@@ -44,4 +44,17 @@ constexpr std::array TALL_ENEMY_PARTS{
         .width = 96.0F, .height = 96.0F, .offsetY = TALL_ENEMY_PART_DISTANCE}};
 constexpr Position WHERE_ITS_LOWER_BOX_IS{.x = 500.0F, .y = 500.0F};
 
+/**
+ * @brief The mask of a hollow enemy, as large as ENEMY_BOX (96 / 4 = 24
+ * pixels a side), its HOLLOW_ENEMY_DRAWN_ROWS top rows alone drawn. At
+ * WHERE_THE_PLAYER_SAW_THE_ENEMY it lies on cells 113 to 136 and 63 to 86
+ * (500 / 4 - 12 and 300 / 4 - 12), its drawn rows on 63 to 66, from y 252 to
+ * 268: a missile on its Position (y 288 to 312) crosses its clear rows only,
+ * and one centered at WHERE_A_MISSILE_GRAZES_ITS_TOP (y 248 to 272) crosses
+ * its drawn rows.
+ */
+constexpr int HOLLOW_ENEMY_SIDE = 24;
+constexpr int HOLLOW_ENEMY_DRAWN_ROWS = 4;
+constexpr Position WHERE_A_MISSILE_GRAZES_ITS_TOP{.x = 500.0F, .y = 260.0F};
+
 }  // namespace rtype::game::testing

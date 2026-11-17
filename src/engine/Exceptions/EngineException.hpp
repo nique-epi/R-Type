@@ -391,4 +391,13 @@ class InvalidGridLayoutException : public EngineException {
   explicit InvalidGridLayoutException(std::size_t maximumLines);
 };
 
+/**
+ * @brief A PixelMask was built with a side outside 1 to MAXIMUM_MASK_SIDE, or a
+ * pixel or a span was read or written outside it.
+ */
+class InvalidPixelMaskException : public EngineException {
+ public:
+  explicit InvalidPixelMaskException(int maximumSide);
+};
+
 }  // namespace rtype::engine

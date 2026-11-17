@@ -19,3 +19,8 @@ constexpr std::string_view ONE_FORWARDED_CLIENT = "203.0.113.7";
 
 /** @brief An X-Forwarded-For whose last entry names no address. */
 constexpr std::string_view CHAIN_ENDING_IN_A_BLANK = "203.0.113.9, ";
+
+/** @brief An X-Forwarded-Proto of a client that came over TLS, in capitals,
+ * since a scheme is read in any case, and of one that came in plain HTTP. */
+constexpr std::string_view HTTPS_IN_CAPITALS = "HTTPS";
+constexpr std::string_view PLAIN_HTTP = "http";

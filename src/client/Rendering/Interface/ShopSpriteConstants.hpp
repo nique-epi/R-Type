@@ -12,4 +12,8 @@ constexpr const char* SHOP_SCENE_ID = "sprites/shop_scene.png";
 constexpr const char* SHOP_KEEPER_SHEET_ID = "sprites/shop_bydo.png";
 constexpr const char* SHOP_FRONT_ID = "sprites/shop_front.png";
 
+/** @brief Asset id of the sales slip of a ware: its paper, its torn edge and
+ * its PAID stamp (see TICKET_PAPER_RECTANGLE). */
+constexpr const char* SHOP_TICKET_SHEET_ID = "sprites/shop_ticket.png";
+
 }  // namespace rtype::client

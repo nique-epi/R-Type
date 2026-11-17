@@ -1,16 +1,25 @@
 #include <gtest/gtest.h>
 #include "CollisionFilter.hpp"
+#include "CollisionMask.hpp"
 #include "CollisionTestConstants.hpp"
 #include "Entity.hpp"
+#include "EntityTypesTestConstants.hpp"
 #include "LagCompensatedHitSystemShipsFixture.hpp"
 #include "LagCompensatedHitSystemShipsTestConstants.hpp"
+#include "MaskSheet.hpp"
+#include "ShippedEntitySheets.hpp"
 
 using rtype::engine::CollisionFilter;
 using rtype::engine::Entity;
+using rtype::game::CollisionMask;
+using rtype::game::MaskSheet;
 using rtype::game::testing::BEAM_ENEMY_AT;
 using rtype::game::testing::BEAM_ENEMY_HIGHER;
 using rtype::game::testing::LagCompensatedHitSystemShipsFixture;
+using rtype::game::testing::MISSILE_OVER_THE_CLEAR_CORNER_OF_THE_SHIP;
 using rtype::game::testing::SHIP_FIVE_TICKS_BEHIND;
+using rtype::game::testing::SHIP_SHEET;
+using rtype::game::testing::shippedEntitySheets;
 using rtype::game::testing::TICKS_AT_THE_FIRST_PLACE;
 using rtype::game::testing::TICKS_AT_THE_SECOND_PLACE;
 using rtype::game::testing::TWO_HUNDRED_UNITS_HIGHER;
@@ -164,4 +173,25 @@ TEST_F(LagCompensatedHitSystemShipsFixture,
   runTicks(1);
 
   EXPECT_TRUE(contacts().empty());
+}
+
+/**
+ * Given a ship with the mask of the shipped sheet, its player seeing the
+ * present, and a missile of an enemy whose box overlaps the box of the ship
+ * over its clear top-left corner only
+ * When one tick runs
+ * Then the missile hits nothing: the ship is tested on its mask
+ */
+TEST_F(LagCompensatedHitSystemShipsFixture,
+       AMissileOverTheClearCornerOfTheShipMissesIt) {
+  const Entity ship = shipAt(WHERE_THE_SHIP_IS, 0);
+  components().add(ship, CollisionMask{.pixels = shippedEntitySheets()
+                                                     .named(SHIP_SHEET)
+                                                     .mask.value_or(MaskSheet{})
+                                                     .pixels});
+  static_cast<void>(enemyMissileAt(MISSILE_OVER_THE_CLEAR_CORNER_OF_THE_SHIP));
+
+  runTicks(1);
+
+  EXPECT_TRUE(hits().empty());
 }

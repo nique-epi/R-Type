@@ -1,0 +1,2 @@
+rtype_add_test(NAME client_spoken_line_tests SOURCES SpokenLineTest.cpp SpokenLineFixture.cpp ${RTYPE_TEST_SOURCE_DIR}/doubles/RecordingInterfaceCanvas.cpp ${RTYPE_TEST_SOURCE_DIR}/doubles/RecordingSoundPlayer.cpp LIBS rtype_client_spoken_line)
+target_include_directories(client_spoken_line_tests PRIVATE ${RTYPE_TEST_SOURCE_DIR}/doubles)

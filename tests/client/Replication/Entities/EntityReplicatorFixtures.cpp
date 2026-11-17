@@ -7,6 +7,7 @@
 #include <vector>
 #include "AnimatedSprite.hpp"
 #include "CollisionBox.hpp"
+#include "CollisionMask.hpp"
 #include "ComponentRegistry.hpp"
 #include "EffectConstants.hpp"
 #include "Entity.hpp"
@@ -210,6 +211,19 @@ std::optional<game::CollisionBox> boxOfThe(
                      const game::EntityType& side) {
         if (side == type) {
           found = box;
+        }
+      });
+  return found;
+}
+
+std::optional<game::CollisionMask> maskOfThe(
+    engine::ComponentRegistry& components, game::EntityType type) {
+  std::optional<game::CollisionMask> found;
+  components.forEach<game::CollisionMask, game::EntityType>(
+      [&found, type](engine::Entity, const game::CollisionMask& mask,
+                     const game::EntityType& side) {
+        if (side == type) {
+          found = mask;
         }
       });
   return found;

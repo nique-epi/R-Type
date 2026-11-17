@@ -455,6 +455,7 @@ std::string settingsText(const PlayerSettings& settings) {
   writeLine(text, SETTINGS_VERSION_NAME, std::to_string(SETTINGS_VERSION));
   writeLine(text, MUSIC_VOLUME_NAME, std::to_string(settings.musicVolume));
   writeLine(text, EFFECTS_VOLUME_NAME, std::to_string(settings.effectsVolume));
+  writeLine(text, VOICES_VOLUME_NAME, std::to_string(settings.voicesVolume));
   writeLine(text, MUTED_NAME, switchValue(settings.muted));
   if (settings.windowSize.has_value()) {
     writeLine(text, WINDOW_SIZE_NAME, windowSizeValue(*settings.windowSize));

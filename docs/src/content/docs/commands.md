@@ -28,6 +28,7 @@ set port 4300
 |---|---|---|
 | `set <setting> <value>` | server, client and master | Gives a setting a value, after checking it. |
 | `module <name> on\|off` | server, client and master | Turns a module of the program on or off before the modules start. |
+| `admin <nickname>` | master, module `accounts` | Makes the account of that nickname an admin when the master starts (see [Master](/R-Type/master/#accounts-and-sessions-accountsmodule)). |
 | `plugin <name>` | server, client and master | Loads a plugin, a module built as a shared library, before the modules install. |
 | `plugin-folder <folder>` | server, client and master | Sets the folder the `plugin` lines read. |
 | `ensure <resource>` | server | Starts a resource: its sheets, sprite sheets and waves are laid over the assets. |
@@ -72,7 +73,7 @@ Master settings (see [Master](/R-Type/master/#configuration-mastercfg)):
 
 | Setting | Value | Default | Effect |
 |---|---|---|---|
-| `port` | 1 to 65535 | 8080 | The TCP port the HTTP API listens on, on every interface. |
+| `port` | 0 to 65535 | 8080 | The TCP port the HTTP API listens on, on every interface; 0 lets the system choose a free one, which the journal names. |
 | `database` | a path | empty | The SQLite file of the master; empty for `r-type_master.db` next to the executable. |
 
 ### `module`
@@ -145,6 +146,8 @@ Master modules:
 | `probe` | `logger` | Opens the UDP socket the probes of the game servers leave from. |
 | `http` | `logger` | Opens the port of the HTTP API. |
 | `servers` | `logger`, `storage`, `probe`, `http` | Creates the game servers with their keys, takes their registration and their heartbeats, and probes their UDP port. |
+| `leaderboard` | `storage`, `http`, `servers` | Keeps the results of the vanilla games and ranks them in the global leaderboard. |
+| `accounts` | `logger`, `storage`, `http` | Keeps the accounts of the players and their sessions, over HTTPS only. Optional: `RTYPE_MODULE_ACCOUNTS`. |
 
 Turning off a module the program cannot run without is accepted when nothing that stays on needs it, and the program then does less. For example, `module lobby off` on the server leaves a server that accepts nobody. On the client, `menus`, `lobby` and `game` need `screens`, and `screens` needs five modules, so turning one of those off is refused until the modules that need it are off first.
 

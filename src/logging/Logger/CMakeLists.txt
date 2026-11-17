@@ -11,7 +11,7 @@ target_include_directories(rtype_logging_records
     ${CMAKE_CURRENT_SOURCE_DIR}/..
 )
 
-add_library(rtype_logging_logger STATIC Logger.cpp ProcessJournal.cpp)
+add_library(rtype_logging_logger STATIC EnvironmentVariable.cpp Logger.cpp ProcessJournal.cpp)
 
 target_include_directories(rtype_logging_logger
   PUBLIC
