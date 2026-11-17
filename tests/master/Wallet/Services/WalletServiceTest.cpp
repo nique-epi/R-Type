@@ -203,16 +203,21 @@ TEST_F(WalletServiceFixture, AStakePastTheChipsIsRefused) {
 }
 
 /**
- * Given a game that pays ACE 1245 kopecks and the crown
+ * Given a game that pays 1245 kopecks and the crown through a ticket ACE was
+ * given
  * When it is credited twice
- * Then the second credits nothing: the kopecks and the crown came once
+ * Then the second credits nothing, its ticket used: the kopecks and the crown
+ * came once, to ACE
  */
-TEST_F(WalletServiceFixture, AGameIsCreditedOnce) {
-  const GameCreditOutcome first = wallets().creditGame(gameCreditOf(ace()));
-  const GameCreditOutcome second = wallets().creditGame(gameCreditOf(ace()));
+TEST_F(WalletServiceFixture, ATicketPaysOnce) {
+  const rtype::master::GameCredit credit =
+      gameCreditOf(aceTicketAt(WALLET_TEST_DATE));
+
+  const GameCreditOutcome first = wallets().creditGame(credit);
+  const GameCreditOutcome second = wallets().creditGame(credit);
 
   EXPECT_EQ(first, GameCreditOutcome::Credited);
-  EXPECT_EQ(second, GameCreditOutcome::AlreadyCredited);
+  EXPECT_EQ(second, GameCreditOutcome::UnknownTicket);
   EXPECT_EQ(wallets().walletOf(ace(), WALLET_TEST_DATE).kopecks,
             TEST_STARTING_WALLET.kopecks + GAME_KOPECKS);
   const std::vector<std::string> looks =
@@ -221,13 +226,47 @@ TEST_F(WalletServiceFixture, AGameIsCreditedOnce) {
 }
 
 /**
- * Given a game credited to an id no account has
- * When it is credited
- * Then nothing is credited, and the outcome says the account is unknown
+ * Given one result of a game presented with two tickets of ACE
+ * When both are credited
+ * Then the second credits nothing: a result pays once whatever its ticket
  */
-TEST_F(WalletServiceFixture, AGameOfAnUnknownAccountCreditsNothing) {
-  EXPECT_EQ(wallets().creditGame(gameCreditOf(UNKNOWN_USER_ID)),
-            GameCreditOutcome::UnknownAccount);
+TEST_F(WalletServiceFixture, AResultPaysOnceWhateverItsTicket) {
+  EXPECT_EQ(wallets().creditGame(gameCreditOf(aceTicketAt(WALLET_TEST_DATE))),
+            GameCreditOutcome::Credited);
+  EXPECT_EQ(wallets().creditGame(gameCreditOf(aceTicketAt(WALLET_TEST_DATE))),
+            GameCreditOutcome::AlreadyCredited);
+  EXPECT_EQ(wallets().walletOf(ace(), WALLET_TEST_DATE).kopecks,
+            TEST_STARTING_WALLET.kopecks + GAME_KOPECKS);
+}
+
+/**
+ * Given a ticket the master never gave
+ * When a game is credited through it
+ * Then nothing is credited, and the outcome says the ticket is unknown
+ */
+TEST_F(WalletServiceFixture, AnUnknownTicketPaysNothing) {
+  EXPECT_EQ(wallets().creditGame(gameCreditOf(std::string{NEVER_GIVEN_TICKET})),
+            GameCreditOutcome::UnknownTicket);
+  EXPECT_EQ(wallets().walletOf(ace(), WALLET_TEST_DATE).kopecks,
+            TEST_STARTING_WALLET.kopecks);
+}
+
+/**
+ * Given a ticket ACE was given 6 hours and a second before the credit, and
+ * one given exactly 6 hours before
+ * When a game is credited through each
+ * Then the first, expired, pays nothing, and the second, at its last second,
+ * pays
+ */
+TEST_F(WalletServiceFixture, AnExpiredTicketPaysNothing) {
+  rtype::master::GameCredit expired =
+      gameCreditOf(aceTicketAt(WALLET_TEST_DATE - SIX_HOURS_AND_A_SECOND));
+  rtype::master::GameCredit lastSecond =
+      gameCreditOf(aceTicketAt(WALLET_TEST_DATE - SIX_HOURS_OF_A_TICKET));
+  lastSecond.reference = std::string{OTHER_GAME_REFERENCE};
+
+  EXPECT_EQ(wallets().creditGame(expired), GameCreditOutcome::UnknownTicket);
+  EXPECT_EQ(wallets().creditGame(lastSecond), GameCreditOutcome::Credited);
 }
 
 /**

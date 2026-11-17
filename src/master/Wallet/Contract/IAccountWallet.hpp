@@ -29,8 +29,11 @@ class IAccountWallet {
       SQLite::Database& connection, const ChipMovement& movement) = 0;
 
   /**
-   * @brief Credits @p credit in one transaction of its own: the kopecks, the
-   * looks won, and its reference, so it is never credited twice.
+   * @brief Credits @p credit, in one transaction of its own, to the account
+   * the master gave its ticket to, if that ticket was never used and has not
+   * expired: marks the ticket used, then writes the kopecks, the looks won,
+   * and the reference, so it is never credited twice. A ticket pays one
+   * result.
    * @returns What it did.
    */
   virtual GameCreditOutcome creditGame(const GameCredit& credit) = 0;

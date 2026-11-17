@@ -13,7 +13,7 @@
 
 /**
  * @brief The master, started on a free port with its wallets, the server
- * "Paris 1", the account ACE and the token of a session of ACE.
+ * "Paris 1", the accounts ACE and BOB, and the token of a session of each.
  */
 class GameCreditRoutesFixture : public ::testing::Test {
  protected:
@@ -21,6 +21,12 @@ class GameCreditRoutesFixture : public ::testing::Test {
 
   /** @returns The id of the account ACE, as decimal text. */
   [[nodiscard]] const std::string& aceAccountId() const;
+
+  /** @returns A game ticket the master gives ACE. */
+  [[nodiscard]] std::string aceTicket() const;
+
+  /** @returns A game ticket the master gives BOB. */
+  [[nodiscard]] std::string bobTicket() const;
 
   /** @returns The answer to the result @p game of the game @p gameId, sent by
    * "Paris 1". */
@@ -30,12 +36,16 @@ class GameCreditRoutesFixture : public ::testing::Test {
   /** @returns The kopecks of the wallet of ACE. */
   [[nodiscard]] std::optional<std::int64_t> kopecksOfAce() const;
 
+  /** @returns The kopecks of the wallet of BOB. */
+  [[nodiscard]] std::optional<std::int64_t> kopecksOfBob() const;
+
   /** @returns How many looks ACE owns. */
   [[nodiscard]] std::optional<std::size_t> looksOfAce() const;
 
  private:
   RunningMaster master_;
   rtype::network::CreatedServer paris_;
-  std::string token_;
+  std::string aceToken_;
+  std::string bobToken_;
   std::string aceAccountId_;
 };

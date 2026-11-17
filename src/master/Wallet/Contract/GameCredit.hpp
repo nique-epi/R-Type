@@ -9,7 +9,9 @@ namespace rtype::master {
 
 /** @brief What a finished game pays the account of one of its players. */
 struct GameCredit {
-  std::int64_t userId{};
+  /** @brief The game ticket the player joined with, as a game server reports
+   * it: it names the account to pay, which only the master knows. */
+  std::string ticket;
   /** @brief The kopecks it pays (network::kopecksFor() and
    * network::withVictoryBonus()); the balance stops at
    * network::MAXIMUM_KOPECKS. */

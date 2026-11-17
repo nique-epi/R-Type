@@ -1,6 +1,7 @@
 #include "WalletServiceFixture.hpp"
 #include <SQLiteCpp/Database.h>
 #include <SQLiteCpp/Statement.h>
+#include <chrono>
 #include <cstdint>
 #include <string>
 #include <string_view>
@@ -8,6 +9,7 @@
 #include "ChipMovementResult.hpp"
 #include "Currency.hpp"
 #include "GameCredit.hpp"
+#include "GameTicketGrant.hpp"
 #include "MasterDatabase.hpp"
 #include "MasterMessageText.hpp"
 #include "MovementReason.hpp"
@@ -31,9 +33,15 @@ std::int64_t insertedAce(rtype::master::MasterDatabase& database) {
 }  // namespace
 
 WalletServiceFixture::WalletServiceFixture()
-    : ace_(insertedAce(file_.database())), wallets_(file_.database(), [] {
-        return rtype::network::Wallet{TEST_STARTING_WALLET};
-      }) {}
+    : ace_(insertedAce(file_.database())),
+      wallets_(file_.database(),
+               [] { return rtype::network::Wallet{TEST_STARTING_WALLET}; }),
+      tickets_(file_.database()) {}
+
+std::string WalletServiceFixture::aceTicketAt(
+    std::chrono::sys_seconds issuedAt) {
+  return tickets_.issue(ace_, issuedAt).value().ticket;
+}
 
 rtype::master::WalletService& WalletServiceFixture::wallets() {
   return wallets_;
@@ -85,9 +93,9 @@ rtype::master::ChipMovementResult WalletServiceFixture::applied(
 }
 
 rtype::master::GameCredit WalletServiceFixture::gameCreditOf(
-    std::int64_t userId) {
+    const std::string& ticket) {
   return rtype::master::GameCredit{
-      .userId = userId,
+      .ticket = ticket,
       .kopecks = GAME_KOPECKS,
       .wonLooks = {std::string{WON_LOOK_NAME}, std::string{NO_LOOK_NAME}},
       .reference = std::string{GAME_REFERENCE},

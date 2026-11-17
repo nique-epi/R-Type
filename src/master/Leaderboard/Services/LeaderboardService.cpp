@@ -1,11 +1,9 @@
 #include "LeaderboardService.hpp"
-#include <charconv>
 #include <chrono>
 #include <cstdint>
 #include <exception>
 #include <optional>
 #include <string>
-#include <system_error>
 #include <vector>
 #include "FinishedGamePlayer.hpp"
 #include "GameCredit.hpp"
@@ -23,34 +21,18 @@ namespace rtype::master {
 
 namespace {
 
-/** @returns The account @p accountId names: its whole text a decimal number
- * from 1; nothing for a guest, or any other text. */
-std::optional<std::int64_t> accountOf(
-    const std::optional<std::string>& accountId) {
-  if (!accountId.has_value() || accountId->empty()) {
-    return std::nullopt;
-  }
-  std::int64_t userId = 0;
-  const char* const end = accountId->data() + accountId->size();
-  const auto [last, error] = std::from_chars(accountId->data(), end, userId);
-  if (error != std::errc{} || last != end || userId < FIRST_ACCOUNT_ID) {
-    return std::nullopt;
-  }
-  return userId;
-}
-
-/** @returns What @p player of @p result is paid at @p now, nothing when it
- * played as a guest. */
+/** @returns What @p player of @p result is paid at @p now, through the game
+ * ticket it joined with; nothing when it played as a guest. The accountId a
+ * server writes is never read: a server cannot know an account. */
 std::optional<GameCredit> creditOf(const ServerGameResult& result,
                                    const network::FinishedGamePlayer& player,
                                    std::chrono::sys_seconds now) {
-  const std::optional<std::int64_t> userId = accountOf(player.accountId);
-  if (!userId.has_value()) {
+  if (!player.ticket.has_value()) {
     return std::nullopt;
   }
   const std::uint32_t kopecks = network::kopecksFor(player.score);
   return GameCredit{
-      .userId = *userId,
+      .ticket = *player.ticket,
       .kopecks =
           result.game.victory ? network::withVictoryBonus(kopecks) : kopecks,
       .wonLooks = player.wonLooks,
@@ -93,15 +75,32 @@ void LeaderboardService::credit(const ServerGameResult& result,
       continue;
     }
     try {
-      if (wallet_->creditGame(*owed) == GameCreditOutcome::Credited) {
-        logger_.info("credited game ", result.gameId, " to account ",
-                     owed->userId, ": ", owed->kopecks, " kopecks, ",
-                     owed->wonLooks.size(), " looks");
-      }
+      logCredit(*owed, wallet_->creditGame(*owed));
     } catch (const std::exception& error) {
-      logger_.error("game ", result.gameId, " was not credited to account ",
-                    owed->userId, ": ", error.what());
+      logger_.error(owed->reference, " was not credited: ", error.what());
     }
+  }
+}
+
+void LeaderboardService::logCredit(const GameCredit& credit,
+                                   GameCreditOutcome outcome) {
+  switch (outcome) {
+    case GameCreditOutcome::Credited:
+      logger_.info(credit.reference,
+                   " credited through its ticket: ", credit.kopecks,
+                   " kopecks, ", credit.wonLooks.size(), " looks");
+      return;
+    case GameCreditOutcome::AlreadyCredited:
+      logger_.info(credit.reference, " was credited before");
+      return;
+    case GameCreditOutcome::UnknownTicket:
+      logger_.info(credit.reference,
+                   " paid nothing: its ticket is unknown, used or expired");
+      return;
+    case GameCreditOutcome::UnknownAccount:
+      logger_.info(credit.reference,
+                   " paid nothing: the account of its ticket is gone");
+      return;
   }
 }
 

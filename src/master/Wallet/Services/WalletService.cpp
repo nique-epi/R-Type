@@ -13,12 +13,15 @@
 #include "ChipMovementResult.hpp"
 #include "ChipRefusal.hpp"
 #include "CreditedResultRepository.hpp"
+#include "CreditedWallet.hpp"
 #include "Currency.hpp"
 #include "ExchangeOrder.hpp"
 #include "ExchangeReceipt.hpp"
 #include "ExchangeRequest.hpp"
 #include "GameCredit.hpp"
 #include "GameCreditOutcome.hpp"
+#include "GameTicketRepository.hpp"
+#include "GameTicketText.hpp"
 #include "KopecksConstants.hpp"
 #include "LookItems.hpp"
 #include "LookOrder.hpp"
@@ -202,29 +205,30 @@ std::uint32_t writtenChips(SQLite::Database& connection,
   return chips;
 }
 
-/** @brief Writes @p credit on a wallet holding @p before: the kopecks, their
- * line of the journal, and the looks won. */
+/** @brief Writes @p credit on @p wallet: the kopecks, their line of the
+ * journal, and the looks won. */
 void writtenCredit(SQLite::Database& connection, const GameCredit& credit,
-                   const network::Wallet& before) {
+                   const CreditedWallet& wallet) {
+  const network::Wallet& before = wallet.before;
   if (credit.kopecks > 0) {
     const std::uint32_t kopecks = network::creditedBalance(
         before, network::Currency::Kopecks, credit.kopecks);
     WalletMovementRepository{connection}.insert(
         MovementRecord{.id = std::nullopt,
-                       .userId = credit.userId,
+                       .userId = wallet.userId,
                        .currency = network::Currency::Kopecks,
                        .amount = std::int64_t{kopecks} - before.kopecks,
                        .reason = network::MovementReason::Game,
                        .reference = credit.reference,
                        .madeAt = credit.creditedAt});
     WalletRepository{connection}.replace(
-        credit.userId,
+        wallet.userId,
         network::withBalance(before, network::Currency::Kopecks, kopecks));
   }
   OwnedLookRepository looks{connection};
   for (const std::string& item : credit.wonLooks) {
     if (network::lookItemOfName(item).has_value()) {
-      looks.insert(LookOwnership{.userId = credit.userId,
+      looks.insert(LookOwnership{.userId = wallet.userId,
                                  .item = item,
                                  .origin = LookOrigin::Game,
                                  .acquiredAt = credit.creditedAt});
@@ -336,15 +340,22 @@ ChipMovementResult WalletService::applyChips(SQLite::Database& connection,
 
 GameCreditOutcome WalletService::creditGame(const GameCredit& credit) {
   return database_.transact([this, &credit](SQLite::Database& connection) {
+    const std::optional<std::int64_t> userId =
+        GameTicketRepository{connection}.redeem(
+            gameTicketFingerprintOf(credit.ticket), credit.creditedAt);
+    if (!userId.has_value()) {
+      return GameCreditOutcome::UnknownTicket;
+    }
     const std::optional<network::Wallet> before =
-        openedWallet(connection, credit.userId, credit.creditedAt);
+        openedWallet(connection, *userId, credit.creditedAt);
     if (!before.has_value()) {
       return GameCreditOutcome::UnknownAccount;
     }
-    if (!CreditedResultRepository{connection}.insert(credit)) {
+    if (!CreditedResultRepository{connection}.insert(credit, *userId)) {
       return GameCreditOutcome::AlreadyCredited;
     }
-    writtenCredit(connection, credit, *before);
+    writtenCredit(connection, credit,
+                  CreditedWallet{.userId = *userId, .before = *before});
     return GameCreditOutcome::Credited;
   });
 }

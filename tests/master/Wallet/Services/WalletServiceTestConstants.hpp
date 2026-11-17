@@ -69,6 +69,17 @@ constexpr std::uint32_t GAME_KOPECKS = 1'245;
 constexpr std::string_view WON_LOOK_NAME = "crown";
 constexpr std::string_view NO_LOOK_NAME = "no_such_look";
 constexpr std::string_view GAME_REFERENCE = "game:7:0123456789abcdef:ACE";
+constexpr std::string_view OTHER_GAME_REFERENCE = "game:7:fedcba9876543210:ACE";
+
+/** @brief A ticket of the shape the master gives, which it never gave. */
+constexpr std::string_view NEVER_GIVEN_TICKET =
+    "rtt_0000000000000000000000000000000000000000000000000000000000000001";
+
+/** @brief How long a ticket pays, 6 hours, as the route documents it, and a
+ * second more. */
+constexpr std::chrono::seconds SIX_HOURS_OF_A_TICKET = std::chrono::hours{6};
+constexpr std::chrono::seconds SIX_HOURS_AND_A_SECOND =
+    SIX_HOURS_OF_A_TICKET + std::chrono::seconds{1};
 
 /** @brief What the transaction of a test throws to roll back. */
 constexpr std::string_view ROLLED_BACK_TEXT = "rolled back";

@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <httplib.h>
+#include <cstdint>
 #include <optional>
 #include <string>
 #include "AccountsRoutesFixtures.hpp"
@@ -20,18 +21,30 @@
 using rtype::network::FinishedGame;
 using rtype::network::FinishedGamePlayer;
 
+namespace {
+
+/** @returns A vanilla game of two where ACE scored @p score, joined with
+ * @p ticket. */
+FinishedGame gameOfAceWith(const std::string& ticket, std::uint32_t score) {
+  return normalGameOfTwo(
+      {FinishedGamePlayer{.nickname = std::string{ACE_NICKNAME},
+                          .accountId = std::nullopt,
+                          .score = score,
+                          .wonLooks = {},
+                          .ticket = ticket}});
+}
+
+}  // namespace
+
 /**
- * Given ACE, whose wallet holds no kopeck
- * When "Paris 1" sends a vanilla game where ACE, under its account, scored
+ * Given ACE, whose wallet holds no kopeck, and a ticket it was given
+ * When "Paris 1" sends a vanilla game where ACE, with that ticket, scored
  * 1234, then sends it again
  * Then ACE gets 123 kopecks, once
  */
 TEST_F(GameCreditRoutesFixture, AGameIsCreditedOnce) {
-  const FinishedGame game = normalGameOfTwo(
-      {FinishedGamePlayer{.nickname = std::string{ACE_NICKNAME},
-                          .accountId = aceAccountId(),
-                          .score = TWELVE_HUNDRED_THIRTY_FOUR_POINTS,
-                          .wonLooks = {}}});
+  const FinishedGame game =
+      gameOfAceWith(aceTicket(), TWELVE_HUNDRED_THIRTY_FOUR_POINTS);
 
   ASSERT_EQ(sendResult(FIRST_GAME_ID, game)->status, EXPECTED_NO_CONTENT);
   ASSERT_EQ(sendResult(FIRST_GAME_ID, game)->status, EXPECTED_NO_CONTENT);
@@ -41,15 +54,13 @@ TEST_F(GameCreditRoutesFixture, AGameIsCreditedOnce) {
 
 /**
  * Given ACE, whose wallet holds no kopeck
- * When a won game where ACE scored 1000 and won the party hat comes
+ * When a won game where ACE, with a ticket, scored 1000 and won the party hat
+ * comes
  * Then ACE gets 100 kopecks and a quarter more, 125, and owns the hat
  */
 TEST_F(GameCreditRoutesFixture, AVictoryPaysABonusAndItsLooks) {
-  FinishedGame game = normalGameOfTwo(
-      {FinishedGamePlayer{.nickname = std::string{ACE_NICKNAME},
-                          .accountId = aceAccountId(),
-                          .score = A_THOUSAND_POINTS,
-                          .wonLooks = {std::string{WON_PARTY_HAT}}}});
+  FinishedGame game = gameOfAceWith(aceTicket(), A_THOUSAND_POINTS);
+  game.players.at(0).wonLooks = {std::string{WON_PARTY_HAT}};
   game.victory = true;
 
   ASSERT_EQ(sendResult(FIRST_GAME_ID, game)->status, EXPECTED_NO_CONTENT);
@@ -60,38 +71,78 @@ TEST_F(GameCreditRoutesFixture, AVictoryPaysABonusAndItsLooks) {
 
 /**
  * Given ACE, whose wallet holds no kopeck
- * When games come whose player names no number of an account, then a number
- * of no account
- * Then each result is kept, and no wallet gets anything
+ * When a game comes whose player names the account id of ACE, and no ticket
+ * Then the result is kept, and ACE gets nothing: an id names no one
  */
-TEST_F(GameCreditRoutesFixture, AnAccountIdOfNoAccountPaysNothing) {
-  const FinishedGame noNumber = normalGameOfTwo(
-      {FinishedGamePlayer{.nickname = std::string{ACE_NICKNAME},
-                          .accountId = std::string{NO_NUMBER_ACCOUNT_ID},
-                          .score = A_THOUSAND_POINTS,
-                          .wonLooks = {}}});
-  const FinishedGame noAccount = normalGameOfTwo(
-      {FinishedGamePlayer{.nickname = std::string{ACE_NICKNAME},
-                          .accountId = std::string{NO_SUCH_ACCOUNT_ID},
-                          .score = A_THOUSAND_POINTS,
-                          .wonLooks = {}}});
+TEST_F(GameCreditRoutesFixture, AnAccountIdPaysNothing) {
+  const FinishedGame game =
+      normalGameOfTwo({FinishedGamePlayer{.nickname = std::string{ACE_NICKNAME},
+                                          .accountId = aceAccountId(),
+                                          .score = A_THOUSAND_POINTS,
+                                          .wonLooks = {},
+                                          .ticket = std::nullopt}});
 
-  EXPECT_EQ(sendResult(FIRST_GAME_ID, noNumber)->status, EXPECTED_NO_CONTENT);
-  EXPECT_EQ(sendResult(SECOND_GAME_ID, noAccount)->status, EXPECTED_NO_CONTENT);
+  EXPECT_EQ(sendResult(FIRST_GAME_ID, game)->status, EXPECTED_NO_CONTENT);
   EXPECT_EQ(kopecksOfAce(), std::optional{NO_KOPECK});
 }
 
 /**
  * Given ACE, whose wallet holds no kopeck
- * When a game that was not vanilla comes, ACE playing under its account
+ * When a game comes whose player names a ticket the master never gave
+ * Then the result is kept, and no wallet gets anything
+ */
+TEST_F(GameCreditRoutesFixture, AnUnknownTicketPaysNothing) {
+  EXPECT_EQ(
+      sendResult(FIRST_GAME_ID, gameOfAceWith(std::string{NEVER_GIVEN_TICKET},
+                                              A_THOUSAND_POINTS))
+          ->status,
+      EXPECTED_NO_CONTENT);
+  EXPECT_EQ(kopecksOfAce(), std::optional{NO_KOPECK});
+  EXPECT_EQ(kopecksOfBob(), std::optional{NO_KOPECK});
+}
+
+/**
+ * Given a ticket of ACE that paid a first game of 1234 points
+ * When a second game comes with the same ticket
+ * Then the second is kept and pays nothing: a ticket pays one result
+ */
+TEST_F(GameCreditRoutesFixture, AUsedTicketPaysNothing) {
+  const std::string ticket = aceTicket();
+  ASSERT_EQ(sendResult(FIRST_GAME_ID,
+                       gameOfAceWith(ticket, TWELVE_HUNDRED_THIRTY_FOUR_POINTS))
+                ->status,
+            EXPECTED_NO_CONTENT);
+
+  EXPECT_EQ(sendResult(SECOND_GAME_ID, gameOfAceWith(ticket, A_THOUSAND_POINTS))
+                ->status,
+            EXPECTED_NO_CONTENT);
+  EXPECT_EQ(kopecksOfAce(), std::optional{KOPECKS_OF_1234_POINTS});
+}
+
+/**
+ * Given ACE and BOB, whose wallets hold no kopeck
+ * When a game comes whose player is named ACE, with a ticket of BOB
+ * Then BOB gets the kopecks and ACE nothing: the ticket names the account,
+ * never the nickname
+ */
+TEST_F(GameCreditRoutesFixture, ATicketPaysTheAccountItWasGivenTo) {
+  ASSERT_EQ(
+      sendResult(FIRST_GAME_ID,
+                 gameOfAceWith(bobTicket(), TWELVE_HUNDRED_THIRTY_FOUR_POINTS))
+          ->status,
+      EXPECTED_NO_CONTENT);
+
+  EXPECT_EQ(kopecksOfBob(), std::optional{KOPECKS_OF_1234_POINTS});
+  EXPECT_EQ(kopecksOfAce(), std::optional{NO_KOPECK});
+}
+
+/**
+ * Given ACE, whose wallet holds no kopeck
+ * When a game that was not vanilla comes, ACE playing with a ticket
  * Then the master refuses it, and ACE gets nothing
  */
 TEST_F(GameCreditRoutesFixture, AGameThatWasNotVanillaPaysNothing) {
-  FinishedGame game =
-      normalGameOfTwo({FinishedGamePlayer{.nickname = std::string{ACE_NICKNAME},
-                                          .accountId = aceAccountId(),
-                                          .score = A_THOUSAND_POINTS,
-                                          .wonLooks = {}}});
+  FinishedGame game = gameOfAceWith(aceTicket(), A_THOUSAND_POINTS);
   game.vanilla = false;
 
   EXPECT_EQ(sendResult(FIRST_GAME_ID, game)->status, EXPECTED_BAD_REQUEST);
@@ -100,7 +151,7 @@ TEST_F(GameCreditRoutesFixture, AGameThatWasNotVanillaPaysNothing) {
 
 /**
  * Given a master whose wallets are off
- * When a server sends a game where ACE played under an account
+ * When a server sends a game where ACE played with a ticket
  * Then the result is kept all the same
  */
 TEST(GameCreditRoutes, AMasterWithoutWalletsKeepsTheResults) {
@@ -112,16 +163,12 @@ TEST(GameCreditRoutes, AMasterWithoutWalletsKeepsTheResults) {
 
   const httplib::Result kept = sendRouteCall(
       master.port(),
-      RouteCall{
-          .method = PUT_METHOD,
-          .path = path,
-          .key = paris.key,
-          .body = rtype::network::finishedGameText(normalGameOfTwo(
-              {FinishedGamePlayer{.nickname = std::string{ACE_NICKNAME},
-                                  .accountId = std::string{NO_SUCH_ACCOUNT_ID},
-                                  .score = A_THOUSAND_POINTS,
-                                  .wonLooks = {}}})),
-          .overHttps = false});
+      RouteCall{.method = PUT_METHOD,
+                .path = path,
+                .key = paris.key,
+                .body = rtype::network::finishedGameText(gameOfAceWith(
+                    std::string{NEVER_GIVEN_TICKET}, A_THOUSAND_POINTS)),
+                .overHttps = false});
 
   ASSERT_TRUE(kept);
   EXPECT_EQ(kept->status, EXPECTED_NO_CONTENT);

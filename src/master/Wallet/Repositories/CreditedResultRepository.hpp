@@ -1,6 +1,7 @@
 #pragma once
 
 #include <SQLiteCpp/Database.h>
+#include <cstdint>
 #include "GameCredit.hpp"
 
 namespace rtype::master {
@@ -13,9 +14,9 @@ class CreditedResultRepository {
   /** @param connection It must outlive the repository. */
   explicit CreditedResultRepository(SQLite::Database& connection);
 
-  /** @brief Notes the reference of @p credit as credited.
+  /** @brief Notes the reference of @p credit as credited to @p userId.
    * @returns Whether it is new: false when it was credited before. */
-  bool insert(const GameCredit& credit);
+  bool insert(const GameCredit& credit, std::int64_t userId);
 
  private:
   SQLite::Database& connection_;

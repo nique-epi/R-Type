@@ -10,7 +10,10 @@ enum class GameCreditOutcome : std::uint8_t {
   Credited,
   /** @brief The reference was credited before: nothing moved. */
   AlreadyCredited,
-  /** @brief No account has the user id: nothing moved. */
+  /** @brief The master gave no ticket of that text, or it was used, or it
+   * expired: nothing moved. */
+  UnknownTicket,
+  /** @brief The account the ticket was given to is gone: nothing moved. */
   UnknownAccount,
 };
 

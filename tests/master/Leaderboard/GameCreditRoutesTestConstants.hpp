@@ -12,10 +12,13 @@ constexpr std::uint32_t A_THOUSAND_POINTS = 1'000;
 constexpr std::int64_t KOPECKS_OF_A_THOUSAND_POINTS_WON = 125;
 constexpr std::int64_t NO_KOPECK = 0;
 
-/** @brief Account ids no account of the tests has: a text that is no number,
- * and a number past every account. */
-constexpr std::string_view NO_NUMBER_ACCOUNT_ID = "ACE";
-constexpr std::string_view NO_SUCH_ACCOUNT_ID = "999999";
+/** @brief A ticket of the shape the master gives, which it never gave. */
+constexpr std::string_view NEVER_GIVEN_TICKET =
+    "rtt_0000000000000000000000000000000000000000000000000000000000000001";
+
+/** @brief The second account of the tests, and its password. */
+constexpr std::string_view BOB_NICKNAME = "BOB";
+constexpr std::string_view BOB_PASSWORD = "another horse battery staple";
 
 /** @brief A look ACE wins in a game, and the looks it then owns: the three of
  * the starter kit and that one. */

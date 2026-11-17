@@ -1,12 +1,15 @@
 #pragma once
 
 #include <gtest/gtest.h>
+#include <chrono>
 #include <cstdint>
+#include <string>
 #include <string_view>
 #include "ChipMovement.hpp"
 #include "ChipMovementResult.hpp"
 #include "Currency.hpp"
 #include "GameCredit.hpp"
+#include "GameTicketService.hpp"
 #include "MasterDatabase.hpp"
 #include "MasterDatabaseFile.hpp"
 #include "WalletService.hpp"
@@ -40,13 +43,17 @@ class WalletServiceFixture : public ::testing::Test {
   rtype::master::ChipMovementResult applied(
       const rtype::master::ChipMovement& movement);
 
-  /** @returns The credit of the game of GAME_REFERENCE to @p userId: its
-   * kopecks, the crown, and a name of no look. */
+  /** @returns A ticket the master gives ACE at @p issuedAt. */
+  [[nodiscard]] std::string aceTicketAt(std::chrono::sys_seconds issuedAt);
+
+  /** @returns The credit of the game of GAME_REFERENCE through @p ticket at
+   * WALLET_TEST_DATE: its kopecks, the crown, and a name of no look. */
   [[nodiscard]] static rtype::master::GameCredit gameCreditOf(
-      std::int64_t userId);
+      const std::string& ticket);
 
  private:
   MasterDatabaseFile file_;
   std::int64_t ace_{};
   rtype::master::WalletService wallets_;
+  rtype::master::GameTicketService tickets_;
 };
