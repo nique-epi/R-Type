@@ -215,6 +215,60 @@ constexpr std::size_t SESSION_TOKEN_BYTES = 32;
 constexpr std::size_t SESSION_TOKEN_SIZE =
     SESSION_TOKEN_PREFIX.size() + (SESSION_TOKEN_BYTES * HEX_DIGITS_PER_BYTE);
 
+/**
+ * @brief The secret of a device link, which only the game keeps:
+ * DEVICE_LINK_SECRET_PREFIX, then DEVICE_LINK_SECRET_BYTES random bytes in
+ * lowercase hexadecimal, DEVICE_LINK_SECRET_SIZE characters in all.
+ */
+constexpr std::string_view DEVICE_LINK_SECRET_PREFIX = "rtd_";
+constexpr std::size_t DEVICE_LINK_SECRET_BYTES = 32;
+constexpr std::size_t DEVICE_LINK_SECRET_SIZE =
+    DEVICE_LINK_SECRET_PREFIX.size() +
+    (DEVICE_LINK_SECRET_BYTES * HEX_DIGITS_PER_BYTE);
+
+/**
+ * @brief The short code of a device link, which a player reads and types:
+ * DEVICE_LINK_USER_CODE_LETTERS letters of DEVICE_LINK_USER_CODE_ALPHABET, the
+ * consonants RFC 8628 (section 6.1) suggests so no two letters look alike and
+ * no word is spelled, in two groups of DEVICE_LINK_USER_CODE_GROUP joined by
+ * DEVICE_LINK_USER_CODE_SEPARATOR: 20 to the 8th codes, `KQFB-WZPM`.
+ */
+constexpr std::string_view DEVICE_LINK_USER_CODE_ALPHABET =
+    "BCDFGHJKLMNPQRSTVWXZ";
+constexpr std::size_t DEVICE_LINK_USER_CODE_LETTERS = 8;
+constexpr std::size_t DEVICE_LINK_USER_CODE_GROUP = 4;
+constexpr char DEVICE_LINK_USER_CODE_SEPARATOR = '-';
+constexpr std::size_t DEVICE_LINK_USER_CODE_SIZE =
+    DEVICE_LINK_USER_CODE_LETTERS + 1;
+
+/** @brief The members of a device link, of its state and of a decision. */
+constexpr std::string_view SECRET_MEMBER = "secret";
+constexpr std::string_view USER_CODE_MEMBER = "userCode";
+constexpr std::string_view VERIFICATION_URI_MEMBER = "verificationUri";
+constexpr std::string_view VERIFICATION_URI_COMPLETE_MEMBER =
+    "verificationUriComplete";
+constexpr std::string_view CREATED_AT_MEMBER = "createdAt";
+constexpr std::string_view INTERVAL_MEMBER = "interval";
+constexpr std::string_view DECISION_MEMBER = "decision";
+
+/** @brief How each DeviceLinkStatus is written, in the order of the enum. */
+constexpr std::string_view PENDING_LINK_TEXT = "pending";
+constexpr std::string_view APPROVED_LINK_TEXT = "approved";
+constexpr std::string_view DENIED_LINK_TEXT = "denied";
+constexpr std::string_view EXPIRED_LINK_TEXT = "expired";
+constexpr auto DEVICE_LINK_STATUS_TEXTS =
+    std::to_array<std::string_view>({PENDING_LINK_TEXT, APPROVED_LINK_TEXT,
+                                     DENIED_LINK_TEXT, EXPIRED_LINK_TEXT});
+
+/** @brief How each DeviceLinkDecision is written, in the order of the enum:
+ * the words of the statuses it leads to. */
+constexpr auto DEVICE_LINK_DECISION_TEXTS =
+    std::to_array<std::string_view>({APPROVED_LINK_TEXT, DENIED_LINK_TEXT});
+
+/** @brief The longest interval between two reads of a device link a master
+ * may ask for, in seconds. */
+constexpr std::uint64_t MAXIMUM_DEVICE_LINK_INTERVAL = 60;
+
 /** @brief The bounds of a score, what a server keeps of one (32 bits). */
 constexpr std::uint64_t LOWEST_SCORE = 0;
 constexpr std::uint64_t HIGHEST_SCORE =

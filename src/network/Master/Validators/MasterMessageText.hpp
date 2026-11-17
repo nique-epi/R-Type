@@ -6,9 +6,13 @@
 #include "BetsReceipt.hpp"
 #include "CasinoRoomListing.hpp"
 #include "CasinoRoomState.hpp"
+#include "CreatedDeviceLink.hpp"
 #include "CreatedServer.hpp"
 #include "CreatedSession.hpp"
 #include "Currency.hpp"
+#include "DeviceLinkDecision.hpp"
+#include "DeviceLinkState.hpp"
+#include "DeviceLinkStatus.hpp"
 #include "ExchangeReceipt.hpp"
 #include "ExchangeRequest.hpp"
 #include "FinishedGame.hpp"
@@ -247,6 +251,78 @@ namespace rtype::network {
  * in all. Anything else is refused before the master looks it up.
  */
 [[nodiscard]] bool isWellFormedSessionToken(std::string_view text);
+
+/** @returns How @p status is written: one of DEVICE_LINK_STATUS_TEXTS. */
+[[nodiscard]] std::string_view deviceLinkStatusText(DeviceLinkStatus status);
+
+/** @returns How @p decision is written: one of DEVICE_LINK_DECISION_TEXTS. */
+[[nodiscard]] std::string_view deviceLinkDecisionText(
+    DeviceLinkDecision decision);
+
+/** @returns The decision @p text writes, or nothing for a text not in
+ * DEVICE_LINK_DECISION_TEXTS. */
+[[nodiscard]] std::optional<DeviceLinkDecision> deviceLinkDecisionOf(
+    std::string_view text);
+
+/**
+ * @returns Whether @p text has the shape of the secret of a device link:
+ * DEVICE_LINK_SECRET_PREFIX, then lowercase hexadecimal digits,
+ * DEVICE_LINK_SECRET_SIZE in all. Anything else is refused before the master
+ * looks it up.
+ */
+[[nodiscard]] bool isWellFormedDeviceLinkSecret(std::string_view text);
+
+/**
+ * @returns The short code @p text writes, as the master keeps it: its
+ * DEVICE_LINK_USER_CODE_LETTERS letters of DEVICE_LINK_USER_CODE_ALPHABET in
+ * capitals, joined by DEVICE_LINK_USER_CODE_SEPARATOR after the first
+ * DEVICE_LINK_USER_CODE_GROUP. A player may type it in any case, with or
+ * without separators (RFC 8628, section 6.1); nothing for any other text.
+ */
+[[nodiscard]] std::optional<std::string> deviceLinkUserCodeOf(
+    std::string_view text);
+
+/** @returns @p link as the JSON answer of `POST /api/device-links`. */
+[[nodiscard]] std::string createdDeviceLinkText(const CreatedDeviceLink& link);
+
+/**
+ * @returns The device link the master answered as @p text: a well formed
+ * `secret`, a short code, two page addresses, an `expiresAt` of seconds from
+ * 0 and an `interval` of 1 to MAXIMUM_DEVICE_LINK_INTERVAL seconds.
+ * @throws InvalidMasterMessageException naming the first member that is not.
+ */
+[[nodiscard]] CreatedDeviceLink createdDeviceLinkFromText(
+    std::string_view text);
+
+/** @returns @p state as the JSON answer of `GET /api/device-links/me` and of
+ * `GET /api/device-links/{code}`. */
+[[nodiscard]] std::string deviceLinkStateText(const DeviceLinkState& state);
+
+/**
+ * @returns The state of a device link the master answered as @p text.
+ * @throws InvalidMasterMessageException naming the first member that is not
+ * what deviceLinkStateText() writes.
+ */
+[[nodiscard]] DeviceLinkState deviceLinkStateFromText(std::string_view text);
+
+/** @returns @p decision as the JSON body of
+ * `PUT /api/device-links/{code}/decision`. */
+[[nodiscard]] std::string decisionMessageText(DeviceLinkDecision decision);
+
+/**
+ * @returns The decision a player sent as @p text; a member it does not know is
+ * ignored.
+ * @throws InvalidMasterMessageException naming `/decision` when it is not one
+ * of DEVICE_LINK_DECISION_TEXTS.
+ */
+[[nodiscard]] DeviceLinkDecision decisionMessageFromText(std::string_view text);
+
+/**
+ * @returns The session the master answered as @p text, what
+ * createdSessionText() writes.
+ * @throws InvalidMasterMessageException naming the first member that is not.
+ */
+[[nodiscard]] CreatedSession createdSessionFromText(std::string_view text);
 
 /**
  * @returns Whether @p text has the shape of a game ticket: GAME_TICKET_PREFIX,

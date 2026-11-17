@@ -1,6 +1,7 @@
 #include "MasterMessageText.hpp"
 #include <algorithm>
 #include <array>
+#include <cctype>
 #include <chrono>
 #include <cmath>
 #include <cstddef>
@@ -22,10 +23,14 @@
 #include "CasinoRoomConstants.hpp"
 #include "CasinoRoomListing.hpp"
 #include "CasinoRoomState.hpp"
+#include "CreatedDeviceLink.hpp"
 #include "CreatedServer.hpp"
 #include "CreatedSession.hpp"
 #include "Currency.hpp"
 #include "DatedStatus.hpp"
+#include "DeviceLinkDecision.hpp"
+#include "DeviceLinkState.hpp"
+#include "DeviceLinkStatus.hpp"
 #include "EndpointText.hpp"
 #include "ExchangeReceipt.hpp"
 #include "ExchangeRequest.hpp"
@@ -1540,6 +1545,165 @@ std::string_view roulettePhaseText(RoulettePhase phase) {
 
 std::optional<RoulettePhase> roulettePhaseOf(std::string_view text) {
   return valueOfText<RoulettePhase>(ROULETTE_PHASE_TEXTS, text);
+}
+
+namespace {
+
+/** @returns The secret of a device link @p field holds, refused unless well
+ * formed. */
+std::string deviceLinkSecretOf(const JsonField& field) {
+  std::string secret = stringOf(field);
+  if (!isWellFormedDeviceLinkSecret(secret)) {
+    refuse(field);
+  }
+  return secret;
+}
+
+/** @returns The short code @p field holds, refused unless it is one. */
+std::string userCodeOf(const JsonField& field) {
+  const std::optional<std::string> code = deviceLinkUserCodeOf(stringOf(field));
+  if (!code.has_value()) {
+    refuse(field);
+  }
+  return *code;
+}
+
+/** @returns The interval @p field holds: 1 to MAXIMUM_DEVICE_LINK_INTERVAL
+ * whole seconds. */
+std::chrono::seconds intervalOf(const JsonField& field) {
+  return std::chrono::seconds{static_cast<std::int64_t>(integerOf(
+      field,
+      IntegerBounds{.lowest = 1, .highest = MAXIMUM_DEVICE_LINK_INTERVAL}))};
+}
+
+/** @returns The letter of a short code @p character stands for, written in
+ * any case; nothing when it is no letter of DEVICE_LINK_USER_CODE_ALPHABET. */
+std::optional<char> userCodeLetterOf(char character) {
+  const auto upper =
+      static_cast<char>(std::toupper(static_cast<unsigned char>(character)));
+  if (std::ranges::find(DEVICE_LINK_USER_CODE_ALPHABET, upper) ==
+      DEVICE_LINK_USER_CODE_ALPHABET.end()) {
+    return std::nullopt;
+  }
+  return upper;
+}
+
+}  // namespace
+
+std::string_view deviceLinkStatusText(DeviceLinkStatus status) {
+  return DEVICE_LINK_STATUS_TEXTS.at(static_cast<std::size_t>(status));
+}
+
+std::string_view deviceLinkDecisionText(DeviceLinkDecision decision) {
+  return DEVICE_LINK_DECISION_TEXTS.at(static_cast<std::size_t>(decision));
+}
+
+std::optional<DeviceLinkDecision> deviceLinkDecisionOf(std::string_view text) {
+  return valueOfText<DeviceLinkDecision>(DEVICE_LINK_DECISION_TEXTS, text);
+}
+
+bool isWellFormedDeviceLinkSecret(std::string_view text) {
+  return text.size() == DEVICE_LINK_SECRET_SIZE &&
+         text.starts_with(DEVICE_LINK_SECRET_PREFIX) &&
+         isMadeOf(text.substr(DEVICE_LINK_SECRET_PREFIX.size()),
+                  LOWERCASE_HEX_DIGITS);
+}
+
+std::optional<std::string> deviceLinkUserCodeOf(std::string_view text) {
+  std::string letters;
+  for (const char character : text) {
+    if (character == DEVICE_LINK_USER_CODE_SEPARATOR) {
+      continue;
+    }
+    const std::optional<char> letter = userCodeLetterOf(character);
+    if (!letter.has_value() ||
+        letters.size() == DEVICE_LINK_USER_CODE_LETTERS) {
+      return std::nullopt;
+    }
+    letters.push_back(*letter);
+  }
+  if (letters.size() != DEVICE_LINK_USER_CODE_LETTERS) {
+    return std::nullopt;
+  }
+  letters.insert(DEVICE_LINK_USER_CODE_GROUP, 1,
+                 DEVICE_LINK_USER_CODE_SEPARATOR);
+  return letters;
+}
+
+std::string createdDeviceLinkText(const CreatedDeviceLink& link) {
+  nlohmann::json document;
+  document[SECRET_MEMBER] = link.secret;
+  document[USER_CODE_MEMBER] = link.userCode;
+  document[VERIFICATION_URI_MEMBER] = link.verificationUri;
+  document[VERIFICATION_URI_COMPLETE_MEMBER] = link.verificationUriComplete;
+  document[EXPIRES_AT_MEMBER] = link.expiresAt.time_since_epoch().count();
+  document[INTERVAL_MEMBER] = link.interval.count();
+  return textOf(document);
+}
+
+CreatedDeviceLink createdDeviceLinkFromText(std::string_view text) {
+  const nlohmann::json document = parsedObject(text);
+  const JsonField link = wholeMessage(document);
+  return CreatedDeviceLink{
+      .secret = deviceLinkSecretOf(memberOf(link, SECRET_MEMBER)),
+      .userCode = userCodeOf(memberOf(link, USER_CODE_MEMBER)),
+      .verificationUri = stringOf(memberOf(link, VERIFICATION_URI_MEMBER)),
+      .verificationUriComplete =
+          stringOf(memberOf(link, VERIFICATION_URI_COMPLETE_MEMBER)),
+      .expiresAt =
+          secondsDateOf(memberOf(link, EXPIRES_AT_MEMBER), NON_NEGATIVE_BOUNDS),
+      .interval = intervalOf(memberOf(link, INTERVAL_MEMBER))};
+}
+
+std::string deviceLinkStateText(const DeviceLinkState& state) {
+  nlohmann::json document;
+  document[USER_CODE_MEMBER] = state.userCode;
+  document[STATUS_MEMBER] = deviceLinkStatusText(state.status);
+  document[CREATED_AT_MEMBER] = state.createdAt.time_since_epoch().count();
+  document[EXPIRES_AT_MEMBER] = state.expiresAt.time_since_epoch().count();
+  document[INTERVAL_MEMBER] = state.interval.count();
+  return textOf(document);
+}
+
+DeviceLinkState deviceLinkStateFromText(std::string_view text) {
+  const nlohmann::json document = parsedObject(text);
+  const JsonField state = wholeMessage(document);
+  return DeviceLinkState{
+      .userCode = userCodeOf(memberOf(state, USER_CODE_MEMBER)),
+      .status = enumIn<DeviceLinkStatus>(memberOf(state, STATUS_MEMBER),
+                                         DEVICE_LINK_STATUS_TEXTS),
+      .createdAt = secondsDateOf(memberOf(state, CREATED_AT_MEMBER),
+                                 NON_NEGATIVE_BOUNDS),
+      .expiresAt = secondsDateOf(memberOf(state, EXPIRES_AT_MEMBER),
+                                 NON_NEGATIVE_BOUNDS),
+      .interval = intervalOf(memberOf(state, INTERVAL_MEMBER))};
+}
+
+std::string decisionMessageText(DeviceLinkDecision decision) {
+  nlohmann::json document;
+  document[DECISION_MEMBER] = deviceLinkDecisionText(decision);
+  return textOf(document);
+}
+
+DeviceLinkDecision decisionMessageFromText(std::string_view text) {
+  const nlohmann::json document = parsedObject(text);
+  return enumIn<DeviceLinkDecision>(
+      memberOf(wholeMessage(document), DECISION_MEMBER),
+      DEVICE_LINK_DECISION_TEXTS);
+}
+
+CreatedSession createdSessionFromText(std::string_view text) {
+  const nlohmann::json document = parsedObject(text);
+  const JsonField session = wholeMessage(document);
+  const JsonField token = memberOf(session, TOKEN_MEMBER);
+  if (!isWellFormedSessionToken(stringOf(token))) {
+    refuse(token);
+  }
+  return CreatedSession{
+      .token = stringOf(token),
+      .expiresAt = secondsDateOf(memberOf(session, EXPIRES_AT_MEMBER),
+                                 NON_NEGATIVE_BOUNDS),
+      .user = userFromText(textOf(memberOf(session, USER_MEMBER).value.get()))};
 }
 
 }  // namespace rtype::network
