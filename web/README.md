@@ -232,7 +232,7 @@ flowchart LR
 - **The key goes to the page that asked, and nowhere else**: the action returns it and writes it in no journal, no address and no store; the page keeps it in React state, so a reload loses it, and says so before and after the creation.
 - **The name is checked twice**, by the form and by the action, with `serverNameProblemOf()` ([`lib/rtype/server-name.ts`](src/lib/rtype/server-name.ts)): empty, or over 32 bytes of UTF-8, is refused without asking the master.
 - **The action never throws**: it returns a `ServerCreationOutcome` ([`lib/rtype/server-creation.ts`](src/lib/rtype/server-creation.ts)), `created`, `invalidName`, `quota` (the 429 of the master), `refused` (its 400) or `unreachable`, and the page has a message for each, the name typed staying in the form.
-- **The visitor is named to the master**: with `MASTER_SITE_KEY` set, `createServer()` sends it in `X-Site-Key`, and the address of the visitor in `X-Site-Client-Address`, so the master can count its quota of creations per visitor and not for the whole site. The master does not read them yet. The address is the last one of `X-Forwarded-For`, which Vercel overwrites; behind a host that passes on what the client sent, a visitor would choose it.
+- **The visitor is named to the master**: with `MASTER_SITE_KEY` set, `createServer()` sends it in `X-Site-Key`, and the address of the visitor in `X-Site-Client-Address`, so the master counts its quota of creations per visitor and not for the whole site. The address is the last one of `X-Forwarded-For`, which Vercel overwrites; behind a host that passes on what the client sent, a visitor would choose it.
 
 The sign-up page checks one zod schema twice: in the browser for the form,
 and on the server for the input of the action.
