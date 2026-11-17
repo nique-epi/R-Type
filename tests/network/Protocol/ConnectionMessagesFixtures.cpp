@@ -6,7 +6,6 @@
 #include "ConnectionRequest.hpp"
 #include "GameRules.hpp"
 #include "GameTicket.hpp"
-#include "ProtocolConstants.hpp"
 #include "ProtocolTestConstants.hpp"
 
 namespace rtype::network::testing {

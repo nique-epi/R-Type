@@ -2,12 +2,12 @@
 #include <SQLiteCpp/Statement.h>
 #include <gtest/gtest.h>
 #include <array>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
 #include "DatabaseFile.hpp"
 #include "GameResult.hpp"
-#include "ProtocolConstants.hpp"
 #include "ResultsDatabase.hpp"
 #include "ResultsDatabaseConstants.hpp"
 #include "ResultsDatabaseFixture.hpp"

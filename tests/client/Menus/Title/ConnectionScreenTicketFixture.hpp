@@ -1,7 +1,6 @@
 #pragma once
 
 #include <gtest/gtest.h>
-#include <SFML/Window/Keyboard.hpp>
 #include "ConnectionScreen.hpp"
 #include "FakeAccountSession.hpp"
 #include "FakeTicketLink.hpp"

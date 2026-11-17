@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <optional>
 #include <string>
 #include <vector>
 #include "ConnectionScreenConstants.hpp"

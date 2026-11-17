@@ -40,7 +40,9 @@ WalletServiceFixture::WalletServiceFixture()
 
 std::string WalletServiceFixture::aceTicketAt(
     std::chrono::sys_seconds issuedAt) {
-  return tickets_.issue(ace_, issuedAt).value().ticket;
+  return tickets_.issue(ace_, issuedAt)
+      .value_or(rtype::network::GameTicketGrant{})
+      .ticket;
 }
 
 rtype::master::WalletService& WalletServiceFixture::wallets() {

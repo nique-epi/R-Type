@@ -2,7 +2,6 @@
 #include <cstdint>
 #include <optional>
 #include <string>
-#include <utility>
 #include <vector>
 #include "GameTicket.hpp"
 #include "TicketReading.hpp"
@@ -19,7 +18,7 @@ std::optional<rtype::client::TicketReading> FakeTicketLink::ticket() const {
 void FakeTicketLink::answerLastAsk(
     std::optional<rtype::network::GameTicket> ticket) {
   reading_ = rtype::client::TicketReading{.ask = askedTokens_.size(),
-                                          .ticket = std::move(ticket)};
+                                          .ticket = ticket};
 }
 
 const std::vector<std::string>& FakeTicketLink::askedTokens() const {

@@ -1,6 +1,5 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include <nlohmann/json.hpp>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -20,7 +19,6 @@ using rtype::network::gameTicketGrantText;
 using rtype::network::InvalidMasterMessageException;
 using rtype::network::isWellFormedGameTicket;
 using rtype::network::testing::finishedGameRefusal;
-using rtype::network::testing::finishedGameTextWith;
 using rtype::network::testing::parisFinishedGame;
 using rtype::network::testing::quoted;
 using ::testing::HasSubstr;
@@ -94,8 +92,12 @@ TEST(GameTicketText, AResultCarriesTheTicketOfAPilot) {
  * Then it refuses it, naming the ticket of that pilot
  */
 TEST(GameTicketText, RefusesAResultWithAMalformedTicket) {
-  EXPECT_THAT(finishedGameRefusal(finishedGameTextWith(
-                  SECOND_PILOT_TICKET_POINTER,
-                  nlohmann::json(std::string{UPPERCASE_TICKET}))),
+  FinishedGame game = parisFinishedGame();
+  game.players.at(1).ticket = std::string{WELL_FORMED_TICKET};
+  std::string text = finishedGameText(game);
+  text.replace(text.find(WELL_FORMED_TICKET), WELL_FORMED_TICKET.size(),
+               UPPERCASE_TICKET);
+
+  EXPECT_THAT(finishedGameRefusal(text),
               HasSubstr(quoted(SECOND_PILOT_TICKET_POINTER)));
 }

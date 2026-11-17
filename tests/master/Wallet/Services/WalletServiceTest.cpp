@@ -12,6 +12,7 @@
 #include "Currency.hpp"
 #include "ExchangeReceipt.hpp"
 #include "ExchangeRequest.hpp"
+#include "GameCredit.hpp"
 #include "GameCreditOutcome.hpp"
 #include "LookPurchaseOutcome.hpp"
 #include "MovementListing.hpp"
@@ -259,7 +260,7 @@ TEST_F(WalletServiceFixture, AnUnknownTicketPaysNothing) {
  * pays
  */
 TEST_F(WalletServiceFixture, AnExpiredTicketPaysNothing) {
-  rtype::master::GameCredit expired =
+  const rtype::master::GameCredit expired =
       gameCreditOf(aceTicketAt(WALLET_TEST_DATE - SIX_HOURS_AND_A_SECOND));
   rtype::master::GameCredit lastSecond =
       gameCreditOf(aceTicketAt(WALLET_TEST_DATE - SIX_HOURS_OF_A_TICKET));

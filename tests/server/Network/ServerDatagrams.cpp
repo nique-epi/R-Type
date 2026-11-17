@@ -10,6 +10,7 @@
 #include "EncodedMessage.hpp"
 #include "Endpoint.hpp"
 #include "GameRules.hpp"
+#include "GameTicket.hpp"
 #include "Heartbeat.hpp"
 #include "MasterProbe.hpp"
 #include "MessagePayload.hpp"

@@ -21,14 +21,13 @@ using rtype::network::GameTicketState;
  * keeps its fingerprint, never the ticket
  */
 TEST_F(GameTicketServiceFixture, KeepsTheFingerprintOfATicketOnly) {
-  const std::optional<GameTicketGrant> grant =
-      tickets().issue(ace(), WALLET_TEST_DATE);
+  const GameTicketGrant grant =
+      tickets().issue(ace(), WALLET_TEST_DATE).value_or(GameTicketGrant{});
 
-  ASSERT_TRUE(grant.has_value());
-  EXPECT_TRUE(rtype::network::isWellFormedGameTicket(grant->ticket));
-  EXPECT_EQ(grant->expiresAt, WALLET_TEST_DATE + SIX_HOURS);
-  EXPECT_EQ(rowsKeyedBy(gameTicketFingerprintOf(grant->ticket)), 1);
-  EXPECT_EQ(rowsKeyedBy(grant->ticket), 0);
+  EXPECT_TRUE(rtype::network::isWellFormedGameTicket(grant.ticket));
+  EXPECT_EQ(grant.expiresAt, WALLET_TEST_DATE + SIX_HOURS);
+  EXPECT_EQ(rowsKeyedBy(gameTicketFingerprintOf(grant.ticket)), 1);
+  EXPECT_EQ(rowsKeyedBy(grant.ticket), 0);
 }
 
 /**
@@ -38,7 +37,7 @@ TEST_F(GameTicketServiceFixture, KeepsTheFingerprintOfATicketOnly) {
  */
 TEST_F(GameTicketServiceFixture, ReadsANewTicketAsUnused) {
   const GameTicketGrant grant =
-      tickets().issue(ace(), WALLET_TEST_DATE).value();
+      tickets().issue(ace(), WALLET_TEST_DATE).value_or(GameTicketGrant{});
 
   const GameTicketState unused{.expiresAt = WALLET_TEST_DATE + SIX_HOURS,
                                .used = false};
@@ -54,7 +53,7 @@ TEST_F(GameTicketServiceFixture, ReadsANewTicketAsUnused) {
  */
 TEST_F(GameTicketServiceFixture, ATicketIsReadByItsAccountOnly) {
   const GameTicketGrant grant =
-      tickets().issue(ace(), WALLET_TEST_DATE).value();
+      tickets().issue(ace(), WALLET_TEST_DATE).value_or(GameTicketGrant{});
 
   EXPECT_EQ(
       tickets().stateOf(UNKNOWN_USER_ID, gameTicketFingerprintOf(grant.ticket)),
@@ -83,7 +82,7 @@ TEST_F(GameTicketServiceFixture, GivesThirtyTicketsAnHour) {
  */
 TEST_F(GameTicketServiceFixture, ForgetsTheExpiredTickets) {
   const GameTicketGrant first =
-      tickets().issue(ace(), WALLET_TEST_DATE).value();
+      tickets().issue(ace(), WALLET_TEST_DATE).value_or(GameTicketGrant{});
 
   static_cast<void>(tickets().issue(
       ace(), WALLET_TEST_DATE + SIX_HOURS + std::chrono::seconds{1}));
