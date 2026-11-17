@@ -9,13 +9,13 @@
 #include <cstdint>
 #include <random>
 #include <vector>
-#include "BackgroundConstants.hpp"
 #include "DecimalRange.hpp"
 #include "DurationRange.hpp"
 #include "Particle.hpp"
 #include "ParticleContent.hpp"
 #include "ParticleSprite.hpp"
 #include "ParticleTrail.hpp"
+#include "PixelGridConstants.hpp"
 #include "RandomRange.hpp"
 #include "TimeConstants.hpp"
 

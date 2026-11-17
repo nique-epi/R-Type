@@ -9,6 +9,7 @@
 #include "BackgroundPace.hpp"
 #include "LayerSources.hpp"
 #include "LayeredBackground.hpp"
+#include "PixelGridConstants.hpp"
 #include "SkyLevel.hpp"
 #include "TimeConstants.hpp"
 

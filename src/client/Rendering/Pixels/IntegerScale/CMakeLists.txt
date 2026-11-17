@@ -2,6 +2,6 @@ add_library(rtype_client_integer_scale STATIC IntegerScale.cpp)
 
 target_include_directories(rtype_client_integer_scale PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_link_libraries(rtype_client_integer_scale PUBLIC rtype_client_background)
+target_link_libraries(rtype_client_integer_scale PUBLIC rtype_client_pixels)
 
 rtype_enable_warnings(rtype_client_integer_scale)

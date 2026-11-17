@@ -16,6 +16,7 @@
 #include "LayerFrame.hpp"
 #include "LayerMotion.hpp"
 #include "LayerSources.hpp"
+#include "PixelGridConstants.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {

@@ -9,9 +9,9 @@
 #include <utility>
 #include "BackgroundCatalog.hpp"
 #include "BackgroundColorConstants.hpp"
-#include "BackgroundConstants.hpp"
 #include "LayerSources.hpp"
 #include "LayeredBackground.hpp"
+#include "PixelGridConstants.hpp"
 #include "PlanePlacement.hpp"
 #include "SeamCover.hpp"
 #include "SkyLevel.hpp"

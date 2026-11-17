@@ -2,8 +2,8 @@
 #include <cstddef>
 #include <span>
 #include <vector>
-#include "BackgroundConstants.hpp"
 #include "MapColumn.hpp"
+#include "PixelGridConstants.hpp"
 
 namespace rtype::client {
 

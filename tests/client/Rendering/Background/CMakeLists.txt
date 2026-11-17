@@ -1,5 +1,3 @@
-rtype_add_test(NAME client_background_tests SOURCES PixelBatchTest.cpp IntegerScaleTest.cpp ShiftedViewTest.cpp MapColumnsTest.cpp MapTileVerticesTest.cpp MapPlaneTest.cpp LIBS rtype_client_map_plane rtype_client_map_columns rtype_client_map_tile_vertices GTest::gmock rtype_client_shifted_view rtype_client_pixel_batch rtype_client_integer_scale)
-target_include_directories(client_background_tests PRIVATE ${RTYPE_TEST_SOURCE_DIR} ${RTYPE_TEST_SOURCE_DIR}/client/Rendering/Effects)
 add_subdirectory(Description)
 add_subdirectory(Layers)
-rtype_add_test(NAME client_sky_piece_tests SOURCES PixelRoundingTest.cpp SeamCoverTest.cpp SeamCoverFixtures.cpp LIBS rtype_client_seam_cover rtype_client_pixel_rounding)
+add_subdirectory(Composition)

@@ -5,7 +5,7 @@
 #include <SFML/Graphics/Vertex.hpp>
 #include <SFML/Graphics/VertexArray.hpp>
 #include <SFML/System/Vector2.hpp>
-#include "BackgroundConstants.hpp"
+#include "PixelGridConstants.hpp"
 
 namespace rtype::client {
 

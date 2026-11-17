@@ -11,6 +11,7 @@
 #include "BackgroundConstants.hpp"
 #include "ClientException.hpp"
 #include "HaloShader.hpp"
+#include "PixelGridConstants.hpp"
 
 namespace rtype::client {
 

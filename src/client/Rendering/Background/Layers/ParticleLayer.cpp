@@ -7,7 +7,6 @@
 #include <cstdint>
 #include <utility>
 #include <vector>
-#include "BackgroundConstants.hpp"
 #include "ILayerCanvas.hpp"
 #include "LayerFrame.hpp"
 #include "PaintedParticle.hpp"
@@ -16,6 +15,7 @@
 #include "ParticleLayerParts.hpp"
 #include "ParticleMotion.hpp"
 #include "ParticlePainting.hpp"
+#include "PixelGridConstants.hpp"
 #include "StarTwinkleStep.hpp"
 #include "TimeConstants.hpp"
 

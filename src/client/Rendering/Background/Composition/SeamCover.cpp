@@ -11,6 +11,7 @@
 #include "BackgroundConstants.hpp"
 #include "BayerThreshold.hpp"
 #include "DitherConstants.hpp"
+#include "PixelGridConstants.hpp"
 
 namespace rtype::client {
 

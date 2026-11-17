@@ -12,6 +12,7 @@
 #include "BackgroundConstants.hpp"
 #include "ClientException.hpp"
 #include "EnlargedPicture.hpp"
+#include "PixelGridConstants.hpp"
 #include "PixelRounding.hpp"
 #include "PlanePlacement.hpp"
 #include "ShiftedView.hpp"

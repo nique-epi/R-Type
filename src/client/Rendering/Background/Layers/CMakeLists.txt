@@ -6,7 +6,10 @@ add_library(rtype_client_background_layers STATIC
   LayerBuilding.cpp
   LayeredBackground.cpp
   LdtkProjectFile.cpp
+  MapColumns.cpp
   MapLayer.cpp
+  MapPlane.cpp
+  MapTileVertices.cpp
   ParticleLayer.cpp
   ParticleMotion.cpp
   ParticlePainting.cpp
@@ -22,12 +25,9 @@ target_link_libraries(rtype_client_background_layers
     SFML::Graphics
     rtype_client_background
     rtype_client_background_description
-    rtype_client_map_plane
     rtype_engine_time
   PRIVATE
     LDtkLoader::LDtkLoader
-    rtype_client_map_columns
-    rtype_client_map_tile_vertices
     rtype_client_pixel_rounding
     rtype_client_random_range
     rtype_logging

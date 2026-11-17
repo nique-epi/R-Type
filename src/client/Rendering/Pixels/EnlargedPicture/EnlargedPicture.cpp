@@ -5,9 +5,9 @@
 #include <SFML/Graphics/Sprite.hpp>
 #include <SFML/Graphics/Texture.hpp>
 #include <SFML/System/Vector2.hpp>
-#include "BackgroundConstants.hpp"
 #include "ClientException.hpp"
 #include "IntegerScale.hpp"
+#include "PixelGridConstants.hpp"
 
 namespace rtype::client {
 

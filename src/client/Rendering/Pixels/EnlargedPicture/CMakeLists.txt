@@ -6,7 +6,7 @@ target_link_libraries(rtype_client_enlarged_picture
   PUBLIC
     SFML::Graphics
   PRIVATE
-    rtype_client_background
+    rtype_client_pixels
     rtype_client_exceptions
     rtype_client_integer_scale
 )

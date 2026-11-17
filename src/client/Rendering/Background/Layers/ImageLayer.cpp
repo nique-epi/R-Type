@@ -2,10 +2,10 @@
 #include <SFML/System/Vector2.hpp>
 #include <cmath>
 #include <utility>
-#include "BackgroundConstants.hpp"
 #include "ILayerCanvas.hpp"
 #include "ImageContent.hpp"
 #include "LayerFrame.hpp"
+#include "PixelGridConstants.hpp"
 #include "PixelRounding.hpp"
 #include "StripFrame.hpp"
 #include "TimeConstants.hpp"
