@@ -12,6 +12,7 @@
 #include "CasinoRoomState.hpp"
 #include "ChipsAtHand.hpp"
 #include "Kopecks.hpp"
+#include "MillisecondDate.hpp"
 #include "PocketColors.hpp"
 #include "RouletteColorConstants.hpp"
 #include "RoulettePhase.hpp"
@@ -96,6 +97,15 @@ std::string resultLineOf(const RouletteReading& reading, std::uint8_t number) {
   return line;
 }
 
+/** @returns The color the roster writes the value of @p player in: gold for
+ * a stake not @p paid yet, green for a gain, pale blue for a loss. */
+sf::Color valueColorOf(const CasinoPlayer& player, bool paid) {
+  if (!paid) {
+    return STAR_GOLD;
+  }
+  return player.payout.value_or(0) > 0 ? GAIN_GREEN : PALE_BLUE;
+}
+
 /** @returns The row of @p player, seated at @p place in the room, from 0. */
 TableRosterRow rowOf(const RouletteReading& reading, const CasinoPlayer& player,
                      std::size_t place) {
@@ -106,9 +116,21 @@ TableRosterRow rowOf(const RouletteReading& reading, const CasinoPlayer& player,
       .colors = reading.palette.at(place % reading.palette.size()),
       .name = own ? player.nickname + OWN_NAME_END : player.nickname,
       .value = paid ? gain : kopecksText(player.stake),
-      .valueColor = !paid                ? STAR_GOLD
-                    : *player.payout > 0 ? GAIN_GREEN
-                                         : PALE_BLUE};
+      .valueColor = valueColorOf(player, paid)};
+}
+
+/** @returns The date the phase of @p room ends at: the close of the bets,
+ * the result, then the end of the round. */
+network::MillisecondDate phaseEndOf(const network::CasinoRoomState& room) {
+  switch (room.phase) {
+    case RoulettePhase::Betting:
+      return room.closesAt;
+    case RoulettePhase::Spinning:
+      return room.resultAt;
+    case RoulettePhase::Result:
+      break;
+  }
+  return room.endsAt;
 }
 
 }  // namespace
@@ -118,9 +140,7 @@ engine::Duration phaseTimeLeft(const RouletteReading& reading) {
     return engine::Duration::zero();
   }
   const network::CasinoRoomState& room = *reading.room;
-  const auto end = room.phase == RoulettePhase::Betting    ? room.closesAt
-                   : room.phase == RoulettePhase::Spinning ? room.resultAt
-                                                           : room.endsAt;
+  const network::MillisecondDate end = phaseEndOf(room);
   return end > room.serverTime ? std::chrono::duration_cast<engine::Duration>(
                                      end - room.serverTime)
                                : engine::Duration::zero();

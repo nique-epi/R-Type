@@ -19,7 +19,8 @@ GameResult vanillaGameOf(std::string_view pilot,
                     .endedAt = endedAt,
                     .players = {PlayerResult{.nickname = std::string{pilot},
                                              .score = SAVED_PILOT_SCORE,
-                                             .deaths = 0}},
+                                             .deaths = 0,
+                                             .wonLooks = {}}},
                     .vanilla = true};
 }
 

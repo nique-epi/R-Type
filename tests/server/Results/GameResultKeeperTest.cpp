@@ -38,7 +38,8 @@ TEST_F(GameResultKeeperFixture, RecordsThePlayersWhenTheGameFinishes) {
   EXPECT_EQ(result.players.at(0),
             (PlayerResult{.nickname = std::string{NICKNAMES.at(FIRST_PLAYER)},
                           .score = KEEPER_SCORE,
-                          .deaths = EVERY_LIFE_LOST}));
+                          .deaths = EVERY_LIFE_LOST,
+                          .wonLooks = {}}));
 }
 
 /**

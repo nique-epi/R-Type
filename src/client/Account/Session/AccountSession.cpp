@@ -57,7 +57,7 @@ std::optional<UserReading> AccountSession::answer() const {
   if (ask_ == NO_ACCOUNT_ASK) {
     return std::nullopt;
   }
-  const std::optional<UserReading> reading = link_->user();
+  std::optional<UserReading> reading = link_->user();
   if (!reading.has_value() || reading->ask != ask_) {
     return std::nullopt;
   }

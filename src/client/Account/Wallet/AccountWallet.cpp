@@ -106,7 +106,7 @@ std::optional<WalletReading> AccountWallet::reading() const {
   if (!session_->signedIn()) {
     return std::nullopt;
   }
-  const std::optional<WalletReading> read = link_->wallet();
+  std::optional<WalletReading> read = link_->wallet();
   if (!read.has_value() || read->token != session_->token()) {
     return std::nullopt;
   }

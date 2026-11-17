@@ -15,7 +15,6 @@
 #include "MenuScreenIdConstants.hpp"
 #include "PlayStart.hpp"
 #include "PlayerPreferences.hpp"
-#include "PlayerSettings.hpp"
 #include "ScreenConstants.hpp"
 #include "ScreenId.hpp"
 #include "SquadronConstants.hpp"

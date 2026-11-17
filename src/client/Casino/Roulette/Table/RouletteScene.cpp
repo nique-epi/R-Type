@@ -1,7 +1,6 @@
 #include "RouletteScene.hpp"
 #include <algorithm>
 #include <cctype>
-#include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <string>

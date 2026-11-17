@@ -47,11 +47,12 @@ void CasinoRoomWatch::follow(const std::optional<CasinoRoomReading>& reading,
   if (!room_.has_value()) {
     return;
   }
+  const std::uint8_t room = *room_;
   sinceState_ += elapsed;
   sinceAnswer_ += elapsed;
   keep(reading);
   if (answered_ && sinceAnswer_ >= CASINO_ROOM_POLL_INTERVAL) {
-    ask_ = link_->askRoom(*room_);
+    ask_ = link_->askRoom(room);
     answered_ = false;
   }
 }

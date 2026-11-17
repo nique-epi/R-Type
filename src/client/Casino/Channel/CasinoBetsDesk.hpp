@@ -9,6 +9,7 @@
 #include "IAccountSession.hpp"
 #include "ICasinoLink.hpp"
 #include "IWallet.hpp"
+#include "OwnBetsReading.hpp"
 #include "RoomRound.hpp"
 #include "RouletteBet.hpp"
 #include "RoundBets.hpp"

@@ -268,7 +268,8 @@ FinishedGame parisFinishedGame() {
       .vanilla = true,
       .players = {FinishedGamePlayer{.nickname = std::string{FIRST_PILOT},
                                      .accountId = std::nullopt,
-                                     .score = FIRST_PILOT_SCORE},
+                                     .score = FIRST_PILOT_SCORE,
+                                     .wonLooks = {}},
                   FinishedGamePlayer{
                       .nickname = std::string{SECOND_PILOT},
                       .accountId = std::string{SECOND_PILOT_ACCOUNT},
@@ -304,7 +305,8 @@ std::string finishedGameTextOfPlayers(std::size_t playerCount) {
     game.players.push_back(
         FinishedGamePlayer{.nickname = std::string{FIVE_PILOTS.at(index)},
                            .accountId = std::nullopt,
-                           .score = FIRST_PILOT_SCORE});
+                           .score = FIRST_PILOT_SCORE,
+                           .wonLooks = {}});
   }
   return finishedGameText(game);
 }

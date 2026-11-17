@@ -28,10 +28,12 @@ TEST_F(ResultsDatabaseFixture, ReadsAVanillaGameTheMasterHasNotAnswered) {
   ResultsDatabase database{file()};
   database.save(vanillaGame({PlayerResult{.nickname = std::string{ACE},
                                           .score = HIGH_SCORE,
-                                          .deaths = TWO_DEATHS},
+                                          .deaths = TWO_DEATHS,
+                                          .wonLooks = {}},
                              PlayerResult{.nickname = std::string{BOB},
                                           .score = LOW_SCORE,
-                                          .deaths = ONE_DEATH}},
+                                          .deaths = ONE_DEATH,
+                                          .wonLooks = {}}},
                             SOME_DATE));
 
   const std::vector<UnsentGame> games =
@@ -47,10 +49,12 @@ TEST_F(ResultsDatabaseFixture, ReadsAVanillaGameTheMasterHasNotAnswered) {
       games[0].result.players,
       (std::vector<PlayerResult>{PlayerResult{.nickname = std::string{ACE},
                                               .score = HIGH_SCORE,
-                                              .deaths = TWO_DEATHS},
+                                              .deaths = TWO_DEATHS,
+                                              .wonLooks = {}},
                                  PlayerResult{.nickname = std::string{BOB},
                                               .score = LOW_SCORE,
-                                              .deaths = ONE_DEATH}}));
+                                              .deaths = ONE_DEATH,
+                                              .wonLooks = {}}}));
 }
 
 /**

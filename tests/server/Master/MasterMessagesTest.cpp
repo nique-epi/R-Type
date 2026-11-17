@@ -172,7 +172,8 @@ TEST(MasterMessages, TheResultOfAGameIsWhatTheMasterKeeps) {
       .endedAt = ENDED_GAME_DATE,
       .players = {PlayerResult{.nickname = std::string{LEADING_PILOT},
                                .score = LEADING_PILOT_SCORE,
-                               .deaths = LEADING_PILOT_DEATHS},
+                               .deaths = LEADING_PILOT_DEATHS,
+                               .wonLooks = {}},
                   PlayerResult{
                       .nickname = std::string{TRAILING_PILOT},
                       .score = TRAILING_PILOT_SCORE,
@@ -191,7 +192,8 @@ TEST(MasterMessages, TheResultOfAGameIsWhatTheMasterKeeps) {
           .vanilla = true,
           .players = {FinishedGamePlayer{.nickname = std::string{LEADING_PILOT},
                                          .accountId = std::nullopt,
-                                         .score = LEADING_PILOT_SCORE},
+                                         .score = LEADING_PILOT_SCORE,
+                                         .wonLooks = {}},
                       FinishedGamePlayer{
                           .nickname = std::string{TRAILING_PILOT},
                           .accountId = std::string{TRAILING_PILOT_ACCOUNT_TEXT},

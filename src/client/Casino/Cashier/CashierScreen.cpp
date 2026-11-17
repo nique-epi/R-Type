@@ -4,7 +4,6 @@
 #include <SFML/Window/Event.hpp>
 #include <SFML/Window/Mouse.hpp>
 #include <cstddef>
-#include <cstdint>
 #include <memory>
 #include <optional>
 #include <string>
@@ -21,7 +20,6 @@
 #include "CasinoBarChip.hpp"
 #include "ChipRow.hpp"
 #include "ChipSelector.hpp"
-#include "ExchangeRequest.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "InterfacePixel.hpp"
 #include "SoundConstants.hpp"

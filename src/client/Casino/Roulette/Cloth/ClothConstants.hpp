@@ -4,7 +4,6 @@
 #include <array>
 #include "ClothBand.hpp"
 #include "ClothPlace.hpp"
-#include "RouletteBet.hpp"
 #include "RouletteBetKind.hpp"
 #include "RouletteConstants.hpp"
 

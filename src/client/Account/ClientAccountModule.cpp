@@ -25,7 +25,7 @@ std::vector<std::string> ClientAccountModule::dependencies() const {
 }
 
 void ClientAccountModule::install(engine::InstallContext& context) {
-  IAccountLink& link = context.require<IAccountLink>();
+  auto& link = context.require<IAccountLink>();
   session_.emplace(link);
   wallet_.emplace(*session_, link);
   context.provide<IAccountSession>(*session_);
@@ -37,7 +37,7 @@ void ClientAccountModule::install(engine::InstallContext& context) {
 }
 
 void ClientAccountModule::start() {
-  if (launchToken_.has_value()) {
+  if (launchToken_.has_value() && session_.has_value()) {
     session_->signIn(*launchToken_);
   }
 }

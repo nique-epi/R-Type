@@ -53,7 +53,7 @@ struct ConnectedPlayer {
    * the numbers LookItemWon carries (see identifiers::lookIndexOf()), in the
    * order it won them. LookItemKeeper fills it; emptied when a new world is
    * built. */
-  std::vector<std::uint8_t> wonLookNumbers{};
+  std::vector<std::uint8_t> wonLookNumbers;
   /** @brief The lives the player has while it has no ship, the next ship
    * included: game::STARTING_LIVES when it is seated, the lives of the rules
    * of the game once it joined and when a new world is built, one less each
@@ -62,16 +62,24 @@ struct ConnectedPlayer {
    * ship holds the lives instead, and this field keeps the value the ship was
    * given. */
   std::uint8_t livesWithoutShip{game::STARTING_LIVES};
-  /** @brief Ticks of the game left before the ship of the player comes back
-   * after it was destroyed: RESPAWN_DELAY_TICKS then, one less at each tick.
-   * 0 while the player has a ship, or no life left. LifeKeeper counts it. */
-  std::size_t ticksUntilRespawn{0};
   /** @brief Whether the player declared itself ready to start; cleared when the
    * game waits for players again. */
   bool ready{false};
   /** @brief Whether the player told the game it shows the game screen, since
    * the game last started waiting for it; cleared when the game does. */
   bool loaded{false};
+  /** @brief Whether the server took the player for gone: its seat, ship, score
+   * and lives are kept, its input number is cleared and it does not count for
+   * the ready check. The next datagram read from the player clears it. */
+  bool away{false};
+  /** @brief Whether the host expelled the player: it was told so (see
+   * PlayerExpeller), and its session closes at the next
+   * Departures::closeSilentSessions(), with the cause Expelled. */
+  bool expelled{false};
+  /** @brief Ticks of the game left before the ship of the player comes back
+   * after it was destroyed: RESPAWN_DELAY_TICKS then, one less at each tick.
+   * 0 while the player has a ship, or no life left. LifeKeeper counts it. */
+  std::size_t ticksUntilRespawn{0};
   /** @brief The datagrams accepted from the player, which every datagram to it
    * acknowledges, and how many of the datagrams it sent never arrived.
    * DatagramReader keeps it. */
@@ -94,14 +102,6 @@ struct ConnectedPlayer {
    * closes once it reaches SESSION_CLOSING_TICKS.
    */
   std::size_t ticksSinceReceived{0};
-  /** @brief Whether the server took the player for gone: its seat, ship, score
-   * and lives are kept, its input number is cleared and it does not count for
-   * the ready check. The next datagram read from the player clears it. */
-  bool away{false};
-  /** @brief Whether the host expelled the player: it was told so (see
-   * PlayerExpeller), and its session closes at the next
-   * Departures::closeSilentSessions(), with the cause Expelled. */
-  bool expelled{false};
   /** @brief The real time since the server last sent the player a Heartbeat,
    * added at the start of each tick, a stall of the server included, since
    * the client waits in real time: the next Heartbeat goes out once it reaches

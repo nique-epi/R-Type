@@ -17,7 +17,7 @@ struct FinishedGamePlayer {
   /** @brief The names of the look items the player won in the game, from
    * identifiers::SHIP_LOOK_ITEM_NAMES; empty when it won none, or when a
    * server older than the member does not say. */
-  std::vector<std::string> wonLooks{};
+  std::vector<std::string> wonLooks;
 
   bool operator==(const FinishedGamePlayer&) const = default;
 };

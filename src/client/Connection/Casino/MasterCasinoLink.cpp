@@ -13,6 +13,7 @@
 #include "CasinoRefusal.hpp"
 #include "CasinoRefusalConstants.hpp"
 #include "CasinoRoomReading.hpp"
+#include "CasinoRoomState.hpp"
 #include "CasinoRoomsReading.hpp"
 #include "CasinoSeat.hpp"
 #include "HttpStatusConstants.hpp"

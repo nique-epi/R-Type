@@ -33,7 +33,8 @@ TEST_F(ResultsDatabaseFixture, SavesARowWithEveryFieldOfTheResult) {
   ResultsDatabase database{file()};
   database.save(normalGame({PlayerResult{.nickname = std::string{ACE},
                                          .score = HIGH_SCORE,
-                                         .deaths = TWO_DEATHS}},
+                                         .deaths = TWO_DEATHS,
+                                         .wonLooks = {}}},
                            SOME_DATE));
 
   const SQLite::Database reader{file().string()};
@@ -358,12 +359,14 @@ TEST_F(ResultsDatabaseFixture, AddsUpEveryGameOfAPlayerInItsStatistics) {
   ResultsDatabase database{file()};
   database.save(normalGame({PlayerResult{.nickname = std::string{ACE},
                                          .score = LOW_SCORE,
-                                         .deaths = TWO_DEATHS}},
+                                         .deaths = TWO_DEATHS,
+                                         .wonLooks = {}}},
                            SOME_DATE));
   GameResult hard =
       normalGame({PlayerResult{.nickname = std::string{ACE_IN_LOWERCASE},
                                .score = MIDDLE_SCORE,
-                               .deaths = ONE_DEATH}},
+                               .deaths = ONE_DEATH,
+                               .wonLooks = {}}},
                  LATER_DATE);
   hard.difficulty = std::string{HARD};
   database.save(hard);

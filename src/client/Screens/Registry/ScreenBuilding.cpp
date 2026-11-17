@@ -6,7 +6,6 @@
 #include "AssetList.hpp"
 #include "DialogScreen.hpp"
 #include "GameWindow.hpp"
-#include "IAccountSession.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "IScreen.hpp"
 #include "IScreenNavigator.hpp"

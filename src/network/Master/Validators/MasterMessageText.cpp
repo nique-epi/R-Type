@@ -997,9 +997,9 @@ User userFromText(std::string_view text) {
   if (!document.is_object()) {
     throw InvalidMasterMessageException("");
   }
-  const auto id = document.find(ID_MEMBER);
-  if (id == document.end() || !id->is_number_integer() ||
-      id->get<std::int64_t>() < 1) {
+  const auto identifier = document.find(ID_MEMBER);
+  if (identifier == document.end() || !identifier->is_number_integer() ||
+      identifier->get<std::int64_t>() < 1) {
     throw InvalidMasterMessageException("/" + std::string{ID_MEMBER});
   }
   const auto nickname = document.find(NICKNAME_MEMBER);
@@ -1014,7 +1014,7 @@ User userFromText(std::string_view text) {
   if (!userRole.has_value()) {
     throw InvalidMasterMessageException("/" + std::string{ROLE_MEMBER});
   }
-  return User{.id = id->get<std::int64_t>(),
+  return User{.id = identifier->get<std::int64_t>(),
               .nickname = nickname->get<std::string>(),
               .role = *userRole};
 }

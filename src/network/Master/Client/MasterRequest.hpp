@@ -1,11 +1,8 @@
 #pragma once
 
+#include <httplib.h>
 #include <string>
 #include "MasterRoute.hpp"
-
-namespace httplib {
-struct Request;
-}  // namespace httplib
 
 namespace rtype::network {
 

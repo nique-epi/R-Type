@@ -2,7 +2,6 @@
 #include <chrono>
 #include <cstdint>
 #include <string>
-#include <string_view>
 #include <vector>
 #include "CasinoController.hpp"
 #include "CasinoModuleConstants.hpp"
@@ -20,7 +19,6 @@
 #include "MasterDatabase.hpp"
 #include "MasterHttpServer.hpp"
 #include "MasterModuleConstants.hpp"
-#include "RouletteDealer.hpp"
 #include "RouletteDurations.hpp"
 #include "RouletteSchedule.hpp"
 #include "RoundClock.hpp"
@@ -61,6 +59,9 @@ void CasinoModule::install(engine::InstallContext& context) {
 }
 
 void CasinoModule::start() {
+  if (!dealer_.has_value()) {
+    return;
+  }
   roundJob_.emplace(
       *dealer_, settings(),
       RoundClock{.now = currentMillisecond, .interval = CASINO_ROUND_INTERVAL});

@@ -1,5 +1,4 @@
 #include "MasterCasinoClient.hpp"
-#include <httplib.h>
 #include <cstdint>
 #include <string>
 #include "BetsReceipt.hpp"

@@ -2,7 +2,6 @@
 #include <chrono>
 #include <cstdint>
 #include <optional>
-#include <string>
 #include <variant>
 #include "ApiRequest.hpp"
 #include "ApiResponse.hpp"

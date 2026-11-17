@@ -19,7 +19,7 @@ struct PlayerResult {
   std::uint64_t accountId{network::GUEST_ACCOUNT_ID};
   /** @brief The names of the look items the player won in the game, from
    * identifiers::SHIP_LOOK_ITEM_NAMES, each once, in the order it won them. */
-  std::vector<std::string> wonLooks{};
+  std::vector<std::string> wonLooks;
 
   bool operator==(const PlayerResult&) const = default;
 };
