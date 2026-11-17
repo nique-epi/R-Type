@@ -12,13 +12,11 @@
 
 namespace rtype::client {
 
-using identifiers::ShipLook;
 using testing::ACCEPTED_PLAYER_NUMBER;
 using ::testing::ElementsAre;
 using testing::FIRST_SEQUENCE;
 using ::testing::IsEmpty;
 using testing::PARTY_HAT_LOOK;
-using testing::SECOND_SEQUENCE;
 using testing::ShipLookExchangeFixture;
 
 /**

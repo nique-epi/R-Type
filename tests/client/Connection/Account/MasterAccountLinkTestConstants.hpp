@@ -1,12 +1,10 @@
 #pragma once
 
 #include <chrono>
+#include <cstdint>
 #include <string_view>
 #include "Currency.hpp"
 #include "ExchangeRequest.hpp"
-#include "OwnedLooks.hpp"
-#include "User.hpp"
-#include "UserRole.hpp"
 #include "Wallet.hpp"
 
 namespace rtype::client::testing {
@@ -38,14 +36,13 @@ constexpr int LINK_CONFLICT_STATUS = 409;
 constexpr int LINK_UNPROCESSABLE_STATUS = 422;
 constexpr int LINK_SERVER_ERROR_STATUS = 500;
 
-/** @brief The account of the token, its balances, before and after a
- * purchase or an exchange, and its looks. */
-inline const network::User LINK_ACE{
-    .id = 7, .nickname = "ACE", .role = network::UserRole::Player};
+/** @brief The account of the token (linkAce(), MasterAccountLinkFixtures.hpp),
+ * its balances, before and after a purchase or an exchange; its looks are
+ * linkLooks(). */
+constexpr std::int64_t LINK_ACE_ID = 7;
+constexpr std::string_view LINK_ACE_NICKNAME = "ACE";
 constexpr network::Wallet LINK_WALLET{.kopecks = 1250, .chips = 40};
 constexpr network::Wallet LINK_WALLET_AFTER{.kopecks = 750, .chips = 540};
-inline const network::OwnedLooks LINK_LOOKS{
-    .items = {"top_hat", "cool_shades", "mustache"}};
 
 /** @brief When the cashier made an exchange. */
 constexpr std::chrono::sys_seconds LINK_MADE_AT{

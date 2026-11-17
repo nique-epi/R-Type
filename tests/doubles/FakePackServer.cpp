@@ -48,7 +48,8 @@ void FakePackServer::releaseTheAnswers() {
 }
 
 std::uint16_t FakePackServer::port() const {
-  return static_cast<std::uint16_t>(listener_->port());
+  return static_cast<std::uint16_t>(listener_.has_value() ? listener_->port()
+                                                          : 0);
 }
 
 std::size_t FakePackServer::requests() const {

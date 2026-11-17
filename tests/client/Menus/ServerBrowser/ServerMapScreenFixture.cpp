@@ -82,4 +82,6 @@ const InterfaceCanvasRecord& ServerMapScreenFixture::painting() const {
   return painting_;
 }
 
+FakeWallet& ServerMapScreenFixture::wallet() { return wallet_; }
+
 }  // namespace rtype::client::testing

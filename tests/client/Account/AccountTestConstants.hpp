@@ -5,9 +5,6 @@
 #include <string_view>
 #include "Currency.hpp"
 #include "ExchangeRequest.hpp"
-#include "OwnedLooks.hpp"
-#include "User.hpp"
-#include "UserRole.hpp"
 #include "Wallet.hpp"
 
 namespace rtype::client::testing {
@@ -21,17 +18,15 @@ constexpr std::string_view OTHER_TOKEN =
 /** @brief The account of ACE_TOKEN, and its id as the game server reads it. */
 constexpr std::int64_t ACE_ID = 7;
 constexpr std::uint64_t ACE_ACCOUNT_ID = 7;
-inline const network::User ACE_ACCOUNT{
-    .id = ACE_ID, .nickname = "ACE", .role = network::UserRole::Player};
+constexpr std::string_view ACE_ACCOUNT_NICKNAME = "ACE";
 
 /** @brief The first ask of each kind a link numbers, and the second. */
 constexpr std::uint64_t FIRST_ASK = 1;
 constexpr std::uint64_t SECOND_ASK = 2;
 
-/** @brief The balances of the wallet of ACE, and the looks it owns: the
- * crown alone. */
+/** @brief The balances of the wallet of ACE; it owns the crown alone
+ * (crownOnlyLooks(), AccountFixtures.hpp). */
 constexpr network::Wallet ACE_BALANCES{.kopecks = 1250, .chips = 40};
-inline const network::OwnedLooks CROWN_ONLY{.items = {"crown"}};
 
 /** @brief Where the crown sits in identifiers::SHIP_LOOK_ITEM_NAMES, and its
  * name. */

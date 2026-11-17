@@ -1,5 +1,6 @@
 #include "AccountSessionFixture.hpp"
 #include <string>
+#include "AccountFixtures.hpp"
 #include "AccountSession.hpp"
 #include "AccountTestConstants.hpp"
 #include "RecordingAccountLink.hpp"
@@ -16,7 +17,7 @@ AccountSession& AccountSessionFixture::session() { return session_; }
 void AccountSessionFixture::signInAsAce() {
   session_.signIn(std::string{ACE_TOKEN});
   link_.userRead =
-      UserReading{.ask = FIRST_ASK, .user = ACE_ACCOUNT, .refusal = {}};
+      UserReading{.ask = FIRST_ASK, .user = aceAccount(), .refusal = {}};
 }
 
 }  // namespace rtype::client::testing

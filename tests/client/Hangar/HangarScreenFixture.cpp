@@ -9,6 +9,7 @@
 #include "HangarScreenTestConstants.hpp"
 #include "InterfaceColorConstants.hpp"
 #include "MotionPreference.hpp"
+#include "PlayerSettings.hpp"
 #include "PointerEvents.hpp"
 #include "RecordingAudioService.hpp"
 #include "RecordingInterfaceCanvas.hpp"
@@ -89,5 +90,7 @@ const RecordingAudioService& HangarScreenFixture::audio() const {
 const InterfaceCanvasRecord& HangarScreenFixture::painting() const {
   return painting_;
 }
+
+FakeWallet& HangarScreenFixture::wallet() { return wallet_; }
 
 }  // namespace rtype::client::testing

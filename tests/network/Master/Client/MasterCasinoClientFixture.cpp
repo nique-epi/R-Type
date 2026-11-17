@@ -64,8 +64,9 @@ CasinoRoomState MasterCasinoClientFixture::testRoomState() {
       .serverTime = MillisecondDate{TEST_MASTER_TIME},
       .winningNumber = std::nullopt,
       .history = {SEVENTEEN},
-      .players = {CasinoPlayer{
-          .nickname = ACE.nickname, .stake = 0, .payout = std::nullopt}}};
+      .players = {CasinoPlayer{.nickname = std::string{ACE_USER_NICKNAME},
+                               .stake = 0,
+                               .payout = std::nullopt}}};
 }
 
 RouletteBets MasterCasinoClientFixture::tenOn17() {

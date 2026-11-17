@@ -2,6 +2,7 @@
 #include <cstddef>
 #include <optional>
 #include "LookItems.hpp"
+#include "LookItemsFixtures.hpp"
 #include "LookItemsTestConstants.hpp"
 
 using rtype::network::inCatalogueOrder;
@@ -9,8 +10,8 @@ using rtype::network::lookItemOfName;
 using rtype::network::testing::CROWN_IN_CAPITALS;
 using rtype::network::testing::CROWN_ITEM;
 using rtype::network::testing::CROWN_ITEM_NAME;
-using rtype::network::testing::LOOKS_IN_CATALOGUE_ORDER;
-using rtype::network::testing::LOOKS_IN_NO_ORDER;
+using rtype::network::testing::looksInCatalogueOrder;
+using rtype::network::testing::looksInNoOrder;
 using rtype::network::testing::NO_ITEM_NAME;
 
 /**
@@ -39,5 +40,5 @@ TEST(LookItems, FindsNoItemForANameNoItemHas) {
  * Then they follow SHIP_LOOK_ITEM_NAMES, and the unknown name goes last
  */
 TEST(LookItems, PutsLooksInTheOrderOfTheCatalogue) {
-  EXPECT_EQ(inCatalogueOrder(LOOKS_IN_NO_ORDER), LOOKS_IN_CATALOGUE_ORDER);
+  EXPECT_EQ(inCatalogueOrder(looksInNoOrder()), looksInCatalogueOrder());
 }

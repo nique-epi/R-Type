@@ -31,7 +31,7 @@ RouletteScreenFixture::RouletteScreenFixture() {
   wallet_.balances =
       rtype::network::Wallet{.kopecks = 0, .chips = CHIPS_OF_ACE};
   account_.signInAs(TABLE_ACE_ACCOUNT, std::string{TABLE_ACE_TOKEN});
-  account_.accountNickname = std::string{ACE_NAME};
+  account_.nameAccount(std::string{ACE_NAME});
   casino_.roomState = bettingRoom(A_ROUND);
   screen_ = std::make_unique<RouletteScreen>(
       RouletteScreenParts{.navigator = navigator_,

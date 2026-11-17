@@ -4,7 +4,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <string_view>
-#include <vector>
 
 namespace rtype::server::testing {
 

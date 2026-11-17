@@ -30,7 +30,7 @@ void FakeAccountMaster::answer(const std::string& route, CannedAnswer answer) {
 std::string FakeAccountMaster::url() const {
   return std::string{ACCOUNT_MASTER_SCHEME} + std::string{ACCOUNT_MASTER_HOST} +
          std::string{ACCOUNT_MASTER_PORT_SEPARATOR} +
-         std::to_string(listener_->port());
+         std::to_string(listener_.has_value() ? listener_->port() : 0);
 }
 
 std::vector<RecordedRequest> FakeAccountMaster::requests() const {

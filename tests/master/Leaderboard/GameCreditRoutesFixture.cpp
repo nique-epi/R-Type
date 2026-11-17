@@ -1,5 +1,6 @@
 #include "GameCreditRoutesFixture.hpp"
 #include <httplib.h>
+#include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <string>

@@ -3,17 +3,23 @@
 #include <optional>
 #include <string>
 #include <vector>
+#include "BetsReading.hpp"
 #include "CannedAnswer.hpp"
 #include "CasinoReadings.hpp"
 #include "CasinoRefusal.hpp"
+#include "CasinoRoomReading.hpp"
 #include "FakeAccountMasterConstants.hpp"
 #include "MasterCasinoLinkFixture.hpp"
 #include "MasterCasinoLinkTestConstants.hpp"
 #include "MasterMessageText.hpp"
 #include "RecordedRequest.hpp"
+#include "SeatReading.hpp"
 
+using rtype::client::BetsReading;
 using rtype::client::CasinoReadings;
 using rtype::client::CasinoRefusal;
+using rtype::client::CasinoRoomReading;
+using rtype::client::SeatReading;
 using rtype::client::testing::BETS_CLOSED_ANSWER;
 using rtype::client::testing::CASINO_CONFLICT_STATUS;
 using rtype::client::testing::CASINO_LINK_TOKEN;
@@ -51,7 +57,9 @@ TEST_F(MasterCasinoLinkFixture, ReadsTheStateOfTheRoomAsked) {
       });
 
   ASSERT_TRUE(readings.has_value());
-  EXPECT_EQ(readings->room->state, linkRoomState());
+  const CasinoReadings read = readings.value_or(CasinoReadings{});
+  ASSERT_TRUE(read.room.has_value());
+  EXPECT_EQ(read.room.value_or(CasinoRoomReading{}).state, linkRoomState());
 }
 
 /**
@@ -96,7 +104,9 @@ TEST_F(MasterCasinoLinkFixture, GetsThePlayerUp) {
       });
 
   ASSERT_TRUE(readings.has_value());
-  EXPECT_EQ(readings->seat->refusal, std::nullopt);
+  const CasinoReadings read = readings.value_or(CasinoReadings{});
+  ASSERT_TRUE(read.seat.has_value());
+  EXPECT_EQ(read.seat.value_or(SeatReading{}).refusal, std::nullopt);
 }
 
 /**
@@ -117,7 +127,9 @@ TEST_F(MasterCasinoLinkFixture, SaysAFullRoomRefusedTheSeat) {
       });
 
   ASSERT_TRUE(readings.has_value());
-  EXPECT_EQ(readings->seat->refusal, CasinoRefusal::RoomFull);
+  const CasinoReadings read = readings.value_or(CasinoReadings{});
+  ASSERT_TRUE(read.seat.has_value());
+  EXPECT_EQ(read.seat.value_or(SeatReading{}).refusal, CasinoRefusal::RoomFull);
 }
 
 /**
@@ -138,7 +150,10 @@ TEST_F(MasterCasinoLinkFixture, SaysTheBetsClosed) {
       });
 
   ASSERT_TRUE(readings.has_value());
-  EXPECT_EQ(readings->bets->refusal, CasinoRefusal::BetsClosed);
+  const CasinoReadings read = readings.value_or(CasinoReadings{});
+  ASSERT_TRUE(read.bets.has_value());
+  EXPECT_EQ(read.bets.value_or(BetsReading{}).refusal,
+            CasinoRefusal::BetsClosed);
 }
 
 /**
@@ -159,7 +174,10 @@ TEST_F(MasterCasinoLinkFixture, TellsANoSeatFromClosedBets) {
       });
 
   ASSERT_TRUE(readings.has_value());
-  EXPECT_EQ(readings->bets->refusal, CasinoRefusal::NotSeated);
+  const CasinoReadings read = readings.value_or(CasinoReadings{});
+  ASSERT_TRUE(read.bets.has_value());
+  EXPECT_EQ(read.bets.value_or(BetsReading{}).refusal,
+            CasinoRefusal::NotSeated);
 }
 
 /**
@@ -180,5 +198,8 @@ TEST_F(MasterCasinoLinkFixture, TellsTooFewChipsFromABrokenRule) {
       });
 
   ASSERT_TRUE(readings.has_value());
-  EXPECT_EQ(readings->bets->refusal, CasinoRefusal::NotEnoughChips);
+  const CasinoReadings read = readings.value_or(CasinoReadings{});
+  ASSERT_TRUE(read.bets.has_value());
+  EXPECT_EQ(read.bets.value_or(BetsReading{}).refusal,
+            CasinoRefusal::NotEnoughChips);
 }

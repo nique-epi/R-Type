@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <string>
+#include "AccountFixtures.hpp"
 #include "AccountSessionFixture.hpp"
 #include "AccountTestConstants.hpp"
 #include "ProtocolConstants.hpp"
@@ -9,9 +10,10 @@
 using rtype::client::SignInRefusal;
 using rtype::client::UserReading;
 using rtype::client::testing::AccountSessionFixture;
-using rtype::client::testing::ACE_ACCOUNT;
 using rtype::client::testing::ACE_ACCOUNT_ID;
+using rtype::client::testing::ACE_ACCOUNT_NICKNAME;
 using rtype::client::testing::ACE_TOKEN;
+using rtype::client::testing::aceAccount;
 using rtype::client::testing::FIRST_ASK;
 using rtype::client::testing::OTHER_TOKEN;
 using rtype::network::GUEST_ACCOUNT_ID;
@@ -57,7 +59,7 @@ TEST_F(AccountSessionFixture, PlaysUnderTheAccountTheMasterNames) {
   signInAsAce();
 
   EXPECT_EQ(session().accountId(), ACE_ACCOUNT_ID);
-  EXPECT_EQ(session().nickname(), ACE_ACCOUNT.nickname);
+  EXPECT_EQ(session().nickname(), ACE_ACCOUNT_NICKNAME);
   EXPECT_EQ(session().token(), ACE_TOKEN);
 }
 
@@ -71,7 +73,7 @@ TEST_F(AccountSessionFixture, AnAnswerToAnOlderTokenIsNotTaken) {
   session().signIn(std::string{OTHER_TOKEN});
 
   link().userRead =
-      UserReading{.ask = FIRST_ASK, .user = ACE_ACCOUNT, .refusal = {}};
+      UserReading{.ask = FIRST_ASK, .user = aceAccount(), .refusal = {}};
 
   EXPECT_FALSE(session().signedIn());
 }

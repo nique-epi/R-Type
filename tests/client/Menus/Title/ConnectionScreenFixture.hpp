@@ -45,12 +45,13 @@ class ConnectionScreenFixture : public ::testing::Test {
 
   /** @returns The sounds the screen played. */
   [[nodiscard]] const RecordingSoundPlayer& sounds() const;
+  /** @returns The account of the player, which a fixture may sign in. */
+  [[nodiscard]] FakeAccountSession& account();
 
+ private:
   /** @brief The account the attempts name: a guest, unless a fixture signs
    * it in. */
   FakeAccountSession account_;
-
- private:
   RecordingNavigator navigator_;
   RecordingServerConnection connection_;
   InterfaceCanvasRecord canvas_;

@@ -41,13 +41,14 @@ class ServerMapScreenFixture : public ::testing::Test {
   [[nodiscard]] const RecordingNavigator& navigator() const;
   [[nodiscard]] const RecordingAudioService& audio() const;
   [[nodiscard]] const ServerChoice& choice() const;
+  /** @returns The wallet of the player, which a test may change. */
+  [[nodiscard]] FakeWallet& wallet();
   [[nodiscard]] const InterfaceCanvasRecord& painting() const;
 
+ private:
   /** @brief The wallet whose kopecks the map shows: 20 of them, until a test
    * changes it. */
   FakeWallet wallet_;
-
- private:
   RecordingNavigator navigator_;
   RecordingSoundPlayer sounds_;
   RecordingAudioService audio_{sounds_};

@@ -1,7 +1,6 @@
 #include <gtest/gtest.h>
 #include <optional>
 #include <string>
-#include "BetsReceipt.hpp"
 #include "CasinoMessageTextFixtures.hpp"
 #include "CasinoMessageTextTestConstants.hpp"
 #include "CasinoRoomState.hpp"

@@ -7,13 +7,11 @@
 #include <string>
 #include <variant>
 #include <vector>
-#include "ChipMovement.hpp"
 #include "ChipMovementResult.hpp"
 #include "ChipRefusal.hpp"
 #include "Currency.hpp"
 #include "ExchangeReceipt.hpp"
 #include "ExchangeRequest.hpp"
-#include "GameCredit.hpp"
 #include "GameCreditOutcome.hpp"
 #include "LookPurchaseOutcome.hpp"
 #include "MovementListing.hpp"
@@ -26,10 +24,8 @@
 #include "WalletServiceFixture.hpp"
 #include "WalletServiceTestConstants.hpp"
 
-using rtype::master::ChipMovement;
 using rtype::master::ChipMovementResult;
 using rtype::master::ChipRefusal;
-using rtype::master::GameCredit;
 using rtype::master::GameCreditOutcome;
 using rtype::master::LookPurchaseOutcome;
 using rtype::master::PageRequest;

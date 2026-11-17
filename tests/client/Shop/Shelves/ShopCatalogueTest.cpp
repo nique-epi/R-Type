@@ -1,7 +1,6 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <algorithm>
-#include <cstddef>
 #include "LookItems.hpp"
 #include "ShopCatalogue.hpp"
 #include "ShopCatalogueTestConstants.hpp"

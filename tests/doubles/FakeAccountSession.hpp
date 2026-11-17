@@ -28,11 +28,12 @@ class FakeAccountSession final : public rtype::client::IAccountSession {
   /** @returns The token signIn() was last given; empty before. */
   [[nodiscard]] const std::string& askedToken() const;
 
-  /** @brief The nickname of the account signed in, which nickname() gives
-   * once signed in; empty by default. Public so a test sets it. */
-  std::string accountNickname;
+  /** @brief Names the account @p nickname, which nickname() gives once
+   * signed in; it has no name by default. */
+  void nameAccount(const std::string& nickname);
 
  private:
+  std::string accountNickname_;
   std::optional<std::uint64_t> accountId_;
   std::string token_;
   std::string askedToken_;

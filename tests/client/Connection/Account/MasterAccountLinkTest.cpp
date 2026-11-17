@@ -1,15 +1,17 @@
 #include <gtest/gtest.h>
-#include <cstdint>
 #include <optional>
 #include <string>
 #include "CannedAnswer.hpp"
+#include "ExchangeReceipt.hpp"
 #include "LookPurchase.hpp"
 #include "MasterAccountLinkFixture.hpp"
+#include "MasterAccountLinkFixtures.hpp"
 #include "MasterAccountLinkTestConstants.hpp"
 #include "MasterMessageText.hpp"
 #include "SignInRefusal.hpp"
 #include "UserReading.hpp"
 #include "WalletChangeReading.hpp"
+#include "WalletExchange.hpp"
 #include "WalletReading.hpp"
 #include "WalletRefusal.hpp"
 
@@ -19,12 +21,10 @@ using rtype::client::WalletChangeReading;
 using rtype::client::WalletReading;
 using rtype::client::WalletRefusal;
 using rtype::client::testing::BUY_CROWN_ROUTE;
-using rtype::client::testing::LINK_ACE;
 using rtype::client::testing::LINK_BUY_500_CHIPS;
 using rtype::client::testing::LINK_CONFLICT_STATUS;
 using rtype::client::testing::LINK_CREATED_STATUS;
 using rtype::client::testing::LINK_CROWN;
-using rtype::client::testing::LINK_LOOKS;
 using rtype::client::testing::LINK_MADE_AT;
 using rtype::client::testing::LINK_OK_STATUS;
 using rtype::client::testing::LINK_SERVER_ERROR_STATUS;
@@ -33,6 +33,8 @@ using rtype::client::testing::LINK_UNAUTHORIZED_STATUS;
 using rtype::client::testing::LINK_UNPROCESSABLE_STATUS;
 using rtype::client::testing::LINK_WALLET;
 using rtype::client::testing::LINK_WALLET_AFTER;
+using rtype::client::testing::linkAce;
+using rtype::client::testing::linkLooks;
 using rtype::client::testing::MasterAccountLinkFixture;
 using rtype::client::testing::OWN_EXCHANGES_ROUTE;
 using rtype::client::testing::OWN_LOOKS_ROUTE;
@@ -50,13 +52,13 @@ using rtype::network::WalletExchange;
 TEST_F(MasterAccountLinkFixture, ReadsTheAccountOfTheToken) {
   master().answer(std::string{OWN_USER_ROUTE},
                   CannedAnswer{.status = LINK_OK_STATUS,
-                               .body = rtype::network::userText(LINK_ACE)});
+                               .body = rtype::network::userText(linkAce())});
 
   const std::optional<UserReading> reading =
       userSoon(link().askUser(std::string{LINK_TOKEN}));
 
   ASSERT_TRUE(reading.has_value());
-  EXPECT_EQ(reading->user, LINK_ACE);
+  EXPECT_EQ(reading.value_or(UserReading{}).user, linkAce());
 }
 
 /**
@@ -72,7 +74,8 @@ TEST_F(MasterAccountLinkFixture, SaysAnUnknownTokenWasRefused) {
       userSoon(link().askUser(std::string{LINK_TOKEN}));
 
   ASSERT_TRUE(reading.has_value());
-  EXPECT_EQ(reading->refusal, SignInRefusal::TokenRefused);
+  EXPECT_EQ(reading.value_or(UserReading{}).refusal,
+            SignInRefusal::TokenRefused);
 }
 
 /**
@@ -88,7 +91,8 @@ TEST_F(MasterAccountLinkFixture, TellsAFailingMasterFromARefusedToken) {
       userSoon(link().askUser(std::string{LINK_TOKEN}));
 
   ASSERT_TRUE(reading.has_value());
-  EXPECT_EQ(reading->refusal, SignInRefusal::MasterRefused);
+  EXPECT_EQ(reading.value_or(UserReading{}).refusal,
+            SignInRefusal::MasterRefused);
 }
 
 /**
@@ -104,16 +108,16 @@ TEST_F(MasterAccountLinkFixture, ReadsTheBalancesAndTheLooks) {
   master().answer(
       std::string{OWN_LOOKS_ROUTE},
       CannedAnswer{.status = LINK_OK_STATUS,
-                   .body = rtype::network::ownedLooksText(LINK_LOOKS)});
+                   .body = rtype::network::ownedLooksText(linkLooks())});
 
   link().askWallet(std::string{LINK_TOKEN});
 
   const std::optional<WalletReading> reading = walletSoon();
 
   ASSERT_TRUE(reading.has_value());
-  EXPECT_EQ(reading->wallet, LINK_WALLET);
-  EXPECT_EQ(reading->looks, LINK_LOOKS);
-  EXPECT_EQ(reading->token, LINK_TOKEN);
+  EXPECT_EQ(reading.value_or(WalletReading{}).wallet, LINK_WALLET);
+  EXPECT_EQ(reading.value_or(WalletReading{}).looks, linkLooks());
+  EXPECT_EQ(reading.value_or(WalletReading{}).token, LINK_TOKEN);
 }
 
 /**
@@ -130,7 +134,8 @@ TEST_F(MasterAccountLinkFixture, SaysAPurchaseThePriceRefused) {
                  link().askPurchase(std::string{LINK_TOKEN}, LINK_CROWN));
 
   ASSERT_TRUE(answer.has_value());
-  EXPECT_EQ(answer->refusal, WalletRefusal::BalanceRefused);
+  EXPECT_EQ(answer.value_or(WalletChangeReading{}).refusal,
+            WalletRefusal::BalanceRefused);
 }
 
 /**
@@ -153,14 +158,14 @@ TEST_F(MasterAccountLinkFixture, APurchaseMadeShowsTheBalancesItAnswered) {
   master().answer(
       std::string{OWN_LOOKS_ROUTE},
       CannedAnswer{.status = LINK_OK_STATUS,
-                   .body = rtype::network::ownedLooksText(LINK_LOOKS)});
+                   .body = rtype::network::ownedLooksText(linkLooks())});
 
   static_cast<void>(link().askPurchase(std::string{LINK_TOKEN}, LINK_CROWN));
 
   const std::optional<WalletReading> reading = walletSoon();
   ASSERT_TRUE(reading.has_value());
-  EXPECT_EQ(reading->wallet, LINK_WALLET_AFTER);
-  EXPECT_EQ(reading->looks, LINK_LOOKS);
+  EXPECT_EQ(reading.value_or(WalletReading{}).wallet, LINK_WALLET_AFTER);
+  EXPECT_EQ(reading.value_or(WalletReading{}).looks, linkLooks());
 }
 
 /**
@@ -185,7 +190,7 @@ TEST_F(MasterAccountLinkFixture, AnExchangeAnswersWithTheBalancesLeft) {
       link().askExchange(std::string{LINK_TOKEN}, LINK_BUY_500_CHIPS));
 
   ASSERT_TRUE(answer.has_value());
-  EXPECT_EQ(answer->wallet, LINK_WALLET_AFTER);
+  EXPECT_EQ(answer.value_or(WalletChangeReading{}).wallet, LINK_WALLET_AFTER);
 }
 
 /**
@@ -203,7 +208,8 @@ TEST_F(MasterAccountLinkFixture, AnExchangeOfNoAmountIsRefusedForItsAmount) {
       link().askExchange(std::string{LINK_TOKEN}, LINK_BUY_500_CHIPS));
 
   ASSERT_TRUE(answer.has_value());
-  EXPECT_EQ(answer->refusal, WalletRefusal::InvalidAmount);
+  EXPECT_EQ(answer.value_or(WalletChangeReading{}).refusal,
+            WalletRefusal::InvalidAmount);
 }
 
 /**
@@ -221,7 +227,8 @@ TEST_F(MasterAccountLinkFixture, APurchaseOfALookNotSoldSaysSo) {
                  link().askPurchase(std::string{LINK_TOKEN}, LINK_CROWN));
 
   ASSERT_TRUE(answer.has_value());
-  EXPECT_EQ(answer->refusal, WalletRefusal::NotForSale);
+  EXPECT_EQ(answer.value_or(WalletChangeReading{}).refusal,
+            WalletRefusal::NotForSale);
 }
 
 /**
@@ -238,7 +245,7 @@ TEST_F(MasterAccountLinkFixture, AnExchangeMadeShowsTheBalancesItAnswered) {
   master().answer(
       std::string{OWN_LOOKS_ROUTE},
       CannedAnswer{.status = LINK_OK_STATUS,
-                   .body = rtype::network::ownedLooksText(LINK_LOOKS)});
+                   .body = rtype::network::ownedLooksText(linkLooks())});
   master().answer(
       std::string{OWN_EXCHANGES_ROUTE},
       CannedAnswer{
@@ -258,6 +265,6 @@ TEST_F(MasterAccountLinkFixture, AnExchangeMadeShowsTheBalancesItAnswered) {
 
   const std::optional<WalletReading> reading = link().wallet();
   ASSERT_TRUE(reading.has_value());
-  EXPECT_EQ(reading->wallet, LINK_WALLET_AFTER);
-  EXPECT_EQ(reading->looks, LINK_LOOKS);
+  EXPECT_EQ(reading.value_or(WalletReading{}).wallet, LINK_WALLET_AFTER);
+  EXPECT_EQ(reading.value_or(WalletReading{}).looks, linkLooks());
 }

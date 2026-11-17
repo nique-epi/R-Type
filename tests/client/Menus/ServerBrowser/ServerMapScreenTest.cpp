@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include "Ambience.hpp"
+#include "CasinoScreenIdConstants.hpp"
 #include "ConnectionRequest.hpp"
 #include "Endpoint.hpp"
 #include "GameRequest.hpp"
@@ -685,7 +686,7 @@ TEST_F(ServerMapScreenFixture, TheMapShowsTheKopecksOfThePlayer) {
 TEST_F(ServerMapScreenFixture, AGuestSeesNoBalance) {
   openOn(readyList());
 
-  wallet_.balances.reset();
+  wallet().balances.reset();
   update(ONE_FRAME);
 
   EXPECT_NE(writingOf(painting(), UNKNOWN_KOPECKS_TEXT), nullptr);
@@ -699,7 +700,7 @@ TEST_F(ServerMapScreenFixture, AGuestSeesNoBalance) {
 TEST_F(ServerMapScreenFixture, ReadsTheWalletWhenItOpens) {
   openOn(readyList());
 
-  EXPECT_EQ(wallet_.walletAsks, 1U);
+  EXPECT_EQ(wallet().walletAsks, 1U);
 }
 
 /**
@@ -712,7 +713,7 @@ TEST_F(ServerMapScreenFixture, ReadsTheWalletAgainWithTheList) {
 
   update(SERVER_LIST_REFRESH_INTERVAL);
 
-  EXPECT_EQ(wallet_.walletAsks, 2U);
+  EXPECT_EQ(wallet().walletAsks, 2U);
 }
 
 /**

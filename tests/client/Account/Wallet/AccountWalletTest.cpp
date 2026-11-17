@@ -6,12 +6,10 @@
 #include "AccountWalletFixture.hpp"
 #include "ShipLocker.hpp"
 #include "WalletChangeReading.hpp"
-#include "WalletReading.hpp"
 
 using rtype::client::NO_ACCOUNT_ASK;
 using rtype::client::ShipLocker;
 using rtype::client::WalletChangeReading;
-using rtype::client::WalletReading;
 using rtype::client::testing::AccountWalletFixture;
 using rtype::client::testing::ACE_ACCOUNT_ID;
 using rtype::client::testing::ACE_BALANCES;

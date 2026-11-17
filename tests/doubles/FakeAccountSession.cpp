@@ -18,7 +18,7 @@ std::uint64_t FakeAccountSession::accountId() const {
 }
 
 std::string FakeAccountSession::nickname() const {
-  return signedIn() ? accountNickname : std::string{};
+  return signedIn() ? accountNickname_ : std::string{};
 }
 
 std::string FakeAccountSession::token() const {
@@ -41,4 +41,8 @@ void FakeAccountSession::signOut() {
 
 const std::string& FakeAccountSession::askedToken() const {
   return askedToken_;
+}
+
+void FakeAccountSession::nameAccount(const std::string& nickname) {
+  accountNickname_ = nickname;
 }

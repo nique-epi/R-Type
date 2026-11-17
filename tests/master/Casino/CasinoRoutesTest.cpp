@@ -2,6 +2,7 @@
 #include <httplib.h>
 #include <cstdint>
 #include <nlohmann/json.hpp>
+#include <nlohmann/json_fwd.hpp>
 #include <optional>
 #include <string>
 #include <vector>
@@ -152,7 +153,7 @@ TEST_F(CasinoRoutesFixture, NewBetsReplaceTheOldOnes) {
   ASSERT_EQ(takeSeat(ace())->status, EXPECTED_CREATED);
   const std::optional<std::uint64_t> round = openRound();
   ASSERT_TRUE(round.has_value());
-  const std::string path = ownBetsPathOf(*round);
+  const std::string path = ownBetsPathOf(round.value_or(0));
 
   const httplib::Result first = send(betsCall(path, ace(), TWO_BETS_BODY));
   const httplib::Result second =
@@ -180,7 +181,7 @@ TEST_F(CasinoRoutesFixture, AnEmptyListTakesTheBetsBack) {
   ASSERT_EQ(takeSeat(ace())->status, EXPECTED_CREATED);
   const std::optional<std::uint64_t> round = openRound();
   ASSERT_TRUE(round.has_value());
-  const std::string path = ownBetsPathOf(*round);
+  const std::string path = ownBetsPathOf(round.value_or(0));
   ASSERT_EQ(send(betsCall(path, ace(), TWO_BETS_BODY))->status, EXPECTED_OK);
 
   const httplib::Result back = send(betsCall(path, ace(), NO_BETS_BODY));
@@ -201,7 +202,7 @@ TEST_F(CasinoRoutesFixture, BetsOnAnotherRoundAreClosed) {
   ASSERT_EQ(takeSeat(ace())->status, EXPECTED_CREATED);
   const std::optional<std::uint64_t> round = openRound();
   ASSERT_TRUE(round.has_value());
-  const std::string path = ownBetsPathOf(*round - 1);
+  const std::string path = ownBetsPathOf(round.value_or(0) - 1);
 
   const httplib::Result closed = send(betsCall(path, ace(), TWO_BETS_BODY));
 
@@ -220,7 +221,7 @@ TEST_F(CasinoRoutesFixture, BetsNeedASeat) {
   ASSERT_TRUE(round.has_value());
 
   const httplib::Result refused =
-      send(betsCall(ownBetsPathOf(*round), ace(), TWO_BETS_BODY));
+      send(betsCall(ownBetsPathOf(round.value_or(0)), ace(), TWO_BETS_BODY));
 
   ASSERT_TRUE(refused);
   EXPECT_EQ(refused->status, EXPECTED_CONFLICT);
@@ -237,7 +238,7 @@ TEST_F(CasinoRoutesFixture, BetsTheRulesRefuseMoveNoChip) {
   ASSERT_EQ(takeSeat(ace())->status, EXPECTED_CREATED);
   const std::optional<std::uint64_t> round = openRound();
   ASSERT_TRUE(round.has_value());
-  const std::string path = ownBetsPathOf(*round);
+  const std::string path = ownBetsPathOf(round.value_or(0));
   const std::vector<std::string> bodies{
       straightBetsOf(ONE_BET_MORE_THAN_A_ROUND_TAKES),
       std::string{CROSSING_SPLIT_BODY}, std::string{NO_CHIP_BODY},
@@ -261,7 +262,7 @@ TEST_F(CasinoRoutesFixture, ARefusedStakeKeepsTheOldBets) {
   ASSERT_EQ(takeSeat(ace())->status, EXPECTED_CREATED);
   const std::optional<std::uint64_t> round = openRound();
   ASSERT_TRUE(round.has_value());
-  const std::string path = ownBetsPathOf(*round);
+  const std::string path = ownBetsPathOf(round.value_or(0));
   ASSERT_EQ(send(betsCall(path, ace(), TWO_BETS_BODY))->status, EXPECTED_OK);
 
   const httplib::Result refused =
@@ -284,8 +285,8 @@ TEST_F(CasinoRoutesFixture, ABetOfNoKindIsMalformed) {
   const std::optional<std::uint64_t> round = openRound();
   ASSERT_TRUE(round.has_value());
 
-  const httplib::Result refused =
-      send(betsCall(ownBetsPathOf(*round), ace(), UNKNOWN_KIND_BET_BODY));
+  const httplib::Result refused = send(
+      betsCall(ownBetsPathOf(round.value_or(0)), ace(), UNKNOWN_KIND_BET_BODY));
 
   ASSERT_TRUE(refused);
   EXPECT_EQ(refused->status, EXPECTED_BAD_REQUEST);

@@ -268,7 +268,7 @@ TEST_F(ReducedMotionHangarFixture, ALookTheAccountDoesNotOwnIsTakenOff) {
   press(Key::Right);
   press(Key::Enter);
 
-  wallet_.looks = ShipLocker{};
+  wallet().looks = ShipLocker{};
   update(rtype::engine::Duration::zero());
 
   EXPECT_EQ(settings().shipLook.head, 0);

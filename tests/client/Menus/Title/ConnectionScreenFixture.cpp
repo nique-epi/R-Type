@@ -40,7 +40,7 @@ ConnectionScreenFixture::ConnectionScreenFixture(ConnectionGoal goal)
               std::make_unique<RecordingInterfaceCanvas>(canvas_)) {}
 
 SignedInConnectionScreenFixture::SignedInConnectionScreenFixture() {
-  account_.signInAs(SIGNED_IN_PLAYER_ACCOUNT_ID, std::string{SIGNED_IN_TOKEN});
+  account().signInAs(SIGNED_IN_PLAYER_ACCOUNT_ID, std::string{SIGNED_IN_TOKEN});
 }
 
 ConnectionForTheScreenBelowFixture::ConnectionForTheScreenBelowFixture()
@@ -85,3 +85,5 @@ void ConnectionScreenFixture::show(ConnectionStatus status) {
 const RecordingSoundPlayer& ConnectionScreenFixture::sounds() const {
   return sounds_;
 }
+
+FakeAccountSession& ConnectionScreenFixture::account() { return account_; }

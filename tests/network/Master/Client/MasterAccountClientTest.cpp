@@ -3,6 +3,7 @@
 #include "CannedAnswer.hpp"
 #include "LookPurchase.hpp"
 #include "MasterAccountClientFixture.hpp"
+#include "MasterAccountClientFixtures.hpp"
 #include "MasterAccountClientTestConstants.hpp"
 #include "MasterMessageText.hpp"
 #include "NetworkException.hpp"
@@ -23,10 +24,11 @@ using rtype::network::walletText;
  * Then it reads ACE
  */
 TEST_F(MasterAccountClientFixture, ReadsTheAccountOfTheToken) {
-  master().answer(std::string{READ_OWN_USER},
-                  CannedAnswer{.status = OK_STATUS, .body = userText(ACE)});
+  master().answer(
+      std::string{READ_OWN_USER},
+      CannedAnswer{.status = OK_STATUS, .body = userText(aceUser())});
 
-  EXPECT_EQ(client().readOwnUser(std::string{ACCOUNT_TOKEN}), ACE);
+  EXPECT_EQ(client().readOwnUser(std::string{ACCOUNT_TOKEN}), aceUser());
 }
 
 /**
@@ -35,8 +37,9 @@ TEST_F(MasterAccountClientFixture, ReadsTheAccountOfTheToken) {
  * Then the token goes as Bearer
  */
 TEST_F(MasterAccountClientFixture, SendsTheTokenAsBearer) {
-  master().answer(std::string{READ_OWN_USER},
-                  CannedAnswer{.status = OK_STATUS, .body = userText(ACE)});
+  master().answer(
+      std::string{READ_OWN_USER},
+      CannedAnswer{.status = OK_STATUS, .body = userText(aceUser())});
 
   static_cast<void>(client().readOwnUser(std::string{ACCOUNT_TOKEN}));
 
@@ -97,9 +100,9 @@ TEST_F(MasterAccountClientFixture, ReadsTheBalancesOfTheWallet) {
 TEST_F(MasterAccountClientFixture, ListsTheLooksOfTheAccount) {
   master().answer(
       std::string{LIST_OWN_LOOKS},
-      CannedAnswer{.status = OK_STATUS, .body = ownedLooksText(ACE_LOOKS)});
+      CannedAnswer{.status = OK_STATUS, .body = ownedLooksText(aceLooks())});
 
-  EXPECT_EQ(client().listOwnLooks(std::string{ACCOUNT_TOKEN}), ACE_LOOKS);
+  EXPECT_EQ(client().listOwnLooks(std::string{ACCOUNT_TOKEN}), aceLooks());
 }
 
 /**
@@ -144,9 +147,9 @@ TEST_F(MasterAccountClientFixture, SendsAnExchangeAndReadsItsReceipt) {
   master().answer(
       std::string{CREATE_OWN_EXCHANGE},
       CannedAnswer{.status = CREATED_STATUS,
-                   .body = exchangeReceiptText(BUY_500_CHIPS_RECEIPT)});
+                   .body = exchangeReceiptText(buyFiveHundredChipsReceipt())});
 
   EXPECT_EQ(client().exchange(std::string{ACCOUNT_TOKEN}, BUY_500_CHIPS),
-            BUY_500_CHIPS_RECEIPT);
+            buyFiveHundredChipsReceipt());
   EXPECT_EQ(lastRequest().body, exchangeRequestText(BUY_500_CHIPS));
 }

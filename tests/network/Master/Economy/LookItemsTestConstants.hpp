@@ -1,9 +1,7 @@
 #pragma once
 
 #include <cstddef>
-#include <string>
 #include <string_view>
-#include <vector>
 
 namespace rtype::network::testing {
 
@@ -12,13 +10,6 @@ namespace rtype::network::testing {
 constexpr std::string_view CROWN_ITEM_NAME = "crown";
 constexpr std::size_t CROWN_ITEM = 2;
 constexpr std::string_view CROWN_IN_CAPITALS = "CROWN";
-constexpr std::string_view NO_ITEM_NAME = "";
-
-/** @brief Looks in no order, a name of no look among them, and the same in
- * the order of the catalogue: top hat, crown, mustache, then the unknown. */
-inline const std::vector<std::string> LOOKS_IN_NO_ORDER{
-    "mustache", "no_such_look", "crown", "top_hat"};
-inline const std::vector<std::string> LOOKS_IN_CATALOGUE_ORDER{
-    "top_hat", "crown", "mustache", "no_such_look"};
+constexpr std::string_view NO_ITEM_NAME{};
 
 }  // namespace rtype::network::testing

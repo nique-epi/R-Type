@@ -14,7 +14,7 @@ class AccountSessionFixture : public ::testing::Test {
   [[nodiscard]] RecordingAccountLink& link();
   [[nodiscard]] AccountSession& session();
 
-  /** @brief Signs in with ACE_TOKEN, and lets the link name ACE_ACCOUNT. */
+  /** @brief Signs in with ACE_TOKEN, and lets the link name aceAccount(). */
   void signInAsAce();
 
  private:

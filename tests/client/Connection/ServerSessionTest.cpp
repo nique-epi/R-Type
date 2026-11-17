@@ -19,6 +19,7 @@
 #include "Expulsion.hpp"
 #include "FixedEntityTypeSourceConstants.hpp"
 #include "GameLoaded.hpp"
+#include "GameRequest.hpp"
 #include "GameStarted.hpp"
 #include "Heartbeat.hpp"
 #include "LobbyState.hpp"
