@@ -409,6 +409,95 @@ export const enPages: PageCopy = {
       welcome: 'Welcome, {nickname}. Your nickname is reserved.',
     },
   },
+  signInPage: {
+    eyebrow: 'Pilot account',
+    title: 'Sign in',
+    lede: 'Sign in with your nickname and your password.',
+    form: {
+      title: 'Sign in',
+      nickname: 'Nickname',
+      password: 'Password',
+      submit: 'Sign in',
+      pending: 'Signing in...',
+      problems: {
+        nicknameRequired: 'Type your nickname',
+        passwordRequired: 'Type your password',
+      },
+    },
+    problems: {
+      wrong: {
+        title: 'Credentials refused',
+        text: 'This nickname and this password do not go together. Check them and try again.',
+      },
+      quota: {
+        title: 'Too many tries',
+        text: 'Too many sign-ins failed from your address. Wait a few minutes.',
+      },
+      unreachable: {
+        title: 'Master unreachable',
+        text: 'The master does not answer. Try again in a moment.',
+      },
+    },
+    signedIn: 'You are signed in.',
+  },
+  linkPage: {
+    eyebrow: 'Pilot account',
+    title: 'Connect a game',
+    lede: 'Connect the game that shows a code to your account, without typing your password in the game.',
+    codeForm: {
+      label: 'Code the game shows',
+      placeholder: 'KQFB-WZPM',
+      submit: 'Continue',
+    },
+    unknown: {
+      title: 'Unknown code',
+      text: 'No game waits for this code: it expired or it was mistyped. Ask the game for a new code.',
+    },
+    unreachable: 'The master does not answer. Try again in a moment.',
+    link: {
+      title: 'A game asks to connect',
+      request:
+        'A game asked at {time} to connect to your account. Its code: {code}.',
+      expiry: 'This code expires at {time}.',
+      warningTitle: 'Careful',
+      warning:
+        'Only connect a game in front of you that shows this code. If someone sent you this code, refuse.',
+      approve: 'Connect this game',
+      deny: 'Refuse',
+      pending: 'Sending...',
+      signOut: 'Use another account',
+      outcomes: {
+        approved: {
+          title: 'Game connected',
+          text: 'Go back to the game: it signs in to your account within seconds.',
+        },
+        denied: {
+          title: 'Connection refused',
+          text: 'The game will not be connected to your account.',
+        },
+        decided: {
+          title: 'Already decided',
+          text: 'This code already got another answer, or it expired.',
+        },
+        unknown: {
+          title: 'Unknown code',
+          text: 'No game waits for this code any more. Ask the game for a new code.',
+        },
+        signedOut: {
+          title: 'Session ended',
+          text: 'Your session expired. Sign in again, then start over.',
+        },
+        unreachable: {
+          title: 'Master unreachable',
+          text: 'The master does not answer. Try again in a moment.',
+        },
+        expired: {
+          title: 'Code expired',
+          text: 'This code expired. Ask the game for a new code.',
+        },
+      },
+    },
+  },
   teamPage: {
     eyebrow: 'Epitech tek3 project',
     title: 'Team',
