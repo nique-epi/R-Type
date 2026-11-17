@@ -1,4 +1,5 @@
 #include "ConnectionRequest.hpp"
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <optional>
@@ -7,6 +8,7 @@
 #include "ByteReader.hpp"
 #include "ByteWriter.hpp"
 #include "GameRules.hpp"
+#include "GameTicket.hpp"
 #include "NetworkException.hpp"
 #include "ProtocolConstants.hpp"
 #include "WireTypes.hpp"
@@ -73,6 +75,13 @@ GameRules decodeRules(ByteReader& reader) {
                    .friendlyFire = readBool(reader)};
 }
 
+/** @returns The GAME_TICKET_BYTES of a ticket @p reader is at. */
+GameTicket ticketOf(ByteReader& reader) {
+  GameTicket ticket{};
+  std::ranges::copy(reader.readBytes(GAME_TICKET_BYTES), ticket.bytes.begin());
+  return ticket;
+}
+
 /** @returns The rules that follow the choice of a NewGame; nothing for any
  * other choice, which carries none. */
 std::optional<GameRules> decodeRulesOf(ByteReader& reader,
@@ -96,7 +105,7 @@ void encodePayload(ByteWriter& writer, const ConnectionRequest& message) {
   validate(message);
   writer.writeUint64(message.cookie);
   writer.writeString(message.nickname);
-  writer.writeUint64(message.accountId);
+  writer.writeBytes(message.ticket.bytes);
   writer.writeUint8(static_cast<std::uint8_t>(message.game.kind));
   writer.writeUint16(message.game.number);
   if (message.rules.has_value()) {
@@ -111,7 +120,7 @@ ConnectionRequest decodePayload(
   ConnectionRequest message{
       .cookie = reader.readUint64(),
       .nickname = reader.readString(),
-      .accountId = reader.readUint64(),
+      .ticket = ticketOf(reader),
       .game =
           GameChoice{.kind = static_cast<GameChoiceKind>(reader.readUint8()),
                      .number = reader.readUint16()}};

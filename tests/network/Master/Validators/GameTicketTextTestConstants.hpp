@@ -21,6 +21,9 @@ constexpr std::string_view SHORT_TICKET =
 constexpr std::string_view LONG_TICKET =
     "rtt_0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0";
 
+/** @brief Where a result names the ticket of its second pilot. */
+constexpr std::string_view SECOND_PILOT_TICKET_POINTER = "/players/1/ticket";
+
 /** @brief An answer of the master whose ticket is in uppercase. */
 constexpr std::string_view UPPERCASE_TICKET_ANSWER =
     R"({"ticket":"rtt_0123456789ABCDEF0123456789abcdef0123456789abcdef0123456789abcdef","expiresAt":1800021600})";

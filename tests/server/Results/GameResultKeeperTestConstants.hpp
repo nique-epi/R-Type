@@ -20,9 +20,6 @@ constexpr std::uint8_t FIVE_LIVES_OF_THE_RULES = 5;
 constexpr std::uint8_t TWO_LIVES_LEFT = 2;
 constexpr std::uint32_t THREE_LIVES_LOST = 3;
 
-/** @brief The account a signed-in player played under. */
-constexpr std::uint64_t KEEPER_ACCOUNT_ID = 4207;
-
 /**
  * @brief Two look items a player won, as LookItemWon numbers them (their place
  * in the catalog of the ship looks, plus one), and their names in that

@@ -24,7 +24,7 @@ class IAccountSession {
   /** @returns Whether the master named the account of the newest token. */
   [[nodiscard]] virtual bool signedIn() const = 0;
 
-  /** @returns The id of the account; network::GUEST_ACCOUNT_ID signed out. */
+  /** @returns The id of the account; NO_ACCOUNT_ID signed out. */
   [[nodiscard]] virtual std::uint64_t accountId() const = 0;
 
   /** @returns The nickname of the account; empty signed out. */

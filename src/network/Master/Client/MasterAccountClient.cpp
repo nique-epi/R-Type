@@ -3,6 +3,7 @@
 #include <string_view>
 #include "ExchangeReceipt.hpp"
 #include "ExchangeRequest.hpp"
+#include "GameTicketGrant.hpp"
 #include "LookPurchase.hpp"
 #include "MasterMessageText.hpp"
 #include "MasterRequest.hpp"
@@ -49,6 +50,13 @@ ExchangeReceipt MasterAccountClient::exchange(const std::string& token,
       transport_.send(jsonRequestOf(CREATE_OWN_EXCHANGE_ROUTE,
                                     apiPathOf(CREATE_OWN_EXCHANGE_ROUTE),
                                     exchangeRequestText(request)),
+                      token));
+}
+
+GameTicketGrant MasterAccountClient::createOwnTicket(const std::string& token) {
+  return gameTicketGrantFromText(
+      transport_.send(masterRequestOf(CREATE_OWN_TICKET_ROUTE,
+                                      apiPathOf(CREATE_OWN_TICKET_ROUTE)),
                       token));
 }
 

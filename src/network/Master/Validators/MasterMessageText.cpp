@@ -699,6 +699,21 @@ bool victoryOf(const JsonField& game) {
   return victory.has_value() && booleanOf(*victory);
 }
 
+/** @returns The game ticket of @p player; none for a guest, or when a server
+ * older than the member does not say. */
+std::optional<std::string> ticketOf(const JsonField& player) {
+  const std::optional<JsonField> ticket =
+      optionalMemberOf(player, TICKET_MEMBER);
+  if (!ticket.has_value()) {
+    return std::nullopt;
+  }
+  std::string text = stringOf(*ticket);
+  if (!isWellFormedGameTicket(text)) {
+    refuse(*ticket);
+  }
+  return text;
+}
+
 FinishedGamePlayer finishedGamePlayerOf(const JsonField& player) {
   requireObject(player);
   return FinishedGamePlayer{
@@ -707,7 +722,8 @@ FinishedGamePlayer finishedGamePlayerOf(const JsonField& player) {
       .score = static_cast<std::uint32_t>(integerOf(
           memberOf(player, SCORE_MEMBER),
           IntegerBounds{.lowest = LOWEST_SCORE, .highest = HIGHEST_SCORE})),
-      .wonLooks = wonLooksOf(player)};
+      .wonLooks = wonLooksOf(player),
+      .ticket = ticketOf(player)};
 }
 
 std::vector<FinishedGamePlayer> finishedGamePlayersOf(const JsonField& game) {
@@ -752,6 +768,9 @@ nlohmann::json finishedGamePlayerDocument(const FinishedGamePlayer& player) {
   }
   document[SCORE_MEMBER] = player.score;
   document[WON_LOOKS_MEMBER] = player.wonLooks;
+  if (player.ticket.has_value()) {
+    document[TICKET_MEMBER] = *player.ticket;
+  }
   return document;
 }
 

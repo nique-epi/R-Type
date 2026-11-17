@@ -43,10 +43,9 @@ using rtype::server::testing::PROBE_SECRET_CEILING;
 using rtype::server::testing::PROBE_SECRET_FLOOR;
 using rtype::server::testing::PROBE_TOKEN_OF_A_HEARTBEAT;
 using rtype::server::testing::TRAILING_PILOT;
-using rtype::server::testing::TRAILING_PILOT_ACCOUNT_ID;
-using rtype::server::testing::TRAILING_PILOT_ACCOUNT_TEXT;
 using rtype::server::testing::TRAILING_PILOT_DEATHS;
 using rtype::server::testing::TRAILING_PILOT_SCORE;
+using rtype::server::testing::TRAILING_PILOT_TICKET;
 using rtype::server::testing::TRAILING_PILOT_WON_LOOK;
 
 /**
@@ -158,12 +157,12 @@ TEST(MasterMessages, AHeartbeatCarriesTheTokenItIsGiven) {
 }
 
 /**
- * Given a won vanilla game of a guest and of a pilot signed in to account 42
- * who won the crown
+ * Given a won vanilla game of a guest and of a pilot who joined with a game
+ * ticket and won the crown
  * When its result is written for the master
  * Then it carries its date, difficulty, players at the start, that it was
- * vanilla and won, the guest without an account, the other pilot under "42"
- * with the crown, each with its score and without the deaths
+ * vanilla and won, the guest without a ticket, the other pilot with its ticket
+ * and the crown, each with its score, without the deaths, and no account
  */
 TEST(MasterMessages, TheResultOfAGameIsWhatTheMasterKeeps) {
   const FinishedGame game = finishedGameOf(GameResult{
@@ -178,8 +177,8 @@ TEST(MasterMessages, TheResultOfAGameIsWhatTheMasterKeeps) {
                       .nickname = std::string{TRAILING_PILOT},
                       .score = TRAILING_PILOT_SCORE,
                       .deaths = TRAILING_PILOT_DEATHS,
-                      .accountId = TRAILING_PILOT_ACCOUNT_ID,
-                      .wonLooks = {std::string{TRAILING_PILOT_WON_LOOK}}}},
+                      .wonLooks = {std::string{TRAILING_PILOT_WON_LOOK}},
+                      .ticket = std::string{TRAILING_PILOT_TICKET}}},
       .vanilla = true,
       .victory = true});
 
@@ -196,8 +195,9 @@ TEST(MasterMessages, TheResultOfAGameIsWhatTheMasterKeeps) {
                                          .wonLooks = {}},
                       FinishedGamePlayer{
                           .nickname = std::string{TRAILING_PILOT},
-                          .accountId = std::string{TRAILING_PILOT_ACCOUNT_TEXT},
+                          .accountId = std::nullopt,
                           .score = TRAILING_PILOT_SCORE,
-                          .wonLooks = {std::string{TRAILING_PILOT_WON_LOOK}}}},
+                          .wonLooks = {std::string{TRAILING_PILOT_WON_LOOK}},
+                          .ticket = std::string{TRAILING_PILOT_TICKET}}},
           .victory = true}));
 }

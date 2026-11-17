@@ -21,6 +21,7 @@
 #include "IOptionalDependencies.hpp"
 #include "IServerCatalog.hpp"
 #include "IServerTicks.hpp"
+#include "ITicketLink.hpp"
 #include "IWallet.hpp"
 #include "InstallContext.hpp"
 #include "Logger.hpp"
@@ -136,6 +137,7 @@ class ClientScreensModule final : public engine::IModule,
   IServerCatalog* serverCatalog_{nullptr};
   IGameCatalog* gameCatalog_{nullptr};
   IAccountSession* account_{nullptr};
+  ITicketLink* tickets_{nullptr};
   IWallet* wallet_{nullptr};
   FrameLoop* loop_{nullptr};
   EventListeners* listeners_{nullptr};

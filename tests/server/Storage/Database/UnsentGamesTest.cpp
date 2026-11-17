@@ -58,21 +58,20 @@ TEST_F(ResultsDatabaseFixture, ReadsAVanillaGameTheMasterHasNotAnswered) {
 }
 
 /**
- * Given a won vanilla game of a player signed in to an account, who won two
- * look items, saved
+ * Given a won vanilla game of a player who joined with a game ticket and won
+ * two look items, saved
  * When the games the master has not answered are read
- * Then the game says it was won, and its row keeps the account and both items
+ * Then the game says it was won, and its row keeps the ticket and both items
  * in their order
  */
-TEST_F(ResultsDatabaseFixture, ReadsTheAccountTheLooksAndTheVictoryOfAGame) {
+TEST_F(ResultsDatabaseFixture, ReadsTheTicketTheLooksAndTheVictoryOfAGame) {
   ResultsDatabase database{file()};
   GameResult won = vanillaGame(
-      {PlayerResult{
-          .nickname = std::string{ACE},
-          .score = HIGH_SCORE,
-          .deaths = TWO_DEATHS,
-          .accountId = SAVED_ACCOUNT_ID,
-          .wonLooks = {std::string{WON_HALO}, std::string{WON_CROWN}}}},
+      {PlayerResult{.nickname = std::string{ACE},
+                    .score = HIGH_SCORE,
+                    .deaths = TWO_DEATHS,
+                    .wonLooks = {std::string{WON_HALO}, std::string{WON_CROWN}},
+                    .ticket = std::string{SAVED_TICKET}}},
       SOME_DATE);
   won.victory = true;
   database.save(won);
@@ -88,7 +87,7 @@ TEST_F(ResultsDatabaseFixture, ReadsTheAccountTheLooksAndTheVictoryOfAGame) {
 /**
  * Given a lost vanilla game of a guest who won nothing, saved
  * When the games the master has not answered are read
- * Then the game says it was lost, and its row names no account and no item
+ * Then the game says it was lost, and its row names no ticket and no item
  */
 TEST_F(ResultsDatabaseFixture, ReadsALostGameOfAGuest) {
   ResultsDatabase database{file()};
@@ -99,7 +98,7 @@ TEST_F(ResultsDatabaseFixture, ReadsALostGameOfAGuest) {
 
   ASSERT_EQ(games.size(), 1U);
   EXPECT_FALSE(games[0].result.victory);
-  EXPECT_EQ(games[0].result.players.at(0).accountId, network::GUEST_ACCOUNT_ID);
+  EXPECT_EQ(games[0].result.players.at(0).ticket, std::nullopt);
   EXPECT_TRUE(games[0].result.players.at(0).wonLooks.empty());
 }
 
@@ -229,7 +228,7 @@ TEST_F(ResultsDatabaseFixture, ReadsAGameOfTheFourthVersionAsLostByAGuest) {
 
   ASSERT_EQ(games.size(), 1U);
   EXPECT_FALSE(games[0].result.victory);
-  EXPECT_EQ(games[0].result.players.at(0).accountId, network::GUEST_ACCOUNT_ID);
+  EXPECT_EQ(games[0].result.players.at(0).ticket, std::nullopt);
   EXPECT_TRUE(games[0].result.players.at(0).wonLooks.empty());
 }
 

@@ -2,7 +2,7 @@
 #include <cstdint>
 #include <optional>
 #include <string>
-#include "ProtocolConstants.hpp"
+#include "AccountLinkConstants.hpp"
 #include "SignInRefusal.hpp"
 
 void FakeAccountSession::signInAs(std::uint64_t accountId,
@@ -14,7 +14,7 @@ void FakeAccountSession::signInAs(std::uint64_t accountId,
 bool FakeAccountSession::signedIn() const { return accountId_.has_value(); }
 
 std::uint64_t FakeAccountSession::accountId() const {
-  return accountId_.value_or(rtype::network::GUEST_ACCOUNT_ID);
+  return accountId_.value_or(rtype::client::NO_ACCOUNT_ID);
 }
 
 std::string FakeAccountSession::nickname() const {

@@ -10,6 +10,7 @@
 #include "GameSettings.hpp"
 #include "GameState.hpp"
 #include "GameStateChanged.hpp"
+#include "GameTicket.hpp"
 #include "IResultsArchive.hpp"
 #include "PlayerRoster.hpp"
 #include "ShipLookConstants.hpp"
@@ -41,8 +42,8 @@ PlayerResult resultOf(const ConnectedPlayer& player, std::uint8_t lives) {
       .nickname = player.nickname,
       .score = player.score,
       .deaths = static_cast<std::uint32_t>(lives - player.livesWithoutShip),
-      .accountId = player.accountId,
-      .wonLooks = wonLooksOf(player)};
+      .wonLooks = wonLooksOf(player),
+      .ticket = network::gameTicketText(player.ticket)};
 }
 
 }  // namespace

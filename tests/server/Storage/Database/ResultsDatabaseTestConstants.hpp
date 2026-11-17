@@ -31,10 +31,13 @@ constexpr std::uint32_t TWO_DEATHS = 2;
 constexpr std::uint32_t ONE_DEATH = 1;
 constexpr std::size_t GAME_ID_SIZE = 32;
 
-/** @brief The account ACE played under, the largest one eight bytes hold,
- * whose digits a text column must keep whole; and two items of the catalog of
- * the ship looks it won. */
-constexpr std::uint64_t SAVED_ACCOUNT_ID = 18'446'744'073'709'551'615U;
+/** @brief The game ticket ACE joined with, as the master writes it; and two
+ * items of the catalog of the ship looks it won. */
+constexpr std::string_view SAVED_TICKET =
+    "rtt_00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff";
+/** @brief Another game ticket, of another game. */
+constexpr std::string_view OTHER_SAVED_TICKET =
+    "rtt_ffeeddccbbaa99887766554433221100ffeeddccbbaa99887766554433221100";
 constexpr std::string_view WON_CROWN = "crown";
 constexpr std::string_view WON_HALO = "halo";
 constexpr std::size_t PLAYERS_ON_A_FULL_BOARD = 11;
@@ -71,8 +74,8 @@ constexpr std::size_t REPLY_QUEUE_ROOM = 4;
 constexpr std::size_t FIRST_ASKER = 0;
 
 constexpr std::string_view SELECT_ROW_OF_ACE = R"sql(
-SELECT game_id, account_id, score, deaths, played_at, difficulty, player_count,
-       vanilla, sent_at
+SELECT game_id, account_id, ticket, score, deaths, played_at, difficulty,
+       player_count, vanilla, sent_at
 FROM game_results WHERE nickname = 'ACE'
 )sql";
 constexpr std::string_view COUNT_GAME_IDS =

@@ -125,7 +125,7 @@ void ConnectionAcceptor::answer(const network::Endpoint& sender,
   }
   ConnectedPlayer* const joined =
       roster_->add(sender, request.nickname, drawSessionToken());
-  joined->accountId = request.accountId;
+  joined->ticket = request.ticket;
   logger_.info("player ", static_cast<unsigned int>(joined->playerNumber),
                " joined from ", sender.address, " port ", sender.port);
   admit_(joined->endpoint, joined->sessionToken);

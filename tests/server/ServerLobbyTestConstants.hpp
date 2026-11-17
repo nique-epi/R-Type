@@ -29,12 +29,6 @@ constexpr std::string_view PLAYER_NICKNAME = "Nolan";
 constexpr std::string_view SHORTEST_NICKNAME = "A";
 
 /**
- * @brief The account a signed-in player names in its request, each byte
- * different.
- */
-constexpr std::uint64_t PLAYER_ACCOUNT_ID = 0x0102030405060708;
-
-/**
  * @brief The start of the nickname nicknameOf() gives each player, followed by
  * the number of the player: Pilot0, Pilot1…
  */

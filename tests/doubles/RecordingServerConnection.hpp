@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cstdint>
 #include <optional>
 #include <ostream>
 #include <string>
@@ -11,12 +10,12 @@
 #include "Endpoint.hpp"
 #include "GameRequest.hpp"
 #include "GameRules.hpp"
+#include "GameTicket.hpp"
 #include "IServerConnection.hpp"
-#include "ProtocolConstants.hpp"
 #include "ServerConnectionRequest.hpp"
 
 /** @brief What a screen asked of the connection: to start an attempt, with its
- * server, its nickname, its game, the rules it sends and its account, or to
+ * server, its nickname, its game, the rules it sends and its ticket, or to
  * drop it. */
 struct ServerConnectionCall {
   ServerConnectionRequest request{};
@@ -24,8 +23,8 @@ struct ServerConnectionCall {
   std::string nickname;
   rtype::network::GameChoice game{rtype::network::ANY_GAME_CHOICE};
   std::optional<rtype::network::GameRules> rules = std::nullopt;
-  /** @brief The account the attempt names. */
-  std::uint64_t accountId{rtype::network::GUEST_ACCOUNT_ID};
+  /** @brief The game ticket the attempt carries. */
+  rtype::network::GameTicket ticket{rtype::network::GUEST_TICKET};
 
   bool operator==(const ServerConnectionCall& other) const = default;
 };

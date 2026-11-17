@@ -4,7 +4,6 @@
 #include <string>
 #include "AccountLinkConstants.hpp"
 #include "IAccountLink.hpp"
-#include "ProtocolConstants.hpp"
 #include "SignInRefusal.hpp"
 #include "UserReading.hpp"
 
@@ -21,7 +20,7 @@ bool AccountSession::signedIn() const {
 std::uint64_t AccountSession::accountId() const {
   const std::optional<UserReading> reading = answer();
   if (!reading.has_value() || !reading->user.has_value()) {
-    return network::GUEST_ACCOUNT_ID;
+    return NO_ACCOUNT_ID;
   }
   return static_cast<std::uint64_t>(reading->user->id);
 }

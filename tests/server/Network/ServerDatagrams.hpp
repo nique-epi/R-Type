@@ -34,9 +34,9 @@
     const std::string& nickname, std::uint64_t cookie);
 
 /** @returns A datagram holding a ConnectionRequest that carries @p cookie and
- * PLAYER_NICKNAME, from a player signed in to the account @p accountId. */
-[[nodiscard]] std::vector<std::byte> requestDatagramOfAccount(
-    std::uint64_t accountId, std::uint64_t cookie);
+ * PLAYER_NICKNAME, from a player who joins with the game ticket @p ticket. */
+[[nodiscard]] std::vector<std::byte> requestDatagramWithTicket(
+    const rtype::network::GameTicket& ticket, std::uint64_t cookie);
 
 /** @returns A datagram holding a ServerInformationRequest sent at
  * @p sentAt. */

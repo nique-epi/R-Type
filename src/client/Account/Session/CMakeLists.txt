@@ -5,8 +5,6 @@ target_include_directories(rtype_client_account_session PUBLIC ${CMAKE_CURRENT_S
 target_link_libraries(rtype_client_account_session
   PUBLIC
     rtype_client_connection_account
-  PRIVATE
-    rtype_network_protocol
 )
 
 rtype_enable_warnings(rtype_client_account_session)

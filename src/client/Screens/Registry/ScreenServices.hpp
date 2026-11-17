@@ -12,6 +12,7 @@
 #include "IGameCatalog.hpp"
 #include "IServerCatalog.hpp"
 #include "IServerTicks.hpp"
+#include "ITicketLink.hpp"
 #include "IWallet.hpp"
 #include "MasterLeaderboard.hpp"
 #include "PlayStart.hpp"
@@ -68,6 +69,9 @@ struct ScreenServices {
    * master: the shop, the hangar, the cashier and the balances read it. */
   std::reference_wrapper<IAccountSession> account;
   std::reference_wrapper<IWallet> wallet;
+  /** @brief Asks the master the game ticket a signed-in player joins a game
+   * with: the connection screens read it. */
+  std::reference_wrapper<ITicketLink> tickets;
   /** @brief The server, the nickname and the game the first connection
    * screen starts with. */
   ServerChoice choice;

@@ -9,7 +9,8 @@ namespace rtype::server {
  *
  * A nickname compares with NOCASE, which folds ASCII letters only, as
  * PlayerRoster::hasNickname() does: ACE and ace are one player. account_id
- * stays empty for a guest (see RESULTS_OF_ACCOUNTS_MIGRATION); sent_at is the
+ * stays empty: a server knows no account, only the game ticket a player
+ * hands it (see RESULTS_FOR_THE_WALLETS_MIGRATION); sent_at is the
  * second the master accepted the game (see ResultsDatabase::markSent());
  * vanilla is 1 for a vanilla game (GameResult::vanilla). Statistics are
  * computed from the rows, so they cannot disagree with them; COALESCE gives no
@@ -62,14 +63,16 @@ CREATE INDEX game_results_not_sent
 /**
  * @brief The fifth version: won_looks, the names of the look items the player
  * won in the game, separated by WON_LOOKS_SEPARATOR, empty when it won none;
- * victory, 1 when the players cleared the level. account_id, kept since the
- * first version, now holds the account of the player in decimal digits, and
- * stays empty for a guest. A row written before this version reads as a game
- * lost without any item won.
+ * victory, 1 when the players cleared the level; ticket, the game ticket the
+ * player joined with as the master writes it, empty for a guest, which the
+ * server only reports to the master with the game and never reads in its
+ * leaderboard or its statistics. A row written before this version reads as
+ * a game of a guest, lost without any item won.
  */
-constexpr std::string_view RESULTS_OF_ACCOUNTS_MIGRATION = R"sql(
+constexpr std::string_view RESULTS_FOR_THE_WALLETS_MIGRATION = R"sql(
 ALTER TABLE game_results ADD COLUMN won_looks TEXT NOT NULL DEFAULT '';
 ALTER TABLE game_results ADD COLUMN victory INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE game_results ADD COLUMN ticket TEXT;
 )sql";
 
 /** @brief What separates two names of won_looks: a name of
@@ -83,10 +86,10 @@ constexpr std::string_view NEW_GAME_ID_QUERY =
 
 constexpr std::string_view INSERT_RESULT_STATEMENT = R"sql(
 INSERT INTO game_results
-  (game_id, nickname, account_id, score, deaths, played_at, difficulty,
+  (game_id, nickname, ticket, score, deaths, played_at, difficulty,
    player_count, vanilla, won_looks, victory)
 VALUES
-  (:game_id, :nickname, :account_id, :score, :deaths, :played_at, :difficulty,
+  (:game_id, :nickname, :ticket, :score, :deaths, :played_at, :difficulty,
    :player_count, :vanilla, :won_looks, :victory)
 )sql";
 
@@ -136,7 +139,7 @@ WITH waiting AS (
   ORDER BY played_at, game_id
   LIMIT :game_limit
 )
-SELECT results.game_id, results.nickname, results.account_id, results.score,
+SELECT results.game_id, results.nickname, results.ticket, results.score,
        results.deaths, results.played_at, results.difficulty,
        results.player_count, results.won_looks, results.victory
 FROM waiting
@@ -160,7 +163,7 @@ constexpr const char* PLAYED_AT_PARAMETER = ":played_at";
 constexpr const char* DIFFICULTY_PARAMETER = ":difficulty";
 constexpr const char* PLAYER_COUNT_PARAMETER = ":player_count";
 constexpr const char* VANILLA_PARAMETER = ":vanilla";
-constexpr const char* ACCOUNT_ID_PARAMETER = ":account_id";
+constexpr const char* TICKET_PARAMETER = ":ticket";
 constexpr const char* WON_LOOKS_PARAMETER = ":won_looks";
 constexpr const char* VICTORY_PARAMETER = ":victory";
 constexpr const char* ASKER_PARAMETER = ":asker";
@@ -180,7 +183,7 @@ constexpr const char* GAME_ID_COLUMN = "game_id";
 constexpr const char* DEATHS_COLUMN = "deaths";
 constexpr const char* DIFFICULTY_COLUMN = "difficulty";
 constexpr const char* PLAYER_COUNT_COLUMN = "player_count";
-constexpr const char* ACCOUNT_ID_COLUMN = "account_id";
+constexpr const char* TICKET_COLUMN = "ticket";
 constexpr const char* WON_LOOKS_COLUMN = "won_looks";
 constexpr const char* VICTORY_COLUMN = "victory";
 

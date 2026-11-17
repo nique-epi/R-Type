@@ -21,7 +21,6 @@
 #include "ResultsDatabaseConstants.hpp"
 #include "ServerMigrationsConstants.hpp"
 #include "UnsentGame.hpp"
-#include "WholeNumberText.hpp"
 
 namespace rtype::server {
 
@@ -63,28 +62,27 @@ std::vector<std::string> splitLooks(std::string_view joined) {
   return looks;
 }
 
-/** @brief Binds @p accountId in decimal digits, or null for a guest. */
-void bindAccount(SQLite::Statement& insert, std::uint64_t accountId) {
-  if (accountId == network::GUEST_ACCOUNT_ID) {
-    insert.bind(ACCOUNT_ID_PARAMETER);
+/** @brief Binds @p ticket, or null for a guest. */
+void bindTicket(SQLite::Statement& insert,
+                const std::optional<std::string>& ticket) {
+  if (!ticket.has_value()) {
+    insert.bind(TICKET_PARAMETER);
     return;
   }
-  insert.bind(ACCOUNT_ID_PARAMETER, std::to_string(accountId));
+  insert.bind(TICKET_PARAMETER, *ticket);
 }
 
-/** @returns The account @p column keeps; a guest for a null, or for a text
- * that is no whole number, which this server never writes. */
-std::uint64_t accountOf(const SQLite::Column& column) {
+/** @returns The ticket @p column keeps; none for a null, a guest. */
+std::optional<std::string> ticketOf(const SQLite::Column& column) {
   if (column.isNull()) {
-    return network::GUEST_ACCOUNT_ID;
+    return std::nullopt;
   }
-  return network::wholeNumberIn<std::uint64_t>(column.getString())
-      .value_or(network::GUEST_ACCOUNT_ID);
+  return column.getString();
 }
 
 void bindPlayer(SQLite::Statement& insert, const PlayerResult& player) {
   insert.bind(NICKNAME_PARAMETER, player.nickname);
-  bindAccount(insert, player.accountId);
+  bindTicket(insert, player.ticket);
   insert.bind(SCORE_PARAMETER, player.score);
   insert.bind(DEATHS_PARAMETER, player.deaths);
   insert.bind(WON_LOOKS_PARAMETER, joinedLooks(player.wonLooks));
@@ -133,8 +131,8 @@ PlayerResult playerOf(const SQLite::Statement& query) {
       .nickname = query.getColumn(NICKNAME_COLUMN).getString(),
       .score = query.getColumn(SCORE_COLUMN).getUInt(),
       .deaths = query.getColumn(DEATHS_COLUMN).getUInt(),
-      .accountId = accountOf(query.getColumn(ACCOUNT_ID_COLUMN)),
-      .wonLooks = splitLooks(query.getColumn(WON_LOOKS_COLUMN).getString())};
+      .wonLooks = splitLooks(query.getColumn(WON_LOOKS_COLUMN).getString()),
+      .ticket = ticketOf(query.getColumn(TICKET_COLUMN))};
 }
 
 /** @brief Writes @p answeredAt on every row of @p gameId with @p update. */

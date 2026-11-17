@@ -1,12 +1,13 @@
 #include <gtest/gtest.h>
 #include <string>
 #include "AccountFixtures.hpp"
+#include "AccountLinkConstants.hpp"
 #include "AccountSessionFixture.hpp"
 #include "AccountTestConstants.hpp"
-#include "ProtocolConstants.hpp"
 #include "SignInRefusal.hpp"
 #include "UserReading.hpp"
 
+using rtype::client::NO_ACCOUNT_ID;
 using rtype::client::SignInRefusal;
 using rtype::client::UserReading;
 using rtype::client::testing::AccountSessionFixture;
@@ -16,7 +17,6 @@ using rtype::client::testing::ACE_TOKEN;
 using rtype::client::testing::aceAccount;
 using rtype::client::testing::FIRST_ASK;
 using rtype::client::testing::OTHER_TOKEN;
-using rtype::network::GUEST_ACCOUNT_ID;
 
 /**
  * Given a session no token signed in
@@ -25,7 +25,7 @@ using rtype::network::GUEST_ACCOUNT_ID;
  */
 TEST_F(AccountSessionFixture, ANewSessionIsAGuest) {
   EXPECT_FALSE(session().signedIn());
-  EXPECT_EQ(session().accountId(), GUEST_ACCOUNT_ID);
+  EXPECT_EQ(session().accountId(), NO_ACCOUNT_ID);
 }
 
 /**
@@ -47,7 +47,7 @@ TEST_F(AccountSessionFixture, SignInAsksTheAccountOfTheToken) {
 TEST_F(AccountSessionFixture, IsAGuestUntilTheMasterAnswers) {
   session().signIn(std::string{ACE_TOKEN});
 
-  EXPECT_EQ(session().accountId(), GUEST_ACCOUNT_ID);
+  EXPECT_EQ(session().accountId(), NO_ACCOUNT_ID);
 }
 
 /**
@@ -89,7 +89,7 @@ TEST_F(AccountSessionFixture, ARefusedTokenSignsNoOneIn) {
   link().userRead = UserReading{
       .ask = FIRST_ASK, .user = {}, .refusal = SignInRefusal::TokenRefused};
 
-  EXPECT_EQ(session().accountId(), GUEST_ACCOUNT_ID);
+  EXPECT_EQ(session().accountId(), NO_ACCOUNT_ID);
   EXPECT_EQ(session().signInRefusal(), SignInRefusal::TokenRefused);
 }
 
@@ -103,6 +103,6 @@ TEST_F(AccountSessionFixture, SignOutForgetsTheAccountAndTheToken) {
 
   session().signOut();
 
-  EXPECT_EQ(session().accountId(), GUEST_ACCOUNT_ID);
+  EXPECT_EQ(session().accountId(), NO_ACCOUNT_ID);
   EXPECT_TRUE(session().token().empty());
 }

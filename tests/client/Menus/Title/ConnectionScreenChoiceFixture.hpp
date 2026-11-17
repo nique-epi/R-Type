@@ -7,6 +7,7 @@
 #include "ConnectionScreen.hpp"
 #include "ConnectionStart.hpp"
 #include "FakeAccountSession.hpp"
+#include "FakeTicketLink.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingServerConnection.hpp"
@@ -65,6 +66,7 @@ class ConnectionScreenChoiceFixture : public ::testing::Test {
   RecordingNavigator navigator_;
   RecordingServerConnection connection_;
   FakeAccountSession account_;
+  FakeTicketLink tickets_;
   InterfaceCanvasRecord canvas_;
   RecordingSoundPlayer sounds_;
   rtype::client::ServerChoice choice_;

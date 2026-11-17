@@ -2,13 +2,11 @@
 #include <SFML/Window/Keyboard.hpp>
 #include <cstddef>
 #include <memory>
-#include <string>
 #include <string_view>
 #include "ConnectionGoal.hpp"
 #include "ConnectionScreen.hpp"
 #include "ConnectionScreenFixtures.hpp"
 #include "ConnectionScreenParts.hpp"
-#include "ConnectionScreenTestConstants.hpp"
 #include "ConnectionStatus.hpp"
 #include "PointerEvents.hpp"
 #include "RecordingInterfaceCanvas.hpp"
@@ -18,9 +16,6 @@
 #include "ScreenInputs.hpp"
 #include "ScreenTestConstants.hpp"
 #include "WidgetConstants.hpp"
-
-using rtype::client::testing::SIGNED_IN_PLAYER_ACCOUNT_ID;
-using rtype::client::testing::SIGNED_IN_TOKEN;
 
 using rtype::client::ConnectionGoal;
 using rtype::client::ConnectionScreen;
@@ -34,14 +29,11 @@ ConnectionScreenFixture::ConnectionScreenFixture(ConnectionGoal goal)
                                     .sounds = sounds_,
                                     .connection = connection_,
                                     .account = account_,
+                                    .tickets = tickets_,
                                     .playfieldPointAt = samePlayfieldPoint,
                                     .choice = choice_,
                                     .goal = goal},
               std::make_unique<RecordingInterfaceCanvas>(canvas_)) {}
-
-SignedInConnectionScreenFixture::SignedInConnectionScreenFixture() {
-  account().signInAs(SIGNED_IN_PLAYER_ACCOUNT_ID, std::string{SIGNED_IN_TOKEN});
-}
 
 ConnectionForTheScreenBelowFixture::ConnectionForTheScreenBelowFixture()
     : ConnectionScreenFixture(ConnectionGoal::ScreenBelow) {}
@@ -85,5 +77,3 @@ void ConnectionScreenFixture::show(ConnectionStatus status) {
 const RecordingSoundPlayer& ConnectionScreenFixture::sounds() const {
   return sounds_;
 }
-
-FakeAccountSession& ConnectionScreenFixture::account() { return account_; }

@@ -10,6 +10,7 @@ add_subdirectory(Casino)
 add_subdirectory(Chat)
 add_subdirectory(ServerList)
 add_subdirectory(Account)
+add_subdirectory(Ticket)
 
 add_library(rtype_client_connection_module STATIC
   ClientConnectionModule.cpp
@@ -29,6 +30,7 @@ target_link_libraries(rtype_client_connection_module
     rtype_client_connection_entity_types
     rtype_client_content_pack
     rtype_client_connection_leaderboard
+    rtype_client_connection_ticket
     rtype_client_entity_appearances
     rtype_client_entity_messages
     rtype_client_handshake

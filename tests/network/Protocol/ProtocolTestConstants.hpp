@@ -3,7 +3,6 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
-#include <limits>
 #include <string_view>
 #include "MessageType.hpp"
 
@@ -157,16 +156,6 @@ constexpr std::size_t LARGEST_DATAGRAM_SIZE = 1200;
  */
 constexpr std::uint64_t SOME_COOKIE = 0x0102030405060708;
 
-/** @brief The account of a player signed in to the master, each byte
- * different, so a byte written out of order shows; and the largest account
- * eight bytes hold. */
-constexpr std::uint64_t SOME_ACCOUNT_ID = 0x1112131415161718;
-constexpr std::uint64_t LARGEST_ACCOUNT_ID =
-    std::numeric_limits<std::uint64_t>::max();
-
-/** @brief The account the protocol page gives a guest. */
-constexpr std::uint64_t GUEST_ACCOUNT_ON_THE_PAGE = 0;
-
 /**
  * @brief The last player number of a game, and the numbers just outside the
  * range 1 to 4.
@@ -234,7 +223,7 @@ constexpr std::uint16_t NO_NAMED_GAME = 0;
  * @brief The sizes the protocol page gives for the smallest ConnectionRequest
  * datagram and for a ConnectionChallenge datagram.
  */
-constexpr std::size_t SMALLEST_REQUEST_DATAGRAM_SIZE_ON_THE_PAGE = 46;
+constexpr std::size_t SMALLEST_REQUEST_DATAGRAM_SIZE_ON_THE_PAGE = 70;
 constexpr std::size_t CHALLENGE_DATAGRAM_SIZE_ON_THE_PAGE = 33;
 
 /**

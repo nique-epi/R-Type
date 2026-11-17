@@ -21,7 +21,7 @@ constexpr std::uint32_t PROTOCOL_ID = 0x52545950;
 
 /**
  * @brief The version of the protocol this code speaks. Version 18 adds the
- * account of the player to ConnectionRequest, see the Version 18 section;
+ * game ticket of the player to ConnectionRequest, see the Version 18 section;
  * version 17 adds the hull to a ship look, see the Version 17 section; version
  * 16 adds the look of each entity to WorldState and DeltaWorldState, and
  * EffectPlayed, see the Version 16 section; version 15 removes the ban: the
@@ -426,19 +426,13 @@ constexpr std::uint16_t FIRST_HOSTED_GAME_NUMBER = 1;
 constexpr std::uint16_t UNUSED_GAME_NUMBER = 0;
 
 /**
- * @brief The account a ConnectionRequest carries for a guest, a player not
- * signed in to the master: the accounts of the master are numbered from 1.
- */
-constexpr std::uint64_t GUEST_ACCOUNT_ID = 0;
-
-/**
  * @brief The size of the smallest datagram holding a ConnectionRequest: a
- * cookie, a nickname of one byte, the account, then the kind and the number of
- * the game.
+ * cookie, a nickname of one byte, the game ticket, then the kind and the
+ * number of the game.
  */
 constexpr std::size_t SMALLEST_CONNECTION_REQUEST_DATAGRAM_SIZE =
     PACKET_HEADER_SIZE + MESSAGE_PREFIX_SIZE + UINT64_WIRE_SIZE +
-    SHORT_STRING_PREFIX_SIZE + MINIMUM_NICKNAME_SIZE + UINT64_WIRE_SIZE +
+    SHORT_STRING_PREFIX_SIZE + MINIMUM_NICKNAME_SIZE + GAME_TICKET_BYTES +
     UINT8_WIRE_SIZE + UINT16_WIRE_SIZE;
 
 /**

@@ -122,6 +122,7 @@ std::unique_ptr<IScreen> buildConnectionScreen(
                             .sounds = soundsOf(context),
                             .connection = context.services.connection.get(),
                             .account = context.services.account.get(),
+                            .tickets = context.services.tickets.get(),
                             .playfieldPointAt = playfieldMappingOf(context),
                             .choice = context.serverChoice.get(),
                             .goal = goal,

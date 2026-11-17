@@ -118,6 +118,7 @@ void ClientScreensModule::install(engine::InstallContext& context) {
   serverCatalog_ = &context.require<IServerCatalog>();
   gameCatalog_ = &context.require<IGameCatalog>();
   account_ = &context.require<IAccountSession>();
+  tickets_ = &context.require<ITicketLink>();
   wallet_ = &context.require<IWallet>();
   loop_ = &context.require<FrameLoop>();
   listeners_ = &context.require<EventListeners>();
@@ -179,6 +180,7 @@ ScreenServices ClientScreensModule::services(
       .gameCatalog = *gameCatalog_,
       .account = *account_,
       .wallet = *wallet_,
+      .tickets = *tickets_,
       .choice = ServerChoice{.server = server,
                              .nickname = nicknameSetting_->text(),
                              .game = launch_.game,

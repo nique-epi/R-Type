@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <chrono>
+#include <optional>
 #include <string>
 #include <vector>
 #include "ConnectedPlayer.hpp"
@@ -12,6 +13,7 @@
 #include "GameSettings.hpp"
 #include "GameState.hpp"
 #include "GameStateChanged.hpp"
+#include "GameTicketBytesTestConstants.hpp"
 #include "PlayerRoster.hpp"
 #include "RecordingResultsArchive.hpp"
 #include "SentDatagrams.hpp"
@@ -264,17 +266,21 @@ TEST_F(GameResultKeeperFixture, DatesAndNamesTheResultAtTheEnd) {
 }
 
 /**
- * Given a player signed in to an account
+ * Given a player who joined with a game ticket, and a guest
  * When the game finishes
- * Then its row names that account
+ * Then the row of the player names its ticket as the master writes it, and
+ * the row of the guest none
  */
-TEST_F(GameResultKeeperFixture, RecordsTheAccountOfAPlayer) {
-  seat(FIRST_PLAYER).accountId = KEEPER_ACCOUNT_ID;
+TEST_F(GameResultKeeperFixture, RecordsTheTicketOfAPlayer) {
+  seat(FIRST_PLAYER).ticket = network::testing::SOME_TICKET;
+  seat(SECOND_PLAYER);
   startTheGame();
 
   finishTheGame();
 
-  EXPECT_EQ(onlyResult().players.at(0).accountId, KEEPER_ACCOUNT_ID);
+  EXPECT_EQ(onlyResult().players.at(0).ticket,
+            std::optional{std::string{network::testing::SOME_TICKET_TEXT}});
+  EXPECT_EQ(onlyResult().players.at(1).ticket, std::nullopt);
 }
 
 /**

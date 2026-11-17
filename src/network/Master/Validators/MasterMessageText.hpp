@@ -161,8 +161,8 @@ namespace rtype::network {
 [[nodiscard]] bool isWellFormedGameId(std::string_view text);
 
 /** @returns @p game as the JSON body of
- * `PUT /api/servers/me/results/{gameId}`, the accountId of a guest left out,
- * victory and the wonLooks of each player always written. */
+ * `PUT /api/servers/me/results/{gameId}`, the accountId and the ticket of a
+ * guest left out, victory and the wonLooks of each player always written. */
 [[nodiscard]] std::string finishedGameText(const FinishedGame& game);
 
 /**
@@ -181,7 +181,9 @@ namespace rtype::network {
  * accountId that is empty, longer than MAXIMUM_ACCOUNT_ID_SIZE or not printable
  * UTF-8, a score above HIGHEST_SCORE, a victory that is no boolean, a wonLooks
  * that is no array or holds more than MAXIMUM_WON_LOOKS names, a name that is
- * not one of identifiers::SHIP_LOOK_ITEM_NAMES.
+ * not one of identifiers::SHIP_LOOK_ITEM_NAMES, a ticket that is not well
+ * formed (isWellFormedGameTicket()). A player without a ticket reads as a
+ * guest.
  */
 [[nodiscard]] FinishedGame finishedGameFromText(std::string_view text);
 

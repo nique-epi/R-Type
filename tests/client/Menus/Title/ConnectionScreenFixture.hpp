@@ -8,6 +8,7 @@
 #include "ConnectionScreen.hpp"
 #include "ConnectionStatus.hpp"
 #include "FakeAccountSession.hpp"
+#include "FakeTicketLink.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingServerConnection.hpp"
@@ -45,26 +46,17 @@ class ConnectionScreenFixture : public ::testing::Test {
 
   /** @returns The sounds the screen played. */
   [[nodiscard]] const RecordingSoundPlayer& sounds() const;
-  /** @returns The account of the player, which a fixture may sign in. */
-  [[nodiscard]] FakeAccountSession& account();
 
  private:
-  /** @brief The account the attempts name: a guest, unless a fixture signs
-   * it in. */
+  /** @brief The account the attempts are made under: a guest. */
   FakeAccountSession account_;
+  FakeTicketLink tickets_;
   RecordingNavigator navigator_;
   RecordingServerConnection connection_;
   InterfaceCanvasRecord canvas_;
   RecordingSoundPlayer sounds_;
   rtype::client::ServerChoice choice_;
   rtype::client::ConnectionScreen screen_;
-};
-
-/** @brief The same screen, the player signed in to SIGNED_IN_PLAYER_ACCOUNT_ID.
- */
-class SignedInConnectionScreenFixture : public ConnectionScreenFixture {
- protected:
-  SignedInConnectionScreenFixture();
 };
 
 /** @brief The same screen, pushed over the screen the player came from. */

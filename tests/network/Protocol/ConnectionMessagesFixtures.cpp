@@ -5,6 +5,7 @@
 #include "ByteWriter.hpp"
 #include "ConnectionRequest.hpp"
 #include "GameRules.hpp"
+#include "GameTicket.hpp"
 #include "ProtocolConstants.hpp"
 #include "ProtocolTestConstants.hpp"
 
@@ -35,7 +36,7 @@ GameRules hardRulesWithFriendlyFire() {
 }
 
 void writeGuestAskingForAnyGame(ByteWriter& writer) {
-  writer.writeUint64(GUEST_ACCOUNT_ID);
+  writer.writeBytes(GUEST_TICKET.bytes);
   writer.writeUint8(ANY_GAME_KIND_BYTE);
   writer.writeUint16(NO_NAMED_GAME);
 }
@@ -43,7 +44,7 @@ void writeGuestAskingForAnyGame(ByteWriter& writer) {
 void writeRequestFor(ByteWriter& writer, const GameChoice& game) {
   writer.writeUint64(SOME_COOKIE);
   writer.writeString(ONE_BYTE_NICKNAME);
-  writer.writeUint64(GUEST_ACCOUNT_ID);
+  writer.writeBytes(GUEST_TICKET.bytes);
   writer.writeUint8(static_cast<std::uint8_t>(game.kind));
   writer.writeUint16(game.number);
 }

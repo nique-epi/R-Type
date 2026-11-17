@@ -21,6 +21,7 @@
 #include "GameLoaded.hpp"
 #include "GameRequest.hpp"
 #include "GameStarted.hpp"
+#include "GameTicketBytesTestConstants.hpp"
 #include "Heartbeat.hpp"
 #include "LobbyState.hpp"
 #include "NetworkTestConstants.hpp"
@@ -75,7 +76,6 @@ using testing::SESSION_TOKEN;
 using testing::sessionHeader;
 using testing::SHIP_ID;
 using testing::SHIP_TYPE_NUMBER;
-using testing::SIGNED_IN_ACCOUNT_ID;
 using ::testing::SizeIs;
 using testing::stateListing;
 using testing::THIRD_SEQUENCE;
@@ -130,13 +130,13 @@ TEST_F(ServerSessionFixture, SendsARequestWithoutCookieAtOnce) {
 
 /**
  * Given a connection with no attempt
- * When it connects to a server for a player signed in to an account
- * Then the request carries that account
+ * When it connects to a server with the game ticket the master gave
+ * Then the request carries that ticket
  */
-TEST_F(ServerSessionFixture, SendsTheAccountOfThePlayer) {
-  connect(GameRequest{.accountId = SIGNED_IN_ACCOUNT_ID});
+TEST_F(ServerSessionFixture, SendsTheTicketOfTheAttempt) {
+  connect(GameRequest{.ticket = network::testing::SOME_TICKET});
 
-  EXPECT_EQ(lastRequest().accountId, SIGNED_IN_ACCOUNT_ID);
+  EXPECT_EQ(lastRequest().ticket, network::testing::SOME_TICKET);
 }
 
 /**

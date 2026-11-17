@@ -4,6 +4,7 @@
 #include <string_view>
 #include "ExchangeReceipt.hpp"
 #include "ExchangeRequest.hpp"
+#include "GameTicketGrant.hpp"
 #include "LookPurchase.hpp"
 #include "MasterTransport.hpp"
 #include "OwnedLooks.hpp"
@@ -62,6 +63,14 @@ class MasterAccountClient {
    */
   [[nodiscard]] ExchangeReceipt exchange(const std::string& token,
                                          const ExchangeRequest& request);
+
+  /**
+   * @returns A new game ticket of the account and its expiry,
+   * `POST /api/users/me/tickets`.
+   * @throws MasterRefusedException with status 429 when the account was given
+   * its quota of tickets in the last hour.
+   */
+  [[nodiscard]] GameTicketGrant createOwnTicket(const std::string& token);
 
  private:
   MasterTransport transport_;

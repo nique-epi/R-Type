@@ -32,6 +32,6 @@ constexpr std::string_view DROP_BANS_TABLE_MIGRATION = "DROP TABLE bans;";
  * storage::openDatabaseFile()). */
 constexpr std::array<std::string_view, 5> SERVER_MIGRATIONS{
     RESULTS_TABLE_MIGRATION, UNSENT_GAMES_MIGRATION, BANS_TABLE_MIGRATION,
-    DROP_BANS_TABLE_MIGRATION, RESULTS_OF_ACCOUNTS_MIGRATION};
+    DROP_BANS_TABLE_MIGRATION, RESULTS_FOR_THE_WALLETS_MIGRATION};
 
 }  // namespace rtype::server

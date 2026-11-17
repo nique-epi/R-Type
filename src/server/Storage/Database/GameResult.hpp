@@ -2,9 +2,9 @@
 
 #include <chrono>
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <vector>
-#include "ProtocolConstants.hpp"
 
 namespace rtype::server {
 
@@ -14,12 +14,12 @@ struct PlayerResult {
   std::uint32_t score{};
   /** @brief The lives the player lost in the game. */
   std::uint32_t deaths{};
-  /** @brief The account the player played under, as its request named it;
-   * network::GUEST_ACCOUNT_ID for a guest. */
-  std::uint64_t accountId{network::GUEST_ACCOUNT_ID};
   /** @brief The names of the look items the player won in the game, from
    * identifiers::SHIP_LOOK_ITEM_NAMES, each once, in the order it won them. */
   std::vector<std::string> wonLooks;
+  /** @brief The game ticket the player joined with, as the master writes it
+   * (network::gameTicketText()); none for a guest. */
+  std::optional<std::string> ticket = std::nullopt;
 
   bool operator==(const PlayerResult&) const = default;
 };

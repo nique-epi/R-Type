@@ -8,6 +8,7 @@
 #include <type_traits>
 #include "ByteWriter.hpp"
 #include "GameRules.hpp"
+#include "GameTicket.hpp"
 #include "MessageType.hpp"
 #include "ProtocolConstants.hpp"
 
@@ -56,7 +57,7 @@ constexpr GameChoice NEW_GAME_CHOICE{.kind = GameChoiceKind::NewGame,
 /**
  * @brief What a client sends to join a game, every 500 ms until it gets an
  * answer: the cookie of the server's challenge, 0 until it has one, the
- * nickname of the player, the account it plays under, the game it asks for
+ * nickname of the player, its game ticket, the game it asks for
  * and, for a NewGame, the rules of that game. A game process reads the choice
  * and the rules and ignores them: the supervisor already chose its game and
  * gave it its rules.
@@ -66,10 +67,11 @@ struct ConnectionRequest {
 
   std::uint64_t cookie;
   std::string nickname;
-  /** @brief The id of the account of the player on the master,
-   * GUEST_ACCOUNT_ID for a guest. Any value is read: nothing proves it, so
-   * the server only passes it on with the results of the game. */
-  std::uint64_t accountId{GUEST_ACCOUNT_ID};
+  /** @brief The game ticket the master gave the player, GUEST_TICKET for a
+   * guest. Any bytes are read: the server cannot check them, so it only
+   * passes them on with the results of the game, and the master pays the
+   * account it gave the ticket to, once. */
+  GameTicket ticket{GUEST_TICKET};
   GameChoice game{ANY_GAME_CHOICE};
   /** @brief The rules of the game a NewGame opens; empty for every other
    * choice. */
@@ -79,7 +81,8 @@ struct ConnectionRequest {
 };
 
 /**
- * @brief Writes the cookie, the nickname with its length, the account, then
+ * @brief Writes the cookie, the nickname with its length, the
+ * GAME_TICKET_BYTES of the ticket, then
  * the kind and the number of the game; for a NewGame, then its difficulty with
  * its length, its lives and its friendly fire.
  * @throws InvalidNicknameException when the nickname is empty, longer than
