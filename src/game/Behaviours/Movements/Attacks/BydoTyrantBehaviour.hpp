@@ -15,7 +15,7 @@ namespace rtype::game {
  * Until it ends its first action it arrives: attack TYRANT_ARRIVAL_ATTACK,
  * sliding in from where it appeared to `rest_x` on its row over `slide_ms`
  * (its signal), then roaring `roar_ms` (its strike), which its
- * `[gameplay.armored]` shields it during. Then, rested `rest_ms`, it lashes its
+ * `[gameplay.boss]` shields it during. Then, rested `rest_ms`, it lashes its
  * tentacles at a ship within `melee_reach` of its melee point, or takes the
  * next attack of its rotation, calm or enraged (see
  * BydoTyrantBehaviourConstants.hpp). An enraged variant signals

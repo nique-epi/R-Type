@@ -17,6 +17,11 @@ MissingLogOptionValueException::MissingLogOptionValueException(
     const std::string& option)
     : LoggingException("Missing value after the logging option: " + option) {}
 
+InvalidLogFormatException::InvalidLogFormatException(
+    const std::string& formatName)
+    : LoggingException("Unknown journal format: " + formatName +
+                       " (text or json)") {}
+
 LogFileOpenException::LogFileOpenException(const std::string& filePath)
     : LoggingException("Cannot open the log file: " + filePath) {}
 

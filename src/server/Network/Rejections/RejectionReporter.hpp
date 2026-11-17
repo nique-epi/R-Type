@@ -7,9 +7,9 @@
 namespace rtype::server {
 
 /**
- * @brief Writes, every TICKS_PER_REPORT ticks, the lines of the datagrams the
+ * @brief Writes, every TICKS_PER_REPORT ticks, the events of the datagrams the
  * RejectionLedger counted since the previous report, at the warn level (see
- * rejectionLinesOf()). A report with nothing to say writes nothing.
+ * rejectionEventsOf()). A report with nothing to say writes nothing.
  *
  * Use it on the simulation thread only; the ledger may be fed from any thread.
  */

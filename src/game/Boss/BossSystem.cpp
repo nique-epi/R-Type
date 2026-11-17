@@ -4,6 +4,7 @@
 #include <optional>
 #include <utility>
 #include "ActionKey.hpp"
+#include "Armored.hpp"
 #include "Boss.hpp"
 #include "BossArrival.hpp"
 #include "BossConstants.hpp"
@@ -132,6 +133,9 @@ void BossSystem::update(engine::ComponentRegistry& components,
 void BossSystem::warn(engine::ComponentRegistry& components,
                       engine::Entity boss) const {
   startSummoning(components, boss, BOSS_ARRIVAL_WARNING_TICKS);
+  if (const auto* const arriving = components.get<Boss>(boss)) {
+    components.add(boss, Armored{.attack = arriving->arrivalAttack});
+  }
   const auto* const type = components.get<EntityTypeNumber>(boss);
   parts_.events.get().publish(BossArrival{
       .typeNumber = type == nullptr ? std::uint8_t{0} : type->number,

@@ -381,18 +381,6 @@ std::optional<ActionKey> fragileFrom(const engine::DataFileTable& gameplay) {
   return actionKeyAt(*fragile);
 }
 
-/** @returns The attack `[gameplay.armored]` names; nothing without it. */
-std::optional<std::uint8_t> armoredFrom(const engine::DataFileTable& gameplay) {
-  const std::optional<engine::DataFileTable> armored =
-      engine::optionalTableAt(gameplay, ARMORED_KEY);
-  if (!armored.has_value()) {
-    return std::nullopt;
-  }
-  engine::refuseUnknownKeys(*armored, ARMORED_KEYS);
-  return static_cast<std::uint8_t>(
-      engine::wholeNumberAt(*armored, ATTACK_KEY, ATTACK_NUMBER_RANGE));
-}
-
 /** @returns The number of the item `look_item` names in the catalog of ship
  * looks; nothing without the key.
  * @throws engine::UnknownDataFileChoiceException when it names no item. */
@@ -426,10 +414,6 @@ void checkContactPartsBelongToAnEnemy(const EntitySheet& sheet,
   if (sheet.fragileIn.has_value()) {
     throw InconsistentEntitySheetException(
         engine::placeOfKey(gameplay, FRAGILE_KEY), FRAGILE_SIDE_RULE);
-  }
-  if (sheet.armoredIn.has_value()) {
-    throw InconsistentEntitySheetException(
-        engine::placeOfKey(gameplay, ARMORED_KEY), ARMORED_SIDE_RULE);
   }
   if (sheet.staysOutside) {
     throw InconsistentEntitySheetException(
@@ -619,7 +603,6 @@ EntitySheet gameplayOf(const SheetText& sheet,
       .hurtZone = hurtZoneFrom(gameplay),
       .survivesContact = holdsMarker(gameplay, SURVIVES_CONTACT_KEY),
       .fragileIn = fragileFrom(gameplay),
-      .armoredIn = armoredFrom(gameplay),
       .staysOutside = holdsMarker(gameplay, STAYS_OUTSIDE_KEY),
       .burst = burstFrom(gameplay),
       .volleys = volleysFrom(gameplay),

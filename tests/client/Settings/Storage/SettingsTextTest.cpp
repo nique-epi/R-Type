@@ -41,6 +41,7 @@ using rtype::client::testing::EARLIER_PREDICTION_LINE;
 using rtype::client::testing::FILE_WITHOUT_A_HULL;
 using rtype::client::testing::FIRST_LAUNCH_FILE;
 using rtype::client::testing::FIRST_LAUNCH_MUSIC_VOLUME;
+using rtype::client::testing::FIRST_LAUNCH_VOICES_VOLUME;
 using rtype::client::testing::FIRST_LINE_WITHOUT_SEPARATOR;
 using rtype::client::testing::FLIES_GOLDEN_ACE;
 using rtype::client::testing::GOLDEN_ACE_LINE;
@@ -179,6 +180,28 @@ TEST(SettingsTextTest, AnInvalidValueKeepsTheDefaultOfThatSettingOnly) {
   EXPECT_EQ(reading.settings.musicVolume, FIRST_LAUNCH_MUSIC_VOLUME);
   EXPECT_EQ(reading.settings.effectsVolume, ANY_VOLUME);
   EXPECT_EQ(reading.ignoredLines, std::vector<std::string>{INVALID_FIRST_LINE});
+}
+
+/**
+ * Given a file of an earlier version that names no voices volume
+ * When it is read
+ * Then the voices keep their default, 80, and no line is listed as invalid
+ */
+TEST(SettingsTextTest, AFileWithoutVoicesKeepsTheirDefault) {
+  const auto reading = readSettingsText("music_volume=70\neffects_volume=40\n",
+                                        PlayerSettings{});
+  EXPECT_EQ(reading.settings.voicesVolume, FIRST_LAUNCH_VOICES_VOLUME);
+  EXPECT_TRUE(reading.ignoredLines.empty());
+}
+
+/**
+ * Given a file that names a voices volume
+ * When it is read
+ * Then the voices take it
+ */
+TEST(SettingsTextTest, TheVoicesVolumeIsRead) {
+  const auto reading = readSettingsText("voices_volume=40\n", PlayerSettings{});
+  EXPECT_EQ(reading.settings.voicesVolume, ANY_VOLUME);
 }
 
 /**

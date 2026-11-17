@@ -1,8 +1,10 @@
 #include "BossSystemArrivalFixture.hpp"
 #include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <optional>
 #include <vector>
+#include "Armored.hpp"
 #include "Boss.hpp"
 #include "BossArrival.hpp"
 #include "BossHealthScalingTestConstants.hpp"
@@ -40,7 +42,7 @@ void BossSystemArrivalFixture::connect(std::size_t players) {
 
 void BossSystemArrivalFixture::addNewBoss() {
   boss_ = entities_.create();
-  components_.add(boss_, Boss{});
+  components_.add(boss_, Boss{.arrivalAttack = ARRIVAL_ATTACK_OF_THE_BOSS});
   components_.add(
       boss_, Health{.points = SHEET_BOSS_HEALTH, .full = SHEET_BOSS_HEALTH});
   components_.add(boss_, CurrentAction{});
@@ -68,6 +70,14 @@ std::optional<std::size_t> BossSystemArrivalFixture::summoningTicksLeft() {
     return std::nullopt;
   }
   return summoning->ticksLeft;
+}
+
+std::optional<std::uint8_t> BossSystemArrivalFixture::armoredAttack() {
+  const Armored* const armored = components_.get<Armored>(boss_);
+  if (armored == nullptr) {
+    return std::nullopt;
+  }
+  return armored->attack;
 }
 
 Health BossSystemArrivalFixture::health() {

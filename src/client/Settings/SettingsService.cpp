@@ -113,9 +113,11 @@ void SettingsService::resetSound() {
   const PlayerSettings firstLaunch;
   settings_->musicVolume = firstLaunch.musicVolume;
   settings_->effectsVolume = firstLaunch.effectsVolume;
+  settings_->voicesVolume = firstLaunch.voicesVolume;
   settings_->muted = firstLaunch.muted;
   changed(SettingId::MusicVolume);
   changed(SettingId::EffectsVolume);
+  changed(SettingId::VoicesVolume);
   changed(SettingId::Muted);
 }
 

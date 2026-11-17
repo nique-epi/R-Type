@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <cstddef>
+#include <cstdint>
 #include <optional>
 #include <vector>
 #include "BossArrival.hpp"
@@ -10,6 +11,7 @@
 
 using rtype::game::BossArrival;
 using rtype::game::BossProgress;
+using rtype::game::testing::ARRIVAL_ATTACK_OF_THE_BOSS;
 using rtype::game::testing::ARRIVING_BOSS_SHEET_NUMBER;
 using rtype::game::testing::BOSS_HEALTH_FOR_THREE_PLAYERS;
 using rtype::game::testing::BossSystemArrivalFixture;
@@ -62,6 +64,20 @@ TEST_F(BossSystemArrivalFixture, KeepsANewBossSummonedForItsWarning) {
 
   EXPECT_EQ(summoningTicksLeft(),
             std::optional<std::size_t>{TICKS_OF_A_BOSS_WARNING});
+}
+
+/**
+ * Given a boss just created, whose arrival is its attack 4
+ * When the boss system runs
+ * Then the boss is armored in its attack 4: no hit hurts it while it arrives
+ */
+TEST_F(BossSystemArrivalFixture, ArmorsANewBossForItsArrival) {
+  addNewBoss();
+
+  run();
+
+  EXPECT_EQ(armoredAttack(),
+            std::optional<std::uint8_t>{ARRIVAL_ATTACK_OF_THE_BOSS});
 }
 
 /**

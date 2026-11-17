@@ -12,6 +12,9 @@ namespace rtype::server {
  */
 constexpr std::string_view LOBBY_LOGGER_NAME = "Lobby";
 
+/** @brief The event of a player the lobby let in. */
+constexpr std::string_view PLAYER_JOINED_EVENT = "player.joined";
+
 /**
  * @brief Why the ConnectionAcceptor drops a datagram, as its lines say.
  */

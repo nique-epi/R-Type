@@ -25,6 +25,10 @@ struct ConnectionAcceptorParts {
    * sent the acceptance; not when an acceptance is repeated. Empty to call
    * nothing. */
   std::function<void(ConnectedPlayer&)> onPlayerJoined;
+  /** @brief What the acceptor calls once for each request it refuses, with its
+   * sender, so the refusal counts in the rejection report instead of a line of
+   * its own. Empty to call nothing. */
+  std::function<void(const network::Endpoint&)> onRefused;
   /** @brief The content the game plays with, which every ConnectionAccepted
    * announces (see contentAnnouncementOf()). */
   network::ContentAnnouncement content;

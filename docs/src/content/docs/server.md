@@ -119,7 +119,7 @@ To change one of them, see [Where to intervene](#where-to-intervene).
 | Timer resolution on Windows | Available | `src/server/Platform/` |
 | The server assembled from modules (logger, network, storage, games, lobby, information, metrics, master), stopped on Ctrl-C or SIGTERM with a `Disconnection` to every player | Available | `src/server/Modules/`, `src/server/Platform/` |
 | Sorting the datagrams before the queues, session token checked, rate limit per address and port with temporary bans | Available | `src/server/Network/` |
-| Rejected datagrams counted by cause and by sender, reported in the journal every 10 s | Available for the datagrams the network thread rejects; the `network` command of the [administration console](#administration-console-serveradminconsolemodule) reads the count since the start | `src/server/Network/Rejections/` |
+| Rejected datagrams counted by cause and by sender, reported in the journal every 10 s | Available for the datagrams the network thread rejects and the connection requests the lobby of a game refuses; the `network` command of the [administration console](#administration-console-serveradminconsolemodule) reads the count since the start | `src/server/Network/Rejections/` |
 | World state sent to the players of a game, at a rate set at launch (`--state-rate`) | Available | `src/server/Replication/Announcements/Streams/`, `src/server/Rules/Match/` |
 | Every player's input applied after the same delay, set at launch (`--input-delay`) | Available | `src/server/Instances/` |
 | One header for every datagram to a player: session token and next sequence | Available | `src/server/Sessions/Roster/` |
@@ -135,6 +135,7 @@ To change one of them, see [Where to intervene](#where-to-intervene).
 | A nickname unique on the server, held with the seat | Available: a second request for the same nickname gets `NicknameTaken` | `src/server/Sessions/Roster/`, `src/server/Lobby/` |
 | Waiting room and start of the game sent to the players (`LobbyState`, `GameStarted`) | Available | `src/server/Replication/Announcements/Milestones/`, `src/server/Rules/Match/` |
 | End of a game sent to the players (`GameEnded`) | Available: when the game is won or lost, with its outcome and the score of each, until the game waits for players again | `src/server/Replication/Announcements/Milestones/`, `src/server/Rules/Match/` |
+| Connections, departures, games started and ended, rejections and errors written as events a tool reads, with `--log-format json` | Available; the supervisor writes no event of the connection requests it redirects or refuses | `src/server/Lobby/`, `src/server/Sessions/Tracking/`, `src/server/SupervisedGames/`, `src/server/Network/Rejections/` |
 | Metrics in the journal every 10 s: duration of the ticks, time of each system, games, players, entities, round trip of each player and traffic | Available; losses are not measured yet | `src/server/Metrics/` |
 | Results of each game kept in a SQLite file, with statistics, and a leaderboard read with `LeaderboardRequest` | Available; the leaderboard of the client reads it, and nothing in the game shows the statistics | `src/server/Results/`, `src/server/Storage/`, `src/storage/` |
 | Text chat in the waiting room and during a match (`ChatLine`, `PlayerChatLine`), one line a second per player, 127 bytes at most | Available; the client sends and shows them (see [Client](/R-Type/client/#chat-chatchannel-chatwindow)) | `src/server/Chat/` |
@@ -215,7 +216,7 @@ The host only starts the supervisor and the master. `--mode game` is the command
 | `--database <file>` | The leaderboard file of the supervisor. |
 | `--log-file <file>` | `r-type_game_<n>.log` next to the executable. |
 | `--configuration <file>` | The file of commands the game reads, `r-type_games_<port>.cfg` next to the executable with the port of the supervisor; no file without it. |
-| `--traffic-csv <file>`, the simulator and logging options | As for the supervisor. The supervisor gives each game its own `--log-file`, then the logging options it shares (`--log-level`, `--no-log-file`, `--no-log-stderr`, `--log-color`, see `LogLaunchOptions::forwardedArguments()`), and `--log-color` when its own journal is in colour, then the five values of its simulated network, then `--traffic-csv` with the file of that game when it was given one. A `--no-log-file` comes after the journal of the game, so the last one wins and the game writes none either. |
+| `--traffic-csv <file>`, the simulator and logging options | As for the supervisor. The supervisor gives each game its own `--log-file`, then the logging options it shares (`--log-level`, `--no-log-file`, `--no-log-stderr`, `--log-color`, `--log-format json`, see `LogLaunchOptions::forwardedArguments()`), and `--log-color` when its own journal is in colour, then the five values of its simulated network, then `--traffic-csv` with the file of that game when it was given one. A `--no-log-file` comes after the journal of the game, so the last one wins and the game writes none either. |
 | `--difficulty <name>`, `--lives <count>`, `--friendly-fire <0\|1>` | The rules of the game, as its creator chose them (see [Rules of a game](#rules-of-a-game)). |
 
 `-p`, `--database`, `--difficulty`, `--lives` and `--friendly-fire` force the settings `port`, `database`, `difficulty`, `lives` and `friendly-fire`, after the file of `--configuration`.
@@ -268,7 +269,7 @@ The player queue and the outgoing queue hold `INCOMING_DATAGRAM_QUEUE_CAPACITY` 
 
 ### Rejection report: `RejectionLedger`
 
-The network thread counts each datagram it rejects: each one the sorter drops, and each one that makes a queue discard its oldest datagram. `RejectionLedger` (`src/server/Network/Rejections/`) keeps one count per cause, and the counts of each sender by address and port. Every `TICKS_PER_REPORT` ticks (600, so every ten seconds), `RejectionReporter` writes them at the `warn` level, then the counts of the senders start afresh; a report with nothing rejected writes nothing.
+The network thread counts each datagram it rejects: each one the sorter drops, and each one that makes a queue discard its oldest datagram. The lobby of a game counts each connection request it refuses, through the `onRefused` of `ConnectionAcceptorParts`. `RejectionLedger` (`src/server/Network/Rejections/`) keeps one count per cause, and the counts of each sender by address and port. Every `TICKS_PER_REPORT` ticks (600, so every ten seconds), `RejectionReporter` writes them at the `warn` level, then the counts of the senders start afresh; a report with nothing rejected writes nothing.
 
 | Cause | The datagram… |
 |---|---|
@@ -284,6 +285,7 @@ The network thread counts each datagram it rejects: each one the sorter drops, a
 | `request queue full` | made the request queue discard its oldest datagram |
 | `information queue full` | made the information queue discard its oldest datagram: the asker gets no answer and asks again when it chooses |
 | `probe queue full` | made the probe queue discard its oldest datagram: its token is lost, and the master sends another after the next heartbeat |
+| `refused connection` | is a connection request the lobby of a game refused: the game full or in progress, the nickname taken, another version. The refusal comes before the challenge, so any sender can repeat it: it is counted here instead of a line each |
 
 ```
 rejected 4 datagrams in the last 10 s (5 since the start): 1 stranger, 3 wrong session token
@@ -296,7 +298,8 @@ rejected datagrams from 2 more senders in the last 10 s, besides 1 forgotten to 
 - A queue only knows the sender of the datagram that made room: the one it discards is an older one, whose sender may be another. In a flood, the sender that pushes is almost always the one that floods.
 - The address and port are written as they are, so a tool that reads the journal, fail2ban for instance, can match the lines of one address.
 - The ledger is safe from any thread: the sorter records on the network thread and the reporter reads on the simulation thread, each under one lock, held to count one datagram or to copy the report.
-- Not counted: a datagram larger than `MAX_DATAGRAM_SIZE` (1200 bytes), which the socket drops before the sorter; a connection request the `ConnectionAcceptor` cannot read or refuses; a message of a player the game cannot read or has no handler for; a datagram whose sequence is not newer than the newest one read. Each of them keeps its own line at the `debug` level. The `network` command of the [administration console](#administration-console-serveradminconsolemodule) reads the count since the start with `rejectedSinceStart()`, which resets nothing.
+- Each line is an event: `datagrams.rejected`, `datagrams.rejected_from` and `datagrams.rejected_elsewhere`, whose fields count each cause under its key, such as `wrong_session_token` (`REJECTION_CAUSE_KEYS`) (see [Events of the journal](#events-of-the-journal)).
+- Not counted: a datagram larger than `MAX_DATAGRAM_SIZE` (1200 bytes), which the socket drops before the sorter; a connection request the `ConnectionAcceptor` cannot read, or the supervisor refuses; a message of a player the game cannot read or has no handler for; a datagram whose sequence is not newer than the newest one read. Each of them keeps its own line at the `debug` level. The `network` command of the [administration console](#administration-console-serveradminconsolemodule) reads the count since the start with `rejectedSinceStart()`, which resets nothing.
 
 ### Flood protection
 
@@ -309,6 +312,25 @@ The room of the player queue protects the server's memory; the sorter protects t
 The limits are kept by address and port, where Quake 3 keeps them by address alone, so the players behind one router, or several clients on one machine, keep a limit each. A flooder that changes its port at every datagram therefore escapes the limit of one port; the room of the request queue, 16 per tick, still bounds what it costs the server. A forger who knows the address and port of a client about to join can get that port banned for 10 s; without the ban, the same flood would hold the client back for as long as it lasts anyway.
 
 The player queue stays as the last safety net. It discards its oldest datagram, where GameNetworkingSockets refuses the newest, because only the newest input of a player counts. Why threads only talk through queues is explained in [Architecture](/R-Type/architecture/#queues-between-threads).
+
+## Events of the journal
+
+The server writes what happens to its players and its games as events (see [Logging](/R-Type/logging/#events-loggerevent)): with `--log-format json`, a tool reads them by name from the journal of the supervisor or of a game, with their values as fields; the text line stays the same.
+
+| Event | Level | Fields | Written by |
+|---|---|---|---|
+| `player.joined` | info | `player`, `address`, `port` | a game, when its lobby lets a player in (`ConnectionAcceptor`) |
+| `player.away` | info | `player`, `address`, `port`, `silent_seconds`, `seat_kept_seconds` | a game, after `SESSION_TIMEOUT` (5 s) of silence (`Departures`) |
+| `player.left` / `player.expelled` | info | `player`, `address`, `port` | a game, when a player leaves or the host expels it |
+| `player.timed_out` | info | `player`, `address`, `port`, `silent_seconds` | a game, when the session closes after `SESSION_SILENCE_LIMIT` (20 s) |
+| `datagrams.rejected` | warn | `seconds`, `total`, one count per cause under its key (`stranger`, `wrong_session_token`…), `since_start` | the rejection report, every 10 s, of the supervisor and of each game |
+| `datagrams.rejected_from` | warn | `address`, `port`, `seconds`, `total`, one count per cause | the same report, one per sender it names |
+| `datagrams.rejected_elsewhere` | warn | `seconds`, `senders`, `forgotten_senders` | the same report, for the senders it does not name |
+| `game.started` | info | `game`, `port` | the supervisor (`GameSpawner`) |
+| `game.ended` / `game.crashed` | info / error | `game`, and `exit_code` for a crash | the supervisor, when a game process ends |
+| `program.stopped` | error | `program` | a program of the server that stops on an error (`main()`) |
+
+The names of the events and of their fields are constants of the modules that write them (`PLAYER_JOINED_EVENT` in `LobbyConstants.hpp`, `ADDRESS_FIELD` in `ServerConstants.hpp`). Every other line keeps its name and level in JSON without an `event`, so an error is found with `jq -c 'select(.level == "error")'`. A sender without a session only ever reaches the rejection report, which writes at most `REPORTED_SENDER_COUNT` + 2 events every 10 s, so no sender can make the journal grow with what it sends.
 
 ## Configuration: `server.cfg`
 
@@ -1063,7 +1085,7 @@ A boss is a body like any other. `World::spawn` gives a body whose sheet has a `
 
 `BossSystem` also tells the players the health of a boss in its fight with a `BossHealthChanged`, whenever what they were last told of it changed: as the fight starts, at the tick after a hit, as it enrages, and with 0 points as its `EntityDestruction` `Killed` is delivered. A boss removed any other way, as a restart from a checkpoint removes it, is told of no more.
 
-The other rules know no boss, only what a sheet declares for any enemy: `DamageRules` takes nothing from an enemy while it is in the attack `[gameplay.armored]` names, which is the arrival of the Tyrant (see [Damage](#damage-damagerules)), and `PlayfieldExitSystem` never removes an enemy whose sheet has the marker `[gameplay.stays_outside]`, so the Tyrant, whose charge takes it past the left edge, is gone only once killed.
+The other rules know no boss, only components any enemy may carry: `DamageRules` takes nothing from an enemy that has an `Armored` while it is in the attack that component names, and `BossSystem` gives one to a boss, for the `arrival_attack` of its sheet, as it warns the players of it (see [Damage](#damage-damagerules)); `PlayfieldExitSystem` never removes an enemy whose sheet has the marker `[gameplay.stays_outside]`, so the Tyrant, whose charge takes it past the left edge, is gone only once killed.
 
 A difficulty that names a `boss` ends its level with it (see [Writing the waves file](/R-Type/waves-file/#the-boss)). `BossStage` (`src/server/Spawning/`) runs that end; `MatchSystems` builds one with each world and ticks it after the `WaveSpawner`, with `lastWaveFinished()`:
 
@@ -1243,7 +1265,7 @@ What the contact costs is decided by `LifeKeeper`, exactly as for a hitbox conta
 2. If the target has a `Health`, it loses `MISSILE_DAMAGE` (1) points, or every point it has left while it is in the action its `Fragile` names (the `[gameplay.fragile]` of its sheet: the Drillback, stunned). While it has points left it is announced with an `EntityDamage`. At 0 or less it is destroyed and announced with an `EntityDestruction` whose cause is `Killed`, which the client shows as an explosion.
 3. A target without `Health` is not hurt: the missile still disappears. A `Shootable` missile of a Bydo is the exception: it is destroyed and announced `Killed`, so every client shows it explode, and nobody earns points, since its sheet has no score.
 
-An enemy whose sheet has `[gameplay.armored]` loses nothing while it is in any phase of the attack that table names, and nothing but the removal of the missile is announced: the Bydo Tyrant, during its arrival. The health of a boss is told by `BossSystem`, not by the damage rule (see [Boss](#boss-bosssystem-and-bossstage)).
+An enemy that has an `Armored` (`src/game/Components/Armored.hpp`) loses nothing while it is in any phase of the attack that component names, and nothing but the removal of the missile is announced: a boss, during its arrival. The health of a boss is told by `BossSystem`, not by the damage rule (see [Boss](#boss-bosssystem-and-bossstage)).
 
 - A Bydo has the `Health` of its sheet (`health.points`, 3 for the Drifter and the Weaver) when `World::spawn` creates it, so three missiles destroy it. Both values are **provisional** until gameplay tunes them. Code must read `MISSILE_DAMAGE` and the sheet and never assume 1 or 3.
 - A Bydo destroyed by the missile of a player earns that player its points (`ScoreValue`, the `score.points` of its sheet): `DamageRules` publishes an `EnemyKilled`, and `ScoreKeeper` (`src/server/Rules/Players/`) adds them to its score.
@@ -1566,7 +1588,7 @@ The counters are read whatever modules are built; only the master module sends t
 | Change what a hit does | `DamageRules::onMissileHit` in `src/game/Systems/DamageRules/DamageRules.cpp`; what a hit takes from a fragile enemy, `damageOf` there |
 | Choose which missiles of the Bydos the players shoot down | `SHOOTABLE_MISSILE_SHEETS` in `src/game/EntityTypes/EntitySheetConstants.hpp`; what it costs, `DamageRules::onMissileHit` |
 | Change the boss of a difficulty, how long its warning lasts or where it enters | `boss` in `assets/waves/waves.toml`; `BOSS_ARRIVAL_WARNING` in `src/game/Boss/BossConstants.hpp` and `BOSS_ENTRY_POSITION` in `src/server/Spawning/BossStageConstants.hpp`; the client times its WARNING screen and the entry of the boss with constants of its own, `WarningBannerConstants.hpp` and `BossArrivalConstants.hpp`, which must follow |
-| Change when a boss enrages, or what shields it | `[gameplay.boss]` and `[gameplay.armored]` in its sheet; `BossSystem` in `src/game/Boss/`, `isArmored` in `src/game/Systems/DamageRules/DamageRules.cpp` |
+| Change when a boss enrages, or what shields it | `[gameplay.boss]` in its sheet; `BossSystem` in `src/game/Boss/`, `isArmored` in `src/game/Systems/DamageRules/DamageRules.cpp` |
 | Change how much health a boss has for the players, or in a difficulty | `BOSS_HEALTH_PER_EXTRA_PLAYER` in `src/game/Boss/BossConstants.hpp`, `scaledBossHealth()` in `src/game/Boss/BossHealth.cpp`; `boss_health_percent` in `assets/waves/waves.toml`; the `health_percent` a script gives `behaviours.spawn` |
 | Test the fight of a boss without the waves | `--boss`, or `set start-at-boss 1` |
 | Play a level a script directs instead of the waves | `set level <name>`, with the `ensure` line of the resource that registers it; the shipped one is `training_run` of `resources/training-run/` |

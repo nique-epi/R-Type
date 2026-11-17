@@ -73,13 +73,6 @@ constexpr std::string_view FRAGILE_WHILE_STUNNED =
     "[gameplay.fragile]\nattack = 0\nphase = \"recover\"\n";
 constexpr std::string_view FRAGILE_WITHOUT_PHASE =
     "[gameplay.fragile]\nattack = 0\n";
-/** @brief The Bydo Tyrant is armored in its attack 2 here; an armored table
- * that also names a phase, which the table does not know. */
-constexpr std::string_view ARMORED_IN_ATTACK_TWO =
-    "[gameplay.armored]\nattack = 2\n";
-constexpr std::uint8_t ATTACK_OF_THE_ARMORED_TABLE = 2;
-constexpr std::string_view ARMORED_WITH_A_PHASE =
-    "[gameplay.armored]\nattack = 2\nphase = \"signal\"\n";
 constexpr std::string_view STAYS_OUTSIDE_MARKER = "[gameplay.stays_outside]\n";
 constexpr std::string_view SURVIVES_CONTACT_MARKER =
     "[gameplay.survives_contact]\n";
@@ -122,10 +115,6 @@ constexpr std::string_view WINDOW_RULE_TEXT =
 constexpr std::string_view FRAGILE_SIDE_RULE_TEXT =
     "only a body of side enemy is fragile in one of its actions";
 constexpr std::string_view FRAGILE_DOTTED_KEY = "gameplay.fragile";
-constexpr std::string_view ARMORED_SIDE_RULE_TEXT =
-    "only a body of side enemy is armored in one of its attacks";
-constexpr std::string_view ARMORED_DOTTED_KEY = "gameplay.armored";
-constexpr std::string_view ARMORED_PHASE_DOTTED_KEY = "gameplay.armored.phase";
 constexpr std::string_view UNTIL_DOTTED_KEY =
     "gameplay.hurt_zone.box[0].until_ms";
 constexpr std::string_view ATTACK_DOTTED_KEY =

@@ -23,6 +23,7 @@ AudioService::AudioService(AssetLibrary& library, SettingsService& settings)
       crowdAmbience_(settings, CROWD_AMBIENCE_TRACK),
       shopMusic_(settings, SHOP_MUSIC_TRACK),
       shopRadio_(settings, SHOP_RADIO_TRACK),
+      shopDance_(settings, SHOP_DANCE_TRACK),
       soundtrack_(SoundtrackParts{
           .theme = theme_, .gameMusic = gameMusic_, .bossMusic = bossMusic_}) {
   settings_->subscribe(sounds_);
@@ -34,9 +35,11 @@ AudioService::AudioService(AssetLibrary& library, SettingsService& settings)
   settings_->subscribe(crowdAmbience_);
   settings_->subscribe(shopMusic_);
   settings_->subscribe(shopRadio_);
+  settings_->subscribe(shopDance_);
 }
 
 AudioService::~AudioService() {
+  settings_->unsubscribe(shopDance_);
   settings_->unsubscribe(shopRadio_);
   settings_->unsubscribe(shopMusic_);
   settings_->unsubscribe(crowdAmbience_);
@@ -69,8 +72,10 @@ void AudioService::setAmbience(Ambience ambience) {
   crowdAmbience_.stop();
   shopMusic_.stop();
   shopRadio_.stop();
+  shopDance_.stop();
   ambience_ = ambience;
-  if (ambience == Ambience::Shop || ambience == Ambience::ShopRadio) {
+  if (ambience == Ambience::Shop || ambience == Ambience::ShopRadio ||
+      ambience == Ambience::ShopDance) {
     soundtrack_.pauseTheme();
   } else {
     soundtrack_.resumeTheme();
@@ -89,6 +94,9 @@ void AudioService::setAmbience(Ambience ambience) {
     case Ambience::ShopRadio:
       shopRadio_.start();
       break;
+    case Ambience::ShopDance:
+      shopDance_.start();
+      break;
     case Ambience::None:
       break;
   }
@@ -106,6 +114,7 @@ void AudioService::open() {
   crowdAmbience_.open(*library_);
   shopMusic_.open(*library_);
   shopRadio_.open(*library_);
+  shopDance_.open(*library_);
 }
 
 void AudioService::update(engine::Duration elapsed) {

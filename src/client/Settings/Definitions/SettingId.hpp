@@ -8,6 +8,7 @@ namespace rtype::client {
 enum class SettingId : std::uint8_t {
   MusicVolume,
   EffectsVolume,
+  VoicesVolume,
   Muted,
   WindowSize,
   DisplayMode,

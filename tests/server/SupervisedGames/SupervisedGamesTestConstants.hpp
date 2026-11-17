@@ -139,3 +139,14 @@ constexpr std::string_view UNKNOWN_DIFFICULTY = "nightmare";
 
 /** @brief Lives one past the most a game accepts. */
 constexpr std::uint8_t LIVES_PAST_THE_MOST = 10;
+
+/** @brief The number of the first game a supervisor starts. */
+constexpr std::int64_t FIRST_GAME_NUMBER = 0;
+
+/** @brief The events the journal names for a game started, crashed or ended,
+ * and the level names of an error and of an info line. */
+constexpr std::string_view STARTED_EVENT_NAME = "game.started";
+constexpr std::string_view CRASHED_EVENT_NAME = "game.crashed";
+constexpr std::string_view ENDED_EVENT_NAME = "game.ended";
+constexpr std::string_view ERROR_LEVEL_NAME = "error";
+constexpr std::string_view INFO_LEVEL_NAME = "info";

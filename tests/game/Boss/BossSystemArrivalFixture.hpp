@@ -2,6 +2,7 @@
 
 #include <gtest/gtest.h>
 #include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <optional>
 #include <vector>
@@ -47,6 +48,10 @@ class BossSystemArrivalFixture : public ::testing::Test {
   /** @returns The ticks left of the Summoning of the boss; nothing when it
    * has none. */
   [[nodiscard]] std::optional<std::size_t> summoningTicksLeft();
+
+  /** @returns The attack the boss is armored in; nothing when it has no
+   * Armored. */
+  [[nodiscard]] std::optional<std::uint8_t> armoredAttack();
 
   /** @returns The health of the boss; none when it has no Health. */
   [[nodiscard]] Health health();

@@ -9,6 +9,7 @@ constexpr int EXPECTED_CREATED = 201;
 constexpr int EXPECTED_NO_CONTENT = 204;
 constexpr int EXPECTED_BAD_REQUEST = 400;
 constexpr int EXPECTED_UNAUTHORIZED = 401;
+constexpr int EXPECTED_FORBIDDEN = 403;
 constexpr int EXPECTED_NOT_FOUND = 404;
 constexpr int EXPECTED_CONFLICT = 409;
 constexpr int EXPECTED_TOO_MANY_REQUESTS = 429;
@@ -19,6 +20,11 @@ constexpr std::string_view LOCATION_HEADER_NAME = "Location";
 constexpr std::string_view CONTENT_TYPE_HEADER = "Content-Type";
 constexpr std::string_view EXPECTED_JSON_TYPE = "application/json";
 constexpr std::string_view PUT_METHOD = "PUT";
+
+/** @brief The header Caddy names the scheme of its client in, and the value
+ * it writes for one that came over TLS. */
+constexpr std::string_view FORWARDED_PROTO_HEADER_NAME = "X-Forwarded-Proto";
+constexpr std::string_view HTTPS_SCHEME_NAME = "https";
 
 /** @brief The member of a problem document that says what was refused. */
 constexpr std::string_view PROBLEM_DETAIL_MEMBER_NAME = "detail";
@@ -49,6 +55,11 @@ constexpr std::size_t CREATIONS_PER_HOUR = 5;
 
 /** @brief The game server the tests create and register. */
 constexpr std::string_view TEST_SERVER_NAME = "Paris 1";
+
+/** @brief The key of the passwords the tests start the master with: 32
+ * bytes in hexadecimal, as `openssl rand -hex 32` draws them. */
+constexpr std::string_view TEST_PASSWORD_KEY =
+    "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff";
 
 /** @brief A key shaped like those the master issues, which it never issued. */
 constexpr std::string_view UNKNOWN_SERVER_KEY =

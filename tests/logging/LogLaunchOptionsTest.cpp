@@ -2,6 +2,9 @@
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
+#include <iterator>
+#include <nlohmann/json.hpp>
+#include <nlohmann/json_fwd.hpp>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -22,6 +25,8 @@
 
 using rtype::logging::COLOR_OPTION;
 using rtype::logging::FILE_OPTION;
+using rtype::logging::FORMAT_OPTION;
+using rtype::logging::InvalidLogFormatException;
 using rtype::logging::InvalidLogOptionException;
 using rtype::logging::LEVEL_OPTION;
 using rtype::logging::LogFileOpenException;
@@ -41,16 +46,20 @@ using rtype::logging::testing::HELLO_LINE;
 using rtype::logging::testing::HIDDEN_LINE;
 using rtype::logging::testing::INFO_LEVEL_ARGUMENT;
 using rtype::logging::testing::JOURNAL_LINE_START;
+using rtype::logging::testing::JSON_FORMAT_ARGUMENT;
 using rtype::logging::testing::KEPT_LINE;
 using rtype::logging::testing::LAUNCH_LOGGER_NAME;
 using rtype::logging::testing::LOST_LINE;
 using rtype::logging::testing::MISSING_JOURNAL;
 using rtype::logging::testing::NO_JOURNAL_LINE;
 using rtype::logging::testing::NO_LEVEL_OPTION;
+using rtype::logging::testing::NOT_A_FORMAT_ARGUMENT;
 using rtype::logging::testing::NOT_A_LEVEL_ARGUMENT;
 using rtype::logging::testing::OPTION_LINE_START;
 using rtype::logging::testing::SHOWN_LINE;
+using rtype::logging::testing::SHOWN_TEXT_LINE_END;
 using rtype::logging::testing::STILL_ON_STDERR_LINE;
+using rtype::logging::testing::TEXT_FORMAT_ARGUMENT;
 using rtype::logging::testing::UNOPENED_JOURNAL_LINE_START;
 using rtype::logging::testing::UNUSED_JOURNAL;
 using rtype::logging::testing::WARNING_COLOR_START;
@@ -338,6 +347,40 @@ TEST_F(LogLaunchOptionsFixture, UnknownLevelIsRejectedAndChangesNothing) {
 }
 
 /**
+ * Given the json format option and a journal
+ * When the options are applied and a warning is logged
+ * Then the line of the journal is a JSON object that names its level, its
+ * logger and its message, and standard error shows the line as text
+ */
+TEST_F(LogLaunchOptionsFixture, JsonFormatWritesTheJournalAsJsonLines) {
+  const JournalFile journal;
+
+  logOptionsOf(Arguments{FORMAT_OPTION, JSON_FORMAT_ARGUMENT}, journal.path())
+      .apply();
+  Logger(std::string(LAUNCH_LOGGER_NAME)).warn(SHOWN_LINE);
+
+  const std::vector<std::string> lines = journal.lines();
+  ASSERT_EQ(lines.size(), 1U);
+  const nlohmann::json line = nlohmann::json::parse(lines.front());
+  EXPECT_EQ(line.at("level").get<std::string>(), "warn");
+  EXPECT_EQ(line.at("logger").get<std::string>(), LAUNCH_LOGGER_NAME);
+  EXPECT_EQ(line.at("message").get<std::string>(), SHOWN_LINE);
+  EXPECT_NE(standardError().find(SHOWN_TEXT_LINE_END), std::string::npos);
+}
+
+/**
+ * Given a format option that names no format
+ * When the options are read
+ * Then it is rejected
+ */
+TEST(LogLaunchOptionsReading, UnknownFormatIsRejected) {
+  EXPECT_THROW(
+      static_cast<void>(logOptionsOf(
+          Arguments{FORMAT_OPTION, NOT_A_FORMAT_ARGUMENT}, UNUSED_JOURNAL)),
+      InvalidLogFormatException);
+}
+
+/**
  * Given a good level and a journal that cannot be opened
  * When the options are applied
  * Then the error is raised and neither the level nor the output changed
@@ -537,6 +580,29 @@ TEST(LogLaunchOptionsForwarding, ForwardsTheColourOption) {
 }
 
 /**
+ * Given the json format option, then the text one
+ * When the options a started process shares are asked for
+ * Then the format option is there with json after the first, and not after the
+ * second, text being what a process writes without it
+ */
+TEST(LogLaunchOptionsForwarding, ForwardsTheJsonFormatOnly) {
+  const std::vector<std::string> json =
+      logOptionsOf(Arguments{FORMAT_OPTION, JSON_FORMAT_ARGUMENT},
+                   UNUSED_JOURNAL)
+          .forwardedArguments();
+  const std::vector<std::string> text =
+      logOptionsOf(Arguments{FORMAT_OPTION, TEXT_FORMAT_ARGUMENT},
+                   UNUSED_JOURNAL)
+          .forwardedArguments();
+
+  const auto format = std::ranges::find(json, FORMAT_OPTION);
+  ASSERT_NE(format, json.end());
+  ASSERT_NE(std::next(format), json.end());
+  EXPECT_EQ(*std::next(format), JSON_FORMAT_ARGUMENT);
+  EXPECT_EQ(std::ranges::find(text, FORMAT_OPTION), text.end());
+}
+
+/**
  * Given no logging option
  * When the options a started process shares are asked for
  * Then the colour option is not among them
@@ -558,7 +624,7 @@ TEST(LogLaunchOptionsUsage, NamesEveryLoggingOption) {
 
   for (const std::string_view option :
        {LEVEL_OPTION, FILE_OPTION, NO_FILE_OPTION, STDERR_OPTION,
-        NO_STDERR_OPTION, COLOR_OPTION}) {
+        NO_STDERR_OPTION, COLOR_OPTION, FORMAT_OPTION}) {
     SCOPED_TRACE(option);
     EXPECT_NE(usage.find(std::string(OPTION_LINE_START) + std::string(option)),
               std::string::npos);

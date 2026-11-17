@@ -82,10 +82,6 @@ rage_below_percent = 50
 rage_attack = 9
 arrival_attack = 0
 
-# No hit hurts it while it arrives: attack 0, in any of its phases.
-[gameplay.armored]
-attack = 0
-
 # Its charge takes it past the left edge and back: leaving never removes it.
 [gameplay.stays_outside]
 

@@ -8,6 +8,7 @@ namespace rtype::network {
 constexpr std::string_view GET_METHOD = "GET";
 constexpr std::string_view POST_METHOD = "POST";
 constexpr std::string_view PUT_METHOD = "PUT";
+constexpr std::string_view DELETE_METHOD = "DELETE";
 
 /** @brief The media type of every body a route reads or answers. */
 constexpr std::string_view JSON_CONTENT_TYPE = "application/json";

@@ -20,10 +20,15 @@
  */
 class RunningMaster {
  public:
-  /** @param settingLines Lines of the command `set` run after those of the
-   * port and the database, such as the one of the site key; none by default.
-   */
+  /** @param settingLines Lines of commands run after those of the port and
+   * the database, such as the `set` of the site key; none by default. The key
+   * of the passwords is TEST_PASSWORD_KEY. */
   explicit RunningMaster(std::vector<std::string> settingLines = {});
+
+  /** @param passwordKeyText The key of the passwords of the accounts; empty to
+   * run without accounts. */
+  RunningMaster(std::vector<std::string> settingLines,
+                std::string passwordKeyText);
 
   /** @returns The TCP port its HTTP API listens on. */
   [[nodiscard]] std::uint16_t port() const;
@@ -49,6 +54,9 @@ class RunningMaster {
    * global leaderboard: one per player once a server sent it, none before. */
   [[nodiscard]] int keptPlayersOf(std::string_view gameId) const;
 
+  /** @returns The journal the master writes to. */
+  [[nodiscard]] const JournalFile& journal() const;
+
   /** @returns The server named @p name, created on it as a host creates one,
    * with its key. */
   [[nodiscard]] rtype::network::CreatedServer createServer(
@@ -59,6 +67,7 @@ class RunningMaster {
   MasterDatabaseFile databaseFile_;
   std::uint16_t port_{rtype::network::ANY_PORT};
   std::vector<std::string> settingLines_;
+  std::string passwordKeyText_;
   rtype::engine::ConfigurationReport report_;
   std::unique_ptr<rtype::engine::Application> application_;
 

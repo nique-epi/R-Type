@@ -2,10 +2,13 @@
 
 #include <array>
 #include <cstddef>
+#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
 #include "HashingConstants.hpp"
+#include "PasswordHash.hpp"
+#include "PasswordKey.hpp"
 #include "SecretComparison.hpp"
 
 namespace rtype::network {
@@ -36,6 +39,33 @@ void fillWithRandomBytes(std::span<std::byte> bytes);
  * expected secret nor how much of its guess was right.
  */
 [[nodiscard]] bool secretsMatch(const SecretComparison& secrets);
+
+/**
+ * @returns The key @p text writes as PASSWORD_KEY_BYTES in hexadecimal, digits
+ * in any case, as `openssl rand -hex 32` draws one; nothing for any other text,
+ * one digit too few or too many included.
+ */
+[[nodiscard]] std::optional<PasswordKey> passwordKeyOfHexadecimal(
+    std::string_view text);
+
+/**
+ * @returns What is kept of @p password: hydro_pwhash_create() of libhydrogen,
+ * with a random salt and PASSWORD_HASH_ROUNDS, encrypted with @p key. Two
+ * hashes of one password differ, since each has a salt of its own.
+ * @throws PasswordHashingException when libhydrogen fails to hash it.
+ */
+[[nodiscard]] PasswordHash passwordHashOf(std::string_view password,
+                                          const PasswordKey& key);
+
+/**
+ * @returns Whether @p hash was made of @p password with @p key, by
+ * hydro_pwhash_verify(), which compares in a time that does not depend on the
+ * bytes. False for another password, another key, or a hash made with more
+ * than PASSWORD_HASH_ROUNDS.
+ */
+[[nodiscard]] bool passwordMatches(std::string_view password,
+                                   const PasswordHash& hash,
+                                   const PasswordKey& key);
 
 /** @returns @p bytes in lowercase hexadecimal, HEX_DIGITS_PER_BYTE digits per
  * byte. */

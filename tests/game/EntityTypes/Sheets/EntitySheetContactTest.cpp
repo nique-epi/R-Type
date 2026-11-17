@@ -1,6 +1,5 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include <cstdint>
 #include <optional>
 #include <string>
 #include "ActionKey.hpp"
@@ -25,14 +24,8 @@ using rtype::game::HurtBox;
 using rtype::game::HurtWindow;
 using rtype::game::testing::ACTION_TOGETHER_RULE_TEXT;
 using rtype::game::testing::APPEARANCE;
-using rtype::game::testing::ARMORED_DOTTED_KEY;
-using rtype::game::testing::ARMORED_IN_ATTACK_TWO;
-using rtype::game::testing::ARMORED_PHASE_DOTTED_KEY;
-using rtype::game::testing::ARMORED_SIDE_RULE_TEXT;
-using rtype::game::testing::ARMORED_WITH_A_PHASE;
 using rtype::game::testing::ATTACK_DOTTED_KEY;
 using rtype::game::testing::ATTACK_OF_EVERY_PHASE;
-using rtype::game::testing::ATTACK_OF_THE_ARMORED_TABLE;
 using rtype::game::testing::BOX_ENDING_AS_IT_STARTS;
 using rtype::game::testing::BOX_OF_AN_UNKNOWN_PHASE;
 using rtype::game::testing::BOX_WITH_A_PHASE_ONLY;
@@ -468,47 +461,6 @@ TEST_F(EntitySheetReaderFixture, RefusesAFragileTableWithoutPhase) {
                                        STEADY_MOTION, LEFT_HEADING_TABLE,
                                        FRAGILE_WITHOUT_PHASE, APPEARANCE})),
                MissingDataFileKeyException);
-}
-
-/**
- * Given the sheet of an enemy armored in its attack 2
- * When its gameplay is read
- * Then it is armored in that attack
- */
-TEST_F(EntitySheetReaderFixture, ReadsTheAttackAnEnemyIsArmoredIn) {
-  const EntitySheet sheet =
-      read({ENEMY_GAMEPLAY, BYDO_HITBOX, STEADY_MOTION, LEFT_HEADING_TABLE,
-            ARMORED_IN_ATTACK_TWO, APPEARANCE});
-
-  EXPECT_EQ(sheet.armoredIn,
-            std::optional<std::uint8_t>{ATTACK_OF_THE_ARMORED_TABLE});
-}
-
-/**
- * Given an armored table that also names a phase
- * When the gameplay is read
- * Then the refusal names that key: an enemy is armored in a whole attack
- */
-TEST_F(EntitySheetReaderFixture, RefusesAPhaseInTheArmoredTable) {
-  const std::string message =
-      refusalOf({ENEMY_GAMEPLAY, BYDO_HITBOX, STEADY_MOTION, LEFT_HEADING_TABLE,
-                 ARMORED_WITH_A_PHASE, APPEARANCE});
-
-  EXPECT_THAT(message, HasSubstr(ARMORED_PHASE_DOTTED_KEY));
-}
-
-/**
- * Given the sheet of a missile that declares itself armored
- * When its gameplay is read
- * Then the refusal names the armored table and the rule
- */
-TEST_F(EntitySheetReaderFixture, RefusesAnArmoredMissile) {
-  const std::string message =
-      refusalOf({ENEMY_MISSILE_GAMEPLAY, BYDO_HITBOX, STEADY_MOTION,
-                 LEFT_HEADING_TABLE, ARMORED_IN_ATTACK_TWO, APPEARANCE});
-
-  EXPECT_THAT(message, HasSubstr(ARMORED_DOTTED_KEY));
-  EXPECT_THAT(message, HasSubstr(ARMORED_SIDE_RULE_TEXT));
 }
 
 /**

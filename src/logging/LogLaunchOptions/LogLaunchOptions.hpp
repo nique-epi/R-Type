@@ -29,9 +29,11 @@ class LogLaunchOptions {
   /**
    * @brief Reads the logging option @p arguments starts with, if it is one:
    *        `--log-level <name>`, `--log-file <path>`, `--no-log-file`,
-   *        `--log-stderr`, `--no-log-stderr` or `--log-color`.
+   *        `--log-stderr`, `--no-log-stderr`, `--log-color` or
+   *        `--log-format <text|json>`.
    *
-   * The value of `--log-level` or `--log-file` is the argument after it, even
+   * The value of `--log-level`, `--log-file` or `--log-format` is the
+   * argument after it, even
    * when it looks like an option. A program reads its arguments once, in
    * order, and hands this the ones that are neither its own options nor the
    * value of one, so the last of `--log-file` and `--no-log-file` wins, and
@@ -46,8 +48,10 @@ class LogLaunchOptions {
    * @throws InvalidLogOptionException when the first argument starts with
    *         `--log-` or `--no-log-` but names no logging option, so a typo is
    *         never silent.
-   * @throws MissingLogOptionValueException when `--log-level` or
-   *         `--log-file` is the last argument.
+   * @throws InvalidLogFormatException when the value of `--log-format` is
+   *         neither text nor json.
+   * @throws MissingLogOptionValueException when `--log-level`, `--log-file`
+   *         or `--log-format` is the last argument.
    */
   [[nodiscard]] std::size_t readOption(
       std::span<const std::string_view> arguments);
@@ -71,8 +75,9 @@ class LogLaunchOptions {
    * @returns The options that give a process this program starts the choices
    *          of these options it shares: `--log-level <name>` when a level
    *          was given, `--no-log-file` when no journal is written,
-   *          `--no-log-stderr` when standard error is off, and `--log-color`
-   *          when colour was asked for; none for a launch
+   *          `--no-log-stderr` when standard error is off, `--log-color`
+   *          when colour was asked for, and `--log-format json` when the
+   *          journal is written as JSON Lines; none for a launch
    *          that gives no logging option. The journal file is the caller's,
    *          given before them so a `--no-log-file` wins over it.
    */

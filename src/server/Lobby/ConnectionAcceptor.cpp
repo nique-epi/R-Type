@@ -5,6 +5,7 @@
 #include <optional>
 #include <random>
 #include <span>
+#include <sstream>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -18,8 +19,12 @@
 #include "Endpoint.hpp"
 #include "IncomingDatagram.hpp"
 #include "LobbyConstants.hpp"
+#include "LogEvent.hpp"
+#include "LogLevel.hpp"
+#include "Logger.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
+#include "PlayerEventFields.hpp"
 #include "PlayerRoster.hpp"
 #include "ProtocolConstants.hpp"
 #include "RequestReading.hpp"
@@ -60,6 +65,21 @@ bool isAcceptanceDue(const ConnectedPlayer& player, engine::Duration now) {
          now - *player.lastAcceptedAt >= CONNECTION_ACCEPTANCE_REPEAT_INTERVAL;
 }
 
+/** @brief Writes the info event of @p player, just let in: its number, its
+ * address and its port. */
+void writeJoined(const logging::Logger& logger, const ConnectedPlayer& player) {
+  std::ostringstream message;
+  message << "player " << static_cast<unsigned int>(player.playerNumber)
+          << " joined from " << player.endpoint.address << " port "
+          << player.endpoint.port;
+  const std::string text = message.str();
+  const auto fields = playerEventFields(player);
+  logger.event(logging::LogEvent{.level = logging::LogLevel::Info,
+                                 .name = PLAYER_JOINED_EVENT,
+                                 .message = text,
+                                 .fields = fields});
+}
+
 }  // namespace
 
 ConnectionAcceptor::ConnectionAcceptor(ConnectionAcceptorParts parts)
@@ -67,6 +87,7 @@ ConnectionAcceptor::ConnectionAcceptor(ConnectionAcceptorParts parts)
       send_(std::move(parts.send)),
       admit_(std::move(parts.admit)),
       onPlayerJoined_(std::move(parts.onPlayerJoined)),
+      onRefused_(std::move(parts.onRefused)),
       content_(parts.content),
       logger_(std::string{LOBBY_LOGGER_NAME}) {}
 
@@ -125,8 +146,7 @@ void ConnectionAcceptor::answer(const network::Endpoint& sender,
   }
   ConnectedPlayer* const joined =
       roster_->add(sender, request.nickname, drawSessionToken());
-  logger_.info("player ", static_cast<unsigned int>(joined->playerNumber),
-               " joined from ", sender.address, " port ", sender.port);
+  writeJoined(logger_, *joined);
   admit_(joined->endpoint, joined->sessionToken);
   accept(*joined, now);
   if (onPlayerJoined_) {
@@ -156,6 +176,9 @@ void ConnectionAcceptor::refuse(const network::Endpoint& sender,
                                 network::RefusalReason reason) {
   logger_.debug("connection refused to ", sender.address, " port ", sender.port,
                 ", reason ", static_cast<unsigned int>(reason));
+  if (onRefused_) {
+    onRefused_(sender);
+  }
   send_(network::OutgoingDatagram{
       .destination = sender,
       .payload = network::DatagramCodec::encode(
