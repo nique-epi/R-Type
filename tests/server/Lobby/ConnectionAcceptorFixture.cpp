@@ -36,6 +36,7 @@ ConnectionAcceptorFixture::ConnectionAcceptorFixture()
               [this](ConnectedPlayer& player) {
                 joinedPlayers_.push_back(player.playerNumber);
               },
+          .onRefused = {},
           .content = gameContent()}) {}
 
 void ConnectionAcceptorFixture::receive(const network::Endpoint& sender,

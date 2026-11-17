@@ -309,6 +309,7 @@ The client, the server and the master write a timestamped journal, `r-type_clien
 | `--log-stderr` | Write to standard error too (default) |
 | `--no-log-stderr` | Do not write to standard error |
 | `--log-color` | Write standard error in colour, even when it is no terminal |
+| `--log-format <text\|json>` | Write the journal file as text (default) or as JSON Lines, one object per line with the events of the server named, for a tool such as `jq`; standard error stays text |
 
 The build option `-DLOG_LEVEL=<name>` removes the calls below a level from the binaries. See [the logging page](docs/src/content/docs/logging.md).
 

@@ -32,6 +32,12 @@ trigger: always_on
 1. **A body that leaves early on one platform puts the rest in the `#else` branch**: `#ifdef _WIN32` then `GTEST_SKIP()`, `return` or `throw`, `#else` the rest, `#endif`. MSVC compiles with `/W4`, which reports the code after the exit as unreachable (`C4702`), and `/WX` makes it an error. Clang and GCC, with `-Wall -Wextra -Wpedantic`, never warn on it, and they do not even compile the `_WIN32` branch, so no local build can show it.
 2. **Before pushing an `#ifdef` that exits on one platform, read what follows its `#endif` in the same body**: any statement there is unreachable on that platform.
 
+### A JSON value is read into its type before it is compared
+
+1. **A `nlohmann::json` is never compared directly with a `std::string_view`** (`EXPECT_EQ(object.at("message"), MESSAGE)`): MSVC finds the `operator==` of the JSON and the one of `std::basic_string_view` equally good and stops on `C2666`. Clang and GCC pick one and say nothing.
+2. **Read the value first**: `object.at("message").get<std::string>()`, as `LogLaunchOptionsTest.cpp` does. A JSON compared with a JSON is fine.
+3. **Before pushing a test that reads JSON**, `git grep -n -E '\.at\("[a-z_]+"\)[,)]' -- tests` prints no assertion that compares such a value with a text.
+
 ### A red proof runs on a binary rebuilt from the faulty source
 
 1. **Swapping a source file and rebuilding in a loop is not enough**: `make` compares timestamps to the second, so a file copied less than a second after the previous build is seen as up to date and the old binary runs.

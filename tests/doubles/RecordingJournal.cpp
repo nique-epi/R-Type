@@ -17,7 +17,8 @@ bool RecordingJournal::accepts(rtype::logging::LogLevel level) const {
 void RecordingJournal::write(const rtype::logging::LogRecord& record) const {
   lines_.push_back(RecordedLine{.level = record.level,
                                 .loggerName = std::string{record.loggerName},
-                                .body = std::string{record.body}});
+                                .body = std::string{record.body},
+                                .fields = std::string{record.fields}});
 }
 
 const std::vector<RecordedLine>& RecordingJournal::lines() const {
