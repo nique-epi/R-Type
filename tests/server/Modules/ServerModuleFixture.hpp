@@ -26,6 +26,10 @@ class ServerModuleFixture : public ::testing::Test {
   /** @returns Whether a UDP socket can be bound on @p port now. */
   [[nodiscard]] static bool portIsFree(std::uint16_t port);
 
+  /** @brief Makes the logging options write the journal as JSON Lines, for a
+   * test that reads its events; called before journalOptions(). */
+  void writeTheJournalAsJson();
+
   /** @returns The journal file the logging options point to. */
   [[nodiscard]] const JournalFile& journal() const;
 

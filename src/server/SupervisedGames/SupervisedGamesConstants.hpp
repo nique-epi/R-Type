@@ -31,6 +31,12 @@ constexpr engine::Duration STOP_POLL_INTERVAL = std::chrono::milliseconds(50);
 /** @brief The name the supervisor writes its journal lines under. */
 constexpr std::string_view SUPERVISOR_LOGGER_NAME = "Supervisor";
 
+/** @brief The events of a game the supervisor started, of a game that ended,
+ * and of a game whose process crashed. */
+constexpr std::string_view GAME_STARTED_EVENT = "game.started";
+constexpr std::string_view GAME_ENDED_EVENT = "game.ended";
+constexpr std::string_view GAME_CRASHED_EVENT = "game.crashed";
+
 /** @brief The journal file of game n is GAME_LOG_FILE_PREFIX, n and
  * GAME_LOG_FILE_SUFFIX. */
 constexpr std::string_view GAME_LOG_FILE_PREFIX = "r-type_game_";

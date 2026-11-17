@@ -22,6 +22,7 @@
 #cmakedefine01 RTYPE_MODULE_CHAT
 #cmakedefine01 RTYPE_MODULE_PLUGINS
 #cmakedefine01 RTYPE_MODULE_GAME_STATISTICS
+#cmakedefine01 RTYPE_MODULE_ACCOUNTS
 
 namespace rtype::engine {
 
@@ -48,5 +49,7 @@ constexpr bool PLUGINS_BUILT = RTYPE_MODULE_PLUGINS == 1;
 /** @brief Whether the build writes the `game-statistics` plugin next to the
  * programs. */
 constexpr bool GAME_STATISTICS_MODULE_BUILT = RTYPE_MODULE_GAME_STATISTICS == 1;
+/** @brief Whether the master holds its `accounts` module. */
+constexpr bool ACCOUNTS_MODULE_BUILT = RTYPE_MODULE_ACCOUNTS == 1;
 
 }  // namespace rtype::engine

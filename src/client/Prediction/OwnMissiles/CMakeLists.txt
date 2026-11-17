@@ -13,6 +13,7 @@ target_link_libraries(rtype_client_prediction_own_missiles
     rtype_engine
     rtype_engine_time
     rtype_game_components
+    rtype_game_contacts
     rtype_network_protocol
   PRIVATE
     rtype_client_entity_sprites

@@ -19,6 +19,11 @@ rtype::logging::LogLaunchOptions ServerModuleFixture::journalOptions() const {
   return logOptionsOf(arguments_, rtype::logging::SERVER_LOG_FILE_NAME);
 }
 
+void ServerModuleFixture::writeTheJournalAsJson() {
+  arguments_.push_back(rtype::logging::FORMAT_OPTION);
+  arguments_.push_back(rtype::logging::JSON_FORMAT_NAME);
+}
+
 std::vector<std::string> ServerModuleFixture::onAnyPort(
     std::vector<std::string> lines) {
   lines.push_back(

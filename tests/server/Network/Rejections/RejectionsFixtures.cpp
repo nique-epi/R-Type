@@ -2,10 +2,15 @@
 #include <cstddef>
 #include <cstdint>
 #include <initializer_list>
+#include <optional>
 #include <string>
+#include <string_view>
+#include <vector>
 #include "Endpoint.hpp"
+#include "EventField.hpp"
 #include "RejectionCause.hpp"
 #include "RejectionCounts.hpp"
+#include "RejectionEvent.hpp"
 #include "RejectionLedger.hpp"
 #include "RejectionsTestConstants.hpp"
 
@@ -38,4 +43,24 @@ rtype::server::RejectionCounts countsOf(
     rtype::server::addOneTo(counts, cause);
   }
   return counts;
+}
+
+std::vector<std::string> messagesOf(
+    const std::vector<rtype::server::RejectionEvent>& events) {
+  std::vector<std::string> messages;
+  messages.reserve(events.size());
+  for (const rtype::server::RejectionEvent& event : events) {
+    messages.push_back(event.message);
+  }
+  return messages;
+}
+
+std::optional<rtype::logging::EventFieldValue> fieldOf(
+    const rtype::server::RejectionEvent& event, std::string_view name) {
+  for (const rtype::logging::EventField& field : event.fields) {
+    if (field.name == name) {
+      return field.value;
+    }
+  }
+  return std::nullopt;
 }

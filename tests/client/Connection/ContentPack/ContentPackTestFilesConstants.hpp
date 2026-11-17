@@ -26,6 +26,10 @@ constexpr std::string_view SHEET_NAMING_A_FILE_OUTSIDE =
 constexpr std::string_view LANCER_SPRITES_PATH = "sprites/mobs/lancer.png";
 constexpr std::string_view LANCER_PIXELS = "\x89PNG\r\n\x1a\nlancer";
 
+/** @brief The mask file of the lancer in a pack, next to its sheet. */
+constexpr std::string_view LANCER_MASK_PATH = "entities/masks/lancer.txt";
+constexpr std::string_view LANCER_MASK = "##\n##\n";
+
 /** @brief What a kept pack is named after its fingerprint, and the types a
  * pack of one sheet gives. */
 constexpr std::string_view KEPT_PACK_EXTENSION = ".pack";

@@ -4,6 +4,7 @@
 #include <string_view>
 #include "ForwardedAddress.hpp"
 #include "HttpServerConstants.hpp"
+#include "LowercaseText.hpp"
 #include "NetworkConstants.hpp"
 #include "PeerAddresses.hpp"
 
@@ -26,17 +27,28 @@ std::string_view lastForwardedAddressIn(std::string_view forwardedFor) {
   return last.substr(first, end - first + 1);
 }
 
+/** @returns Whether a request with @p addresses came from the proxy on the
+ * machine, which a server built with @p trust believes. */
+bool fromTrustedProxy(const PeerAddresses& addresses, ForwardedAddress trust) {
+  return trust == ForwardedAddress::TrustedFromLoopback &&
+         addresses.peer == LOOPBACK_IPV4_ADDRESS;
+}
+
 }  // namespace
 
 std::string clientAddressOf(const PeerAddresses& addresses,
                             ForwardedAddress trust) {
-  if (trust != ForwardedAddress::TrustedFromLoopback ||
-      addresses.peer != LOOPBACK_IPV4_ADDRESS) {
+  if (!fromTrustedProxy(addresses, trust)) {
     return addresses.peer;
   }
   const std::string_view forwarded =
       lastForwardedAddressIn(addresses.forwardedFor);
   return forwarded.empty() ? addresses.peer : std::string{forwarded};
+}
+
+bool reachedOverHttps(const PeerAddresses& addresses, ForwardedAddress trust) {
+  return fromTrustedProxy(addresses, trust) &&
+         lowercaseOf(addresses.forwardedProto) == HTTPS_SCHEME;
 }
 
 }  // namespace rtype::network

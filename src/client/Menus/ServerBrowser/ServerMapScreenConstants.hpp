@@ -3,21 +3,64 @@
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Keyboard.hpp>
+#include <array>
 #include <chrono>
 #include <cstddef>
+#include <optional>
+#include "HangarScreenIdConstants.hpp"
+#include "InterfaceConstants.hpp"
+#include "KopecksLabelConstants.hpp"
 #include "MasterMessageConstants.hpp"
+#include "SectorMapConstants.hpp"
+#include "ServerMapTab.hpp"
+#include "ShopScreenIdConstants.hpp"
+#include "WidgetConstants.hpp"
 
 namespace rtype::client {
 
-/** @brief The header of the map: its title, and the line under it, which
- * starts with the number of servers shown. */
+/** @brief The title of the map, under the tabs, SERVER_MAP_TITLE_GAP over
+ * the top left corner of the map. */
 constexpr const char* SERVER_MAP_TITLE = "SECTOR MAP";
-constexpr const char* SERVER_COUNT_SUFFIX = " SERVERS";
-constexpr const char* ONE_SERVER_TEXT = "1 SERVER";
-constexpr const char* SERVER_MAP_HINT =
-    " - THE CLOSER TO YOUR PLANET, THE LOWER THE PING";
-constexpr sf::Vector2i SERVER_MAP_TITLE_ANCHOR{24, 24};
-constexpr sf::Vector2i SERVER_MAP_SUBTITLE_ANCHOR{24, 37};
+constexpr int SERVER_MAP_TITLE_GAP = 4;
+constexpr sf::Vector2i SERVER_MAP_TITLE_ANCHOR{
+    SECTOR_MAP_AREA.position.x,
+    SECTOR_MAP_AREA.position.y - TEXT_LINE_HEIGHT - SERVER_MAP_TITLE_GAP};
+
+/**
+ * @brief The tabs over the map, the Tab Rail v2 of the design system: SECTORS,
+ * the map itself, open; HANGAR, opened by HANGAR_KEY; SHOP, opened by
+ * SHOP_KEY; CASINO, locked until the casino exists, CASINO_KEY making it
+ * shake. The row is centred between the safe margin and the kopecks balance,
+ * BUTTON_GAP short of its frame, its labels at SERVER_MAP_TABS_TOP, halfway
+ * into the safe margin, so the bar under them stands well clear of the title.
+ * The kopecks frame rises with them: its amount, KOPECKS_FRAME_PADDING under
+ * its top, sits on the row of the labels.
+ */
+constexpr const char* SECTORS_TAB_LABEL = "SECTORS";
+constexpr const char* CASINO_TAB_LABEL = "CASINO";
+constexpr sf::Keyboard::Key CASINO_KEY = sf::Keyboard::Key::C;
+constexpr std::size_t SECTORS_TAB = 0;
+constexpr std::array<ServerMapTab, 4> SERVER_MAP_TABS{
+    ServerMapTab{.tab = {.label = SECTORS_TAB_LABEL, .locked = false},
+                 .key = std::nullopt,
+                 .screen = std::nullopt},
+    ServerMapTab{.tab = {.label = HANGAR_LABEL, .locked = false},
+                 .key = HANGAR_KEY,
+                 .screen = HANGAR_SCREEN},
+    ServerMapTab{.tab = {.label = SHOP_LABEL, .locked = false},
+                 .key = SHOP_KEY,
+                 .screen = SHOP_SCREEN},
+    ServerMapTab{.tab = {.label = CASINO_TAB_LABEL, .locked = true},
+                 .key = CASINO_KEY,
+                 .screen = std::nullopt}};
+constexpr int SERVER_MAP_TABS_TOP = SAFE_MARGIN / 2;
+constexpr sf::Vector2i SERVER_MAP_TABS_TOP_MIDDLE{
+    (SAFE_MARGIN + KOPECKS_BALANCE_TOP_RIGHT.x - KOPECKS_FRAME_SIZE.x -
+     BUTTON_GAP) /
+        2,
+    SERVER_MAP_TABS_TOP};
+constexpr sf::Vector2i SERVER_MAP_KOPECKS_TOP_RIGHT{
+    KOPECKS_BALANCE_TOP_RIGHT.x, SERVER_MAP_TABS_TOP - KOPECKS_FRAME_PADDING.y};
 
 /** @brief What the map says while it has no server to show, centred on the
  * map, a line every MESSAGE_LINE_PITCH. */
@@ -70,25 +113,29 @@ constexpr const char* UPDATE_WARNING = "UPDATE: ANOTHER VERSION";
 constexpr const char* OPEN_GAMES_HINT = "ENTER: ITS GAMES";
 constexpr const char* ZOOM_IN_HINT = "ENTER OR SCROLL: ZOOM IN";
 
-/** @brief The chips under the map: QUICK PLAY on the left, then RANKING,
- * ADDRESS and BACK against the right edge of the map. */
-constexpr int SERVER_MAP_CHIPS_TOP = 226;
-constexpr int SERVER_MAP_CHIPS_LEFT = 24;
-constexpr int SERVER_MAP_CHIPS_RIGHT = 456;
+/** @brief The chips under the map: QUICK PLAY on the left, then ADDRESS
+ * and BACK against the right edge of the map. */
+constexpr int SERVER_MAP_CHIPS_GAP = 6;
+constexpr int SERVER_MAP_CHIPS_TOP =
+    SECTOR_MAP_AREA.position.y + SECTOR_MAP_AREA.size.y + SERVER_MAP_CHIPS_GAP;
+constexpr int SERVER_MAP_CHIPS_LEFT = SECTOR_MAP_AREA.position.x;
+constexpr int SERVER_MAP_CHIPS_RIGHT =
+    SECTOR_MAP_AREA.position.x + SECTOR_MAP_AREA.size.x;
 constexpr const char* QUICK_PLAY_LABEL = "QUICK PLAY";
 constexpr const char* QUICK_PLAY_KEY_NAME = "Q";
 constexpr sf::Keyboard::Key QUICK_PLAY_KEY = sf::Keyboard::Key::Q;
-constexpr const char* RANKING_LABEL = "RANKING";
-constexpr const char* RANKING_KEY_NAME = "L";
-constexpr sf::Keyboard::Key RANKING_KEY = sf::Keyboard::Key::L;
 constexpr const char* ADDRESS_LABEL = "ADDRESS";
 constexpr const char* ADDRESS_KEY_NAME = "D";
 constexpr sf::Keyboard::Key ADDRESS_KEY = sf::Keyboard::Key::D;
 
 /** @brief The panel of the games of a server, over the map dimmed: its area,
- * its title, the count of its games, its rule, its columns, its rows, and the
- * line under them that says what ENTER does. */
-constexpr sf::IntRect GAME_PANEL_AREA{{184, 52}, {272, 168}};
+ * as tall as the map, its title, the count of its games, its rule, its
+ * columns, its rows, and the line under them that says what ENTER does. */
+constexpr int GAME_PANEL_LEFT = 184;
+constexpr sf::IntRect GAME_PANEL_AREA{
+    {GAME_PANEL_LEFT, SECTOR_MAP_AREA.position.y},
+    {SECTOR_MAP_AREA.position.x + SECTOR_MAP_AREA.size.x - GAME_PANEL_LEFT,
+     SECTOR_MAP_AREA.size.y}};
 constexpr int GAME_PANEL_PADDING = 10;
 constexpr int GAME_PANEL_TITLE_TOP = 6;
 constexpr int GAME_PANEL_RULE_TOP = 18;

@@ -46,6 +46,7 @@ using rtype::client::SHIP_LOOK_SHEET_ID;
 using rtype::client::SHOP_FRONT_ID;
 using rtype::client::SHOP_KEEPER_SHEET_ID;
 using rtype::client::SHOP_SCENE_ID;
+using rtype::client::SHOP_TICKET_SHEET_ID;
 using rtype::client::SMALL_FONT_ID;
 using rtype::client::titleAssets;
 using rtype::client::withEntitySheets;
@@ -200,7 +201,21 @@ TEST(ScreenAssets, TheIntroLoadsTheTitleAndTheEffectSheet) {
                   LOGO_ID, ENTITY_SHEET_ID, HUD_SHEET_ID, PROFESSOR_SHEET_ID,
                   LEADERBOARD_SHEET_ID, SHIP_LOOK_SHEET_ID, SHIP_HULL_SHEET_ID,
                   SECTOR_MAP_SHEET_ID, SHOP_SCENE_ID, SHOP_KEEPER_SHEET_ID,
-                  SHOP_FRONT_ID, EFFECT_SHEET_ID));
+                  SHOP_FRONT_ID, SHOP_TICKET_SHEET_ID, EFFECT_SHEET_ID));
+}
+
+/**
+ * Given the ticket sheet of the repository
+ * When it is read
+ * Then it is 176 by 272 pixels: the paper and its shadow, 175 by 219, its
+ * torn edge, rows 224 to 231, and its stamp, rows 236 to 269, all fit in it
+ */
+TEST(ScreenAssets, TheTicketSheetHoldsItsPictures) {
+  sf::Image sheet;
+
+  ASSERT_TRUE(sheet.loadFromFile(repositoryAssets() / SHOP_TICKET_SHEET_ID));
+
+  EXPECT_EQ(sf::Vector2i(sheet.getSize()), TICKET_SHEET_SIZE);
 }
 
 /**

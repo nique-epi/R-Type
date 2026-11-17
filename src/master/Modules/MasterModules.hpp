@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <string>
 #include <vector>
 #include "FailureReport.hpp"
 #include "IModule.hpp"
@@ -11,8 +12,9 @@ namespace rtype::master {
 /**
  * @brief The modules of the master, in the order an Application installs and
  * starts them (and stops them in reverse): the logger, the storage, the
- * probes, the HTTP API and the game servers. This is the one place that lists
- * them.
+ * probes, the HTTP API, the game servers, the leaderboard and, when
+ * RTYPE_MODULE_ACCOUNTS builds it, the accounts.
+ * This is the one place that lists them.
  *
  * The storage comes before the HTTP API, so a database the master cannot open
  * stops it before its port opens, and the API stops before the database
@@ -21,11 +23,13 @@ namespace rtype::master {
  *
  * @param logOptions Applied by the logger module when it starts.
  * @param onFailure Told by the HTTP module when its server stops on its own.
+ * @param passwordKeyText The key of the passwords of the accounts, as
+ * PASSWORD_KEY_VARIABLE holds it; empty to run without accounts.
  * @throws engine::UnknownExecutablePathException when the system does not
  * tell where the executable is, next to which the database lies by default.
  */
 [[nodiscard]] std::vector<std::unique_ptr<engine::IModule>> masterModules(
-    const logging::LogLaunchOptions& logOptions,
-    const FailureReport& onFailure);
+    const logging::LogLaunchOptions& logOptions, const FailureReport& onFailure,
+    const std::string& passwordKeyText);
 
 }  // namespace rtype::master

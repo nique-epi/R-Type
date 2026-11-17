@@ -44,4 +44,11 @@ constexpr std::array MASTER_SETTING_NAMES{
  */
 constexpr std::string_view DATABASE_FILE_NAME = "r-type_master.db";
 
+/**
+ * @brief The environment variable the key of the passwords is read from at
+ * launch: network::PASSWORD_KEY_BYTES in hexadecimal. Unset or empty, the
+ * master runs without accounts.
+ */
+constexpr std::string_view PASSWORD_KEY_VARIABLE = "RT_PASSWORD_KEY";
+
 }  // namespace rtype::master

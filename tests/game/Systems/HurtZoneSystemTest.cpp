@@ -6,10 +6,12 @@
 #include "CurrentAction.hpp"
 #include "Entity.hpp"
 #include "EntityType.hpp"
+#include "EntityTypesTestConstants.hpp"
 #include "HurtZoneSystem.hpp"
 #include "HurtZoneSystemFixtures.hpp"
 #include "HurtZoneSystemTestConstants.hpp"
 #include "ShipContact.hpp"
+#include "ShippedEntitySheets.hpp"
 #include "ViewDelay.hpp"
 
 using rtype::engine::CollisionFilter;
@@ -20,15 +22,20 @@ using rtype::game::ShipContact;
 using rtype::game::ViewDelay;
 using rtype::game::testing::A_SECOND_INTO_THE_PHASE;
 using rtype::game::testing::ALWAYS_HURTING_BOX;
+using rtype::game::testing::BOX_ON_THE_HULL;
+using rtype::game::testing::BOX_OVER_THE_CLEAR_CORNER;
 using rtype::game::testing::contactsOf;
 using rtype::game::testing::enemyWith;
 using rtype::game::testing::JUST_BEFORE_THE_WINDOW;
+using rtype::game::testing::MASKED_SHIP_ON_CELL_ZERO;
 using rtype::game::testing::MOVED_ENEMY_X;
 using rtype::game::testing::OPEN_ENDED_STRIKE_BOX;
 using rtype::game::testing::SHIP_APART_FROM_THE_BOX_X;
 using rtype::game::testing::SHIP_IN_THE_MOVED_BOX_X;
 using rtype::game::testing::SHIP_INSIDE_THE_BOX_X;
+using rtype::game::testing::SHIP_SHEET;
 using rtype::game::testing::SHIP_TOUCHING_THE_BOX_X;
+using rtype::game::testing::shippedEntitySheets;
 using rtype::game::testing::SIGNAL_OF_ATTACK_ONE;
 using rtype::game::testing::STRIKE_BOX;
 using rtype::game::testing::STRIKE_OF_ATTACK_ONE;
@@ -298,4 +305,37 @@ TEST(HurtZoneSystem, AZoneSparesAShipItsBodyDoesNotTouch) {
   scene.spawn(EntityType::Player, SHIP_INSIDE_THE_BOX_X, 0.0F);
 
   EXPECT_TRUE(contactsOf(scene).empty());
+}
+
+/**
+ * Given the ship of the shipped sheet and an enemy whose box that always
+ * hurts overlaps the box of the ship over its clear top-left corner only
+ * When the hurt zone system updates and the bus dispatches
+ * Then no ShipContact is delivered: the box misses the pixels of the ship
+ */
+TEST(HurtZoneSystem, ABoxOverTheClearCornerOfTheShipSparesIt) {
+  CollisionScene scene;
+  enemyWith(scene, 0.0F, {BOX_OVER_THE_CLEAR_CORNER});
+  scene.spawnFromSheet(shippedEntitySheets().named(SHIP_SHEET),
+                       MASKED_SHIP_ON_CELL_ZERO);
+
+  EXPECT_TRUE(contactsOf(scene).empty());
+}
+
+/**
+ * Given the ship of the shipped sheet and an enemy whose box that always
+ * hurts lies on the hull of the ship
+ * When the hurt zone system updates and the bus dispatches
+ * Then one ShipContact names the ship
+ */
+TEST(HurtZoneSystem, ABoxOnTheHullOfTheShipHurtsIt) {
+  CollisionScene scene;
+  enemyWith(scene, 0.0F, {BOX_ON_THE_HULL});
+  const Entity ship = scene.spawnFromSheet(
+      shippedEntitySheets().named(SHIP_SHEET), MASKED_SHIP_ON_CELL_ZERO);
+
+  const std::vector<ShipContact> received = contactsOf(scene);
+
+  ASSERT_EQ(received.size(), 1U);
+  EXPECT_EQ(received.front().player, ship);
 }

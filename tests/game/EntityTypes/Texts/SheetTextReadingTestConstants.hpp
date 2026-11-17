@@ -21,6 +21,11 @@ constexpr std::string_view FIRST_SHEET_NAME = "drifter";
 constexpr std::string_view SECOND_SHEET_NAME = "weaver";
 constexpr std::size_t SHEETS_IN_THE_FOLDER = 2;
 
+/** @brief The mask file of the Drifter, next to its sheet, and what it
+ * holds. */
+constexpr std::string_view DRIFTER_MASK_FILE_NAME = "masks/drifter.txt";
+constexpr std::string_view DRIFTER_MASK = "##\n##\n";
+
 /** @brief A folder of the temporary folder that does not exist. */
 constexpr std::string_view MISSING_FOLDER_NAME = "no_such_folder";
 

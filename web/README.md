@@ -44,9 +44,13 @@ examples (see [A silent master](#a-silent-master)). To see real data, start a
 master and tell the site where it is:
 
 ```bash
-./r-type_server --mode master -p 8081      # from the root of the repository
+RT_PASSWORD_KEY=$(openssl rand -hex 32) ./r-type_server --mode master -p 8081   # from the root of the repository
 echo 'MASTER_URL=http://localhost:8081' > web/.env.local
 ```
+
+The master does not start without `RT_PASSWORD_KEY`, the key of the passwords
+of its accounts. A new key at each launch makes the accounts of the launch
+before unreadable: keep one in a file to keep them.
 
 | Command                           | Does                                                                                  |
 | --------------------------------- | ------------------------------------------------------------------------------------- |
@@ -85,6 +89,8 @@ committed.
 | **StPageFlip** (`page-flip`)                                   | the page that turns in the bestiary                                                           | [`src/components/wiki/bestiary-book.tsx`](src/components/wiki/bestiary-book.tsx), [`src/types/page-flip.d.ts`](src/types/page-flip.d.ts) |
 | **zod**                                                        | the shape of what the master and the environment send, checked at run time                    | `src/lib/api/schemas/`, `src/config/env.config.ts`                                                                                       |
 | **@better-fetch/fetch**                                        | the typed client of the master                                                                | [`src/lib/api/clients/master/`](src/lib/api/clients/master/index.ts)                                                                     |
+| **next-safe-action**                                           | a server action that checks its input against a zod schema before it runs                     | [`src/lib/safe-action/`](src/lib/safe-action/index.ts)                                                                                   |
+| **react-hook-form** with **@hookform/resolvers**               | a form checked in the browser against the same zod schema as its action                       | [`src/components/accounts/sign-up-form.tsx`](src/components/accounts/sign-up-form.tsx)                                                   |
 | **server-only**                                                | makes the build fail if a client component imports a server module                            | the top of every file in `src/hooks/api/`, `src/lib/api/`, `src/config/server-env.ts`                                                    |
 | **Biome**                                                      | linter and formatter (single quotes, two spaces, organized imports)                           | `biome.json`                                                                                                                             |
 | **Vitest**, **Testing Library**, **jsdom**                     | the tests                                                                                     | `vitest.config.mts`, `src/test/`                                                                                                         |
@@ -119,17 +125,19 @@ A test sits **beside the file it tests** (`ranking-view.ts`, `ranking-view.test.
 
 ### `src/lib/`: no JSX
 
-| Folder or file                       | Holds                                                                                                                                                                                                          |
-| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`lib/api/`](src/lib/api/)           | the client of the master: `clients/` (the fetch client and its list of routes), `schemas/` (zod), `routes/` (one function per route), `helpers/` (error mapping). One entry point: `api` in `lib/api/index.ts` |
-| [`lib/github/`](src/lib/github/)     | the latest GitHub release: reading it, finding the installer of the reader's system, the install steps (`systems.ts` lists the systems apart from the zod schema, so the browser never loads zod for it)       |
-| [`lib/gsap/`](src/lib/gsap/index.ts) | GSAP, registered once, and the media query of reduced motion                                                                                                                                                   |
-| [`lib/rtype/`](src/lib/rtype/)       | what the site knows of the game: servers and their seats, players, palettes, the ranking choice, the team, the example servers                                                                                 |
-| `lib/visitor-address.ts`             | `visitorAddressOf()`: the address of the visitor of a request, the last one of its `X-Forwarded-For`                                                                                                           |
-| `lib/site-paths.ts`                  | the path of each page in each language (`pathOf(locale, 'ranking')`)                                                                                                                                           |
-| `lib/fonts.ts`                       | the three fonts, loaded once                                                                                                                                                                                   |
-| `lib/shortcuts.ts`                   | `runShortcut()`: the keys of a screen of the game (Q, E, F, Escape...)                                                                                                                                         |
-| `lib/breakpoints.ts`, `lib/utils.ts` | the wide-screen query, the `cn` helper                                                                                                                                                                         |
+| Folder or file                                     | Holds                                                                                                                                                                                                          |
+| -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`lib/api/`](src/lib/api/)                         | the client of the master: `clients/` (the fetch client and its list of routes), `schemas/` (zod), `routes/` (one function per route), `helpers/` (error mapping). One entry point: `api` in `lib/api/index.ts` |
+| [`lib/github/`](src/lib/github/)                   | the latest GitHub release: reading it, finding the installer of the reader's system, the install steps (`systems.ts` lists the systems apart from the zod schema, so the browser never loads zod for it)       |
+| [`lib/gsap/`](src/lib/gsap/index.ts)               | GSAP, registered once, and the media query of reduced motion                                                                                                                                                   |
+| [`lib/rtype/`](src/lib/rtype/)                     | what the site knows of the game: servers and their seats, players, palettes, the ranking choice, the team, the example servers                                                                                 |
+| `lib/visitor-address.ts`                           | `visitorAddressOf()`: the address of the visitor of a request, the last one of its `X-Forwarded-For`                                                                                                           |
+| `lib/request-visitor-address.ts`                   | `requestVisitorAddress()`: that address for the request a server action answers                                                                                                                                |
+| [`lib/safe-action/`](src/lib/safe-action/index.ts) | `actionClient`, the client every server action built with next-safe-action comes from: it checks the input, and answers an error it did not expect with `UNEXPECTED_ERROR` alone, written nowhere              |
+| `lib/site-paths.ts`                                | the path of each page in each language (`pathOf(locale, 'ranking')`)                                                                                                                                           |
+| `lib/fonts.ts`                                     | the three fonts, loaded once                                                                                                                                                                                   |
+| `lib/shortcuts.ts`                                 | `runShortcut()`: the keys of a screen of the game (Q, E, F, Escape...)                                                                                                                                         |
+| `lib/breakpoints.ts`, `lib/utils.ts`               | the wide-screen query, the `cn` helper                                                                                                                                                                         |
 
 ## Pages, languages and routing
 
@@ -142,6 +150,7 @@ Every page lives under `app/[lang]/`, `lang` being `fr` (the default) or `en`.
 | `/servers`                 | `servers/page.tsx`                    | the servers, their games and their ping (the sector map)               |
 | `/servers/[id]`            | `servers/[id]/page.tsx`               | one server, its games, the load of its machine, its last 100 samples   |
 | `/host`                    | `host/page.tsx`                       | nothing; its form creates a server on the master                       |
+| `/signup`                  | `signup/page.tsx`                     | nothing; its form creates an account on the master                     |
 | `/leaderboard`             | `leaderboard/page.tsx`                | the leaderboard; the scope and filters are in the query of the address |
 | `/wiki`, `/wiki/[section]` | `wiki/`                               | nothing; `/wiki` redirects to the first article                        |
 | `/team`                    | `team/page.tsx`                       | nothing                                                                |
@@ -208,8 +217,9 @@ the server then reads the master again. So a leaderboard can be shared by its li
 
 ### Writing to the master
 
-The hosting page (`/host`) is the one page that writes: it creates a server
-with `POST /api/servers` and shows its key, which the master gives once.
+Two pages write. The hosting page (`/host`) creates a server with
+`POST /api/servers` and shows its key, which the master gives once; the
+sign-up page (`/signup`) creates an account with `POST /api/users`.
 
 ```mermaid
 flowchart LR
@@ -223,6 +233,21 @@ flowchart LR
 - **The name is checked twice**, by the form and by the action, with `serverNameProblemOf()` ([`lib/rtype/server-name.ts`](src/lib/rtype/server-name.ts)): empty, or over 32 bytes of UTF-8, is refused without asking the master.
 - **The action never throws**: it returns a `ServerCreationOutcome` ([`lib/rtype/server-creation.ts`](src/lib/rtype/server-creation.ts)), `created`, `invalidName`, `quota` (the 429 of the master), `refused` (its 400) or `unreachable`, and the page has a message for each, the name typed staying in the form.
 - **The visitor is named to the master**: with `MASTER_SITE_KEY` set, `createServer()` sends it in `X-Site-Key`, and the address of the visitor in `X-Site-Client-Address`, so the master can count its quota of creations per visitor and not for the whole site. The master does not read them yet. The address is the last one of `X-Forwarded-For`, which Vercel overwrites; behind a host that passes on what the client sent, a visitor would choose it.
+
+The sign-up page checks one zod schema twice: in the browser for the form,
+and on the server for the input of the action.
+
+```mermaid
+flowchart LR
+  Form["SignUpSection (browser)"] --> Action["sign-up.action.ts"]
+  Action --> Route["lib/api: createUser()"]
+  Route --> Master["master"]
+```
+
+- **One schema, checked twice**: [`lib/rtype/sign-up.ts`](src/lib/rtype/sign-up.ts) holds `credentialsSchema`, the rules of the master (a nickname of 1 to 16 bytes of printable UTF-8, the blanks around it left out; a password of 8 to 128 bytes, kept as typed), and `signUpFormSchema`, the same with the password typed a second time. `react-hook-form` checks the form with the second; the action is built with `actionClient.inputSchema(credentialsSchema)`, so what a browser sends that the form would refuse never reaches the master.
+- **The password goes to the master alone**: the action writes nothing in the journal, an error it did not expect is answered with `UNEXPECTED_ERROR` alone, and the form is gone once the account exists. The fields tell the browser `username` and `new-password`, so a password manager offers to save them.
+- **The outcome is read by the page**: `outcomeOf()` turns what the action hands back into `created`, `taken` (409), `quota` (429), `refused` (400, or credentials the action refused) or `unreachable`, each with its message over the form, what was typed staying in it.
+- **The visitor is named as for a server**: `createUser()` sends the site headers through `visitorHeadersOf()` ([`lib/api/helpers/visitor-headers.ts`](src/lib/api/helpers/visitor-headers.ts)), which `createServer()` calls too.
 
 ### Other server reads
 

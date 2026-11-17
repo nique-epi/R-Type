@@ -5,7 +5,6 @@
 #include <SFML/Window/Event.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <SFML/Window/Mouse.hpp>
-#include <cstddef>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -27,12 +26,12 @@
 #include "InterfacePixel.hpp"
 #include "KeyChip.hpp"
 #include "KeyChipParts.hpp"
+#include "KopecksPainting.hpp"
 #include "MapDirection.hpp"
-#include "MapPlaceConstants.hpp"
-#include "MapPlaces.hpp"
 #include "MenuBuilder.hpp"
 #include "MenuScreenIdConstants.hpp"
 #include "PlanetPose.hpp"
+#include "PlayerSettings.hpp"
 #include "RingedPlanet.hpp"
 #include "SectorMapPainting.hpp"
 #include "ServerCompatibility.hpp"
@@ -53,10 +52,6 @@ namespace {
 
 Button::Text quickPlayText() {
   return {.label = QUICK_PLAY_LABEL, .keyName = QUICK_PLAY_KEY_NAME};
-}
-
-Button::Text rankingText() {
-  return {.label = RANKING_LABEL, .keyName = RANKING_KEY_NAME};
 }
 
 Button::Text addressText() {
@@ -87,10 +82,6 @@ sf::IntRect backChipArea() {
 
 sf::IntRect addressChipArea() {
   return chipAreaLeftOf(addressText(), backChipArea());
-}
-
-sf::IntRect rankingChipArea() {
-  return chipAreaLeftOf(rankingText(), addressChipArea());
 }
 
 /** @returns Where QUICK PLAY lies: alone on the left, the main action. */
@@ -175,22 +166,6 @@ void openGamesOf(ServerMapChoice& map, IGameCatalog& games) {
   }
 }
 
-/** @returns The place of MAP_PLACES that @p pixel picks: only the whole map
- * shows them. */
-std::optional<std::size_t> placeShownAt(const ServerMapChoice& map,
-                                        sf::Vector2i pixel) {
-  return map.stage() == ServerMapStage::ZoomedOut ? mapPlaceAt(pixel)
-                                                  : std::nullopt;
-}
-
-/** @brief Lets go of @p heldKey, then pushes the screen of the place
- * @p place over the map: the release of that key goes to that screen. */
-void openPlace(std::optional<sf::Keyboard::Key>& heldKey,
-               IScreenNavigator& navigator, std::size_t place) {
-  heldKey.reset();
-  navigator.push(MAP_PLACES.at(place).screen);
-}
-
 /** @brief Zooms in when the wheel turns up over the whole map, out when it
  * turns down over the zoomed map. */
 void zoomWithWheel(ServerMapChoice& map, float delta) {
@@ -220,15 +195,6 @@ KeyChipParts quickPlayChipParts(std::function<void()> action,
                       .restState = BarState::Selected};
 }
 
-KeyChipParts rankingChipParts(std::function<void()> action,
-                              ISoundPlayer& sounds) {
-  return KeyChipParts{.text = rankingText(),
-                      .area = rankingChipArea(),
-                      .key = RANKING_KEY,
-                      .action = std::move(action),
-                      .sounds = sounds};
-}
-
 KeyChipParts addressChipParts(std::function<void()> action,
                               ISoundPlayer& sounds) {
   return KeyChipParts{.text = addressText(),
@@ -253,12 +219,14 @@ ServerMapScreen::ServerMapScreen(ServerMapScreenParts parts,
     : navigator_(&parts.navigator.get()),
       ambience_(parts.audio.get(), Ambience::Space),
       servers_(&parts.servers.get()),
+      settings_(&parts.settings.get()),
       games_(&parts.games.get()),
       choice_(&parts.choice.get()),
       canvas_(std::move(canvas)),
       playfieldPointAt_(std::move(parts.playfieldPointAt)),
       motion_(parts.motion),
       sessionEnd_(parts.connection.get()),
+      tabs_(parts.navigator.get(), parts.sounds.get()),
       quickPlayChip_(quickPlayChipParts(
           [this] {
             if (const std::optional<ChosenGame> game =
@@ -268,8 +236,6 @@ ServerMapScreen::ServerMapScreen(ServerMapScreenParts parts,
             }
           },
           parts.sounds)),
-      rankingChip_(rankingChipParts(
-          [this] { navigator_->push(LEADERBOARD_SCREEN); }, parts.sounds)),
       addressChip_(addressChipParts(
           [this] { navigator_->push(CONNECTION_SCREEN); }, parts.sounds)),
       backChip_(backChipParts([this] { stepBack(); }, parts.sounds)) {
@@ -278,8 +244,8 @@ ServerMapScreen::ServerMapScreen(ServerMapScreenParts parts,
 }
 
 void ServerMapScreen::handleEvent(const sf::Event& event) {
+  tabs_.handleEvent(event, playfieldPointAt_);
   quickPlayChip_.handleEvent(event, playfieldPointAt_);
-  rankingChip_.handleEvent(event, playfieldPointAt_);
   addressChip_.handleEvent(event, playfieldPointAt_);
   backChip_.handleEvent(event, playfieldPointAt_);
   if (const auto* pressed = event.getIf<sf::Event::KeyPressed>()) {
@@ -293,8 +259,7 @@ void ServerMapScreen::handleEvent(const sf::Event& event) {
     if (map_.stage() == ServerMapStage::Games) {
       static_cast<void>(panel_.chooseAt(pixel));
     }
-    placeShown_ = placeShownAt(map_, pixel);
-    chosenShown_ = !placeShown_ && map_.chooseAt(pixel);
+    chosenShown_ = map_.chooseAt(pixel);
   } else if (const auto* click = event.getIf<sf::Event::MouseButtonPressed>();
              click != nullptr && click->button == sf::Mouse::Button::Left) {
     pointerPressed(interfacePixelAt(playfieldPointAt_(click->position)));
@@ -306,6 +271,7 @@ void ServerMapScreen::handleEvent(const sf::Event& event) {
 void ServerMapScreen::update(engine::Duration elapsed) {
   elapsed_ += elapsed;
   sinceRefresh_ += elapsed;
+  tabs_.update(elapsed);
   const bool cameBack = sessionEnd_.recheckDue(elapsed);
   if (sinceRefresh_ >= SERVER_LIST_REFRESH_INTERVAL || cameBack) {
     refresh();
@@ -341,10 +307,6 @@ void ServerMapScreen::keyPressed(const sf::Event::KeyPressed& key) {
       map_.stage() != ServerMapStage::Games) {
     map_.moveByPing(key.shift ? -1 : 1);
     chosenShown_ = true;
-    return;
-  }
-  if (const auto place = mapPlaceOpenedBy(key.code)) {
-    openPlace(heldKey_, *navigator_, *place);
     return;
   }
   if ((key.code != MENU_CONFIRM_KEY && key.code != REFRESH_KEY) ||
@@ -392,8 +354,6 @@ void ServerMapScreen::pointerPressed(sf::Vector2i pixel) {
     if (panel_.chooseAt(pixel)) {
       confirm();
     }
-  } else if (const auto place = placeShownAt(map_, pixel)) {
-    openPlace(heldKey_, *navigator_, *place);
   } else if (map_.chooseAt(pixel)) {
     openGamesOf(map_, *games_);
   }
@@ -417,7 +377,10 @@ void ServerMapScreen::refresh() {
 void ServerMapScreen::repaint() {
   canvas_->clear();
   const ServerListPhase phase = servers_->snapshot().phase;
-  paintServerMapHeader(*canvas_, map_.servers().size());
+  tabs_.paint(*canvas_);
+  paintKopecksBalance(*canvas_, SERVER_MAP_KOPECKS_TOP_RIGHT,
+                      settings_->kopecks);
+  paintServerMapHeader(*canvas_);
   if (phase == ServerListPhase::Ready) {
     const PlanetPose pose = planetPoseIn(
         map_.view(), turnedPlanet(PlanetPose{}, elapsed_, motion_));
@@ -435,11 +398,7 @@ void ServerMapScreen::repaint() {
   } else {
     paintServerMapMessage(*canvas_, phase);
   }
-  if (map_.stage() == ServerMapStage::ZoomedOut) {
-    paintMapPlaces(*canvas_, chosenShown_ ? std::nullopt : placeShown_);
-  }
   quickPlayChip_.paint(*canvas_);
-  rankingChip_.paint(*canvas_);
   addressChip_.paint(*canvas_);
   backChip_.paint(*canvas_);
   canvas_->display();

@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <functional>
 #include <iterator>
+#include <optional>
 #include <set>
 #include <span>
 #include <string>
@@ -17,6 +18,7 @@
 #include "EntitySheetConstants.hpp"
 #include "GameException.hpp"
 #include "PathText.hpp"
+#include "SheetMaskText.hpp"
 #include "SheetText.hpp"
 #include "SheetTextReading.hpp"
 
@@ -28,6 +30,28 @@ namespace {
 std::string sheetPathOf(const std::string& name) {
   return std::string{ENTITY_SHEET_FOLDER_IN_ASSETS} + ASSET_PATH_SEPARATOR +
          name + std::string{engine::DATA_FILE_EXTENSION};
+}
+
+/** @returns The path of the mask file of the type @p name in the assets
+ * folder. */
+std::string maskFilePathOf(const std::string& name) {
+  return std::string{ENTITY_SHEET_FOLDER_IN_ASSETS} + ASSET_PATH_SEPARATOR +
+         maskPathOf(name);
+}
+
+/** @returns The mask file of the type @p name among @p files, named by its
+ * path below @p folder; nothing when @p files hold none. */
+std::optional<SheetMaskText> maskTextIn(
+    std::span<const identifiers::ContentFile> files, const std::string& name,
+    const std::filesystem::path& folder) {
+  const std::string path = maskFilePathOf(name);
+  const auto mask =
+      std::ranges::find(files, path, &identifiers::ContentFile::path);
+  if (mask == files.end()) {
+    return std::nullopt;
+  }
+  return SheetMaskText{.source = engine::shownPath(folder / path),
+                       .text = mask->bytes};
 }
 
 /** @returns The sprite sheet the `[appearance]` of @p sheet names. */
@@ -84,6 +108,14 @@ bool isSheetPath(const std::string& path) {
          file.extension() == engine::DATA_FILE_EXTENSION;
 }
 
+bool isMaskPath(const std::string& path) {
+  const std::filesystem::path file{path};
+  return file.parent_path() ==
+             std::filesystem::path{ENTITY_SHEET_FOLDER_IN_ASSETS} /
+                 MASK_FOLDER_OF_SHEETS &&
+         file.extension() == MASK_FILE_EXTENSION;
+}
+
 std::vector<SheetText> sheetTextsOf(
     std::span<const identifiers::ContentFile> files,
     const std::filesystem::path& folder) {
@@ -91,9 +123,11 @@ std::vector<SheetText> sheetTextsOf(
   for (const identifiers::ContentFile& file : files) {
     if (isSheetPath(file.path)) {
       const std::filesystem::path path{file.path};
-      sheets.push_back(SheetText{.name = logging::genericText(path.stem()),
+      const std::string name = logging::genericText(path.stem());
+      sheets.push_back(SheetText{.name = name,
                                  .source = engine::shownPath(folder / path),
-                                 .text = file.bytes});
+                                 .text = file.bytes,
+                                 .mask = maskTextIn(files, name, folder)});
     }
   }
   return sheets;
@@ -108,6 +142,11 @@ std::vector<identifiers::ContentFile> contentFilesIn(
     spriteSheets.insert(spriteSheetOf(sheet));
     files.push_back(identifiers::ContentFile{.path = sheetPathOf(sheet.name),
                                              .bytes = std::move(sheet.text)});
+    if (sheet.mask.has_value()) {
+      files.push_back(
+          identifiers::ContentFile{.path = maskFilePathOf(sheet.name),
+                                   .bytes = std::move(sheet.mask->text)});
+    }
   }
   for (const std::string& spriteSheet : spriteSheets) {
     files.push_back(identifiers::ContentFile{

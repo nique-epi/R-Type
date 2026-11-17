@@ -1,14 +1,9 @@
 'use server';
 
-import { headers } from 'next/headers';
-
 import { api } from '@/lib/api';
+import { requestVisitorAddress } from '@/lib/request-visitor-address';
 import type { ServerCreationOutcome } from '@/lib/rtype/server-creation';
 import { serverNameProblemOf } from '@/lib/rtype/server-name';
-import { visitorAddressOf } from '@/lib/visitor-address';
-
-/** The header the host of the site names the visitor of a request in. */
-const FORWARDED_FOR_HEADER = 'x-forwarded-for';
 
 /**
  * The server action of the hosting page: creates a server named `name` on
@@ -28,9 +23,7 @@ export async function createServerAction(
 
   const { data, error } = await api.servers.createServer({
     name: name.trim(),
-    visitorAddress: visitorAddressOf(
-      (await headers()).get(FORWARDED_FOR_HEADER),
-    ),
+    visitorAddress: await requestVisitorAddress(),
   });
 
   if (data) {

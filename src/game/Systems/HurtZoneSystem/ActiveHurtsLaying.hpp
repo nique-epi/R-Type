@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ActiveHurts.hpp"
-#include "Bounds.hpp"
+#include "ContactShape.hpp"
 #include "HurtingEnemy.hpp"
 
 namespace rtype::game {
@@ -16,9 +16,10 @@ namespace rtype::game {
  */
 void layActiveHurts(const HurtingEnemy& enemy, ActiveHurts& hurts);
 
-/** @returns Whether an active box or an active beam of @p hurts overlaps
- * @p ship. */
-[[nodiscard]] bool hurtsBounds(const ActiveHurts& hurts,
-                               const engine::Bounds& ship);
+/** @returns Whether an active box or an active beam of @p hurts touches
+ * @p ship: its box, then its mask when it has one (shapesTouch(),
+ * beamTouchesShape()). */
+[[nodiscard]] bool hurtsShape(const ActiveHurts& hurts,
+                              const ContactShape& ship);
 
 }  // namespace rtype::game

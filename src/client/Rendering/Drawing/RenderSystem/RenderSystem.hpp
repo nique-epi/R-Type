@@ -83,7 +83,9 @@ class RenderSystem {
   void collectAfterimages(engine::ComponentRegistry& components);
 
   /** @brief Draws a rolling sprite row by row: round(height x |cos|) rows of
-   * its frame, ROLL_THINNEST_ROWS at least, upside down and shaded once its
+   * its frame, game::ROLL_THINNEST_ROWS at least (game::rolledRowsOf(), the
+   * rows the server lays the collision mask of the ship with), upside down
+   * and shaded once its
    * belly shows, unless a hit or an invulnerability already tones it. The
    * outline of an invulnerable ship is left out while it rolls. */
   static void drawRolled(IDrawSurface& surface, const DrawCall& call,
