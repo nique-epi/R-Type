@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-namespace rtype::server::testing {
+namespace rtype::game::testing {
 
 /** @brief The health the sheet of the Bydo Tyrant gives, and what the boss
  * has for one to four players: each player past the first adds 25 %. */
@@ -26,4 +26,4 @@ constexpr std::size_t TWO_PLAYERS = 2;
 constexpr std::size_t THREE_PLAYERS = 3;
 constexpr std::size_t FOUR_PLAYERS = 4;
 
-}  // namespace rtype::server::testing
+}  // namespace rtype::game::testing

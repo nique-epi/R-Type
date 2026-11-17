@@ -30,6 +30,7 @@ constexpr int WAIT_INTENT_ARGUMENT = 2;
 constexpr int WAIT_YIELDED_VALUES = 1;
 constexpr int SPAWN_TYPE_ARGUMENT = 1;
 constexpr int SPAWN_POSITION_ARGUMENT = 2;
+constexpr int SPAWN_OPTIONS_ARGUMENT = 3;
 constexpr int DESTROY_ID_ARGUMENT = 1;
 constexpr int PRE_HIT_FUNCTION_ARGUMENT = 1;
 
@@ -48,6 +49,14 @@ constexpr const char* VIEW_WOUNDED_KEY = "wounded";
 constexpr const char* VIEW_HEALTH_SHARE_KEY = "health_share";
 constexpr const char* VIEW_ENRAGED_KEY = "enraged";
 constexpr const char* VIEW_ACTIONS_ENDED_KEY = "actions_ended";
+
+/** @brief The option of `behaviours.spawn` that gives the health of the
+ * body, in percent of the health of its sheet: a whole number from
+ * MINIMUM_SPAWN_HEALTH_PERCENT to WHOLE_PERCENT, and what refuses another. */
+constexpr const char* SPAWN_HEALTH_PERCENT_KEY = "health_percent";
+constexpr double MINIMUM_SPAWN_HEALTH_PERCENT = 1.0;
+constexpr std::string_view WRONG_SPAWN_HEALTH_PERCENT_MESSAGE =
+    "the health_percent of a body is a whole number from 1 to 100";
 
 /** @brief The keys of a point and of an action, in the view and the intent. */
 constexpr const char* POINT_X_KEY = "x";

@@ -25,6 +25,7 @@
 #include "PlayerRoster.hpp"
 #include "Position.hpp"
 #include "ScriptMachine.hpp"
+#include "SpawnOptions.hpp"
 
 namespace rtype::server {
 
@@ -60,7 +61,8 @@ EntityOrders::~EntityOrders() {
 }
 
 std::uint32_t EntityOrders::spawn(std::string_view type,
-                                  game::Position position) {
+                                  game::Position position,
+                                  game::SpawnOptions options) {
   if (orders_.size() >= MAXIMUM_SPAWN_ORDERS_PER_TICK) {
     throw engine::ScriptException("too many bodies created in one tick");
   }
@@ -73,8 +75,10 @@ std::uint32_t EntityOrders::spawn(std::string_view type,
     throw engine::ScriptException("a script cannot create a ship");
   }
   const std::uint32_t networkId = parts_.world.get().reserveNetworkId();
-  orders_.push_back(EntityOrder{
-      .sheet = *sheet, .position = position, .networkId = networkId});
+  orders_.push_back(EntityOrder{.sheet = *sheet,
+                                .position = position,
+                                .networkId = networkId,
+                                .options = options});
   return networkId;
 }
 
@@ -110,7 +114,8 @@ void EntityOrders::appear(const EntityOrder& order) const {
   parts_.world.get().spawnFrom(
       sheet, game::BodyPlacement{.position = order.position,
                                  .origin = order.position,
-                                 .reservedNetworkId = order.networkId});
+                                 .reservedNetworkId = order.networkId,
+                                 .healthPercent = order.options.healthPercent});
   const network::EntitySpawned spawned = entitySpawnedOf(
       order.networkId, game::EntityTypeNumber{.number = sheet.number},
       order.position);

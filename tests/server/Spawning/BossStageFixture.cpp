@@ -1,24 +1,18 @@
 #include "BossStageFixture.hpp"
-#include <gtest/gtest.h>
 #include <cstddef>
-#include <cstdint>
 #include <memory>
 #include <optional>
 #include <string>
 #include <utility>
 #include <vector>
 #include "Boss.hpp"
-#include "BossArrival.hpp"
 #include "BossStage.hpp"
 #include "BossStageParts.hpp"
 #include "BossStageTestConstants.hpp"
 #include "Entity.hpp"
 #include "EntitySheets.hpp"
-#include "EntitySpawned.hpp"
-#include "OutgoingDatagram.hpp"
 #include "Position.hpp"
-#include "SentDatagrams.hpp"
-#include "ServerLobbyTestConstants.hpp"
+#include "RecordingEntityOrders.hpp"
 #include "SheetText.hpp"
 #include "SheetTextFixtures.hpp"
 
@@ -29,24 +23,19 @@ BossStageFixture::BossStageFixture()
           game::testing::sheetText(WARLORD_NAME_IN_TESTS, WARLORD_SHEET_TEXT),
           game::testing::sheetText(STAGE_MINION_NAME_IN_TESTS,
                                    STAGE_MINION_SHEET_TEXT)})) {
-  events_.subscribe<game::BossArrival>(
-      [this](const game::BossArrival& arrival) {
-        arrivals_.push_back(arrival);
-      });
   buildStage(std::string{WARLORD_NAME_IN_TESTS});
 }
 
 void BossStageFixture::buildStage(std::optional<std::string> boss) {
+  stage_ = std::make_unique<BossStage>(BossStageParts{
+      .world = world_, .orders = orders_, .boss = std::move(boss)});
+}
+
+void BossStageFixture::refuseTheBoss() {
   stage_ = std::make_unique<BossStage>(
       BossStageParts{.world = world_,
-                     .roster = roster_,
-                     .send =
-                         [this](network::OutgoingDatagram datagram) {
-                           sent_.push_back(std::move(datagram));
-                         },
-                     .events = events_,
-                     .types = sheets_,
-                     .boss = std::move(boss)});
+                     .orders = refusingOrders_,
+                     .boss = std::string{WARLORD_NAME_IN_TESTS}});
 }
 
 void BossStageFixture::runTicks(std::size_t count, bool lastWaveFinished) {
@@ -55,32 +44,12 @@ void BossStageFixture::runTicks(std::size_t count, bool lastWaveFinished) {
   }
 }
 
-void BossStageFixture::connectPlayers(std::size_t count) {
-  for (std::size_t index = 0; index < count; ++index) {
-    EXPECT_NE(roster_.add(playerEndpoint(index),
-                          std::string{PLAYER_NICKNAME} + std::to_string(index),
-                          SESSION_TOKEN + index),
-              nullptr);
-  }
+const std::vector<RecordedSpawn>& BossStageFixture::orders() const {
+  return orders_.spawns();
 }
 
-std::vector<game::BossArrival> BossStageFixture::arrivals() {
-  events_.dispatch();
-  return arrivals_;
-}
-
-std::vector<game::Position> BossStageFixture::bosses() {
-  std::vector<game::Position> found;
-  world_.components().forEach<game::Boss, game::Position>(
-      [&found](engine::Entity, const game::Boss&,
-               const game::Position& position) { found.push_back(position); });
-  return found;
-}
-
-std::vector<network::EntitySpawned> BossStageFixture::spawnsSentTo(
-    std::size_t index) const {
-  return onlyMessagesIn<network::EntitySpawned>(
-      sentTo(sent_, playerEndpoint(index)));
+void BossStageFixture::addBoss() {
+  world_.spawn(sheets_.named(WARLORD_NAME_IN_TESTS), WHERE_THE_BOSS_IS_ORDERED);
 }
 
 void BossStageFixture::addMinion() {
@@ -100,9 +69,5 @@ void BossStageFixture::destroyTheBosses() {
 }
 
 bool BossStageFixture::cleared() const { return stage_->levelCleared(); }
-
-std::uint8_t BossStageFixture::warlordNumber() const {
-  return sheets_.named(WARLORD_NAME_IN_TESTS).number;
-}
 
 }  // namespace rtype::server::testing

@@ -10,6 +10,7 @@
 #include "EdgePulse.hpp"
 #include "EffectTools.hpp"
 #include "EnemyAction.hpp"
+#include "EntityDestroyed.hpp"
 #include "FlashPreference.hpp"
 #include "IAudioService.hpp"
 #include "IInterfaceCanvas.hpp"
@@ -39,7 +40,14 @@ BossPresentation::BossPresentation(EffectTools tools, ISoundPlayer& sounds,
     : effects_(tools), sounds_(&sounds), audio_(&audio) {}
 
 void BossPresentation::apply(const network::BossStatus& status) {
+  if (status.stage == network::BossStage::Arriving) {
+    roarAt_.reset();
+    chargeSignalledAt_.reset();
+  }
   tracker_.follow(status, now_);
+  if (status.stage != network::BossStage::Arriving) {
+    bossInPlay_ = status.bossEntityId;
+  }
   if (status.stage != network::BossStage::Arriving && shielded_.has_value()) {
     effects_.shield(*shielded_, false);
     shielded_.reset();
@@ -71,6 +79,21 @@ void BossPresentation::apply(const network::EnemyAction& action) {
   sounds_->play(BOSS_ROAR_SOUND_ID);
 }
 
+void BossPresentation::apply(const network::EntityDestroyed& destroyed) {
+  if (destroyed.reason != network::DestructionReason::Removed ||
+      bossInPlay_ != destroyed.entityId) {
+    return;
+  }
+  tracker_.forget();
+  bossInPlay_.reset();
+  roarAt_.reset();
+  chargeSignalledAt_.reset();
+  if (bossMusicStarted_) {
+    bossMusicStarted_ = false;
+    audio_->playGameMusic();
+  }
+}
+
 void BossPresentation::advance(engine::Duration elapsed) {
   const std::optional<engine::Duration> before = tracker_.sinceArrival(now_);
   now_ += elapsed;
@@ -84,6 +107,8 @@ void BossPresentation::advance(engine::Duration elapsed) {
     sounds_->play(BOSS_STEP_SOUND_ID);
   }
 }
+
+void BossPresentation::followLevel() { playsALevel_ = true; }
 
 void BossPresentation::endGame() {
   gameEnded_ = true;
@@ -121,7 +146,10 @@ void BossPresentation::followMusic() {
     audio_->playBossMusic();
     return;
   }
-  if (gameEnded_ && bossMusicStarted_) {
+  const bool bossGone =
+      gameEnded_ ||
+      (playsALevel_ && tracker_.fight().stage == network::BossStage::Defeated);
+  if (bossGone && bossMusicStarted_) {
     bossMusicStarted_ = false;
     audio_->playGameMusic();
   }

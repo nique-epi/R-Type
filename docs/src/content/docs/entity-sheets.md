@@ -101,10 +101,11 @@ projectile = "enemy_missile"
 | `volley.chance_percent` | percent | 1 to 100; 100 when left out | the chance the volley fires when its action starts, drawn each time, so two volleys of one action fire or not apart |
 | `boss.rage_below_percent` | percent | 1 to 99 | its `Boss`: it enrages once its health falls below its full health times this share, rounded down |
 | `boss.rage_attack` | | 0 to 255 | the attack it starts, in the phase `enraged`, when it enrages |
-| `boss.arrival_attack` | | 0 to 255 | the attack of its arrival: while it is in any phase of it, a hit takes nothing from it |
+| `boss.arrival_attack` | | 0 to 255 | the attack of its arrival: while it is in any phase of it, a hit takes nothing from it, and its fight starts, and its bar shows, once it ended an action and left that attack |
+| `[gameplay.stays_outside]` | | an empty table; enemies only | the `StaysOutside` marker: leaving the playfield never removes the body, as the Bydo Tyrant, whose charge takes it past the left edge and back |
 | `look_item` | | the name of an accessory of the catalog, one of the first 25 names of `SHIP_LOOK_ITEM_NAMES` (`top_hat` to `long_beard`); a hull (`war_shark`, `vostok`, `bydo_husk`, `golden_ace`, `golden_bydo`) is refused, since a hull never floats in a game; for side `look_item` only | its `LookItem`: the item the pilot whose ship touches the body wins for the locker of the hangar (see [Ship looks](/R-Type/server/#look-items-lookitemkeeper)) |
 
-- `side`, `layer`, `pilot`, `hitbox` and `motion` are required; the key `hits` and the tables `behaviour`, `health`, `score`, `gun`, `hurt_zone`, `survives_contact`, `fragile`, `burst`, `volley` and `boss` may be left out. The three keys of `boss` are required in it. A body without `health` takes no damage: a missile that hits it still disappears, and a ship pays a hit with a life instead (see [Lives](/R-Type/server/#lives-lifekeeper)). A body without `score` earns nothing, without `gun` fires nothing.
+- `side`, `layer`, `pilot`, `hitbox` and `motion` are required; the key `hits` and the tables `behaviour`, `health`, `score`, `gun`, `hurt_zone`, `survives_contact`, `fragile`, `stays_outside`, `burst`, `volley` and `boss` may be left out. The three keys of `boss` are required in it. A body without `health` takes no damage: a missile that hits it still disappears, and a ship pays a hit with a life instead (see [Lives](/R-Type/server/#lives-lifekeeper)). A body without `score` earns nothing, without `gun` fires nothing.
 - Any other key is refused, so a misspelt key stops the program instead of being ignored. Every number is a TOML integer: `240`, never `240.0` or `"240"`.
 - A duration of the gun becomes the nearest whole number of ticks of a sixtieth of a second: 333 ms are 20 ticks, 1500 ms are 90. The interval is at least 1 tick (`MINIMUM_GUN_INTERVAL_TICKS`), and so is the time before a burst (`MINIMUM_BURST_TICKS`).
 - The keys, the choices and the ranges live in `src/game/EntityTypes/EntitySheetConstants.hpp`.
@@ -120,7 +121,7 @@ A sheet whose keys are each valid is refused when it does not hold together:
 - A missile flies towards the edge that removes it (see [Piloted bodies](/R-Type/server/#piloted-bodies-pilotsystem-and-playfieldexitsystem)): on its first tick its pilot steers a missile of side `player_missile` to the right and one of side `enemy_missile` to the left. A `straight` heading of 1 for the first, of -1 for the second; the `weave` goes left, and so does `scatter` on its first tick, still on the point it steers from, so both may pilot a missile of an enemy only. A missile flying the other way, or staying, would never be removed when it hits nothing. The check looks at the first tick only: a missile that turns later, as a shard of a burst, leaves by any edge it flies towards.
 - `[gameplay.behaviour]` stands only when the behaviour of the pilot declares settings, and then holds exactly those settings.
 - A gun fires a sheet of the folder: of side `player_missile` for a shooter of side `player`, of side `enemy_missile` for any other shooter.
-- Only a body of side `enemy` has a `hurt_zone`, `survives_contact`, `fragile`, `volley` or `boss`, and a `hurt_zone` holds at least one box.
+- Only a body of side `enemy` has a `hurt_zone`, `survives_contact`, `fragile`, `stays_outside`, `volley` or `boss`, and a `hurt_zone` holds at least one box.
 - A `boss` has a `health`: its bar shows it and its rage reads it.
 - A volley is made of a sheet of the folder of side `enemy` or `enemy_missile`, and its gap leaves at least one body: `gap_count` is below `count`.
 - A beam that sweeps, `to_deg` other than `from_deg`, names `until_ms`, the end of its sweep; a beam without `until_ms` keeps `from_deg`.
@@ -379,10 +380,11 @@ The final boss, the diver it calls in and its projectiles: the Tyrant draws from
 | `pilot` | `bydo_tyrant` | `scatter` | `scatter` | `straight`, `heading` -1 | `scatter` |
 | `hitbox` | 440 × 488, 12 units right of and 4 below its center: its body | 96 × 96 | 32 × 32 | 36 × 36 | 32 × 32 |
 | `motion` | `steady`, 2500, fast enough for its charge | `steady`, 360 | `steady`, 420 | `steady`, 1: a mine | `steady`, 300 |
-| `health` | 240, scaled when it appears (see [Boss](/R-Type/server/#boss-bossstage-and-bossphasesystem)) | 2 | none | none | none |
+| `health` | 240, scaled once its warning is over (see [Boss](/R-Type/server/#boss-bosssystem-and-bossstage)) | 2 | none | none | none |
 | `score` | 10000 | 150 | none | none | none |
 | `gun` | none | 1800 ms, first after 800 ms, `enemy_missile` | none | none | none |
 | `boss` | enrages below 50 %, rage attack 9, arrival attack 0 | | | | |
+| `stays_outside` | yes: its charge takes it past the left edge | | | | |
 | contact | it survives; its body hurts, two boxes, its tentacles a box in attacks 4 and 14, its beam in 2, 12 and 15, the last sweeping from -35 to 12 degrees over 1200 ms | | | | |
 | `volley` | 5 `tyrant_missile` over 48 degrees in attack 1, 7 in attack 11; a brood in front of it in attacks 3 and 13, one volley of one body each: a `weaver` always, then two `tyrant_diver` from the top and the bottom edges at 28 degrees, a `voltjelly`, a `reaper` and a `bydomancer`, each by its chance, 70, 70, 60, 40 and 30 % (90, 90, 80, 60 and 50 % enraged), and each moved at random by its jitter; 5 `tyrant_spore` on a diagonal in attack 16; a wall of 9 `drifter` with 2 left out in attack 17 | | | | |
 | `burst` | | none | none | after 1100 ms, 4 `tyrant_spore_shard` | none |

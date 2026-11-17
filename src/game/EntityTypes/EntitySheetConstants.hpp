@@ -61,17 +61,18 @@ constexpr std::string_view GUN_KEY = "gun";
 constexpr std::string_view HURT_ZONE_KEY = "hurt_zone";
 constexpr std::string_view SURVIVES_CONTACT_KEY = "survives_contact";
 constexpr std::string_view FRAGILE_KEY = "fragile";
+constexpr std::string_view STAYS_OUTSIDE_KEY = "stays_outside";
 constexpr std::string_view BURST_KEY = "burst";
 constexpr std::string_view VOLLEY_KEY = "volley";
 constexpr std::string_view BOSS_KEY = "boss";
 constexpr std::string_view LOOK_ITEM_KEY = "look_item";
 constexpr std::string_view MASK_KEY = "mask";
 constexpr std::array GAMEPLAY_KEYS{
-    SIDE_KEY,      PILOT_KEY,  LAYER_KEY,     HITS_KEY,
-    HITBOX_KEY,    MOTION_KEY, BEHAVIOUR_KEY, HEALTH_KEY,
-    SCORE_KEY,     GUN_KEY,    HURT_ZONE_KEY, SURVIVES_CONTACT_KEY,
-    FRAGILE_KEY,   BURST_KEY,  VOLLEY_KEY,    BOSS_KEY,
-    LOOK_ITEM_KEY, MASK_KEY};
+    SIDE_KEY,    PILOT_KEY,         LAYER_KEY,     HITS_KEY,
+    HITBOX_KEY,  MOTION_KEY,        BEHAVIOUR_KEY, HEALTH_KEY,
+    SCORE_KEY,   GUN_KEY,           HURT_ZONE_KEY, SURVIVES_CONTACT_KEY,
+    FRAGILE_KEY, STAYS_OUTSIDE_KEY, BURST_KEY,     VOLLEY_KEY,
+    BOSS_KEY,    LOOK_ITEM_KEY,     MASK_KEY};
 
 /** @brief The keys of one box of a hitbox, in logical units: its size, and
  * where its center is from the Position of the body, 0 without them. */
@@ -227,8 +228,9 @@ constexpr std::array BOSS_KEYS{RAGE_BELOW_PERCENT_KEY, RAGE_ATTACK_KEY,
 constexpr engine::WholeNumberRange RAGE_PERCENT_RANGE{.lowest = 1,
                                                       .highest = 99};
 
-/** @brief `[gameplay.survives_contact]` is a marker: it holds no key. */
-constexpr std::array<std::string_view, 0> SURVIVES_CONTACT_KEYS{};
+/** @brief `[gameplay.survives_contact]` and `[gameplay.stays_outside]` are
+ * markers: a marker holds no key. */
+constexpr std::array<std::string_view, 0> MARKER_KEYS{};
 
 /** @brief The keys of `[gameplay.fragile]`: the action in which any hit
  * destroys the enemy, both required. */
@@ -353,6 +355,8 @@ constexpr std::string_view HURT_ZONE_SIDE_RULE =
     "only a body of side enemy has a hurt zone";
 constexpr std::string_view SURVIVES_CONTACT_SIDE_RULE =
     "only a body of side enemy survives a contact";
+constexpr std::string_view STAYS_OUTSIDE_SIDE_RULE =
+    "only a body of side enemy stays outside the playfield";
 constexpr std::string_view FRAGILE_SIDE_RULE =
     "only a body of side enemy is fragile in one of its actions";
 constexpr std::string_view HURT_ZONE_BOXES_RULE =

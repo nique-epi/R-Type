@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <vector>
+#include "Armored.hpp"
 #include "CollisionScene.hpp"
 #include "CurrentAction.hpp"
 #include "DamageRules.hpp"
@@ -18,6 +19,7 @@
 #include "WorldTestConstants.hpp"
 
 using rtype::engine::Entity;
+using rtype::game::Armored;
 using rtype::game::CurrentAction;
 using rtype::game::EnemyKilled;
 using rtype::game::EntityDamage;
@@ -27,6 +29,9 @@ using rtype::game::Health;
 using rtype::game::MissileHit;
 using rtype::game::NetworkIdentity;
 using rtype::game::testing::Announcement;
+using rtype::game::testing::ARMORED_ATTACK;
+using rtype::game::testing::ARMORED_SIGNAL;
+using rtype::game::testing::ARMORED_STRIKE;
 using rtype::game::testing::BYDO_ID;
 using rtype::game::testing::BYDO_POINTS;
 using rtype::game::testing::CHARGING;
@@ -320,6 +325,67 @@ TEST(DamageRules, AFragileEnemyOutOfItsActionLosesOnePoint) {
   const Entity bydo =
       damage.bydo(BYDO_ID, Health{.points = FOUR_HEALTH_POINTS});
   damage.scene.components.add(bydo, Fragile{.in = STUNNED});
+  damage.scene.components.add(bydo, CurrentAction{.key = CHARGING});
+
+  damage.hit(missile, bydo);
+
+  ASSERT_NE(damage.scene.components.get<Health>(bydo), nullptr);
+  EXPECT_EQ(damage.scene.components.get<Health>(bydo)->points,
+            THREE_HEALTH_POINTS);
+}
+
+/**
+ * Given a Bydo with four health points, armored in its attack 2 and in the
+ * signal of that attack
+ * When a missile hits it
+ * Then it keeps its four points
+ */
+TEST(DamageRules, AnArmoredEnemyInItsArmoredAttackLosesNothing) {
+  DamageScene damage;
+  const Entity missile = damage.missile(MISSILE_ID);
+  const Entity bydo =
+      damage.bydo(BYDO_ID, Health{.points = FOUR_HEALTH_POINTS});
+  damage.scene.components.add(bydo, Armored{.attack = ARMORED_ATTACK});
+  damage.scene.components.add(bydo, CurrentAction{.key = ARMORED_SIGNAL});
+
+  damage.hit(missile, bydo);
+
+  ASSERT_NE(damage.scene.components.get<Health>(bydo), nullptr);
+  EXPECT_EQ(damage.scene.components.get<Health>(bydo)->points,
+            FOUR_HEALTH_POINTS);
+}
+
+/**
+ * Given a Bydo armored in its attack 2 and in the strike of that attack
+ * When a missile hits it
+ * Then the missile is announced as removed, and nothing else is announced
+ */
+TEST(DamageRules, AMissileOnAnArmoredEnemyIsRemoved) {
+  DamageScene damage;
+  const Entity missile = damage.missile(MISSILE_ID);
+  const Entity bydo =
+      damage.bydo(BYDO_ID, Health{.points = FOUR_HEALTH_POINTS});
+  damage.scene.components.add(bydo, Armored{.attack = ARMORED_ATTACK});
+  damage.scene.components.add(bydo, CurrentAction{.key = ARMORED_STRIKE});
+
+  damage.hit(missile, bydo);
+
+  const std::vector<Announcement> expected{removed(MISSILE_ID)};
+  EXPECT_EQ(damage.announced, expected);
+}
+
+/**
+ * Given a Bydo with four health points, armored in its attack 2 but in the
+ * strike of its attack 0
+ * When a missile hits it
+ * Then it loses one point, as any enemy
+ */
+TEST(DamageRules, AnArmoredEnemyOutOfItsArmoredAttackLosesOnePoint) {
+  DamageScene damage;
+  const Entity missile = damage.missile(MISSILE_ID);
+  const Entity bydo =
+      damage.bydo(BYDO_ID, Health{.points = FOUR_HEALTH_POINTS});
+  damage.scene.components.add(bydo, Armored{.attack = ARMORED_ATTACK});
   damage.scene.components.add(bydo, CurrentAction{.key = CHARGING});
 
   damage.hit(missile, bydo);

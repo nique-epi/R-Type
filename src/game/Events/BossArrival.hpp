@@ -5,9 +5,9 @@
 namespace rtype::game {
 
 /**
- * @brief Event published when the last wave of a level with a boss is over:
- * the number of the sheet of the boss (see EntityTypeNumber), and how long
- * the players hear the warning before it appears, in milliseconds.
+ * @brief Event published once a boss appeared, for the players to be warned
+ * of it: the number of its sheet (see EntityTypeNumber), and how long the
+ * warning lasts before its behaviour brings it in, in milliseconds.
  */
 struct BossArrival {
   std::uint8_t typeNumber{};

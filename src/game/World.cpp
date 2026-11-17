@@ -33,6 +33,7 @@
 #include "MotionSheet.hpp"
 #include "NetworkEntityTable.hpp"
 #include "NetworkIdentity.hpp"
+#include "PercentConstants.hpp"
 #include "Pilot.hpp"
 #include "PilotSheet.hpp"
 #include "Position.hpp"
@@ -45,6 +46,7 @@
 #include "ShipRollMasks.hpp"
 #include "Shootable.hpp"
 #include "ShownLook.hpp"
+#include "StaysOutside.hpp"
 #include "SteadyMotion.hpp"
 #include "SurvivesContact.hpp"
 #include "TimeConstants.hpp"
@@ -55,13 +57,21 @@ namespace rtype::game {
 namespace {
 
 /** @brief A body being made: the entity, the sheet of its type, where it
- * appears and the point its Pilot steers from. */
+ * appears, the point its Pilot steers from, and its health in percent of
+ * what its sheet gives. */
 struct BodyStart {
   engine::Entity body;
   std::reference_wrapper<const EntitySheet> sheet;
   Position position;
   Position origin;
+  int healthPercent;
 };
+
+/** @returns The health of @p start, which its sheet gives health: that
+ * health taken at the percent of @p start, rounded down, never under 1. */
+int healthOf(const BodyStart& start, int sheetHealth) {
+  return std::max(1, sheetHealth * start.healthPercent / WHOLE_PERCENT);
+}
 
 /** @brief Gives @p start what every entity of a sheet has: where it is, its
  * side, its box, the boxes or the collision mask its sheet gives, its collision
@@ -127,8 +137,8 @@ void addPilot(engine::ComponentRegistry& components, const BodyStart& start) {
 void addCombat(engine::ComponentRegistry& components, const BodyStart& start) {
   const EntitySheet& sheet = start.sheet.get();
   if (sheet.health.has_value()) {
-    components.add(start.body,
-                   Health{.points = *sheet.health, .full = *sheet.health});
+    const int health = healthOf(start, *sheet.health);
+    components.add(start.body, Health{.points = health, .full = health});
   }
   if (sheet.points.has_value()) {
     components.add(start.body, ScoreValue{.points = *sheet.points});
@@ -156,9 +166,10 @@ bool isShootable(const EntitySheet& sheet) {
 }
 
 /** @brief Gives @p start the parts that decide what its contact with a ship
- * or a missile does: the CurrentAction of an enemy, then the HurtZone and the
- * SurvivesContact and the Fragile its sheet declares, the Shootable of a
- * missile SHOOTABLE_MISSILE_SHEETS names, and the LookItem of a look item. */
+ * or a missile does, or what leaving the playfield does: the CurrentAction of
+ * an enemy, then the HurtZone, the SurvivesContact, the Fragile and the
+ * StaysOutside its sheet declares, the Shootable of a missile
+ * SHOOTABLE_MISSILE_SHEETS names, and the LookItem of a look item. */
 void addContactParts(engine::ComponentRegistry& components,
                      const BodyStart& start) {
   const EntitySheet& sheet = start.sheet.get();
@@ -174,6 +185,9 @@ void addContactParts(engine::ComponentRegistry& components,
   if (sheet.fragileIn.has_value()) {
     components.add(start.body, Fragile{.in = *sheet.fragileIn});
   }
+  if (sheet.staysOutside) {
+    components.add(start.body, StaysOutside{});
+  }
   if (isShootable(sheet)) {
     components.add(start.body, Shootable{});
   }
@@ -182,16 +196,14 @@ void addContactParts(engine::ComponentRegistry& components,
   }
 }
 
-/** @brief Gives @p start its Boss when its sheet makes it one: its rage
- * threshold is its full health times the percentage of the sheet. */
+/** @brief Gives @p start its Boss when its sheet makes it one. */
 void addBoss(engine::ComponentRegistry& components, const BodyStart& start) {
   const EntitySheet& sheet = start.sheet.get();
   if (!sheet.boss.has_value() || !sheet.health.has_value()) {
     return;
   }
   components.add(start.body,
-                 Boss{.rageBelowPoints = rageBelowPointsOf(
-                          *sheet.health, sheet.boss->rageBelowPercent),
+                 Boss{.rageBelowPercent = sheet.boss->rageBelowPercent,
                       .rageAttack = sheet.boss->rageAttack,
                       .arrivalAttack = sheet.boss->arrivalAttack});
 }
@@ -233,7 +245,8 @@ std::uint32_t World::spawnFrom(const EntitySheet& sheet,
   const BodyStart start{.body = registry_.create(),
                         .sheet = sheet,
                         .position = placement.position,
-                        .origin = placement.origin};
+                        .origin = placement.origin,
+                        .healthPercent = placement.healthPercent};
   addPlace(components_, start);
   addMotion(components_, start);
   addRollMasks(components_, start, rolledMasks_);
