@@ -9,11 +9,15 @@
 #include "DataFileReadingTestConstants.hpp"
 #include "DataFileTable.hpp"
 #include "DataFileText.hpp"
+#include "DecimalRange.hpp"
 #include "EngineException.hpp"
 #include "TemporaryFolder.hpp"
 
 using rtype::engine::choiceAt;
 using rtype::engine::dataFileContent;
+using rtype::engine::DataFileDecimalOutOfRangeException;
+using rtype::engine::DataFileFlagExpectedException;
+using rtype::engine::DataFileRangeExpectedException;
 using rtype::engine::dataFilesIn;
 using rtype::engine::DataFileSyntaxException;
 using rtype::engine::DataFileTable;
@@ -23,6 +27,10 @@ using rtype::engine::DataFileText;
 using rtype::engine::DataFileTextExpectedException;
 using rtype::engine::DataFileTextsExpectedException;
 using rtype::engine::DataFileValueOutOfRangeException;
+using rtype::engine::decimalAt;
+using rtype::engine::DecimalRange;
+using rtype::engine::decimalRangeAt;
+using rtype::engine::flagAt;
 using rtype::engine::keyName;
 using rtype::engine::millisecondsAt;
 using rtype::engine::MissingDataFileKeyException;
@@ -556,4 +564,271 @@ TEST(DataFileReading, TheContentOfAFileIsReadAsBytes) {
   folder.write(CRLF_FILE, CRLF_CONTENT);
 
   EXPECT_EQ(dataFileContent(folder.path() / CRLF_FILE), CRLF_CONTENT);
+}
+
+/**
+ * Given a parallax written 0.25
+ * When it is read as a decimal number
+ * Then it is a quarter
+ */
+TEST(DataFileReading, ADecimalNumberIsRead) {
+  const toml::table root = parseDataFile(A_QUARTER_PARALLAX, SHEET_FILE_NAME);
+  const DataFileTable motion =
+      tableAt(rootOf(root, SHEET_FILE_NAME), MOTION_TABLE);
+
+  EXPECT_DOUBLE_EQ(decimalAt(motion, PARALLAX_KEY, PARALLAX_RANGE), A_QUARTER);
+}
+
+/**
+ * Given a repeat written 488, a TOML integer
+ * When it is read as a decimal number
+ * Then it is 488
+ */
+TEST(DataFileReading, AnIntegerIsReadAsADecimalNumber) {
+  const toml::table root =
+      parseDataFile(A_REPEAT_AS_AN_INTEGER, SHEET_FILE_NAME);
+  const DataFileTable motion =
+      tableAt(rootOf(root, SHEET_FILE_NAME), MOTION_TABLE);
+
+  EXPECT_DOUBLE_EQ(decimalAt(motion, REPEAT_KEY, REPEAT_RANGE), REPEAT_OF_488);
+}
+
+/**
+ * Given the numbers 0 and 4.0, the two bounds of 0 to 4
+ * When each is read in that range
+ * Then each is read as it is written
+ */
+TEST(DataFileReading, ADecimalNumberIsReadAtBothBounds) {
+  const toml::table root =
+      parseDataFile(BOTH_BOUNDS_OF_PARALLAX, SHEET_FILE_NAME);
+  const DataFileTable motion =
+      tableAt(rootOf(root, SHEET_FILE_NAME), MOTION_TABLE);
+
+  EXPECT_DOUBLE_EQ(decimalAt(motion, LOWEST_KEY, PARALLAX_RANGE),
+                   LOWEST_PARALLAX);
+  EXPECT_DOUBLE_EQ(decimalAt(motion, HIGHEST_KEY, PARALLAX_RANGE),
+                   HIGHEST_PARALLAX);
+}
+
+/**
+ * Given the parallax 4.5, over 0 to 4
+ * When it is read in that range
+ * Then a DataFileDecimalOutOfRangeException names the file, line 2, the
+ * column of the value, the key and its range
+ */
+TEST(DataFileReading, ADecimalNumberOverItsRangeIsRefusedAtTheValue) {
+  const toml::table root =
+      parseDataFile(A_PARALLAX_OVER_ITS_RANGE, SHEET_FILE_NAME);
+  const DataFileTable motion =
+      tableAt(rootOf(root, SHEET_FILE_NAME), MOTION_TABLE);
+
+  EXPECT_THAT(
+      [&motion] {
+        static_cast<void>(decimalAt(motion, PARALLAX_KEY, PARALLAX_RANGE));
+      },
+      ThrowsMessage<DataFileDecimalOutOfRangeException>(
+          StrEq(std::string{PARALLAX_OVER_ITS_RANGE_MESSAGE})));
+}
+
+/**
+ * Given the parallax -0.5, under 0 to 4
+ * When it is read in that range
+ * Then a DataFileDecimalOutOfRangeException is thrown
+ */
+TEST(DataFileReading, ADecimalNumberUnderItsRangeIsRefused) {
+  const toml::table root =
+      parseDataFile(A_PARALLAX_UNDER_ITS_RANGE, SHEET_FILE_NAME);
+  const DataFileTable motion =
+      tableAt(rootOf(root, SHEET_FILE_NAME), MOTION_TABLE);
+
+  EXPECT_THROW(
+      static_cast<void>(decimalAt(motion, PARALLAX_KEY, PARALLAX_RANGE)),
+      DataFileDecimalOutOfRangeException);
+}
+
+/**
+ * Given a parallax written as a text
+ * When it is read as a decimal number
+ * Then a DataFileDecimalOutOfRangeException is thrown
+ */
+TEST(DataFileReading, ATextIsNotADecimalNumber) {
+  const toml::table root = parseDataFile(A_PARALLAX_AS_A_TEXT, SHEET_FILE_NAME);
+  const DataFileTable motion =
+      tableAt(rootOf(root, SHEET_FILE_NAME), MOTION_TABLE);
+
+  EXPECT_THROW(
+      static_cast<void>(decimalAt(motion, PARALLAX_KEY, PARALLAX_RANGE)),
+      DataFileDecimalOutOfRangeException);
+}
+
+/**
+ * Given a speed written [300, 510.5]
+ * When it is read as a range
+ * Then its lowest is 300 and its highest 510.5
+ */
+TEST(DataFileReading, ARangeIsReadWithItsLowestFirst) {
+  const toml::table root = parseDataFile(A_SPEED_RANGE, SHEET_FILE_NAME);
+  const DataFileTable motion =
+      tableAt(rootOf(root, SHEET_FILE_NAME), MOTION_TABLE);
+
+  const DecimalRange speed = decimalRangeAt(motion, SPEED_KEY, SPEED_BOUNDS);
+
+  EXPECT_DOUBLE_EQ(speed.lowest, SLOWEST_SPEED);
+  EXPECT_DOUBLE_EQ(speed.highest, FASTEST_SPEED);
+}
+
+/**
+ * Given a speed written [60, 60], both ends equal
+ * When it is read as a range
+ * Then both its ends are 60
+ */
+TEST(DataFileReading, ARangeMayHoldASingleNumber) {
+  const toml::table root = parseDataFile(A_SINGLE_SPEED, SHEET_FILE_NAME);
+  const DataFileTable motion =
+      tableAt(rootOf(root, SHEET_FILE_NAME), MOTION_TABLE);
+
+  const DecimalRange speed = decimalRangeAt(motion, SPEED_KEY, SPEED_BOUNDS);
+
+  EXPECT_DOUBLE_EQ(speed.lowest, SINGLE_SPEED);
+  EXPECT_DOUBLE_EQ(speed.highest, SINGLE_SPEED);
+}
+
+/**
+ * Given a speed written [510, 300], its highest first
+ * When it is read as a range
+ * Then a DataFileRangeExpectedException names the file, line 2, the column
+ * of the array, the key and its bounds
+ */
+TEST(DataFileReading, ARangeWithItsHighestFirstIsRefusedAtTheArray) {
+  const toml::table root =
+      parseDataFile(A_SPEED_RANGE_REVERSED, SHEET_FILE_NAME);
+  const DataFileTable motion =
+      tableAt(rootOf(root, SHEET_FILE_NAME), MOTION_TABLE);
+
+  EXPECT_THAT(
+      [&motion] {
+        static_cast<void>(decimalRangeAt(motion, SPEED_KEY, SPEED_BOUNDS));
+      },
+      ThrowsMessage<DataFileRangeExpectedException>(
+          StrEq(std::string{SPEED_RANGE_REVERSED_MESSAGE})));
+}
+
+/**
+ * Given a speed written with three numbers
+ * When it is read as a range
+ * Then a DataFileRangeExpectedException is thrown
+ */
+TEST(DataFileReading, ThreeNumbersAreNotARange) {
+  const toml::table root = parseDataFile(THREE_SPEEDS, SHEET_FILE_NAME);
+  const DataFileTable motion =
+      tableAt(rootOf(root, SHEET_FILE_NAME), MOTION_TABLE);
+
+  EXPECT_THROW(
+      static_cast<void>(decimalRangeAt(motion, SPEED_KEY, SPEED_BOUNDS)),
+      DataFileRangeExpectedException);
+}
+
+/**
+ * Given a speed written with one number in an array
+ * When it is read as a range
+ * Then a DataFileRangeExpectedException is thrown
+ */
+TEST(DataFileReading, OneNumberIsNotARange) {
+  const toml::table root = parseDataFile(ONE_SPEED, SHEET_FILE_NAME);
+  const DataFileTable motion =
+      tableAt(rootOf(root, SHEET_FILE_NAME), MOTION_TABLE);
+
+  EXPECT_THROW(
+      static_cast<void>(decimalRangeAt(motion, SPEED_KEY, SPEED_BOUNDS)),
+      DataFileRangeExpectedException);
+}
+
+/**
+ * Given a speed whose highest, 9000, is over its bounds of 0 to 8192
+ * When it is read as a range
+ * Then a DataFileRangeExpectedException is thrown
+ */
+TEST(DataFileReading, ARangeWithAnEndOverItsBoundsIsRefused) {
+  const toml::table root =
+      parseDataFile(A_SPEED_OVER_ITS_BOUNDS, SHEET_FILE_NAME);
+  const DataFileTable motion =
+      tableAt(rootOf(root, SHEET_FILE_NAME), MOTION_TABLE);
+
+  EXPECT_THROW(
+      static_cast<void>(decimalRangeAt(motion, SPEED_KEY, SPEED_BOUNDS)),
+      DataFileRangeExpectedException);
+}
+
+/**
+ * Given a speed written as one number, not an array
+ * When it is read as a range
+ * Then a DataFileRangeExpectedException is thrown
+ */
+TEST(DataFileReading, ANumberAloneIsNotARange) {
+  const toml::table root = parseDataFile(A_SPEED_AS_A_NUMBER, SHEET_FILE_NAME);
+  const DataFileTable motion =
+      tableAt(rootOf(root, SHEET_FILE_NAME), MOTION_TABLE);
+
+  EXPECT_THROW(
+      static_cast<void>(decimalRangeAt(motion, SPEED_KEY, SPEED_BOUNDS)),
+      DataFileRangeExpectedException);
+}
+
+/**
+ * Given a speed whose second end is a text
+ * When it is read as a range
+ * Then a DataFileRangeExpectedException is thrown
+ */
+TEST(DataFileReading, ATextAmongTheEndsOfARangeIsRefused) {
+  const toml::table root =
+      parseDataFile(A_TEXT_AMONG_THE_SPEEDS, SHEET_FILE_NAME);
+  const DataFileTable motion =
+      tableAt(rootOf(root, SHEET_FILE_NAME), MOTION_TABLE);
+
+  EXPECT_THROW(
+      static_cast<void>(decimalRangeAt(motion, SPEED_KEY, SPEED_BOUNDS)),
+      DataFileRangeExpectedException);
+}
+
+/**
+ * Given a flag written true
+ * When it is read
+ * Then it is true
+ */
+TEST(DataFileReading, AFlagWrittenTrueIsTrue) {
+  const toml::table root = parseDataFile(A_LAYER_THAT_WARPS, SHEET_FILE_NAME);
+  const DataFileTable motion =
+      tableAt(rootOf(root, SHEET_FILE_NAME), MOTION_TABLE);
+
+  EXPECT_TRUE(flagAt(motion, WARPS_KEY));
+}
+
+/**
+ * Given a flag written false
+ * When it is read
+ * Then it is false
+ */
+TEST(DataFileReading, AFlagWrittenFalseIsFalse) {
+  const toml::table root =
+      parseDataFile(A_LAYER_THAT_DOES_NOT_WARP, SHEET_FILE_NAME);
+  const DataFileTable motion =
+      tableAt(rootOf(root, SHEET_FILE_NAME), MOTION_TABLE);
+
+  EXPECT_FALSE(flagAt(motion, WARPS_KEY));
+}
+
+/**
+ * Given a flag written 1, a number
+ * When it is read
+ * Then a DataFileFlagExpectedException names the file, line 2, the column of
+ * the value and the key
+ */
+TEST(DataFileReading, ANumberIsNotAFlag) {
+  const toml::table root = parseDataFile(WARPS_AS_A_NUMBER, SHEET_FILE_NAME);
+  const DataFileTable motion =
+      tableAt(rootOf(root, SHEET_FILE_NAME), MOTION_TABLE);
+
+  EXPECT_THAT([&motion] { static_cast<void>(flagAt(motion, WARPS_KEY)); },
+              ThrowsMessage<DataFileFlagExpectedException>(
+                  StrEq(std::string{WARPS_AS_A_NUMBER_MESSAGE})));
 }
