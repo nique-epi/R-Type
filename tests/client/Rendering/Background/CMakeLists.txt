@@ -2,4 +2,5 @@ rtype_add_test(NAME client_background_tests SOURCES RecordingPixelSurface.cpp Pi
 target_include_directories(client_background_tests PRIVATE ${RTYPE_TEST_SOURCE_DIR} ${RTYPE_TEST_SOURCE_DIR}/client/Rendering/Effects)
 target_compile_definitions(client_background_tests PRIVATE RTYPE_SOURCE_ASSETS_FOLDER="${PROJECT_SOURCE_DIR}/assets")
 add_subdirectory(Description)
+add_subdirectory(Layers)
 rtype_add_test(NAME client_sky_piece_tests SOURCES PixelRoundingTest.cpp SeamCoverTest.cpp SeamCoverFixtures.cpp LIBS rtype_client_seam_cover rtype_client_pixel_rounding)
