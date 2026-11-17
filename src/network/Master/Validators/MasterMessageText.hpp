@@ -13,6 +13,8 @@
 #include "ExchangeRequest.hpp"
 #include "FinishedGame.hpp"
 #include "GameListing.hpp"
+#include "GameTicketGrant.hpp"
+#include "GameTicketState.hpp"
 #include "GlobalLeaderboard.hpp"
 #include "LookPurchase.hpp"
 #include "MovementListing.hpp"
@@ -243,6 +245,27 @@ namespace rtype::network {
  * in all. Anything else is refused before the master looks it up.
  */
 [[nodiscard]] bool isWellFormedSessionToken(std::string_view text);
+
+/**
+ * @returns Whether @p text has the shape of a game ticket: GAME_TICKET_PREFIX,
+ * then lowercase hexadecimal digits, GAME_TICKET_SIZE in all.
+ */
+[[nodiscard]] bool isWellFormedGameTicket(std::string_view text);
+
+/** @returns @p grant as the JSON answer of `POST /api/users/me/tickets`. */
+[[nodiscard]] std::string gameTicketGrantText(const GameTicketGrant& grant);
+
+/**
+ * @returns The ticket the master answered as @p text: an object whose
+ * `ticket` is well formed (isWellFormedGameTicket()) and whose `expiresAt` is
+ * a whole number of seconds from 0.
+ * @throws InvalidMasterMessageException naming the first member that is not.
+ */
+[[nodiscard]] GameTicketGrant gameTicketGrantFromText(std::string_view text);
+
+/** @returns @p state as the JSON answer of
+ * `GET /api/users/me/tickets/{ticket}`. */
+[[nodiscard]] std::string gameTicketStateText(const GameTicketState& state);
 
 /**
  * @returns The `detail` of the problem document (RFC 9457) @p text holds, or

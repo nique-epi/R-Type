@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 #include "ConfigurationRegistry.hpp"
+#include "GameTicketController.hpp"
+#include "GameTicketService.hpp"
 #include "IModule.hpp"
 #include "InstallContext.hpp"
 #include "SettingValue.hpp"
@@ -16,11 +18,13 @@ namespace rtype::master {
 /**
  * @brief The module of the wallets of the accounts: their kopecks and chips,
  * the journal of what moved them, and the looks they own, kept in the tables
- * `wallets`, `wallet_movements`, `owned_looks` and `credited_results`. It
- * answers `GET /api/users/me/wallet`, `GET /api/users/me/wallet/movements`,
- * `POST /api/users/me/wallet/exchanges`,
- * `GET /api/users/me/wallet/exchanges/{exchange}`, `GET /api/users/me/looks`
- * and `PUT /api/users/me/looks/{item}`, over HTTPS only, to the account of a
+ * `wallets`, `wallet_movements`, `owned_looks` and `credited_results`, and
+ * the game tickets through which a result pays an account, kept in
+ * `game_tickets`. It answers `GET /api/users/me/wallet`,
+ * `GET /api/users/me/wallet/movements`, `POST /api/users/me/wallet/exchanges`,
+ * `GET /api/users/me/wallet/exchanges/{exchange}`, `GET /api/users/me/looks`,
+ * `PUT /api/users/me/looks/{item}`, `POST /api/users/me/tickets` and
+ * `GET /api/users/me/tickets/{ticket}`, over HTTPS only, to the account of a
  * session; and provides IAccountWallet to the other modules.
  *
  * It needs the module accounts, which names the account of a session: a
@@ -50,6 +54,8 @@ class WalletModule final : public engine::IModule {
   const engine::SettingValue* startingChips_{nullptr};
   std::optional<WalletService> service_;
   std::optional<WalletController> controller_;
+  std::optional<GameTicketService> tickets_;
+  std::optional<GameTicketController> ticketController_;
 };
 
 }  // namespace rtype::master

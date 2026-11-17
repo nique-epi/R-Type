@@ -4,6 +4,8 @@
 #include <vector>
 #include "ConfigurationRegistry.hpp"
 #include "ControllerRoute.hpp"
+#include "GameTicketController.hpp"
+#include "GameTicketService.hpp"
 #include "IAccountWallet.hpp"
 #include "ISessionAccounts.hpp"
 #include "InstallContext.hpp"
@@ -34,9 +36,13 @@ void WalletModule::install(engine::InstallContext& context) {
   WalletService& service = service_.emplace(
       context.require<MasterDatabase>(), [this] { return startingWallet(); });
   context.provide<IAccountWallet>(service);
-  WalletController& controller =
-      controller_.emplace(context.require<ISessionAccounts>(), service);
-  addRoutes(context.require<MasterHttpServer>(), WALLET_ROUTES, controller);
+  auto& accounts = context.require<ISessionAccounts>();
+  auto& server = context.require<MasterHttpServer>();
+  addRoutes(server, WALLET_ROUTES, controller_.emplace(accounts, service));
+  GameTicketService& tickets =
+      tickets_.emplace(context.require<MasterDatabase>());
+  addRoutes(server, GAME_TICKET_ROUTES,
+            ticketController_.emplace(accounts, tickets));
 }
 
 void WalletModule::start() {}

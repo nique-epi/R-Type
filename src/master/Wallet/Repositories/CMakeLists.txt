@@ -1,5 +1,6 @@
 add_library(rtype_master_wallet_repositories STATIC
   CreditedResultRepository.cpp
+  GameTicketRepository.cpp
   OwnedLookRepository.cpp
   WalletMovementRepository.cpp
   WalletRepository.cpp

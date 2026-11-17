@@ -2,7 +2,7 @@ if(NOT RTYPE_MODULE_WALLET)
   return()
 endif()
 
-target_sources(master_tests PRIVATE WalletRoutesFixture.cpp WalletRoutesFixtures.cpp WalletRoutesTest.cpp)
+target_sources(master_tests PRIVATE GameTicketRoutesTest.cpp WalletRoutesFixture.cpp WalletRoutesFixtures.cpp WalletRoutesTest.cpp)
 
 target_include_directories(master_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 

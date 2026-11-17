@@ -100,6 +100,19 @@ constexpr MasterRoute READ_OWN_EXCHANGE_ROUTE{
     .method = RouteMethod::Get,
     .path = "/users/me/wallet/exchanges/:exchange",
     .httpsOnly = true};
+/** @brief Gives the account of the token a game ticket, which a game server
+ * reports with the result of a game so the master pays that account. */
+constexpr MasterRoute CREATE_OWN_TICKET_ROUTE{.method = RouteMethod::Post,
+                                              .path = "/users/me/tickets",
+                                              .httpsOnly = true};
+/** @brief The parameter of a path that names a game ticket by its
+ * fingerprint. */
+constexpr std::string_view TICKET_PATH_PARAMETER = "ticket";
+/** @brief A game ticket the master gave the account of the token, named by
+ * its fingerprint. */
+constexpr MasterRoute READ_OWN_TICKET_ROUTE{.method = RouteMethod::Get,
+                                            .path = "/users/me/tickets/:ticket",
+                                            .httpsOnly = true};
 /** @brief The looks the account of the token owns. */
 constexpr MasterRoute LIST_OWN_LOOKS_ROUTE{
     .method = RouteMethod::Get, .path = "/users/me/looks", .httpsOnly = true};

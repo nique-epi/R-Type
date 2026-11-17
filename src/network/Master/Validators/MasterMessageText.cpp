@@ -32,6 +32,8 @@
 #include "FinishedGame.hpp"
 #include "FinishedGamePlayer.hpp"
 #include "GameListing.hpp"
+#include "GameTicketGrant.hpp"
+#include "GameTicketState.hpp"
 #include "GlobalLeaderboard.hpp"
 #include "GlobalLeaderboardRow.hpp"
 #include "HostedGame.hpp"
@@ -1034,6 +1036,12 @@ bool isWellFormedSessionToken(std::string_view text) {
                   LOWERCASE_HEX_DIGITS);
 }
 
+bool isWellFormedGameTicket(std::string_view text) {
+  return text.size() == GAME_TICKET_SIZE &&
+         text.starts_with(GAME_TICKET_PREFIX) &&
+         isMadeOf(text.substr(GAME_TICKET_PREFIX.size()), LOWERCASE_HEX_DIGITS);
+}
+
 std::string problemDetailOf(std::string_view text) {
   const nlohmann::json document = nlohmann::json::parse(text, nullptr, false);
   if (!document.is_object()) {
@@ -1104,6 +1112,15 @@ std::int64_t nonNegativeIntegerOf(const JsonField& field) {
   return static_cast<std::int64_t>(integerOf(field, NON_NEGATIVE_BOUNDS));
 }
 
+/** @returns The game ticket @p field holds, refused unless well formed. */
+std::string gameTicketOf(const JsonField& field) {
+  std::string ticket = stringOf(field);
+  if (!isWellFormedGameTicket(ticket)) {
+    refuse(field);
+  }
+  return ticket;
+}
+
 WalletExchange walletExchangeOf(const JsonField& exchange) {
   return WalletExchange{
       .id = nonNegativeIntegerOf(memberOf(exchange, ID_MEMBER)),
@@ -1114,6 +1131,29 @@ WalletExchange walletExchangeOf(const JsonField& exchange) {
 }
 
 }  // namespace
+
+std::string gameTicketGrantText(const GameTicketGrant& grant) {
+  nlohmann::json document;
+  document[TICKET_MEMBER] = grant.ticket;
+  document[EXPIRES_AT_MEMBER] = grant.expiresAt.time_since_epoch().count();
+  return textOf(document);
+}
+
+GameTicketGrant gameTicketGrantFromText(std::string_view text) {
+  const nlohmann::json document = parsedObject(text);
+  const JsonField grant = wholeMessage(document);
+  return GameTicketGrant{
+      .ticket = gameTicketOf(memberOf(grant, TICKET_MEMBER)),
+      .expiresAt = secondsDateOf(memberOf(grant, EXPIRES_AT_MEMBER),
+                                 NON_NEGATIVE_BOUNDS)};
+}
+
+std::string gameTicketStateText(const GameTicketState& state) {
+  nlohmann::json document;
+  document[EXPIRES_AT_MEMBER] = state.expiresAt.time_since_epoch().count();
+  document[USED_MEMBER] = state.used;
+  return textOf(document);
+}
 
 std::string walletText(const Wallet& wallet) {
   return textOf(walletDocument(wallet));

@@ -186,6 +186,11 @@ constexpr std::string_view TOKEN_MEMBER = "token";
 constexpr std::string_view EXPIRES_AT_MEMBER = "expiresAt";
 constexpr std::string_view USER_MEMBER = "account";
 
+/** @brief The members of a game ticket: the ticket itself, and whether a
+ * result already paid through it. */
+constexpr std::string_view TICKET_MEMBER = "ticket";
+constexpr std::string_view USED_MEMBER = "used";
+
 /**
  * @brief The bounds of a password, in bytes of printable UTF-8: the bounds
  * Better Auth sets by default, 8 to 128. A password is hashed whatever its

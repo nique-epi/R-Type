@@ -299,13 +299,37 @@ CREATE TABLE casino_rounds (
 )sql";
 
 /**
+ * @brief The game tickets (migration 9): what the master gave a signed-in
+ * player before it joins a game, which a game server reports with the result
+ * so the master credits that account and no other.
+ *
+ * A ticket is keyed by its fingerprint, never the ticket, so a copy of the
+ * file presents no ticket; the table has no rowid, as sessions. used_at is
+ * null until a result paid through the ticket, which then pays nothing more.
+ * The first index counts the tickets an account was given in the last hour,
+ * the second finds the expired ones, which the master forgets.
+ */
+constexpr std::string_view GAME_TICKETS_MIGRATION = R"sql(
+CREATE TABLE game_tickets (
+  fingerprint TEXT    PRIMARY KEY,
+  user_id     INTEGER NOT NULL REFERENCES users (id),
+  issued_at   INTEGER NOT NULL,
+  expires_at  INTEGER NOT NULL,
+  used_at     INTEGER
+) STRICT, WITHOUT ROWID;
+
+CREATE INDEX game_tickets_by_user ON game_tickets (user_id, issued_at);
+CREATE INDEX game_tickets_by_expiry ON game_tickets (expires_at);
+)sql";
+
+/**
  * @brief The migrations of the database of the master, in order:
  * MASTER_MIGRATIONS[0] is version 1. A change adds a migration at the end and
  * never edits one a master already applied.
  */
-constexpr std::array<std::string_view, 8> MASTER_MIGRATIONS{
+constexpr std::array<std::string_view, 9> MASTER_MIGRATIONS{
     SERVERS_MIGRATION, STATUSES_MIGRATION,     PROBES_MIGRATION,
     RESULTS_MIGRATION, MACHINE_LOAD_MIGRATION, ACCOUNTS_MIGRATION,
-    WALLET_MIGRATION,  CASINO_MIGRATION};
+    WALLET_MIGRATION,  CASINO_MIGRATION,       GAME_TICKETS_MIGRATION};
 
 }  // namespace rtype::master

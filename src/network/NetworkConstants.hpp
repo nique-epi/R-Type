@@ -127,4 +127,17 @@ constexpr std::size_t HEX_DIGITS_PER_BYTE = 2;
 /** @brief The digits of lowercase hexadecimal, each at its value. */
 constexpr std::string_view LOWERCASE_HEX_DIGITS = "0123456789abcdef";
 
+/**
+ * @brief The ticket of a game: what the master gives a signed-in player before
+ * it joins a game, which the player hands to the game server and the server to
+ * the master with the result, so the master credits the account it was given
+ * to, and no other. GAME_TICKET_BYTES random bytes; as text, GAME_TICKET_PREFIX
+ * then those bytes in lowercase hexadecimal, GAME_TICKET_SIZE characters in
+ * all.
+ */
+constexpr std::size_t GAME_TICKET_BYTES = 32;
+constexpr std::string_view GAME_TICKET_PREFIX = "rtt_";
+constexpr std::size_t GAME_TICKET_SIZE =
+    GAME_TICKET_PREFIX.size() + (GAME_TICKET_BYTES * HEX_DIGITS_PER_BYTE);
+
 }  // namespace rtype::network

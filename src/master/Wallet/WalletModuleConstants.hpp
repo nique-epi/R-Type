@@ -3,6 +3,7 @@
 #include <array>
 #include <cstdint>
 #include "ControllerRoute.hpp"
+#include "GameTicketController.hpp"
 #include "MasterRouteConstants.hpp"
 #include "WalletController.hpp"
 
@@ -27,6 +28,15 @@ constexpr std::array WALLET_ROUTES{
         .answer = &WalletController::listOwnLooks},
     ControllerRoute<WalletController>{.route = network::BUY_OWN_LOOK_ROUTE,
                                       .answer = &WalletController::buyOwnLook}};
+
+/** @brief The routes of the game tickets and what answers each. */
+constexpr std::array GAME_TICKET_ROUTES{
+    ControllerRoute<GameTicketController>{
+        .route = network::CREATE_OWN_TICKET_ROUTE,
+        .answer = &GameTicketController::createOwnTicket},
+    ControllerRoute<GameTicketController>{
+        .route = network::READ_OWN_TICKET_ROUTE,
+        .answer = &GameTicketController::readOwnTicket}};
 
 /** @brief What a wallet holds when it opens while the settings
  * `wallet-starting-kopecks` and `wallet-starting-chips` keep their default:
