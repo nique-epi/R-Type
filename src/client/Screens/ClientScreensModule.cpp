@@ -26,6 +26,7 @@
 #include "IGameCatalog.hpp"
 #include "IServerCatalog.hpp"
 #include "IServerTicks.hpp"
+#include "ITicketLink.hpp"
 #include "IWallet.hpp"
 #include "InstallContext.hpp"
 #include "IntegerSettingDefinition.hpp"

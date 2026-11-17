@@ -9,6 +9,7 @@
 #include "ByteWriter.hpp"
 #include "GameRules.hpp"
 #include "GameTicket.hpp"
+#include "NetworkConstants.hpp"
 #include "NetworkException.hpp"
 #include "ProtocolConstants.hpp"
 #include "WireTypes.hpp"

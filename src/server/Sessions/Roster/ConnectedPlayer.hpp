@@ -12,7 +12,6 @@
 #include "GameTicket.hpp"
 #include "InputPace.hpp"
 #include "LivesConstants.hpp"
-#include "ProtocolConstants.hpp"
 #include "RoundTripMeter.hpp"
 #include "SentStates.hpp"
 #include "TimeConstants.hpp"

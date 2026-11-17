@@ -1,5 +1,4 @@
 #include "GameTicket.hpp"
-#include <algorithm>
 #include <cstddef>
 #include <optional>
 #include <string>

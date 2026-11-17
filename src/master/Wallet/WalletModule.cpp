@@ -4,7 +4,6 @@
 #include <vector>
 #include "ConfigurationRegistry.hpp"
 #include "ControllerRoute.hpp"
-#include "GameTicketController.hpp"
 #include "GameTicketService.hpp"
 #include "IAccountWallet.hpp"
 #include "ISessionAccounts.hpp"
@@ -16,7 +15,6 @@
 #include "MasterHttpServer.hpp"
 #include "MasterModuleConstants.hpp"
 #include "Wallet.hpp"
-#include "WalletController.hpp"
 #include "WalletModuleConstants.hpp"
 #include "WalletService.hpp"
 
