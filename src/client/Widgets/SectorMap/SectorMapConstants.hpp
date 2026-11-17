@@ -9,13 +9,18 @@ namespace rtype::client {
 
 /**
  * @brief The map of the servers, on the 480 x 270 grid of the interface: its
- * frame, the planet of the player cut in half by the left edge of the frame,
- * and where the chosen server stands once zoomed in.
+ * frame, under the tabs and the title of the map, the planet of the player cut
+ * in half by the left edge of the frame at its middle height, and where the
+ * chosen server stands once zoomed in, CHOSEN_STAR_RISE above that height.
  */
-inline constexpr sf::IntRect SECTOR_MAP_AREA{{24, 52}, {432, 168}};
+inline constexpr sf::IntRect SECTOR_MAP_AREA{{24, 56}, {432, 164}};
 inline constexpr int SECTOR_PLANET_RADIUS = 60;
-inline constexpr sf::Vector2i SECTOR_PLANET_CENTER{24, 136};
-inline constexpr sf::Vector2i CHOSEN_STAR_ZOOMED_IN{300, 126};
+inline constexpr sf::Vector2i SECTOR_PLANET_CENTER{
+    SECTOR_MAP_AREA.position.x,
+    SECTOR_MAP_AREA.position.y + (SECTOR_MAP_AREA.size.y / 2)};
+inline constexpr int CHOSEN_STAR_RISE = 10;
+inline constexpr sf::Vector2i CHOSEN_STAR_ZOOMED_IN{
+    300, SECTOR_PLANET_CENTER.y - CHOSEN_STAR_RISE};
 inline constexpr double ZOOMED_OUT_FACTOR = 1.0;
 inline constexpr double ZOOMED_IN_FACTOR = 2.0;
 

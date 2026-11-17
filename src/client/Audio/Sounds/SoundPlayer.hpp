@@ -22,8 +22,9 @@ class SoundBank;
 
 /**
  * @brief Plays the sounds of a sound bank on SOUND_VOICE_LIMIT voices at
- * most, each at the EFFECTS volume of the player, nothing while MUTE ALL is
- * on. It keeps that volume, and the settings service tells it when it moves.
+ * most, a voice of VOICE_SOUND_IDS at the VOICES volume of the player and
+ * any other sound at its EFFECTS volume, nothing while MUTE ALL is on. It
+ * keeps both volumes, and the settings service tells it when one moves.
  *
  * A voice is an sf::Sound, created the first time it is needed and kept; the
  * next sound takes the voice voiceForNextSound() gives, so a sound started
@@ -46,8 +47,8 @@ class SoundPlayer : public ISoundPlayer, public ISettingsListener {
    * every id of ALL_SOUND_IDS is loaded when the sound module starts. */
   void play(std::string_view soundId) override;
 
-  /** @brief Takes the volume of the sounds the settings now hold when
-   * @p changed moves it; ignores the other settings. */
+  /** @brief Takes the volume of the effects or of the voices the settings
+   * now hold when @p changed moves it; ignores the other settings. */
   void settingChanged(SettingId changed) override;
 
  private:
@@ -62,6 +63,7 @@ class SoundPlayer : public ISoundPlayer, public ISettingsListener {
   const SoundBank* bank_;
   const SettingsService* settings_;
   float volume_;
+  float voicesVolume_;
   std::vector<sf::Sound> voices_;
   std::vector<std::uint64_t> startRanks_;
   std::uint64_t startedSounds_{};

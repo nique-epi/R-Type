@@ -27,7 +27,12 @@
 #include "StorageConstants.hpp"
 
 RunningMaster::RunningMaster(std::vector<std::string> settingLines)
-    : settingLines_(std::move(settingLines)) {
+    : RunningMaster(std::move(settingLines), std::string{TEST_PASSWORD_KEY}) {}
+
+RunningMaster::RunningMaster(std::vector<std::string> settingLines,
+                             std::string passwordKeyText)
+    : settingLines_(std::move(settingLines)),
+      passwordKeyText_(std::move(passwordKeyText)) {
   databaseFile_.close();
   application_ = application();
   application_->start();
@@ -44,7 +49,7 @@ std::unique_ptr<rtype::engine::Application> RunningMaster::application() {
   std::vector<std::unique_ptr<rtype::engine::IModule>> modules =
       rtype::master::masterModules(
           logOptionsOf(quiet, journal_.path()),
-          []([[maybe_unused]] const std::string& reason) {});
+          []([[maybe_unused]] const std::string& reason) {}, passwordKeyText_);
   modules.push_back(std::make_unique<HttpPortRecordingModule>(port_));
   return std::make_unique<rtype::engine::Application>(
       rtype::engine::LoopStages(rtype::master::MASTER_LOOP_STAGES),
@@ -92,6 +97,8 @@ int RunningMaster::keptPlayersOf(std::string_view gameId) const {
   query.executeStep();
   return query.getColumn(0).getInt();
 }
+
+const JournalFile& RunningMaster::journal() const { return journal_; }
 
 rtype::network::CreatedServer RunningMaster::createServer(
     std::string_view name) const {

@@ -1,7 +1,11 @@
 #include "RejectionReporter.hpp"
 #include <string>
+#include "LogEvent.hpp"
+#include "LogLevel.hpp"
+#include "RejectionEvent.hpp"
+#include "RejectionEvents.hpp"
 #include "RejectionLedger.hpp"
-#include "RejectionLines.hpp"
+#include "RejectionReport.hpp"
 #include "ServerConstants.hpp"
 
 namespace rtype::server {
@@ -15,8 +19,12 @@ void RejectionReporter::countTick() {
     return;
   }
   ticksSinceReport_ = 0;
-  for (const std::string& line : rejectionLinesOf(rejections_->takeReport())) {
-    logger_.warn(line);
+  const RejectionReport report = rejections_->takeReport();
+  for (const RejectionEvent& event : rejectionEventsOf(report)) {
+    logger_.event(logging::LogEvent{.level = logging::LogLevel::Warn,
+                                    .name = event.name,
+                                    .message = event.message,
+                                    .fields = event.fields});
   }
 }
 

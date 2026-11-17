@@ -31,6 +31,11 @@ void BossTracker::follow(const network::BossStatus& status,
 
 const BossFight& BossTracker::fight() const { return fight_; }
 
+void BossTracker::forget() {
+  fight_ = BossFight{};
+  arrivedAt_.reset();
+}
+
 std::optional<engine::Duration> BossTracker::sinceArrival(
     engine::Duration now) const {
   if (!arrivedAt_.has_value()) {

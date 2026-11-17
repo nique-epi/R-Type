@@ -6,12 +6,14 @@
 #include <vector>
 #include "IEntityOrders.hpp"
 #include "Position.hpp"
+#include "SpawnOptions.hpp"
 
 /** @brief A body a script asked for, its sheet name copied out of the
  * script. */
 struct RecordedSpawn {
   std::string type;
   rtype::game::Position position{};
+  rtype::game::SpawnOptions options{};
 };
 
 /** @brief Body orders that record what the scripts order and give every body
@@ -21,7 +23,8 @@ class RecordingEntityOrders final : public rtype::game::IEntityOrders {
   explicit RecordingEntityOrders(std::uint32_t givenId);
 
   [[nodiscard]] std::uint32_t spawn(std::string_view type,
-                                    rtype::game::Position position) override;
+                                    rtype::game::Position position,
+                                    rtype::game::SpawnOptions options) override;
   void destroy(std::uint32_t networkId) override;
 
   /** @returns The bodies asked for, in order. */

@@ -19,6 +19,7 @@ constexpr int VOLUME_STEP = 5;
 constexpr int VOLUME_PAGE_STEPS = 2;
 constexpr int DEFAULT_MUSIC_VOLUME = 70;
 constexpr int DEFAULT_EFFECTS_VOLUME = 80;
+constexpr int DEFAULT_VOICES_VOLUME = 80;
 
 /**
  * @brief The chat: the letters of one of its lines, the lines it shows while
@@ -87,6 +88,7 @@ constexpr int SETTINGS_VERSION = 1;
 /** @brief Names of the settings in the file. */
 constexpr std::string_view MUSIC_VOLUME_NAME = "music_volume";
 constexpr std::string_view EFFECTS_VOLUME_NAME = "effects_volume";
+constexpr std::string_view VOICES_VOLUME_NAME = "voices_volume";
 constexpr std::string_view MUTED_NAME = "mute_all";
 constexpr std::string_view WINDOW_SIZE_NAME = "window_size";
 constexpr std::string_view DISPLAY_MODE_NAME = "display_mode";

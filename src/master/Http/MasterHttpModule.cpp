@@ -18,6 +18,8 @@
 #include "MasterRouteConstants.hpp"
 #include "MasterVersionConstants.hpp"
 #include "NetworkConstants.hpp"
+#include "SettingValue.hpp"
+#include "TextSettingDefinition.hpp"
 
 namespace rtype::master {
 
@@ -35,6 +37,20 @@ network::ApiResponse healthResponse(
   return network::ApiResponse{.status = OK_STATUS, .body = health.dump()};
 }
 
+/** @returns The `site-key` setting, declared in @p configuration. It has no
+ * check: a refused line would write its value in the journal. */
+const engine::SettingValue& declareSiteKey(
+    engine::ConfigurationRegistry& configuration) {
+  return configuration.declareText(engine::TextSettingDefinition{
+      .name = std::string{SITE_KEY_SETTING_NAME},
+      .defaultValue = {},
+      .help = "Secret the web site sends in X-Site-Key, so what it asks for "
+              "a visitor is counted under the address it names in "
+              "X-Site-Client-Address; empty to count every request under the "
+              "address it comes from",
+      .validate = {}});
+}
+
 }  // namespace
 
 MasterHttpModule::MasterHttpModule(FailureReport onFailure)
@@ -49,17 +65,17 @@ std::vector<std::string> MasterHttpModule::dependencies() const {
 }
 
 void MasterHttpModule::install(engine::InstallContext& context) {
-  portSetting_ =
-      &context.require<engine::ConfigurationRegistry>().declareInteger(
-          engine::IntegerSettingDefinition{
-              .name = std::string{PORT_SETTING_NAME},
-              .defaultValue = network::DEFAULT_MASTER_PORT,
-              .lowest = network::ANY_PORT,
-              .highest = network::HIGHEST_PORT,
-              .help = "TCP port the HTTP API listens on, 0 for one the "
-                      "system chooses"});
+  auto& configuration = context.require<engine::ConfigurationRegistry>();
+  portSetting_ = &configuration.declareInteger(engine::IntegerSettingDefinition{
+      .name = std::string{PORT_SETTING_NAME},
+      .defaultValue = network::DEFAULT_MASTER_PORT,
+      .lowest = network::ANY_PORT,
+      .highest = network::HIGHEST_PORT,
+      .help = "TCP port the HTTP API listens on, 0 for one the "
+              "system chooses"});
   server_.add(network::HEALTH_ROUTE, healthResponse);
   context.provide(server_);
+  context.provide(siteVisitors_.emplace(declareSiteKey(configuration)));
 }
 
 void MasterHttpModule::start() {

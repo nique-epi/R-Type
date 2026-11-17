@@ -63,4 +63,53 @@ constexpr sf::Vector2i FAR_FROM_THE_RADIO{400, 40};
 
 constexpr std::string_view SHOP_SCENE_SHEET = "sprites/shop_scene.png";
 
+/** @brief Pixels of the interface: the middle of the bottles of the
+ * shopkeeper, which the picture draws from (368, 164) over 78 x 27 pixels,
+ * and one on the wood just left of them. */
+constexpr sf::Vector2i BOTTLES_MIDDLE{407, 177};
+constexpr sf::Vector2i BESIDE_THE_BOTTLES{367, 177};
+
+/** @brief Pixels of the interface: the middle of the abacus of the counter,
+ * (151, 168) to (181, 184), and of the glass of tea, (207, 169) to
+ * (221, 184). */
+constexpr sf::Vector2i ABACUS_MIDDLE{166, 176};
+constexpr sf::Vector2i TEA_MIDDLE{214, 177};
+
+/** @brief A word of each line the shopkeeper says, found in no other line
+ * of these tests: the party hat bought; the first two lines on a ware too
+ * expensive; a ware owned; where the radio is; his first two lines on his
+ * bottles; the radio tuned to Papers, Please, to Kavorka, then back. */
+constexpr std::string_view PARTY_HAT_LINE_WORD = "VODKA.";
+constexpr std::string_view FIRST_TOO_EXPENSIVE_WORD = "NYET.";
+constexpr std::string_view SECOND_TOO_EXPENSIVE_WORD = "CHARITY,";
+/** @brief A word of the refusal of the war shark, the first hull, to a
+ * player who cannot pay it, which no refusal of an accessory says. */
+constexpr std::string_view WAR_SHARK_TOO_EXPENSIVE_WORD = "WALLETS,";
+constexpr std::string_view ALREADY_YOURS_WORD = "HATS,";
+constexpr std::string_view RADIO_HINT_WORD = "QUIET?";
+constexpr std::string_view FIRST_BOTTLES_WORD = "HANDS";
+constexpr std::string_view SECOND_BOTTLES_WORD = "MEDICINE.";
+constexpr std::string_view BORDER_RADIO_WORD = "ARSTOTZKA!";
+constexpr std::string_view DANCE_RADIO_WORD = "FAST!";
+/** @brief A word of each of his three lines on his abacus and his tea. */
+constexpr std::string_view FIRST_COUNTER_WORD = "ABACUS,";
+constexpr std::string_view SECOND_COUNTER_WORD = "AGAIN?";
+constexpr std::string_view LAST_COUNTER_WORD = "OLD";
+constexpr std::string_view SHOP_MUSIC_WORD = "MOSCOW.";
+
+/** @brief The sales slip, 172 by 216 pixels, centred on the 480 by 270
+ * interface: its top-left corner at (154, 27). BUY lies at (80, 160) of it,
+ * 80 by 22, so its middle is at (274, 198); CANCEL at (12, 160), 66 by 22,
+ * its middle at (199, 198). The bottom-left corner of the shop is off it. */
+constexpr std::string_view TICKET_SHEET = "sprites/shop_ticket.png";
+constexpr sf::Vector2i BUY_BUTTON_MIDDLE{274, 198};
+constexpr sf::Vector2i CANCEL_BUTTON_MIDDLE{199, 198};
+constexpr sf::Vector2i OFF_THE_TICKET{20, 250};
+
+/** @brief A paid ticket shows its stamp 700 ms: 16 ms then 683 ms make
+ * 699 ms, short of it, and one more millisecond reaches it. */
+constexpr std::chrono::milliseconds THE_STAMP_TIME{700};
+constexpr std::chrono::milliseconds ALMOST_THE_STAMP_TIME{683};
+constexpr std::chrono::milliseconds THE_REST_OF_THE_STAMP_TIME{1};
+
 }  // namespace rtype::client::testing

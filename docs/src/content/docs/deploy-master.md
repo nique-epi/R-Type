@@ -23,7 +23,7 @@ The master (see [Master](/R-Type/master/)) runs on one small AWS machine, descri
 - **One address that does not change**, an Elastic IP (`aws_eip.master`). The A record of the domain of the master (`master_domain`) points at it, so Terraform refuses to destroy it (`prevent_destroy`).
 - **Two open ports**, from anywhere: 443, the HTTPS API, and 80, which only answers the certificate challenges of Let's Encrypt and sends the rest to HTTPS. The master listens on 8080 (`master_port`), which no rule opens. There is no SSH and no key pair: the machine is reached through AWS Systems Manager (SSM), which needs no open port.
 - **Caddy**, the package of Ubuntu, in front of the master: it answers HTTPS for `master_domain` with a certificate of Let's Encrypt it gets at the first deployment and renews by itself, and forwards each request to `127.0.0.1:8080`.
-- **One systemd service**, `rtype-master`, which runs `r-type_server --mode master -p 8080` as the user `rtype`, with the database in `/var/lib/rtype/r-type_master.db`. It writes no journal file; its lines go to `journalctl -u rtype-master`. The port in the unit and `master_port` must stay equal. systemd starts it again 5 seconds after it stopped by itself.
+- **One systemd service**, `rtype-master`, which runs `r-type_server --mode master -p 8080` as the user `rtype`, with the database in `/var/lib/rtype/r-type_master.db`. The master stops at its start without `RT_PASSWORD_KEY`, the key of the passwords of its accounts, so the unit must give it one (see [Master](/R-Type/master/#accounts-and-sessions-accountsmodule)). It writes no journal file; its lines go to `journalctl -u rtype-master`. The port in the unit and `master_port` must stay equal. systemd starts it again 5 seconds after it stopped by itself.
 - **A health check**, `rtype-master-health.timer`: every 30 seconds it asks `GET /api/health` on the machine, and restarts the master when two requests 5 seconds apart both fail. It covers a master that still runs and no longer answers, which the restart of the service does not.
 - **A test game server**, `rtype-test-server`, the one the team plays on between two LANs. It reads `/var/lib/rtype/test-server/server.cfg`, which a person writes once with its own key of the master, and runs from its own copy of the release. The deployment never enables it: `lan-close` starts it and `lan-open` stops it (see [Game servers for a LAN](/R-Type/deploy-game-servers/)). The network rules of Terraform do not open its ports.
 - **A CPU on credits.** A `t3` machine earns CPU credits at a baseline of 20% of each vCPU and spends them when it works harder. The instance is set to `cpu_credits = "standard"`: once the credits are gone, the CPU is slowed down, and the bill never exceeds the price of the instance. The master is an HTTP API on a SQLite file, which stays far below that baseline. A machine whose CPU never slows down (`c7i-flex.large`, `c5.large`) costs more.
@@ -76,18 +76,18 @@ The web site calls the master from its own server, at `MASTER_URL` (see [Master]
 
 ## Giving the site its key
 
-Every visitor of the site reaches the master from the address of Vercel, so they would share one quota of creations. The site and the master hold one secret, with which the site names the visitor it creates a server for (see [Master](/R-Type/master/#creating-a-game-server-post-apiservers)). Nothing sets it by itself, and without it the site still works, all its visitors under one quota:
+Every visitor of the site reaches the master from the address of Vercel, so they would share one quota of creations and one count of failed sign-ins. The site and the master hold one secret, with which the site names the visitor it creates a server or an account for, or signs in (see [Master](/R-Type/master/#creating-a-game-server-post-apiservers)). Nothing sets it by itself, and without it the site still works, all its visitors under one quota:
 
 1. Draw it once: `openssl rand -hex 32`. Letters and digits only, so its line of `master.cfg` is never refused, and never written in the journal.
 2. On the instance (an SSM session), write the line `set site-key <secret>` in `/var/lib/rtype/master.cfg`, the folder the master starts from, readable by the user `rtype` only (`chown rtype:rtype`, `chmod 600`), then `systemctl restart rtype-master`. A deployment does not touch that file.
 3. In the Vercel project, set `MASTER_SITE_KEY` to the same value, as a sensitive variable, for Production only, then deploy the site again.
 
-The secret is in neither GitHub nor Terraform. To change it, do the three steps again; between steps 2 and 3 the creations of the site are counted under the address of Vercel.
+The secret is in neither GitHub nor Terraform. To change it, do the three steps again; between steps 2 and 3 the creations and sign-ins of the site are counted under the address of Vercel.
 
 ## Limits
 
 - **HTTPS ends at Caddy.** Between Caddy and the master, on the machine, requests go in plain HTTP to `127.0.0.1:8080`. The master reads the address of each client in the `X-Forwarded-For` header Caddy writes, and trusts it only from `127.0.0.1` (see [Master](/R-Type/master/#the-http-api-masterhttpserver)).
-- **Whoever holds the key of the site creates servers without limit**, since it names the address each creation is counted under. It lives in `master.cfg` on the instance and in the variables of Vercel, nowhere else.
+- **Whoever holds the key of the site creates servers and accounts and tries passwords without limit**, since it names the address each request is counted under. It lives in `master.cfg` on the instance and in the variables of Vercel, nowhere else.
 - **An older release cannot reach it.** A client or a game server built before HTTPS refuses an `https://` address: the players and the hosts need a release that speaks it.
 - **The domain needs its record.** If the Elastic IP is ever replaced, only the A record changes; everything else holds the domain.
 - **One machine, one database, no backup.** A restart cuts the master for a few seconds; the games in progress go on, since no datagram of a game goes through the master.

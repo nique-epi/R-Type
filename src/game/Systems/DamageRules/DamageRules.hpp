@@ -15,7 +15,6 @@ class EventBus;
 namespace rtype::game {
 
 struct AppliedHit;
-struct Health;
 struct MissileHit;
 
 /**
@@ -30,18 +29,18 @@ struct MissileHit;
  * with an EntityDamage while it has points left, and destroyed with an
  * EntityDestruction Killed when it has none. A target without Health is not
  * hurt, unless it is a Shootable missile of an enemy, which is destroyed
- * with an EntityDestruction Killed. A Boss in its arrival loses nothing: the
- * missile is removed, nothing else is announced. A Boss that loses points is
- * announced with a BossHealthChanged. When the missile has a MissileOwner and
- * the target that dies has a ScoreValue above 0, an EnemyKilled follows the
- * destruction, naming the owner and the points. A hit naming an entity that is
- * gone or has no NetworkIdentity is ignored, so two missiles reaching the same
- * target in one dispatch never destroy it twice. Once a hit is applied and its
- * announcements published, the HitReaction of the target, when its sheet
- * names an on_hit, is told of it as an AppliedHit, a hit on a target without
- * Health included: what the handler publishes is delivered after the
- * announcements of the hit, since the bus delivers in the order of
- * publication. The bus and the registry must outlive this object.
+ * with an EntityDestruction Killed. An Armored enemy in the attack it is
+ * armored in loses nothing: the missile is removed, nothing else is announced.
+ * When the missile has a MissileOwner and the target that dies has a ScoreValue
+ * above 0, an EnemyKilled follows the destruction, naming the owner and the
+ * points. A hit naming an entity that is gone or has no NetworkIdentity is
+ * ignored, so two missiles reaching the same target in one dispatch never
+ * destroy it twice. Once a hit is applied and its announcements published,
+ * the HitReaction of the target, when its sheet names an on_hit, is told of
+ * it as an AppliedHit, a hit on a target without Health included: what the
+ * handler publishes is delivered after the announcements of the hit, since
+ * the bus delivers in the order of publication. The bus and the registry
+ * must outlive this object.
  */
 class DamageRules {
  public:
@@ -66,11 +65,6 @@ class DamageRules {
    * to @p shooter, when a player shot it and it is worth any. */
   void killTarget(engine::Entity target, std::uint32_t networkId,
                   std::optional<std::uint8_t> shooter);
-
-  /** @brief Publishes a BossHealthChanged for @p target, which has
-   * @p health, when it is a boss. */
-  void announceBossHealth(engine::Entity target, std::uint32_t networkId,
-                          const Health& health);
 
   engine::EventBus& events_;
   engine::ComponentRegistry& components_;

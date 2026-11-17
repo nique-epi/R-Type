@@ -15,6 +15,7 @@
 #include "OutgoingDatagram.hpp"
 #include "PlayerRoster.hpp"
 #include "Position.hpp"
+#include "SpawnOptions.hpp"
 #include "World.hpp"
 
 namespace rtype::server::testing {
@@ -30,9 +31,11 @@ class EntityOrdersFixture : public ::testing::Test {
 
   /** @brief Connects @p count players, who are then told about each body. */
   void connectPlayers(std::size_t count);
-  /** @returns What `behaviours.spawn` returns for @p sheet at @p position. */
+  /** @returns What `behaviours.spawn` returns for @p sheet at @p position,
+   * with @p options. */
   [[nodiscard]] std::uint32_t spawnByScript(std::string_view sheet,
-                                            game::Position position);
+                                            game::Position position,
+                                            game::SpawnOptions options = {});
   /** @brief What `behaviours.destroy` does for @p networkId. */
   void removeByScript(std::uint32_t networkId);
   /** @brief Ends the tick: the asked bodies appear and go, and the bus
@@ -45,6 +48,9 @@ class EntityOrdersFixture : public ::testing::Test {
   /** @returns Where the body of @p networkId is; nothing when none is. */
   [[nodiscard]] std::optional<game::Position> positionOf(
       std::uint32_t networkId);
+  /** @returns The health points of the body of @p networkId; nothing when
+   * none is or it has no Health. */
+  [[nodiscard]] std::optional<int> healthOf(std::uint32_t networkId);
   /** @returns The EntitySpawned sent to the player connected @p index-th. */
   [[nodiscard]] std::vector<network::EntitySpawned> spawnsSentTo(
       std::size_t index) const;

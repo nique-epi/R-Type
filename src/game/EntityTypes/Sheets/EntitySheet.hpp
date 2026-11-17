@@ -71,6 +71,8 @@ struct EntitySheet {
   /** @brief The action in which any hit destroys it; nothing for a body that
    * loses one point a hit all the time. */
   std::optional<ActionKey> fragileIn{std::nullopt};
+  /** @brief Whether leaving the playfield never removes it. */
+  bool staysOutside{false};
   /** @brief How it bursts into shards; nothing for a body that does not. */
   std::optional<BurstSheet> burst{std::nullopt};
   /** @brief The volleys it fires as it enters some of its actions, in the

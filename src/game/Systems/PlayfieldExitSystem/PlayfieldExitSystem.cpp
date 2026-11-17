@@ -1,5 +1,4 @@
 #include "PlayfieldExitSystem.hpp"
-#include "Boss.hpp"
 #include "CollisionBox.hpp"
 #include "CollisionConstants.hpp"
 #include "ComponentRegistry.hpp"
@@ -15,6 +14,7 @@
 #include "PlayfieldConstants.hpp"
 #include "Position.hpp"
 #include "SpawningConstants.hpp"
+#include "StaysOutside.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::game {
@@ -107,7 +107,7 @@ void PlayfieldExitSystem::update(engine::ComponentRegistry& components,
                           const EntityType& type) {
         if (!hasLeftThePlayfield(type, position,
                                  edgeExitOf(components, entity, type)) ||
-            components.get<Boss>(entity) != nullptr) {
+            components.has<StaysOutside>(entity)) {
           return;
         }
         const NetworkIdentity* identity =

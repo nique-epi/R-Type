@@ -83,8 +83,9 @@ class Departures {
    * says, and publishes its PlayerDeparture. */
   void announce(const ConnectedPlayer& player, game::DepartureCause cause);
 
-  /** @brief Writes the info line of a departure: the address of a player who
-   * left or was expelled, or how long a player who timed out stayed silent. */
+  /** @brief Writes the info event of a departure: the address of a player who
+   * left or was expelled, and how long a player who timed out stayed
+   * silent. */
   void logDeparture(const ConnectedPlayer& player,
                     game::DepartureCause cause) const;
 

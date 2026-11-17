@@ -13,6 +13,7 @@ constexpr std::array VOLUME_NUMBERS{
     NamedNumber{.name = MUSIC_VOLUME_NAME, .setting = &MUSIC_VOLUME_SETTING},
     NamedNumber{.name = EFFECTS_VOLUME_NAME,
                 .setting = &EFFECTS_VOLUME_SETTING},
+    NamedNumber{.name = VOICES_VOLUME_NAME, .setting = &VOICES_VOLUME_SETTING},
 };
 constexpr std::array CHAT_NUMBERS{
     NamedNumber{.name = CHAT_LETTERS_NAME, .setting = &CHAT_LETTERS_SETTING},

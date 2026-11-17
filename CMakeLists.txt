@@ -24,6 +24,7 @@ option(RTYPE_MODULE_MASTER_LINK "Build the module that registers the server with
 option(RTYPE_MODULE_ADMIN_CONSOLE "Build the administration console of the supervisor" ON)
 option(RTYPE_MODULE_CHAT "Build the chat module of the games" ON)
 option(RTYPE_MODULE_PLUGINS "Build the loading of plugins: the plugin and plugin-folder commands" ON)
+option(RTYPE_MODULE_ACCOUNTS "Build the accounts and sessions of the master" ON)
 cmake_dependent_option(RTYPE_MODULE_GAME_STATISTICS "Build the game-statistics plugin" ON "RTYPE_MODULE_PLUGINS" OFF)
 
 add_feature_info(audio RTYPE_MODULE_AUDIO "the sound of the client")
@@ -34,6 +35,7 @@ add_feature_info(master-link RTYPE_MODULE_MASTER_LINK "the registration of the s
 add_feature_info(admin-console RTYPE_MODULE_ADMIN_CONSOLE "the administration console of the supervisor")
 add_feature_info(chat RTYPE_MODULE_CHAT "the chat of the games")
 add_feature_info(plugins RTYPE_MODULE_PLUGINS "the loading of plugins")
+add_feature_info(accounts RTYPE_MODULE_ACCOUNTS "the accounts and sessions of the master")
 add_feature_info(game-statistics RTYPE_MODULE_GAME_STATISTICS "the game-statistics plugin")
 
 if(NOT CMAKE_RUNTIME_OUTPUT_DIRECTORY)

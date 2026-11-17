@@ -28,8 +28,9 @@ namespace rtype::game {
  * while a part of it shows. An enemy, or a missile flying left, past the right
  * edge, where the enemies appear, is not out. Only
  * entities that have a NetworkIdentity are removed. A ship is never removed by
- * leaving. A Boss is never removed by leaving either: its charge takes it
- * past the left edge and back. The bus must outlive this object.
+ * leaving. An enemy that StaysOutside is never removed by leaving either: the
+ * charge of the Bydo Tyrant takes it past the left edge and back. The bus must
+ * outlive this object.
  */
 class PlayfieldExitSystem final : public engine::ISystem {
  public:

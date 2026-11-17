@@ -28,7 +28,8 @@ MasterModulesFixture::masterApplication(
     std::vector<std::string> lines) {
   std::vector<std::unique_ptr<rtype::engine::IModule>> modules =
       rtype::master::masterModules(
-          journalOptions(), []([[maybe_unused]] const std::string& reason) {});
+          journalOptions(), []([[maybe_unused]] const std::string& reason) {},
+          std::string{TEST_PASSWORD_KEY});
   modules.push_back(std::make_unique<HttpPortRecordingModule>(port_));
   for (std::unique_ptr<rtype::engine::IModule>& module : extra) {
     modules.push_back(std::move(module));

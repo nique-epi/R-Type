@@ -49,7 +49,7 @@ namespace rtype::server {
  */
 class LevelDirector {
  public:
-  /** @throws UnknownLevelException as stagesOfLevel() does. */
+  /** @throws UnknownLevelException as entryOfLevel() does. */
   explicit LevelDirector(LevelDirectorParts parts);
 
   /** @brief Lets one tick of the level pass. */

@@ -224,4 +224,7 @@ MasterUnreachableException::MasterUnreachableException(
     const std::string& reason)
     : NetworkException("the master did not answer: " + reason) {}
 
+PasswordHashingException::PasswordHashingException()
+    : NetworkException("libhydrogen failed to hash a password") {}
+
 }  // namespace rtype::network

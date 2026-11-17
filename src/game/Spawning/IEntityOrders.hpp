@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <string_view>
 #include "Position.hpp"
+#include "SpawnOptions.hpp"
 
 namespace rtype::game {
 
@@ -10,7 +11,7 @@ namespace rtype::game {
  * @brief Orders to create and remove bodies, given while the bodies are being
  * visited and carried out by the game once that visit is over, before the
  * next tick. The scripts give them through `behaviours.spawn` and
- * `behaviours.destroy`.
+ * `behaviours.destroy`, and a level places its enemies through them.
  */
 class IEntityOrders {
  public:
@@ -18,12 +19,13 @@ class IEntityOrders {
 
   /**
    * @returns The network id the body of the sheet @p type, appearing at
-   * @p position, will have.
+   * @p position as @p options ask, will have.
    * @throws engine::ScriptException, saying why, for a sheet that does not
    * exist or that a ship is made from, or past the bodies of a tick.
    */
   [[nodiscard]] virtual std::uint32_t spawn(std::string_view type,
-                                            Position position) = 0;
+                                            Position position,
+                                            SpawnOptions options) = 0;
 
   /**
    * @brief Removes the body of @p networkId: an id no body has does nothing,

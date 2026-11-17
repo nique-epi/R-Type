@@ -7,6 +7,7 @@ import { problemSchema } from '../../schemas/master';
 import {
   leaderboardEndpointsSchema,
   serversEndpointsSchema,
+  usersEndpointsSchema,
 } from './endpoints';
 
 const MASTER_API_PREFIX = '/api';
@@ -21,6 +22,7 @@ const MASTER_TIMEOUT_MILLISECONDS = 5000;
 const masterSchema = createSchema({
   ...leaderboardEndpointsSchema,
   ...serversEndpointsSchema,
+  ...usersEndpointsSchema,
 });
 
 export const master = createFetch({
@@ -38,6 +40,7 @@ export const master = createFetch({
 export const MASTER_ERROR_CODES = {
   400: 'BAD_REQUEST',
   401: 'UNAUTHORIZED',
+  403: 'FORBIDDEN',
   404: 'NOT_FOUND',
   409: 'CONFLICT',
   413: 'PAYLOAD_TOO_LARGE',

@@ -3,8 +3,7 @@
 #include <cstdint>
 #include <optional>
 #include "AppliedHit.hpp"
-#include "Boss.hpp"
-#include "BossHealthChanged.hpp"
+#include "Armored.hpp"
 #include "ComponentRegistry.hpp"
 #include "CurrentAction.hpp"
 #include "DamageConstants.hpp"
@@ -57,12 +56,13 @@ std::optional<std::uint8_t> shooterOf(engine::ComponentRegistry& components,
   return owner->playerNumber;
 }
 
-/** @returns Whether @p target is a boss in any phase of its arrival. */
+/** @returns Whether @p target is Armored and in any phase of the attack it
+ * is armored in. */
 bool isArmored(engine::ComponentRegistry& components, engine::Entity target) {
-  const auto* const boss = components.get<Boss>(target);
+  const auto* const armored = components.get<Armored>(target);
   const auto* const current = components.get<CurrentAction>(target);
-  return boss != nullptr && current != nullptr && current->key.has_value() &&
-         current->key->attack == boss->arrivalAttack;
+  return armored != nullptr && current != nullptr && current->key.has_value() &&
+         current->key->attack == armored->attack;
 }
 
 /** @returns The points @p missile takes from what it hits: those of its
@@ -147,7 +147,6 @@ void DamageRules::hurtTarget(engine::Entity target,
   if (applied.damage == 0) {
     return;
   }
-  announceBossHealth(target, applied.targetNetworkId, *health);
   if (health->points > 0) {
     events_.publish(EntityDamage{.networkId = applied.targetNetworkId});
     return;
@@ -173,20 +172,6 @@ void DamageRules::killTarget(engine::Entity target, std::uint32_t networkId,
   if (shooter.has_value() && points > 0) {
     events_.publish(EnemyKilled{.playerNumber = *shooter, .points = points});
   }
-}
-
-void DamageRules::announceBossHealth(engine::Entity target,
-                                     std::uint32_t networkId,
-                                     const Health& health) {
-  const auto* const boss = components_.get<Boss>(target);
-  if (boss == nullptr) {
-    return;
-  }
-  events_.publish(BossHealthChanged{
-      .networkId = networkId,
-      .points = static_cast<std::uint16_t>(std::max(health.points, 0)),
-      .full = static_cast<std::uint16_t>(health.full),
-      .enraged = boss->enraged});
 }
 
 }  // namespace rtype::game

@@ -73,6 +73,7 @@ constexpr std::string_view FRAGILE_WHILE_STUNNED =
     "[gameplay.fragile]\nattack = 0\nphase = \"recover\"\n";
 constexpr std::string_view FRAGILE_WITHOUT_PHASE =
     "[gameplay.fragile]\nattack = 0\n";
+constexpr std::string_view STAYS_OUTSIDE_MARKER = "[gameplay.stays_outside]\n";
 constexpr std::string_view SURVIVES_CONTACT_MARKER =
     "[gameplay.survives_contact]\n";
 constexpr std::string_view SURVIVES_CONTACT_WITH_A_KEY =
@@ -103,6 +104,8 @@ constexpr std::string_view ACTION_TOGETHER_RULE_TEXT =
     "a box names the attack and the phase it hurts in together, or neither";
 constexpr std::string_view HURT_ZONE_SIDE_RULE_TEXT =
     "only a body of side enemy has a hurt zone";
+constexpr std::string_view STAYS_OUTSIDE_SIDE_RULE_TEXT =
+    "only a body of side enemy stays outside the playfield";
 constexpr std::string_view SURVIVES_CONTACT_SIDE_RULE_TEXT =
     "only a body of side enemy survives a contact";
 constexpr std::string_view TIMING_RULE_TEXT =

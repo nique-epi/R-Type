@@ -11,6 +11,7 @@
 #include "IModule.hpp"
 #include "IPlayerAdmission.hpp"
 #include "InstallContext.hpp"
+#include "RejectionLedger.hpp"
 #include "RunningGame.hpp"
 #include "SystemClock.hpp"
 #include "TickDatagrams.hpp"
@@ -74,6 +75,7 @@ class ServerLobbyModule final : public engine::IModule {
   IDatagramSender* sender_{nullptr};
   IPlayerAdmission* admission_{nullptr};
   TickDatagrams* tickDatagrams_{nullptr};
+  RejectionLedger* rejections_{nullptr};
   std::unique_ptr<ConnectionAcceptor> acceptor_;
 };
 

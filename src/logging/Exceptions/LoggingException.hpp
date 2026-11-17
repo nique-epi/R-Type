@@ -38,6 +38,14 @@ class MissingLogOptionValueException : public LoggingException {
 };
 
 /**
+ * @brief The value of `--log-format` names no format of the journal.
+ */
+class InvalidLogFormatException : public LoggingException {
+ public:
+  explicit InvalidLogFormatException(const std::string& formatName);
+};
+
+/**
  * @brief The log file could not be opened for appending.
  */
 class LogFileOpenException : public LoggingException {

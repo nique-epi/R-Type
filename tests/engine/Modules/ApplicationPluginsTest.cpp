@@ -254,7 +254,8 @@ TEST_F(ApplicationPluginsFixture, TheProgramJournalHoldsTheLineAPluginWrote) {
   EXPECT_EQ(state.journal.lines(), (std::vector<RecordedLine>{RecordedLine{
                                        .level = rtype::logging::LogLevel::Info,
                                        .loggerName = GREETER_LOGGER,
-                                       .body = GREETER_START_LINE}}));
+                                       .body = GREETER_START_LINE,
+                                       .fields = {}}}));
 }
 
 /**

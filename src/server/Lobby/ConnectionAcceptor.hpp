@@ -120,6 +120,7 @@ class ConnectionAcceptor {
   std::function<void(network::OutgoingDatagram)> send_;
   std::function<void(const network::Endpoint&, std::uint64_t)> admit_;
   std::function<void(ConnectedPlayer&)> onPlayerJoined_;
+  std::function<void(const network::Endpoint&)> onRefused_;
   network::ContentAnnouncement content_;
   network::CookieIssuer cookies_;
   std::random_device random_;

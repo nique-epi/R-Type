@@ -1,7 +1,9 @@
 #include "GameFlowBossLevelFixture.hpp"
 #include <cstddef>
 #include <string>
+#include <vector>
 #include "Boss.hpp"
+#include "BossProgress.hpp"
 #include "Entity.hpp"
 #include "GameFlowFixture.hpp"
 #include "Position.hpp"
@@ -27,12 +29,17 @@ GameFlowBossLevelFixture::GameFlowBossLevelFixture()
     : GameFlowFixture(oneWaveLevelWithTheWarlord(), sheetsWithAWarlord()) {}
 
 std::size_t GameFlowBossLevelFixture::bossesInPlay() {
-  std::size_t bosses = 0;
+  return bossProgress().size();
+}
+
+std::vector<game::BossProgress> GameFlowBossLevelFixture::bossProgress() {
+  std::vector<game::BossProgress> progress;
   flow().world().components().forEach<game::Boss, game::Position>(
-      [&bosses](engine::Entity, const game::Boss&, const game::Position&) {
-        ++bosses;
+      [&progress](engine::Entity, const game::Boss& boss,
+                  const game::Position&) {
+        progress.push_back(boss.progress);
       });
-  return bosses;
+  return progress;
 }
 
 }  // namespace rtype::server::testing
