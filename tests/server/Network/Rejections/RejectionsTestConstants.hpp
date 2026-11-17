@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <string_view>
+#include "EventField.hpp"
 
 /** @brief The address every sender of the ledger tests sends from. */
 constexpr std::string_view REJECTED_ADDRESS = "198.51.100.7";
@@ -56,3 +57,26 @@ constexpr std::string_view SENDER_LINE =
 constexpr std::string_view OTHER_SENDERS_LINE =
     "rejected datagrams from 2 more senders in the last 10 s, besides 1 "
     "forgotten to keep at most 64";
+
+/** @brief The names of the events of a report: its causes, a sender it names,
+ * the senders it does not name. */
+constexpr std::string_view CAUSES_EVENT_NAME = "datagrams.rejected";
+constexpr std::string_view SENDER_EVENT_NAME = "datagrams.rejected_from";
+constexpr std::string_view OTHER_SENDERS_EVENT_NAME =
+    "datagrams.rejected_elsewhere";
+
+/** @brief The values the events of that report hold: 10 s, 4 datagrams, 1 and
+ * 3 of a cause, 5 since the start, the address and port of the sender, 2
+ * unnamed senders. */
+constexpr rtype::logging::EventFieldValue REPORT_LENGTH_FIELD{std::int64_t{10}};
+constexpr rtype::logging::EventFieldValue CAUSES_TOTAL_FIELD{std::int64_t{4}};
+constexpr rtype::logging::EventFieldValue ONE_FIELD{std::int64_t{1}};
+constexpr rtype::logging::EventFieldValue THREE_FIELD{std::int64_t{3}};
+constexpr rtype::logging::EventFieldValue SINCE_START_FIELD_VALUE{
+    std::int64_t{5}};
+constexpr rtype::logging::EventFieldValue SENDER_ADDRESS_FIELD{
+    std::string_view{"203.0.113.7"}};
+constexpr rtype::logging::EventFieldValue SENDER_PORT_FIELD{
+    std::int64_t{40000}};
+constexpr rtype::logging::EventFieldValue UNNAMED_SENDERS_FIELD{
+    std::int64_t{2}};

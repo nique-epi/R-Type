@@ -53,6 +53,28 @@ constexpr MasterRoute LIST_SERVER_SAMPLES_ROUTE{.method = RouteMethod::Get,
 constexpr MasterRoute LIST_SERVER_STATUSES_ROUTE{
     .method = RouteMethod::Get, .path = "/servers/:id/statuses"};
 
+/**
+ * @brief Creates an account, named by its nickname, with its password. The
+ * routes of the accounts are answered over HTTPS only.
+ */
+constexpr MasterRoute CREATE_USER_ROUTE{
+    .method = RouteMethod::Post, .path = "/users", .httpsOnly = true};
+
+/** @brief The account of the session of the token. */
+constexpr MasterRoute READ_OWN_USER_ROUTE{
+    .method = RouteMethod::Get, .path = "/users/me", .httpsOnly = true};
+
+/**
+ * @brief Opens a session for a nickname and its password; the answer holds
+ * its token, the only time it is shown.
+ */
+constexpr MasterRoute CREATE_SESSION_ROUTE{
+    .method = RouteMethod::Post, .path = "/sessions", .httpsOnly = true};
+
+/** @brief Closes the session of the token; closing it again succeeds. */
+constexpr MasterRoute DELETE_OWN_SESSION_ROUTE{
+    .method = RouteMethod::Delete, .path = "/sessions/me", .httpsOnly = true};
+
 /** @brief The parameter of a path that names a game of a server. */
 constexpr std::string_view GAME_ID_PATH_PARAMETER = "gameId";
 

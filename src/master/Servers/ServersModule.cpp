@@ -2,10 +2,8 @@
 #include <functional>
 #include <string>
 #include <vector>
-#include "ConfigurationRegistry.hpp"
 #include "IProbeSender.hpp"
 #include "InstallContext.hpp"
-#include "MasterConstants.hpp"
 #include "MasterDatabase.hpp"
 #include "MasterHttpServer.hpp"
 #include "MasterModuleConstants.hpp"
@@ -13,27 +11,9 @@
 #include "ServerStatusJobConstants.hpp"
 #include "ServersController.hpp"
 #include "ServersService.hpp"
-#include "SettingValue.hpp"
-#include "TextSettingDefinition.hpp"
+#include "SiteVisitors.hpp"
 
 namespace rtype::master {
-
-namespace {
-
-/** @returns The `site-key` setting, declared in @p configuration. It has no
- * check: a refused line would write its value in the journal. */
-const engine::SettingValue& declareSiteKey(
-    engine::ConfigurationRegistry& configuration) {
-  return configuration.declareText(engine::TextSettingDefinition{
-      .name = std::string{SITE_KEY_SETTING_NAME},
-      .defaultValue = {},
-      .help = "Secret the web site sends in X-Site-Key, so a creation is "
-              "counted under the visitor it names in X-Site-Client-Address; "
-              "empty to count every creation under the address it comes from",
-      .validate = {}});
-}
-
-}  // namespace
 
 std::string ServersModule::name() const {
   return std::string{SERVERS_MODULE_NAME};
@@ -48,9 +28,9 @@ void ServersModule::install(engine::InstallContext& context) {
   database_ = &context.require<MasterDatabase>();
   ServersService& service = service_.emplace(*database_);
   context.provide(service);
-  ServersController& controller = controller_.emplace(
-      service, context.require<IProbeSender>(),
-      declareSiteKey(context.require<engine::ConfigurationRegistry>()));
+  ServersController& controller =
+      controller_.emplace(service, context.require<IProbeSender>(),
+                          context.require<SiteVisitors>());
   auto& server = context.require<MasterHttpServer>();
   server.add(network::CREATE_SERVER_ROUTE,
              std::bind_front(&ServersController::createServer, &controller));

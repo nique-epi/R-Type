@@ -5,17 +5,16 @@
 #include <cstddef>
 #include <functional>
 #include <optional>
-#include <vector>
 #include "Button.hpp"
 #include "HelpWalkthroughConstants.hpp"
 #include "HelpWalkthroughParts.hpp"
-#include "HelpWord.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "ISoundPlayer.hpp"
 #include "LobbyPartAreas.hpp"
 #include "MotionPreference.hpp"
 #include "PlayerPalette.hpp"
 #include "PlayfieldMapping.hpp"
+#include "SpeechLines.hpp"
 #include "TimeConstants.hpp"
 
 namespace sf {
@@ -88,7 +87,7 @@ class HelpWalkthrough {
   ISoundPlayer* sounds_{};
   /** @brief The lines of every step, its keys named when the help was
    * built. */
-  std::array<std::vector<std::vector<HelpWord>>, HELP_STEPS.size()> stepLines_;
+  std::array<SpeechLines, HELP_STEPS.size()> stepLines_;
   std::reference_wrapper<const PlayerPalette> palette_;
   MotionPreference motion_{};
   sf::IntRect chipArea_;

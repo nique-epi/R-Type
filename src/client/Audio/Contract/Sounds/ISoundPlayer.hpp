@@ -16,8 +16,9 @@ class ISoundPlayer {
  public:
   virtual ~ISoundPlayer() = default;
 
-  /** @brief Starts the sound of an asset id at the EFFECTS volume of the
-   * player; nothing plays while MUTE ALL is on. */
+  /** @brief Starts the sound of an asset id at the VOICES volume of the
+   * player for a sound of VOICE_SOUND_IDS, at its EFFECTS volume for any
+   * other; nothing plays while MUTE ALL is on. */
   virtual void play(std::string_view soundId) = 0;
 };
 

@@ -2,7 +2,6 @@
 
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Keyboard.hpp>
-#include <cstddef>
 #include <memory>
 #include <optional>
 #include <vector>
@@ -21,10 +20,13 @@
 #include "ServerChoice.hpp"
 #include "ServerMapChoice.hpp"
 #include "ServerMapScreenParts.hpp"
+#include "ServerMapTabs.hpp"
 #include "SessionEndWatch.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
+
+struct PlayerSettings;
 
 /**
  * @brief The map of the servers PLAY opens over the title, and RETRY under the
@@ -33,6 +35,8 @@ namespace rtype::client {
  * master lists standing past it by its ping, the chosen one framed with its
  * bubble.
  *
+ * The tabs over the map (ServerMapTabs) open the hangar and the shop over
+ * it; the kopecks of the player are shown on their right.
  * The arrows choose the star they point at, Tab the next server by ping.
  * MENU_CONFIRM_KEY, or the wheel up, zooms on the chosen server; once zoomed,
  * MENU_CONFIRM_KEY opens the panel of its games, read from the master, and on
@@ -45,9 +49,8 @@ namespace rtype::client {
  * number, with the rules the master lists for it. The chips: QUICK PLAY joins
  * any game of the server with the lowest ping among those of this version
  * that list fewer players than their games hold, and is disabled when none
- * does; RANKING opens the leaderboard, ADDRESS the connection form, BACK goes
- * one stage back, then closes the map. A place of the whole map
- * (MAP_PLACES: the hangar, the shop), or its key, pushes its screen.
+ * does; ADDRESS opens the connection form, BACK goes one stage back, then
+ * closes the map.
  *
  * The list is read when the map opens, again every
  * SERVER_LIST_REFRESH_INTERVAL, on REFRESH_KEY, and GAMES_RECHECK_DELAY after
@@ -81,8 +84,7 @@ class ServerMapScreen : public IScreen {
   void confirm();
   /** @brief Acts on a click at @p pixel of the interface: on the panel of the
    * games, chooses the row under it and acts on it as MENU_CONFIRM_KEY does;
-   * elsewhere, opens the hangar from its star, or the games of the server
-   * whose star it is. */
+   * elsewhere, opens the games of the server whose star it is. */
   void pointerPressed(sf::Vector2i pixel);
   /** @brief Goes one stage back, or closes the map from the whole map. */
   void stepBack();
@@ -94,6 +96,7 @@ class ServerMapScreen : public IScreen {
   IScreenNavigator* navigator_;
   AmbienceScope ambience_;
   IServerCatalog* servers_;
+  const PlayerSettings* settings_;
   IGameCatalog* games_;
   ServerChoice* choice_;
   std::unique_ptr<IInterfaceCanvas> canvas_;
@@ -102,8 +105,8 @@ class ServerMapScreen : public IScreen {
   ServerMapChoice map_;
   GamePanel panel_;
   SessionEndWatch sessionEnd_;
+  ServerMapTabs tabs_;
   KeyChip quickPlayChip_;
-  KeyChip rankingChip_;
   KeyChip addressChip_;
   KeyChip backChip_;
   engine::Duration elapsed_{};
@@ -117,10 +120,6 @@ class ServerMapScreen : public IScreen {
   /** @brief Whether the whole map shows the corners and the bubble of the
    * chosen server: the pointer is over it, or an arrow or Tab chose it. */
   bool chosenShown_{false};
-  /** @brief The place of MAP_PLACES the pointer is over, if any: its corners
-   * and its bubble show, and the chosen server shows none. One at most, so
-   * two places never show their bubbles together. */
-  std::optional<std::size_t> placeShown_;
 };
 
 }  // namespace rtype::client

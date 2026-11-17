@@ -17,8 +17,14 @@
  * ```
  *
  * Output line format: `[YYYY-MM-DDTHH:MM:SS.mmmZ] [LEVEL] [Name] - body`,
- * with the time in UTC. Lines go to the sinks set by `Logger::setOutput()`:
- * a file (appended to, flushed after every line) and/or standard error.
+ * with the time of the call in UTC. Lines go to the sinks set by
+ * `Logger::setOutput()`: a file (appended to, flushed after every line) and/or
+ * standard error. A call only queues its line: one thread of the journal writes
+ * the lines, in the order they were queued, so the thread that logs never waits
+ * for the disk (see JournalWriter). When the queue is full, the new line is
+ * dropped and the next line written says how many were lost. flushJournal()
+ * waits for the lines queued before it; closeJournal() writes them and stops
+ * the thread, which every program does before main() returns.
  *
  * Two filter layers:
  *
@@ -43,6 +49,8 @@
 #include <string_view>
 #include <utility>
 #include "ILogJournal.hpp"
+#include "LogEvent.hpp"
+#include "LogFormat.hpp"
 #include "LogLevel.hpp"
 #include "LogRecord.hpp"
 
@@ -59,6 +67,9 @@ struct LogOutput {
    * `--log-color`, which the supervisor gives a game whose standard error it
    * relays. */
   bool forceColor{false};
+  /** @brief How the file writes a line: text, or JSON Lines for a tool, with
+   * `--log-format json`. Standard error always shows the text. */
+  LogFormat fileFormat{LogFormat::Text};
 };
 
 class Logger {
@@ -89,7 +100,8 @@ class Logger {
   static std::optional<LogLevel> parseLevel(std::string_view text);
 
   /**
-   * @brief Replaces the sinks. The file is opened in append mode, before
+   * @brief Replaces the sinks once the lines queued before the call are
+   *        written to the old ones. The file is opened in append mode, before
    *        anything changes, and flushed after every line.
    * @throws LogFileOpenException when the file cannot be opened. The previous
    *         sinks are then kept.
@@ -130,6 +142,14 @@ class Logger {
       emit(LogLevel::Error, std::forward<Args>(args)...);
     }
   }
+
+  /**
+   * @brief Writes @p event as one line when its level is written: the
+   * message as text, and in the JSON of the file a member "event" with its
+   * name and one member per field, so a tool filters on the name and reads
+   * the values.
+   */
+  void event(const LogEvent& event) const;
 
   class ScopedTimer {
    public:
@@ -184,20 +204,32 @@ void writeLogLine(const LogRecord& record);
 
 /**
  * @brief Hands every line this copy of the library writes to standard error to
- * @p writer, without its end, instead of std::cerr; an empty @p writer writes
- * them to std::cerr again. The writer runs under the lock of the sinks, so it
- * must never write to the journal itself. The admin console of the supervisor
- * uses it to keep the line being typed under the lines of the journal.
+ * @p standardErrorWriter, without its end, instead of std::cerr, from the lines
+ * queued after the call on; an empty one writes them to std::cerr again. It
+ * runs on the thread of the journal, under the lock of the sinks, so it must
+ * never write to the journal itself. The admin console of the supervisor uses
+ * it to keep the line being typed under the lines of the journal.
  */
-void setStandardErrorWriter(std::function<void(std::string_view)> writer);
+void setStandardErrorWriter(
+    std::function<void(std::string_view)> standardErrorWriter);
 
 /**
- * @brief Writes @p line, without its end, to standard error, through the writer
- * of setStandardErrorWriter() when one is set: a line that does not come from
- * this journal, such as a line a game process wrote. @p line may hold several
- * lines, one end of line between two.
+ * @brief Queues @p line, without its end, for standard error, through the
+ * writer of setStandardErrorWriter() when one is set: a line that does not come
+ * from this journal, such as a line a game process wrote, in its place among
+ * the lines of the journal. @p line may hold several lines, one end of line
+ * between two.
  */
 void writeStandardErrorLine(std::string_view line);
+
+/** @brief Waits until every line queued before the call is written. Does
+ * nothing on the thread of the journal. */
+void flushJournal();
+
+/** @brief Writes every queued line, then stops the thread of the journal; the
+ * next line starts it again. Every program calls it before main() returns, so
+ * no thread is left running while the statics are destroyed. */
+void closeJournal();
 
 /** @returns Whether this process writes its journal in colour on its own:
  * standard error is a terminal, and neither NO_COLOR nor RT_LOG_NO_COLOR is

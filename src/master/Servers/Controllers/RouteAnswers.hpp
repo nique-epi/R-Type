@@ -11,6 +11,7 @@
 #include "NetworkException.hpp"
 #include "PageRequest.hpp"
 #include "QueryBounds.hpp"
+#include "ServersControllerConstants.hpp"
 #include "ServersService.hpp"
 
 namespace rtype::master {
@@ -19,9 +20,10 @@ namespace rtype::master {
  * @p status, whose detail is @p detail. */
 [[nodiscard]] network::ApiResponse refusal(int status, std::string_view detail);
 
-/** @returns The answer to a request that carries no key the master issued:
- * 401, with `WWW-Authenticate: Bearer`. */
-[[nodiscard]] network::ApiResponse unauthorizedResponse();
+/** @returns The answer to a request that carries no key or token the master
+ * issued: 401, with `WWW-Authenticate: Bearer`, whose detail is @p detail. */
+[[nodiscard]] network::ApiResponse unauthorizedResponse(
+    std::string_view detail);
 
 /** @returns The text of the parameter @p name of the query of @p request,
  * nothing when the request leaves it out. A parameter given twice keeps its
@@ -74,7 +76,7 @@ network::ApiResponse answerAsServerOfKey(ServersService& service,
   const std::optional<KnownServer> server =
       service.serverOfKey(request.bearerToken.value_or(std::string{}));
   if (!server.has_value()) {
-    return unauthorizedResponse();
+    return unauthorizedResponse(UNKNOWN_KEY_DETAIL);
   }
   return answerOrRefuse([&answer, &server] { return answer(*server); });
 }

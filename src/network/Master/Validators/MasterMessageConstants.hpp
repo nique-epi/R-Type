@@ -171,6 +171,37 @@ constexpr std::string_view GAME_ID_DIGITS = LOWERCASE_HEX_DIGITS;
 /** @brief The longest id of an account, in bytes of printable UTF-8. */
 constexpr std::size_t MAXIMUM_ACCOUNT_ID_SIZE = 64;
 
+/** @brief The members of credentials, of an account and of a session. */
+constexpr std::string_view PASSWORD_MEMBER = "password";
+constexpr std::string_view ROLE_MEMBER = "role";
+constexpr std::string_view TOKEN_MEMBER = "token";
+constexpr std::string_view EXPIRES_AT_MEMBER = "expiresAt";
+constexpr std::string_view USER_MEMBER = "account";
+
+/**
+ * @brief The bounds of a password, in bytes of printable UTF-8: the bounds
+ * Better Auth sets by default, 8 to 128. A password is hashed whatever its
+ * length, so the upper bound only caps the work of one request.
+ */
+constexpr std::size_t MINIMUM_PASSWORD_SIZE = 8;
+constexpr std::size_t MAXIMUM_PASSWORD_SIZE = 128;
+
+/** @brief How each UserRole is written, in the order of the enum. */
+constexpr std::string_view PLAYER_ROLE_TEXT = "player";
+constexpr std::string_view ADMIN_ROLE_TEXT = "admin";
+constexpr auto USER_ROLE_TEXTS =
+    std::to_array<std::string_view>({PLAYER_ROLE_TEXT, ADMIN_ROLE_TEXT});
+
+/**
+ * @brief The token of a session: SESSION_TOKEN_PREFIX, so a token that leaks
+ * is recognized, then SESSION_TOKEN_BYTES random bytes in lowercase
+ * hexadecimal, SESSION_TOKEN_SIZE characters in all.
+ */
+constexpr std::string_view SESSION_TOKEN_PREFIX = "rts_";
+constexpr std::size_t SESSION_TOKEN_BYTES = 32;
+constexpr std::size_t SESSION_TOKEN_SIZE =
+    SESSION_TOKEN_PREFIX.size() + (SESSION_TOKEN_BYTES * HEX_DIGITS_PER_BYTE);
+
 /** @brief The bounds of a score, what a server keeps of one (32 bits). */
 constexpr std::uint64_t LOWEST_SCORE = 0;
 constexpr std::uint64_t HIGHEST_SCORE =

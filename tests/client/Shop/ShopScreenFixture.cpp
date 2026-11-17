@@ -1,6 +1,7 @@
 #include "ShopScreenFixture.hpp"
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Keyboard.hpp>
+#include <algorithm>
 #include <cstdint>
 #include <memory>
 #include "KeyPress.hpp"
@@ -14,6 +15,8 @@
 #include "ScreenTestConstants.hpp"
 #include "ShopScreen.hpp"
 #include "ShopScreenParts.hpp"
+#include "ShopScreenTestConstants.hpp"
+#include "TimeConstants.hpp"
 
 namespace rtype::client::testing {
 
@@ -51,6 +54,16 @@ void ShopScreenFixture::pointAt(sf::Vector2i pixel, bool clicked) {
   screen_->update(ONE_FRAME);
 }
 
+void ShopScreenFixture::buyChosen() {
+  press(sf::Keyboard::Key::Enter);
+  press(sf::Keyboard::Key::Enter);
+  wait(THE_STAMP_TIME);
+}
+
+void ShopScreenFixture::wait(engine::Duration elapsed) {
+  screen_->update(elapsed);
+}
+
 void ShopScreenFixture::give(std::uint32_t kopecks) {
   settings_.kopecks = kopecks;
   screen_->update(ONE_FRAME);
@@ -72,6 +85,13 @@ const RecordingSoundPlayer& ShopScreenFixture::sounds() const {
 
 const InterfaceCanvasRecord& ShopScreenFixture::painting() const {
   return painting_;
+}
+
+bool showsATicket(const InterfaceCanvasRecord& painting) {
+  return std::ranges::any_of(painting.images,
+                             [](const RecordedImage& image) noexcept {
+                               return image.assetId == TICKET_SHEET;
+                             });
 }
 
 }  // namespace rtype::client::testing

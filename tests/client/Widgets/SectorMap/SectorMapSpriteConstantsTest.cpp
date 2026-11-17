@@ -4,12 +4,10 @@
 #include "SheetPixels.hpp"
 #include "SpriteFrame.hpp"
 
-using rtype::client::HANGAR_HOUSE_FRAME;
 using rtype::client::LARGE_PLANET_FRAMES;
 using rtype::client::MEDIUM_PLANET_FRAMES;
 using rtype::client::OTHER_VERSION_PLANET_FRAMES;
 using rtype::client::SECTOR_MAP_SHEET_ID;
-using rtype::client::SHOP_KIOSK_FRAME;
 using rtype::client::SLOW_PLANET_FRAMES;
 using rtype::client::SMALL_PLANET_FRAMES;
 using rtype::game::SpriteFrame;
@@ -35,17 +33,13 @@ TEST(SectorMapSpriteConstants, EveryPlanetFrameHoldsAWholeDrawing) {
 
 /**
  * Given the sheet of the map of the servers shipped in assets/
- * When the still planet of another version, the house of the hangar and the
- * kiosk of the shop are placed on it
- * Then each lies inside the sheet, shows a drawing, and cuts none
+ * When the still planet of another version is placed on it
+ * Then it lies inside the sheet, shows a drawing, and cuts none
  */
-TEST(SectorMapSpriteConstants, TheStillGlyphsHoldWholeDrawings) {
+TEST(SectorMapSpriteConstants, TheStillPlanetHoldsAWholeDrawing) {
   const sf::Image sheet = shippedSheet(SECTOR_MAP_SHEET_ID);
-  for (const SpriteFrame frame : {OTHER_VERSION_PLANET_FRAMES.front(),
-                                  HANGAR_HOUSE_FRAME, SHOP_KIOSK_FRAME}) {
-    SCOPED_TRACE(frame.top);
-    EXPECT_TRUE(liesInside(frame, sheet.getSize()));
-    EXPECT_TRUE(showsAVisiblePixel(sheet, frame));
-    EXPECT_FALSE(hasAVisiblePixelAround(sheet, frame));
-  }
+  const SpriteFrame frame = OTHER_VERSION_PLANET_FRAMES.front();
+  EXPECT_TRUE(liesInside(frame, sheet.getSize()));
+  EXPECT_TRUE(showsAVisiblePixel(sheet, frame));
+  EXPECT_FALSE(hasAVisiblePixelAround(sheet, frame));
 }

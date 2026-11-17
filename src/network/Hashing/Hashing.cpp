@@ -4,11 +4,16 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
+#include <utility>
 #include "HashingConstants.hpp"
 #include "NetworkConstants.hpp"
+#include "NetworkException.hpp"
+#include "PasswordHash.hpp"
+#include "PasswordKey.hpp"
 #include "SecretComparison.hpp"
 
 namespace rtype::network {
@@ -17,6 +22,8 @@ static_assert(HASH_CONTEXT_LENGTH == hydro_hash_CONTEXTBYTES);
 static_assert(HASH_BYTES >= hydro_hash_BYTES_MIN &&
               HASH_BYTES <= hydro_hash_BYTES_MAX);
 static_assert(SECRET_COMPARISON_CONTEXT.size() == HASH_CONTEXT_LENGTH);
+static_assert(PASSWORD_KEY_BYTES == hydro_pwhash_MASTERKEYBYTES);
+static_assert(PASSWORD_HASH_BYTES == hydro_pwhash_STOREDBYTES);
 
 namespace {
 
@@ -44,6 +51,33 @@ std::array<std::byte, HASH_BYTES> hashOf(std::span<const std::byte> bytes,
 
 void fillWithRandomBytes(std::span<std::byte> bytes) {
   hydro_random_buf(bytes.data(), bytes.size());
+}
+
+std::optional<PasswordKey> passwordKeyOfHexadecimal(std::string_view text) {
+  PasswordKey key{};
+  const int written = hydro_hex2bin(key.data(), key.size(), text.data(),
+                                    text.size(), nullptr, nullptr);
+  if (std::cmp_not_equal(written, key.size())) {
+    return std::nullopt;
+  }
+  return key;
+}
+
+PasswordHash passwordHashOf(std::string_view password, const PasswordKey& key) {
+  PasswordHash hash{};
+  if (hydro_pwhash_create(hash.data(), password.data(), password.size(),
+                          key.data(), PASSWORD_HASH_ROUNDS,
+                          PASSWORD_HASH_MEMORY, PASSWORD_HASH_THREADS) != 0) {
+    throw PasswordHashingException();
+  }
+  return hash;
+}
+
+bool passwordMatches(std::string_view password, const PasswordHash& hash,
+                     const PasswordKey& key) {
+  return hydro_pwhash_verify(hash.data(), password.data(), password.size(),
+                             key.data(), PASSWORD_HASH_ROUNDS,
+                             PASSWORD_HASH_MEMORY, PASSWORD_HASH_THREADS) == 0;
 }
 
 bool secretsMatch(const SecretComparison& secrets) {

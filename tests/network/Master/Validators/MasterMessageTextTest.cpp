@@ -19,6 +19,7 @@
 #include "ServerRegistration.hpp"
 #include "ServerStatus.hpp"
 #include "StatusListing.hpp"
+#include "UserCredentials.hpp"
 
 using rtype::network::CreatedServer;
 using rtype::network::createdServerFromText;
@@ -35,6 +36,7 @@ using rtype::network::heartbeatFromText;
 using rtype::network::heartbeatText;
 using rtype::network::isWellFormedGameId;
 using rtype::network::isWellFormedServerKey;
+using rtype::network::isWellFormedSessionToken;
 using rtype::network::problemDetailOf;
 using rtype::network::registrationFromText;
 using rtype::network::registrationText;
@@ -51,7 +53,13 @@ using rtype::network::ServerStatus;
 using rtype::network::serverStatusOf;
 using rtype::network::StatusListing;
 using rtype::network::statusListingText;
+using rtype::network::UserCredentials;
+using rtype::network::userCredentialsFromText;
+using rtype::network::userCredentialsText;
 using rtype::network::testing::ACCOUNT_ID_OF_65_BYTES;
+using rtype::network::testing::ACCOUNT_NICKNAME;
+using rtype::network::testing::ACCOUNT_NICKNAME_POINTER;
+using rtype::network::testing::ACCOUNT_SESSION_TOKEN;
 using rtype::network::testing::ADDRESS_POINTER;
 using rtype::network::testing::AVERAGE_PING_POINTER;
 using rtype::network::testing::CONFLICT_DETAIL;
@@ -110,6 +118,7 @@ using rtype::network::testing::KEY_POINTER;
 using rtype::network::testing::KEY_WITHOUT_PREFIX;
 using rtype::network::testing::LARGEST_PROBE_TOKEN;
 using rtype::network::testing::LONG_GAME_ID;
+using rtype::network::testing::LONGEST_PASSWORD_SIZE;
 using rtype::network::testing::LOSS_ABOVE_ALL;
 using rtype::network::testing::LOSS_PERCENT_POINTER;
 using rtype::network::testing::LOWEST_KEPT_PROBE_SECRET;
@@ -123,6 +132,7 @@ using rtype::network::testing::NAME_OF_33_BYTES;
 using rtype::network::testing::NAME_POINTER;
 using rtype::network::testing::NAME_WITH_LINE_FEED;
 using rtype::network::testing::NEGATIVE_MEASURE;
+using rtype::network::testing::NICKNAME_PAST_THE_PROTOCOL;
 using rtype::network::testing::NO_GAME;
 using rtype::network::testing::NO_GAME_LIFE;
 using rtype::network::testing::NO_PLAYERS;
@@ -148,6 +158,8 @@ using rtype::network::testing::parisLeaderboard;
 using rtype::network::testing::parisRegistration;
 using rtype::network::testing::parisSampleListing;
 using rtype::network::testing::parisServerListing;
+using rtype::network::testing::PASSWORD_LETTER;
+using rtype::network::testing::PASSWORD_POINTER;
 using rtype::network::testing::PAUSED_STATE;
 using rtype::network::testing::PLAIN_TEXT_ERROR;
 using rtype::network::testing::PLAYER_COUNT_POINTER;
@@ -185,8 +197,11 @@ using rtype::network::testing::SEVENTEEN_BYTE_DIFFICULTY;
 using rtype::network::testing::SEVENTEEN_BYTE_NICKNAME;
 using rtype::network::testing::SHORT_GAME_ID;
 using rtype::network::testing::SHORT_KEY;
+using rtype::network::testing::SHORT_TOKEN;
+using rtype::network::testing::SHORTEST_PASSWORD_SIZE;
 using rtype::network::testing::THIRD_PILOT;
 using rtype::network::testing::TICK_P50_POINTER;
+using rtype::network::testing::TOKEN_WITH_A_KEY_PREFIX;
 using rtype::network::testing::TOTAL_MEMORY_POINTER;
 using rtype::network::testing::UDP_PORT_POINTER;
 using rtype::network::testing::UNKNOWN_MEMBER_POINTER;
@@ -195,7 +210,9 @@ using rtype::network::testing::UNKNOWN_STATUS_TEXT;
 using rtype::network::testing::UNREACHABLE_TEXT;
 using rtype::network::testing::UPPERCASE_GAME_ID;
 using rtype::network::testing::UPPERCASE_KEY;
+using rtype::network::testing::UPPERCASE_TOKEN;
 using rtype::network::testing::USED_MEMORY_POINTER;
+using rtype::network::testing::userCredentialsRefusal;
 using rtype::network::testing::VANILLA_AS_TEXT;
 using rtype::network::testing::VANILLA_POINTER;
 using rtype::network::testing::WAITING_GAME_NUMBER;
@@ -1148,4 +1165,83 @@ TEST(MasterMessageText, ReadsALeaderboardThatNamesNoPlayer) {
 TEST(MasterMessageText, RefusesALeaderboardRowOfRankZero) {
   EXPECT_THAT(globalLeaderboardRefusal(RANK_ZERO_LEADERBOARD_TEXT),
               HasSubstr(quoted(FIRST_SCORE_RANK_POINTER)));
+}
+
+/**
+ * Given credentials whose password is the shortest a player may choose
+ * When they are written, then read back
+ * Then they are the same credentials
+ */
+TEST(MasterMessageText, ReadsAPasswordOfEightBytes) {
+  const UserCredentials credentials{
+      .nickname = std::string{ACCOUNT_NICKNAME},
+      .password = std::string(SHORTEST_PASSWORD_SIZE, PASSWORD_LETTER)};
+
+  EXPECT_EQ(userCredentialsFromText(userCredentialsText(credentials)),
+            credentials);
+}
+
+/**
+ * Given credentials whose password is the longest a player may choose
+ * When they are written, then read back
+ * Then they are the same credentials
+ */
+TEST(MasterMessageText, ReadsAPasswordOf128Bytes) {
+  const UserCredentials credentials{
+      .nickname = std::string{ACCOUNT_NICKNAME},
+      .password = std::string(LONGEST_PASSWORD_SIZE, PASSWORD_LETTER)};
+
+  EXPECT_EQ(userCredentialsFromText(userCredentialsText(credentials)),
+            credentials);
+}
+
+/**
+ * Given credentials whose password is one byte past the longest
+ * When they are read
+ * Then the password is refused
+ */
+TEST(MasterMessageText, RefusesAPasswordOf129Bytes) {
+  const UserCredentials credentials{
+      .nickname = std::string{ACCOUNT_NICKNAME},
+      .password = std::string(LONGEST_PASSWORD_SIZE + 1, PASSWORD_LETTER)};
+
+  EXPECT_THAT(userCredentialsRefusal(userCredentialsText(credentials)),
+              HasSubstr(quoted(PASSWORD_POINTER)));
+}
+
+/**
+ * Given credentials whose nickname is longer than the protocol allows
+ * When they are read
+ * Then the nickname is refused
+ */
+TEST(MasterMessageText, RefusesANicknameTheProtocolRefuses) {
+  const UserCredentials credentials{
+      .nickname = std::string{NICKNAME_PAST_THE_PROTOCOL},
+      .password = std::string(SHORTEST_PASSWORD_SIZE, PASSWORD_LETTER)};
+
+  EXPECT_THAT(userCredentialsRefusal(userCredentialsText(credentials)),
+              HasSubstr(quoted(ACCOUNT_NICKNAME_POINTER)));
+}
+
+/**
+ * Given a token of the shape the master issues
+ * When it is checked
+ * Then it is well formed
+ */
+TEST(MasterMessageText, AcceptsATokenOfTheShapeTheMasterIssues) {
+  EXPECT_TRUE(isWellFormedSessionToken(ACCOUNT_SESSION_TOKEN));
+}
+
+/**
+ * Given tokens with the prefix of a server key, in uppercase, or one digit
+ * short
+ * When each is checked
+ * Then none is well formed
+ */
+TEST(MasterMessageText, RefusesATokenShapedAlmostRight) {
+  for (const std::string_view token :
+       {TOKEN_WITH_A_KEY_PREFIX, UPPERCASE_TOKEN, SHORT_TOKEN}) {
+    SCOPED_TRACE(token);
+    EXPECT_FALSE(isWellFormedSessionToken(token));
+  }
 }

@@ -14,6 +14,10 @@ struct PlayerSettings;
  * EFFECTS volume of the player, 0 while MUTE ALL is on. */
 [[nodiscard]] float effectsVolumeOf(const PlayerSettings& settings);
 
+/** @returns The volume a voice plays at, from 0 to 100 as SFML takes it: the
+ * VOICES volume of the player, 0 while MUTE ALL is on. */
+[[nodiscard]] float voicesVolumeOf(const PlayerSettings& settings);
+
 /** @returns Whether a change of @p changed moves the volume of the music: the
  * MUSIC volume, or MUTE ALL. */
 [[nodiscard]] bool changesMusicVolume(SettingId changed);
@@ -21,5 +25,9 @@ struct PlayerSettings;
 /** @returns Whether a change of @p changed moves the volume of the sounds: the
  * EFFECTS volume, or MUTE ALL. */
 [[nodiscard]] bool changesEffectsVolume(SettingId changed);
+
+/** @returns Whether a change of @p changed moves the volume of the voices:
+ * the VOICES volume, or MUTE ALL. */
+[[nodiscard]] bool changesVoicesVolume(SettingId changed);
 
 }  // namespace rtype::client

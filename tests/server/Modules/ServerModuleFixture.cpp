@@ -15,6 +15,11 @@ rtype::logging::LogLaunchOptions ServerModuleFixture::journalOptions() const {
   return logOptionsOf(arguments_, rtype::logging::SERVER_LOG_FILE_NAME);
 }
 
+void ServerModuleFixture::writeTheJournalAsJson() {
+  arguments_.push_back(rtype::logging::FORMAT_OPTION);
+  arguments_.push_back(rtype::logging::JSON_FORMAT_NAME);
+}
+
 std::uint16_t ServerModuleFixture::freeUdpPort() { return ::freeUdpPort(); }
 
 bool ServerModuleFixture::portIsFree(std::uint16_t port) {
