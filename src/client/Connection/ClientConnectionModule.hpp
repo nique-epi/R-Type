@@ -8,6 +8,7 @@
 #include "Logger.hpp"
 #include "MasterAccountLink.hpp"
 #include "MasterCasinoLink.hpp"
+#include "MasterDeviceLinkFlow.hpp"
 #include "MasterLeaderboard.hpp"
 #include "MasterLink.hpp"
 #include "MasterTicketLink.hpp"
@@ -83,6 +84,7 @@ class ClientConnectionModule final : public engine::IModule {
   PlayerConnection connection_;
   MasterLink masterLink_;
   MasterAccountLink accountLink_;
+  MasterDeviceLinkFlow deviceLinkFlow_;
   MasterTicketLink ticketLink_;
   MasterCasinoLink casinoLink_;
   ServerCatalog servers_;

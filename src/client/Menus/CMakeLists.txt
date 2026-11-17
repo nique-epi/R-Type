@@ -1,6 +1,7 @@
 add_subdirectory(Leaderboard)
 add_subdirectory(Options)
 add_subdirectory(ServerBrowser)
+add_subdirectory(SignIn)
 add_subdirectory(Title)
 
 add_library(rtype_client_menus_module STATIC ClientMenusModule.cpp)
@@ -17,6 +18,8 @@ target_link_libraries(rtype_client_menus_module
     rtype_client_input_keys
     rtype_client_menus_leaderboard
     rtype_client_menus_server_browser
+    rtype_client_menus_sign_in
+    rtype_client_platform
     rtype_client_options
     rtype_client_title
 )

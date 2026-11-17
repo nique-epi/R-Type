@@ -40,8 +40,8 @@ std::vector<std::string> ClientShopModule::dependencies() const {
 }
 
 void ClientShopModule::install(engine::InstallContext& context) {
-  context.require<ScreenRegistry>().add(SHOP_SCREEN,
-                                        signedInOnly(buildShopScreen));
+  context.require<ScreenRegistry>().add(
+      SHOP_SCREEN, signedInOnly(buildShopScreen, SHOP_SCREEN));
 }
 
 void ClientShopModule::start() {}

@@ -3,13 +3,16 @@
 #include <gtest/gtest.h>
 #include <SFML/Window/Keyboard.hpp>
 #include <memory>
+#include "FakeAccountSession.hpp"
 #include "FakeUpdateNotice.hpp"
 #include "FakeWallet.hpp"
 #include "PlayStart.hpp"
 #include "PlayerSettings.hpp"
+#include "RecordingDeviceLinkFlow.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingSoundPlayer.hpp"
+#include "SignInReturn.hpp"
 #include "TitleScreen.hpp"
 
 /** @brief A title screen alone, with a recording navigator and canvas. */
@@ -45,5 +48,8 @@ class TitleScreenFixture : public ::testing::Test {
   FakeUpdateNotice notice_;
   rtype::client::PlayerSettings settings_;
   FakeWallet wallet_;
+  FakeAccountSession account_;
+  RecordingDeviceLinkFlow deviceLinks_;
+  rtype::client::SignInReturn signInReturn_;
   std::unique_ptr<rtype::client::TitleScreen> title_;
 };

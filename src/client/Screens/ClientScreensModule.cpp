@@ -22,6 +22,7 @@
 #include "FrameLoop.hpp"
 #include "GameWindow.hpp"
 #include "IAccountSession.hpp"
+#include "IDeviceLinkFlow.hpp"
 #include "IEntityTypeTable.hpp"
 #include "IGameCatalog.hpp"
 #include "IServerCatalog.hpp"
@@ -120,6 +121,7 @@ void ClientScreensModule::install(engine::InstallContext& context) {
   gameCatalog_ = &context.require<IGameCatalog>();
   account_ = &context.require<IAccountSession>();
   tickets_ = &context.require<ITicketLink>();
+  deviceLinks_ = &context.require<IDeviceLinkFlow>();
   wallet_ = &context.require<IWallet>();
   loop_ = &context.require<FrameLoop>();
   listeners_ = &context.require<EventListeners>();
@@ -159,8 +161,7 @@ network::Endpoint ClientScreensModule::configuredServer() const {
           portSetting_->integer().value_or(launch_.server.port))};
 }
 
-ScreenServices ClientScreensModule::services(
-    const network::Endpoint& server) const {
+ScreenServices ClientScreensModule::services(const network::Endpoint& server) {
   return ScreenServices{
       .settings = *settings_,
       .settingsService = *settingsService_,
@@ -182,6 +183,8 @@ ScreenServices ClientScreensModule::services(
       .account = *account_,
       .wallet = *wallet_,
       .tickets = *tickets_,
+      .deviceLinks = *deviceLinks_,
+      .signInReturn = signInReturn_,
       .choice = ServerChoice{.server = server,
                              .nickname = nicknameSetting_->text(),
                              .game = launch_.game,

@@ -4,6 +4,7 @@ target_include_directories(client_connection_tests PRIVATE ${CMAKE_CURRENT_SOURC
 target_link_libraries(client_connection_tests PRIVATE httplib::httplib rtype_test_support)
 
 add_subdirectory(Account)
+add_subdirectory(DeviceLink)
 add_subdirectory(Casino)
 add_subdirectory(Chat)
 add_subdirectory(ContentPack)

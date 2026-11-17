@@ -91,17 +91,25 @@ void ClientCasinoModule::install(engine::InstallContext& context) {
                   context.require<IAccountSession>(),
                   context.require<IWallet>());
   context.require<ScreenRegistry>().add(
-      CASINO_SCREEN, signedInOnly([this](const ScreenContext& screens) {
-        return buildCasinoScreen(screens, *casino_);
-      }));
+      CASINO_SCREEN, signedInOnly(
+                         [this](const ScreenContext& screens) {
+                           return buildCasinoScreen(screens, *casino_);
+                         },
+                         CASINO_SCREEN));
   context.require<ScreenRegistry>().add(
-      CASINO_BUY_CHIPS_SCREEN, signedInOnly([](const ScreenContext& screens) {
-        return buildCashierScreen(screens, CashierWay::BuyChips);
-      }));
-  context.require<ScreenRegistry>().add(
-      CASINO_CASH_OUT_SCREEN, signedInOnly([](const ScreenContext& screens) {
-        return buildCashierScreen(screens, CashierWay::CashOut);
-      }));
+      CASINO_BUY_CHIPS_SCREEN, signedInOnly(
+                                   [](const ScreenContext& screens) {
+                                     return buildCashierScreen(
+                                         screens, CashierWay::BuyChips);
+                                   },
+                                   CASINO_BUY_CHIPS_SCREEN));
+  context.require<ScreenRegistry>().add(CASINO_CASH_OUT_SCREEN,
+                                        signedInOnly(
+                                            [](const ScreenContext& screens) {
+                                              return buildCashierScreen(
+                                                  screens, CashierWay::CashOut);
+                                            },
+                                            CASINO_CASH_OUT_SCREEN));
   context.require<ScreenRegistry>().add(
       ROULETTE_SCREEN, [this](const ScreenContext& screens) {
         return buildRouletteScreen(screens, *casino_, roulette_);
