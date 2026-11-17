@@ -39,8 +39,10 @@ class LayerCanvas final : public ILayerCanvas {
   void drawTiles(std::string_view tileset, const sf::VertexArray& tiles,
                  int column) override;
 
-  /** @brief Draws the pixels, then the frames, collected since paintOn(). */
-  void flush();
+  /** @brief Draws the pixels, then the frames, collected since paintOn().
+   * @returns Whether anything was drawn on the target since paintOn(): a
+   * pixel, a frame or tiles. */
+  [[nodiscard]] bool flush();
 
  private:
   /** @returns The batch of the frames drawn from @p image. */
@@ -48,6 +50,7 @@ class LayerCanvas final : public ILayerCanvas {
 
   TextureLookup textureOf_;
   sf::RenderTarget* target_{};
+  bool painted_{false};
   PixelBatch pixels_;
   std::vector<FrameBatch> frames_;
 };

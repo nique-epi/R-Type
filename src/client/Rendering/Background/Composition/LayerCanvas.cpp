@@ -22,6 +22,7 @@ LayerCanvas::LayerCanvas(TextureLookup textureOf)
 
 void LayerCanvas::paintOn(sf::RenderTarget& target) {
   target_ = &target;
+  painted_ = false;
   pixels_.clear();
   for (FrameBatch& batch : frames_) {
     batch.triangles.clear();
@@ -30,6 +31,7 @@ void LayerCanvas::paintOn(sf::RenderTarget& target) {
 
 void LayerCanvas::plot(sf::Vector2i pixel, sf::Color color) {
   pixels_.plot(pixel, color);
+  painted_ = true;
 }
 
 void LayerCanvas::drawFrame(const StripFrame& frame, sf::Vector2i topLeft) {
@@ -40,22 +42,24 @@ void LayerCanvas::drawFrame(const StripFrame& frame, sf::Vector2i topLeft) {
   const sf::FloatRect source = stripFrameRect(image->getSize(), frame);
   appendQuad(batchOf(*image).triangles,
              sf::FloatRect{sf::Vector2f(topLeft), source.size}, source);
+  painted_ = true;
 }
 
 void LayerCanvas::drawTiles(std::string_view tileset,
                             const sf::VertexArray& tiles, int column) {
   const sf::Texture* const image = textureOf_(tileset);
-  if (image == nullptr || target_ == nullptr) {
+  if (image == nullptr || target_ == nullptr || tiles.getVertexCount() == 0) {
     return;
   }
+  painted_ = true;
   sf::RenderStates states(image);
   states.transform.translate({static_cast<float>(column), 0.0F});
   target_->draw(tiles, states);
 }
 
-void LayerCanvas::flush() {
-  if (target_ == nullptr) {
-    return;
+bool LayerCanvas::flush() {
+  if (target_ == nullptr || !painted_) {
+    return false;
   }
   target_->draw(pixels_);
   for (const FrameBatch& batch : frames_) {
@@ -63,6 +67,7 @@ void LayerCanvas::flush() {
       target_->draw(batch.triangles, sf::RenderStates(batch.image));
     }
   }
+  return true;
 }
 
 FrameBatch& LayerCanvas::batchOf(const sf::Texture& image) {

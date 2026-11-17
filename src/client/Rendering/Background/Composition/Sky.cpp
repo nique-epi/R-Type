@@ -68,7 +68,10 @@ void Sky::paintLayers(const LayeredBackground& background,
     }
     canvas_.paintOn(surface);
     background.paint(layer, canvas_);
-    canvas_.flush();
+    if (!canvas_.flush()) {
+      picture_.leavePlaneEmpty(plane);
+      continue;
+    }
     if (behind) {
       entranceMask_.cover(surface, *seam);
     }
