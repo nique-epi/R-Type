@@ -13,11 +13,11 @@
 #include "ImageContent.hpp"
 #include "LayerDescription.hpp"
 #include "LayerMotion.hpp"
+#include "MapContent.hpp"
+#include "MapLayerKind.hpp"
 #include "ParticleContent.hpp"
 #include "ParticleSprite.hpp"
 #include "ParticleTrail.hpp"
-#include "PropContent.hpp"
-#include "TileContent.hpp"
 
 using rtype::client::BackgroundDescription;
 using rtype::client::DurationRange;
@@ -26,11 +26,11 @@ using rtype::client::ImageContent;
 using rtype::client::InconsistentBackgroundException;
 using rtype::client::LayerDescription;
 using rtype::client::LayerMotion;
+using rtype::client::MapContent;
+using rtype::client::MapLayerKind;
 using rtype::client::ParticleContent;
 using rtype::client::ParticleSprite;
 using rtype::client::ParticleTrail;
-using rtype::client::PropContent;
-using rtype::client::TileContent;
 using rtype::client::TooManyBackgroundTablesException;
 using rtype::engine::DataFileDecimalOutOfRangeException;
 using rtype::engine::DataFileFlagExpectedException;
@@ -143,7 +143,8 @@ TEST(BackgroundReading, ReadsTiles) {
       backgroundReading(A_PLANET_THEN_WALLS);
 
   ASSERT_EQ(background.layers.size(), TWO_LAYERS);
-  const auto tiles = contentOf<TileContent>(background.layers[WALL_LAYER]);
+  const auto tiles = contentOf<MapContent>(background.layers[WALL_LAYER]);
+  EXPECT_EQ(tiles.kind, MapLayerKind::Tiles);
   EXPECT_EQ(tiles.project, FOSSE_PROJECT);
   EXPECT_EQ(tiles.layer, NEAR_LAYER_OF_THE_PROJECT);
   EXPECT_EQ(tiles.tileset, NEAR_TILESET);
@@ -157,7 +158,8 @@ TEST(BackgroundReading, ReadsTiles) {
 TEST(BackgroundReading, ReadsProps) {
   const LayerDescription layer = layerReading(CRATES);
 
-  const auto props = contentOf<PropContent>(layer);
+  const auto props = contentOf<MapContent>(layer);
+  EXPECT_EQ(props.kind, MapLayerKind::Props);
   EXPECT_EQ(props.project, FOSSE_PROJECT);
   EXPECT_EQ(props.layer, PROP_LAYER_OF_THE_PROJECT);
   EXPECT_EQ(props.tileset, PROP_TILESET);

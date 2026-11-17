@@ -5,11 +5,13 @@
 #include "LdtkProjectFile.hpp"
 #include "LdtkProjectFileFixtures.hpp"
 #include "LdtkProjectFileTestConstants.hpp"
+#include "MapLayerKind.hpp"
 #include "MapPlane.hpp"
 #include "MapTileVerticesTestConstants.hpp"
 
 using rtype::client::LdtkProjectException;
 using rtype::client::LdtkProjectFile;
+using rtype::client::MapLayerKind;
 using rtype::client::MapPlane;
 using ::testing::ElementsAreArray;
 
@@ -21,7 +23,7 @@ using ::testing::ElementsAreArray;
 TEST(LdtkProjectFile, ReadsEveryMapOfTheProject) {
   const LdtkProjectFile pit{shippedFile(PIT_PROJECT)};
 
-  const MapPlane plane = pit.tilePlane(NEAR_TILE_LAYER);
+  const MapPlane plane = pit.plane(NEAR_TILE_LAYER, MapLayerKind::Tiles);
 
   EXPECT_THAT(plane.widths(), ElementsAreArray(WIDTHS_OF_THE_MAPS_OF_THE_PIT));
 }
@@ -34,7 +36,7 @@ TEST(LdtkProjectFile, ReadsEveryMapOfTheProject) {
 TEST(LdtkProjectFile, BuildsEveryTileOfALayer) {
   const LdtkProjectFile pit{shippedFile(PIT_PROJECT)};
 
-  const MapPlane plane = pit.tilePlane(NEAR_TILE_LAYER);
+  const MapPlane plane = pit.plane(NEAR_TILE_LAYER, MapLayerKind::Tiles);
 
   EXPECT_EQ(plane.tilesOf(FIRST_MAP_OF_THE_PIT).getVertexCount(),
             VERTICES_OF_THE_FIRST_NEAR_LAYER);
@@ -49,7 +51,7 @@ TEST(LdtkProjectFile, BuildsEveryTileOfALayer) {
 TEST(LdtkProjectFile, PlacesATileWhereTheProjectHasIt) {
   const LdtkProjectFile pit{shippedFile(PIT_PROJECT)};
 
-  const MapPlane plane = pit.tilePlane(NEAR_TILE_LAYER);
+  const MapPlane plane = pit.plane(NEAR_TILE_LAYER, MapLayerKind::Tiles);
 
   const sf::VertexArray& tiles = plane.tilesOf(FIRST_MAP_OF_THE_PIT);
   EXPECT_EQ(tiles[FIRST_TILE_CORNER].position, WHERE_THE_ENTRANCE_BEGINS);
@@ -65,7 +67,7 @@ TEST(LdtkProjectFile, PlacesATileWhereTheProjectHasIt) {
 TEST(LdtkProjectFile, FindsWhereTheEntranceBegins) {
   const LdtkProjectFile pit{shippedFile(PIT_PROJECT)};
 
-  const MapPlane plane = pit.tilePlane(NEAR_TILE_LAYER);
+  const MapPlane plane = pit.plane(NEAR_TILE_LAYER, MapLayerKind::Tiles);
 
   EXPECT_EQ(plane.firstTileColumnOf(FIRST_MAP_OF_THE_PIT),
             COLUMN_WHERE_THE_ENTRANCE_BEGINS);
@@ -89,8 +91,9 @@ TEST(LdtkProjectFile, RefusesAMissingProject) {
 TEST(LdtkProjectFile, RefusesALayerTheMapsLack) {
   const LdtkProjectFile pit{shippedFile(PIT_PROJECT)};
 
-  EXPECT_THROW(static_cast<void>(pit.tilePlane(LAYER_THE_PIT_LACKS)),
-               LdtkProjectException);
+  EXPECT_THROW(
+      static_cast<void>(pit.plane(LAYER_THE_PIT_LACKS, MapLayerKind::Tiles)),
+      LdtkProjectException);
 }
 
 /**
@@ -102,7 +105,7 @@ TEST(LdtkProjectFile, RefusesALayerTheMapsLack) {
 TEST(LdtkProjectFile, ReadsOnePropPerEntityThatHasATile) {
   const LdtkProjectFile project{propProject()};
 
-  const MapPlane plane = project.propPlane(PROP_LAYER);
+  const MapPlane plane = project.plane(PROP_LAYER, MapLayerKind::Props);
 
   EXPECT_THAT(plane.widths(), ElementsAreArray(WIDTH_OF_THE_PROP_MAP));
   EXPECT_EQ(plane.tilesOf(THE_PROP_MAP).getVertexCount(), VERTICES_OF_ONE_PROP);
@@ -117,7 +120,7 @@ TEST(LdtkProjectFile, ReadsOnePropPerEntityThatHasATile) {
 TEST(LdtkProjectFile, PlacesAPropByItsPivot) {
   const LdtkProjectFile project{propProject()};
 
-  const MapPlane plane = project.propPlane(PROP_LAYER);
+  const MapPlane plane = project.plane(PROP_LAYER, MapLayerKind::Props);
 
   const sf::VertexArray& prop = plane.tilesOf(THE_PROP_MAP);
   ASSERT_EQ(prop.getVertexCount(), VERTICES_OF_ONE_PROP);

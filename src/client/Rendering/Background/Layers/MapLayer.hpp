@@ -17,7 +17,7 @@ namespace rtype::client {
  */
 class MapLayer final : public ILayerContent {
  public:
-  /** @param maps The maps, as tilePlaneOf() or propPlaneOf() read them.
+  /** @param maps The maps, as LdtkProjectFile::plane() reads them.
    * @param tileset The asset id of the image their triangles are cut from. */
   MapLayer(MapPlane maps, std::string tileset);
 

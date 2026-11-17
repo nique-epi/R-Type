@@ -2,15 +2,13 @@
 
 #include <variant>
 #include "ImageContent.hpp"
+#include "MapContent.hpp"
 #include "ParticleContent.hpp"
-#include "PropContent.hpp"
-#include "TileContent.hpp"
 
 namespace rtype::client {
 
-/** @brief What a layer of a background shows: one of the four kinds of
- * content. */
-using LayerContent =
-    std::variant<ImageContent, TileContent, ParticleContent, PropContent>;
+/** @brief What a layer of a background shows: an image, a layer of an LDtk
+ * project, tiles or props, or particles. */
+using LayerContent = std::variant<ImageContent, MapContent, ParticleContent>;
 
 }  // namespace rtype::client

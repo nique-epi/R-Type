@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 #include <string_view>
+#include "MapLayerKind.hpp"
 #include "MapPlane.hpp"
 
 namespace ldtk {
@@ -30,20 +31,14 @@ class LdtkProjectFile {
   LdtkProjectFile& operator=(LdtkProjectFile&&) noexcept;
 
   /**
-   * @returns The tile layer @p layer of every map of the project, in the
-   * order the project lists its maps, two triangles per tile.
+   * @returns The layer @p layer of every map of the project, in the order
+   * the project lists its maps, read as @p kind says. A layer of tiles gives
+   * two triangles per tile. A layer of props gives two triangles per entity
+   * that has a tile: the rectangle its tile names, its pivot where the entity
+   * lies; an entity without a tile shows nothing.
    * @throws LdtkProjectException when a map lacks the layer.
    */
-  [[nodiscard]] MapPlane tilePlane(std::string_view layer) const;
-
-  /**
-   * @returns The entity layer @p layer of every map of the project, as
-   * tilePlane() gives a tile layer: each entity that has a tile is a prop,
-   * the rectangle its tile names, its pivot where the entity lies, two
-   * triangles each. An entity without a tile shows nothing.
-   * @throws LdtkProjectException when a map lacks the layer.
-   */
-  [[nodiscard]] MapPlane propPlane(std::string_view layer) const;
+  [[nodiscard]] MapPlane plane(std::string_view layer, MapLayerKind kind) const;
 
  private:
   std::unique_ptr<ldtk::Project> project_;

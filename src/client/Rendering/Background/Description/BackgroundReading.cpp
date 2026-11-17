@@ -27,11 +27,11 @@
 #include "LayerContent.hpp"
 #include "LayerDescription.hpp"
 #include "LayerMotion.hpp"
+#include "MapContent.hpp"
+#include "MapLayerKind.hpp"
 #include "ParticleContent.hpp"
 #include "ParticleSprite.hpp"
 #include "ParticleTrail.hpp"
-#include "PropContent.hpp"
-#include "TileContent.hpp"
 #include "TimeConstants.hpp"
 #include "TrailStop.hpp"
 
@@ -42,6 +42,12 @@ namespace {
 /** @returns Whether @p table holds a key @p key. */
 bool holds(const engine::DataFileTable& table, std::string_view key) {
   return table.table.get().contains(key);
+}
+
+/** @returns The flag @p key of @p table holds, as engine::flagAt() reads it,
+ * or false when the table leaves the key out. */
+bool flagOrFalseAt(const engine::DataFileTable& table, std::string_view key) {
+  return holds(table, key) && engine::flagAt(table, key);
 }
 
 /** @returns Where @p table starts, for an error about the table as a whole,
@@ -163,7 +169,7 @@ LayerMotion motionOf(const engine::DataFileTable& layer) {
       .parallax = floatOrZeroAt(*motion, PARALLAX_KEY, PARALLAX_RANGE),
       .autoscroll = floatOrZeroAt(*motion, AUTOSCROLL_KEY, AUTOSCROLL_RANGE),
       .repeat = floatOrZeroAt(*motion, REPEAT_KEY, REPEAT_RANGE),
-      .warps = holds(*motion, WARPS_KEY) && engine::flagAt(*motion, WARPS_KEY)};
+      .warps = flagOrFalseAt(*motion, WARPS_KEY)};
 }
 
 /** @returns The image @p image describes, every key checked. */
@@ -176,13 +182,13 @@ ImageContent imageOf(const engine::DataFileTable& image) {
 }
 
 /** @returns The layer of an LDtk project @p table describes, every key
- * checked, as a TileContent or a PropContent. */
-template <typename Content>
-Content projectLayerOf(const engine::DataFileTable& table) {
+ * checked, holding what @p kind says. */
+MapContent mapContentOf(const engine::DataFileTable& table, MapLayerKind kind) {
   engine::refuseUnknownKeys(table, PROJECT_LAYER_KEYS);
-  return Content{.project = assetIdAt(table, PROJECT_KEY),
-                 .layer = engine::textAt(table, PROJECT_LAYER_KEY),
-                 .tileset = assetIdAt(table, TILESET_KEY)};
+  return MapContent{.project = assetIdAt(table, PROJECT_KEY),
+                    .layer = engine::textAt(table, PROJECT_LAYER_KEY),
+                    .tileset = assetIdAt(table, TILESET_KEY),
+                    .kind = kind};
 }
 
 /** @returns Where the particles @p particles describes are born: its
@@ -302,11 +308,8 @@ void readPopulation(const engine::DataFileTable& particles,
   content.population = static_cast<std::size_t>(
       engine::wholeNumberAt(particles, POPULATION_KEY, POPULATION_RANGE));
   content.twinkle = optionalColorAt(particles, TWINKLE_KEY);
-  content.twinkleSteps =
-      holds(particles, TWINKLE_STEPS_KEY)
-          ? engine::wholeNumberAt(particles, TWINKLE_STEPS_KEY,
-                                  TWINKLE_STEPS_RANGE)
-          : 0;
+  content.twinkleSteps = engine::wholeNumberOrZeroAt(
+      particles, TWINKLE_STEPS_KEY, TWINKLE_STEPS_RANGE);
   content.warpTrail = optionalColorAt(particles, WARP_TRAIL_KEY);
 }
 
@@ -388,12 +391,12 @@ LayerContent contentOf(const engine::DataFileTable& layer,
     return imageOf(engine::tableAt(layer, IMAGE_CONTENT_KEY));
   }
   if (holds(layer, TILE_CONTENT_KEY)) {
-    return projectLayerOf<TileContent>(
-        engine::tableAt(layer, TILE_CONTENT_KEY));
+    return mapContentOf(engine::tableAt(layer, TILE_CONTENT_KEY),
+                        MapLayerKind::Tiles);
   }
   if (holds(layer, PROP_CONTENT_KEY)) {
-    return projectLayerOf<PropContent>(
-        engine::tableAt(layer, PROP_CONTENT_KEY));
+    return mapContentOf(engine::tableAt(layer, PROP_CONTENT_KEY),
+                        MapLayerKind::Props);
   }
   return particlesOf(engine::tableAt(layer, PARTICLE_CONTENT_KEY), groups);
 }
@@ -404,8 +407,7 @@ LayerDescription layerOf(const engine::DataFileTable& layer,
   engine::refuseUnknownKeys(layer, LAYER_KEYS);
   return LayerDescription{.name = engine::textAt(layer, LAYER_NAME_KEY),
                           .motion = motionOf(layer),
-                          .entrance = holds(layer, LAYER_ENTRANCE_KEY) &&
-                                      engine::flagAt(layer, LAYER_ENTRANCE_KEY),
+                          .entrance = flagOrFalseAt(layer, LAYER_ENTRANCE_KEY),
                           .content = contentOf(layer, groups)};
 }
 

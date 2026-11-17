@@ -16,6 +16,7 @@
 #include <string_view>
 #include <vector>
 #include "ClientException.hpp"
+#include "MapLayerKind.hpp"
 #include "MapPlane.hpp"
 #include "MapTile.hpp"
 #include "MapTileVertices.hpp"
@@ -73,17 +74,10 @@ sf::VertexArray propTrianglesOf(const ldtk::Layer& layer) {
   return triangles;
 }
 
-/** @returns The plane of the layer @p layer of every map of @p project, each
- * map turned into triangles by @p trianglesOf. It throws what LDtkLoader
- * throws for a map that lacks the layer. */
-template <typename TrianglesOf>
-MapPlane planeOf(const ldtk::Project& project, std::string_view layer,
-                 TrianglesOf trianglesOf) {
-  MapPlane plane;
-  for (const ldtk::Level& map : project.getWorld().allLevels()) {
-    plane.addMap(trianglesOf(map.getLayer(std::string(layer))), map.size.x);
-  }
-  return plane;
+/** @returns The triangles of @p layer, which holds what @p kind says. */
+sf::VertexArray trianglesOf(const ldtk::Layer& layer, MapLayerKind kind) {
+  return kind == MapLayerKind::Props ? propTrianglesOf(layer)
+                                     : tileTrianglesOf(layer);
 }
 
 }  // namespace
@@ -105,17 +99,15 @@ LdtkProjectFile::LdtkProjectFile(LdtkProjectFile&&) noexcept = default;
 LdtkProjectFile& LdtkProjectFile::operator=(LdtkProjectFile&&) noexcept =
     default;
 
-MapPlane LdtkProjectFile::tilePlane(std::string_view layer) const {
+MapPlane LdtkProjectFile::plane(std::string_view layer,
+                                MapLayerKind kind) const {
   try {
-    return planeOf(*project_, layer, tileTrianglesOf);
-  } catch (const std::exception& error) {
-    throw LdtkProjectException(file_, error.what());
-  }
-}
-
-MapPlane LdtkProjectFile::propPlane(std::string_view layer) const {
-  try {
-    return planeOf(*project_, layer, propTrianglesOf);
+    MapPlane maps;
+    for (const ldtk::Level& map : project_->getWorld().allLevels()) {
+      maps.addMap(trianglesOf(map.getLayer(std::string(layer)), kind),
+                  map.size.x);
+    }
+    return maps;
   } catch (const std::exception& error) {
     throw LdtkProjectException(file_, error.what());
   }

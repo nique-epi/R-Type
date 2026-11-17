@@ -8,13 +8,13 @@
 #include "BackgroundDescription.hpp"
 #include "ClientException.hpp"
 #include "LayerDescription.hpp"
-#include "TileContent.hpp"
+#include "MapContent.hpp"
 
 using rtype::client::BackgroundCatalog;
 using rtype::client::BackgroundDescription;
 using rtype::client::LayerDescription;
+using rtype::client::MapContent;
 using rtype::client::MissingBackgroundFileException;
-using rtype::client::TileContent;
 using ::testing::AllOf;
 using ::testing::Contains;
 using ::testing::ElementsAre;
@@ -213,7 +213,7 @@ TEST(BackgroundCatalog, ReadsThePitTheRepositoryShips) {
   ASSERT_NE(pit, nullptr);
   ASSERT_EQ(pit->layers.size(), LAYERS_OF_THE_PIT);
   for (const LayerDescription& layer : pit->layers) {
-    EXPECT_TRUE(std::holds_alternative<TileContent>(layer.content));
+    EXPECT_TRUE(std::holds_alternative<MapContent>(layer.content));
     EXPECT_EQ(layer.entrance, &layer == &pit->layers.back());
   }
 }

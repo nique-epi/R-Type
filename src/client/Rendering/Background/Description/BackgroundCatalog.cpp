@@ -20,11 +20,10 @@
 #include "DataFileReading.hpp"
 #include "ImageContent.hpp"
 #include "LayerDescription.hpp"
+#include "MapContent.hpp"
 #include "ParticleContent.hpp"
 #include "ParticleSprite.hpp"
 #include "PathText.hpp"
-#include "PropContent.hpp"
-#include "TileContent.hpp"
 
 namespace rtype::client {
 
@@ -35,14 +34,9 @@ using NamedFiles = std::vector<std::reference_wrapper<std::string>>;
 /** @returns The files @p image names: its image. */
 NamedFiles namedFilesOf(ImageContent& image) { return {image.file}; }
 
-/** @returns The files @p tiles names: its project and its tileset. */
-NamedFiles namedFilesOf(TileContent& tiles) {
-  return {tiles.project, tiles.tileset};
-}
-
-/** @returns The files @p props names: its project and its tileset. */
-NamedFiles namedFilesOf(PropContent& props) {
-  return {props.project, props.tileset};
+/** @returns The files @p maps names: its project and its tileset. */
+NamedFiles namedFilesOf(MapContent& maps) {
+  return {maps.project, maps.tileset};
 }
 
 /** @returns The files @p particles names: the image of each sprite. */
@@ -59,14 +53,9 @@ void addImagesOf(const ImageContent& image, std::set<std::string>& images) {
   images.insert(image.file);
 }
 
-/** @brief Adds to @p images the tileset @p tiles names. */
-void addImagesOf(const TileContent& tiles, std::set<std::string>& images) {
-  images.insert(tiles.tileset);
-}
-
-/** @brief Adds to @p images the tileset @p props names. */
-void addImagesOf(const PropContent& props, std::set<std::string>& images) {
-  images.insert(props.tileset);
+/** @brief Adds to @p images the tileset @p maps names. */
+void addImagesOf(const MapContent& maps, std::set<std::string>& images) {
+  images.insert(maps.tileset);
 }
 
 /** @brief Adds to @p images the image of each sprite of @p particles. */

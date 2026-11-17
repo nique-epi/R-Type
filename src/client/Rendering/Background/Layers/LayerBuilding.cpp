@@ -21,13 +21,12 @@
 #include "LayerSources.hpp"
 #include "LdtkProjectFile.hpp"
 #include "Logger.hpp"
+#include "MapContent.hpp"
 #include "MapLayer.hpp"
 #include "MapPlane.hpp"
 #include "ParticleContent.hpp"
 #include "ParticleLayer.hpp"
 #include "ParticleLayerParts.hpp"
-#include "PropContent.hpp"
-#include "TileContent.hpp"
 
 namespace rtype::client {
 
@@ -59,31 +58,9 @@ std::uint32_t nextSeed(LayerWorkshop& workshop) {
  * read. */
 const LdtkProjectFile& projectOf(const std::string& project,
                                  LayerWorkshop& workshop) {
-  const auto found = workshop.projects.find(project);
-  if (found != workshop.projects.end()) {
-    return found->second;
-  }
   return workshop.projects
       .try_emplace(project, workshop.sources.get().fileOf(project))
       .first->second;
-}
-
-/** @returns The layer that shows the maps @p content names, taken from its
- * project by @p planeOf; a layer that shows nothing, told in the journal,
- * when the project or its layer cannot be read. */
-template <typename Content, typename PlaneOf>
-std::unique_ptr<ILayerContent> mapLayerOf(const Content& content,
-                                          LayerWorkshop& workshop,
-                                          PlaneOf planeOf) {
-  try {
-    return std::make_unique<MapLayer>(
-        planeOf(projectOf(content.project, workshop), content.layer),
-        content.tileset);
-  } catch (const LdtkProjectException& error) {
-    workshop.logger.error("a layer of a background shows nothing: ",
-                          error.what());
-    return std::make_unique<MapLayer>(MapPlane{}, content.tileset);
-  }
 }
 
 std::unique_ptr<ILayerContent> contentOf(
@@ -92,24 +69,21 @@ std::unique_ptr<ILayerContent> contentOf(
   return std::make_unique<ImageLayer>(image, layer.motion.repeat);
 }
 
-std::unique_ptr<ILayerContent> contentOf(
-    const TileContent& tiles, [[maybe_unused]] const LayerDescription& layer,
-    LayerWorkshop& workshop) {
-  return mapLayerOf(
-      tiles, workshop,
-      [](const LdtkProjectFile& project, const std::string& layerName) {
-        return project.tilePlane(layerName);
-      });
-}
-
-std::unique_ptr<ILayerContent> contentOf(
-    const PropContent& props, [[maybe_unused]] const LayerDescription& layer,
-    LayerWorkshop& workshop) {
-  return mapLayerOf(
-      props, workshop,
-      [](const LdtkProjectFile& project, const std::string& layerName) {
-        return project.propPlane(layerName);
-      });
+/** @returns The layer that shows the maps @p maps names, taken from its
+ * project; a layer that shows nothing, told in the journal under the name of
+ * @p layer, when the project or its layer cannot be read. */
+std::unique_ptr<ILayerContent> contentOf(const MapContent& maps,
+                                         const LayerDescription& layer,
+                                         LayerWorkshop& workshop) {
+  try {
+    return std::make_unique<MapLayer>(
+        projectOf(maps.project, workshop).plane(maps.layer, maps.kind),
+        maps.tileset);
+  } catch (const LdtkProjectException& error) {
+    workshop.logger.error("the layer ", layer.name,
+                          " of a background shows nothing: ", error.what());
+    return std::make_unique<MapLayer>(MapPlane{}, maps.tileset);
+  }
 }
 
 std::unique_ptr<ILayerContent> contentOf(const ParticleContent& particles,

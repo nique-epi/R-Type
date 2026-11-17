@@ -17,6 +17,7 @@
 #include "LayerMotion.hpp"
 #include "LayerSources.hpp"
 #include "PixelGridConstants.hpp"
+#include "PixelRounding.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -91,7 +92,7 @@ float LayeredBackground::shiftOf(std::size_t layer) const {
     return 0.0F;
   }
   const double moved = movedBy(layer);
-  return -static_cast<float>(moved - std::floor(moved));
+  return -shiftPastPixel(static_cast<float>(moved - std::floor(moved)));
 }
 
 void LayeredBackground::paint(std::size_t layer, ILayerCanvas& canvas) const {
