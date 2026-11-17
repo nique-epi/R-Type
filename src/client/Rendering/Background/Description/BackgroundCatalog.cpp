@@ -4,6 +4,7 @@
 #include <map>
 #include <optional>
 #include <ranges>
+#include <set>
 #include <span>
 #include <string>
 #include <string_view>
@@ -51,6 +52,29 @@ NamedFiles namedFilesOf(ParticleContent& particles) {
     files.emplace_back(sprite.file);
   }
   return files;
+}
+
+/** @brief Adds to @p images the image @p image names. */
+void addImagesOf(const ImageContent& image, std::set<std::string>& images) {
+  images.insert(image.file);
+}
+
+/** @brief Adds to @p images the tileset @p tiles names. */
+void addImagesOf(const TileContent& tiles, std::set<std::string>& images) {
+  images.insert(tiles.tileset);
+}
+
+/** @brief Adds to @p images the tileset @p props names. */
+void addImagesOf(const PropContent& props, std::set<std::string>& images) {
+  images.insert(props.tileset);
+}
+
+/** @brief Adds to @p images the image of each sprite of @p particles. */
+void addImagesOf(const ParticleContent& particles,
+                 std::set<std::string>& images) {
+  for (const ParticleSprite& sprite : particles.sprites) {
+    images.insert(sprite.file);
+  }
 }
 
 /** @returns How the client names the file @p file once found in one of
@@ -128,6 +152,28 @@ const BackgroundDescription* BackgroundCatalog::named(
     std::string_view name) const {
   const auto found = backgrounds_.find(name);
   return found == backgrounds_.end() ? nullptr : &found->second;
+}
+
+std::vector<std::string> BackgroundCatalog::names() const {
+  std::vector<std::string> names;
+  names.reserve(backgrounds_.size());
+  for (const std::string& name : std::views::keys(backgrounds_)) {
+    names.push_back(name);
+  }
+  return names;
+}
+
+std::vector<std::string> BackgroundCatalog::images() const {
+  std::set<std::string> distinct;
+  for (const BackgroundDescription& background :
+       std::views::values(backgrounds_)) {
+    for (const LayerDescription& layer : background.layers) {
+      std::visit(
+          [&distinct](const auto& content) { addImagesOf(content, distinct); },
+          layer.content);
+    }
+  }
+  return {distinct.begin(), distinct.end()};
 }
 
 BackgroundCatalog::BackgroundCatalog(

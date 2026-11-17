@@ -6,11 +6,9 @@
 #include <LDtkLoader/Project.hpp>
 #include <LDtkLoader/Tile.hpp>
 #include <SFML/Graphics/PrimitiveType.hpp>
-#include <SFML/Graphics/Vertex.hpp>
+#include <SFML/Graphics/Rect.hpp>
 #include <SFML/Graphics/VertexArray.hpp>
 #include <SFML/System/Vector2.hpp>
-#include <array>
-#include <cstddef>
 #include <exception>
 #include <filesystem>
 #include <memory>
@@ -22,13 +20,11 @@
 #include "MapTile.hpp"
 #include "MapTileVertices.hpp"
 #include "PathText.hpp"
-#include "TileCornerConstants.hpp"
+#include "TexturedQuad.hpp"
 
 namespace rtype::client {
 
 namespace {
-
-using TileCorners = std::array<sf::Vector2f, TILE_CORNERS>;
 
 /** @returns The tile @p tile of a tile layer, as tileVertices() takes it. */
 MapTile mapTileOf(const ldtk::Tile& tile) {
@@ -50,17 +46,6 @@ sf::VertexArray tileTrianglesOf(const ldtk::Layer& layer) {
   return tileVertices(tiles, layer.getCellSize());
 }
 
-/** @returns The corners of a rectangle whose top-left corner is
- * @p topLeft, @p size wide and high, clockwise from the top left. */
-TileCorners cornersOf(sf::Vector2f topLeft, sf::Vector2f size) {
-  TileCorners corners{};
-  corners[TOP_LEFT_CORNER] = topLeft;
-  corners[TOP_RIGHT_CORNER] = topLeft + sf::Vector2f{size.x, 0.0F};
-  corners[BOTTOM_RIGHT_CORNER] = topLeft + size;
-  corners[BOTTOM_LEFT_CORNER] = topLeft + sf::Vector2f{0.0F, size.y};
-  return corners;
-}
-
 /** @brief Adds to @p triangles the two triangles of the prop @p entity: the
  * rectangle its tile names, its pivot on the position of the entity. */
 void addProp(const ldtk::Entity& entity, sf::VertexArray& triangles) {
@@ -71,13 +56,10 @@ void addProp(const ldtk::Entity& entity, sf::VertexArray& triangles) {
                                  (entity.getPivot().x * size.x),
                              static_cast<float>(entity.getPosition().y) -
                                  (entity.getPivot().y * size.y));
-  const TileCorners place = cornersOf(topLeft, size);
-  const TileCorners texture = cornersOf(
-      {static_cast<float>(source.x), static_cast<float>(source.y)}, size);
-  for (const std::size_t corner : TILE_TRIANGLE_CORNERS) {
-    triangles.append(sf::Vertex{.position = place.at(corner),
-                                .texCoords = texture.at(corner)});
-  }
+  appendQuad(
+      triangles, sf::FloatRect{topLeft, size},
+      sf::FloatRect{
+          {static_cast<float>(source.x), static_cast<float>(source.y)}, size});
 }
 
 /** @returns The triangles of the props of @p layer. */
@@ -112,7 +94,7 @@ LdtkProjectFile::LdtkProjectFile(const std::filesystem::path& file)
   try {
     project_->loadFromFile(file.string());
   } catch (const std::exception& error) {
-    throw BiomeMapException(file_, error.what());
+    throw LdtkProjectException(file_, error.what());
   }
 }
 
@@ -127,7 +109,7 @@ MapPlane LdtkProjectFile::tilePlane(std::string_view layer) const {
   try {
     return planeOf(*project_, layer, tileTrianglesOf);
   } catch (const std::exception& error) {
-    throw BiomeMapException(file_, error.what());
+    throw LdtkProjectException(file_, error.what());
   }
 }
 
@@ -135,7 +117,7 @@ MapPlane LdtkProjectFile::propPlane(std::string_view layer) const {
   try {
     return planeOf(*project_, layer, propTrianglesOf);
   } catch (const std::exception& error) {
-    throw BiomeMapException(file_, error.what());
+    throw LdtkProjectException(file_, error.what());
   }
 }
 

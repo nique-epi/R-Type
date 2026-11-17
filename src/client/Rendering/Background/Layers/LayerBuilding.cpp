@@ -55,7 +55,7 @@ std::uint32_t nextSeed(LayerWorkshop& workshop) {
 }
 
 /** @returns The LDtk project the asset id @p project names, read on its
- * first use by @p workshop. @throws BiomeMapException when it cannot be
+ * first use by @p workshop. @throws LdtkProjectException when it cannot be
  * read. */
 const LdtkProjectFile& projectOf(const std::string& project,
                                  LayerWorkshop& workshop) {
@@ -79,7 +79,7 @@ std::unique_ptr<ILayerContent> mapLayerOf(const Content& content,
     return std::make_unique<MapLayer>(
         planeOf(projectOf(content.project, workshop), content.layer),
         content.tileset);
-  } catch (const BiomeMapException& error) {
+  } catch (const LdtkProjectException& error) {
     workshop.logger.error("a layer of a background shows nothing: ",
                           error.what());
     return std::make_unique<MapLayer>(MapPlane{}, content.tileset);

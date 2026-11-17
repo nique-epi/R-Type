@@ -36,6 +36,10 @@ class LayeredBackground {
    * of the emission groups, then what each layer shows. */
   void advance(engine::Duration elapsed, const BackgroundPace& pace);
 
+  /** @brief Puts every layer back where it began, as when the background
+   * was built; its particles stay as they are. */
+  void restart();
+
   /** @returns Whether this is the background @p description describes. */
   [[nodiscard]] bool shows(const BackgroundDescription& description) const;
 

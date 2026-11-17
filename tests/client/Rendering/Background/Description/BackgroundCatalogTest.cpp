@@ -15,7 +15,11 @@ using rtype::client::BackgroundDescription;
 using rtype::client::LayerDescription;
 using rtype::client::MissingBackgroundFileException;
 using rtype::client::TileContent;
+using ::testing::AllOf;
+using ::testing::Contains;
+using ::testing::ElementsAre;
 using ::testing::HasSubstr;
+using ::testing::SizeIs;
 using ::testing::ThrowsMessage;
 
 /**
@@ -148,6 +152,37 @@ TEST_F(BackgroundCatalogFixture, RefusesAFileNoFolderHolds) {
   EXPECT_THAT([this] { static_cast<void>(catalogOfBothFolders()); },
               ThrowsMessage<MissingBackgroundFileException>(
                   HasSubstr(std::string{PLANET_ASSET_ID})));
+}
+
+/**
+ * Given assets that hold space, and a resource that holds nebula
+ * When the names of their backgrounds are asked for
+ * Then they are both, in alphabetical order
+ */
+TEST_F(BackgroundCatalogFixture, NamesItsBackgroundsInAlphabeticalOrder) {
+  write(SPACE_OF_THE_ASSETS, A_SKY_OF_ONE_PLANET);
+  write(PLANET_OF_THE_ASSETS, ANY_IMAGE);
+  write(NEBULA_OF_THE_RESOURCE, A_SKY_OF_ONE_MOON);
+  write(MOON_OF_THE_RESOURCE, ANY_IMAGE);
+
+  const BackgroundCatalog catalog = catalogOfBothFolders();
+
+  EXPECT_THAT(catalog.names(),
+              ElementsAre(std::string{NEBULA_NAME}, std::string{SPACE_NAME}));
+}
+
+/**
+ * Given the assets the repository ships
+ * When the images of their backgrounds are asked for
+ * Then they are nine, each once, the planet and the near walls among them
+ */
+TEST(BackgroundCatalog, ListsEveryImageItsBackgroundsNameOnce) {
+  const BackgroundCatalog catalog = shippedBackgrounds();
+
+  EXPECT_THAT(catalog.images(),
+              AllOf(SizeIs(IMAGES_OF_THE_SHIPPED_BACKGROUNDS),
+                    Contains(std::string{PLANET_ASSET_ID}),
+                    Contains(std::string{NEAR_WALL_TILESET})));
 }
 
 /**

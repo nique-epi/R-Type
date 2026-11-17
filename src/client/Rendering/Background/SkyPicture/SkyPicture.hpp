@@ -32,6 +32,14 @@ class SkyPicture {
   explicit SkyPicture(std::size_t planeCount);
 
   /**
+   * @brief Makes the picture hold at least @p count planes, and leaves every
+   * plane from @p count on out of it until it is painted again.
+   * @throws RenderTextureNotCreatedException when a new plane cannot get its
+   * render texture.
+   */
+  void holdPlanes(std::size_t count);
+
+  /**
    * @brief Clears the plane @p plane to transparent, to be laid where
    * @p placement says.
    *

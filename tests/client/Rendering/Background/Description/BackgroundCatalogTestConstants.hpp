@@ -45,6 +45,12 @@ constexpr std::string_view MOON_LAYER_NAME = "moon";
 constexpr std::string_view PLANET_ASSET_ID = "backgrounds/space/planet.png";
 constexpr std::string_view MOON_ASSET_ID = "backgrounds/space/moon.png";
 
+/** @brief The six images of the sky the repository ships and the three
+ * tilesets of its Pit: nine images, the planet and the near walls among
+ * them. */
+constexpr std::size_t IMAGES_OF_THE_SHIPPED_BACKGROUNDS = 9;
+constexpr std::string_view NEAR_WALL_TILESET = "biomes/fosse/fosse_near.png";
+
 /** @brief The backgrounds the repository ships: the sky, whose events never
  * show more than four at once, and the Pit, three layers of walls entered
  * through the last. */

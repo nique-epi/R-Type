@@ -10,7 +10,6 @@
 #include <cmath>
 #include "BackgroundConstants.hpp"
 #include "BayerThreshold.hpp"
-#include "BiomeConstants.hpp"
 #include "DitherConstants.hpp"
 
 namespace rtype::client {

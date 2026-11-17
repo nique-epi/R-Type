@@ -18,19 +18,26 @@
 
 namespace rtype::client {
 
-SkyPicture::SkyPicture(std::size_t planeCount)
-    : planes_(planeCount), shifts_(planeCount) {
-  for (sf::RenderTexture& plane : planes_) {
-    if (!plane.resize(PLANE_CANVAS_SIZE)) {
-      throw RenderTextureNotCreatedException(PLANE_CANVAS_SIZE.x,
-                                             PLANE_CANVAS_SIZE.y);
-    }
-  }
+SkyPicture::SkyPicture(std::size_t planeCount) {
+  holdPlanes(planeCount);
   if (!flatPicture_.resize(BACKGROUND_SIZE)) {
     throw RenderTextureNotCreatedException(BACKGROUND_SIZE.x,
                                            BACKGROUND_SIZE.y);
   }
   flatPicture_.setSmooth(true);
+}
+
+void SkyPicture::holdPlanes(std::size_t count) {
+  while (planes_.size() < count) {
+    if (!planes_.emplace_back().resize(PLANE_CANVAS_SIZE)) {
+      throw RenderTextureNotCreatedException(PLANE_CANVAS_SIZE.x,
+                                             PLANE_CANVAS_SIZE.y);
+    }
+    shifts_.emplace_back();
+  }
+  for (std::size_t plane = count; plane < shifts_.size(); ++plane) {
+    shifts_[plane] = std::nullopt;
+  }
 }
 
 sf::RenderTexture& SkyPicture::paintPlane(std::size_t plane,

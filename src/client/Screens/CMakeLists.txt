@@ -31,8 +31,8 @@ target_link_libraries(rtype_client_screens_module
     rtype_client_pilots
     rtype_client_rendering_interfaces
     rtype_client_screen_registry
-    rtype_client_scrolling_background
     rtype_client_settings_module
+    rtype_client_sky
     rtype_client_settings_values
     rtype_client_waiting_room
     rtype_client_window_display

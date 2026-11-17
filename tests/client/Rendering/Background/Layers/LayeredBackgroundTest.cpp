@@ -202,6 +202,20 @@ TEST_F(LayeredBackgroundFixture, ANegativeTimeMovesNothing) {
 }
 
 /**
+ * Given the planet, ten seconds after its start, 18 pixels to the left
+ * When the background starts over
+ * Then its layer is back where it began
+ */
+TEST_F(LayeredBackgroundFixture, StartsOverFromWhereItsLayersBegan) {
+  LayeredBackground sky = smallSky();
+  sky.advance(TEN_SECONDS_OF_LAYER, BackgroundPace{});
+
+  sky.restart();
+
+  EXPECT_FLOAT_EQ(whereLies(sky, PLANET_LAYER_OF_THE_SKY), 0.0F);
+}
+
+/**
  * Given the sky the repository ships, whose events are born first after
  * 600 ms
  * When 550 ms pass, then 100 more, a frame of 50 ms at a time

@@ -6,6 +6,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <vector>
 #include "BackgroundDescription.hpp"
 
 namespace rtype::client {
@@ -43,6 +44,15 @@ class BackgroundCatalog {
   /** @returns The background named @p name, or nullptr when no folder holds
    * one. */
   [[nodiscard]] const BackgroundDescription* named(std::string_view name) const;
+
+  /** @returns The name of every background, in alphabetical order. */
+  [[nodiscard]] std::vector<std::string> names() const;
+
+  /** @returns Every image a layer of a background names, as the catalog
+   * names it, each once, in alphabetical order: the images of the layers,
+   * the tilesets, the sprites of the particles. The client loads them before
+   * the sky draws them. */
+  [[nodiscard]] std::vector<std::string> images() const;
 
  private:
   explicit BackgroundCatalog(

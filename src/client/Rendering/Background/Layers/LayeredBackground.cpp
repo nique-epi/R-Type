@@ -1,4 +1,5 @@
 #include "LayeredBackground.hpp"
+#include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <cstddef>
@@ -61,6 +62,11 @@ void LayeredBackground::advance(engine::Duration elapsed,
   for (std::size_t layer = 0; layer < layers_.contents.size(); ++layer) {
     layers_.contents[layer]->advance(elapsed, frameOf(layer));
   }
+}
+
+void LayeredBackground::restart() {
+  std::ranges::fill(drifted_, 0.0);
+  pace_ = BackgroundPace{};
 }
 
 bool LayeredBackground::shows(const BackgroundDescription& description) const {

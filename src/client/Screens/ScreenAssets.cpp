@@ -1,12 +1,12 @@
 #include "ScreenAssets.hpp"
 #include <algorithm>
 #include <string>
+#include "AssetKind.hpp"
 #include "AssetLibrary.hpp"
 #include "AssetList.hpp"
 #include "AssetLoadingStep.hpp"
-#include "Biome.hpp"
-#include "BiomeConstants.hpp"
-#include "BiomeLayer.hpp"
+#include "AssetProblemReport.hpp"
+#include "BackgroundCatalog.hpp"
 #include "EffectConstants.hpp"
 #include "EntityAppearances.hpp"
 #include "EntitySpriteConstants.hpp"
@@ -53,11 +53,6 @@ AssetList gameAssets() {
   assets.textures.emplace_back(EFFECT_SHEET_ID);
   assets.textures.emplace_back(PLUG_ICON_ID);
   assets.textures.emplace_back(FLIGHT_LOG_SHEET_ID);
-  for (const Biome& biome : BIOMES) {
-    for (const BiomeLayer& layer : biome.layers) {
-      assets.textures.emplace_back(layer.tileset);
-    }
-  }
   return assets;
 }
 
@@ -74,6 +69,17 @@ AssetList withEntitySheets(AssetList assets,
 void loadInterfaceAssets(AssetLibrary& library) {
   loadAtOnce(library, interfaceAssets());
   library.keepPermanently(interfaceAssets());
+}
+
+void loadBackgroundAssets(AssetLibrary& library,
+                          const BackgroundCatalog& catalog) {
+  const AssetList images{.textures = catalog.images()};
+  AssetProblemReport problems(library);
+  for (const std::string& image : images.textures) {
+    problems.record(image, library.load(AssetKind::Texture, image));
+  }
+  problems.throwIfAny();
+  library.keepPermanently(images);
 }
 
 AssetList introAssets() {

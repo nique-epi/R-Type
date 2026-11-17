@@ -19,7 +19,7 @@ namespace rtype::client {
  */
 class LdtkProjectFile {
  public:
-  /** @throws BiomeMapException when @p file cannot be read as an LDtk
+  /** @throws LdtkProjectException when @p file cannot be read as an LDtk
    * project. */
   explicit LdtkProjectFile(const std::filesystem::path& file);
   ~LdtkProjectFile();
@@ -32,7 +32,7 @@ class LdtkProjectFile {
   /**
    * @returns The tile layer @p layer of every map of the project, in the
    * order the project lists its maps, two triangles per tile.
-   * @throws BiomeMapException when a map lacks the layer.
+   * @throws LdtkProjectException when a map lacks the layer.
    */
   [[nodiscard]] MapPlane tilePlane(std::string_view layer) const;
 
@@ -41,7 +41,7 @@ class LdtkProjectFile {
    * tilePlane() gives a tile layer: each entity that has a tile is a prop,
    * the rectangle its tile names, its pivot where the entity lies, two
    * triangles each. An entity without a tile shows nothing.
-   * @throws BiomeMapException when a map lacks the layer.
+   * @throws LdtkProjectException when a map lacks the layer.
    */
   [[nodiscard]] MapPlane propPlane(std::string_view layer) const;
 

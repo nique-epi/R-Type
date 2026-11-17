@@ -8,7 +8,7 @@
 #include "MapPlane.hpp"
 #include "MapTileVerticesTestConstants.hpp"
 
-using rtype::client::BiomeMapException;
+using rtype::client::LdtkProjectException;
 using rtype::client::LdtkProjectFile;
 using rtype::client::MapPlane;
 using ::testing::ElementsAreArray;
@@ -74,23 +74,23 @@ TEST(LdtkProjectFile, FindsWhereTheEntranceBegins) {
 /**
  * Given a project no folder holds
  * When it is read
- * Then a BiomeMapException is thrown
+ * Then a LdtkProjectException is thrown
  */
 TEST(LdtkProjectFile, RefusesAMissingProject) {
   EXPECT_THROW(const LdtkProjectFile missing{shippedFile(MISSING_PROJECT)},
-               BiomeMapException);
+               LdtkProjectException);
 }
 
 /**
  * Given the project of the Pit, and a layer none of its maps has
  * When that layer is read
- * Then a BiomeMapException is thrown
+ * Then a LdtkProjectException is thrown
  */
 TEST(LdtkProjectFile, RefusesALayerTheMapsLack) {
   const LdtkProjectFile pit{shippedFile(PIT_PROJECT)};
 
   EXPECT_THROW(static_cast<void>(pit.tilePlane(LAYER_THE_PIT_LACKS)),
-               BiomeMapException);
+               LdtkProjectException);
 }
 
 /**

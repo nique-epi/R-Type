@@ -1,30 +1,52 @@
 #include "ClientScreens.hpp"
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Window/Event.hpp>
+#include <array>
 #include <random>
 #include <string_view>
+#include "AssetLibrary.hpp"
+#include "BackgroundCatalog.hpp"
 #include "MenuScreenIdConstants.hpp"
 #include "OpeningScreen.hpp"
+#include "ScreenAssets.hpp"
 #include "ScreenContext.hpp"
 #include "ScreenId.hpp"
 #include "ScreenRegistry.hpp"
 #include "ScreenServices.hpp"
 #include "ServerChoice.hpp"
+#include "SkySources.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
 
+namespace {
+
+/** @returns The backgrounds of the assets of @p library, their images
+ * loaded for good. */
+BackgroundCatalog loadedBackgroundsOf(AssetLibrary& library) {
+  const std::array folders{library.folder()};
+  BackgroundCatalog backgrounds = BackgroundCatalog::fromFolders(folders);
+  loadBackgroundAssets(library, backgrounds);
+  return backgrounds;
+}
+
+}  // namespace
+
 ClientScreens::ClientScreens(const ScreenServices& parts,
                              const ScreenRegistry& registry)
     : connection_(&parts.connection.get()),
+      backgrounds_(loadedBackgroundsOf(parts.assets.get())),
       background_(
-          std::random_device{}(),
-          [assets = parts.assets](std::string_view assetId) {
-            return assets.get().findTexture(assetId);
-          },
-          [assets = parts.assets](std::string_view assetId) {
-            return assets.get().fileOf(assetId);
-          }),
+          backgrounds_,
+          SkySources{.seed = std::random_device{}(),
+                     .textureOf =
+                         [assets = parts.assets](std::string_view assetId) {
+                           return assets.get().findTexture(assetId);
+                         },
+                     .fileOf =
+                         [assets = parts.assets](std::string_view assetId) {
+                           return assets.get().fileOf(assetId);
+                         }}),
       serverChoice_(parts.choice),
       screens_([this, &registry](ScreenId screen) {
         return registry.create(screen, context_);

@@ -1,7 +1,5 @@
 #pragma once
 
-#include <SFML/Graphics/RenderTarget.hpp>
-#include <SFML/Graphics/Texture.hpp>
 #include <SFML/Graphics/VertexArray.hpp>
 #include <cstddef>
 #include <span>
@@ -29,11 +27,6 @@ class MapPlane {
   /** @returns The column of the leftmost tile of the map @p map, which must
    * have been added: where its tiles begin. Its width when it has none. */
   [[nodiscard]] int firstTileColumnOf(std::size_t map) const;
-
-  /** @brief Draws the maps that show when the first one starts on the
-   * column @p firstColumn, textured by @p tileset. */
-  void draw(sf::RenderTarget& canvas, const sf::Texture& tileset,
-            int firstColumn) const;
 
  private:
   std::vector<sf::VertexArray> maps_;

@@ -10,6 +10,9 @@ add_library(rtype_client_background_layers STATIC
   ParticleLayer.cpp
   ParticleMotion.cpp
   ParticlePainting.cpp
+  ShownBackgrounds.cpp
+  StripFrameRect.cpp
+  TexturedQuad.cpp
 )
 
 target_include_directories(rtype_client_background_layers PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

@@ -4,15 +4,16 @@
 #include <SFML/Window/Event.hpp>
 #include <cstddef>
 #include <optional>
+#include "BackgroundCatalog.hpp"
 #include "GameResult.hpp"
 #include "ScreenContext.hpp"
 #include "ScreenRegistry.hpp"
 #include "ScreenServices.hpp"
 #include "ScreenStack.hpp"
-#include "ScrollingBackground.hpp"
 #include "ServerChoice.hpp"
 #include "ServerSession.hpp"
 #include "SessionLossWatch.hpp"
+#include "Sky.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -78,7 +79,10 @@ class ClientScreens {
 
  private:
   const ServerSession* connection_;
-  ScrollingBackground background_;
+  /** @brief The backgrounds of the assets, whose images are loaded for good
+   * when the screens are built: the sky shows behind every screen. */
+  BackgroundCatalog backgrounds_;
+  Sky background_;
   GameResult gameResult_;
   std::optional<std::size_t> previousTaunt_;
   /** @brief The server, the nickname and the game every connection screen
