@@ -1,7 +1,7 @@
 --!strict
--- The level campaign: five stages a team plays one after the other, each one
--- after the first starting at a checkpoint. A server plays it with
--- `set level campaign`.
+-- The level fosse, named after the biome it leads into: five stages a team
+-- plays one after the other, each one after the first starting at a
+-- checkpoint. A server plays it with `set level fosse`.
 --
 -- The first two stages cross open space, with the stars alone; the second
 -- ends on a mini-boss, the Bydo Tyrant with 40 % of its health. The third
@@ -92,7 +92,7 @@ local DEPTHS: { Wave } = {
 	{ at = 15480, sheet = "drillback", rows = { 360, 720 } },
 }
 
-level.register("campaign", {
+level.register("fosse", {
 	function()
 		play(OUT_OF_THE_BASE)
 		level.wait_scroll(3000)

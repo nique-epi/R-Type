@@ -20,11 +20,11 @@ constexpr std::string_view SHIPPED_LEVEL_RESOURCE = "training-run";
 constexpr std::string_view SHIPPED_LEVEL = "training_run";
 constexpr std::size_t STAGES_OF_THE_SHIPPED_LEVEL = 2;
 
-/** @brief The campaign the repository ships: the resource campaign, whose
- * level campaign goes from open space into the Pit in five stages. */
-constexpr std::string_view CAMPAIGN_RESOURCE = "campaign";
-constexpr std::string_view CAMPAIGN_LEVEL = "campaign";
-constexpr std::size_t STAGES_OF_THE_CAMPAIGN = 5;
+/** @brief The level of the Pit the repository ships: the resource fosse,
+ * whose level fosse goes from open space into the Pit in five stages. */
+constexpr std::string_view FOSSE_RESOURCE = "fosse";
+constexpr std::string_view FOSSE_LEVEL = "fosse";
+constexpr std::size_t STAGES_OF_THE_FOSSE_LEVEL = 5;
 
 /** @brief A level no script registers. */
 constexpr std::string_view UNKNOWN_LEVEL = "nowhere";
