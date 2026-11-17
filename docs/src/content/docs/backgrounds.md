@@ -56,7 +56,7 @@ A table in braces fits on one line; one that needs several lines is written as a
 | `repeat` | 1 to 65536 | the width after which the layer shows again what it showed |
 | `warps` | `true` or `false` | whether its autoscroll speeds up while the ships warp at the start of a game |
 
-A layer with `parallax = 1` is painted on whole pixels, on the grid of the ships; any other moves by a pixel of the screen at a time, so a slow layer never jumps.
+A layer with a `parallax` of 1 or more is painted on whole pixels, on the grid of the ships; any other moves by a pixel of the screen at a time, so a slow layer never jumps.
 
 A background with an `entrance` arrives from the right edge of the screen through that layer. The layers written before it show only right of where the entrance begins, fading in over 16 columns, and the background it replaces stays behind until the entrance has left the screen. A background without one replaces the other at once.
 
