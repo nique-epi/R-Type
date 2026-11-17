@@ -6,7 +6,7 @@ Every file the client reads at run time, and the source of the dictionary of the
 |---|---|
 | `sprites/` | textures and sprite sheets |
 | `biomes/` | one folder per biome: the LDtk project of its maps and the tilesets of its planes |
-| `backgrounds/` | one folder per background: the images its layers draw |
+| `backgrounds/` | one file per background, `<name>.toml`, which lists its layers (see the page Writing a background of the site), and one folder per background: the images its layers draw |
 | `sounds/` | short sound effects, loaded in memory |
 | `music/` | music, read from disk while it plays |
 | `fonts/` | fonts |
