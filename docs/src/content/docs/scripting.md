@@ -235,7 +235,14 @@ What a script may rely on:
 - **A boss comes as any body does.** A stage creates it with `behaviours.spawn`, past the right edge, such as `behaviours.spawn("bydo_tyrant", { x = 2176, y = 492 }, { health_percent = 40 })`: the players get the WARNING once it appeared, nothing steers it for `BOSS_ARRIVAL_WARNING` (4400 ms), then its health is scaled for the players connected and the `boss_health_percent` of the difficulty and it enters. `level.enemies()` counts it from the tick after the stage created it. Several bosses may come in one level: each plays the whole arrival again on the client, the alarm, the WARNING, the music of the boss, then its bar. In a game that plays a level, the music of the game comes back once that boss is defeated; in a game of waves, the music of its boss plays until the game ends. A team that loses every life during a warning starts the stage again, and the boss of that warning is removed with every other body.
 - **Any script may read and move the level during a game that plays one.** The behaviour of a boss may call `level.pause_scroll()` when it arrives. In a game that plays its waves, every function of `level` but `register` raises an error, which stops the body that called it. `bus.on` only runs in the function of a body, so a stage hears no event: it polls, as the example does with `level.enemies()`.
 
-The repository ships one level, `training_run`, in `resources/training-run/`: two stages, fifteen enemies placed in `levels/training_run.ldtk`, a pause of the scroll on each Reaper until it is destroyed, a checkpoint, the stars and then the biome `fosse`. Play it with `ensure training-run` and `set level training_run` in `server.cfg`.
+The repository ships two levels:
+
+| Level | Resource | What it plays |
+|---|---|---|
+| `fosse` | `resources/fosse/` | named after the biome it leads into: five stages, each one after the first at a checkpoint: two in open space, the second ending on the Bydo Tyrant with 40 % of its health as a mini-boss, then two in the Pit, entered through its cave, and a last stage on the Bydo Tyrant at full health. The positions of its Bydos are written in the script until a level places them in its LDtk project. |
+| `training_run` | `resources/training-run/` | two stages, fifteen enemies placed in `levels/training_run.ldtk`, a pause of the scroll on each Reaper until it is destroyed, a checkpoint, the stars and then the biome `fosse` |
+
+Play one with `ensure fosse` and `set level fosse` in `server.cfg`, or `ensure training-run` and `set level training_run`.
 
 ## Placing the enemies in LDtk
 
