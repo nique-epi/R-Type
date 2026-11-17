@@ -9,6 +9,7 @@ target_link_libraries(rtype_client_background
     rtype_game
 )
 
+add_subdirectory(Description)
 add_subdirectory(ShiftedView)
 add_subdirectory(RandomRange)
 add_subdirectory(PixelRounding)
