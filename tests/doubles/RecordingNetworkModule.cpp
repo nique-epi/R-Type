@@ -26,6 +26,7 @@ void RecordingNetworkModule::install(rtype::engine::InstallContext& context) {
   context.provide<rtype::server::IPlayerAdmission>(admission_);
   context.provide(tickDatagrams_);
   context.provide(traffic_);
+  context.provide(rejections_);
   context.provide<rtype::server::IListeningPort>(*this);
 }
 

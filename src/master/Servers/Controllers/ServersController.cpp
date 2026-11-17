@@ -29,9 +29,7 @@
 #include "ServerRegistration.hpp"
 #include "ServersControllerConstants.hpp"
 #include "ServersService.hpp"
-#include "SettingValue.hpp"
-#include "SiteClaim.hpp"
-#include "SiteVisitorAddress.hpp"
+#include "SiteVisitors.hpp"
 
 namespace rtype::master {
 
@@ -69,21 +67,6 @@ network::ApiResponse answerOfServerPage(const network::ApiRequest& request,
     return refusal(NOT_FOUND_STATUS, UNKNOWN_SERVER_DETAIL);
   }
   return okResponse(write(*listing));
-}
-
-/** @returns The value of the header @p name of @p request, empty without
- * that header. */
-std::string headerOf(const network::ApiRequest& request,
-                     std::string_view name) {
-  const auto header = request.headers.find(std::string{name});
-  return header == request.headers.end() ? std::string{} : header->second;
-}
-
-/** @returns What @p request says of the web site and its visitor. */
-SiteClaim siteClaimOf(const network::ApiRequest& request) {
-  return SiteClaim{
-      .key = headerOf(request, SITE_KEY_HEADER),
-      .clientAddress = headerOf(request, SITE_CLIENT_ADDRESS_HEADER)};
 }
 
 network::ApiResponse createdResponse(const network::CreatedServer& created) {
@@ -125,8 +108,10 @@ network::ApiResponse heartbeatAnswer() {
 
 ServersController::ServersController(ServersService& service,
                                      IProbeSender& probeSender,
-                                     const engine::SettingValue& siteKey)
-    : service_(service), probeSender_(probeSender), siteKey_(siteKey) {}
+                                     const SiteVisitors& siteVisitors)
+    : service_(service),
+      probeSender_(probeSender),
+      siteVisitors_(siteVisitors) {}
 
 network::ApiResponse ServersController::createServer(
     const network::ApiRequest& request) {
@@ -134,8 +119,7 @@ network::ApiResponse ServersController::createServer(
     const std::optional<network::CreatedServer> created =
         service_.createServer(CreationAttempt{
             .creation = network::serverCreationFromText(request.body),
-            .address = visitorAddressOf(siteClaimOf(request), siteKey_.text())
-                           .value_or(request.remoteAddress),
+            .address = siteVisitors_.addressOf(request),
             .requestedAt = currentSecond()});
     if (!created.has_value()) {
       return refusal(TOO_MANY_REQUESTS_STATUS, CREATION_QUOTA_DETAIL);

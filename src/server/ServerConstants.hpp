@@ -122,6 +122,23 @@ constexpr std::string_view GAME_NAME_PREFIX = "GAME ";
 constexpr std::string_view SERVER_LOGGER_NAME = "Server";
 
 /**
+ * @brief The names of the fields of the events the server writes in its
+ * journal: who (a player number, an address and a port, a game number), and
+ * the figures a tool reads without parsing the message.
+ */
+constexpr std::string_view PLAYER_FIELD = "player";
+constexpr std::string_view ADDRESS_FIELD = "address";
+constexpr std::string_view PORT_FIELD = "port";
+constexpr std::string_view SILENT_SECONDS_FIELD = "silent_seconds";
+constexpr std::string_view SEAT_KEPT_SECONDS_FIELD = "seat_kept_seconds";
+constexpr std::string_view GAME_FIELD = "game";
+constexpr std::string_view EXIT_CODE_FIELD = "exit_code";
+constexpr std::string_view PROGRAM_FIELD = "program";
+
+/** @brief The event of a program of the server that stopped on an error. */
+constexpr std::string_view PROGRAM_STOPPED_EVENT = "program.stopped";
+
+/**
  * @brief Why the DatagramSorter drops a datagram, as its lines say; a header
  * it does not speak is dropped for FOREIGN_HEADER_DROP_REASON.
  */
@@ -166,7 +183,7 @@ constexpr std::uint64_t OFFICIAL_WAVES_FINGERPRINT = 0x9719fc671f2bf7f3;
  * are not vanilla. A test fails when a shipped sheet changes and this does
  * not.
  */
-constexpr std::uint64_t OFFICIAL_ENTITY_SHEETS_FINGERPRINT = 0xb4e89d283de099ab;
+constexpr std::uint64_t OFFICIAL_ENTITY_SHEETS_FINGERPRINT = 0x371ed15a17a8ffcd;
 
 /**
  * @brief Why the games of a server are not vanilla, as the lines of its journal

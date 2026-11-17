@@ -9,6 +9,7 @@
 #include <system_error>
 #include <utility>
 #include <vector>
+#include "LogFormat.hpp"
 #include "LogLaunchSettings.hpp"
 #include "Logger.hpp"
 #include "LoggingConstants.hpp"
@@ -57,6 +58,18 @@ void recordColor(LogLaunchSettings& settings,
   settings.output.forceColor = true;
 }
 
+void recordFormat(LogLaunchSettings& settings, std::string_view formatName) {
+  if (formatName == TEXT_FORMAT_NAME) {
+    settings.output.fileFormat = LogFormat::Text;
+    return;
+  }
+  if (formatName == JSON_FORMAT_NAME) {
+    settings.output.fileFormat = LogFormat::Json;
+    return;
+  }
+  throw InvalidLogFormatException(std::string(formatName));
+}
+
 std::optional<LaunchOption> findLaunchOption(std::string_view argument) {
   constexpr std::array launchOptions{
       LaunchOption{
@@ -72,6 +85,8 @@ std::optional<LaunchOption> findLaunchOption(std::string_view argument) {
                    .record = recordNoStderr},
       LaunchOption{
           .name = COLOR_OPTION, .takesValue = false, .record = recordColor},
+      LaunchOption{
+          .name = FORMAT_OPTION, .takesValue = true, .record = recordFormat},
   };
   for (const LaunchOption& option : launchOptions) {
     if (option.name == argument) {
@@ -171,7 +186,8 @@ LogOutput applyOutput(const LogLaunchSettings& settings) {
   }
   const LogOutput withoutJournal{.toStderr = settings.output.toStderr,
                                  .filePath = std::nullopt,
-                                 .forceColor = settings.output.forceColor};
+                                 .forceColor = settings.output.forceColor,
+                                 .fileFormat = settings.output.fileFormat};
   Logger::setOutput(withoutJournal);
   return withoutJournal;
 }
@@ -232,6 +248,10 @@ std::vector<std::string> LogLaunchOptions::forwardedArguments() const {
   if (settings_.output.forceColor) {
     arguments.emplace_back(COLOR_OPTION);
   }
+  if (settings_.output.fileFormat == LogFormat::Json) {
+    arguments.emplace_back(FORMAT_OPTION);
+    arguments.emplace_back(JSON_FORMAT_NAME);
+  }
   return arguments;
 }
 
@@ -260,6 +280,10 @@ std::string LogLaunchOptions::usageWithJournalAt(
   appendUsageEntry(
       text, COLOR_OPTION,
       "Write standard error in colour, even when it is no terminal.");
+  appendUsageEntry(text, std::string(FORMAT_OPTION) + " <format>",
+                   "Journal file as text, or as json: one JSON object per "
+                   "line, for a tool. Standard error stays text. Default: "
+                   "text.");
   return text;
 }
 

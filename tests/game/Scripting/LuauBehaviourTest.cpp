@@ -199,6 +199,115 @@ TEST_F(LuauBehaviourFixture, AsksTheGameForTheBodyAScriptCreates) {
 }
 
 /**
+ * Given a script that creates a drifter with 40 percent of its health
+ * When its body is steered in a game
+ * Then the game is asked for that drifter at 40 percent of its health
+ */
+TEST_F(LuauBehaviourFixture, AsksTheGameForTheHealthPercentAScriptGives) {
+  RecordingEntityOrders world{GIVEN_NETWORK_ID};
+  attach(world);
+  load(WEAKENER_SCRIPT);
+  SteeredBody body{.position = BODY_IN_THE_MIDDLE};
+  beginTick();
+
+  static_cast<void>(steer(WEAKENER_BEHAVIOUR, body));
+
+  ASSERT_EQ(world.spawns().size(), 1U);
+  EXPECT_EQ(world.spawns().front().options.healthPercent,
+            WEAKENED_HEALTH_PERCENT);
+}
+
+/**
+ * Given a script that creates a drifter with one percent of its health, the
+ * lowest a script may ask
+ * When its body is steered in a game
+ * Then the game is asked for that drifter at one percent
+ */
+TEST_F(LuauBehaviourFixture, AcceptsTheLowestHealthPercent) {
+  RecordingEntityOrders world{GIVEN_NETWORK_ID};
+  attach(world);
+  load(WEAKENER_SCRIPT);
+  SteeredBody body{.position = BODY_IN_THE_MIDDLE};
+  beginTick();
+
+  static_cast<void>(steer(LOWEST_PERCENT_BEHAVIOUR, body));
+
+  ASSERT_EQ(world.spawns().size(), 1U);
+  EXPECT_EQ(world.spawns().front().options.healthPercent,
+            LOWEST_HEALTH_PERCENT);
+}
+
+/**
+ * Given a script that creates a drifter with 100 percent of its health, the
+ * highest a script may ask
+ * When its body is steered in a game
+ * Then the game is asked for that drifter at 100 percent
+ */
+TEST_F(LuauBehaviourFixture, AcceptsTheWholeHealthPercent) {
+  RecordingEntityOrders world{GIVEN_NETWORK_ID};
+  attach(world);
+  load(WEAKENER_SCRIPT);
+  SteeredBody body{.position = BODY_IN_THE_MIDDLE};
+  beginTick();
+
+  static_cast<void>(steer(WHOLE_PERCENT_BEHAVIOUR, body));
+
+  ASSERT_EQ(world.spawns().size(), 1U);
+  EXPECT_EQ(world.spawns().front().options.healthPercent, WHOLE_HEALTH_PERCENT);
+}
+
+/**
+ * Given a script that creates a drifter with no percent of its health
+ * When its body is steered in a game
+ * Then no body is asked for
+ */
+TEST_F(LuauBehaviourFixture, RefusesAHealthPercentOfZero) {
+  RecordingEntityOrders world{GIVEN_NETWORK_ID};
+  attach(world);
+  load(WEAKENER_SCRIPT);
+  SteeredBody body{.position = BODY_IN_THE_MIDDLE};
+  beginTick();
+
+  static_cast<void>(steer(NO_PERCENT_BEHAVIOUR, body));
+
+  EXPECT_TRUE(world.spawns().empty());
+}
+
+/**
+ * Given a script that creates a drifter with 101 percent of its health
+ * When its body is steered in a game
+ * Then no body is asked for
+ */
+TEST_F(LuauBehaviourFixture, RefusesAHealthPercentPastTheWhole) {
+  RecordingEntityOrders world{GIVEN_NETWORK_ID};
+  attach(world);
+  load(WEAKENER_SCRIPT);
+  SteeredBody body{.position = BODY_IN_THE_MIDDLE};
+  beginTick();
+
+  static_cast<void>(steer(PAST_THE_WHOLE_BEHAVIOUR, body));
+
+  EXPECT_TRUE(world.spawns().empty());
+}
+
+/**
+ * Given a script that creates a drifter with 40.5 percent of its health
+ * When its body is steered in a game
+ * Then no body is asked for: the percent is a whole number
+ */
+TEST_F(LuauBehaviourFixture, RefusesAHealthPercentThatIsNotWhole) {
+  RecordingEntityOrders world{GIVEN_NETWORK_ID};
+  attach(world);
+  load(WEAKENER_SCRIPT);
+  SteeredBody body{.position = BODY_IN_THE_MIDDLE};
+  beginTick();
+
+  static_cast<void>(steer(FRACTIONAL_PERCENT_BEHAVIOUR, body));
+
+  EXPECT_TRUE(world.spawns().empty());
+}
+
+/**
  * Given a script that removes the body it just created
  * When its body is steered in a game
  * Then the game is asked to remove the id it gave that body

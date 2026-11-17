@@ -21,12 +21,14 @@
 #include "LuauPreHit.hpp"
 #include "LuauResumeContext.hpp"
 #include "LuauSetting.hpp"
+#include "PercentConstants.hpp"
 #include "Position.hpp"
 #include "ScriptFailureReport.hpp"
 #include "ScriptFunction.hpp"
 #include "ScriptLimits.hpp"
 #include "ScriptSource.hpp"
 #include "ScriptWait.hpp"
+#include "SpawnOptions.hpp"
 #include "WholeNumberRange.hpp"
 #include "lua.h"
 #include "lualib.h"
@@ -136,16 +138,38 @@ Position spawnPositionOf(lua_State* state) {
   return Position{.x = across, .y = down};
 }
 
-/** @brief `behaviours.spawn(type, position)`: returns the network id of the
- * body, which appears once the bodies of this tick were steered. */
+/** @returns The options at the argument SPAWN_OPTIONS_ARGUMENT, those of a
+ * body made as its sheet says without them; raises an error when its
+ * `health_percent` is not a whole number from 1 to 100. */
+SpawnOptions spawnOptionsOf(lua_State* state) {
+  if (lua_isnoneornil(state, SPAWN_OPTIONS_ARGUMENT)) {
+    return SpawnOptions{};
+  }
+  luaL_checktype(state, SPAWN_OPTIONS_ARGUMENT, LUA_TTABLE);
+  const int type =
+      lua_rawgetfield(state, SPAWN_OPTIONS_ARGUMENT, SPAWN_HEALTH_PERCENT_KEY);
+  const double percent =
+      type == LUA_TNIL ? double{WHOLE_PERCENT} : lua_tonumber(state, -1);
+  lua_pop(state, 1);
+  if ((type != LUA_TNIL && type != LUA_TNUMBER) ||
+      percent != std::floor(percent) ||
+      percent < MINIMUM_SPAWN_HEALTH_PERCENT || percent > WHOLE_PERCENT) {
+    raise(state, std::string{WRONG_SPAWN_HEALTH_PERCENT_MESSAGE});
+  }
+  return SpawnOptions{.healthPercent = static_cast<int>(percent)};
+}
+
+/** @brief `behaviours.spawn(type, position, options)`: returns the network
+ * id of the body, which appears once the bodies of this tick were steered. */
 int spawnBody(lua_State* state) {
   IEntityOrders& orders = ordersOf(state);
   const char* const type = luaL_checkstring(state, SPAWN_TYPE_ARGUMENT);
   const Position position = spawnPositionOf(state);
+  const SpawnOptions options = spawnOptionsOf(state);
   std::uint32_t networkId = 0;
   std::string refusal;
   try {
-    networkId = orders.spawn(type, position);
+    networkId = orders.spawn(type, position, options);
   } catch (const std::exception& error) {
     refusal = error.what();
   }

@@ -11,6 +11,7 @@ export const frPages = {
     ranking: 'Classement',
     wiki: 'Wiki',
     team: 'Equipe',
+    signUp: 'Inscription',
   },
   site: {
     metaDescription:
@@ -352,6 +353,63 @@ export const frPages = {
       copiedLine: 'Clé copiée dans le presse-papiers.',
       copyFailed:
         'Copie refusée par le navigateur : sélectionnez la clé à la main.',
+    },
+  },
+  signUpPage: {
+    eyebrow: 'Compte pilote',
+    title: 'Inscription',
+    lede: 'Créez votre compte de pilote : votre pseudo vous appartient, sur tous les serveurs.',
+    home: "Revenir a l'accueil",
+    download: 'Telecharger le jeu',
+    form: {
+      title: 'Nouveau compte',
+      nickname: 'Pseudo',
+      nicknamePlaceholder: 'ACE',
+      counter: '{length} / {maximum}',
+      password: 'Mot de passe',
+      passwordHelp: '{minimum} caractères au moins',
+      confirmation: 'Confirmer le mot de passe',
+      noEmailTitle: 'Sans e-mail',
+      noEmail:
+        "Un compte n'a pas d'adresse e-mail : un mot de passe oublié ne se récupère pas, gardez-le précieusement. Le master limite le nombre de comptes créés par heure depuis une même adresse.",
+      submit: 'Creer le compte',
+      pending: 'Creation...',
+      problems: {
+        nicknameRequired: 'Choisissez un pseudo',
+        nicknameTooLong:
+          'Ce pseudo est trop long : {maximum} caractères au plus, une lettre accentuée en compte deux',
+        nicknameUnprintable:
+          'Ce pseudo contient un caractère que le jeu ne peut pas afficher',
+        passwordTooShort:
+          'Ce mot de passe est trop court : {minimum} caractères au moins',
+        passwordTooLong:
+          'Ce mot de passe est trop long : {maximum} caractères au plus',
+        passwordUnprintable:
+          'Ce mot de passe contient un caractère que le master refuse',
+        confirmationDifferent: 'Les deux mots de passe diffèrent',
+      },
+    },
+    problems: {
+      taken: {
+        title: 'Pseudo pris',
+        text: 'Un autre pilote a déjà ce pseudo, majuscules comprises. Choisissez-en un autre.',
+      },
+      quota: {
+        title: 'Quota atteint',
+        text: 'Trop de comptes ont été créés depuis votre adresse pendant la dernière heure. Réessayez plus tard : ce que vous avez saisi est gardé.',
+      },
+      refused: {
+        title: 'Compte refusé',
+        text: "Le master n'accepte pas ce pseudo ou ce mot de passe. Vérifiez-les et réessayez.",
+      },
+      unreachable: {
+        title: 'Master injoignable',
+        text: 'Le master ne répond pas. Réessayez dans un instant : ce que vous avez saisi est gardé.',
+      },
+    },
+    created: {
+      title: 'Compte cree',
+      welcome: 'Bienvenue, {nickname}. Votre pseudo est réservé.',
     },
   },
   teamPage: {

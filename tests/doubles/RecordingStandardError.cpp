@@ -17,6 +17,7 @@ RecordingStandardError::~RecordingStandardError() {
 }
 
 std::vector<std::string> RecordingStandardError::lines() const {
+  rtype::logging::flushJournal();
   const std::lock_guard<std::mutex> lock(mutex_);
   return lines_;
 }

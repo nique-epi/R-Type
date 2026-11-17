@@ -22,13 +22,16 @@ using rtype::game::Position;
 using rtype::game::ScriptEvent;
 using rtype::network::EntitySpawned;
 using rtype::server::EntityOrders;
+using rtype::server::testing::AT_FORTY_PERCENT;
 using rtype::server::testing::DRIFTER_SHEET;
 using rtype::server::testing::EntityOrdersFixture;
+using rtype::server::testing::FORTY_PERCENT_OF_THE_TYRANT;
 using rtype::server::testing::PLAYERS_TOLD;
 using rtype::server::testing::SCRIPT_EVENT_NAME;
 using rtype::server::testing::SCRIPTED_REMOVALS_IN_A_TICK;
 using rtype::server::testing::SCRIPTED_SPAWNS_IN_A_TICK;
 using rtype::server::testing::SHIP_SHEET;
+using rtype::server::testing::TYRANT_SHEET;
 using rtype::server::testing::UNKNOWN_SHEET;
 using rtype::server::testing::WHERE_A_SCRIPT_PUTS_IT;
 using rtype::server::testing::WHERE_THE_SHIP_FLIES;
@@ -61,6 +64,21 @@ TEST_F(EntityOrdersFixture, CreatesTheBodyWithTheIdTheScriptWasGiven) {
   const Position found = position.value_or(Position{});
   EXPECT_EQ(found.x, WHERE_A_SCRIPT_PUTS_IT.x);
   EXPECT_EQ(found.y, WHERE_A_SCRIPT_PUTS_IT.y);
+}
+
+/**
+ * Given a script that asked for a Bydo Tyrant at 40 percent of its health
+ * When the tick ends
+ * Then the body has 96 of the 240 points its sheet gives
+ */
+TEST_F(EntityOrdersFixture, CreatesTheBodyAtTheHealthPercentAsked) {
+  const std::uint32_t networkId =
+      spawnByScript(TYRANT_SHEET, WHERE_A_SCRIPT_PUTS_IT, AT_FORTY_PERCENT);
+
+  endTick();
+
+  EXPECT_EQ(healthOf(networkId),
+            std::optional<int>{FORTY_PERCENT_OF_THE_TYRANT});
 }
 
 /**

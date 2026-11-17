@@ -2,6 +2,8 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <nlohmann/json.hpp>
+#include <nlohmann/json_fwd.hpp>
 #include <span>
 #include <string>
 #include <utility>
@@ -17,9 +19,11 @@
 #include "ConnectionRefused.hpp"
 #include "ConnectionRequest.hpp"
 #include "DatagramCodec.hpp"
+#include "DebugJournal.hpp"
 #include "Endpoint.hpp"
 #include "GameTicketBytesTestConstants.hpp"
 #include "IncomingDatagram.hpp"
+#include "LogFormat.hpp"
 #include "MessageType.hpp"
 #include "NetworkConstants.hpp"
 #include "NetworkException.hpp"
@@ -48,6 +52,7 @@ using testing::DROPPED_DATAGRAM_LINE_TEXT;
 using testing::DROPPED_TOGETHER_COUNT;
 using testing::emptyNicknameRequestDatagram;
 using testing::gameContent;
+using testing::JOINED_EVENT_NAME;
 using testing::JUST_AFTER_THE_REPEAT;
 using testing::JUST_BEFORE_THE_REPEAT;
 using testing::NEXT_ACCEPTANCE_REPEAT_TIME;
@@ -110,6 +115,28 @@ TEST_F(ConnectionAcceptorFixture, ReportsNobodyForAChallengedSender) {
   receive(playerEndpoint(0), requestDatagram(0));
 
   EXPECT_TRUE(joinedPlayers().empty());
+}
+
+/**
+ * Given a journal written as JSON Lines and an acceptor with nobody connected
+ * When a sender goes through the challenge
+ * Then one player.joined event names the first seat, the address and the port
+ * of the sender
+ */
+TEST_F(ConnectionAcceptorFixture, WritesAJoinedPlayerAsAnEvent) {
+  const DebugJournal journal{rtype::logging::LogFormat::Json};
+
+  connect(playerEndpoint(0));
+
+  const std::vector<nlohmann::json> events =
+      journal.file().events(JOINED_EVENT_NAME);
+  ASSERT_EQ(events.size(), 1U);
+  EXPECT_EQ(events.front().at("player").get<std::int64_t>(),
+            network::FIRST_PLAYER_NUMBER);
+  EXPECT_EQ(events.front().at("address").get<std::string>(),
+            playerEndpoint(0).address);
+  EXPECT_EQ(events.front().at("port").get<std::int64_t>(),
+            playerEndpoint(0).port);
 }
 
 /**
@@ -672,6 +699,7 @@ TEST(ConnectionAcceptor, AnswersTheNextRequestAfterOneWhoseAnswerThrew) {
       .admit = [](const network::Endpoint&, std::uint64_t) {},
       .onPlayerJoined =
           [](ConnectedPlayer&) { throw network::InvalidCoordinateException(); },
+      .onRefused = {},
       .content = gameContent()}};
   const network::IncomingDatagram firstRequest{.sender = playerEndpoint(0),
                                                .payload = requestDatagram(0)};
@@ -806,6 +834,7 @@ TEST(ConnectionAcceptor, ChallengesWithNoMoreBytesWhateverTheTable) {
           },
       .admit = [](const network::Endpoint&, std::uint64_t) {},
       .onPlayerJoined = {},
+      .onRefused = {},
       .content = gameContent()}};
   const network::IncomingDatagram request{
       .sender = playerEndpoint(0),
@@ -818,6 +847,39 @@ TEST(ConnectionAcceptor, ChallengesWithNoMoreBytesWhateverTheTable) {
 
   ASSERT_EQ(answers.size(), 1U);
   EXPECT_LE(answers.front().payload.size(), request.payload.size());
+}
+
+/**
+ * Given an acceptor whose game is in progress
+ * When a sender asks to join, then another sender is let through the challenge
+ * of a game waiting for players
+ * Then the refused sender is handed to the callback of refusals once, and the
+ * challenged one never
+ */
+TEST(ConnectionAcceptor, HandsEachRefusedSenderToItsCallback) {
+  PlayerRoster roster;
+  std::vector<network::Endpoint> refused;
+  ConnectionAcceptor acceptor{ConnectionAcceptorParts{
+      .roster = roster,
+      .send = [](const network::OutgoingDatagram&) {},
+      .admit = [](const network::Endpoint&, std::uint64_t) {},
+      .onPlayerJoined = {},
+      .onRefused =
+          [&refused](const network::Endpoint& sender) {
+            refused.push_back(sender);
+          },
+      .content = gameContent()}};
+  const network::IncomingDatagram refusedRequest{.sender = playerEndpoint(0),
+                                                 .payload = requestDatagram(0)};
+  const network::IncomingDatagram challengedRequest{
+      .sender = playerEndpoint(1), .payload = requestDatagram(0)};
+
+  acceptor.setGameInProgress(true);
+  acceptor.receive(std::span{&refusedRequest, 1}, REQUEST_TIME);
+  acceptor.setGameInProgress(false);
+  acceptor.receive(std::span{&challengedRequest, 1}, REQUEST_TIME);
+
+  EXPECT_EQ(refused, std::vector<network::Endpoint>{playerEndpoint(0)});
 }
 
 }  // namespace rtype::server

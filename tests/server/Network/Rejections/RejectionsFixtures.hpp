@@ -2,9 +2,15 @@
 
 #include <cstddef>
 #include <initializer_list>
+#include <optional>
+#include <string>
+#include <string_view>
+#include <vector>
 #include "Endpoint.hpp"
+#include "EventField.hpp"
 #include "RejectionCause.hpp"
 #include "RejectionCounts.hpp"
+#include "RejectionEvent.hpp"
 #include "RejectionLedger.hpp"
 
 /**
@@ -29,3 +35,12 @@ void recordStrangers(rtype::server::RejectionLedger& ledger, std::size_t count);
 /** @returns Counts holding one for each cause in @p causes. */
 [[nodiscard]] rtype::server::RejectionCounts countsOf(
     std::initializer_list<rtype::server::RejectionCause> causes);
+
+/** @returns The messages of @p events, in order. */
+[[nodiscard]] std::vector<std::string> messagesOf(
+    const std::vector<rtype::server::RejectionEvent>& events);
+
+/** @returns The value of the field of @p event named @p name; nothing when it
+ * has no such field. */
+[[nodiscard]] std::optional<rtype::logging::EventFieldValue> fieldOf(
+    const rtype::server::RejectionEvent& event, std::string_view name);

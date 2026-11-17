@@ -8,6 +8,7 @@
 #include "IEntityOrders.hpp"
 #include "Logger.hpp"
 #include "Position.hpp"
+#include "SpawnOptions.hpp"
 
 namespace rtype::server {
 
@@ -43,7 +44,8 @@ class EntityOrders final : public game::IEntityOrders {
   void onTick();
 
   [[nodiscard]] std::uint32_t spawn(std::string_view type,
-                                    game::Position position) override;
+                                    game::Position position,
+                                    game::SpawnOptions options) override;
   void destroy(std::uint32_t networkId) override;
 
  private:

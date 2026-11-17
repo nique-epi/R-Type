@@ -8,13 +8,15 @@
 #include "InstallContext.hpp"
 #include "RecordingDatagramSender.hpp"
 #include "RecordingPlayerAdmission.hpp"
+#include "RejectionLedger.hpp"
 #include "TickDatagrams.hpp"
 #include "TrafficCounters.hpp"
 
 /** @brief Module double that stands in for the network module: it provides, as
  * the real one does, a datagram sender and a player admission that record what
  * they receive, the datagrams of the tick, which the test sets, the traffic,
- * which the test counts, and the default port as the port it listens on. It
+ * which the test counts, the ledger of the rejected datagrams, and the
+ * default port as the port it listens on. It
  * opens no socket and runs no thread. */
 class RecordingNetworkModule : public rtype::engine::IModule,
                                public rtype::server::IListeningPort {
@@ -36,4 +38,5 @@ class RecordingNetworkModule : public rtype::engine::IModule,
   RecordingPlayerAdmission admission_;
   rtype::server::TickDatagrams tickDatagrams_;
   rtype::network::TrafficCounters traffic_;
+  rtype::server::RejectionLedger rejections_;
 };

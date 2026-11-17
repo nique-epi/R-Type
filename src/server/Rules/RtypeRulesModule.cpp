@@ -39,7 +39,7 @@ void RtypeRulesModule::install(GameContext& game,
 }
 
 void RtypeRulesModule::start() {
-  addRtypeSystems(game_->systems, game_->events);
+  addRtypeSystems(*game_);
   auto scoreKeeper =
       std::make_unique<ScoreKeeper>(game_->events, game_->roster);
   flow_->begin();

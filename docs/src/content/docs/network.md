@@ -538,7 +538,7 @@ After the line of a bot, the report gives one line for each game in which the bo
 | `bot alive … s` | How long the bot had a life left while the boss fought. |
 | `… lives lost` | The lives the bot lost while the boss fought, not those it lost before: a bot that came to the boss with fewer lives is out after fewer. |
 
-The health of the boss grows with the players, 25 % for each one past the first (see [Server and game](/R-Type/server/#boss-bossstage-and-bossphasesystem)), so two runs are compared with the same number of bots. `--boss` starts every game at its boss but keeps the ships invulnerable, so it tells nothing of how long a bot lives. To meet the boss with ships that can die, a resource lays a short level over `normal`, one Bydo then the Bydo Tyrant (see [Waves of a resource](/R-Type/waves-file/#waves-of-a-resource)):
+The health of the boss grows with the players, 25 % for each one past the first (see [Server and game](/R-Type/server/#boss-bosssystem-and-bossstage)), so two runs are compared with the same number of bots. `--boss` starts every game at its boss but keeps the ships invulnerable, so it tells nothing of how long a bot lives. To meet the boss with ships that can die, a resource lays a short level over `normal`, one Bydo then the Bydo Tyrant (see [Waves of a resource](/R-Type/waves-file/#waves-of-a-resource)):
 
 ```toml
 # resources/boss-duel/waves/waves.toml

@@ -21,6 +21,7 @@ namespace {
  * @brief Starts the modules of the client, runs its frame loop until the
  * window is closed or no screen is left, then stops the modules in the
  * reverse order: the connection leaves the server, then the window closes.
+ * The journal is written to its end before it returns.
  * @returns the exit code: 0 once the client stopped, 1 after an error, which
  *          is logged and printed. No exception leaves it.
  */
@@ -50,9 +51,11 @@ int runClient(const rtype::client::LaunchOptions& launchOptions) {
     const rtype::logging::Logger logger{
         std::string{rtype::client::CLIENT_LOGGER_NAME}};
     logger.error("client stopped: ", error.what());
+    rtype::logging::closeJournal();
     std::cerr << "client stopped: " << error.what() << '\n';
     return 1;
   }
+  rtype::logging::closeJournal();
   return 0;
 }
 

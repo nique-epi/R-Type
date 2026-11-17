@@ -1,6 +1,7 @@
 add_library(rtype_server_sessions_roster STATIC
   ArrivalLedger.cpp
   ConnectedPlayers.cpp
+  PlayerEventFields.cpp
   PlayerRoster.cpp
   SeatIndex.cpp
   SentStates.cpp
@@ -14,6 +15,7 @@ target_link_libraries(rtype_server_sessions_roster
     rtype_engine_time
     rtype_game_components
     rtype_identifiers
+    rtype_logging
     rtype_network_connection_request
     rtype_network_protocol
     rtype_network_statistics_round_trip
@@ -21,6 +23,7 @@ target_link_libraries(rtype_server_sessions_roster
     rtype_network_transport
   PRIVATE
     rtype_network_datagram_codec
+    rtype_server_constants
 )
 
 rtype_enable_warnings(rtype_server_sessions_roster)

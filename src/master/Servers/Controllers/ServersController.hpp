@@ -4,7 +4,7 @@
 #include "ApiResponse.hpp"
 #include "IProbeSender.hpp"
 #include "ServersService.hpp"
-#include "SettingValue.hpp"
+#include "SiteVisitors.hpp"
 
 namespace rtype::master {
 
@@ -23,19 +23,18 @@ class ServersController {
    * controller.
    * @param probeSender Where the probes of the accepted heartbeats go; it
    * must outlive the controller.
-   * @param siteKey The `site-key` setting, the secret of the web site, read
-   * at each creation and never written anywhere; it must outlive the
+   * @param siteVisitors Who a creation is counted under; it must outlive the
    * controller.
    */
   ServersController(ServersService& service, IProbeSender& probeSender,
-                    const engine::SettingValue& siteKey);
+                    const SiteVisitors& siteVisitors);
 
   /**
    * @returns The answer of `POST /api/servers`: 201, `Location` naming the
    * server, and the server with its key, shown this once. The creation is
    * counted under the visitor the web site names when the request carries
-   * the site key (visitorAddressOf()), under the address it came from
-   * otherwise: a wrong or missing key is no error.
+   * the site key (SiteVisitors::addressOf()), under the address it came
+   * from otherwise: a wrong or missing key is no error.
    */
   [[nodiscard]] network::ApiResponse createServer(
       const network::ApiRequest& request);
@@ -93,7 +92,7 @@ class ServersController {
  private:
   ServersService& service_;
   IProbeSender& probeSender_;
-  const engine::SettingValue& siteKey_;
+  const SiteVisitors& siteVisitors_;
 };
 
 }  // namespace rtype::master

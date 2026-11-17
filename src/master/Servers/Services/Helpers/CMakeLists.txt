@@ -1,7 +1,6 @@
 add_library(rtype_master_servers_helpers STATIC
   ServerKey.cpp
   ServerStatusRule.cpp
-  SiteVisitorAddress.cpp
 )
 
 target_include_directories(rtype_master_servers_helpers PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

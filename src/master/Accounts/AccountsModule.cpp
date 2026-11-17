@@ -18,6 +18,7 @@
 #include "MasterModuleConstants.hpp"
 #include "PasswordKey.hpp"
 #include "PasswordKeyText.hpp"
+#include "SiteVisitors.hpp"
 #include "WireTypes.hpp"
 
 namespace rtype::master {
@@ -41,7 +42,8 @@ void AccountsModule::install(engine::InstallContext& context) {
   AccountsService& service =
       service_.emplace(context.require<MasterDatabase>(), key);
   context.provide<ISessionAccounts>(service);
-  AccountsController& controller = controller_.emplace(service);
+  AccountsController& controller =
+      controller_.emplace(service, context.require<SiteVisitors>());
   addRoutes(context.require<MasterHttpServer>(), ACCOUNT_ROUTES, controller);
 }
 

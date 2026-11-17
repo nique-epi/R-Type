@@ -1,8 +1,9 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <string_view>
-#include "BossStageConstants.hpp"
+#include "Position.hpp"
 
 namespace rtype::server::testing {
 
@@ -45,22 +46,19 @@ heading = 0
 [appearance]
 )";
 
-/** @brief The tick the last wave is found over announces the boss; it
- * appears BOSS_ARRIVAL_WARNING_TICKS ticks later, on the next tick. */
-constexpr std::size_t TICKS_TO_ANNOUNCE_THE_BOSS = 1;
-constexpr std::size_t TICKS_TO_THE_LAST_TICK_OF_THE_WARNING =
-    TICKS_TO_ANNOUNCE_THE_BOSS + BOSS_ARRIVAL_WARNING_TICKS;
-constexpr std::size_t TICKS_TO_THE_BOSS =
-    TICKS_TO_THE_LAST_TICK_OF_THE_WARNING + 1;
+/** @brief The network id the recorded orders give every body. */
+constexpr std::uint32_t ORDERED_BOSS_ID = 77;
+
+/** @brief Where the boss of the waves is ordered: half its 512-unit frame
+ * past the right edge of the 1920-unit playfield, on the middle row of the
+ * 984 units of the area of play. */
+constexpr game::Position WHERE_THE_BOSS_IS_ORDERED{.x = 2176.0F, .y = 492.0F};
+
+/** @brief The tick the last wave is found over orders the boss, and the game
+ * makes it appear at the end of the next one. */
+constexpr std::size_t TICKS_TO_ORDER_THE_BOSS = 1;
 
 /** @brief A few ticks: as many while the waves go on, or the boss lives. */
 constexpr std::size_t A_FEW_STAGE_TICKS = 10;
-/** @brief Longer than the warning: a level without boss announces none. */
-constexpr std::size_t LONGER_THAN_THE_WARNING = BOSS_ARRIVAL_WARNING_TICKS * 2;
-
-/** @brief The players told about the boss, by the order they connect in. */
-constexpr std::size_t FIRST_STAGE_PLAYER = 0;
-constexpr std::size_t SECOND_STAGE_PLAYER = 1;
-constexpr std::size_t STAGE_PLAYER_COUNT = 2;
 
 }  // namespace rtype::server::testing
