@@ -11,6 +11,9 @@ MasterException::MasterException(const std::string& message)
 DatabaseClosedException::DatabaseClosedException()
     : MasterException("the database of the master is not open") {}
 
+UserCodesExhaustedException::UserCodesExhaustedException()
+    : MasterException("every short code drawn for a device link is taken") {}
+
 MissingPasswordKeyException::MissingPasswordKeyException(
     std::string_view variable)
     : MasterException(std::string{variable} +

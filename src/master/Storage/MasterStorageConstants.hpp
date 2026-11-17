@@ -323,13 +323,42 @@ CREATE INDEX game_tickets_by_expiry ON game_tickets (expires_at);
 )sql";
 
 /**
+ * @brief The device links (migration 10): what a game asked for to sign in
+ * through the web site, which a signed-in player approves or denies there.
+ *
+ * A link is keyed by its short code, unique among the links kept; its secret
+ * is kept as its fingerprint, never the secret, so a copy of the file claims
+ * no link. user_id and decision stay null until a player decides, and are
+ * written once. read_at is when the game last read the link, so a game that
+ * reads it too often is slowed down. A link is forgotten once it expired long
+ * enough for the game to have read it expired; the first index counts the
+ * links an address asked for in the last hour, the second finds the old ones.
+ */
+constexpr std::string_view DEVICE_LINKS_MIGRATION = R"sql(
+CREATE TABLE device_links (
+  user_code          TEXT    PRIMARY KEY,
+  secret_fingerprint TEXT    NOT NULL UNIQUE,
+  address            TEXT    NOT NULL,
+  created_at         INTEGER NOT NULL,
+  expires_at         INTEGER NOT NULL,
+  read_at            INTEGER NOT NULL,
+  user_id            INTEGER REFERENCES users (id),
+  decision           TEXT
+) STRICT, WITHOUT ROWID;
+
+CREATE INDEX device_links_by_address ON device_links (address, created_at);
+CREATE INDEX device_links_by_expiry ON device_links (expires_at);
+)sql";
+
+/**
  * @brief The migrations of the database of the master, in order:
  * MASTER_MIGRATIONS[0] is version 1. A change adds a migration at the end and
  * never edits one a master already applied.
  */
-constexpr std::array<std::string_view, 9> MASTER_MIGRATIONS{
-    SERVERS_MIGRATION, STATUSES_MIGRATION,     PROBES_MIGRATION,
-    RESULTS_MIGRATION, MACHINE_LOAD_MIGRATION, ACCOUNTS_MIGRATION,
-    WALLET_MIGRATION,  CASINO_MIGRATION,       GAME_TICKETS_MIGRATION};
+constexpr std::array<std::string_view, 10> MASTER_MIGRATIONS{
+    SERVERS_MIGRATION,     STATUSES_MIGRATION,     PROBES_MIGRATION,
+    RESULTS_MIGRATION,     MACHINE_LOAD_MIGRATION, ACCOUNTS_MIGRATION,
+    WALLET_MIGRATION,      CASINO_MIGRATION,       GAME_TICKETS_MIGRATION,
+    DEVICE_LINKS_MIGRATION};
 
 }  // namespace rtype::master

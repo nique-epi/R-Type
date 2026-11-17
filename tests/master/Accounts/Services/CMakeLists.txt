@@ -1,1 +1,1 @@
-target_sources(master_tests PRIVATE AccountsServiceFixture.cpp AccountsServiceTest.cpp)
+target_sources(master_tests PRIVATE AccountsServiceFixture.cpp AccountsServiceTest.cpp DeviceLinksServiceFixture.cpp DeviceLinksServiceTest.cpp)
