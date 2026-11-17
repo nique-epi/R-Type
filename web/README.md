@@ -151,6 +151,8 @@ Every page lives under `app/[lang]/`, `lang` being `fr` (the default) or `en`.
 | `/servers/[id]`            | `servers/[id]/page.tsx`               | one server, its games, the load of its machine, its last 100 samples   |
 | `/host`                    | `host/page.tsx`                       | nothing; its form creates a server on the master                       |
 | `/signup`                  | `signup/page.tsx`                     | nothing; its form creates an account on the master                     |
+| `/signin`                  | `signin/page.tsx`                     | nothing; its form opens a session, then leads to `?next=`              |
+| `/link`                    | `link/page.tsx`                       | the device link of `?code=`, which the visitor connects or refuses     |
 | `/leaderboard`             | `leaderboard/page.tsx`                | the leaderboard; the scope and filters are in the query of the address |
 | `/wiki`, `/wiki/[section]` | `wiki/`                               | nothing; `/wiki` redirects to the first article                        |
 | `/team`                    | `team/page.tsx`                       | nothing                                                                |
@@ -217,9 +219,12 @@ the server then reads the master again. So a leaderboard can be shared by its li
 
 ### Writing to the master
 
-Two pages write. The hosting page (`/host`) creates a server with
+Four pages write. The hosting page (`/host`) creates a server with
 `POST /api/servers` and shows its key, which the master gives once; the
-sign-up page (`/signup`) creates an account with `POST /api/users`.
+sign-up page (`/signup`) creates an account with `POST /api/users`; the
+sign-in page (`/signin`) opens a session with `POST /api/sessions`; the page
+`/link` connects a game to the account signed in with
+`PUT /api/device-links/{code}/decision`.
 
 ```mermaid
 flowchart LR
@@ -248,6 +253,26 @@ flowchart LR
 - **The password goes to the master alone**: the action writes nothing in the journal, an error it did not expect is answered with `UNEXPECTED_ERROR` alone, and the form is gone once the account exists. The fields tell the browser `username` and `new-password`, so a password manager offers to save them.
 - **The outcome is read by the page**: `outcomeOf()` turns what the action hands back into `created`, `taken` (409), `quota` (429), `refused` (400, or credentials the action refused) or `unreachable`, each with its message over the form, what was typed staying in it.
 - **The visitor is named as for a server**: `createUser()` sends the site headers through `visitorHeadersOf()` ([`lib/api/helpers/visitor-headers.ts`](src/lib/api/helpers/visitor-headers.ts)), which `createServer()` calls too.
+
+### Signing in, and connecting a game
+
+The game never asks for a password: it opens the page `/link?code=KQFB-WZPM`
+in the browser, and the player connects it there (the OAuth 2.0 Device
+Authorization Grant, see the page Master of the documentation site).
+
+```mermaid
+flowchart LR
+  Link["/link (server)"] -->|no session| SignIn["/signin?next=/fr/link?code=…"]
+  SignIn --> Link
+  Link --> Section["LinkSection (browser)"]
+  Section --> Action["link.action.ts"]
+  Action --> Master["master"]
+```
+
+- **The session is a cookie the site alone reads**: [`lib/session/session-cookie.ts`](src/lib/session/session-cookie.ts) keeps the token of the master in `rtype_session`, `HttpOnly`, `Secure`, `SameSite=Lax`, until the expiry the master gave. Only the server of the site reads it and sends it to the master as `Authorization: Bearer`; no page and no script ever sees the token.
+- **The sign-in leads back, on the site only**: `nextPathOf()` ([`lib/rtype/sign-in.ts`](src/lib/rtype/sign-in.ts)) keeps `?next=` only for a path of this site, so `//evil.test` or `https://evil.test` leads home, never off the site.
+- **The page `/link`** ([`components/blocks/link/link-blocks.tsx`](src/components/blocks/link/link-blocks.tsx)) sends a visitor with no session, or whose session expired, to `/signin?next=` itself. It reads the code in any case, with or without its dash (`userCodeOf()`, [`lib/rtype/device-link.ts`](src/lib/rtype/device-link.ts)), and never sends the master a text that is no code. It shows the code and the time the game asked, then CONNECT THIS GAME or REFUSE, once; a code no link holds, a decision already made, an expired session and a silent master each have a message.
+- **Signing out** (`sign-out.action.ts`) closes the session on the master, then forgets the cookie whether the master answered or not.
 
 ### Other server reads
 

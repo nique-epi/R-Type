@@ -18,11 +18,11 @@ This page tells you where to look when you need to change something. It describe
 | The games of a server, for the client, `GET /api/servers/{id}/games` | Available | `src/master/Servers/`, `src/network/Master/` |
 | The statuses of the servers, their list and their history, `GET /api/servers` | Available; the route that puts a server in maintenance is not written | `src/master/Servers/`, `src/network/Master/` |
 | The probe of the UDP port of each game server, module `probe` | Available | `src/master/Probe/`, `src/master/Servers/`, `src/server/Master/` |
-| The web site, a Next.js server of its own that calls the API | Available: the pages of the design in French and English (home, download, sector map, a server, hosting, sign-up, leaderboard, wiki, team); the hosting page creates a server with `POST /api/servers`, the sign-up page an account with `POST /api/users`, the leaderboard reads `GET /api/leaderboard` | `web/` |
+| The web site, a Next.js server of its own that calls the API | Available: the pages of the design in French and English (home, download, sector map, a server, hosting, sign-up, leaderboard, wiki, team); the hosting page creates a server with `POST /api/servers`, the sign-up page an account with `POST /api/users`, the sign-in page a session with `POST /api/sessions`, the page `/link` connects a game to an account, the leaderboard reads `GET /api/leaderboard` | `web/` |
 | The results of the games and the global leaderboard, `PUT /api/servers/me/results/{gameId}` and `GET /api/leaderboard` | Available; a game server sends its vanilla games after its heartbeats | `src/master/Leaderboard/`, `src/network/Master/` |
 | The master on AWS, installed from each release | Available; see [Deploying the master](/R-Type/deploy-master/) | `infra/`, `.github/workflows/deploy-master.yaml` |
 | A machine of game servers created for a LAN | Available; see [Game servers for a LAN](/R-Type/deploy-game-servers/) | `infra/game-servers/`, `infra/terraform-game/` |
-| Accounts and sessions, over HTTPS only, `POST /api/users` and `POST /api/sessions` | Available; optional module `accounts`, without whose key `RT_PASSWORD_KEY` the master does not start; the game client signs in with a token given at launch (`--session`), the web site does not sign in yet | `src/master/Accounts/`, `src/network/Master/`, `src/network/Hashing/` |
+| Accounts and sessions, over HTTPS only, `POST /api/users` and `POST /api/sessions` | Available; optional module `accounts`, without whose key `RT_PASSWORD_KEY` the master does not start; the web site signs in, and the game client signs in through it with a device link, or with a token given at launch (`--session`) | `src/master/Accounts/`, `src/network/Master/`, `src/network/Hashing/` |
 | Wallets of the accounts: kopecks, chips and owned looks, the cashier and the purchase of a look, over HTTPS only, `/api/users/me/wallet` and `/api/users/me/looks` | Available; optional module `wallet`; the games of a signed-in player credit it, and the game client reads and spends it | `src/master/Wallet/`, `src/network/Master/Economy/` |
 | The casino: roulette rooms whose rounds follow the clock of the master, `/api/casino/rooms` | Available; optional module `casino`; the game client plays it | `src/master/Casino/`, `src/network/Master/Casino/` |
 | Administration | Not yet written | |
@@ -57,6 +57,7 @@ The master reads `master.cfg`, in the folder it is started from, between the ins
 | `port` | 0 to 65535 | 8080 | The TCP port the HTTP API listens on, on every interface; 0 lets the system choose a free one, which the journal names. |
 | `database` | a path | empty | The SQLite file of the master; empty for `r-type_master.db` next to the executable. |
 | `site-key` | a text | empty | The secret the web site names itself by when it creates a server or an account, or signs in, for a visitor (see [Creating a game server](#creating-a-game-server-post-apiservers)); empty, the master reads nothing the site says of its visitor. The `http` module declares it. Set it in `master.cfg`, never on the command line, which every user of the machine can read. |
+| `site-url` | an address starting with `https://` or `http://` | `https://rtype.app` | The web site whose page `/link` validates the device links a game signs in through (module `accounts`, see [Device links](#device-links-signing-a-game-in-through-the-site)); the master writes it in each link it opens, without the slash at its end. |
 | `wallet-starting-kopecks` | 0 to 999999 | 0 | The kopecks a wallet holds when it opens, at the first read of its account (module `wallet`); a wallet already open keeps its balances. |
 | `wallet-starting-chips` | 0 to 999999 | 500 | The chips a wallet holds when it opens. |
 | `casino-rooms` | 1 to 16 | 3 | The roulette rooms the casino runs (module `casino`). |
@@ -124,6 +125,8 @@ The web site is a program of its own: a Next.js server, in `web/` (see [Web site
 | `/servers/{id}` | the games of a server, its figures, the load of its machine (see [The load of a server](#the-load-of-a-server)) and the pilots of its last 100 samples (the master keeps one sample a second, a page of the list holds 100); a server created and not registered yet shows a waiting notice | the list, `GET /api/servers/{id}/samples` |
 | `/host` | the form that creates a server, with no account, then its key, shown once with a button that copies it, and the two lines of `server.cfg` that hold it; the home page, the hosting guide of the wiki and the key H of the sector map lead to it | nothing; it writes with `POST /api/servers` |
 | `/signup` | the form that creates an account: a nickname, a password and the same password again, then a welcome; the menu of the site leads to it | nothing; it writes with `POST /api/users` |
+| `/signin` | the form that signs in, a nickname and a password, then the page `?next=` names, a path of the site only, the home page otherwise | nothing; it writes with `POST /api/sessions` |
+| `/link` | the page a game sends its player to, `?code=KQFB-WZPM`: a visitor with no session is sent to `/signin` first, then sees the code and the time the game asked, and connects or refuses it; without a code, or with one no link holds, a field for the code the game shows | `GET /api/device-links/{code}`; it writes with `PUT /api/device-links/{code}/decision` |
 | `/leaderboard` | the leaderboard screen of the game, by server or for everyone; the scope and the filters are in the address (`?scope=server&server=7&difficulty=hard&pilots=3`) and the page reads the ten best players again at each address | the leaderboard, and the list of servers for the first tab |
 | `/wiki/{keys,enemies,accessibility,host}` | the controls, the bestiary, the pilot palettes, the guide to host a server | nothing |
 | `/team` | the four members and their GitHub | nothing |
@@ -135,6 +138,9 @@ The web site is a program of its own: a Next.js server, in `web/` (see [Web site
 - **The site names the visitor it creates a server for**: when `MASTER_SITE_KEY` is set, the request carries it in `X-Site-Key`, and in `X-Site-Client-Address` the last address of the `X-Forwarded-For` the host of the site wrote, which Vercel overwrites with the public address of the client. The master counts the creation under that visitor when the key matches its `site-key` setting (see [Creating a game server](#creating-a-game-server-post-apiservers)). The site must run behind a host that overwrites `X-Forwarded-For`, or a visitor chooses the address it is counted under.
 - **The lines of `server.cfg` the page gives** are `set master-url`, with `PUBLIC_MASTER_URL` (`https://master.rtype.app` by default, as `server.cfg.example` writes it), and `set master-key` with the key. `MASTER_URL` is never shown: it may be an address only the site reaches.
 - **An account is created on the site, never in the game.** The form and the server action check the same zod schema (`credentialsSchema`, `web/src/lib/rtype/sign-up.ts`), the rules of the master: a nickname of 1 to 16 bytes of printable UTF-8, the blanks around it left out, and a password of 8 to 128 bytes kept as typed. A sign-up the master would refuse never reaches it. An account has no e-mail, so the form asks the password twice and says that a forgotten one cannot be recovered. The password goes from the action to the master alone: it is written in no journal, and the form is gone once the account exists. A nickname taken (409), the quota (429), a refusal (400) and a master that does not answer each have a message, and what was typed stays. The site names its visitor with the site key, as for a server.
+
+- **A session of the site is a cookie the site alone reads.** The sign-in action keeps the token of the master in `rtype_session` (`web/src/lib/session/session-cookie.ts`), `HttpOnly`, `Secure`, `SameSite=Lax`, until the expiry the master gave; the server of the site sends it to the master as Bearer, and it never reaches a page or a script. Leaving the page `/link` with another account closes the session on the master, then forgets the cookie.
+- **The page `/link` says what it connects.** It writes the code and the time the game asked in the zone of the browser, and tells the player to connect only a game in front of them: the guard RFC 8628 (section 5.4) gives against a code someone else made a player validate.
 
 ### The components of the site
 
@@ -188,6 +194,7 @@ The storage module opens its file with `rtype_storage` (`openDatabaseFile()`, se
 | 8 | `casino_bets` | the bets of each account on a round of a room: the kind, the first number and the chips of each |
 | 8 | `casino_rounds` | the number each round of a room drew, written once, when its bets close |
 | 9 | `game_tickets` | each game ticket given and not yet expired: the fingerprint of the ticket, never the ticket, its account, when it was given, when it expires, and when a result used it |
+| 10 | `device_links` | each device link a game asked for: its short code, the key, the fingerprint of its secret, never the secret, the address that asked, when it opened, expires and was last read, and once a player decided, its account and its decision; forgotten an hour after it expired |
 | 4 | `game_results` | a row per player of each vanilla game a server reported: its server, the id of the game, the nickname, the account, the score, the date, the difficulty and the number of players; the key is the server, the game and the nickname, compared without case |
 
 ## The load of a server
@@ -389,14 +396,14 @@ A credit is one transaction: it marks the ticket used (`used_at`), then writes t
 
 ## Accounts and sessions: `AccountsModule`
 
-A player creates an account named by its nickname, then opens sessions with its password; the session token names the account to the master. The account holds a wallet (see [Wallets](#wallets-walletmodule)) and plays at the casino (see [The casino](#the-casino-casinomodule)); playing a game never asks for one, and a guest earns nothing. The game client signs in with the token `--session` gives it (see [Client](/R-Type/client/#account-clientaccountmodule-iaccountsession-iwallet)); the web site does not sign in yet. The module is optional (`RTYPE_MODULE_ACCOUNTS`), and every route of it answers over HTTPS only.
+A player creates an account named by its nickname, then opens sessions with its password; the session token names the account to the master. The account holds a wallet (see [Wallets](#wallets-walletmodule)) and plays at the casino (see [The casino](#the-casino-casinomodule)); playing a game never asks for one, and a guest earns nothing. The web site signs a visitor in and keeps the token in a cookie of its own (see [The pages of the site](#the-pages-of-the-site)); the game client signs in through the site with a device link (see [Device links](#device-links-signing-a-game-in-through-the-site)), or with the token `--session` gives it (see [Client](/R-Type/client/#account-clientaccountmodule-iaccountsession-iwallet)). The module is optional (`RTYPE_MODULE_ACCOUNTS`), and every route of it answers over HTTPS only.
 
 The other modules read an account through `ISessionAccounts` (`rtype_master_accounts_contract`, `src/master/Accounts/Contract/`), which `AccountsService` implements: `userOfToken(token, now)` gives the account of a session, or nothing for a token that is malformed, unknown or expired, and extends the session as `GET /api/users/me` does. A controller answers a route of an account through `answerAsAccountOf()` (`RouteAnswers.hpp`), which answers 401, with `WWW-Authenticate: Bearer`, when the request carries no token or no session has it, before the body is read.
 
 | Route | Does | Answers |
 |---|---|---|
 | `POST /api/users` | creates an account from `{"nickname":"ACE","password":"…"}` | 201, `Location: /api/users/<id>`, and `{"id":1,"nickname":"ACE","role":"player"}`; 409 for a nickname taken, 429 over the quota of creations |
-| `POST /api/sessions` | opens a session for the same body | 201, `Location: /api/sessions/me`, and `{"token":"rts_<64 hexadecimal digits>","expiresAt":1800604800,"user":{…}}`; 401 for a wrong nickname or password, 429 after too many failures |
+| `POST /api/sessions` | opens a session for the same body | 201, `Location: /api/sessions/me`, and `{"token":"rts_<64 hexadecimal digits>","expiresAt":1800604800,"account":{…}}`; 401 for a wrong nickname or password, 429 after too many failures |
 | `GET /api/users/me` | reads the account of the token sent as `Authorization: Bearer <token>` | 200 and the account; 401 without a session |
 | `DELETE /api/sessions/me` | closes the session of the token | 204, for a session already closed too; 401 without a token |
 
@@ -412,7 +419,28 @@ A body the master cannot read answers 400 naming the member. The token is sent a
 - **The journal** names each sign-in, `ACE signed in from 203.0.113.7`, and each refusal, `sign-in as ACE from 203.0.113.7 refused: wrong nickname or password`.
 - **Roles.** An account is a `player` when it is created. A line `admin <nickname>` of `master.cfg` makes that account an `admin` when the master starts, and the journal says so; a line that names no account yet is written in the journal and applies at the next start after the account exists. Removing the line takes the role from nobody. Nothing reads the role yet: the administration is not written.
 
-The module is laid out as `ServersModule`: `AccountsController`, `AccountsService` (the quotas and the sessions; `Services/Helpers/`, the token and the key), one repository per table (`UserRepository` for `users`, `SessionRepository`, `SignInFailureRepository`), and the plain structs of `Models/`.
+The module is laid out as `ServersModule`: `AccountsController` and `DeviceLinksController`, `AccountsService` and `DeviceLinksService` (the quotas, the sessions and the links; `Services/Helpers/`, the token, the key and the secret of a link), one repository per table (`UserRepository` for `users`, `SessionRepository`, `SignInFailureRepository`, `DeviceLinkRepository`), and the plain structs of `Models/`.
+
+### Device links: signing a game in through the site
+
+A game never asks for a password: it signs in through the web site, with the OAuth 2.0 Device Authorization Grant of RFC 8628. The game asks for a link and shows its short code; a player signed in on the site approves it on the page `/link`; the game, which reads its link every few seconds, then trades it for a session. The links live in the module `accounts`, since the trade opens a session and the approval reads one.
+
+| Route | Caller | Answers |
+|---|---|---|
+| `POST /api/device-links` | the game, no credential | 201, `Location: /api/device-links/me`, and `{"secret":"rtd_…","userCode":"KQFB-WZPM","verificationUri":"<site-url>/link","verificationUriComplete":"<site-url>/link?code=KQFB-WZPM","expiresAt":…,"interval":5}`; 429 over the quota |
+| `GET /api/device-links/me` | the game, its secret as `Authorization: Bearer rtd_…` | 200 and `{"userCode","status","createdAt","expiresAt","interval"}`, `status` one of `pending`, `approved`, `denied`, `expired`; 401 for no link of that secret; 429 with `Retry-After: 5` for a read before the interval |
+| `DELETE /api/device-links/me` | the game, its secret | 204, for a link already gone too; 401 without a secret |
+| `GET /api/device-links/{code}` | the site, the session of the player | 200 and the state of the link; 401 without a session; 404 for no link of that code |
+| `PUT /api/device-links/{code}/decision` | the site, the session of the player | `{"decision":"approved"}` or `"denied"`: 200 and the state; the same decision sent again is answered the same; 409 once decided otherwise, or expired undecided; 400 for any other word |
+| `POST /api/sessions` | the game, its secret, no body | 201 and the session of the account that approved the link, as for a sign-in; 401 for no link of that secret, 409 while it waits, 403 once refused, 410 once expired |
+
+- **The secret names the link of a game, never a path.** It is `rtd_` and 32 random bytes in hexadecimal, shown once; the database keeps its fingerprint (`deviceLinkFingerprintOf()`). A player names a link by its short code, which only a signed-in account may read or decide on.
+- **A short code** is 8 letters of `DEVICE_LINK_USER_CODE_ALPHABET`, the 20 consonants RFC 8628 suggests, `KQFB-WZPM`, drawn without bias; the master reads it in any case, with or without its dash (`deviceLinkUserCodeOf()`). A code another live link holds is drawn again, `MAXIMUM_USER_CODE_DRAWS` (8) times at most.
+- **A link lives `DEVICE_LINK_LIFETIME` (10 minutes).** Its game reads it every `DEVICE_LINK_INTERVAL` (5 s); a read within `DEVICE_LINK_SHORTEST_READ_GAP` (4 s) of the last one answers 429, RFC 8628's `slow_down`, and leaves the last read as it was. A refusal stays `denied` past the expiry, so the game says it was refused.
+- **One link, one session.** The trade reads the link and removes it in one transaction, so a secret sent twice opens one session; the session then opens as a sign-in does (`AccountsService::openSession()`), counted under the address of the game.
+- **A decision is written once**, on a link no one decided and not expired: the update names the decider in the same step, so two players who answer at once leave one decision.
+- **Quota.** An address asks for `MAXIMUM_DEVICE_LINKS_PER_ADDRESS` (10) links per `DEVICE_LINK_CREATION_WINDOW` (1 hour) at most. A link is forgotten `DEVICE_LINK_KEPT_AFTER_EXPIRY` (1 hour) after it expired, so the quota still counts it. The reads of codes by a signed-in account are not counted: a guess needs an account, and 20 to the 8th codes over 10 minutes leave it nothing to find.
+- **The journal** names each session opened through a link, `ACE signed in through a device link from 203.0.113.7`, never a secret, a short code or a token.
 
 ## Wallets: `WalletModule`
 
