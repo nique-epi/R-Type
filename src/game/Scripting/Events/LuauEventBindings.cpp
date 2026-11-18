@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <array>
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -200,10 +201,13 @@ LuauEventBindings::LuauEventBindings(engine::ScriptMachine& machine)
   machine.expose(EVENT_BUS_TABLE, functions, this);
 }
 
-void LuauEventBindings::attach(engine::EventBus& bus) { bus_ = &bus; }
+std::uint64_t LuauEventBindings::attach(engine::EventBus& bus) {
+  bus_ = &bus;
+  return ++attachment_;
+}
 
-void LuauEventBindings::detach(const engine::EventBus& bus) noexcept {
-  if (bus_ == &bus) {
+void LuauEventBindings::detach(std::uint64_t attachment) noexcept {
+  if (attachment == attachment_) {
     bus_ = nullptr;
   }
 }

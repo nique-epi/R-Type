@@ -18,7 +18,7 @@
 
 LuauEventBindingsFixture::LuauEventBindingsFixture()
     : scripts_(reportInto(log_)) {
-  scripts_.eventBindings().attach(bus_);
+  static_cast<void>(scripts_.eventBindings().attach(bus_));
   static_cast<void>(bus_.subscribe<rtype::game::ScriptEvent>(
       [this](const rtype::game::ScriptEvent& event) {
         published_.push_back(event);

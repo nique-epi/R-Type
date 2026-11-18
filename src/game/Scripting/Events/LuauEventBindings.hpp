@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <functional>
 #include <optional>
 #include <span>
@@ -48,11 +49,15 @@ class LuauEventBindings {
   ~LuauEventBindings() = default;
 
   /** @brief Makes @p bus the one the scripts subscribe to and publish on; it
-   * must outlive every entity that subscribed. */
-  void attach(engine::EventBus& bus);
+   * must outlive every entity that subscribed.
+   * @returns The number of this attachment, which detach() takes: the bus of
+   * the next game of a server is often the same object, attached before the
+   * game it replaces detaches. */
+  [[nodiscard]] std::uint64_t attach(engine::EventBus& bus);
 
-  /** @brief Forgets @p bus, unless another took its place. */
-  void detach(const engine::EventBus& bus) noexcept;
+  /** @brief Forgets the bus of @p attachment, unless another attachment took
+   * its place since. */
+  void detach(std::uint64_t attachment) noexcept;
 
   /** @brief Names the subscriptions of the entity whose script steps, the one
    * `bus.on` subscribes for; nullptr once its step is over. */
@@ -87,6 +92,7 @@ class LuauEventBindings {
 
   std::reference_wrapper<engine::ScriptMachine> machine_;
   engine::EventBus* bus_{nullptr};
+  std::uint64_t attachment_{0};
   LuauEventSubscriptions* subscriber_{nullptr};
   /** The thread every subscribed function runs on, one at a time; empty
    * before the first one and after one that failed. */

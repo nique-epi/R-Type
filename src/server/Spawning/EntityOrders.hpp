@@ -56,6 +56,9 @@ class EntityOrders final : public game::IEntityOrders {
   EntityOrdersParts parts_;
   logging::Logger logger_;
   bool budgetWarned_{false};
+  /** The number of the attachment of the bus of this game to the scripts,
+   * so the game it replaces never detaches it. */
+  std::uint64_t busAttachment_{0};
   std::vector<EntityOrder> orders_;
   std::vector<std::uint32_t> removals_;
 };
