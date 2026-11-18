@@ -182,6 +182,7 @@ Paths below are relative to `.claude/rules/`.
 - `fix/execution/fix-execution-a-setting-of-an-optional-module-is-tested-with-the-module-off.md`
 - `fix/execution/fix-execution-a-split-commit-carries-its-own-links.md`
 - `fix/execution/fix-execution-a-dll-exports-what-its-own-standard-compiled.md`
+- `fix/execution/fix-execution-a-library-a-public-header-includes-is-linked-public.md`
 - `fix/execution/fix-execution-a-downloaded-artifact-keeps-its-folders.md`
 - `fix/execution/fix-execution-a-static-library-reached-twice-on-the-link-line.md`
 - `fix/execution/fix-execution-a-test-added-to-an-executable-links-what-it-uses.md`
