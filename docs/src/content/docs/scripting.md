@@ -265,10 +265,33 @@ The repository ships two levels:
 
 | Level | Resource | What it plays |
 |---|---|---|
-| `fosse` | `resources/fosse/` | named after the biome it leads into: five stages, each one after the first at a checkpoint: two in open space, the second ending on the Bydo Tyrant with 40 % of its health as a mini-boss, then two in the Pit, entered through its cave, and a last stage on the Bydo Tyrant at full health. The positions of its Bydos are written in the script until a level places them in its LDtk project. |
+| `fosse` | `resources/fosse/` | named after the biome it leads into: five stages, each one after the first at a checkpoint: two in open space, the second ending on the Bydo Tyrant with 40 % of its health as a mini-boss, then two in the Pit, entered through its cave, where the mobs of the Pit join the Bydos, and a last stage on the boss of the Pit, the Necromancer (see [The mobs of the Pit](#the-mobs-of-the-pit-and-the-necromancer)). The positions of its enemies are written in the script until a level places them in its LDtk project. |
 | `training_run` | `resources/training-run/` | two stages, fifteen enemies placed in `levels/training_run.ldtk`, a pause of the scroll on each Reaper until it is destroyed, a checkpoint, the stars and then the biome `fosse` |
 
 Play one with `ensure fosse` and `set level fosse` in `server.cfg`, or `ensure training-run` and `set level training_run`.
+
+### The mobs of the Pit and the Necromancer
+
+The resource fosse brings its own enemies: their sheets in `entities/`, their sprites in `sprites/fosse/`, and the behaviours that steer them in `server/fosse_mobs.luau` and `server/necromancer.luau`. Every mob crosses the playfield from the right to the left, some along a wave, and plays its idle loop while it moves; an attack is three actions of attack 0, `signal`, `strike` and `recover`, whose lengths in the sheet are those of their animations.
+
+| Sheet | Pilot | What it does |
+|---|---|---|
+| `sporecap` | `sporecap_walk` | walks left along the bottom row; a ship within `reach` of its column, above it, makes it puff `spores` `sporecap_spore` missiles, `spore_gap` units apart, which weave left |
+| `lanternfin` | `lanternfin_hunt` | swims left along a wave (`curve`, `curve_ms`), drawing towards the row of the nearest ship; that ship ahead within `reach` and `align` units of its row, its lure flashes and it lunges at `lunge_speed` |
+| `stalagmaw` | `stalagmaw_drop` | crawls left along the top row at `crawl_speed`; a ship below it within `reach` makes it shake, then fall at `fall_speed`, and it is removed below the playfield |
+| `ruin_warden` | `warden_float` | floats left, bobbing (`bob`, `bob_ms`); left of `fire_from_x` and rested, its rune lights up and it fires one `ruin_warden_bolt` |
+| `glowmoth` | `weave` | flutters left in a wave, in swarms; it does not attack |
+
+The Necromancer (`necromancer`, pilot `necromancer_rite`) is the boss of the last stage. It slides in from the right to `rest_x` (its arrival, attack 5), then plays its attacks in place: the rings (attack 0), the fist (1), the raise of the dead (2) and the gaze (3), each once in that order and then at random. Only its mask is hurt: its `pre_hit` stops a missile that hits it elsewhere, or while the mask is covered, and the mask is uncovered during the strike of the rings and the recovers of the fist and of the gaze. Below half its health it hides in its hood for `rage_ms` (attack 4) and pairs its attacks: rings with the fist, skeleton arms under the gaze. What leaves it is a body of its own, which a ship touches and which stops missiles or lets them through:
+
+| Sheet | Pilot | What it does |
+|---|---|---|
+| `necromancer_ring` | `necromancer_ring` | flies left along its lane to `turn_x`, sweeps to `middle_y`, flies back right and is removed at `return_x`; it stops missiles |
+| `bone_spike` | `necromancer_effect` | erupts beside the fist, and hurts during its strike |
+| `bone_arm` | `necromancer_effect` | opens a fissure for `strike_after_ms`, then bursts up and hurts during its strike; three of them rise, moved together each time |
+| `necromancer_beam` | `necromancer_effect` | draws the beam of the gaze for `life_ms`; the beam that hurts is the `hurt_zone.beam` of the Necromancer |
+
+The fist hurts through a box of the Necromancer's `hurt_zone`, the first 333 ms of its strike. A body of `necromancer_effect` keeps its hitbox 1024 units below its center, out of the playfield, so only its hurt zone touches a ship. The values of these sheets are **provisional** until gameplay tunes them.
 
 ## Placing the enemies in LDtk
 
@@ -358,6 +381,7 @@ The three sides found the same 9,457,143 collisions, about 2,600 a tick: 300 bod
 | Change what happens to a body whose subscribed function failed | `LuauBehaviour::steer()` in `src/game/Scripting/`, the only place that stops a script |
 | Change what a level script may call, or what it refuses | the functions of `LuauLevels` in `src/game/Scripting/Level/LuauLevels.cpp`, their names and messages in `LuauLevelConstants.hpp` |
 | Change when a stage is resumed, or what a checkpoint keeps | `LuauLevelRun` in `src/game/Scripting/Level/`, `LevelCheckpoint` in `src/game/Level/` |
+| Change a mob of the Pit, the Necromancer or one of its attacks | its sheet in `resources/fosse/entities/`, its behaviour in `resources/fosse/server/fosse_mobs.luau` or `necromancer.luau`, when they come in `fosse.luau` |
 | Change how an LDtk file is read, or what it refuses | `ldtkPlacementsOf()` in `src/game/Level/Ldtk/LdtkPlacementReading.cpp`, the members and reasons in `LdtkConstants.hpp`; the check of the sheets in `readLevelPlacements()`, `src/game/Scripting/Level/LevelPlacementFiles.cpp` |
 | Change when a placed enemy comes in, or where it appears | `PlacedEnemySpawner` in `src/game/Spawning/`, ticked by `LevelDirector` in `src/server/Spawning/` |
 | Expose another function to the scripts | `ScriptMachine::expose()`, before the first script runs, as `BehaviourScripts` exposes `behaviours.register` |

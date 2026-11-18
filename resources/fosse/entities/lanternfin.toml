@@ -1,0 +1,101 @@
+# The entity type lanternfin, brought by the resource fosse:
+# a cave eel that swims left along a wave and lunges at a ship ahead of it.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy"
+layer = "enemy"
+hits = ["player"]
+pilot = "lanternfin_hunt"
+
+[gameplay.hitbox]
+width = 112
+height = 112
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 240
+
+# It cruises at 240 along a wave of 40 % of its speed every 1.6 s, lunges at
+# 1100 for 600 ms at a ship within 720 units ahead and 64 units of its row.
+[gameplay.behaviour]
+reach = 720
+align = 64
+cruise_speed = 240
+lunge_speed = 1100
+curve = 40
+curve_ms = 1600
+rest_ms = 1200
+signal_ms = 400
+strike_ms = 600
+recover_ms = 400
+
+[gameplay.health]
+points = 3
+
+[gameplay.score]
+points = 250
+
+[appearance]
+sheet = "sprites/fosse/lanternfin.png"
+
+# Idle, while it swims left: a wave runs from the head to the tail, the lure
+# pulses.
+[appearance.idle]
+left = 0
+top = 0
+width = 28
+height = 28
+frames = 6
+spacing = 2
+frame_ms = 100
+
+# Signal: the lure flashes before the lunge.
+[appearance.attack_0.signal]
+left = 0
+top = 30
+width = 28
+height = 28
+frames = 2
+spacing = 2
+frame_ms = 80
+playback = "loop"
+afterwards = "stay"
+
+# Strike: it lunges, speed lines behind it.
+[appearance.attack_0.strike]
+left = 0
+top = 60
+width = 44
+height = 28
+frames = 2
+spacing = 2
+frame_ms = 60
+playback = "loop"
+afterwards = "stay"
+anchor_x = 8
+
+# Recover: it slows down.
+[appearance.attack_0.recover]
+left = 0
+top = 90
+width = 28
+height = 28
+frames = 2
+spacing = 2
+frame_ms = 200
+playback = "once"
+afterwards = "idle"
+
+# The death, centered on the body; the row under it is the same death without
+# flash.
+[appearance.death]
+left = 0
+top = 120
+width = 48
+height = 48
+frames = 6
+spacing = 2
+frame_ms = 70

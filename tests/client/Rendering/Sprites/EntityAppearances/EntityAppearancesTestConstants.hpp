@@ -221,3 +221,12 @@ constexpr std::array<std::string_view, 3> FULL_SQUARE_OF_THREE{"###", "###",
 constexpr std::array<std::string_view, 3> CENTER_OF_A_SQUARE_OF_THREE{
     "...", ".#.", "..."};
 constexpr int PEELED_ONCE = 1;
+
+/** @brief The folder of the sheets the resource fosse brings, from the assets
+ * folder of the sources, and the name of every sheet in it. */
+constexpr std::string_view FOSSE_SHEETS_FROM_THE_ASSETS =
+    "../resources/fosse/entities";
+constexpr std::array<std::string_view, 12> FOSSE_SHEET_NAMES{
+    "bone_arm",         "bone_spike",       "glowmoth",         "lanternfin",
+    "necromancer",      "necromancer_beam", "necromancer_ring", "ruin_warden",
+    "ruin_warden_bolt", "sporecap",         "sporecap_spore",   "stalagmaw"};

@@ -1,6 +1,7 @@
-# The resource fosse: the level a team plays from the base to the Bydo
-# Tyrant, through the Pit, with the enemies the game ships. A server starts it
+# The resource fosse: the level a team plays from the base to the
+# Necromancer, through the Pit, with the enemies the game ships and the mobs
+# of the Pit it brings (entities/, sprites/fosse/, server/). A server starts it
 # with the line `ensure fosse` of its server.cfg, and plays it with
 # `set level fosse`.
 # The keys are described on the page "Write a resource" of the docs.
-description = "A level of five stages from open space into the Pit, with a mini-boss and the Bydo Tyrant"
+description = "A level of five stages from open space into the Pit, with a mini-boss, the mobs of the Pit and the Necromancer"

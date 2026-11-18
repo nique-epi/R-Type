@@ -33,6 +33,7 @@ using rtype::game::DRAWN_MASK_PIXEL;
 using rtype::game::SpriteFrame;
 using rtype::game::testing::DRIFTER_SHEET;
 using rtype::game::testing::sheetText;
+using rtype::game::testing::shippedAssetFolder;
 using rtype::game::testing::shippedSheetFolder;
 
 namespace {
@@ -142,6 +143,11 @@ EntityAppearances threeAppearancesOnTwoSheets() {
 
 EntityAppearances shippedAppearances() {
   return EntityAppearances::fromFolder(shippedSheetFolder());
+}
+
+EntityAppearances fosseAppearances() {
+  return EntityAppearances::fromFolder(shippedAssetFolder() /
+                                       FOSSE_SHEETS_FROM_THE_ASSETS);
 }
 
 bool hurtsAllTheTime(const rtype::game::EntitySheet& sheet) {

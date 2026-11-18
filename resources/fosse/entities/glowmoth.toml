@@ -1,0 +1,54 @@
+# The entity type glowmoth, brought by the resource fosse:
+# a glowing moth that flutters left in a wave, in swarms.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy"
+layer = "enemy"
+hits = ["player"]
+pilot = "weave"
+
+[gameplay.hitbox]
+width = 96
+height = 96
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 200
+
+[gameplay.behaviour]
+amplitude = 48
+period_ms = 1200
+
+[gameplay.health]
+points = 1
+
+[gameplay.score]
+points = 50
+
+[appearance]
+sheet = "sprites/fosse/glowmoth.png"
+
+# Idle, while it flutters left: its wings beat around its body and it rises on
+# each beat.
+[appearance.idle]
+left = 0
+top = 0
+width = 24
+height = 24
+frames = 4
+spacing = 2
+frame_ms = 70
+
+# The death, centered on the body; the row under it is the same death without
+# flash.
+[appearance.death]
+left = 0
+top = 26
+width = 32
+height = 32
+frames = 6
+spacing = 2
+frame_ms = 70

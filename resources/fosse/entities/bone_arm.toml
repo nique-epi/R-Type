@@ -1,0 +1,65 @@
+# The entity type bone_arm, brought by the resource fosse:
+# a skeleton arm the Necromancer raises from a fissure.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy"
+layer = "boss_effect"
+hits = ["player"]
+pilot = "necromancer_effect"
+
+# Only its hurt zone touches a ship: its hitbox lies far below the
+# playfield, where no ship flies.
+[gameplay.hitbox]
+width = 4
+height = 4
+offset_y = 1024
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 1
+
+# The fissure opens with the signal of the raise, 1992 ms, then the arm
+# bursts up for its strike, 1660 ms.
+[gameplay.behaviour]
+strike_after_ms = 1992
+life_ms = 3652
+
+[gameplay.survives_contact]
+
+[[gameplay.hurt_zone.box]]
+offset_x = 0
+offset_y = 42
+width = 128
+height = 528
+attack = 0
+phase = "strike"
+from_ms = 250
+until_ms = 1500
+
+[appearance]
+sheet = "sprites/fosse/bone_arm.png"
+
+# Idle: the fissure opens and bony fingers come out.
+[appearance.idle]
+left = 0
+top = 0
+width = 58
+height = 167
+frames = 14
+spacing = 2
+frame_ms = 83
+
+# Strike: the skeleton arm bursts up, claws the air, then sinks.
+[appearance.attack_0.strike]
+left = 0
+top = 169
+width = 58
+height = 167
+frames = 11
+spacing = 2
+frame_ms = 166
+playback = "once"
+afterwards = "idle"

@@ -516,3 +516,18 @@ TEST(EntityAppearances, PeelingASquareOfThreeLeavesItsCenter) {
   EXPECT_EQ(peeled(rowsFrom(FULL_SQUARE_OF_THREE), PEELED_ONCE),
             rowsFrom(CENTER_OF_A_SQUARE_OF_THREE));
 }
+
+/**
+ * Given the sheets the resource fosse brings: its mobs, the Necromancer and
+ * the bodies of its attacks
+ * When a client reads their appearances, as it reads a content pack
+ * Then every one of them is read, so a client can play that pack
+ */
+TEST(EntityAppearances, ReadsEverySheetOfTheFosseResource) {
+  const EntityAppearances appearances = fosseAppearances();
+
+  for (const std::string_view name : FOSSE_SHEET_NAMES) {
+    SCOPED_TRACE(name);
+    EXPECT_NE(appearances.named(name), nullptr);
+  }
+}

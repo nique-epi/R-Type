@@ -25,6 +25,10 @@
 /** @returns The appearances of the sheets shipped in assets/. */
 [[nodiscard]] rtype::client::EntityAppearances shippedAppearances();
 
+/** @returns The appearances of the sheets the resource fosse brings, read as a
+ * client reads them. */
+[[nodiscard]] rtype::client::EntityAppearances fosseAppearances();
+
 /** @returns Whether @p sheet has a hurt box that hurts all the time. */
 [[nodiscard]] bool hurtsAllTheTime(const rtype::game::EntitySheet& sheet);
 
