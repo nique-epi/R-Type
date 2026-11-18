@@ -1,8 +1,10 @@
 #pragma once
 
+#include <cstddef>
 #include <functional>
 #include <optional>
 #include <string>
+#include "LevelCheckpoint.hpp"
 #include "LevelDirectorParts.hpp"
 #include "LevelProgress.hpp"
 #include "Logger.hpp"

@@ -18,6 +18,7 @@
 #include "LevelConstants.hpp"
 #include "LevelDirector.hpp"
 #include "LevelDirectorParts.hpp"
+#include "LevelTransition.hpp"
 #include "LifeKeeper.hpp"
 #include "LifeKeeperParts.hpp"
 #include "LookItemKeeper.hpp"
@@ -56,10 +57,15 @@ void runWorldSystems(GameContext& game, game::World& world) {
  */
 void holdTheShipsOfATransition(GameContext& game, game::World& world,
                                const LevelDirector* director) {
-  if (director == nullptr || !director->progress().transition.has_value()) {
+  if (director == nullptr) {
     return;
   }
-  const std::uint32_t ticksLeft = director->progress().transition->ticksLeft;
+  const std::optional<game::LevelTransition>& transition =
+      director->progress().transition;
+  if (!transition.has_value()) {
+    return;
+  }
+  const std::uint32_t ticksLeft = transition->ticksLeft;
   holdEveryShip(world, game.roster.get(), ticksLeft);
   if (ticksLeft == game::LEVEL_TRANSITION_RETURN_TICKS) {
     returnEveryShip(world, game.roster.get());

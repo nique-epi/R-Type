@@ -41,6 +41,10 @@ constexpr const char* START_SCROLL_KEY = "scroll";
 constexpr const char* START_BIOME_KEY = "biome";
 constexpr const char* START_BIOME_SINCE_KEY = "biome_since";
 
+/** @brief The first stage a start may be declared for, counted from 1: the
+ * first stage always starts at the start of the level. */
+constexpr double FIRST_STARTED_STAGE_NUMBER = 2.0;
+
 /** @brief The part of a path that leaves its folder. */
 constexpr std::string_view PARENT_FOLDER_PART = "..";
 

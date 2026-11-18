@@ -9,6 +9,7 @@
 #include <limits>
 #include <map>
 #include <optional>
+#include <ratio>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -209,7 +210,8 @@ LevelCheckpoint startDeclared(lua_State* state, std::size_t stage) {
 std::size_t startedStageOf(lua_State* state, int count) {
   const double number =
       lua_type(state, -2) == LUA_TNUMBER ? lua_tonumber(state, -2) : 0.0;
-  if (number < 2.0 || number > count || number != std::floor(number)) {
+  if (number < FIRST_STARTED_STAGE_NUMBER || number > count ||
+      number != std::floor(number)) {
     throw engine::ScriptException(WRONG_LEVEL_STARTS_MESSAGE);
   }
   return static_cast<std::size_t>(number) - 1;
