@@ -46,6 +46,13 @@ struct HeldChange {
                                    engine::Duration elapsed);
 
 /**
+ * @returns @p ship kept inside the play area, its velocity along an axis lost
+ * where an edge stopped it: the last step of shipAfter(), for a caller that
+ * moves the ship again after it (blockedByObstacles()).
+ */
+[[nodiscard]] MovingShip stoppedAtTheEdges(MovingShip ship);
+
+/**
  * @returns @p motion with the presses of @p change recorded, and a maneuver
  * started by a direction pressed again within DOUBLE_TAP_INPUTS inputs of its
  * last press: down or up rolls the ship ROLL_SIDESTEP that way, right dashes

@@ -6,6 +6,7 @@
 #include "BehaviourView.hpp"
 #include "IBehaviour.hpp"
 #include "IEntityOrders.hpp"
+#include "IHitHandler.hpp"
 #include "Intent.hpp"
 #include "lua.h"
 
@@ -15,6 +16,11 @@ LuauBehaviourFixture::LuauBehaviourFixture()
 void LuauBehaviourFixture::load(std::string_view script) {
   scripts_.run(scriptsOf(script));
   behaviours_ = scripts_.behaviours();
+}
+
+rtype::game::IHitHandler* LuauBehaviourFixture::hitHandler(
+    std::string_view name) {
+  return behaviours_.findHitHandler(name);
 }
 
 void LuauBehaviourFixture::attach(rtype::game::IEntityOrders& orders) {

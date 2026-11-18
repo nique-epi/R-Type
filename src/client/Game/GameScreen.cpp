@@ -134,6 +134,7 @@ struct EntityMessageRoutes {
   std::reference_wrapper<ScoreBoard> scoreBoard;
   std::reference_wrapper<DepartureFeed> departures;
   std::reference_wrapper<ISky> sky;
+  std::reference_wrapper<OwnPrediction> prediction;
 };
 
 /** @returns What the sky shows of the level @p status tells. */
@@ -148,7 +149,8 @@ SkyLevel skyLevelOf(const network::LevelStatus& status) {
  * board and the feed, an EnemyAction to the enemy it animates and to the boss,
  * an EffectPlayed to the player of the named effects, a BossStatus to the
  * boss, an EntityDestroyed to the boss and to the replicator, a LevelStatus to
- * the sky and to the boss, anything else but GameEnded to the replicator. */
+ * the sky, to the boss and to the prediction, which moves the walls ahead by
+ * its scroll, anything else but GameEnded to the replicator. */
 void routeEntityMessage(const EntityMessageRoutes& routes,
                         const EntityMessage& message) {
   std::visit(
@@ -170,6 +172,7 @@ void routeEntityMessage(const EntityMessageRoutes& routes,
           routes.replicator.get().apply(announced);
         } else if constexpr (std::is_same_v<Announced, network::LevelStatus>) {
           routes.sky.get().showLevel(skyLevelOf(announced));
+          routes.prediction.get().followScroll(announced.scrollSpeed);
           routes.boss.get().followLevel();
         } else if constexpr (!std::is_same_v<Announced, network::GameEnded>) {
           routes.replicator.get().apply(announced);
@@ -277,12 +280,13 @@ void GameScreen::handleEvent(const sf::Event& event) {
 }
 
 void GameScreen::update(engine::Duration elapsed) {
+  const std::optional<double> serverTick = serverTicks_->serverTickNow();
   const PlayerCommand command{.held = playerActions(),
-                              .shownTick = interpolationClock_.shownTick()};
+                              .shownTick = interpolationClock_.shownTick(),
+                              .serverTick = serverTick};
   prediction_.advance(elapsed, command, *inputs_);
   traceHeldActions(logger_, command.held, loggedActions_);
   systems_.run(components_, elapsed);
-  const std::optional<double> serverTick = serverTicks_->serverTickNow();
   interpolationClock_.follow(serverTick);
   interpolationClock_.advance(elapsed);
   const engine::Duration sinceTheWorld =
@@ -294,7 +298,7 @@ void GameScreen::update(engine::Duration elapsed) {
   applyEntityMessages();
   showOtherEntities(interpolationClock_, components_, feedback_);
   interpolationTally_->countFrame(interpolationClock_.renderTick(), serverTick);
-  prediction_.place(replicator_, components_);
+  prediction_.place(replicator_);
   tagPilotShips(components_, scoreBoard_.pilots(), *settings_);
   dressPilotShips(components_, shipLooks_->playerLooks());
   askForTheEndWhenDue();
@@ -314,7 +318,8 @@ void GameScreen::applyEntityMessages() {
                                    .boss = boss_,
                                    .scoreBoard = scoreBoard_,
                                    .departures = departures_,
-                                   .sky = *sky_};
+                                   .sky = *sky_,
+                                   .prediction = prediction_};
   for (const EntityMessage& message : receivedEntityMessages_) {
     routeEntityMessage(routes, message);
     if (const auto* ended = std::get_if<network::GameEnded>(&message)) {

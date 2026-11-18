@@ -17,6 +17,8 @@ constexpr float OTHER_Y = 40.0F;
 
 /** @brief The health a new Bydo has, as the world tests expect it. */
 constexpr int THREE_HEALTH_POINTS = 3;
+/** @brief The damage a test gives the sheet of a missile. */
+constexpr int SHEET_DAMAGE_POINTS = 3;
 
 /** @brief A sheet that gives 200 health points placed at 40 percent of them
  * has 80; a Bydo of three points placed at one percent keeps one point. */

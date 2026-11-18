@@ -75,6 +75,8 @@ rtype::engine::CollisionFilter shippedFilterOf(EntityType type) {
       return ENEMY_MISSILE_FILTER;
     case EntityType::LookItem:
       return LOOK_ITEM_FILTER;
+    case EntityType::Obstacle:
+      return OBSTACLE_FILTER;
   }
   return rtype::engine::CollisionFilter{};
 }

@@ -12,6 +12,7 @@
 #include "EntityRegistry.hpp"
 #include "IBehaviourState.hpp"
 #include "IEntityOrders.hpp"
+#include "IHitHandler.hpp"
 #include "Intent.hpp"
 #include "Position.hpp"
 
@@ -40,6 +41,9 @@ class LuauBehaviourFixture : public ::testing::Test {
                                           SteeredBody& body);
   /** @returns The memory the scripts hold once every garbage is collected. */
   [[nodiscard]] std::size_t memoryAfterCollection();
+  /** @returns The hit handler the scripts declared under @p name; nullptr
+   * when none is. */
+  [[nodiscard]] rtype::game::IHitHandler* hitHandler(std::string_view name);
   /** @returns The failures reported so far. */
   [[nodiscard]] const FailureLog& failures() const;
 
