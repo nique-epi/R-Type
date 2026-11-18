@@ -8,6 +8,8 @@ type TitledPage =
   | 'serversPage'
   | 'hostPage'
   | 'signUpPage'
+  | 'signInPage'
+  | 'linkPage'
   | 'rankingPage'
   | 'teamPage'
   | 'downloadPage';

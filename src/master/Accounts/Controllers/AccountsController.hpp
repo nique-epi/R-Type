@@ -3,6 +3,7 @@
 #include "AccountsService.hpp"
 #include "ApiRequest.hpp"
 #include "ApiResponse.hpp"
+#include "DeviceLinksService.hpp"
 #include "SiteVisitors.hpp"
 
 namespace rtype::master {
@@ -26,10 +27,12 @@ class AccountsController {
   /**
    * @param service Applies the rules of the accounts; it must outlive the
    * controller.
+   * @param links Trades an approved device link for a session; it must
+   * outlive the controller.
    * @param siteVisitors Who a creation or a sign-in is counted under; it must
    * outlive the controller.
    */
-  AccountsController(AccountsService& service,
+  AccountsController(AccountsService& service, DeviceLinksService& links,
                      const SiteVisitors& siteVisitors);
 
   /**
@@ -49,7 +52,10 @@ class AccountsController {
    * @returns The answer of `POST /api/sessions`: 201, `Location` naming the
    * session of the token, and the session with its token, shown this once; 401
    * for a wrong nickname or password, 429 when the address or the visitor
-   * failed too many sign-ins.
+   * failed too many sign-ins. A request with no body and the secret of a
+   * device link as Bearer trades the link instead: 201 and the session of the
+   * account that approved it; 401 for no link of that secret, 409 while it
+   * waits, 403 once refused, 410 once expired.
    */
   [[nodiscard]] network::ApiResponse createSession(
       const network::ApiRequest& request);
@@ -61,6 +67,7 @@ class AccountsController {
 
  private:
   AccountsService& service_;
+  DeviceLinksService& links_;
   const SiteVisitors& siteVisitors_;
 };
 

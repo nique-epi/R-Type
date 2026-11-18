@@ -34,6 +34,10 @@ constexpr std::string_view PORT_SETTING_NAME = "port";
 constexpr std::string_view DATABASE_SETTING_NAME = "database";
 constexpr std::string_view SITE_KEY_SETTING_NAME = "site-key";
 
+/** @brief The setting of the module accounts: the address of the web site,
+ * whose page `/link` validates the device links. */
+constexpr std::string_view SITE_URL_SETTING_NAME = "site-url";
+
 /** @brief The settings of the module wallet: what a wallet holds when it
  * opens, at the first read of an account. */
 constexpr std::string_view WALLET_STARTING_KOPECKS_SETTING_NAME =

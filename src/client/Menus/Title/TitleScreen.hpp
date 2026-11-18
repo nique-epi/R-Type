@@ -1,6 +1,8 @@
 #pragma once
 
 #include <memory>
+#include "IAccountSession.hpp"
+#include "IDeviceLinkFlow.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "IScreen.hpp"
 #include "IScreenNavigator.hpp"
@@ -10,6 +12,7 @@
 #include "Menu.hpp"
 #include "PlayStart.hpp"
 #include "PlayfieldMapping.hpp"
+#include "SignInReturn.hpp"
 #include "Squadron.hpp"
 #include "TimeConstants.hpp"
 #include "TitleScreenParts.hpp"
@@ -45,9 +48,15 @@ class TitleScreen : public IScreen {
   [[nodiscard]] bool hidesScreensBelow() const override;
 
  private:
-  [[nodiscard]] static Menu buildMenu(IScreenNavigator& navigator,
-                                      ISoundPlayer& sounds,
-                                      PlayStart playStart);
+  [[nodiscard]] Menu buildMenu(ISoundPlayer& sounds, PlayStart playStart);
+
+  /** @brief Signs out the player signed in, on the master too, or opens
+   * SIGN_IN_SCREEN for a guest. */
+  void signInOrOut();
+
+  /** @brief Writes on the account bar what it does now: SIGN IN, or SIGN OUT
+   * and the nickname. */
+  void showAccount();
   void repaint();
   /** @brief Puts the update panel over the title once a release waits, or
    * else WHAT'S NEW once notes wait; each once per title. */
@@ -58,6 +67,9 @@ class TitleScreen : public IScreen {
   const PlayerSettings* settings_;
   const IWallet* wallet_;
   IScreenNavigator* navigator_;
+  IAccountSession* account_;
+  IDeviceLinkFlow* deviceLinks_;
+  SignInReturn* signInReturn_;
   const IUpdateNotice* notice_;
   bool updateAsked_{};
   bool notesAsked_{};

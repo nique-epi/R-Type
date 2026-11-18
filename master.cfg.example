@@ -19,6 +19,11 @@ set database ""
 # site the same value (MASTER_SITE_KEY), and keep this file private.
 set site-key ""
 
+# The web site whose page /link validates the device links a game signs in
+# through (module accounts): an address starting with https:// or http://,
+# without the slash at its end. The master writes it in each link it opens.
+set site-url "https://rtype.app"
+
 # What the wallet of an account holds when it opens, at the first read of its
 # kopecks, chips or looks (module wallet): kopecks and chips, each 0 to
 # 999999. A wallet already open keeps its balances when these change.

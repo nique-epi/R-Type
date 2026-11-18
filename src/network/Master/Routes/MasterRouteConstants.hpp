@@ -74,6 +74,37 @@ constexpr MasterRoute CREATE_SESSION_ROUTE{
 /** @brief Closes the session of the token; closing it again succeeds. */
 constexpr MasterRoute DELETE_OWN_SESSION_ROUTE{
     .method = RouteMethod::Delete, .path = "/sessions/me", .httpsOnly = true};
+
+/**
+ * @brief Opens a device link for a game, which a player validates on the web
+ * site; the answer holds its secret, the only time it is shown, and its short
+ * code. The routes of the device links are answered over HTTPS only.
+ */
+constexpr MasterRoute CREATE_DEVICE_LINK_ROUTE{
+    .method = RouteMethod::Post, .path = "/device-links", .httpsOnly = true};
+/** @brief The device link of the secret the game sends as Bearer. */
+constexpr MasterRoute READ_OWN_DEVICE_LINK_ROUTE{
+    .method = RouteMethod::Get, .path = "/device-links/me", .httpsOnly = true};
+/** @brief Forgets the device link of the secret; forgetting it again
+ * succeeds. */
+constexpr MasterRoute DELETE_OWN_DEVICE_LINK_ROUTE{
+    .method = RouteMethod::Delete,
+    .path = "/device-links/me",
+    .httpsOnly = true};
+/** @brief The parameter of a path that names a device link by its short
+ * code. */
+constexpr std::string_view DEVICE_LINK_CODE_PATH_PARAMETER = "code";
+/** @brief The device link of the short code in the path, read by a signed-in
+ * player on the web site before deciding. */
+constexpr MasterRoute READ_DEVICE_LINK_ROUTE{.method = RouteMethod::Get,
+                                             .path = "/device-links/:code",
+                                             .httpsOnly = true};
+/** @brief Replaces the decision on the device link of the short code in the
+ * path, made by the account of the session: approved or denied, once. */
+constexpr MasterRoute REPLACE_DEVICE_LINK_DECISION_ROUTE{
+    .method = RouteMethod::Put,
+    .path = "/device-links/:code/decision",
+    .httpsOnly = true};
 /**
  * @brief The balances of the wallet of the account of the token, opened at
  * its first read. The routes of the wallet are answered over HTTPS only, to

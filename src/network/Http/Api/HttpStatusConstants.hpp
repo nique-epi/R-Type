@@ -12,6 +12,7 @@ constexpr int UNAUTHORIZED_STATUS = 401;
 constexpr int FORBIDDEN_STATUS = 403;
 constexpr int NOT_FOUND_STATUS = 404;
 constexpr int CONFLICT_STATUS = 409;
+constexpr int GONE_STATUS = 410;
 constexpr int UNPROCESSABLE_CONTENT_STATUS = 422;
 constexpr int TOO_MANY_REQUESTS_STATUS = 429;
 

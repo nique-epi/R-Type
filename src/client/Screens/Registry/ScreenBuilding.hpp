@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <optional>
 #include "AssetList.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "IScreen.hpp"
@@ -33,16 +34,19 @@ namespace rtype::client {
 [[nodiscard]] std::unique_ptr<IScreen> dialogScreenOf(
     const ScreenContext& context, Menu menu);
 
-/** @returns The dialog that tells a guest a sign-in is needed: OK, which
- * MENU_CANCEL_KEY answers too, closes it. */
+/** @returns The dialog that tells a guest a sign-in is needed: SIGN IN pushes
+ * SIGN_IN_SCREEN over it, which closes it once signed in and opens @p asking
+ * in its place when it names a screen; OK, which MENU_CANCEL_KEY answers too,
+ * closes it. */
 [[nodiscard]] std::unique_ptr<IScreen> signInNeededScreenOf(
-    const ScreenContext& context);
+    const ScreenContext& context, std::optional<ScreenId> asking);
 
 /** @returns A builder of what @p builder builds for a player signed in, and
  * of the dialog that tells a guest a sign-in is needed
- * (signInNeededScreenOf()) in its place. */
+ * (signInNeededScreenOf()) in its place, @p asking being the screen it is
+ * registered as. */
 [[nodiscard]] ScreenRegistry::Builder signedInOnly(
-    ScreenRegistry::Builder builder);
+    ScreenRegistry::Builder builder, ScreenId asking);
 
 /**
  * @brief The loading screen of a list while some of its assets are not

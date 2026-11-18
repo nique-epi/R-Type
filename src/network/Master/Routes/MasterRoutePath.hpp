@@ -57,6 +57,15 @@ namespace rtype::network {
  */
 [[nodiscard]] std::string lookPathOf(MasterRoute route, std::string_view item);
 
+/**
+ * @returns The path a client calls @p route by when its path names the device
+ * link of the short code @p userCode: `/api/device-links/KQ7F-4ZPB/decision`
+ * for REPLACE_DEVICE_LINK_DECISION_ROUTE. The code is written as it comes; the
+ * master refuses one that is no short code.
+ */
+[[nodiscard]] std::string deviceLinkPathOf(MasterRoute route,
+                                           std::string_view userCode);
+
 /** @returns How HTTP names @p method: GET_METHOD, POST_METHOD, PUT_METHOD or
  * DELETE_METHOD. */
 [[nodiscard]] std::string_view methodNameOf(RouteMethod method);

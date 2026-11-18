@@ -10,6 +10,7 @@ add_subdirectory(Casino)
 add_subdirectory(Chat)
 add_subdirectory(ServerList)
 add_subdirectory(Account)
+add_subdirectory(DeviceLink)
 add_subdirectory(Ticket)
 
 add_library(rtype_client_connection_module STATIC
@@ -25,6 +26,7 @@ target_include_directories(rtype_client_connection_module PUBLIC ${CMAKE_CURRENT
 target_link_libraries(rtype_client_connection_module
   PUBLIC
     rtype_client_connection_account
+    rtype_client_connection_device_link
     rtype_client_connection_casino
     rtype_client_connection_chat
     rtype_client_connection_entity_types

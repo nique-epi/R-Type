@@ -7,6 +7,7 @@
 #include "GameWindow.hpp"
 #include "IAccountSession.hpp"
 #include "IAudioService.hpp"
+#include "IDeviceLinkFlow.hpp"
 #include "IEntityTypeSource.hpp"
 #include "IEntityTypeTable.hpp"
 #include "IGameCatalog.hpp"
@@ -22,6 +23,7 @@
 #include "ServerSession.hpp"
 #include "SettingsService.hpp"
 #include "ShipLookExchange.hpp"
+#include "SignInReturn.hpp"
 #include "WaitingRoom.hpp"
 
 namespace rtype::client {
@@ -72,6 +74,11 @@ struct ScreenServices {
   /** @brief Asks the master the game ticket a signed-in player joins a game
    * with: the connection screens read it. */
   std::reference_wrapper<ITicketLink> tickets;
+  /** @brief Signs the game in through the web site: SIGN_IN_SCREEN reads it.
+   */
+  std::reference_wrapper<IDeviceLinkFlow> deviceLinks;
+  /** @brief The screen SIGN_IN_SCREEN opens again once signed in. */
+  std::reference_wrapper<SignInReturn> signInReturn;
   /** @brief The server, the nickname and the game the first connection
    * screen starts with. */
   ServerChoice choice;

@@ -1,8 +1,11 @@
 #include "ClientMenusModule.hpp"
+#include <chrono>
 #include <memory>
+#include <optional>
 #include <random>
 #include <string>
 #include <vector>
+#include "BrowserOpening.hpp"
 #include "ConnectionGoal.hpp"
 #include "ConnectionScreen.hpp"
 #include "ConnectionScreenParts.hpp"
@@ -34,6 +37,9 @@
 #include "ScreenRegistry.hpp"
 #include "ServerMapScreen.hpp"
 #include "ServerMapScreenParts.hpp"
+#include "SignInScreen.hpp"
+#include "SignInScreenIdConstants.hpp"
+#include "SignInScreenParts.hpp"
 #include "SquadronStart.hpp"
 #include "TitleOpening.hpp"
 #include "TitleScreen.hpp"
@@ -71,6 +77,9 @@ std::unique_ptr<IScreen> buildTitleScreen(const ScreenContext& context,
                        .sounds = soundsOf(context),
                        .settings = context.services.settings.get(),
                        .wallet = context.services.wallet.get(),
+                       .account = context.services.account.get(),
+                       .deviceLinks = context.services.deviceLinks.get(),
+                       .signInReturn = context.services.signInReturn.get(),
                        .playfieldPointAt = playfieldMappingOf(context),
                        .motion = motionPreference(),
                        .seed = std::random_device{}(),
@@ -180,6 +189,25 @@ std::unique_ptr<IScreen> buildLeaderboardScreen(const ScreenContext& context) {
       interfaceCanvasOf(context));
 }
 
+/** @returns The dialog that signs the game in through the web site, opening
+ * its pages in the browser of the player, on the clock of the system. */
+std::unique_ptr<IScreen> buildSignInScreen(const ScreenContext& context) {
+  return std::make_unique<SignInScreen>(
+      SignInScreenParts{.navigator = context.navigator.get(),
+                        .deviceLinks = context.services.deviceLinks.get(),
+                        .account = context.services.account.get(),
+                        .signInReturn = context.services.signInReturn.get(),
+                        .sounds = soundsOf(context),
+                        .playfieldPointAt = playfieldMappingOf(context),
+                        .openPage = openInBrowser,
+                        .now =
+                            [] {
+                              return std::chrono::floor<std::chrono::seconds>(
+                                  std::chrono::system_clock::now());
+                            }},
+      interfaceCanvasOf(context));
+}
+
 /** @brief Adds to @p registry the five connection screens: the form, the one
  * for the leaderboard, the one that joins at once, the one that asks only for
  * the nickname to join a server of the map, and the one RETRY opens. */
@@ -205,6 +233,16 @@ void addConnectionScreens(ScreenRegistry& registry) {
     return buildConnectionScreen(screens, ConnectionGoal::WaitingRoom,
                                  ConnectionStart::LastAttemptOnConfirm);
   });
+}
+
+/** @brief Adds to @p registry the two screens of the sign-in: the dialog
+ * that says one is needed, which the hangar pushes over itself, and the
+ * dialog that signs the game in through the web site. */
+void addSignInScreens(ScreenRegistry& registry) {
+  registry.add(SIGN_IN_NEEDED_SCREEN, [](const ScreenContext& screens) {
+    return signInNeededScreenOf(screens, std::nullopt);
+  });
+  registry.add(SIGN_IN_SCREEN, buildSignInScreen);
 }
 
 }  // namespace
@@ -252,7 +290,7 @@ void ClientMenusModule::install(engine::InstallContext& context) {
   registry.add(NEW_GAME_SCREEN, buildNewGameScreen);
   registry.add(LEADERBOARD_SCREEN, buildLeaderboardScreen);
   registry.add(CONNECTION_LOST_SCREEN, buildConnectionLostScreen);
-  registry.add(SIGN_IN_NEEDED_SCREEN, signInNeededScreenOf);
+  addSignInScreens(registry);
 }
 
 void ClientMenusModule::start() {}

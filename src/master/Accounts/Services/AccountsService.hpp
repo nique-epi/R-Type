@@ -13,6 +13,7 @@
 #include "MasterDatabase.hpp"
 #include "NewUser.hpp"
 #include "PasswordKey.hpp"
+#include "SessionOrigin.hpp"
 #include "SessionRepository.hpp"
 #include "SignInFailureRepository.hpp"
 #include "User.hpp"
@@ -73,6 +74,15 @@ class AccountsService final : public ISessionAccounts {
    * @returns Whether an account has that nickname. */
   bool makeAdmin(const std::string& nickname);
 
+  /**
+   * @brief Opens a session of SESSION_LIFETIME for @p user, counted under the
+   * address of @p origin, as a sign-in does once the password matched; a
+   * device link the player approved opens one this way too.
+   * @returns The session and its token, shown this once.
+   */
+  network::CreatedSession openSession(const network::User& user,
+                                      const SessionOrigin& origin);
+
  private:
   [[nodiscard]] NewUser newUserOf(const CredentialsAttempt& request) const;
 
@@ -87,10 +97,6 @@ class AccountsService final : public ISessionAccounts {
   /** @brief Counts the failed sign-in of @p request, and writes it in the
    * journal. */
   void recordFailure(const CredentialsAttempt& request);
-
-  /** @returns A new session of @p user, opened as @p request asks. */
-  network::CreatedSession createdSessionFor(const network::User& user,
-                                            const CredentialsAttempt& request);
 
   network::PasswordKey key_;
   UserRepository users_;

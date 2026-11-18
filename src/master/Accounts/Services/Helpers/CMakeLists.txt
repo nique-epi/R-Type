@@ -1,4 +1,5 @@
 add_library(rtype_master_accounts_helpers STATIC
+  DeviceLinkSecret.cpp
   PasswordKeyText.cpp
   SessionToken.cpp
 )

@@ -7,6 +7,8 @@ const PAGE_PATHS = {
   servers: '/servers',
   host: '/host',
   signUp: '/signup',
+  signIn: '/signin',
+  link: '/link',
   ranking: '/leaderboard',
   wiki: '/wiki',
   team: '/team',

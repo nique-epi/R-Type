@@ -65,6 +65,8 @@ constexpr const char* OK_LABEL = "OK";
  * the looks live on an account of the master. */
 constexpr const char* SIGN_IN_HEADING = "SIGN IN NEEDED";
 constexpr const char* SIGN_IN_MESSAGE = "SIGN IN TO SPEND KOPECKS.";
+/** @brief The button of that dialog that opens SIGN_IN_SCREEN. */
+constexpr const char* SIGN_IN_LABEL = "SIGN IN";
 
 /**
  * @brief The word after a number of pilots, as the waiting room counts its

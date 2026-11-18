@@ -17,8 +17,11 @@
 #include "PlayerPreferences.hpp"
 #include "ScreenConstants.hpp"
 #include "ScreenId.hpp"
+#include "SignInReturn.hpp"
+#include "SignInScreenIdConstants.hpp"
 #include "SquadronConstants.hpp"
 #include "TimeConstants.hpp"
+#include "TitleScreenConstants.hpp"
 #include "TitleScreenParts.hpp"
 #include "UpdateScreenIdConstants.hpp"
 #include "WalletPurse.hpp"
@@ -44,9 +47,11 @@ TitleScreen::TitleScreen(TitleScreenParts parts,
       settings_(&parts.settings.get()),
       wallet_(&parts.wallet.get()),
       navigator_(&parts.navigator.get()),
+      account_(&parts.account.get()),
+      deviceLinks_(&parts.deviceLinks.get()),
+      signInReturn_(&parts.signInReturn.get()),
       notice_(parts.notice),
-      menu_(buildMenu(parts.navigator.get(), parts.sounds.get(),
-                      parts.playStart)),
+      menu_(buildMenu(parts.sounds.get(), parts.playStart)),
       squadron_(parts.motion, parts.seed, parts.squadronStart) {
   repaint();
 }
@@ -56,6 +61,7 @@ void TitleScreen::handleEvent(const sf::Event& event) {
 }
 
 void TitleScreen::update(engine::Duration elapsed) {
+  showAccount();
   menu_.advance(elapsed);
   squadron_.advance(elapsed);
   askForNotice();
@@ -68,8 +74,8 @@ void TitleScreen::draw(sf::RenderTarget& target) const {
 
 bool TitleScreen::hidesScreensBelow() const { return true; }
 
-Menu TitleScreen::buildMenu(IScreenNavigator& navigator, ISoundPlayer& sounds,
-                            PlayStart playStart) {
+Menu TitleScreen::buildMenu(ISoundPlayer& sounds, PlayStart playStart) {
+  IScreenNavigator& navigator = *navigator_;
   const ScreenId playScreen = playScreenOf(playStart);
   return MenuBuilder(MenuBuilder::Frame::Page, &sounds)
       .version(GAME_VERSION_TEXT)
@@ -82,11 +88,34 @@ Menu TitleScreen::buildMenu(IScreenNavigator& navigator, ISoundPlayer& sounds,
           [&navigator] { navigator.push(LEADERBOARD_SCREEN); })
       .button({.label = SETTINGS_LABEL, .description = SETTINGS_DESCRIPTION},
               [&navigator] { navigator.push(OPTIONS_SCREEN); })
+      .button({.label = SIGN_IN_LABEL, .description = SIGN_IN_DESCRIPTION},
+              [this] { signInOrOut(); })
       .cancelButton({.label = QUIT_LABEL, .description = QUIT_DESCRIPTION},
                     [&navigator] { navigator.push(QUIT_CONFIRMATION_SCREEN); })
       .illustration(SQUADRON_BOX_SIZE)
       .footer(COPYRIGHT_TEXT)
       .build();
+}
+
+void TitleScreen::signInOrOut() {
+  if (account_->signedIn()) {
+    deviceLinks_->askSignOut(account_->token());
+    account_->signOut();
+    return;
+  }
+  *signInReturn_ = SignInReturn{};
+  navigator_->push(SIGN_IN_SCREEN);
+}
+
+void TitleScreen::showAccount() {
+  if (!account_->signedIn()) {
+    menu_.setLabel(ACCOUNT_BUTTON, SIGN_IN_LABEL);
+    menu_.setDescription(ACCOUNT_BUTTON, SIGN_IN_DESCRIPTION);
+    return;
+  }
+  menu_.setLabel(ACCOUNT_BUTTON,
+                 std::string{SIGN_OUT_START} + account_->nickname());
+  menu_.setDescription(ACCOUNT_BUTTON, SIGN_OUT_DESCRIPTION);
 }
 
 void TitleScreen::askForNotice() {
