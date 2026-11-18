@@ -196,13 +196,13 @@ TEST(EntityAppearances, RefusesAnIdleAnimationOfNoFrame) {
 }
 
 /**
- * Given a sheet whose idle animation holds 16 frames, the most it may
+ * Given a sheet whose idle animation holds 24 frames, the most it may
  * When it is read
- * Then it holds 16 frames
+ * Then it holds 24 frames
  */
 TEST(EntityAppearances, ReadsTheMostFramesAnIdleAnimationMayHold) {
   const EntityAppearances appearances =
-      appearancesReading(SHEET_WITH_SIXTEEN_FRAMES_TEXT);
+      appearancesReading(SHEET_WITH_TWENTY_FOUR_FRAMES_TEXT);
   const EntityAppearance* const read = appearances.named(READ_TYPE_NAME);
   ASSERT_NE(read, nullptr);
 
@@ -210,13 +210,13 @@ TEST(EntityAppearances, ReadsTheMostFramesAnIdleAnimationMayHold) {
 }
 
 /**
- * Given a sheet whose idle animation holds 17 frames, one past the most
+ * Given a sheet whose idle animation holds 25 frames, one past the most
  * When it is read
  * Then reading stops on the frame count
  */
 TEST(EntityAppearances, RefusesOneFramePastTheMost) {
   EXPECT_THROW(
-      static_cast<void>(appearancesReading(SHEET_WITH_SEVENTEEN_FRAMES_TEXT)),
+      static_cast<void>(appearancesReading(SHEET_WITH_TWENTY_FIVE_FRAMES_TEXT)),
       DataFileValueOutOfRangeException);
 }
 

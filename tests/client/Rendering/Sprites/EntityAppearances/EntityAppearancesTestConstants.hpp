@@ -149,7 +149,7 @@ frames = 0
 spacing = 2
 frame_ms = 120
 )";
-constexpr std::string_view SHEET_WITH_SEVENTEEN_FRAMES_TEXT = R"(
+constexpr std::string_view SHEET_WITH_TWENTY_FIVE_FRAMES_TEXT = R"(
 [gameplay]
 
 [appearance]
@@ -160,11 +160,11 @@ left = 10
 top = 20
 width = 8
 height = 6
-frames = 17
+frames = 25
 spacing = 2
 frame_ms = 120
 )";
-constexpr std::string_view SHEET_WITH_SIXTEEN_FRAMES_TEXT = R"(
+constexpr std::string_view SHEET_WITH_TWENTY_FOUR_FRAMES_TEXT = R"(
 [gameplay]
 
 [appearance]
@@ -175,7 +175,7 @@ left = 10
 top = 20
 width = 8
 height = 6
-frames = 16
+frames = 24
 spacing = 2
 frame_ms = 120
 )";
@@ -212,7 +212,7 @@ frame_ms = 120
 
 /** @brief The most frames an idle animation holds, as the sheet format of
  * the architecture page writes it. */
-constexpr std::size_t MOST_FRAMES_A_SHEET_HOLDS = 16;
+constexpr std::size_t MOST_FRAMES_A_SHEET_HOLDS = 24;
 
 /** @brief A square of 3 by 3 drawn pixels, and what peeling its outline once
  * leaves: its center, the one pixel whose four neighbours are drawn. */

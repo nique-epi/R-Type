@@ -96,8 +96,9 @@ constexpr std::array AFTERWARDS_NAMES{RETURNS_TO_IDLE, STAYS_ON_LAST_FRAME};
  */
 constexpr std::int64_t LARGEST_SHEET_PIXELS = 4096;
 
-/** @brief The most frames an animation of a sheet holds. */
-constexpr std::int64_t MOST_FRAMES = 16;
+/** @brief The most frames an animation of a sheet holds: 24, so a two-second
+ * action of a boss plays at 12 frames a second. */
+constexpr std::int64_t MOST_FRAMES = 24;
 
 /** @brief The farthest a frame hangs from the body, in pixels of the canvas,
  * either way. */

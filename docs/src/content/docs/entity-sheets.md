@@ -257,7 +257,7 @@ frame_ms = 250
 | `sheet` | | a text: the asset id of a sprite sheet | the texture it is drawn from, which the game screen loads with its other assets |
 | `idle.left`, `idle.top` | pixels of the sheet | 0 to 4095 | the top-left corner of its first frame |
 | `idle.width`, `idle.height` | pixels of the sheet | 1 to 4096 | the size of a frame |
-| `idle.frames` | frames | 1 to 16 | how many frames follow each other in the row |
+| `idle.frames` | frames | 1 to 24 | how many frames follow each other in the row |
 | `idle.spacing` | pixels of the sheet | 0 to 64 | the gap between two frames |
 | `idle.frame_ms` | milliseconds | 1 to 60000 | how long each frame shows, in a loop |
 | `[appearance.enraged_idle]` | | the keys of `idle`; may be left out | the idle animation of an enemy once the server announced it enraged, which every attack that ends with `afterwards = "idle"` goes back to; the enemy keeps `idle` without it |
