@@ -38,12 +38,19 @@ constexpr const char* LEVEL_LDTK_KEY = "ldtk";
  * each start: the scroll, the biome and the scroll that biome began at. */
 constexpr const char* LEVEL_STARTS_KEY = "starts";
 constexpr const char* START_SCROLL_KEY = "scroll";
-constexpr const char* START_BIOME_KEY = "biome";
-constexpr const char* START_BIOME_SINCE_KEY = "biome_since";
 
 /** @brief The first stage a start may be declared for, counted from 1: the
  * first stage always starts at the start of the level. */
 constexpr double FIRST_STARTED_STAGE_NUMBER = 2.0;
+constexpr const char* START_BIOME_KEY = "biome";
+constexpr const char* START_BIOME_SINCE_KEY = "biome_since";
+
+/** @brief The option that closes the play area of some biomes with a ceiling
+ * and a floor, and the keys of each band: the rows a ship flies between, in
+ * logical units from the top edge of the playfield. */
+constexpr const char* LEVEL_BANDS_KEY = "bands";
+constexpr const char* BAND_TOP_KEY = "top";
+constexpr const char* BAND_BOTTOM_KEY = "bottom";
 
 /** @brief The part of a path that leaves its folder. */
 constexpr std::string_view PARENT_FOLDER_PART = "..";
@@ -93,10 +100,14 @@ constexpr const char* LEVEL_YIELD_MESSAGE =
     "a stage may only yield through level.wait, level.wait_scroll and "
     "level.transition";
 constexpr const char* WRONG_LEVEL_OPTIONS_MESSAGE =
-    "the options of a level are a table whose keys are ldtk and starts";
+    "the options of a level are a table whose keys are ldtk, starts and "
+    "bands";
 constexpr const char* WRONG_LEVEL_STARTS_MESSAGE =
     "the starts of a level map a stage from 2 to its last to a table of a "
     "scroll, a biome and a biome_since, finite numbers from 0 and a biome name";
+constexpr const char* WRONG_LEVEL_BANDS_MESSAGE =
+    "the bands of a level map a biome name to a table of a top and a bottom, "
+    "rows from 0 to the bottom of the play area, at least a ship apart";
 constexpr const char* WRONG_LDTK_FILE_MESSAGE =
     "the ldtk option of a level is a relative path inside its resource, "
     "without ..";

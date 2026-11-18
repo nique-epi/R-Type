@@ -26,6 +26,7 @@
 #include "MatchSystemsParts.hpp"
 #include "PlayerController.hpp"
 #include "ServerException.hpp"
+#include "ShipBand.hpp"
 #include "TimeConstants.hpp"
 #include "TransitionHold.hpp"
 #include "VolleySystem.hpp"
@@ -70,6 +71,17 @@ void holdTheShipsOfATransition(GameContext& game, game::World& world,
   if (ticksLeft == game::LEVEL_TRANSITION_RETURN_TICKS) {
     returnEveryShip(world, game.roster.get());
   }
+}
+
+/** @brief Gives the ships of @p world the band of the biome the level
+ * @p director directs shows (see bandEveryShip()); nothing in a game that
+ * plays its waves, whose ships fly in the whole play area. */
+void keepTheShipsInTheirBand(GameContext& game, game::World& world,
+                             const LevelDirector* director) {
+  if (director == nullptr) {
+    return;
+  }
+  bandEveryShip(world, game.roster.get(), director->band());
 }
 
 /** @returns The boss stage of the level played in @p world, its boss created
@@ -217,6 +229,7 @@ void MatchSystems::onTick(IHitArbitration& arbitration, std::uint32_t tick) {
     levelDirector_->onTick();
   }
   holdTheShipsOfATransition(game, world_, levelDirector_.get());
+  keepTheShipsInTheirBand(game, world_, levelDirector_.get());
   runWorldSystems(game, world_);
   weaponSystem_->onTick();
   volleySystem_->onTick();

@@ -40,10 +40,15 @@ using rtype::game::testing::LAST_PRESS_OF_THE_WINDOW;
 using rtype::game::testing::LATE_SECOND_PRESS;
 using rtype::game::testing::LEFT_EDGE_STOP_X;
 using rtype::game::testing::motionAfterTwoPresses;
+using rtype::game::testing::NARROW_BAND;
+using rtype::game::testing::NARROW_BAND_MIDDLE_Y;
 using rtype::game::testing::NEAR_AN_EDGE;
 using rtype::game::testing::OppositeDirections;
 using rtype::game::testing::PARTIAL_STEERING;
 using rtype::game::testing::PAST_FULL_SPEED_TICKS;
+using rtype::game::testing::PIT_BAND;
+using rtype::game::testing::PIT_CEILING_STOP_Y;
+using rtype::game::testing::PIT_FLOOR_STOP_Y;
 using rtype::game::testing::PLAY_AREA_CENTER;
 using rtype::game::testing::POSITION_TOLERANCE;
 using rtype::game::testing::PRESS_AFTER_THE_DASH;
@@ -263,6 +268,69 @@ INSTANTIATE_TEST_SUITE_P(
             .from = {.x = PLAY_AREA_CENTER.x,
                      .y = PLAY_AREA_HEIGHT - NEAR_AN_EDGE},
             .stop = {.x = PLAY_AREA_CENTER.x, .y = BOTTOM_EDGE_STOP_Y}}));
+
+/**
+ * Given a ship of the Pit near its floor, its player holding down
+ * When a second passes
+ * Then the ship stops with its side on the floor of the band, above the
+ * bottom of the play area
+ */
+TEST(ShipControl, StopsAtTheFloorOfItsBand) {
+  const MovingShip ship = shipAfterTicks(
+      MovingShip{.position = {.x = PLAY_AREA_CENTER.x,
+                              .y = PIT_FLOOR_STOP_Y - NEAR_AN_EDGE},
+                 .motion = {},
+                 .band = PIT_BAND},
+      ShipDirections{.down = true}, rtype::engine::SIMULATION_TICKS_PER_SECOND);
+
+  EXPECT_FLOAT_EQ(ship.position.y, PIT_FLOOR_STOP_Y);
+}
+
+/**
+ * Given a ship of the Pit near its ceiling, its player holding up
+ * When a second passes
+ * Then the ship stops with its side on the ceiling of the band
+ */
+TEST(ShipControl, StopsAtTheCeilingOfItsBand) {
+  const MovingShip ship = shipAfterTicks(
+      MovingShip{.position = {.x = PLAY_AREA_CENTER.x,
+                              .y = PIT_CEILING_STOP_Y + NEAR_AN_EDGE},
+                 .motion = {},
+                 .band = PIT_BAND},
+      ShipDirections{.up = true}, rtype::engine::SIMULATION_TICKS_PER_SECOND);
+
+  EXPECT_FLOAT_EQ(ship.position.y, PIT_CEILING_STOP_Y);
+}
+
+/**
+ * Given a ship at the top of the play area when its band becomes the Pit
+ * When a tick passes, its player holding nothing
+ * Then the ship is brought down below the ceiling and keeps its band
+ */
+TEST(ShipControl, BringsAShipAboveItsBandBelowTheCeiling) {
+  const MovingShip ship = shipAfterTicks(
+      MovingShip{.position = {.x = PLAY_AREA_CENTER.x, .y = TOP_EDGE_STOP_Y},
+                 .motion = {},
+                 .band = PIT_BAND},
+      ShipDirections{}, 1);
+
+  EXPECT_FLOAT_EQ(ship.position.y, PIT_CEILING_STOP_Y);
+  EXPECT_EQ(ship.band, PIT_BAND);
+}
+
+/**
+ * Given a ship in a band narrower than a ship
+ * When a tick passes, its player holding down
+ * Then the ship keeps its center on the middle row of the band
+ */
+TEST(ShipControl, KeepsAShipOnTheMiddleOfABandNarrowerThanIt) {
+  const MovingShip ship = shipAfterTicks(
+      MovingShip{
+          .position = PLAY_AREA_CENTER, .motion = {}, .band = NARROW_BAND},
+      ShipDirections{.down = true}, 1);
+
+  EXPECT_FLOAT_EQ(ship.position.y, NARROW_BAND_MIDDLE_Y);
+}
 
 /**
  * Given a ship whose side is on the right edge, going right at SHIP_SPEED

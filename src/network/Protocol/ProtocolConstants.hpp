@@ -644,6 +644,13 @@ constexpr std::string_view BIOME_FIELD = "biome";
 constexpr std::string_view SCROLL_POSITION_FIELD = "scrollPosition";
 constexpr std::string_view SCROLL_SPEED_FIELD = "scrollSpeed";
 constexpr std::string_view BIOME_SINCE_FIELD = "biomeSince";
+constexpr std::string_view BAND_FIELD = "band";
+
+/** @brief The bottom row of the band of a LevelStatus whose biome closes
+ * nothing: past any playfield, so the ships fly down to the bottom of the
+ * play area. */
+constexpr std::uint16_t OPEN_BAND_BOTTOM =
+    std::numeric_limits<std::uint16_t>::max();
 
 /**
  * @brief Wire steps in one logical unit: a coordinate is sent in eighths of a

@@ -6,6 +6,7 @@
 #include <vector>
 #include "Bounds.hpp"
 #include "IPlayerInputLink.hpp"
+#include "PlayBand.hpp"
 #include "PlayerCommand.hpp"
 #include "Position.hpp"
 #include "PredictedCommand.hpp"
@@ -64,9 +65,14 @@ class OwnShipPredictor {
    * from 0 to 1; nothing while it does not roll. */
   [[nodiscard]] std::optional<float> rollShare() const;
 
+  /** @brief Keeps the predicted ship between the rows of @p band, this ship
+   * and the next ones (see ShipPrediction::useBand()). */
+  void useBand(game::PlayBand band);
+
  private:
   std::uint8_t playerNumber_;
   ShipPrediction prediction_;
+  game::PlayBand band_{};
   std::optional<std::uint32_t> shipEntityId_;
   engine::Duration uncounted_{};
 };

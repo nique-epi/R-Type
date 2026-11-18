@@ -39,6 +39,7 @@
 #include "PercentConstants.hpp"
 #include "Pilot.hpp"
 #include "PilotSheet.hpp"
+#include "PlayBand.hpp"
 #include "Position.hpp"
 #include "RolledMaskCatalog.hpp"
 #include "RolledMasks.hpp"
@@ -99,11 +100,13 @@ void addPlace(engine::ComponentRegistry& components, const BodyStart& start) {
   components.add(start.body, Intent{});
 }
 
-/** @brief Gives @p start the motion its sheet names. */
+/** @brief Gives @p start the motion its sheet names; a ship flies in the
+ * whole play area until a level gives it the band of its biome. */
 void addMotion(engine::ComponentRegistry& components, const BodyStart& start) {
   const MotionSheet& motion = start.sheet.get().motion;
   if (motion.kind == MotionKind::Ship) {
     components.add(start.body, ShipMotion{});
+    components.add(start.body, PlayBand{});
     return;
   }
   if (motion.kind == MotionKind::Scroll) {

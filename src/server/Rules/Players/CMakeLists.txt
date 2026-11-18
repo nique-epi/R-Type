@@ -8,6 +8,7 @@ add_library(rtype_server_rules_players STATIC
   FavorTheShooter.cpp
   FavorThePlayers.cpp
   ShooterViews.cpp
+  ShipBand.cpp
   TransitionHold.cpp
 )
 

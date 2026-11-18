@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include "Direction.hpp"
+#include "PlayBand.hpp"
 #include "Position.hpp"
 #include "ShipDirections.hpp"
 #include "ShipMotion.hpp"
@@ -10,10 +11,12 @@
 namespace rtype::game {
 
 /** @brief A ship as ShipControl moves it: where its center is, in logical
- * units, and what moves it besides the directions held. */
+ * units, what moves it besides the directions held, and the rows it flies
+ * between. */
 struct MovingShip {
   Position position{};
   ShipMotion motion{};
+  PlayBand band{};
 };
 
 /** @brief A new input of a player for its ship: the directions it held
@@ -33,9 +36,10 @@ struct HeldChange {
  * DRIFT_RISE_RATE and the constants after it tell. A reversal
  * chases the new target from the current speed. A maneuver carries the ship
  * on top, its distance eased out over its duration. The ship stops where its
- * side meets an edge of the play area, the playfield less the status band
- * (PLAY_AREA_HEIGHT), and loses its velocity along that axis; a ship that
- * started outside comes back the least needed.
+ * side meets a side edge of the playfield, or the top or the bottom of its
+ * band (the play area, the playfield less the status band, unless a level
+ * closes it), and loses its velocity along that axis; a ship that started
+ * outside comes back the least needed. The band is kept as it was.
  *
  * The server runs it for each ship at every tick of a game in progress. The
  * client runs it to predict its own ship, one tick per input.
@@ -46,9 +50,10 @@ struct HeldChange {
                                    engine::Duration elapsed);
 
 /**
- * @returns @p ship kept inside the play area, its velocity along an axis lost
- * where an edge stopped it: the last step of shipAfter(), for a caller that
- * moves the ship again after it (blockedByObstacles()).
+ * @returns @p ship kept inside its band (the play area unless a level closes
+ * it), its velocity along an axis lost where an edge stopped it: the last step
+ * of shipAfter(), for a caller that moves the ship again after it
+ * (blockedByObstacles()).
  */
 [[nodiscard]] MovingShip stoppedAtTheEdges(MovingShip ship);
 

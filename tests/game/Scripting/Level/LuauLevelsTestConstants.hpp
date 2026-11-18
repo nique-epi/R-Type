@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <string_view>
+#include "PlayBand.hpp"
 
 /** @brief A script that registers two levels, of one and of two stages, and
  * their names in alphabetical order. */
@@ -60,6 +61,31 @@ constexpr std::string_view CAVES_LDTK_FILE = "levels/caves.ldtk";
 
 /** @brief The LDtk file of the level the repository ships. */
 constexpr std::string_view SHIPPED_LEVEL_LDTK_FILE = "levels/training_run.ldtk";
+
+/** @brief A script that closes the biome pit with a ceiling on row 200 and a
+ * floor on row 800, and the band it declares. */
+constexpr std::string_view REGISTERS_A_BAND = R"(
+level.register("caves", { function() end },
+  { bands = { pit = { top = 200, bottom = 800 } } })
+)";
+constexpr std::string_view BANDED_BIOME = "pit";
+constexpr rtype::game::PlayBand DECLARED_BAND{.top = 200.0F, .bottom = 800.0F};
+
+/** @brief Scripts whose band is 40 units tall, less than a ship; whose floor
+ * lies on row 1000, below the play area (984); and whose biome is no biome
+ * name. */
+constexpr std::string_view REGISTERS_A_BAND_NARROWER_THAN_A_SHIP = R"(
+level.register("caves", { function() end },
+  { bands = { pit = { top = 500, bottom = 540 } } })
+)";
+constexpr std::string_view REGISTERS_A_BAND_BELOW_THE_PLAY_AREA = R"(
+level.register("caves", { function() end },
+  { bands = { pit = { top = 200, bottom = 1000 } } })
+)";
+constexpr std::string_view REGISTERS_A_BAND_OF_NO_BIOME_NAME = R"(
+level.register("caves", { function() end },
+  { bands = { Pit = { top = 200, bottom = 800 } } })
+)";
 
 /** @brief A script that declares a start for the first stage of its level,
  * which always starts at the start of the level. */

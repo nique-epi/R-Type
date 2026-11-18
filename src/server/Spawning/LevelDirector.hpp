@@ -12,6 +12,7 @@
 #include "LuauLevelRun.hpp"
 #include "LuauLevels.hpp"
 #include "PlacedEnemySpawner.hpp"
+#include "PlayBand.hpp"
 
 namespace rtype::server {
 
@@ -91,6 +92,10 @@ class LevelDirector {
   /** @returns Where the level stands: its scroll, its biome and its last
    * checkpoint, for whatever in the game follows the scroll. */
   [[nodiscard]] const game::LevelProgress& progress() const;
+
+  /** @returns The rows the ships fly between in the biome the level shows:
+   * the band the level declares for it, the whole play area otherwise. */
+  [[nodiscard]] game::PlayBand band() const;
 
  private:
   void spawnDuePlacements();

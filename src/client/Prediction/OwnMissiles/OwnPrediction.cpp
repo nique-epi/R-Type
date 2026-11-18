@@ -8,6 +8,7 @@
 #include "IPlayerInputLink.hpp"
 #include "OwnMissilesParts.hpp"
 #include "OwnShip.hpp"
+#include "PlayBand.hpp"
 #include "PlayerCommand.hpp"
 #include "PredictedCommand.hpp"
 #include "PredictedShipPlacement.hpp"
@@ -58,6 +59,8 @@ void OwnPrediction::place(const EntityReplicator& replicator) {
   placePredictedShip(ship_, replicator, components_.get());
   missiles_.touchEnemies();
 }
+
+void OwnPrediction::useBand(game::PlayBand band) { ship_.useBand(band); }
 
 IOwnMissileListener& OwnPrediction::missiles() { return missiles_; }
 

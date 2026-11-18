@@ -22,6 +22,7 @@
 #include "LuauLevelRunState.hpp"
 #include "LuauLevels.hpp"
 #include "NetworkIdentity.hpp"
+#include "PlayBand.hpp"
 #include "ScrollingBodies.hpp"
 #include "ServerConstants.hpp"
 #include "ServerException.hpp"
@@ -124,6 +125,11 @@ bool LevelDirector::restartFromCheckpoint() {
 
 const game::LevelProgress& LevelDirector::progress() const { return progress_; }
 
+game::PlayBand LevelDirector::band() const {
+  const auto found = entry_.get().bands.find(progress_.biome);
+  return found == entry_.get().bands.end() ? game::PlayBand{} : found->second;
+}
+
 void LevelDirector::spawnDuePlacements() {
   if (!progress_.placedEnemiesAsked) {
     return;
@@ -160,7 +166,8 @@ void LevelDirector::announceChange() {
                         .scrollPosition = progress_.scroll.position(),
                         .scrollSpeed = progress_.scroll.speed(),
                         .biomeSince = progress_.biomeSince,
-                        .transitionLeft = transitionLeftOf(progress_)});
+                        .transitionLeft = transitionLeftOf(progress_),
+                        .band = band()});
 }
 
 void LevelDirector::removeEveryBodyButTheShips() const {

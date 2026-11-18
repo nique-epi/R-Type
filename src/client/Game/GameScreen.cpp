@@ -64,11 +64,13 @@
 #include "PilotNameTags.hpp"
 #include "PilotShipLooks.hpp"
 #include "PilotShips.hpp"
+#include "PlayBand.hpp"
 #include "PlayerAction.hpp"
 #include "PlayerCommand.hpp"
 #include "PlayerLeft.hpp"
 #include "PlayerPalette.hpp"
 #include "PlayerPreferences.hpp"
+#include "PlayfieldConstants.hpp"
 #include "PositionInterpolation.hpp"
 #include "ScoreBoard.hpp"
 #include "ShipFlightSystem.hpp"
@@ -161,13 +163,22 @@ SkyLevel skyLevelOf(const network::LevelStatus& status) {
                   .biomeSince = status.biomeSince};
 }
 
+/** @returns The rows the ships fly between in the biome @p status names: its
+ * band, the bottom of the play area at the lowest. */
+game::PlayBand bandOf(const network::LevelStatus& status) {
+  return game::PlayBand{
+      .top = static_cast<float>(status.bandTop),
+      .bottom = std::min(static_cast<float>(status.bandBottom),
+                         game::PLAY_AREA_HEIGHT)};
+}
+
 /** @brief Hands an entity message to whoever it goes to: a PlayerLeft to the
  * board and the feed, an EnemyAction to the enemy it animates and to the boss,
  * an EffectPlayed to the player of the named effects, a BossStatus to the
  * boss, an EntityDestroyed to the boss and to the replicator, a LevelStatus to
  * the sky, to the transition, to the boss and to the prediction, which moves
- * the walls ahead by its scroll, anything else but GameEnded to the
- * replicator. */
+ * the walls ahead by its scroll and keeps the ship in its band, anything else
+ * but GameEnded to the replicator. */
 void routeEntityMessage(const EntityMessageRoutes& routes,
                         const EntityMessage& message) {
   std::visit(
@@ -192,6 +203,7 @@ void routeEntityMessage(const EntityMessageRoutes& routes,
           routes.prediction.get().followScroll(announced.scrollSpeed);
           routes.transition.get().show(announced.transitionLeft);
           routes.boss.get().followLevel();
+          routes.prediction.get().useBand(bandOf(announced));
         } else if constexpr (!std::is_same_v<Announced, network::GameEnded>) {
           routes.replicator.get().apply(announced);
         }

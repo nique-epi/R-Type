@@ -9,18 +9,21 @@
 #include "LevelDirector.hpp"
 #include "LevelDirectorFixture.hpp"
 #include "LevelDirectorTestConstants.hpp"
+#include "PlayBand.hpp"
 #include "ServerException.hpp"
 
 using rtype::server::entryOfLevel;
 using rtype::server::startOfStage;
 using rtype::server::UnknownLevelException;
 using rtype::server::UnknownLevelStartException;
+using rtype::server::testing::CAVES_BAND;
 using rtype::server::testing::CAVES_BIOME;
 using rtype::server::testing::DIRECTED_LEVEL;
 using rtype::server::testing::FIRST_STAGE;
 using rtype::server::testing::LEVEL_ENEMY_SHEET;
 using rtype::server::testing::LEVEL_OF_ONE_BIOME;
 using rtype::server::testing::LEVEL_OF_TWO_BIOMES;
+using rtype::server::testing::LEVEL_OF_TWO_BIOMES_THE_SECOND_CLOSED;
 using rtype::server::testing::LEVEL_OF_TWO_STAGES;
 using rtype::server::testing::LEVEL_OF_TWO_STAGES_THAT_SPAWNS_THE_PLACED;
 using rtype::server::testing::LEVEL_SHIP_SHEET;
@@ -123,6 +126,34 @@ TEST_F(LevelDirectorFixture, TellsTheBiomeChanged) {
 
   ASSERT_THAT(changes(), SizeIs(2));
   EXPECT_EQ(changes().back().biome, CAVES_BIOME);
+}
+
+/**
+ * Given a level whose first biome declares no band
+ * When its first tick passes
+ * Then the game is told the ships fly in the whole play area
+ */
+TEST_F(LevelDirectorFixture, TellsTheWholePlayAreaForABiomeWithoutBand) {
+  direct(LEVEL_OF_TWO_BIOMES_THE_SECOND_CLOSED);
+
+  tick(1);
+
+  ASSERT_THAT(changes(), SizeIs(1));
+  EXPECT_EQ(changes().back().band, rtype::game::PlayBand{});
+}
+
+/**
+ * Given a level whose second biome, caves, is closed from row 200 to row 800
+ * When the stage names that biome
+ * Then the game is told the band of caves with it
+ */
+TEST_F(LevelDirectorFixture, TellsTheBandOfTheBiome) {
+  direct(LEVEL_OF_TWO_BIOMES_THE_SECOND_CLOSED);
+
+  tick(TICK_OF_THE_SECOND_ACT);
+
+  ASSERT_THAT(changes(), SizeIs(2));
+  EXPECT_EQ(changes().back().band, CAVES_BAND);
 }
 
 /**

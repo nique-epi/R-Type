@@ -338,6 +338,68 @@ TEST(LuauLevels, RefusesToSpawnThePlacedOutsideAGame) {
 }
 
 /**
+ * Given a script that declares the band of the biome pit
+ * When the entry of its level is asked for
+ * Then it holds that band for that biome
+ */
+TEST(LuauLevels, KeepsTheBandOfABiome) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+
+  scripts.run(scriptsOf(REGISTERS_A_BAND));
+
+  const LuauLevelEntry* const entry = scripts.levels().entryOf(CAVES_LEVEL);
+  ASSERT_NE(entry, nullptr);
+  ASSERT_TRUE(entry->bands.contains(BANDED_BIOME));
+  EXPECT_EQ(entry->bands.find(BANDED_BIOME)->second, DECLARED_BAND);
+}
+
+/**
+ * Given a script whose band is narrower than a ship
+ * When it runs
+ * Then it fails, saying what the bands of a level are
+ */
+TEST(LuauLevels, RefusesABandNarrowerThanAShip) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+
+  EXPECT_THAT(
+      [&] { scripts.run(scriptsOf(REGISTERS_A_BAND_NARROWER_THAN_A_SHIP)); },
+      ThrowsMessage<ScriptException>(
+          HasSubstr(rtype::game::WRONG_LEVEL_BANDS_MESSAGE)));
+}
+
+/**
+ * Given a script whose band has its floor below the play area
+ * When it runs
+ * Then it fails, saying what the bands of a level are
+ */
+TEST(LuauLevels, RefusesABandBelowThePlayArea) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+
+  EXPECT_THAT(
+      [&] { scripts.run(scriptsOf(REGISTERS_A_BAND_BELOW_THE_PLAY_AREA)); },
+      ThrowsMessage<ScriptException>(
+          HasSubstr(rtype::game::WRONG_LEVEL_BANDS_MESSAGE)));
+}
+
+/**
+ * Given a script whose band names no biome
+ * When it runs
+ * Then it fails, saying what the bands of a level are
+ */
+TEST(LuauLevels, RefusesABandOfNoBiomeName) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+
+  EXPECT_THAT(
+      [&] { scripts.run(scriptsOf(REGISTERS_A_BAND_OF_NO_BIOME_NAME)); },
+      ThrowsMessage<ScriptException>(
+          HasSubstr(rtype::game::WRONG_LEVEL_BANDS_MESSAGE)));
+}
+
+/**
  * Given a script that declares a start for the first stage of its level
  * When it runs
  * Then it fails, saying what the starts of a level are

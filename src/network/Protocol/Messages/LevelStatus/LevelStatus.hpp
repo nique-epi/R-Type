@@ -7,6 +7,7 @@
 #include <type_traits>
 #include "ByteWriter.hpp"
 #include "MessageType.hpp"
+#include "ProtocolConstants.hpp"
 
 namespace rtype::network {
 
@@ -24,7 +25,10 @@ namespace rtype::network {
  * sliding in, are finite and never negative. The time left of the transition
  * the level plays between two of its parts, in milliseconds, is 0 when it
  * plays none: its players are held while it lasts, and a client plays the
- * cinematic of the transition from it.
+ * cinematic of the transition from it. The band is the rows the ships fly
+ * between in that biome, in logical units from the top of the playfield: its
+ * top lies above its bottom, and a bottom of OPEN_BAND_BOTTOM closes nothing,
+ * the ships flying down to the bottom of the play area.
  */
 struct LevelStatus {
   static constexpr MessageType TYPE = MessageType::LevelStatus;
@@ -34,14 +38,16 @@ struct LevelStatus {
   float scrollSpeed{};
   float biomeSince{};
   std::uint16_t transitionLeft{};
+  std::uint16_t bandTop{};
+  std::uint16_t bandBottom{OPEN_BAND_BOTTOM};
 
   bool operator==(const LevelStatus&) const = default;
 };
 
 /**
  * @brief Writes the biome, as a short string, then the scroll position, the
- * scroll speed, the position the biome began at and the time left of the
- * transition.
+ * scroll speed, the position the biome began at, the time left of the
+ * transition and the top and the bottom of the band.
  * @throws InvalidFieldValueException when the status breaks a rule of
  * LevelStatus; nothing is written then.
  */
@@ -49,9 +55,9 @@ void encodePayload(ByteWriter& writer, const LevelStatus& message);
 
 /**
  * @brief Reads a LevelStatus from the whole of @p payload.
- * @throws BufferUnderflowException when @p payload ends before the time left
- * of the transition.
- * @throws TrailingBytesException when bytes follow that time.
+ * @throws BufferUnderflowException when @p payload ends before the bottom of
+ * the band.
+ * @throws TrailingBytesException when bytes follow that bottom.
  * @throws InvalidFieldValueException when the status breaks a rule of
  * LevelStatus.
  */

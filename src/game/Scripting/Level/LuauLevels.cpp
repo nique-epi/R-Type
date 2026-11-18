@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <functional>
 #include <limits>
 #include <map>
 #include <optional>
@@ -31,9 +32,12 @@
 #include "LuauLevelEntry.hpp"
 #include "LuauLevelStep.hpp"
 #include "LuauLevelWait.hpp"
+#include "PlayBand.hpp"
+#include "PlayfieldConstants.hpp"
 #include "ScriptFunction.hpp"
 #include "ScriptMachine.hpp"
 #include "ScriptWait.hpp"
+#include "ShipControlConstants.hpp"
 #include "TimeConstants.hpp"
 #include "lua.h"
 #include "lualib.h"
@@ -123,7 +127,8 @@ void refuseUnknownOptions(lua_State* state) {
     const bool known =
         lua_type(state, -2) == LUA_TSTRING &&
         (std::string_view{lua_tostring(state, -2)} == LEVEL_LDTK_KEY ||
-         std::string_view{lua_tostring(state, -2)} == LEVEL_STARTS_KEY);
+         std::string_view{lua_tostring(state, -2)} == LEVEL_STARTS_KEY ||
+         std::string_view{lua_tostring(state, -2)} == LEVEL_BANDS_KEY);
     lua_pop(state, 1);
     if (!known) {
       lua_pop(state, 1);
@@ -245,6 +250,67 @@ std::map<std::size_t, LevelCheckpoint> startsOf(lua_State* state, int count) {
   return starts;
 }
 
+/** @returns The row at @p key of the table on top of the stack.
+ * @throws engine::ScriptException unless it is a finite number from 0 to
+ * PLAY_AREA_HEIGHT. */
+float bandRowOf(lua_State* state, const char* key) {
+  lua_rawgetfield(state, -1, key);
+  const double row = lua_type(state, -1) == LUA_TNUMBER
+                         ? lua_tonumber(state, -1)
+                         : std::numeric_limits<double>::quiet_NaN();
+  lua_pop(state, 1);
+  if (!std::isfinite(row) || row < 0.0 || row > PLAY_AREA_HEIGHT) {
+    throw engine::ScriptException(WRONG_LEVEL_BANDS_MESSAGE);
+  }
+  return static_cast<float>(row);
+}
+
+/** @returns The band the table on top of the stack declares.
+ * @throws engine::ScriptException unless it is a table whose bottom lies a
+ * ship height or more below its top. */
+PlayBand bandDeclared(lua_State* state) {
+  if (lua_type(state, -1) != LUA_TTABLE) {
+    throw engine::ScriptException(WRONG_LEVEL_BANDS_MESSAGE);
+  }
+  const PlayBand band{.top = bandRowOf(state, BAND_TOP_KEY),
+                      .bottom = bandRowOf(state, BAND_BOTTOM_KEY)};
+  if (band.bottom - band.top < SHIP_HEIGHT) {
+    throw engine::ScriptException(WRONG_LEVEL_BANDS_MESSAGE);
+  }
+  return band;
+}
+
+/** @returns The bands the options at LEVEL_OPTIONS_ARGUMENT declare under
+ * LEVEL_BANDS_KEY, by biome name; none without options or without that key.
+ * @throws engine::ScriptException when they are no table, a key is no biome
+ * name, or a band is wrong. */
+std::map<std::string, PlayBand, std::less<>> bandsOf(lua_State* state) {
+  std::map<std::string, PlayBand, std::less<>> bands;
+  if (lua_isnoneornil(state, LEVEL_OPTIONS_ARGUMENT)) {
+    return bands;
+  }
+  lua_rawgetfield(state, LEVEL_OPTIONS_ARGUMENT, LEVEL_BANDS_KEY);
+  if (lua_isnil(state, -1)) {
+    lua_pop(state, 1);
+    return bands;
+  }
+  if (lua_type(state, -1) != LUA_TTABLE) {
+    throw engine::ScriptException(WRONG_LEVEL_BANDS_MESSAGE);
+  }
+  lua_pushnil(state);
+  while (lua_next(state, -2) != 0) {
+    const bool named = lua_type(state, -2) == LUA_TSTRING &&
+                       identifiers::isBiomeName(lua_tostring(state, -2));
+    if (!named) {
+      throw engine::ScriptException(WRONG_LEVEL_BANDS_MESSAGE);
+    }
+    bands.emplace(lua_tostring(state, -2), bandDeclared(state));
+    lua_pop(state, 1);
+  }
+  lua_pop(state, 1);
+  return bands;
+}
+
 /** @brief `level.register(name, stages, options)`: an exception that leaves
  * it is an error of the script, as Luau makes of any exception a C function
  * throws. */
@@ -262,7 +328,8 @@ int registerLevel(lua_State* state) {
                  LuauLevelEntry{.stages = stageReferences(state, count),
                                 .ldtkFile = ldtkFileOf(state),
                                 .placements = {},
-                                .starts = startsOf(state, count)});
+                                .starts = startsOf(state, count),
+                                .bands = bandsOf(state)});
   return 0;
 }
 

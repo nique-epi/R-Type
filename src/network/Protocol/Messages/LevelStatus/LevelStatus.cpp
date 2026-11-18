@@ -35,6 +35,9 @@ void validate(const LevelStatus& message) {
   requireScrollValue(SCROLL_POSITION_FIELD, message.scrollPosition);
   requireScrollValue(SCROLL_SPEED_FIELD, message.scrollSpeed);
   requireScrollValue(BIOME_SINCE_FIELD, message.biomeSince);
+  if (message.bandTop >= message.bandBottom) {
+    throw InvalidFieldValueException(BAND_FIELD, message.bandTop);
+  }
 }
 
 }  // namespace
@@ -46,6 +49,8 @@ void encodePayload(ByteWriter& writer, const LevelStatus& message) {
   writer.writeFloat(message.scrollSpeed);
   writer.writeFloat(message.biomeSince);
   writer.writeUint16(message.transitionLeft);
+  writer.writeUint16(message.bandTop);
+  writer.writeUint16(message.bandBottom);
 }
 
 LevelStatus decodePayload(
@@ -57,12 +62,16 @@ LevelStatus decodePayload(
   const float scrollSpeed = reader.readFloat();
   const float biomeSince = reader.readFloat();
   const std::uint16_t transitionLeft = reader.readUint16();
+  const std::uint16_t bandTop = reader.readUint16();
+  const std::uint16_t bandBottom = reader.readUint16();
   requireFullyRead(reader);
   LevelStatus message{.biome = std::move(biome),
                       .scrollPosition = scrollPosition,
                       .scrollSpeed = scrollSpeed,
                       .biomeSince = biomeSince,
-                      .transitionLeft = transitionLeft};
+                      .transitionLeft = transitionLeft,
+                      .bandTop = bandTop,
+                      .bandBottom = bandBottom};
   validate(message);
   return message;
 }

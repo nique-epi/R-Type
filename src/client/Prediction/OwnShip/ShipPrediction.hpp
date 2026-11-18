@@ -6,6 +6,7 @@
 #include <optional>
 #include <span>
 #include "Bounds.hpp"
+#include "PlayBand.hpp"
 #include "Position.hpp"
 #include "ShipControl.hpp"
 #include "ShipDirections.hpp"
@@ -68,6 +69,11 @@ class ShipPrediction {
    * does not roll. */
   [[nodiscard]] std::optional<float> rollShare() const;
 
+  /** @brief Keeps the ship between the rows of @p band from now on, as the
+   * server does in the biome a LevelStatus names; the whole play area until
+   * it is called. */
+  void useBand(game::PlayBand band);
+
  private:
   void dropBefore(std::uint32_t inputNumber);
   void replayAfterFront(game::MovingShip restart);
@@ -79,6 +85,7 @@ class ShipPrediction {
   void replayFrom(std::size_t first, game::MovingShip from);
 
   bool started_{false};
+  game::PlayBand band_{};
   game::MovingShip current_{};
   game::ShipDirections lastHeld_{};
   std::deque<PendingCommand> pending_;

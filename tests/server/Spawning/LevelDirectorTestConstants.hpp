@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <string_view>
+#include "PlayBand.hpp"
 #include "Position.hpp"
 
 namespace rtype::server::testing {
@@ -54,6 +55,18 @@ level.register("directed", { function()
 end })
 )";
 constexpr std::string_view CAVES_BIOME = "caves";
+
+/** @brief A level of the two biomes of LEVEL_OF_TWO_BIOMES, the second one,
+ * caves, closed by a ceiling on row 200 and a floor on row 800. */
+constexpr std::string_view LEVEL_OF_TWO_BIOMES_THE_SECOND_CLOSED = R"(
+level.register("directed", { function()
+  level.biome("wreck")
+  level.wait(50)
+  level.biome("caves")
+  level.wait(50)
+end }, { bands = { caves = { top = 200, bottom = 800 } } })
+)";
+constexpr game::PlayBand CAVES_BAND{.top = 200.0F, .bottom = 800.0F};
 constexpr std::size_t TICK_OF_THE_SECOND_ACT = 4;
 
 /** @brief A level whose stage waits for a long time. */
