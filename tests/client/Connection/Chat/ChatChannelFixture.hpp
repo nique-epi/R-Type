@@ -2,6 +2,7 @@
 
 #include <gtest/gtest.h>
 #include <cstdint>
+#include <filesystem>
 #include <string_view>
 #include <vector>
 #include "ArrivalTally.hpp"
@@ -51,7 +52,8 @@ class ChatChannelFixture : public ::testing::Test {
   RecordingWaitingRoom room_;
   ChatChannel chat_{dispatcher_, room_};
   SessionEntityTypes entityTypes_{testLocalContent()};
-  ContentLoading content_{ContentPackCache{unusedCacheFolder()}};
+  ContentLoading content_{ContentPackCache{unusedCacheFolder()},
+                          std::filesystem::path{}};
   ArrivalTally arrivals_;
   ServerSession session_{ServerSessionParts{.link = link_,
                                             .dispatcher = dispatcher_,

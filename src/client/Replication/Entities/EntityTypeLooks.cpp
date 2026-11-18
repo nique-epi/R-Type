@@ -28,7 +28,8 @@ std::optional<EntityTypeLook> EntityTypeLooks::lookOf(
                         .appearance = *appearance,
                         .hitbox = entry->hitbox,
                         .hitboxParts = entry->hitboxParts,
-                        .mask = entry->mask};
+                        .mask = entry->mask,
+                        .obstacle = entry->obstacle};
 }
 
 game::ShipGun EntityTypeLooks::shipGun() const { return table_->shipGun(); }

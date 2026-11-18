@@ -4,11 +4,13 @@ target_include_directories(rtype_client_content_pack_reading PUBLIC ${CMAKE_CURR
 
 target_link_libraries(rtype_client_content_pack_reading
   PUBLIC
+    rtype_client_background_description
     rtype_client_entity_appearances
     rtype_game_entity_types
     rtype_identifiers
   PRIVATE
     rtype_client_exceptions
+    rtype_game_backgrounds
     rtype_logging
 )
 

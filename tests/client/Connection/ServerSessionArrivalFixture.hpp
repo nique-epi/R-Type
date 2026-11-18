@@ -2,6 +2,7 @@
 
 #include <gtest/gtest.h>
 #include <chrono>
+#include <filesystem>
 #include <optional>
 #include "ArrivalTally.hpp"
 #include "ContentLoading.hpp"
@@ -51,7 +52,8 @@ class ServerSessionArrivalFixture : public ::testing::Test {
   SimulatedClock clock_;
   RoundTripWatch roundTrips_{dispatcher_, clock_};
   SessionEntityTypes entityTypes_{testLocalContent()};
-  ContentLoading content_{ContentPackCache{unusedCacheFolder()}};
+  ContentLoading content_{ContentPackCache{unusedCacheFolder()},
+                          std::filesystem::path{}};
   ArrivalTally arrivals_;
   ServerSession session_{ServerSessionParts{.link = link_,
                                             .dispatcher = dispatcher_,

@@ -10,7 +10,8 @@
 # each game process reads that file (--configuration) and nothing else. Each
 # section below says which program reads it: [supervisor] or [games].
 
-# [supervisor] The UDP port, from 1 to 65535.
+# [supervisor] The UDP port, from 0 to 65535; 0 lets the system choose a free
+# one at each start.
 set port 4242
 
 # [games] The seed of the first game, from 0 to 4294967295, or 'none' to draw one.
@@ -33,7 +34,9 @@ set input-delay 3
 set start-at-boss 0
 
 # [games] The level every game plays: one a script of a resource registered with
-# level.register, such as training_run of the resource training-run. The
+# level.register, such as fosse of the resource fosse, from open space
+# into the Pit with a mini-boss and the Bydo Tyrant, or training_run of the
+# resource training-run. The
 # game is then never vanilla. Empty plays the waves of its difficulty, the
 # survival mode.
 set level ""
@@ -89,6 +92,7 @@ set server-name "R-Type server"
 # supervisor serves them in its content pack. A wrong line or a missing
 # resource stops the server.
 # ensure crimson-drifter
+# ensure fosse
 
 # [games] The CSV file the game-statistics plugin writes a row per Bydo killed to, then
 # the total of each game, named after it: each game writes <name>_<its port><extension>,

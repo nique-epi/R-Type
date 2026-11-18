@@ -8,6 +8,7 @@
 #include "AssetLoadResult.hpp"
 #include "AssetTestConstants.hpp"
 #include "ClientException.hpp"
+#include "PathText.hpp"
 #include "TemporaryFolder.hpp"
 
 using rtype::client::AssetKind;
@@ -22,8 +23,10 @@ using rtype::client::testing::ESCAPING_MUSIC_ID;
 using rtype::client::testing::HUD_FONT_ID;
 using rtype::client::testing::NOT_AN_ASSET;
 using rtype::client::testing::OUTSIDE_FILE_NAME;
+using rtype::client::testing::PACK_MUSIC_FILE;
 using rtype::client::testing::PLAYER_SHIP_ID;
 using rtype::client::testing::STAGE_MUSIC_ID;
+using rtype::logging::genericText;
 using ::testing::HasSubstr;
 using ::testing::ThrowsMessage;
 
@@ -52,6 +55,24 @@ TEST(AssetLibrary, RejectsAnIdThatLeavesTheFolder) {
 
   EXPECT_EQ(library.load(AssetKind::Music, ESCAPING_MUSIC_ID),
             AssetLoadResult::InvalidId);
+}
+
+/**
+ * Given a music file of a content pack, kept outside the assets folder
+ * When it is loaded by its whole path
+ * Then it is located, and that whole path gives its file
+ */
+TEST(AssetLibrary, LocatesAFileNamedByItsWholePath) {
+  const TemporaryFolder repository;
+  repository.write(PACK_MUSIC_FILE, NOT_AN_ASSET);
+  AssetLibrary library{repository.path() / ASSETS_FOLDER};
+  const std::filesystem::path file = repository.path() / PACK_MUSIC_FILE;
+
+  const AssetLoadResult result =
+      library.load(AssetKind::Music, genericText(file));
+
+  EXPECT_EQ(result, AssetLoadResult::Loaded);
+  EXPECT_EQ(library.musicFile(genericText(file)), file);
 }
 
 /**

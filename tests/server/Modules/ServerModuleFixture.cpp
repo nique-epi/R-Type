@@ -1,9 +1,13 @@
 #include "ServerModuleFixture.hpp"
 #include <cstdint>
+#include <string>
 #include <vector>
 #include "LogLaunchOptions.hpp"
 #include "LogLaunchOptionsFixtures.hpp"
 #include "LoggingConstants.hpp"
+#include "NetworkConstants.hpp"
+#include "ServerConstants.hpp"
+#include "SettingLine.hpp"
 #include "UdpPortProbe.hpp"
 
 ServerModuleFixture::ServerModuleFixture()
@@ -20,7 +24,13 @@ void ServerModuleFixture::writeTheJournalAsJson() {
   arguments_.push_back(rtype::logging::JSON_FORMAT_NAME);
 }
 
-std::uint16_t ServerModuleFixture::freeUdpPort() { return ::freeUdpPort(); }
+std::vector<std::string> ServerModuleFixture::onAnyPort(
+    std::vector<std::string> lines) {
+  lines.push_back(
+      rtype::engine::settingLine(rtype::server::PORT_SETTING_NAME,
+                                 std::to_string(rtype::network::ANY_PORT)));
+  return lines;
+}
 
 bool ServerModuleFixture::portIsFree(std::uint16_t port) {
   return udpPortIsFree(port);

@@ -1,11 +1,14 @@
 #pragma once
 
 #include <cstdint>
+#include <memory>
 #include <optional>
 #include <vector>
+#include "BackgroundCatalog.hpp"
 #include "ContentFingerprint.hpp"
 #include "EntityAppearances.hpp"
 #include "IEntityTypeTable.hpp"
+#include "ISessionBackgrounds.hpp"
 #include "LocalContent.hpp"
 #include "NumberedEntityType.hpp"
 #include "PackContent.hpp"
@@ -15,7 +18,8 @@ namespace rtype::client {
 
 /**
  * @brief The entity types of the session: those of the client's own sheets
- * when the server plays the same content, or those of the pack of the server.
+ * when the server plays the same content, or those of the pack of the server,
+ * with the backgrounds that pack brings.
  *
  * The client's own content is given at construction, read from its assets,
  * with its fingerprint, so an acceptance that announces that fingerprint
@@ -25,7 +29,8 @@ namespace rtype::client {
  * forget() comes back to the client's own. Not thread-safe: use it from the
  * frame loop only.
  */
-class SessionEntityTypes final : public IEntityTypeTable {
+class SessionEntityTypes final : public IEntityTypeTable,
+                                 public ISessionBackgrounds {
  public:
   explicit SessionEntityTypes(LocalContent local);
 
@@ -52,6 +57,9 @@ class SessionEntityTypes final : public IEntityTypeTable {
   [[nodiscard]] const EntityAppearances& appearances() const override;
 
   [[nodiscard]] game::ShipGun shipGun() const override;
+
+  [[nodiscard]] std::shared_ptr<const BackgroundCatalog> backgrounds()
+      const override;
 
  private:
   [[nodiscard]] const std::vector<game::NumberedEntityType>& types() const;

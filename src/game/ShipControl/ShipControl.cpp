@@ -122,20 +122,6 @@ Position carriedBy(ShipMotion& motion, engine::Duration elapsed) {
                   .y = motion.maneuverDistance.y * share};
 }
 
-/** @returns @p ship kept inside the play area, its velocity along an axis
- * lost where an edge stopped it. */
-MovingShip stoppedAtTheEdges(MovingShip ship) {
-  const Position kept = keptInsidePlayArea(ship.position);
-  if (kept.x != ship.position.x) {
-    ship.motion.velocityX = 0.0F;
-  }
-  if (kept.y != ship.position.y) {
-    ship.motion.velocityY = 0.0F;
-  }
-  ship.position = kept;
-  return ship;
-}
-
 /**
  * @brief Records the press of @p direction in @p change into @p lastPress.
  * @returns Whether it was a second press within DOUBLE_TAP_INPUTS of the
@@ -208,6 +194,18 @@ ShipMotion started(ShipMotion motion, ManeuverOrder order) {
 }
 
 }  // namespace
+
+MovingShip stoppedAtTheEdges(MovingShip ship) {
+  const Position kept = keptInsidePlayArea(ship.position);
+  if (kept.x != ship.position.x) {
+    ship.motion.velocityX = 0.0F;
+  }
+  if (kept.y != ship.position.y) {
+    ship.motion.velocityY = 0.0F;
+  }
+  ship.position = kept;
+  return ship;
+}
 
 MovingShip shipAfter(MovingShip from, ShipDirections held,
                      engine::Duration elapsed) {

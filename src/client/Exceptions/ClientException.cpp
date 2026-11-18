@@ -1,4 +1,5 @@
 #include "ClientException.hpp"
+#include <cstddef>
 #include <cstdint>
 #include <limits>
 #include <stdexcept>
@@ -6,6 +7,8 @@
 #include <string_view>
 #include <vector>
 #include "ClientConstants.hpp"
+#include "DataFilePlace.hpp"
+#include "ErrorText.hpp"
 #include "ProtocolConstants.hpp"
 
 namespace rtype::client {
@@ -44,6 +47,21 @@ ForeignSpriteSheetException::ForeignSpriteSheetException(
     : ClientException("a sheet of the content pack names " + sheet +
                       ", which the pack does not hold") {}
 
+InconsistentBackgroundException::InconsistentBackgroundException(
+    const engine::DataFilePlace& place, std::string_view rule)
+    : ClientException(engine::placeText(place) + ": " + place.key + ": " +
+                      std::string(rule)) {}
+
+TooManyBackgroundTablesException::TooManyBackgroundTablesException(
+    const engine::DataFilePlace& place, std::size_t most)
+    : ClientException(engine::placeText(place) + ": " + place.key +
+                      " holds more than " + std::to_string(most) + " tables") {}
+
+MissingBackgroundFileException::MissingBackgroundFileException(
+    const std::string& background, const std::string& file)
+    : ClientException(background + ": no content folder holds " + file +
+                      ", which it names") {}
+
 ContentFileWriteException::ContentFileWriteException(const std::string& file)
     : ClientException("cannot write the file of a content pack " + file) {}
 
@@ -61,9 +79,9 @@ RenderTextureNotCreatedException::RenderTextureNotCreatedException(
     : ClientException("A render texture could not be created, size " +
                       std::to_string(width) + " x " + std::to_string(height)) {}
 
-BiomeMapException::BiomeMapException(std::string_view project,
-                                     std::string_view reason)
-    : ClientException("cannot read the maps of a biome in " +
+LdtkProjectException::LdtkProjectException(std::string_view project,
+                                           std::string_view reason)
+    : ClientException("cannot read the maps of the LDtk project " +
                       std::string(project) + ": " + std::string(reason)) {}
 
 DuplicateScreenException::DuplicateScreenException(std::string_view screenName)

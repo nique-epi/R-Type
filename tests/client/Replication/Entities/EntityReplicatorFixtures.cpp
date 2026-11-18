@@ -6,8 +6,6 @@
 #include <ostream>
 #include <vector>
 #include "AnimatedSprite.hpp"
-#include "CollisionBox.hpp"
-#include "CollisionMask.hpp"
 #include "ComponentRegistry.hpp"
 #include "EffectConstants.hpp"
 #include "Entity.hpp"
@@ -18,7 +16,6 @@
 #include "FixedEntityTypeSource.hpp"
 #include "FixedEntityTypeSourceConstants.hpp"
 #include "HitFlash.hpp"
-#include "HitboxParts.hpp"
 #include "Invulnerability.hpp"
 #include "Layer.hpp"
 #include "Lifetime.hpp"
@@ -201,45 +198,6 @@ std::optional<std::uint8_t> shownLookOf(engine::ComponentRegistry& components,
         }
       });
   return look;
-}
-
-std::optional<game::CollisionBox> boxOfThe(
-    engine::ComponentRegistry& components, game::EntityType type) {
-  std::optional<game::CollisionBox> found;
-  components.forEach<game::CollisionBox, game::EntityType>(
-      [&found, type](engine::Entity, const game::CollisionBox& box,
-                     const game::EntityType& side) {
-        if (side == type) {
-          found = box;
-        }
-      });
-  return found;
-}
-
-std::optional<game::CollisionMask> maskOfThe(
-    engine::ComponentRegistry& components, game::EntityType type) {
-  std::optional<game::CollisionMask> found;
-  components.forEach<game::CollisionMask, game::EntityType>(
-      [&found, type](engine::Entity, const game::CollisionMask& mask,
-                     const game::EntityType& side) {
-        if (side == type) {
-          found = mask;
-        }
-      });
-  return found;
-}
-
-std::optional<game::HitboxParts> partsOfThe(
-    engine::ComponentRegistry& components, game::EntityType type) {
-  std::optional<game::HitboxParts> found;
-  components.forEach<game::HitboxParts, game::EntityType>(
-      [&found, type](engine::Entity, const game::HitboxParts& parts,
-                     const game::EntityType& side) {
-        if (side == type) {
-          found = parts;
-        }
-      });
-  return found;
 }
 
 network::EntitySpawned ownMissileSpawned(std::uint8_t owner) {

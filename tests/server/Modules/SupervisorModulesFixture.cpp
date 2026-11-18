@@ -20,8 +20,8 @@
 #include "ExecutablePath.hpp"
 #include "GameLineRule.hpp"
 #include "IModule.hpp"
-#include "LaunchArgumentsConstants.hpp"
 #include "LaunchOptions.hpp"
+#include "ListeningPortRecordingModule.hpp"
 #include "LoggingConstants.hpp"
 #include "LoopStages.hpp"
 #include "MessagePayload.hpp"
@@ -37,9 +37,7 @@
 #include "UdpTestClient.hpp"
 
 SupervisorModulesFixture::SupervisorModulesFixture()
-    : port_(freeUdpPort()),
-      portText_(std::to_string(port_)),
-      journalText_(journal().path().string()) {}
+    : journalText_(journal().path().string()) {}
 
 SupervisorModulesFixture::~SupervisorModulesFixture() {
   std::error_code ignored;
@@ -61,15 +59,15 @@ std::unique_ptr<rtype::engine::Application>
 SupervisorModulesFixture::supervisor(
     const std::vector<std::string_view>& options,
     std::unique_ptr<rtype::engine::IModule> console) {
-  std::vector<std::string_view> arguments{
-      rtype::engine::PORT_OPTION, portText_, rtype::logging::FILE_OPTION,
-      journalText_, rtype::logging::NO_STDERR_OPTION};
+  std::vector<std::string_view> arguments{rtype::logging::FILE_OPTION,
+                                          journalText_,
+                                          rtype::logging::NO_STDERR_OPTION};
   arguments.insert(arguments.end(), options.begin(), options.end());
   const rtype::server::LaunchOptions launchOptions =
       rtype::server::LaunchOptions::read(arguments);
   const rtype::engine::ConfigurationSource configuration{
       .file = folder_.path() / rtype::server::SERVER_CONFIGURATION_FILE_NAME,
-      .forcedLines = launchOptions.forcedLines(),
+      .forcedLines = onAnyPort(launchOptions.forcedLines()),
       .handOver =
           rtype::server::gameLineRule(rtype::server::SUPERVISOR_MODULE_NAMES)};
   auto modules = rtype::server::supervisorModules(
@@ -78,6 +76,7 @@ SupervisorModulesFixture::supervisor(
   if (console != nullptr) {
     modules.back() = std::move(console);
   }
+  modules.push_back(std::make_unique<ListeningPortRecordingModule>(port_));
   auto step = rtype::engine::configurationStep(configuration, report_);
   return std::make_unique<rtype::engine::Application>(
       rtype::engine::LoopStages(rtype::server::SERVER_LOOP_STAGES),
@@ -103,7 +102,7 @@ std::string SupervisorModulesFixture::gameConfigurationText() const {
 
 std::filesystem::path SupervisorModulesFixture::gameConfigurationFile() const {
   return rtype::engine::executableFolder() /
-         (std::string{GAMES_FILE_PREFIX} + portText_ +
+         (std::string{GAMES_FILE_PREFIX} + std::to_string(port_) +
           std::string{GAMES_FILE_SUFFIX});
 }
 

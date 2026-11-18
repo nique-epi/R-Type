@@ -4,15 +4,18 @@
 #include <SFML/Window/Event.hpp>
 #include <cstddef>
 #include <optional>
+#include "AssetLibrary.hpp"
+#include "BackgroundCatalog.hpp"
 #include "GameResult.hpp"
+#include "ISessionBackgrounds.hpp"
 #include "ScreenContext.hpp"
 #include "ScreenRegistry.hpp"
 #include "ScreenServices.hpp"
 #include "ScreenStack.hpp"
-#include "ScrollingBackground.hpp"
 #include "ServerChoice.hpp"
 #include "ServerSession.hpp"
 #include "SessionLossWatch.hpp"
+#include "Sky.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -36,6 +39,11 @@ namespace rtype::client {
  * The sky and every screen move by the real time elapsed since the previous
  * frame, so their speed does not depend on the frame rate. The sky is drawn
  * under every screen for now, the loading screen and the options included.
+ *
+ * While the session plays the pack of a server that brings backgrounds, the
+ * sky lays them over its own, from the frame their images are loaded, which
+ * the loading screen of a game does; it takes them off the frame the session
+ * is over, and never shows one whose images are not loaded.
  *
  * The screens keep pointers to it, so it can be neither copied nor moved.
  */
@@ -77,8 +85,18 @@ class ClientScreens {
   [[nodiscard]] bool isEmpty() const;
 
  private:
+  /** @brief Lays over the sky the backgrounds of the session while their
+   * images are loaded, and takes them off otherwise: a session that is over,
+   * or images not loaded yet or released. */
+  void followSessionBackgrounds();
+
   const ServerSession* connection_;
-  ScrollingBackground background_;
+  const ISessionBackgrounds* sessionBackgrounds_;
+  const AssetLibrary* assets_;
+  /** @brief The backgrounds of the assets, whose images are loaded for good
+   * when the screens are built: the sky shows behind every screen. */
+  BackgroundCatalog backgrounds_;
+  Sky background_;
   GameResult gameResult_;
   std::optional<std::size_t> previousTaunt_;
   /** @brief The server, the nickname and the game every connection screen

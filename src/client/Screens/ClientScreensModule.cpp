@@ -26,6 +26,7 @@
 #include "IGameCatalog.hpp"
 #include "IServerCatalog.hpp"
 #include "IServerTicks.hpp"
+#include "ISessionBackgrounds.hpp"
 #include "ITicketLink.hpp"
 #include "IWallet.hpp"
 #include "InstallContext.hpp"
@@ -114,6 +115,7 @@ void ClientScreensModule::install(engine::InstallContext& context) {
   globalLeaderboard_ = &context.require<MasterLeaderboard>();
   chat_ = &context.require<ChatChannel>();
   entityTable_ = &context.require<IEntityTypeTable>();
+  sessionBackgrounds_ = &context.require<ISessionBackgrounds>();
   entityTypes_ = std::make_unique<EntityTypeLooks>(*entityTable_);
   serverTicks_ = &context.require<IServerTicks>();
   serverCatalog_ = &context.require<IServerCatalog>();
@@ -166,6 +168,7 @@ ScreenServices ClientScreensModule::services(
       .settingsService = *settingsService_,
       .assets = *assets_,
       .entityTable = *entityTable_,
+      .sessionBackgrounds = *sessionBackgrounds_,
       .audio = *audio_,
       .window = *window_,
       .connection = *connection_,

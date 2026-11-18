@@ -30,7 +30,10 @@ namespace rtype::server {
  * Each onTick() steps the stage due, makes the placed enemies due appear once
  * a stage asked for them with `level.spawn_placed()` (see
  * game::PlacedEnemySpawner), then scrolls the level by one tick unless its
- * script paused the scroll. A game::LevelChange is published on
+ * script paused the scroll, and carries every body that follows the scroll
+ * as far as the level scrolled (game::carryAlongTheScroll()), before the
+ * world moves its ships and tests its collisions. A game::LevelChange is
+ * published on
  * the bus of the game at the first tick, then each time the biome changes,
  * the scroll stops or starts again, or the level restarts from a checkpoint.
  *

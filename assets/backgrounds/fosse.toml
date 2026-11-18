@@ -1,0 +1,18 @@
+# The Pit: three layers of walls, cut from the maps of its LDtk project, and
+# no star. The background arrives through its nearest layer.
+
+[[layer]]
+name = "far walls"
+motion = { parallax = 0.25 }
+tiles = { project = "biomes/fosse/fosse.ldtk", layer = "Far", tileset = "biomes/fosse/fosse_far.png" }
+
+[[layer]]
+name = "middle walls"
+motion = { parallax = 0.5 }
+tiles = { project = "biomes/fosse/fosse.ldtk", layer = "Mid", tileset = "biomes/fosse/fosse_mid.png" }
+
+[[layer]]
+name = "near walls"
+motion = { parallax = 1 }
+entrance = true
+tiles = { project = "biomes/fosse/fosse.ldtk", layer = "Near", tileset = "biomes/fosse/fosse_near.png" }

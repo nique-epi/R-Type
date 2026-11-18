@@ -18,9 +18,10 @@ template <typename Asset>
 using AssetsById = std::map<std::string, Asset, std::less<>>;
 
 /**
- * @brief Reads @p file into @p assets under @p assetId, unless the id breaks
- * the asset id rule or is loaded already; an Asset is built from the path of
- * its file, and SFML throws sf::Exception when it cannot read it.
+ * @brief Reads @p file into @p assets under @p assetId, unless the id is
+ * neither an asset id nor the whole path of a file, or is loaded already; an
+ * Asset is built from the path of its file, and SFML throws sf::Exception
+ * when it cannot read it.
  *
  * @returns Loaded when the asset is held, read now or before; InvalidId,
  * MissingFile or UnreadableFile otherwise, with nothing added. It never
@@ -30,7 +31,7 @@ template <typename Asset>
 [[nodiscard]] AssetLoadResult loadAssetFile(AssetsById<Asset>& assets,
                                             std::string_view assetId,
                                             const std::filesystem::path& file) {
-  if (!isValidAssetId(assetId)) {
+  if (!isValidAssetId(assetId) && !isWholeFilePath(assetId)) {
     return AssetLoadResult::InvalidId;
   }
   if (assets.contains(assetId)) {

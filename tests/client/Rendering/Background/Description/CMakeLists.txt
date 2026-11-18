@@ -1,0 +1,3 @@
+rtype_add_test(NAME client_background_description_tests SOURCES BackgroundCatalogFixture.cpp BackgroundCatalogTest.cpp BackgroundReadingFixtures.cpp BackgroundReadingTest.cpp LIBS rtype_client_background_description GTest::gmock rtype_test_support)
+target_include_directories(client_background_description_tests PRIVATE ${RTYPE_TEST_SOURCE_DIR})
+target_compile_definitions(client_background_description_tests PRIVATE RTYPE_SOURCE_ASSETS_FOLDER="${PROJECT_SOURCE_DIR}/assets")

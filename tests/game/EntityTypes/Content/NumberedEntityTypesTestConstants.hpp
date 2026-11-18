@@ -30,6 +30,14 @@ constexpr std::string_view SHEET_OF_A_PLUGIN_PILOT =
     "[gameplay.behaviour]\nwindup_ms = 400\n[appearance]\n";
 constexpr float LANCER_BOX_WIDTH = 64.0F;
 constexpr float LANCER_BOX_HEIGHT = 32.0F;
+/** @brief A wall that blocks the ships, whose sheet names an on_hit the client
+ * does not read. */
+constexpr std::string_view WALL_TYPE = "steel_wall";
+constexpr std::string_view SHEET_OF_A_BLOCKING_WALL =
+    "[gameplay]\nside = \"obstacle\"\npilot = \"straight\"\n"
+    "on_hit = \"crack\"\n"
+    "[gameplay.hitbox]\nwidth = 64\nheight = 256\n"
+    "[gameplay.obstacle]\ncontact = \"blocking\"\n[appearance]\n";
 /** @brief A sheet whose hitbox lists two boxes, 40 by 40 and 100 by 60. */
 constexpr std::string_view SHEET_OF_TWO_BOXES =
     "[gameplay]\nside = \"enemy\"\n"

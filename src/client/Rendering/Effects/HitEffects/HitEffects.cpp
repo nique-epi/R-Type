@@ -30,6 +30,7 @@ float towardsShooterOf(game::EntityType type) {
   switch (type) {
     case game::EntityType::Enemy:
     case game::EntityType::PlayerMissile:
+    case game::EntityType::Obstacle:
       return TOWARDS_LEFT;
     case game::EntityType::Player:
     case game::EntityType::EnemyMissile:

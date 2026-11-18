@@ -56,6 +56,24 @@ TEST(LuauLevels, ReadsTheLevelTheRepositoryShips) {
 }
 
 /**
+ * Given the scripts of the resource fosse the repository ships
+ * When they run
+ * Then the level fosse is registered, with its five stages
+ */
+TEST(LuauLevels, ReadsTheFosseLevelTheRepositoryShips) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+  const std::array folders{
+      std::filesystem::path{RTYPE_SOURCE_RESOURCES_FOLDER} / FOSSE_RESOURCE};
+
+  scripts.run(rtype::game::scriptSourcesIn(folders));
+
+  const LuauLevelEntry* const entry = scripts.levels().entryOf(FOSSE_LEVEL);
+  ASSERT_NE(entry, nullptr);
+  EXPECT_EQ(entry->stages.size(), STAGES_OF_THE_FOSSE_LEVEL);
+}
+
+/**
  * Given a script that registers two levels
  * When the names of the levels are asked for
  * Then both are listed, in alphabetical order

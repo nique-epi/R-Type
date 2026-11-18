@@ -18,6 +18,7 @@
 #include "DataFilePlace.hpp"
 #include "DataFileTable.hpp"
 #include "DataFileText.hpp"
+#include "DecimalRange.hpp"
 #include "EngineException.hpp"
 #include "PathText.hpp"
 #include "TimeConstants.hpp"
@@ -33,6 +34,20 @@ bool isDataFile(const std::filesystem::directory_entry& entry) {
   std::error_code ignored;
   return entry.is_regular_file(ignored) &&
          entry.path().extension() == std::filesystem::path{DATA_FILE_EXTENSION};
+}
+
+/** @returns The number @p node holds, a TOML integer or float, when it is
+ * one of @p range; nothing otherwise. */
+std::optional<double> decimalIn(const toml::node& node, DecimalRange range) {
+  if (!node.is_number()) {
+    return std::nullopt;
+  }
+  const std::optional<double> number = node.value<double>();
+  if (!number.has_value() || *number < range.lowest ||
+      *number > range.highest) {
+    return std::nullopt;
+  }
+  return number;
 }
 
 /** @returns The name of the table at @p index of the array @p key of
@@ -181,6 +196,43 @@ std::int64_t wholeNumberOrZeroAt(const DataFileTable& table,
 Duration millisecondsAt(const DataFileTable& table, std::string_view key,
                         WholeNumberRange range) {
   return std::chrono::milliseconds{wholeNumberAt(table, key, range)};
+}
+
+double decimalAt(const DataFileTable& table, std::string_view key,
+                 DecimalRange range) {
+  const toml::node& node = nodeAt(table, key);
+  const std::optional<double> number = decimalIn(node, range);
+  if (!number.has_value()) {
+    throw DataFileDecimalOutOfRangeException(placeOf(node.source(), table, key),
+                                             range);
+  }
+  return *number;
+}
+
+DecimalRange decimalRangeAt(const DataFileTable& table, std::string_view key,
+                            DecimalRange bounds) {
+  const toml::node& node = nodeAt(table, key);
+  const toml::array* const array = node.as_array();
+  if (array == nullptr || array->size() != DECIMAL_RANGE_ENDS) {
+    throw DataFileRangeExpectedException(placeOf(node.source(), table, key),
+                                         bounds);
+  }
+  const std::optional<double> lowest = decimalIn(*array->get(0), bounds);
+  const std::optional<double> highest = decimalIn(*array->get(1), bounds);
+  if (!lowest.has_value() || !highest.has_value() || *lowest > *highest) {
+    throw DataFileRangeExpectedException(placeOf(node.source(), table, key),
+                                         bounds);
+  }
+  return DecimalRange{.lowest = *lowest, .highest = *highest};
+}
+
+bool flagAt(const DataFileTable& table, std::string_view key) {
+  const toml::node& node = nodeAt(table, key);
+  const std::optional<bool> flag = node.value_exact<bool>();
+  if (!flag.has_value()) {
+    throw DataFileFlagExpectedException(placeOf(node.source(), table, key));
+  }
+  return *flag;
 }
 
 std::string textAt(const DataFileTable& table, std::string_view key) {

@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
 #include <string_view>
 #include <vector>
 #include "ArrivalTally.hpp"
@@ -62,7 +63,8 @@ class ServerLeaderboardFixture : public ::testing::Test {
   GameLoadedReminder gameLoaded_;
   ServerLeaderboard leaderboard_{dispatcher_};
   SessionEntityTypes entityTypes_{testLocalContent()};
-  ContentLoading content_{ContentPackCache{unusedCacheFolder()}};
+  ContentLoading content_{ContentPackCache{unusedCacheFolder()},
+                          std::filesystem::path{}};
   ArrivalTally arrivals_;
   ServerSession session_{
       ServerSessionParts{.link = link_,

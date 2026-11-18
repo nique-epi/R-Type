@@ -5,25 +5,11 @@ target_include_directories(rtype_client_background INTERFACE ${CMAKE_CURRENT_SOU
 target_link_libraries(rtype_client_background
   INTERFACE
     SFML::Graphics
+    rtype_client_pixels
     rtype_engine_time
     rtype_game
 )
 
-add_subdirectory(ShiftedView)
-add_subdirectory(RandomRange)
-add_subdirectory(PixelRounding)
-add_subdirectory(PixelBatch)
-add_subdirectory(PlanetImage)
-add_subdirectory(SkyEvents)
-add_subdirectory(Starfield)
-add_subdirectory(GaussianBlur)
-add_subdirectory(IntegerScale)
-add_subdirectory(MapTileVertices)
-add_subdirectory(MapColumns)
-add_subdirectory(MapPlane)
-add_subdirectory(BiomeMap)
-add_subdirectory(SeamCover)
-add_subdirectory(BiomeDecor)
-add_subdirectory(EnlargedPicture)
-add_subdirectory(SkyPicture)
-add_subdirectory(ScrollingBackground)
+add_subdirectory(Description)
+add_subdirectory(Layers)
+add_subdirectory(Composition)

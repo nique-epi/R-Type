@@ -1,5 +1,6 @@
 #include "ContentLoading.hpp"
 #include <cstddef>
+#include <filesystem>
 #include <memory>
 #include <optional>
 #include <span>
@@ -20,11 +21,13 @@
 #include "PackDownloadOutcome.hpp"
 #include "PackDownloadProgress.hpp"
 #include "PackDownloadTarget.hpp"
+#include "PackFolders.hpp"
 
 namespace rtype::client {
 
-ContentLoading::ContentLoading(ContentPackCache cache)
-    : cache_(std::move(cache)) {}
+ContentLoading::ContentLoading(ContentPackCache cache,
+                               std::filesystem::path assetFolder)
+    : cache_(std::move(cache)), assetFolder_(std::move(assetFolder)) {}
 
 ContentStep ContentLoading::begin(const network::ContentAnnouncement& announced,
                                   const std::string& host) {
@@ -92,8 +95,10 @@ ContentStep ContentLoading::readDownloaded(std::span<const std::byte> pack) {
 ContentStep ContentLoading::read(
     std::span<const identifiers::ContentFile> files) {
   try {
-    content_ =
-        packContentOf(files, cache_.spriteFolderOf(announced_.fingerprint));
+    content_ = packContentOf(
+        files,
+        PackFolders{.assets = assetFolder_,
+                    .pack = cache_.spriteFolderOf(announced_.fingerprint)});
   } catch (const std::runtime_error&) {
     return ContentStep::Refused;
   }

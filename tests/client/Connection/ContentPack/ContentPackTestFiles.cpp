@@ -1,6 +1,7 @@
 #include "ContentPackTestFiles.hpp"
 #include <cstddef>
 #include <string>
+#include <string_view>
 #include <vector>
 #include "ContentFile.hpp"
 #include "ContentFingerprint.hpp"
@@ -27,6 +28,15 @@ std::vector<identifiers::ContentFile> lancerFilesWithAMask() {
 std::vector<identifiers::ContentFile> lancerFilesNamingAFileOutside() {
   std::vector<identifiers::ContentFile> files = lancerFiles();
   files.front().bytes = std::string{SHEET_NAMING_A_FILE_OUTSIDE};
+  return files;
+}
+
+std::vector<identifiers::ContentFile> lancerFilesWithABackground(
+    std::string_view background) {
+  std::vector<identifiers::ContentFile> files = lancerFiles();
+  files.insert(files.begin(), identifiers::ContentFile{
+                                  .path = std::string{LAIR_BACKGROUND_PATH},
+                                  .bytes = std::string{background}});
   return files;
 }
 
