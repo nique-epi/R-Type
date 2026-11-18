@@ -1,3 +1,4 @@
+add_subdirectory(Backgrounds)
 add_subdirectory(Behaviours)
 add_subdirectory(Boss)
 add_subdirectory(Components)

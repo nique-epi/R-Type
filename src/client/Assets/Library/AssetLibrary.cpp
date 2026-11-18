@@ -7,6 +7,7 @@
 #include <string_view>
 #include <utility>
 #include <vector>
+#include "AssetIds.hpp"
 #include "AssetKind.hpp"
 #include "AssetList.hpp"
 #include "AssetLoadResult.hpp"
@@ -52,7 +53,8 @@ AssetLibrary::AssetLibrary(std::filesystem::path folder)
 const std::filesystem::path& AssetLibrary::folder() const { return folder_; }
 
 std::filesystem::path AssetLibrary::fileOf(std::string_view assetId) const {
-  return folder_ / std::filesystem::path(assetId);
+  return isWholeFilePath(assetId) ? std::filesystem::path(assetId)
+                                  : folder_ / std::filesystem::path(assetId);
 }
 
 AssetLoadResult AssetLibrary::load(AssetKind kind, std::string_view assetId) {

@@ -1,8 +1,10 @@
 #include "SessionEntityTypes.hpp"
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <utility>
 #include <vector>
+#include "BackgroundCatalog.hpp"
 #include "ContentFingerprint.hpp"
 #include "EntityAppearances.hpp"
 #include "EntityTypeConstants.hpp"
@@ -51,6 +53,11 @@ const EntityAppearances& SessionEntityTypes::appearances() const {
 
 game::ShipGun SessionEntityTypes::shipGun() const {
   return playsThePack_ && pack_.has_value() ? pack_->gun : local_.gun;
+}
+
+std::shared_ptr<const BackgroundCatalog> SessionEntityTypes::backgrounds()
+    const {
+  return playsThePack_ && pack_.has_value() ? pack_->backgrounds : nullptr;
 }
 
 const std::vector<game::NumberedEntityType>& SessionEntityTypes::types() const {

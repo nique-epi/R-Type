@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <cstddef>
 #include <cstdint>
 #include "ComponentRegistry.hpp"
 #include "Direction.hpp"
@@ -9,6 +10,7 @@
 #include "MovementSystem.hpp"
 #include "MovementSystemFixtures.hpp"
 #include "MovementSystemTestConstants.hpp"
+#include "ObstacleContact.hpp"
 #include "PlayfieldConstants.hpp"
 #include "Position.hpp"
 #include "ShipMotion.hpp"
@@ -21,21 +23,25 @@ using rtype::engine::Duration;
 using rtype::engine::Entity;
 using rtype::engine::EntityRegistry;
 using rtype::engine::SIMULATION_TICK_DURATION;
+using rtype::engine::SIMULATION_TICKS_PER_SECOND;
 using rtype::engine::testing::ONE_SECOND;
 using rtype::game::Direction;
 using rtype::game::FULL_STEERING;
 using rtype::game::Intent;
 using rtype::game::MovementSystem;
+using rtype::game::ObstacleContact;
 using rtype::game::PLAYFIELD_WIDTH;
 using rtype::game::Position;
 using rtype::game::ShipMotion;
 using rtype::game::SteadyMotion;
+using rtype::game::testing::AGAINST_THE_WALL_X;
 using rtype::game::testing::HALF_SECOND;
 using rtype::game::testing::HALF_SECOND_ARRIVAL_X;
 using rtype::game::testing::HALF_SECOND_ARRIVAL_Y;
 using rtype::game::testing::HALF_STEERING;
 using rtype::game::testing::POSITION_TOLERANCE_UNITS;
 using rtype::game::testing::runOneSecondAt;
+using rtype::game::testing::shipHoldingRight;
 using rtype::game::testing::SPEED_X;
 using rtype::game::testing::START_X;
 using rtype::game::testing::START_Y;
@@ -44,6 +50,7 @@ using rtype::game::testing::STEADY_ARRIVAL_Y;
 using rtype::game::testing::STEADY_TOP_SPEED;
 using rtype::game::testing::steadyBodyAtSpeed;
 using rtype::game::testing::TWICE_THE_FULL_STEERING;
+using rtype::game::testing::wallDoing;
 
 /**
  * Given a steady body at (100, 200) going at (120, -60) units per second
@@ -263,4 +270,47 @@ TEST(MovementSystem, SteadyBodyNeverGoesFasterThanItsTopSpeed) {
   const Position* position = components.get<Position>(body);
   ASSERT_NE(position, nullptr);
   EXPECT_FLOAT_EQ(position->x, STEADY_ARRIVAL_X);
+}
+
+/**
+ * Given a ship at x 300 holding right, and a blocking wall whose left side is
+ * at x 468
+ * When a second of ticks passes
+ * Then the ship rests against the wall, its center at x 404
+ */
+TEST(MovementSystem, AShipStopsAgainstABlockingObstacle) {
+  EntityRegistry entities;
+  ComponentRegistry components(entities);
+  const Entity ship = shipHoldingRight(entities, components);
+  static_cast<void>(wallDoing(entities, components, ObstacleContact::Blocking));
+  MovementSystem movement;
+
+  for (std::size_t tick = 0; tick < SIMULATION_TICKS_PER_SECOND; ++tick) {
+    movement.update(components, SIMULATION_TICK_DURATION);
+  }
+
+  ASSERT_NE(components.get<Position>(ship), nullptr);
+  EXPECT_FLOAT_EQ(components.get<Position>(ship)->x, AGAINST_THE_WALL_X);
+}
+
+/**
+ * Given a ship at x 300 holding right, and a fatal wall whose left side is at
+ * x 468
+ * When a second of ticks passes
+ * Then the ship flew into the wall: the wall costs it a life, it does not stop
+ * it
+ */
+TEST(MovementSystem, AShipFliesIntoAFatalObstacle) {
+  EntityRegistry entities;
+  ComponentRegistry components(entities);
+  const Entity ship = shipHoldingRight(entities, components);
+  static_cast<void>(wallDoing(entities, components, ObstacleContact::Fatal));
+  MovementSystem movement;
+
+  for (std::size_t tick = 0; tick < SIMULATION_TICKS_PER_SECOND; ++tick) {
+    movement.update(components, SIMULATION_TICK_DURATION);
+  }
+
+  ASSERT_NE(components.get<Position>(ship), nullptr);
+  EXPECT_GT(components.get<Position>(ship)->x, AGAINST_THE_WALL_X);
 }

@@ -8,6 +8,7 @@
 #include <string_view>
 #include <vector>
 #include "DataFilePlace.hpp"
+#include "DecimalRange.hpp"
 #include "WholeNumberRange.hpp"
 
 namespace rtype::engine {
@@ -266,6 +267,35 @@ class DataFileValueOutOfRangeException : public EngineException {
  public:
   DataFileValueOutOfRangeException(const DataFilePlace& place,
                                    WholeNumberRange range);
+};
+
+/**
+ * @brief A value of a data file is not a TOML number, integer or float,
+ * within the range of its key.
+ */
+class DataFileDecimalOutOfRangeException : public EngineException {
+ public:
+  DataFileDecimalOutOfRangeException(const DataFilePlace& place,
+                                     DecimalRange range);
+};
+
+/**
+ * @brief A key of a data file that must hold a range, an array of two numbers
+ * with the lowest first, holds something else.
+ */
+class DataFileRangeExpectedException : public EngineException {
+ public:
+  /** @param bounds The numbers both ends of the range may be, in the
+   * message. */
+  DataFileRangeExpectedException(const DataFilePlace& place,
+                                 DecimalRange bounds);
+};
+
+/** @brief A key of a data file that must hold `true` or `false` holds
+ * something else. */
+class DataFileFlagExpectedException : public EngineException {
+ public:
+  explicit DataFileFlagExpectedException(const DataFilePlace& place);
 };
 
 /** @brief A key of a data file that must hold a text holds something else. */

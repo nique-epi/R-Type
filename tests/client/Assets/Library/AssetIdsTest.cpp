@@ -1,8 +1,14 @@
 #include <gtest/gtest.h>
 #include "AssetIds.hpp"
 #include "AssetIdsFixtures.hpp"
+#include "AssetTestConstants.hpp"
+#include "PathText.hpp"
+#include "TemporaryFolder.hpp"
 
 using rtype::client::isValidAssetId;
+using rtype::client::isWholeFilePath;
+using rtype::client::testing::PLAYER_SHIP_ID;
+using rtype::logging::genericText;
 
 /**
  * Given an asset id that follows the rule
@@ -32,3 +38,23 @@ INSTANTIATE_TEST_SUITE_P(
                       "Sprites/ship.png", "sprites\\ship.png", "c:/ship.png",
                       "sprites/player ship.png", "sprites/ship`.png",
                       "sprites/ship{.png", "sprites/\xC3\xA9.png"));
+
+/**
+ * Given an asset id
+ * When it is asked whether it is the whole path of a file
+ * Then it is not: it names a file of the assets folder
+ */
+TEST(WholeFilePath, IsNotAnAssetId) {
+  EXPECT_FALSE(isWholeFilePath(PLAYER_SHIP_ID));
+}
+
+/**
+ * Given the path of a file from the root of the disk
+ * When it is asked whether it is the whole path of a file
+ * Then it is
+ */
+TEST(WholeFilePath, IsAPathFromTheRootOfTheDisk) {
+  const TemporaryFolder folder;
+
+  EXPECT_TRUE(isWholeFilePath(genericText(folder.path() / PLAYER_SHIP_ID)));
+}

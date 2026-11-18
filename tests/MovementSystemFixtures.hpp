@@ -4,6 +4,7 @@
 #include "ComponentRegistry.hpp"
 #include "Entity.hpp"
 #include "EntityRegistry.hpp"
+#include "ObstacleContact.hpp"
 
 namespace rtype::game::testing {
 
@@ -22,5 +23,16 @@ void runOneSecondAt(std::int64_t framesPerSecond,
  */
 [[nodiscard]] engine::Entity steadyBodyAtSpeed(
     engine::EntityRegistry& entities, engine::ComponentRegistry& components);
+
+/** @returns A new ship of @p components at (SHIP_START_X, WALL_ROW_Y) that
+ * holds right. */
+[[nodiscard]] engine::Entity shipHoldingRight(
+    engine::EntityRegistry& entities, engine::ComponentRegistry& components);
+
+/** @returns A new wall of @p components, WALL_BOX centered at (WALL_X,
+ * WALL_ROW_Y), that does @p contact to a ship. */
+engine::Entity wallDoing(engine::EntityRegistry& entities,
+                         engine::ComponentRegistry& components,
+                         ObstacleContact contact);
 
 }  // namespace rtype::game::testing

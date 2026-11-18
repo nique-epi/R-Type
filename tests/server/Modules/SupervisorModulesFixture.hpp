@@ -9,16 +9,17 @@
 #include "Application.hpp"
 #include "ConfigurationReport.hpp"
 #include "IModule.hpp"
+#include "NetworkConstants.hpp"
 #include "ServerInformation.hpp"
 #include "ServerModuleFixture.hpp"
 #include "StopRequest.hpp"
 #include "TemporaryFolder.hpp"
 #include "UdpTestClient.hpp"
 
-/** @brief The base of the tests of a whole supervisor: its modules on a free
- * port, its server.cfg in a folder of the test, read with the configuration
- * step main() gives it, and the file it writes for its games next to the
- * executable, removed after the test. */
+/** @brief The base of the tests of a whole supervisor: its modules on a port
+ * the system chooses, its server.cfg in a folder of the test, read with the
+ * configuration step main() gives it, and the file it writes for its games next
+ * to the executable, removed after the test. */
 class SupervisorModulesFixture : public ServerModuleFixture {
  public:
   SupervisorModulesFixture();
@@ -32,8 +33,10 @@ class SupervisorModulesFixture : public ServerModuleFixture {
   /** @brief Writes @p lines, one per line, to the server.cfg of the test. */
   void writeConfiguration(const std::vector<std::string>& lines) const;
 
-  /** @returns The supervisor launched with @p options after its port and its
-   * journal, reading the server.cfg of the test. Start it once. */
+  /** @returns The supervisor launched with @p options after its journal,
+   * reading the server.cfg of the test, its port set to ANY_PORT after the
+   * lines of its options; a module listed last keeps the port it listens on
+   * for port(). Start it once. */
   [[nodiscard]] std::unique_ptr<rtype::engine::Application> supervisor(
       const std::vector<std::string_view>& options);
 
@@ -43,7 +46,8 @@ class SupervisorModulesFixture : public ServerModuleFixture {
       const std::vector<std::string_view>& options,
       std::unique_ptr<rtype::engine::IModule> console);
 
-  /** @returns The port the supervisor is given, in UDP and in TCP. */
+  /** @returns The port the supervisor listens on, in UDP and in TCP, once
+   * its application started; ANY_PORT before. */
   [[nodiscard]] std::uint16_t port() const;
 
   /** @returns A file of results in the folder of the test, for --database;
@@ -66,8 +70,7 @@ class SupervisorModulesFixture : public ServerModuleFixture {
  private:
   [[nodiscard]] std::filesystem::path gameConfigurationFile() const;
 
-  std::uint16_t port_;
-  std::string portText_;
+  std::uint16_t port_{rtype::network::ANY_PORT};
   std::string journalText_;
   TemporaryFolder folder_;
   rtype::server::StopRequest stopRequest_;

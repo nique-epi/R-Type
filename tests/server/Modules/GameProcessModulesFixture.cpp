@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 #include "Application.hpp"
 #include "ConfigurationReader.hpp"
@@ -13,6 +14,7 @@
 #include "GameLaunchOptions.hpp"
 #include "GameProcessModules.hpp"
 #include "LaunchArgumentsConstants.hpp"
+#include "ListeningPortRecordingModule.hpp"
 #include "LoggingConstants.hpp"
 #include "LoopStages.hpp"
 #include "MessagePayload.hpp"
@@ -25,9 +27,7 @@
 #include "UdpTestClient.hpp"
 
 GameProcessModulesFixture::GameProcessModulesFixture()
-    : port_(freeUdpPort()),
-      workingFolderChange_(workingFolder_.path()),
-      portText_(std::to_string(port_)),
+    : workingFolderChange_(workingFolder_.path()),
       supervisorPortText_(std::to_string(supervisor_.localEndpoint().port)),
       databaseText_((workingFolder_.path() / TEST_DATABASE_FILE).string()),
       journalText_(journal().path().string()),
@@ -37,7 +37,6 @@ GameProcessModulesFixture::GameProcessModulesFixture()
 std::vector<std::string_view> GameProcessModulesFixture::gameArguments(
     const std::vector<std::string_view>& more) const {
   std::vector<std::string_view> arguments{
-      rtype::engine::PORT_OPTION,       portText_,
       rtype::server::SUPERVISOR_OPTION, supervisorPortText_,
       rtype::server::LINK_TOKEN_OPTION, GAME_PROCESS_LINK_TOKEN,
       rtype::engine::DATABASE_OPTION,   databaseText_,
@@ -98,12 +97,14 @@ GameProcessModulesFixture::launchOptions() const {
 std::unique_ptr<rtype::engine::Application>
 GameProcessModulesFixture::gameApplication(
     const rtype::server::GameLaunchOptions& options) {
+  auto modules = rtype::server::gameProcessModules(options, stopRequest_);
+  modules.push_back(std::make_unique<ListeningPortRecordingModule>(port_));
   return std::make_unique<rtype::engine::Application>(
       rtype::engine::LoopStages(rtype::server::SERVER_LOOP_STAGES),
-      rtype::server::gameProcessModules(options, stopRequest_),
+      std::move(modules),
       rtype::engine::configurationStep(
           options.configurationFile().value_or(std::filesystem::path{}),
-          options.forcedLines(), configurationReport_));
+          onAnyPort(options.forcedLines()), configurationReport_));
 }
 
 void GameProcessModulesFixture::writeConfiguration(

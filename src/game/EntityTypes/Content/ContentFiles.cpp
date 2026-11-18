@@ -11,6 +11,7 @@
 #include <toml++/toml.hpp>
 #include <utility>
 #include <vector>
+#include "BackgroundFiles.hpp"
 #include "ContentFile.hpp"
 #include "DataFileConstants.hpp"
 #include "DataFileReading.hpp"
@@ -151,6 +152,12 @@ std::vector<identifiers::ContentFile> contentFilesIn(
   for (const std::string& spriteSheet : spriteSheets) {
     files.push_back(identifiers::ContentFile{
         .path = spriteSheet, .bytes = contentOf(contentFolders, spriteSheet)});
+  }
+  for (identifiers::ContentFile& file : backgroundFilesIn(contentFolders)) {
+    if (std::ranges::find(files, file.path, &identifiers::ContentFile::path) ==
+        files.end()) {
+      files.push_back(std::move(file));
+    }
   }
   std::ranges::sort(files, std::less{}, &identifiers::ContentFile::path);
   return files;

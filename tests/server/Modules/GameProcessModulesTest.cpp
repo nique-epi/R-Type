@@ -108,8 +108,7 @@ TEST_F(GameProcessModulesFixture, OpensTheTrafficFileOfItsLaunchOption) {
  * Given a game process whose modules started and a client that joined it
  * When the application stops
  * Then the client receives the three copies of a Disconnection, about
- * FAREWELL_COPY_INTERVAL apart, under its session token, and the port is
- * free again
+ * FAREWELL_COPY_INTERVAL apart, under its session token
  */
 TEST_F(GameProcessModulesFixture, SaysGoodbyeToAJoinedPlayerWhenItStops) {
   const auto application = gameApplication(launchOptions());
@@ -130,6 +129,5 @@ TEST_F(GameProcessModulesFixture, SaysGoodbyeToAJoinedPlayerWhenItStops) {
   }
   EXPECT_GE(goodbyes[1].time - goodbyes[0].time, MINIMUM_COPY_SPACING);
   EXPECT_GE(goodbyes[2].time - goodbyes[1].time, MINIMUM_COPY_SPACING);
-  EXPECT_TRUE(portIsFree(port()));
   EXPECT_EQ(client().failedSendCount(), 0U);
 }

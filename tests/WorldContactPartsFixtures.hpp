@@ -4,6 +4,7 @@
 #include "EntitySheet.hpp"
 #include "HitboxParts.hpp"
 #include "HurtZone.hpp"
+#include "ObstacleContact.hpp"
 
 namespace rtype::game::testing {
 
@@ -19,5 +20,9 @@ namespace rtype::game::testing {
  * the marker @p survives the test asks for. */
 [[nodiscard]] EntitySheet drifterWith(const std::optional<HurtZone>& zone,
                                       bool survives);
+
+/** @returns The Drifter of the shipped sheets made a wall that does
+ * @p contact to a ship, as a sheet of side obstacle reads. */
+[[nodiscard]] EntitySheet wallDoing(ObstacleContact contact);
 
 }  // namespace rtype::game::testing

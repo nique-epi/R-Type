@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <optional>
 #include <vector>
-#include "AllEntityTypes.hpp"
+#include "AllEntityTypesConstants.hpp"
 #include "AppearanceReference.hpp"
 #include "CollisionBox.hpp"
 #include "CollisionMask.hpp"
@@ -21,6 +21,8 @@
 #include "HitboxParts.hpp"
 #include "LastListedTicksTestConstants.hpp"
 #include "NetworkIdentity.hpp"
+#include "Obstacle.hpp"
+#include "ObstacleContact.hpp"
 #include "PilotTestConstants.hpp"
 #include "SoundConstants.hpp"
 #include "WorldState.hpp"
@@ -41,10 +43,11 @@ using rtype::client::testing::announcedEntityCount;
 using rtype::client::testing::ANOTHER_PLAYER;
 using rtype::client::testing::APPLIED_TICK;
 using rtype::client::testing::BEFORE_THE_FIRST_PLAYER;
-using rtype::client::testing::boxOfThe;
+using rtype::client::testing::BLOCKING_WALL_TYPE_NUMBER;
 using rtype::client::testing::BYDO_BOX;
 using rtype::client::testing::BYDO_ID;
 using rtype::client::testing::BYDO_POSITION;
+using rtype::client::testing::componentOfThe;
 using rtype::client::testing::damaged;
 using rtype::client::testing::drawnAs;
 using rtype::client::testing::drawnEffects;
@@ -70,7 +73,6 @@ using rtype::client::testing::LAST_KEPT_TICK;
 using rtype::client::testing::listed;
 using rtype::client::testing::LISTING_TICK;
 using rtype::client::testing::LOOK_ITEM_ID;
-using rtype::client::testing::maskOfThe;
 using rtype::client::testing::NAMED_LOOK;
 using rtype::client::testing::NEWER_TICK;
 using rtype::client::testing::NO_HISTORY_POSITION;
@@ -79,7 +81,6 @@ using rtype::client::testing::OLDER_LOOK;
 using rtype::client::testing::OLDER_TICK;
 using rtype::client::testing::OWN_PLAYER;
 using rtype::client::testing::ownMissileSpawned;
-using rtype::client::testing::partsOfThe;
 using rtype::client::testing::pilotColorOfThe;
 using rtype::client::testing::PLAYER_MISSILE_ID;
 using rtype::client::testing::PLAYER_MISSILE_POSITION;
@@ -105,6 +106,7 @@ using rtype::client::testing::TICK_BETWEEN_THE_LISTINGS;
 using rtype::client::testing::TWO_BOX_ENEMY_PARTS;
 using rtype::client::testing::TWO_BOX_ENEMY_TYPE_NUMBER;
 using rtype::client::testing::UNANNOUNCED_ID;
+using rtype::client::testing::WALL_ID;
 using rtype::client::testing::WEAVER_TYPE_NUMBER;
 using rtype::engine::Entity;
 using rtype::game::CollisionBox;
@@ -112,6 +114,8 @@ using rtype::game::CollisionMask;
 using rtype::game::EntityType;
 using rtype::game::HitboxParts;
 using rtype::game::NetworkIdentity;
+using rtype::game::Obstacle;
+using rtype::game::ObstacleContact;
 using rtype::identifiers::NO_ENTITY_ID;
 using rtype::identifiers::NO_ENTITY_TYPE;
 using rtype::network::WorldState;
@@ -157,9 +161,9 @@ TEST_F(EntityReplicatorFixture,
 /**
  * Given a replicator that has applied nothing
  * When one entity of each side is announced
- * Then the ship and the Bydo are drawn with the look of the side the table
- * gives their type, and the missiles are not drawn yet: they await the tick
- * the client shows
+ * Then the ship, the Bydo, the look item and the wall are drawn with the look
+ * of the side the table gives their type, and the missiles are not drawn yet:
+ * they await the tick the client shows
  */
 TEST_F(EntityReplicatorFixture, DrawsAShipAndABydoAndHoldsTheMissilesBack) {
   announceOneOfEachType();
@@ -168,7 +172,8 @@ TEST_F(EntityReplicatorFixture, DrawsAShipAndABydoAndHoldsTheMissilesBack) {
               UnorderedElementsAre(
                   drawnAs(EntityType::Player, SHIP_ID, SHIP_POSITION),
                   drawnAs(EntityType::Enemy, BYDO_ID, BYDO_POSITION),
-                  drawnAs(EntityType::LookItem, LOOK_ITEM_ID, BYDO_POSITION)));
+                  drawnAs(EntityType::LookItem, LOOK_ITEM_ID, BYDO_POSITION),
+                  drawnAs(EntityType::Obstacle, WALL_ID, BYDO_POSITION)));
 }
 
 /**
@@ -180,7 +185,7 @@ TEST_F(EntityReplicatorFixture, GivesAnEntityTheBoxOfItsType) {
   replicator().apply(spawned(BYDO_ID, DRIFTER_TYPE_NUMBER, BYDO_POSITION));
 
   const std::optional<CollisionBox> box =
-      boxOfThe(components(), EntityType::Enemy);
+      componentOfThe<CollisionBox>(components(), EntityType::Enemy);
   ASSERT_TRUE(box.has_value());
   EXPECT_FLOAT_EQ(box.value_or(CollisionBox{}).width, BYDO_BOX.width);
   EXPECT_FLOAT_EQ(box.value_or(CollisionBox{}).height, BYDO_BOX.height);
@@ -197,10 +202,40 @@ TEST_F(EntityReplicatorFixture, GivesAnEntityTheBoxesItsTypeLists) {
       spawned(BYDO_ID, TWO_BOX_ENEMY_TYPE_NUMBER, BYDO_POSITION));
 
   const std::optional<HitboxParts> parts =
-      partsOfThe(components(), EntityType::Enemy);
+      componentOfThe<HitboxParts>(components(), EntityType::Enemy);
   ASSERT_TRUE(parts.has_value());
   EXPECT_THAT(parts.value_or(HitboxParts{}).boxes,
               ElementsAreArray(TWO_BOX_ENEMY_PARTS));
+}
+
+/**
+ * Given a replicator that has applied nothing
+ * When a wall whose type blocks the ships is announced
+ * Then it carries an Obstacle that blocks, which the prediction of the own
+ * ship stops it against
+ */
+TEST_F(EntityReplicatorFixture, AnObstacleIsCreatedWithItsContact) {
+  replicator().apply(
+      spawned(WALL_ID, BLOCKING_WALL_TYPE_NUMBER, BYDO_POSITION));
+
+  const std::optional<Obstacle> obstacle =
+      componentOfThe<Obstacle>(components(), EntityType::Obstacle);
+  ASSERT_TRUE(obstacle.has_value());
+  EXPECT_EQ(
+      obstacle.value_or(Obstacle{.contact = ObstacleContact::Fatal}).contact,
+      ObstacleContact::Blocking);
+}
+
+/**
+ * Given a replicator that has applied nothing
+ * When a Bydo, whose type is no obstacle, is announced
+ * Then it carries no Obstacle
+ */
+TEST_F(EntityReplicatorFixture, AnEnemyIsCreatedWithoutObstacle) {
+  replicator().apply(spawned(BYDO_ID, DRIFTER_TYPE_NUMBER, BYDO_POSITION));
+
+  EXPECT_FALSE(
+      componentOfThe<Obstacle>(components(), EntityType::Enemy).has_value());
 }
 
 /**
@@ -211,7 +246,8 @@ TEST_F(EntityReplicatorFixture, GivesAnEntityTheBoxesItsTypeLists) {
 TEST_F(EntityReplicatorFixture, GivesAnEntityOfOneBoxNoHitboxParts) {
   replicator().apply(spawned(BYDO_ID, DRIFTER_TYPE_NUMBER, BYDO_POSITION));
 
-  EXPECT_FALSE(partsOfThe(components(), EntityType::Enemy).has_value());
+  EXPECT_FALSE(
+      componentOfThe<HitboxParts>(components(), EntityType::Enemy).has_value());
 }
 
 /**
@@ -1047,7 +1083,7 @@ TEST_F(EntityReplicatorFixture, GivesAnEntityTheMaskOfItsType) {
   replicator().apply(spawned(BYDO_ID, HOLLOW_ENEMY_TYPE_NUMBER, BYDO_POSITION));
 
   const std::optional<CollisionMask> mask =
-      maskOfThe(components(), EntityType::Enemy);
+      componentOfThe<CollisionMask>(components(), EntityType::Enemy);
   ASSERT_TRUE(mask.has_value());
   const CollisionMask found = mask.value_or(CollisionMask{});
   ASSERT_NE(found.pixels, nullptr);
@@ -1063,5 +1099,6 @@ TEST_F(EntityReplicatorFixture, GivesAnEntityTheMaskOfItsType) {
 TEST_F(EntityReplicatorFixture, GivesAnEntityWithoutAMaskNoCollisionMask) {
   replicator().apply(spawned(BYDO_ID, DRIFTER_TYPE_NUMBER, BYDO_POSITION));
 
-  EXPECT_FALSE(maskOfThe(components(), EntityType::Enemy).has_value());
+  EXPECT_FALSE(componentOfThe<CollisionMask>(components(), EntityType::Enemy)
+                   .has_value());
 }

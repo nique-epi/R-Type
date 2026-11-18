@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
 #include <thread>
 #include <vector>
@@ -63,8 +64,10 @@ class ServerNetworkModule final : public engine::IModule,
   /** @brief Stops the server, waits for its threads and closes the socket. */
   void stop() override;
 
-  /** @returns The port the `port` setting holds, the one given at
-   * construction until the configuration sets another. */
+  /** @returns The port the socket is bound to between start() and stop(),
+   * the one the system chose when the `port` setting holds 0; otherwise the
+   * port the setting holds, the one given at construction until the
+   * configuration sets another. */
   [[nodiscard]] std::uint16_t listeningPort() const override;
 
  private:
@@ -78,6 +81,7 @@ class ServerNetworkModule final : public engine::IModule,
   TickDatagrams tickDatagrams_;
   std::unique_ptr<ServerApplication> server_;
   std::jthread serverThread_;
+  std::optional<std::uint16_t> boundPort_;
 };
 
 }  // namespace rtype::server

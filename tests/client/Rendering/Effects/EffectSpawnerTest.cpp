@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <optional>
 #include <vector>
-#include "AllEntityTypes.hpp"
+#include "AllEntityTypesConstants.hpp"
 #include "BackgroundColorConstants.hpp"
 #include "Caption.hpp"
 #include "ComponentRegistry.hpp"

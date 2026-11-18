@@ -5,6 +5,7 @@
 #include <string_view>
 #include <vector>
 #include "DataFilePlace.hpp"
+#include "DecimalRange.hpp"
 #include "WholeNumberRange.hpp"
 
 namespace rtype::engine {
@@ -20,5 +21,8 @@ namespace rtype::engine {
 
 /** @returns The text of the whole numbers of @p range: `1 to 100`. */
 [[nodiscard]] std::string rangeText(WholeNumberRange range);
+
+/** @returns The text of the decimal numbers of @p range: `0.25 to 4`. */
+[[nodiscard]] std::string rangeText(DecimalRange range);
 
 }  // namespace rtype::engine
