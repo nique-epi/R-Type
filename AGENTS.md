@@ -143,12 +143,14 @@ Paths below are relative to `.claude/rules/`.
 
 **Reasoning — `fix/reasoning/`**
 - `fix/reasoning/fix-reasoning-a-detour-comes-back-to-where-it-started.md`
+- `fix/reasoning/fix-reasoning-a-generated-sheet-keeps-the-limits-of-its-reader.md`
 - `fix/reasoning/fix-reasoning-a-guard-after-the-write-is-only-an-alarm.md`
 - `fix/reasoning/fix-reasoning-a-library-may-fail-without-throwing.md`
 - `fix/reasoning/fix-reasoning-a-second-connection-of-a-test-waits-like-the-first.md`
 - `fix/reasoning/fix-reasoning-a-pointer-is-read-in-the-grid-it-is-compared-with.md`
 - `fix/reasoning/fix-reasoning-a-sanitizer-sees-only-what-leaves-the-allocation.md`
 - `fix/reasoning/fix-reasoning-a-session-opened-to-read-holds-a-seat.md`
+- `fix/reasoning/fix-reasoning-shrinking-a-body-keeps-the-reach-of-its-attacks.md`
 - `fix/reasoning/fix-reasoning-a-key-held-down-repeats-its-press.md`
 - `fix/reasoning/fix-reasoning-a-new-highlight-is-cleared-by-every-path-that-sets-another.md`
 - `fix/reasoning/fix-reasoning-a-screen-pushed-over-others-leaves-them-running.md`
@@ -174,6 +176,7 @@ Paths below are relative to `.claude/rules/`.
 - `fix/reasoning/fix-reasoning-use-measurements-to-falsify-before-coding.md`
 - `fix/reasoning/fix-reasoning-two-queues-are-drained-against-the-order-of-their-pushes.md`
 - `fix/reasoning/fix-reasoning-validate-the-instrument-before-reporting-a-count.md`
+- `fix/reasoning/fix-reasoning-a-weak-point-is-reached-from-where-shots-come.md`
 - `fix/reasoning/fix-reasoning-verify-the-premise-before-fixing-downstream.md`
 
 **Execution (shell, git, build) — `fix/execution/`**
@@ -183,6 +186,8 @@ Paths below are relative to `.claude/rules/`.
 - `fix/execution/fix-execution-a-split-commit-carries-its-own-links.md`
 - `fix/execution/fix-execution-a-dll-exports-what-its-own-standard-compiled.md`
 - `fix/execution/fix-execution-a-library-a-public-header-includes-is-linked-public.md`
+- `fix/execution/fix-execution-a-name-removed-from-a-luau-script-is-searched.md`
+- `fix/execution/fix-execution-a-protocol-bump-searches-the-tests-for-the-old-version.md`
 - `fix/execution/fix-execution-a-downloaded-artifact-keeps-its-folders.md`
 - `fix/execution/fix-execution-a-static-library-reached-twice-on-the-link-line.md`
 - `fix/execution/fix-execution-a-test-added-to-an-executable-links-what-it-uses.md`
