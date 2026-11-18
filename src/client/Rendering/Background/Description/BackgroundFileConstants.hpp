@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <string_view>
 #include "BackgroundColorConstants.hpp"
+#include "BackgroundFileKeyConstants.hpp"
 #include "DecimalRange.hpp"
 #include "WholeNumberRange.hpp"
 
@@ -11,11 +12,12 @@ namespace rtype::client {
 
 /** @brief The folder of a content folder that holds its backgrounds, one
  * `.toml` file each, named after the background. */
-constexpr std::string_view BACKGROUND_FOLDER_IN_ASSETS = "backgrounds";
+constexpr std::string_view BACKGROUND_FOLDER_IN_ASSETS =
+    game::BACKGROUND_FOLDER_IN_ASSETS;
 
 /** @brief The keys of the root of a background file: its layers, from the
  * farthest to the nearest, and its emission groups, which it may leave out. */
-constexpr std::string_view LAYER_TABLES_KEY = "layer";
+constexpr std::string_view LAYER_TABLES_KEY = game::BACKGROUND_LAYER_TABLES_KEY;
 constexpr std::string_view GROUP_TABLES_KEY = "group";
 constexpr std::array BACKGROUND_ROOT_KEYS{LAYER_TABLES_KEY, GROUP_TABLES_KEY};
 
@@ -32,10 +34,11 @@ constexpr std::size_t MOST_TRAIL_STOPS = 16;
 constexpr std::string_view LAYER_NAME_KEY = "name";
 constexpr std::string_view LAYER_MOTION_KEY = "motion";
 constexpr std::string_view LAYER_ENTRANCE_KEY = "entrance";
-constexpr std::string_view IMAGE_CONTENT_KEY = "image";
-constexpr std::string_view TILE_CONTENT_KEY = "tiles";
-constexpr std::string_view PARTICLE_CONTENT_KEY = "particles";
-constexpr std::string_view PROP_CONTENT_KEY = "props";
+constexpr std::string_view IMAGE_CONTENT_KEY = game::BACKGROUND_IMAGE_KEY;
+constexpr std::string_view TILE_CONTENT_KEY = game::BACKGROUND_TILES_KEY;
+constexpr std::string_view PARTICLE_CONTENT_KEY =
+    game::BACKGROUND_PARTICLES_KEY;
+constexpr std::string_view PROP_CONTENT_KEY = game::BACKGROUND_PROPS_KEY;
 constexpr std::array LAYER_CONTENT_KEYS{IMAGE_CONTENT_KEY, TILE_CONTENT_KEY,
                                         PARTICLE_CONTENT_KEY, PROP_CONTENT_KEY};
 constexpr std::array LAYER_KEYS{LAYER_NAME_KEY,     LAYER_MOTION_KEY,
@@ -64,16 +67,16 @@ constexpr engine::DecimalRange SIZE_RANGE{.lowest = 0.0, .highest = 65536.0};
 
 /** @brief The keys of `image`: the asset id of its file, and where its
  * top-left corner lies, 0 on an axis it leaves out. */
-constexpr std::string_view FILE_KEY = "file";
+constexpr std::string_view FILE_KEY = game::BACKGROUND_FILE_KEY;
 constexpr std::string_view IMAGE_X_KEY = "x";
 constexpr std::string_view IMAGE_Y_KEY = "y";
 constexpr std::array IMAGE_KEYS{FILE_KEY, IMAGE_X_KEY, IMAGE_Y_KEY};
 
 /** @brief The keys of `tiles` and of `props`: the asset ids of the LDtk
  * project and of the tileset, and the name of the layer of the project. */
-constexpr std::string_view PROJECT_KEY = "project";
+constexpr std::string_view PROJECT_KEY = game::BACKGROUND_PROJECT_KEY;
 constexpr std::string_view PROJECT_LAYER_KEY = "layer";
-constexpr std::string_view TILESET_KEY = "tileset";
+constexpr std::string_view TILESET_KEY = game::BACKGROUND_TILESET_KEY;
 constexpr std::array PROJECT_LAYER_KEYS{PROJECT_KEY, PROJECT_LAYER_KEY,
                                         TILESET_KEY};
 
@@ -81,7 +84,7 @@ constexpr std::array PROJECT_LAYER_KEYS{PROJECT_KEY, PROJECT_LAYER_KEY,
  * look, a pixel or sprites. */
 constexpr std::string_view AREA_KEY = "area";
 constexpr std::string_view PIXEL_KEY = "pixel";
-constexpr std::string_view SPRITES_KEY = "sprites";
+constexpr std::string_view SPRITES_KEY = game::BACKGROUND_SPRITES_KEY;
 
 /** @brief The keys of `area`, all four needed. */
 constexpr std::string_view AREA_LEFT_KEY = "left";

@@ -12,6 +12,7 @@ target_link_libraries(rtype_client_background_description
     rtype_client_exceptions
     rtype_engine_exceptions
     rtype_engine_time
+    rtype_game_backgrounds
   PRIVATE
     rtype_client_asset_library
     rtype_engine_data_files
