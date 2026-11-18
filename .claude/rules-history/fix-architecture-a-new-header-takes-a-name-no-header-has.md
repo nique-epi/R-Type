@@ -36,3 +36,15 @@ Calibration: on `origin/main` at `edf3388`, `git ls-files -- '*/EncodedMessage.h
 **Rule added.** Search the type name itself in `src/` and `tests/`, and the name of a free function at namespace scope, before declaring them; choose a name that says what sets the new type apart.
 
 **Revised the same day, after a review.** The first commands used `-P` (PCRE, missing from some builds of git), missed a type written with an attribute (`struct [[nodiscard]] Result`), left out untracked files, and searched free functions in headers only. The search is now portable, includes untracked files, reads attributes, says which lines are a clash (a forward declaration of the same type is not), and covers sources for free functions.
+
+## Update (2026-11-18) — the searches run on the whole branch before the push
+
+**Context.** A branch turned the background of the client into data. Its layers of particles keep their particles in a struct of `src/client/Rendering/Background/Layers/`, added with the classes that move and paint them.
+
+**Mistake.** That struct was declared `rtype::client::Particle`, in `Particle.hpp`. `src/client/Rendering/Effects/Ground/Particle.hpp` already declared a `rtype::client::Particle`, the component of the ground effects, with other members and another size. Both searches of this rule would have printed it; neither was run on that name. Every test passed, and the client was started for a few seconds on its title, where no effect is painted. Built in Release and played, the client stopped on a segmentation fault 2.6 s into a game: `colorAt()`, called by `paintGroundEffects()`, read the colors of a particle of an effect as a null pointer and a size of 171 209 680. `nm` on the client showed one `ComponentStorage<rtype::client::Particle>` and one `std::vector<rtype::client::Particle>::emplace_back` for the two structs.
+
+**Root cause.** The searches were steps to take when a header or a type is written, with nothing that runs them again once the branch is whole. No test could stand in for them: no test executable links the layers of a background and the effects of a game together, so only the program held both definitions.
+
+**Rule added.** Before the first push of a branch, and before each push that adds a header or a type, both searches run on every header name and every type name the branch adds. The rule says why the suite cannot show a clash, and what a clash looks like when it crashes.
+
+**Fix.** The particle of a layer is `LayerParticle`, in `LayerParticle.hpp`; `nm` then shows one `emplace_back` for each type.
