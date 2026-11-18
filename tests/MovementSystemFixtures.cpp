@@ -2,6 +2,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include "CollisionBox.hpp"
 #include "ComponentRegistry.hpp"
 #include "Direction.hpp"
 #include "DirectionConstants.hpp"
@@ -11,7 +12,10 @@
 #include "Intent.hpp"
 #include "MovementSystem.hpp"
 #include "MovementSystemTestConstants.hpp"
+#include "Obstacle.hpp"
+#include "ObstacleContact.hpp"
 #include "Position.hpp"
+#include "ShipMotion.hpp"
 #include "SimulatedClock.hpp"
 #include "SteadyMotion.hpp"
 #include "SystemScheduler.hpp"
@@ -46,6 +50,27 @@ engine::Entity steadyBodyAtSpeed(engine::EntityRegistry& entities,
   components.add(body, Intent{.direction = Direction{.x = FULL_STEERING,
                                                      .y = SPEED_Y / SPEED_X}});
   return body;
+}
+
+engine::Entity shipHoldingRight(engine::EntityRegistry& entities,
+                                engine::ComponentRegistry& components) {
+  const engine::Entity ship = entities.create();
+  components.add(ship, Position{.x = SHIP_START_X, .y = WALL_ROW_Y});
+  components.add(ship, ShipMotion{});
+  components.add(ship,
+                 Intent{.direction = Direction{.x = FULL_STEERING, .y = 0.0F},
+                        .steered = true});
+  return ship;
+}
+
+engine::Entity wallDoing(engine::EntityRegistry& entities,
+                         engine::ComponentRegistry& components,
+                         ObstacleContact contact) {
+  const engine::Entity wall = entities.create();
+  components.add(wall, Position{.x = WALL_X, .y = WALL_ROW_Y});
+  components.add(wall, WALL_BOX);
+  components.add(wall, Obstacle{.contact = contact});
+  return wall;
 }
 
 }  // namespace rtype::game::testing

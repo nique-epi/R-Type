@@ -1,35 +1,13 @@
 #pragma once
 
 #include <SFML/System/Vector2.hpp>
-#include <array>
 #include <chrono>
-#include <cstddef>
-#include <cstdint>
 #include <numbers>
 #include <string_view>
-#include "PlayfieldConstants.hpp"
-#include "Star.hpp"
-#include "StarPlane.hpp"
+#include "PixelGridConstants.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
-
-/**
- * @brief Size of one background pixel, in logical units of the playfield.
- *
- * The background is painted at a quarter of the playfield resolution, then
- * enlarged over it: see ScrollingBackground for how its pixels stay sharp.
- */
-constexpr float BACKGROUND_PIXEL_SIZE = 4.0F;
-
-/** @brief Size of the background, in background pixels. */
-constexpr float BACKGROUND_WIDTH =
-    game::PLAYFIELD_WIDTH / BACKGROUND_PIXEL_SIZE;
-constexpr float BACKGROUND_HEIGHT =
-    game::PLAYFIELD_HEIGHT / BACKGROUND_PIXEL_SIZE;
-constexpr sf::Vector2u BACKGROUND_SIZE(
-    static_cast<unsigned int>(BACKGROUND_WIDTH),
-    static_cast<unsigned int>(BACKGROUND_HEIGHT));
 
 /**
  * @brief Columns a plane of the sky keeps beyond each side of the background,
@@ -44,10 +22,6 @@ constexpr sf::Vector2u PLANE_CANVAS_SIZE(
  * its edges. */
 constexpr float VIEW_HALF_SHARE = 0.5F;
 
-/** @brief The planes of the starfield, in the order they are drawn. */
-constexpr std::array STAR_PLANES{StarPlane::FarStars, StarPlane::Planet,
-                                 StarPlane::MiddleStars, StarPlane::NearStars};
-
 /**
  * @brief Longest time the background moves by in one frame.
  *
@@ -57,99 +31,8 @@ constexpr std::array STAR_PLANES{StarPlane::FarStars, StarPlane::Planet,
 constexpr engine::Duration MAXIMUM_BACKGROUND_STEP =
     std::chrono::milliseconds(50);
 
-/**
- * @brief Offset from the top-left corner of a pixel to its center: a point
- * drawn there lights exactly that pixel.
- */
-constexpr sf::Vector2f PIXEL_CENTER(0.5F, 0.5F);
-
-/** @brief Offsets to the pixels around a pixel. */
-constexpr sf::Vector2i PIXEL_ABOVE(0, -1);
-constexpr sf::Vector2i PIXEL_BELOW(0, 1);
-constexpr std::array CROSS_DIRECTIONS{sf::Vector2i(-1, 0), sf::Vector2i(1, 0),
-                                      PIXEL_ABOVE, PIXEL_BELOW};
-constexpr std::array DIAGONAL_DIRECTIONS{
-    sf::Vector2i(1, 1), sf::Vector2i(-1, -1), sf::Vector2i(1, -1),
-    sf::Vector2i(-1, 1)};
-
-/**
- * @brief The three star layers, in the order of StarDepth: the farther a
- * layer, the more stars it holds and the slower they go.
- */
-constexpr std::array STAR_LAYERS{
-    StarLayer{.depth = StarDepth::Far, .count = 441, .speed = 4.5F},
-    StarLayer{.depth = StarDepth::Middle, .count = 90, .speed = 12.0F},
-    StarLayer{.depth = StarDepth::Near, .count = 36, .speed = 30.0F},
-};
-
-/**
- * @brief A star whose column goes further left than this margin comes back
- * as far beyond the right edge, at a new height: it travels
- * STAR_WRAP_DISTANCE columns.
- */
-constexpr int STAR_WRAP_MARGIN = 4;
-constexpr int STAR_WRAP_DISTANCE =
-    static_cast<int>(BACKGROUND_WIDTH) + (2 * STAR_WRAP_MARGIN);
-
-/** @brief Chance that a star is warm: a warm near star is drawn gold. */
-constexpr float WARM_STAR_CHANCE = 0.2F;
-
-/** @brief Each star twinkles during one StarTwinkleStep out of
- * STAR_TWINKLE_CYCLE_STEPS. */
-constexpr std::int64_t STAR_TWINKLE_CYCLE_STEPS = 8;
-
-/**
- * @brief Planet image: a sphere PLANET_RADIUS pixels in radius, centered in an
- * image wide enough for its ring, which spans 1.9 radii on each side.
- */
-constexpr int PLANET_RADIUS = 39;
-constexpr int PLANET_HALF_WIDTH = 2 * PLANET_RADIUS;
-constexpr int PLANET_IMAGE_EXTRA_ROWS = 7;
-constexpr sf::Vector2u PLANET_IMAGE_SIZE(
-    static_cast<unsigned int>((2 * PLANET_HALF_WIDTH) + 1),
-    static_cast<unsigned int>((2 * PLANET_RADIUS) + PLANET_IMAGE_EXTRA_ROWS));
-constexpr sf::Vector2i PLANET_CENTER(PLANET_HALF_WIDTH,
-                                     static_cast<int>(PLANET_IMAGE_SIZE.y) / 2);
-
-/**
- * @brief Light on the planet: from the left and the top across the sphere,
- * and from the viewer. Kept below 1 so dithering never goes past the
- * lightest shade.
- */
-constexpr sf::Vector2f PLANET_LIGHT_ACROSS(-0.55F, -0.45F);
-constexpr float PLANET_LIGHT_FROM_VIEWER = 0.7F;
-constexpr float PLANET_BRIGHTEST_LIGHT = 0.999F;
-
-/**
- * @brief 2 x 2 Bayer matrix: thresholds, in quarters, that mix two
- * neighbouring shades of the planet into a checkerboard.
- */
-constexpr std::array PLANET_DITHER_MATRIX{std::array{0, 2}, std::array{3, 1}};
-constexpr float PLANET_DITHER_LEVELS = 4.0F;
-
-/**
- * @brief Planet ring: half width and half height in planet radii, tilt in
- * pixels, and angle between two of its points, in radians.
- */
-constexpr float PLANET_RING_WIDTH_RADII = 1.9F;
-constexpr float PLANET_RING_HEIGHT_RADII = 0.32F;
-constexpr float PLANET_RING_TILT = 2.0F;
-constexpr float PLANET_RING_ANGLE_STEP = 0.01F;
+/** @brief A whole turn, in radians. */
 constexpr float FULL_TURN = 2.0F * std::numbers::pi_v<float>;
-
-/**
- * @brief Planet movement: speed towards the left in pixels per second, start
- * and height as shares of the background, and how far beyond the right edge
- * it comes back once it has left on the left.
- */
-constexpr float PLANET_SPEED = 1.8F;
-constexpr float PLANET_START_SHARE_OF_WIDTH = 0.6F;
-constexpr float PLANET_TOP_SHARE_OF_HEIGHT = 0.16F;
-constexpr float PLANET_REENTRY_MARGIN = 10.0F;
-
-/** @brief Number of colors along the tail of a shooting star or a comet. */
-constexpr std::size_t TAIL_GRADIENT_STOP_COUNT = 4;
-
 /**
  * @brief Halo: the background is blurred with a Gaussian of this standard
  * deviation, in background pixels, sampled over HALO_KERNEL_DEVIATIONS
@@ -165,8 +48,22 @@ constexpr int HALO_KERNEL_RADIUS =
 
 constexpr std::string_view BACKGROUND_LOGGER_NAME = "Background";
 
-/** @brief A star moving more than STREAK_SPEED_FACTOR times its own speed is
- * drawn with the streak it covers in one SIMULATION_TICK_DURATION. */
+/** @brief The background the sky shows when a level names no biome, behind
+ * the menus too, and for a biome it has no background for. */
+constexpr std::string_view DEFAULT_BACKGROUND_NAME = "space";
+
+/** @brief The layers behind the entrance of a background show from where the
+ * entrance begins, fading in over SEAM_EDGE_WIDTH columns of dither. */
+constexpr int SEAM_EDGE_WIDTH = 16;
+
+/** @brief Once the entrance of a background begins left of this column, it
+ * has left the screen with its fringe, whatever the shake of the camera, and
+ * the background it replaced is no longer drawn. */
+constexpr int ENTRANCE_GONE_COLUMN = -2 * SEAM_EDGE_WIDTH;
+
+/** @brief A particle of a layer that warps at more than STREAK_SPEED_FACTOR
+ * times its own speed is drawn with the streak its layer covers in one
+ * SIMULATION_TICK_DURATION. */
 constexpr float STREAK_SPEED_FACTOR = 1.5F;
 
 }  // namespace rtype::client

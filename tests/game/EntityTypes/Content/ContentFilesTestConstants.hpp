@@ -74,6 +74,15 @@ constexpr std::string_view CRIMSON_PIXELS = "\x89PNG\r\n\x1a\ncrimson";
  * assets and one bringing its own. */
 constexpr std::size_t FILES_OF_THE_STACK = 5;
 
+/** @brief A background of the resource that shows the sprite sheet one of
+ * its sheets names, and the files of the stack with it: one more. */
+constexpr std::string_view CRIMSON_BACKGROUND_FILE = "backgrounds/crimson.toml";
+constexpr std::string_view BACKGROUND_SHOWING_THE_CRIMSON_BYDOS =
+    "[[layer]]\nname = \"bydos\"\n"
+    "image = { file = \"sprites/crimson/bydos.png\" }\n";
+constexpr std::size_t FILES_OF_THE_STACK_AND_A_BACKGROUND =
+    FILES_OF_THE_STACK + 1;
+
 /** @brief The example resource the repository ships, beside its assets, and
  * the sheet and sprite sheet it brings. */
 constexpr std::string_view EXAMPLE_RESOURCE = "resources/crimson-drifter";

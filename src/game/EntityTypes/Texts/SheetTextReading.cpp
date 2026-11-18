@@ -24,6 +24,7 @@
 #include "GameException.hpp"
 #include "MaskConstants.hpp"
 #include "MaskSheet.hpp"
+#include "ObstacleContact.hpp"
 #include "PathText.hpp"
 #include "PixelMask.hpp"
 #include "SheetMaskText.hpp"
@@ -318,6 +319,17 @@ CollisionBox hitboxOf(const engine::DataFileTable& gameplay) {
     return enclosingBoxOf(parts);
   }
   return boxAt(engine::tableAt(gameplay, HITBOX_KEY));
+}
+
+std::optional<ObstacleContact> obstacleContactOf(
+    const engine::DataFileTable& gameplay) {
+  const std::optional<engine::DataFileTable> obstacle =
+      engine::optionalTableAt(gameplay, OBSTACLE_KEY);
+  if (!obstacle.has_value()) {
+    return std::nullopt;
+  }
+  engine::refuseUnknownKeys(*obstacle, OBSTACLE_KEYS);
+  return CONTACTS.at(engine::choiceAt(*obstacle, CONTACT_KEY, CONTACT_NAMES));
 }
 
 std::string maskPathOf(std::string_view sheetName) {

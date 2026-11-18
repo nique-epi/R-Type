@@ -1,0 +1,1 @@
+rtype_add_test(NAME client_pixel_tests SOURCES PixelBatchTest.cpp PixelRoundingTest.cpp IntegerScaleTest.cpp ShiftedViewTest.cpp LIBS rtype_client_pixel_batch rtype_client_pixel_rounding rtype_client_shifted_view rtype_client_integer_scale GTest::gmock)

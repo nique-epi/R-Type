@@ -6,6 +6,7 @@ target_link_libraries(rtype_game_damage_rules
   PUBLIC
     rtype_engine_event_bus
     rtype_engine_component_registry
+    rtype_game_behaviours_piloting
     rtype_game_components
     rtype_game_events
 )

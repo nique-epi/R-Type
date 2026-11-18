@@ -9,6 +9,7 @@ target_link_libraries(rtype_game_entity_content
     rtype_identifiers
   PRIVATE
     rtype_engine_data_files
+    rtype_game_backgrounds
     rtype_game_entity_sheet_format
     rtype_game_exceptions
     rtype_logging

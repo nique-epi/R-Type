@@ -31,6 +31,10 @@ namespace rtype::game {
  *   a player hits a missile of an enemy only when the second is Shootable,
  *   and the two fly through each other otherwise;
  * - a player and an enemy become a ShipContact;
+ * - a player and an obstacle become a ShipContact, whether the ship carries a
+ *   ViewDelay or not: LagCompensatedHitSystem records no obstacle, so the
+ *   contact is judged in the present; a blocking obstacle only overlaps a
+ *   ship it pins against an edge;
  * - a player and a look item become a LookItemTouched.
  * A missile of a player and the ship of a player become a MissileHit only
  * with friendly fire on, when the MissileOwner of the missile and the

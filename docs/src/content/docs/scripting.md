@@ -191,6 +191,32 @@ end)
 - **Once the budget of the tick is spent, the hit applies** without a call.
 - **A failure lets the hit apply**: a function that fails, waits or runs past its budget is forgotten, and stops the script of its body at its next tick, as a failed step does.
 
+## Reacting to a hit once it applied
+
+The sheet of a body may name a function told of every hit of a missile on that body once the server applied it: a wall that cracks, a crate that drops a bonus, a body that changes its look below half its health.
+
+```lua
+behaviours.on_hit("crack", function(hit)
+	if hit.destroyed then
+		bus.emit("wall_broken", { id = hit.id })
+	end
+end)
+```
+
+```toml
+[gameplay]
+side = "obstacle"
+layer = "wall"
+pilot = "straight"
+on_hit = "crack"
+```
+
+`behaviours.on_hit(name, function)` declares a hit handler while the script is read, as `behaviours.register` declares a behaviour; two handlers of one name stop the supervisor at start (`DuplicateHitHandlerException`), and a sheet that names a handler no script declared is refused. The handler serves every body whose sheet names it, any side but `player`, and whatever pilots the body, a built-in behaviour included. `DamageRules` calls it after the hit applied and its announcements were published, a hit on a body without `health` included, so what the function publishes arrives after them. It receives `id` the network id of the body, `missile` that of the missile, `damage` the health points the hit took (0 for a body without `health`, or a boss arriving), `health` the points left, absent for a body without `health`, and `destroyed`. It cannot undo the hit, and may create and remove bodies.
+
+- **It is a step without the handle**: it has the 2 ms of a step and counts in the 8 ms of the tick; `e` is not given, and it cannot wait.
+- **Once the budget of the tick is spent, it is not called**: the hit still applies.
+- **A failure is reported once**, as `the on_hit function <name> failed: <reason>`; the hit stays applied, no body is stopped, and later hits still call it.
+
 ## Directing a level
 
 A script may also write a level: what comes, when the decor moves and stops, which biome the players see and where a lost team starts again. A server plays it with the setting `level` (see [Server](/R-Type/server/#level-a-script-directs-leveldirector)); without it, a game plays the waves of its difficulty.
@@ -222,7 +248,7 @@ level.register("training_run", {
 | `level.wait_scroll(position)` | stops the stage until the level scrolled `position` logical units; while the scroll is paused short of it, the stage waits. It only runs in a stage. |
 | `level.scroll()` | how far the level scrolled, in logical units. |
 | `level.pause_scroll()`, `level.resume_scroll()` | stop the scroll where it is, and let it move on. The decor of the players stops and moves with it. |
-| `level.biome(name)` | names the biome the players see from now: 1 to 24 lowercase letters, digits and underscores. A client draws the decor it has for that name (see [Client](/R-Type/client/#decor-of-a-biome-biomedecor)), and the stars alone for a name it does not know. A new name begins where the scroll stands: the biome enters from the right edge of the screen from there, through the entrance its first map opens on, if it has one; naming the biome already shown changes nothing. |
+| `level.biome(name)` | names the biome the players see from now: 1 to 24 lowercase letters, digits and underscores. A client shows the background named after it, a file of its `assets/backgrounds/` (see [Writing a background](/R-Type/backgrounds/)), and the sky of open space for a name it has no file for. A new name begins where the scroll stands: a background that has an entrance arrives from the right edge of the screen from there, through that entrance; naming the biome already shown changes nothing. |
 | `level.enemies()` | how many enemies the world holds, the bodies of side `enemy`. |
 | `level.placements()` | the enemies the LDtk file of the level places, sorted by `x`: a list of tables `{ entity, sheet, x, y, width, fields }` (see [Placing the enemies in LDtk](#placing-the-enemies-in-ldtk)); empty for a level without an `ldtk` option. |
 | `level.spawn_placed()` | from now on, each placed enemy appears as the scroll brings its left edge to the right edge of the playfield, for the rest of the level, restarts from a checkpoint included; calling it again changes nothing. It only runs during a game. |
@@ -235,7 +261,14 @@ What a script may rely on:
 - **A boss comes as any body does.** A stage creates it with `behaviours.spawn`, past the right edge, such as `behaviours.spawn("bydo_tyrant", { x = 2176, y = 492 }, { health_percent = 40 })`: the players get the WARNING once it appeared, nothing steers it for `BOSS_ARRIVAL_WARNING` (4400 ms), then its health is scaled for the players connected and the `boss_health_percent` of the difficulty and it enters. `level.enemies()` counts it from the tick after the stage created it. Several bosses may come in one level: each plays the whole arrival again on the client, the alarm, the WARNING, the music of the boss, then its bar. In a game that plays a level, the music of the game comes back once that boss is defeated; in a game of waves, the music of its boss plays until the game ends. A team that loses every life during a warning starts the stage again, and the boss of that warning is removed with every other body.
 - **Any script may read and move the level during a game that plays one.** The behaviour of a boss may call `level.pause_scroll()` when it arrives. In a game that plays its waves, every function of `level` but `register` raises an error, which stops the body that called it. `bus.on` only runs in the function of a body, so a stage hears no event: it polls, as the example does with `level.enemies()`.
 
-The repository ships one level, `training_run`, in `resources/training-run/`: two stages, fifteen enemies placed in `levels/training_run.ldtk`, a pause of the scroll on each Reaper until it is destroyed, a checkpoint, the stars and then the biome `fosse`. Play it with `ensure training-run` and `set level training_run` in `server.cfg`.
+The repository ships two levels:
+
+| Level | Resource | What it plays |
+|---|---|---|
+| `fosse` | `resources/fosse/` | named after the biome it leads into: five stages, each one after the first at a checkpoint: two in open space, the second ending on the Bydo Tyrant with 40 % of its health as a mini-boss, then two in the Pit, entered through its cave, and a last stage on the Bydo Tyrant at full health. The positions of its Bydos are written in the script until a level places them in its LDtk project. |
+| `training_run` | `resources/training-run/` | two stages, fifteen enemies placed in `levels/training_run.ldtk`, a pause of the scroll on each Reaper until it is destroyed, a checkpoint, the stars and then the biome `fosse` |
+
+Play one with `ensure fosse` and `set level fosse` in `server.cfg`, or `ensure training-run` and `set level training_run`.
 
 ## Placing the enemies in LDtk
 
@@ -321,6 +354,7 @@ The three sides found the same 9,457,143 collisions, about 2,600 a tick: 300 bod
 | Change what a published event may carry | `ScriptEvent` and `ScriptEventField` in `src/game/Events/`, read by `publishedFields()` in `LuauEventBindings.cpp` |
 | Change when a subscription ends | `LuauEventSubscription` and `LuauEventSubscriptions`, what one body keeps subscribed, in `src/game/Scripting/Events/` |
 | Change what a pre_hit function receives, returns, or what its failure does | `LuauPreHit` and `LuauBehaviourState` in `src/game/Scripting/`, the hit table in `pushHitTable()` of `LuauBehaviourTables.cpp`; who asks it, `targetLetsHit()` in `src/game/Systems/CollisionRules/PreHitCheck.cpp` |
+| Change what an on_hit function receives, or when it is called | `LuauHitHandler` in `src/game/Scripting/`, the hit table in `pushAppliedHitTable()` of `LuauBehaviourTables.cpp`; who calls it, `DamageRules::onMissileHit()` in `src/game/Systems/DamageRules/`; the call on a thread of its own, shared with pre_hit, in `LuauSingleCall` |
 | Change what happens to a body whose subscribed function failed | `LuauBehaviour::steer()` in `src/game/Scripting/`, the only place that stops a script |
 | Change what a level script may call, or what it refuses | the functions of `LuauLevels` in `src/game/Scripting/Level/LuauLevels.cpp`, their names and messages in `LuauLevelConstants.hpp` |
 | Change when a stage is resumed, or what a checkpoint keeps | `LuauLevelRun` in `src/game/Scripting/Level/`, `LevelCheckpoint` in `src/game/Level/` |

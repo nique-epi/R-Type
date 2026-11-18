@@ -1,0 +1,116 @@
+# The sky of the menus and of open space: three layers of stars, a ringed
+# planet, and the sky events. Places and sizes are in background pixels, the
+# background being 480 by 270; speeds are in background pixels per second.
+
+[[layer]]
+name = "far stars"
+motion = { autoscroll = 4.5, repeat = 488, warps = true }
+
+[layer.particles]
+population = 441
+area = { left = 0, top = 0, width = 480, height = 270 }
+pixel = "deep_blue"
+twinkle = "blue"
+twinkle_steps = 8
+warp_trail = "deep_blue"
+
+[[layer]]
+name = "planet"
+motion = { autoscroll = 1.8, repeat = 647 }
+image = { file = "backgrounds/space/planet.png", x = 288, y = 43 }
+
+[[layer]]
+name = "middle stars"
+motion = { autoscroll = 12, repeat = 488, warps = true }
+
+[layer.particles]
+population = 90
+area = { left = 0, top = 0, width = 480, height = 270 }
+pixel = "pale_blue"
+twinkle = "blue"
+twinkle_steps = 8
+warp_trail = "blue"
+
+[[layer]]
+name = "near stars"
+motion = { autoscroll = 30, repeat = 488, warps = true }
+
+[layer.particles]
+population = 36
+area = { left = 0, top = 0, width = 480, height = 270 }
+twinkle_steps = 8
+warp_trail = "pale_blue"
+sprites = [
+  { file = "backgrounds/space/near_star.png", frames = 2, weight = 4, anchor_x = 1, anchor_y = 1 },
+  { file = "backgrounds/space/warm_star.png", frames = 2, weight = 1, anchor_x = 1, anchor_y = 1 },
+]
+
+# The sky events share one pace and never show more than four at once.
+[[group]]
+name = "sky events"
+most_alive = 4
+first_ms = 600
+every_ms = [800, 2600]
+
+[[layer]]
+name = "shooting stars"
+
+[layer.particles]
+group = "sky events"
+weight = 4
+area = { left = 168, top = 0, width = 312, height = 121.5 }
+speed = [300, 510]
+angle = [139.89, 162.81]
+life_ms = [133.33, 333.33]
+pixel = "star_white"
+
+[layer.particles.trail]
+longest = 12
+grow = 180
+shrink = 150
+stops = [
+  { until = 0.15, color = "star_white" },
+  { until = 0.4, color = "pale_blue" },
+  { until = 0.7, color = "blue" },
+  { until = 1, color = "deep_blue" },
+]
+
+[[layer]]
+name = "flares"
+
+[layer.particles]
+group = "sky events"
+weight = 1.5
+area = { left = 4, top = 4, width = 472, height = 262 }
+life_ms = [666.67, 1000]
+sprites = [
+  { file = "backgrounds/space/flare.png", frames = 64, anchor_x = 3, anchor_y = 3 },
+]
+
+[[layer]]
+name = "asteroids"
+
+[layer.particles]
+group = "sky events"
+weight = 1.5
+area = { left = 486, top = 0, width = 0, height = 270 }
+speed = [42, 108]
+drift = 9
+margin = 6
+sprites = [
+  { file = "backgrounds/space/asteroid.png", frames = 4, fps = [6, 18] },
+]
+
+[[layer]]
+name = "comets"
+
+[layer.particles]
+group = "sky events"
+weight = 1
+area = { left = 484, top = 10, width = 0, height = 250 }
+speed = [48, 78]
+drift = 7.5
+margin = 32
+sprites = [
+  { file = "backgrounds/space/comet.png", frames = 15, anchor_y = 1, fps = [60, 60] },
+]

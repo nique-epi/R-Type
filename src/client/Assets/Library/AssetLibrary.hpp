@@ -30,7 +30,8 @@ class AssetLibrary {
   [[nodiscard]] std::filesystem::path fileOf(std::string_view assetId) const;
 
   /** @brief Loads an asset unless it is already loaded; music is only located,
-   * since it is streamed when it plays. */
+   * since it is streamed when it plays. An asset is named by its id, or by
+   * the whole path of its file; any other name is refused as InvalidId. */
   [[nodiscard]] AssetLoadResult load(AssetKind kind, std::string_view assetId);
 
   [[nodiscard]] bool isLoaded(AssetKind kind, std::string_view assetId) const;

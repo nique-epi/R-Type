@@ -2,7 +2,9 @@
 
 #include <cstdint>
 #include <optional>
+#include <span>
 #include <vector>
+#include "Bounds.hpp"
 #include "IPlayerInputLink.hpp"
 #include "PlayerCommand.hpp"
 #include "Position.hpp"
@@ -46,6 +48,10 @@ class OwnShipPredictor {
    * A part of a state that lists the player with the ship followed but not
    * its entity changes nothing. */
   void apply(const network::WorldState& state);
+
+  /** @brief Stops the predicted ship against @p obstacles from the next
+   * command on (see ShipPrediction::seeObstacles()). */
+  void seeObstacles(std::span<const engine::Bounds> obstacles);
 
   /** @returns The entity id the server gave the ship, once a state listed it
    * and the prediction runs. */

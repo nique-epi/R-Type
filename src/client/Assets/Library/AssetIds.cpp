@@ -1,6 +1,7 @@
 #include "AssetIds.hpp"
 #include <algorithm>
 #include <cstddef>
+#include <filesystem>
 #include <string_view>
 #include "AssetConstants.hpp"
 
@@ -38,6 +39,10 @@ bool isValidAssetId(std::string_view assetId) {
     }
     remaining.remove_prefix(separator + 1);
   }
+}
+
+bool isWholeFilePath(std::string_view assetName) {
+  return std::filesystem::path(assetName).is_absolute();
 }
 
 }  // namespace rtype::client
