@@ -68,9 +68,10 @@ void ServerNetworkModule::install(engine::InstallContext& context) {
           engine::IntegerSettingDefinition{
               .name = std::string{PORT_SETTING_NAME},
               .defaultValue = port_,
-              .lowest = network::LOWEST_PORT,
+              .lowest = network::ANY_PORT,
               .highest = network::HIGHEST_PORT,
-              .help = "UDP port to listen on"});
+              .help = "UDP port to listen on, 0 for one the system "
+                      "chooses"});
   context.provide<IDatagramSender>(*server_);
   context.provide<IPlayerAdmission>(*server_);
   context.provide(tickDatagrams_);
@@ -88,6 +89,7 @@ void ServerNetworkModule::start() {
     server_->close();
     throw;
   }
+  boundPort_ = bound.port;
   logger_.info("listening on UDP port ", bound.port);
 }
 
@@ -95,9 +97,13 @@ void ServerNetworkModule::stop() {
   server_->stop();
   serverThread_.join();
   server_->close();
+  boundPort_.reset();
 }
 
 std::uint16_t ServerNetworkModule::listeningPort() const {
+  if (boundPort_.has_value()) {
+    return *boundPort_;
+  }
   return static_cast<std::uint16_t>(portSetting_->integer().value_or(port_));
 }
 

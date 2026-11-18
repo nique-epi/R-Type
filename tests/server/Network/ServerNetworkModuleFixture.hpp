@@ -8,6 +8,7 @@
 #include "Endpoint.hpp"
 #include "IModule.hpp"
 #include "NetworkConditions.hpp"
+#include "NetworkConstants.hpp"
 #include "ServerModuleFixture.hpp"
 #include "StageWork.hpp"
 #include "StopRequest.hpp"
@@ -16,8 +17,8 @@ class ServiceProbeModule;
 class PortProbeModule;
 
 /** @brief The base of the tests of the network module: the journal and
- * network modules of the server on a free port, then the probe the test
- * gives. */
+ * network modules of the server, then the probe the test gives, then a module
+ * that keeps the port the network module listens on once it started. */
 class ServerNetworkModuleFixture : public ServerModuleFixture {
  protected:
   /**
@@ -56,10 +57,15 @@ class ServerNetworkModuleFixture : public ServerModuleFixture {
 
   [[nodiscard]] rtype::server::StopRequest& stopRequest();
 
+  /** @returns The port the network module listens on, once the application
+   * started; ANY_PORT before. */
+  [[nodiscard]] std::uint16_t port() const;
+
   /** @returns The loopback address on @p port. */
   [[nodiscard]] static rtype::network::Endpoint loopbackOnPort(
       std::uint16_t port);
 
  private:
   rtype::server::StopRequest stopRequest_;
+  std::uint16_t port_{rtype::network::ANY_PORT};
 };

@@ -32,28 +32,29 @@
 using rtype::engine::Application;
 using rtype::engine::LoopStages;
 using rtype::engine::ModuleStartFailedException;
+using rtype::network::ANY_PORT;
 using rtype::network::Endpoint;
 using rtype::server::SERVER_LOOP_STAGES;
 
 /**
- * Given a port and a module listed after the network module that tries to bind
- * that port while it installs
+ * Given the network module on a port the system chooses, and a module listed
+ * after it that reads the port it listens on while it installs
  * When the application starts
- * Then the port was free during install(): the network module binds in start()
+ * Then that module read no bound port during install(), and the started
+ * network module listens on one: it binds in start()
  */
 TEST_F(ServerNetworkModuleFixture, BindsNothingWhileItInstalls) {
-  const std::uint16_t port = freeUdpPort();
   auto portProbe = std::make_unique<PortProbeModule>(
-      PORT_PROBE_MODULE,
-      std::vector<std::string>{std::string{rtype::server::NETWORK_MODULE_NAME}},
-      port);
+      PORT_PROBE_MODULE, std::vector<std::string>{
+                             std::string{rtype::server::NETWORK_MODULE_NAME}});
   const PortProbeModule* probe = portProbe.get();
   Application application(LoopStages(SERVER_LOOP_STAGES),
-                          networkModulesThen(port, std::move(portProbe)));
+                          networkModulesThen(ANY_PORT, std::move(portProbe)));
 
   application.start();
 
-  EXPECT_TRUE(probe->portWasFree());
+  EXPECT_EQ(probe->portAtInstall(), ANY_PORT);
+  EXPECT_NE(port(), ANY_PORT);
 }
 
 /**
@@ -63,17 +64,18 @@ TEST_F(ServerNetworkModuleFixture, BindsNothingWhileItInstalls) {
  * Then the first try fails and the second succeeds: stop() gives the port back
  */
 TEST_F(ServerNetworkModuleFixture, ListensOnItsPortFromStartToStop) {
-  const std::uint16_t port = freeUdpPort();
   Application application(
       LoopStages(SERVER_LOOP_STAGES),
-      networkModulesThen(port, probeRunning([](rtype::engine::Duration) {})));
+      networkModulesThen(ANY_PORT,
+                         probeRunning([](rtype::engine::Duration) {})));
   application.start();
+  const std::uint16_t listening = port();
 
-  const bool freeWhileStarted = portIsFree(port);
+  const bool freeWhileStarted = portIsFree(listening);
   application.stop();
 
   EXPECT_FALSE(freeWhileStarted);
-  EXPECT_TRUE(portIsFree(port));
+  EXPECT_TRUE(portIsFree(listening));
 }
 
 /**
@@ -84,9 +86,8 @@ TEST_F(ServerNetworkModuleFixture, ListensOnItsPortFromStartToStop) {
 TEST_F(ServerNetworkModuleFixture, ProvidesItsServicesToTheModulesAfterIt) {
   auto probeModule = probeRunning([](rtype::engine::Duration) {});
   const ServiceProbeModule* probe = probeModule.get();
-  Application application(
-      LoopStages(SERVER_LOOP_STAGES),
-      networkModulesThen(freeUdpPort(), std::move(probeModule)));
+  Application application(LoopStages(SERVER_LOOP_STAGES),
+                          networkModulesThen(ANY_PORT, std::move(probeModule)));
 
   application.start();
 
@@ -106,7 +107,7 @@ TEST_F(ServerNetworkModuleFixture,
   std::atomic<std::int64_t> lastElapsed{0};
   Application application(
       LoopStages(SERVER_LOOP_STAGES),
-      networkModulesThen(freeUdpPort(),
+      networkModulesThen(ANY_PORT,
                          probeRunning(countingPassesIn(passes, lastElapsed))));
   application.start();
 
@@ -123,7 +124,6 @@ TEST_F(ServerNetworkModuleFixture,
  * Then the work of a stage sees it among the datagrams of the tick
  */
 TEST_F(ServerNetworkModuleFixture, HandsTheTickTheDatagramsOfAnAdmittedPlayer) {
-  const std::uint16_t port = freeUdpPort();
   std::atomic<std::size_t> playerDatagrams{0};
   std::atomic<int> passes{0};
   ServiceProbeModule* probe = nullptr;
@@ -134,7 +134,7 @@ TEST_F(ServerNetworkModuleFixture, HandsTheTickTheDatagramsOfAnAdmittedPlayer) {
       });
   probe = probeModule.get();
   Application application(LoopStages(SERVER_LOOP_STAGES),
-                          networkModulesThen(port, std::move(probeModule)));
+                          networkModulesThen(ANY_PORT, std::move(probeModule)));
   application.start();
   rtype::network::NetworkContext clientContext;
   rtype::network::UdpSocket client{clientContext, loopbackOnPort(0)};
@@ -143,7 +143,7 @@ TEST_F(ServerNetworkModuleFixture, HandsTheTickTheDatagramsOfAnAdmittedPlayer) {
   rtype::network::PacketHeader header;
   header.sessionToken = ADMITTED_TOKEN;
 
-  client.send(loopbackOnPort(port), readyDatagram(header));
+  client.send(loopbackOnPort(port()), readyDatagram(header));
   clientContext.run();
   const int passesAfterSending = passes;
   const bool ranAgain = waitForPasses(passes, passesAfterSending + 2);
@@ -161,8 +161,7 @@ TEST_F(ServerNetworkModuleFixture, HandsTheTickTheDatagramsOfAnAdmittedPlayer) {
 TEST_F(ServerNetworkModuleFixture, TellsTheStopRequestWhenTheServerFails) {
   Application application(
       LoopStages(SERVER_LOOP_STAGES),
-      networkModulesThen(freeUdpPort(),
-                         probeRunning([](rtype::engine::Duration) {
+      networkModulesThen(ANY_PORT, probeRunning([](rtype::engine::Duration) {
                            throw std::runtime_error(STAGE_FAILURE_TEXT);
                          })));
   application.start();
@@ -207,9 +206,9 @@ TEST_F(ServerNetworkModuleFixture, FailsToStartWhenThePortIsTaken) {
 TEST_F(ServerNetworkModuleFixture, DelaysWhatItSendsByHalfTheSimulatedLag) {
   auto probeModule = probeRunning([](rtype::engine::Duration) {});
   const ServiceProbeModule* probe = probeModule.get();
-  Application application(LoopStages(SERVER_LOOP_STAGES),
-                          networkModulesOver(freeUdpPort(), LAGGING_NETWORK,
-                                             std::move(probeModule)));
+  Application application(
+      LoopStages(SERVER_LOOP_STAGES),
+      networkModulesOver(ANY_PORT, LAGGING_NETWORK, std::move(probeModule)));
   application.start();
   UdpTestClient client;
   const auto queuedAt = std::chrono::steady_clock::now();
