@@ -53,10 +53,6 @@ class Sky final : public ISky {
    * sky, or takes them off for nullptr, see ShownBackgrounds::layOver(). */
   void layOver(std::shared_ptr<const BackgroundCatalog> backgrounds);
 
-  /** @returns The catalog laid over the backgrounds of the sky; nullptr when
-   * none is. */
-  [[nodiscard]] const BackgroundCatalog* laidOver() const;
-
   /**
    * @brief Draws the sky over the whole playfield.
    *

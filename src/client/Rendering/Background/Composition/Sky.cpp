@@ -39,10 +39,6 @@ void Sky::layOver(std::shared_ptr<const BackgroundCatalog> backgrounds) {
   backgrounds_.layOver(std::move(backgrounds));
 }
 
-const BackgroundCatalog* Sky::laidOver() const {
-  return backgrounds_.laidOver();
-}
-
 void Sky::draw(sf::RenderTarget& target) {
   const LayeredBackground* const leaving = backgrounds_.leaving();
   const LayeredBackground* const shown = backgrounds_.shown();

@@ -106,10 +106,10 @@ bool ClientScreens::isEmpty() const { return screens_.isEmpty(); }
 void ClientScreens::followSessionBackgrounds() {
   std::shared_ptr<const BackgroundCatalog> session =
       sessionBackgrounds_->backgrounds();
-  if (session.get() != background_.laidOver() &&
-      holdsTheImagesOf(*assets_, session.get())) {
-    background_.layOver(std::move(session));
+  if (!holdsTheImagesOf(*assets_, session.get())) {
+    session.reset();
   }
+  background_.layOver(std::move(session));
 }
 
 }  // namespace rtype::client

@@ -263,8 +263,7 @@ TEST_F(ShownBackgroundsFixture, ABackgroundLaidOverIsShownForItsBiome) {
 /**
  * Given the space of the pack of a server laid over the sky
  * When what is laid over is taken off
- * Then the background shown is the sky of the client again, and nothing is
- * laid over
+ * Then the background shown is the sky of the client again
  */
 TEST_F(ShownBackgroundsFixture, TakingOffWhatIsLaidOverShowsTheSkyAgain) {
   ShownBackgrounds backgrounds = shippedSky();
@@ -274,7 +273,6 @@ TEST_F(ShownBackgroundsFixture, TakingOffWhatIsLaidOverShowsTheSkyAgain) {
 
   ASSERT_NE(backgrounds.shown(), nullptr);
   EXPECT_TRUE(backgrounds.shown()->shows(described(SHIPPED_SKY)));
-  EXPECT_EQ(backgrounds.laidOver(), nullptr);
 }
 
 /**

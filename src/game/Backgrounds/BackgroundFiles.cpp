@@ -5,7 +5,6 @@
 #include <iterator>
 #include <map>
 #include <optional>
-#include <ranges>
 #include <span>
 #include <string>
 #include <string_view>
@@ -15,6 +14,7 @@
 #include <vector>
 #include "BackgroundFileKeyConstants.hpp"
 #include "ContentFile.hpp"
+#include "ContentFolders.hpp"
 #include "DataFileConstants.hpp"
 #include "DataFileReading.hpp"
 #include "DataFileTable.hpp"
@@ -88,12 +88,12 @@ void append(std::vector<std::string>& names, std::vector<std::string> added) {
   std::ranges::move(added, std::back_inserter(names));
 }
 
-/** @returns Every file the background file @p file names, in the order of
- * its layers: the image of a layer, the project and the tileset of tiles or
- * props, the image of each sprite of particles. */
-std::vector<std::string> namedFilesOf(const std::filesystem::path& file) {
-  const std::string source = engine::shownPath(file);
-  const std::string text = engine::dataFileContent(file);
+/** @returns Every file the background whose text is @p text names, in the
+ * order of its layers: the image of a layer, the project and the tileset of
+ * tiles or props, the image of each sprite of particles. The errors call the
+ * background @p source. */
+std::vector<std::string> namedFilesOf(const std::string& text,
+                                      const std::string& source) {
   const toml::table root = engine::parseDataFile(text, source);
   std::vector<std::string> names;
   for (const engine::DataFileTable& layer : engine::tablesAt(
@@ -109,22 +109,6 @@ std::vector<std::string> namedFilesOf(const std::filesystem::path& file) {
   return names;
 }
 
-/** @returns The file @p name in the last of @p resourceFolders that holds
- * it; nothing when none does. */
-std::optional<std::filesystem::path> lastHolderOf(
-    std::span<const std::filesystem::path> resourceFolders,
-    const std::string& name) {
-  for (const std::filesystem::path& resource :
-       resourceFolders | std::views::reverse) {
-    std::filesystem::path file = resource / std::filesystem::path{name};
-    std::error_code ignored;
-    if (std::filesystem::is_regular_file(file, ignored)) {
-      return file;
-    }
-  }
-  return std::nullopt;
-}
-
 /**
  * @brief Adds to @p files the file @p name a background names, read from the
  * last resource of @p contentFolders that holds it; nothing when only the
@@ -138,14 +122,15 @@ void addNamedFile(BytesByPath& files,
   if (files.contains(name)) {
     return;
   }
-  const std::optional<std::filesystem::path> held =
-      lastHolderOf(contentFolders.subspan(1), name);
-  if (held.has_value()) {
-    files.try_emplace(name, engine::dataFileContent(*held));
-    return;
-  }
   const std::filesystem::path inAssets =
       contentFolders.front() / std::filesystem::path{name};
+  const std::filesystem::path lastHeld =
+      engine::contentFilesOf(contentFolders, std::filesystem::path{name})
+          .back();
+  if (lastHeld != inAssets) {
+    files.try_emplace(name, engine::dataFileContent(lastHeld));
+    return;
+  }
   std::error_code ignored;
   if (!std::filesystem::is_regular_file(inAssets, ignored)) {
     throw engine::UnreadableDataFileException(engine::shownPath(inAssets));
@@ -165,8 +150,10 @@ std::vector<identifiers::ContentFile> backgroundFilesIn(
   BytesByPath bytes;
   for (const auto& [path, file] :
        backgroundFilesOf(contentFolders.subspan(1))) {
-    bytes.insert_or_assign(path, engine::dataFileContent(file));
-    for (const std::string& name : namedFilesOf(file)) {
+    const std::string text = engine::dataFileContent(file);
+    bytes.insert_or_assign(path, text);
+    for (const std::string& name :
+         namedFilesOf(text, engine::shownPath(file))) {
       addNamedFile(bytes, contentFolders, name);
     }
   }

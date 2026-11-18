@@ -43,7 +43,7 @@ namespace rtype::client {
  * While the session plays the pack of a server that brings backgrounds, the
  * sky lays them over its own, from the frame their images are loaded, which
  * the loading screen of a game does; it takes them off the frame the session
- * is over.
+ * is over, and never shows one whose images are not loaded.
  *
  * The screens keep pointers to it, so it can be neither copied nor moved.
  */
@@ -85,8 +85,9 @@ class ClientScreens {
   [[nodiscard]] bool isEmpty() const;
 
  private:
-  /** @brief Lays over the sky the backgrounds of the session once their
-   * images are loaded, or takes off those of a session that is over. */
+  /** @brief Lays over the sky the backgrounds of the session while their
+   * images are loaded, and takes them off otherwise: a session that is over,
+   * or images not loaded yet or released. */
   void followSessionBackgrounds();
 
   const ServerSession* connection_;

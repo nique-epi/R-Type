@@ -114,10 +114,6 @@ void ShownBackgrounds::layOver(
   }
 }
 
-const BackgroundCatalog* ShownBackgrounds::laidOver() const {
-  return laidOverCatalog_.get();
-}
-
 LayeredBackground* ShownBackgrounds::backgroundOf(std::string_view biome) {
   const std::string_view name = biome.empty() ? DEFAULT_BACKGROUND_NAME : biome;
   LayeredBackground* const found = builtNamed(name);

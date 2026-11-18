@@ -7,6 +7,7 @@ target_link_libraries(rtype_game_backgrounds
     rtype_identifiers
   PRIVATE
     rtype_engine_data_files
+    rtype_engine_resources
     rtype_logging
 )
 

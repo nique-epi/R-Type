@@ -69,9 +69,6 @@ class ShownBackgrounds {
    */
   void layOver(std::shared_ptr<const BackgroundCatalog> catalog);
 
-  /** @returns The catalog laid over; nullptr when none is. */
-  [[nodiscard]] const BackgroundCatalog* laidOver() const;
-
  private:
   /** @returns The background of the biome @p biome, as the class says. */
   [[nodiscard]] LayeredBackground* backgroundOf(std::string_view biome);
