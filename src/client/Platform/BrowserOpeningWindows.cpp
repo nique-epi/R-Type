@@ -1,5 +1,7 @@
-#include <shellapi.h>
+// clang-format off
 #include <windows.h>
+#include <shellapi.h>
+// clang-format on
 #include <string>
 #include "BrowserOpening.hpp"
 #include "PlatformConstants.hpp"

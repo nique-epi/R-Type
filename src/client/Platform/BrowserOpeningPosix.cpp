@@ -7,13 +7,28 @@
 #include <thread>
 #include "BrowserOpening.hpp"
 #include "PlatformConstants.hpp"
-
-/** @brief The environment of the program, which POSIX declares in no header;
- * the opener is started with it, so it finds the display of the player. */
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-extern char** environ;
+#if defined(__APPLE__)
+#include <crt_externs.h>
+#else
+#include <unistd.h>
+#endif
 
 namespace rtype::client {
+
+namespace {
+
+/** @returns The environment of the program, which the opener is started with
+ * so it finds the display of the player: glibc declares it in <unistd.h>, and
+ * macOS hands it out through _NSGetEnviron(). */
+char** programEnvironment() {
+#if defined(__APPLE__)
+  return *_NSGetEnviron();
+#else
+  return environ;
+#endif
+}
+
+}  // namespace
 
 bool openInBrowser(const std::string& url) {
   if (!isWebAddress(url)) {
@@ -25,7 +40,7 @@ bool openInBrowser(const std::string& url) {
   // NOLINTNEXTLINE(misc-include-cleaner)
   pid_t opener = 0;
   if (posix_spawnp(&opener, command.c_str(), nullptr, nullptr, arguments.data(),
-                   environ) != 0) {
+                   programEnvironment()) != 0) {
     return false;
   }
   std::thread([opener] {
