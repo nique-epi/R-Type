@@ -336,3 +336,18 @@ TEST(LuauLevels, RefusesToSpawnThePlacedOutsideAGame) {
               ThrowsMessage<ScriptException>(
                   HasSubstr(rtype::game::NO_LEVEL_PLAYED_MESSAGE)));
 }
+
+/**
+ * Given a script that declares a start for the first stage of its level
+ * When it runs
+ * Then it fails, saying what the starts of a level are
+ */
+TEST(LuauLevels, RefusesAStartForTheFirstStage) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+
+  EXPECT_THAT(
+      [&] { scripts.run(scriptsOf(REGISTERS_A_START_FOR_THE_FIRST_STAGE)); },
+      ThrowsMessage<ScriptException>(
+          HasSubstr(rtype::game::WRONG_LEVEL_STARTS_MESSAGE)));
+}

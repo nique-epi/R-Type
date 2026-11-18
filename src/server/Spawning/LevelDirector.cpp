@@ -1,6 +1,8 @@
 #include "LevelDirector.hpp"
 #include <chrono>
+#include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <utility>
 #include "BehaviourScripts.hpp"
@@ -11,6 +13,7 @@
 #include "EntityType.hpp"
 #include "EventBus.hpp"
 #include "LevelChange.hpp"
+#include "LevelCheckpoint.hpp"
 #include "LevelDirectorConstants.hpp"
 #include "LevelDirectorParts.hpp"
 #include "LevelProgress.hpp"
@@ -20,6 +23,7 @@
 #include "LuauLevels.hpp"
 #include "NetworkIdentity.hpp"
 #include "ScrollingBodies.hpp"
+#include "ServerConstants.hpp"
 #include "ServerException.hpp"
 #include "TimeConstants.hpp"
 
@@ -49,6 +53,19 @@ const game::LuauLevelEntry& entryOfLevel(const game::LuauLevels& levels,
   return *entry;
 }
 
+std::optional<game::LevelCheckpoint> startOfStage(
+    const game::LuauLevelEntry& entry, const std::string& level,
+    std::size_t stage) {
+  if (stage == FIRST_LEVEL_STAGE) {
+    return std::nullopt;
+  }
+  const auto declared = entry.starts.find(stage - FIRST_LEVEL_STAGE);
+  if (declared == entry.starts.end()) {
+    throw UnknownLevelStartException(level, stage);
+  }
+  return declared->second;
+}
+
 LevelDirector::LevelDirector(LevelDirectorParts parts)
     : parts_(std::move(parts)),
       entry_(entryOfLevel(parts_.scripts.get().levels(), parts_.level)),
@@ -59,7 +76,13 @@ LevelDirector::LevelDirector(LevelDirectorParts parts)
           .progress = progress_,
           .components = parts_.world.get().components()}),
       placer_(entry_.get().placements),
-      logger_(std::string{LEVEL_DIRECTOR_LOGGER_NAME}) {}
+      logger_(std::string{LEVEL_DIRECTOR_LOGGER_NAME}) {
+  progress_.checkpoint =
+      startOfStage(entry_, parts_.level, parts_.startingStage);
+  if (progress_.checkpoint.has_value()) {
+    restartFromCheckpoint();
+  }
+}
 
 void LevelDirector::onTick() {
   const bool hadFailed = failed();

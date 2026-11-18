@@ -146,3 +146,9 @@ constexpr std::array<std::string_view, 12>
     GAME_ARGUMENTS_OF_DEBUG_ON_A_BAD_NETWORK{
         "--log-level", "debug", "--lag",        "300", "--jitter",  "50",
         "--loss",      "10",    "--duplicates", "2",   "--reorder", "5"};
+
+/** @brief A stage of the stage option, the line it forces, and a stage no
+ * level has, before its first. */
+constexpr std::string_view STAGE_ARGUMENT = "4";
+constexpr std::string_view STAGE_LINE = "set start-at-stage 4";
+constexpr std::string_view STAGE_BEFORE_THE_FIRST_ARGUMENT = "0";

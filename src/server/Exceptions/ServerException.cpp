@@ -70,6 +70,13 @@ UnknownLevelException::UnknownLevelException(
     : ServerException("no script registers the level " + level +
                       "; registered: " + engine::listText(known)) {}
 
+UnknownLevelStartException::UnknownLevelStartException(const std::string& level,
+                                                       std::size_t stage)
+    : ServerException("the level " + level +
+                      " declares no start for its stage " +
+                      std::to_string(stage) + "; name it in the starts of " +
+                      "level.register") {}
+
 EmptyEnemyCycleException::EmptyEnemyCycleException()
     : ServerException("A wave plan must name at least one enemy") {}
 

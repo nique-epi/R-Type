@@ -39,6 +39,7 @@
 #include "LevelDirector.hpp"
 #include "LevelPlacementFiles.hpp"
 #include "Logger.hpp"
+#include "LuauLevelConstants.hpp"
 #include "LuauLevelEntry.hpp"
 #include "LuauLevels.hpp"
 #include "ModuleConstants.hpp"
@@ -178,6 +179,25 @@ const engine::SettingValue& declareStartAtBoss(
       .help = "1 starts every game at its boss, without the waves"});
 }
 
+/** @returns The setting START_AT_STAGE_SETTING_NAME, declared in
+ * @p configuration: the stage every game that plays a level starts at, from
+ * FIRST_LEVEL_STAGE (the default) to the most a level holds. */
+const engine::SettingValue& declareStartAtStage(
+    engine::ConfigurationRegistry& configuration) {
+  return configuration.declareInteger(engine::IntegerSettingDefinition{
+      .name = std::string{START_AT_STAGE_SETTING_NAME},
+      .defaultValue = FIRST_LEVEL_STAGE,
+      .lowest = FIRST_LEVEL_STAGE,
+      .highest = game::MAXIMUM_LEVEL_STAGES,
+      .help = "The stage every game that plays a level starts at"});
+}
+
+/** @returns The stage @p setting, START_AT_STAGE_SETTING_NAME, names. */
+std::size_t startingStageOf(const engine::SettingValue& setting) {
+  return static_cast<std::size_t>(
+      setting.integer().value_or(static_cast<std::int64_t>(FIRST_LEVEL_STAGE)));
+}
+
 /** @returns The setting LEVEL_SETTING_NAME, declared in @p configuration:
  * the level every game plays, or nothing (the default) to play the waves. */
 const engine::SettingValue& declareLevel(
@@ -252,6 +272,7 @@ void ServerGamesModule::declareSettings(
           .help = "Ticks every player's input is held before it is applied"});
   ruleSettings_.declare(configuration);
   startAtBossSetting_ = &declareStartAtBoss(configuration);
+  startAtStageSetting_ = &declareStartAtStage(configuration);
   levelSetting_ = &declareLevel(configuration);
 }
 
@@ -260,7 +281,9 @@ void ServerGamesModule::start() {
       [this](const std::string& message) { logger_.warn(message); });
   scripts_->run(game::scriptSourcesIn(settings_.contentFolders));
   if (!levelSetting_->text().empty()) {
-    static_cast<void>(entryOfLevel(scripts_->levels(), levelSetting_->text()));
+    static_cast<void>(startOfStage(
+        entryOfLevel(scripts_->levels(), levelSetting_->text()),
+        levelSetting_->text(), startingStageOf(*startAtStageSetting_)));
   }
   const game::EntitySheets& types =
       types_.emplace(game::EntitySheets::fromTexts(
@@ -311,6 +334,7 @@ GameSettings ServerGamesModule::settingsOf(const WaveCatalog& catalog,
       .vanilla = breaches.empty(),
       .startsAtBoss = startsAtBoss,
       .level = level.empty() ? std::nullopt : std::optional{level},
+      .startingStage = startingStageOf(*startAtStageSetting_),
       .scripts = scripts_.get()};
 }
 

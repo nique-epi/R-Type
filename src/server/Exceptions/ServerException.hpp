@@ -107,6 +107,13 @@ class UnknownLevelException : public ServerException {
                         const std::vector<std::string>& known);
 };
 
+/** @brief The games are set to start at a stage of their level whose script
+ * declares no start for it. */
+class UnknownLevelStartException : public ServerException {
+ public:
+  UnknownLevelStartException(const std::string& level, std::size_t stage);
+};
+
 /** @brief The game of the process was asked for before the games module
  * created it. */
 class GameNotCreatedException : public ServerException {

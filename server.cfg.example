@@ -33,9 +33,15 @@ set input-delay 3
 # the ships never die, and the game is never vanilla. 0 plays the waves.
 set start-at-boss 0
 
+# [games] The stage every game that plays a level starts at, from 1, where the
+# script of the level declares it starts, to test it: set start-at-stage 4 with
+# the level fosse starts in the Pit. 1 plays the level from its start.
+set start-at-stage 1
+
 # [games] The level every game plays: one a script of a resource registered with
-# level.register, such as fosse of the resource fosse, from open space
-# into the Pit with a mini-boss and the Bydo Tyrant, or training_run of the
+# level.register, such as fosse of the resource fosse, from open space to
+# the Bydo Tyrant, then through a transition into the Pit and its Necromancer,
+# or training_run of the
 # resource training-run. The
 # game is then never vanilla. Empty plays the waves of its difficulty, the
 # survival mode.

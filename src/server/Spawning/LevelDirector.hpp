@@ -23,6 +23,16 @@ namespace rtype::server {
     const game::LuauLevels& levels, const std::string& level);
 
 /**
+ * @returns Where a game that starts at @p stage, from FIRST_LEVEL_STAGE, of
+ * @p entry, the level @p level, starts: nothing at FIRST_LEVEL_STAGE, the
+ * start the script declares for that stage otherwise.
+ * @throws UnknownLevelStartException when it declares none.
+ */
+[[nodiscard]] std::optional<game::LevelCheckpoint> startOfStage(
+    const game::LuauLevelEntry& entry, const std::string& level,
+    std::size_t stage);
+
+/**
  * @brief Directs the level a game plays in one world: it steps the stages
  * its script registered (see game::LuauLevelRun), scrolls the level, and
  * tells the game what the players must see of it.
@@ -46,12 +56,17 @@ namespace rtype::server {
  * each with an EntityDestruction Removed; the enemies placed after that
  * checkpoint then come in again.
  *
+ * A director built for a stage after the first starts the level there, as
+ * restartFromCheckpoint() would from the start the script declares for it,
+ * which then stays the checkpoint of the level.
+ *
  * It works on one world: the game builds a new one with each new world. Not
  * thread-safe: use it from the simulation thread only.
  */
 class LevelDirector {
  public:
-  /** @throws UnknownLevelException as entryOfLevel() does. */
+  /** @throws UnknownLevelException as entryOfLevel() does, and
+   * UnknownLevelStartException as startOfStage() does. */
   explicit LevelDirector(LevelDirectorParts parts);
 
   /** @brief Lets one tick of the level pass. */

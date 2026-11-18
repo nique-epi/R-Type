@@ -148,7 +148,8 @@ std::unique_ptr<LevelDirector> levelDirectorFor(GameContext& game,
                          .events = game.events.get(),
                          .orders = orders,
                          .scripts = *settings.scripts,
-                         .level = *settings.level});
+                         .level = *settings.level,
+                         .startingStage = settings.startingStage});
 }
 
 /** @returns Whether the boss of the level may come at this tick, after

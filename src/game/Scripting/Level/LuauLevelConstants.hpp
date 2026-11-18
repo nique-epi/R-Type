@@ -34,6 +34,13 @@ constexpr int LEVEL_BIOME_ARGUMENT = 1;
 constexpr int LEVEL_OPTIONS_ARGUMENT = 3;
 constexpr const char* LEVEL_LDTK_KEY = "ldtk";
 
+/** @brief The option that declares where some stages start, and the keys of
+ * each start: the scroll, the biome and the scroll that biome began at. */
+constexpr const char* LEVEL_STARTS_KEY = "starts";
+constexpr const char* START_SCROLL_KEY = "scroll";
+constexpr const char* START_BIOME_KEY = "biome";
+constexpr const char* START_BIOME_SINCE_KEY = "biome_since";
+
 /** @brief The part of a path that leaves its folder. */
 constexpr std::string_view PARENT_FOLDER_PART = "..";
 
@@ -79,9 +86,13 @@ constexpr const char* NO_LEVEL_PLAYED_MESSAGE =
 constexpr const char* WRONG_BIOME_NAME_MESSAGE =
     "the name of a biome is 1 to 24 lowercase letters, digits and underscores";
 constexpr const char* LEVEL_YIELD_MESSAGE =
-    "a stage may only yield through level.wait and level.wait_scroll";
+    "a stage may only yield through level.wait, level.wait_scroll and "
+    "level.transition";
 constexpr const char* WRONG_LEVEL_OPTIONS_MESSAGE =
-    "the options of a level are a table whose only key is ldtk";
+    "the options of a level are a table whose keys are ldtk and starts";
+constexpr const char* WRONG_LEVEL_STARTS_MESSAGE =
+    "the starts of a level map a stage from 2 to its last to a table of a "
+    "scroll, a biome and a biome_since, finite numbers from 0 and a biome name";
 constexpr const char* WRONG_LDTK_FILE_MESSAGE =
     "the ldtk option of a level is a relative path inside its resource, "
     "without ..";

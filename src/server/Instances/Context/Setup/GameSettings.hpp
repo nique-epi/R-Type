@@ -53,6 +53,9 @@ struct GameSettings {
    * `level.register`; nothing for a game that plays the waves of its
    * difficulty. A game that plays a level is never vanilla. */
   std::optional<std::string> level = std::nullopt;
+  /** @brief The stage of that level the game starts at, from
+   * FIRST_LEVEL_STAGE, where the script of the level declares it starts. */
+  std::size_t startingStage{FIRST_LEVEL_STAGE};
   /** @brief The scripts its bodies run on, which outlive it; nullptr in a game
    * built without any. */
   game::BehaviourScripts* scripts{nullptr};

@@ -6,6 +6,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <limits>
+#include <map>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -20,6 +22,7 @@
 #include "LdtkField.hpp"
 #include "LdtkFieldValue.hpp"
 #include "LdtkPlacement.hpp"
+#include "LevelCheckpoint.hpp"
 #include "LevelConstants.hpp"
 #include "LevelProgress.hpp"
 #include "LevelTransition.hpp"
@@ -118,7 +121,8 @@ void refuseUnknownOptions(lua_State* state) {
   while (lua_next(state, LEVEL_OPTIONS_ARGUMENT) != 0) {
     const bool known =
         lua_type(state, -2) == LUA_TSTRING &&
-        std::string_view{lua_tostring(state, -2)} == LEVEL_LDTK_KEY;
+        (std::string_view{lua_tostring(state, -2)} == LEVEL_LDTK_KEY ||
+         std::string_view{lua_tostring(state, -2)} == LEVEL_STARTS_KEY);
     lua_pop(state, 1);
     if (!known) {
       lua_pop(state, 1);
@@ -151,6 +155,94 @@ std::optional<std::string> ldtkFileOf(lua_State* state) {
   return file;
 }
 
+/** @returns The number at @p key of the table on top of the stack, or
+ * @p fallback without one.
+ * @throws engine::ScriptException unless it is a finite number from 0. */
+double startNumberOf(lua_State* state, const char* key, double fallback) {
+  lua_rawgetfield(state, -1, key);
+  const int type = lua_type(state, -1);
+  const double value = type == LUA_TNUMBER ? lua_tonumber(state, -1) : fallback;
+  lua_pop(state, 1);
+  if ((type != LUA_TNUMBER && type != LUA_TNIL) || !std::isfinite(value) ||
+      value < 0.0) {
+    throw engine::ScriptException(WRONG_LEVEL_STARTS_MESSAGE);
+  }
+  return value;
+}
+
+/** @returns The biome at START_BIOME_KEY of the table on top of the stack,
+ * empty without one.
+ * @throws engine::ScriptException unless it is a biome name. */
+std::string startBiomeOf(lua_State* state) {
+  lua_rawgetfield(state, -1, START_BIOME_KEY);
+  const int type = lua_type(state, -1);
+  std::string biome = type == LUA_TSTRING ? lua_tostring(state, -1) : "";
+  lua_pop(state, 1);
+  if (type != LUA_TNIL && !identifiers::isBiomeName(biome)) {
+    throw engine::ScriptException(WRONG_LEVEL_STARTS_MESSAGE);
+  }
+  return biome;
+}
+
+/** @returns Where stage @p stage, counted from 0, starts, as the table on top
+ * of the stack declares it: its scroll, its biome, and the scroll that biome
+ * began at, its own scroll when it gives none. */
+LevelCheckpoint startDeclared(lua_State* state, std::size_t stage) {
+  if (lua_type(state, -1) != LUA_TTABLE) {
+    throw engine::ScriptException(WRONG_LEVEL_STARTS_MESSAGE);
+  }
+  const double scroll = startNumberOf(state, START_SCROLL_KEY,
+                                      std::numeric_limits<double>::quiet_NaN());
+  const double biomeSince = startNumberOf(state, START_BIOME_SINCE_KEY, scroll);
+  return LevelCheckpoint{
+      .stage = stage,
+      .travelled = std::chrono::duration_cast<engine::Duration>(
+          std::chrono::duration<double>(scroll / LEVEL_SCROLL_SPEED)),
+      .biome = startBiomeOf(state),
+      .biomeSince = static_cast<float>(biomeSince)};
+}
+
+/** @returns The stage, counted from 0, the key on top but one of the stack
+ * names, from 1.
+ * @throws engine::ScriptException unless it is a whole number from 2 to
+ * @p count. */
+std::size_t startedStageOf(lua_State* state, int count) {
+  const double number =
+      lua_type(state, -2) == LUA_TNUMBER ? lua_tonumber(state, -2) : 0.0;
+  if (number < 2.0 || number > count || number != std::floor(number)) {
+    throw engine::ScriptException(WRONG_LEVEL_STARTS_MESSAGE);
+  }
+  return static_cast<std::size_t>(number) - 1;
+}
+
+/** @returns The starts the options at LEVEL_OPTIONS_ARGUMENT declare under
+ * LEVEL_STARTS_KEY for a level of @p count stages; none without options or
+ * without that key.
+ * @throws engine::ScriptException when they are no table, or a start is
+ * wrong. */
+std::map<std::size_t, LevelCheckpoint> startsOf(lua_State* state, int count) {
+  std::map<std::size_t, LevelCheckpoint> starts;
+  if (lua_isnoneornil(state, LEVEL_OPTIONS_ARGUMENT)) {
+    return starts;
+  }
+  lua_rawgetfield(state, LEVEL_OPTIONS_ARGUMENT, LEVEL_STARTS_KEY);
+  if (lua_isnil(state, -1)) {
+    lua_pop(state, 1);
+    return starts;
+  }
+  if (lua_type(state, -1) != LUA_TTABLE) {
+    throw engine::ScriptException(WRONG_LEVEL_STARTS_MESSAGE);
+  }
+  lua_pushnil(state);
+  while (lua_next(state, -2) != 0) {
+    const std::size_t stage = startedStageOf(state, count);
+    starts.emplace(stage, startDeclared(state, stage));
+    lua_pop(state, 1);
+  }
+  lua_pop(state, 1);
+  return starts;
+}
+
 /** @brief `level.register(name, stages, options)`: an exception that leaves
  * it is an error of the script, as Luau makes of any exception a C function
  * throws. */
@@ -167,7 +259,8 @@ int registerLevel(lua_State* state) {
   levels.declare(std::move(name),
                  LuauLevelEntry{.stages = stageReferences(state, count),
                                 .ldtkFile = ldtkFileOf(state),
-                                .placements = {}});
+                                .placements = {},
+                                .starts = startsOf(state, count)});
   return 0;
 }
 

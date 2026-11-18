@@ -100,6 +100,7 @@ class ServerGamesModule final : public engine::IModule {
   const engine::SettingValue* inputDelaySetting_{nullptr};
   GameRuleSettings ruleSettings_;
   const engine::SettingValue* startAtBossSetting_{nullptr};
+  const engine::SettingValue* startAtStageSetting_{nullptr};
   const engine::SettingValue* levelSetting_{nullptr};
   logging::Logger logger_;
   engine::SystemClock clock_;

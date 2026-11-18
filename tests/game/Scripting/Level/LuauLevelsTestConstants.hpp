@@ -60,6 +60,13 @@ constexpr std::string_view CAVES_LDTK_FILE = "levels/caves.ldtk";
 /** @brief The LDtk file of the level the repository ships. */
 constexpr std::string_view SHIPPED_LEVEL_LDTK_FILE = "levels/training_run.ldtk";
 
+/** @brief A script that declares a start for the first stage of its level,
+ * which always starts at the start of the level. */
+constexpr std::string_view REGISTERS_A_START_FOR_THE_FIRST_STAGE = R"(
+level.register("caves", { function() end, function() end },
+  { starts = { [1] = { scroll = 0 } } })
+)";
+
 /** @brief Scripts whose LDtk file leaves its content folder, is absolute, or
  * is no text, and one with an option no level has. */
 constexpr std::string_view REGISTERS_AN_LDTK_FILE_ABOVE_THE_CONTENT = R"(

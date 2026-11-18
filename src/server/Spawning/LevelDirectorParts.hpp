@@ -1,10 +1,12 @@
 #pragma once
 
+#include <cstddef>
 #include <functional>
 #include <string>
 #include "BehaviourScripts.hpp"
 #include "EventBus.hpp"
 #include "IEntityOrders.hpp"
+#include "ServerConstants.hpp"
 #include "World.hpp"
 
 namespace rtype::server {
@@ -24,6 +26,8 @@ struct LevelDirectorParts {
   std::reference_wrapper<game::BehaviourScripts> scripts;
   /** @brief The name the level was registered under. */
   std::string level;
+  /** @brief The stage the level starts at, from FIRST_LEVEL_STAGE. */
+  std::size_t startingStage{FIRST_LEVEL_STAGE};
 };
 
 }  // namespace rtype::server

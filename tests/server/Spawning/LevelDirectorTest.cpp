@@ -5,14 +5,19 @@
 #include <string>
 #include "LdtkPlacementFixtures.hpp"
 #include "LdtkPlacementTestConstants.hpp"
+#include "LevelCheckpoint.hpp"
 #include "LevelDirector.hpp"
 #include "LevelDirectorFixture.hpp"
 #include "LevelDirectorTestConstants.hpp"
 #include "ServerException.hpp"
 
 using rtype::server::entryOfLevel;
+using rtype::server::startOfStage;
 using rtype::server::UnknownLevelException;
+using rtype::server::UnknownLevelStartException;
 using rtype::server::testing::CAVES_BIOME;
+using rtype::server::testing::DIRECTED_LEVEL;
+using rtype::server::testing::FIRST_STAGE;
 using rtype::server::testing::LEVEL_ENEMY_SHEET;
 using rtype::server::testing::LEVEL_OF_ONE_BIOME;
 using rtype::server::testing::LEVEL_OF_TWO_BIOMES;
@@ -24,13 +29,17 @@ using rtype::server::testing::LEVEL_THAT_PAUSES;
 using rtype::server::testing::LEVEL_THAT_PLAYS_A_TRANSITION;
 using rtype::server::testing::LEVEL_THAT_SPAWNS_THE_PLACED;
 using rtype::server::testing::LEVEL_THAT_WAITS;
+using rtype::server::testing::LEVEL_WITH_A_DECLARED_START;
 using rtype::server::testing::LevelDirectorFixture;
 using rtype::server::testing::SCROLL_OF_ONE_SECOND;
 using rtype::server::testing::SCROLL_OF_ONE_TICK;
+using rtype::server::testing::SCROLL_OF_THE_DECLARED_START;
 using rtype::server::testing::SCROLL_ONE_TICK_AFTER_THE_CHECKPOINT;
 using rtype::server::testing::SCROLL_TOLERANCE;
 using rtype::server::testing::SCROLLED_ONE_SECOND_X;
 using rtype::server::testing::SCROLLED_UNTIL_THE_PAUSE_X;
+using rtype::server::testing::SECOND_STAGE;
+using rtype::server::testing::SECOND_STAGE_FROM_ZERO;
 using rtype::server::testing::SPAWNS_AFTER_THE_RESTART;
 using rtype::server::testing::SPAWNS_BEFORE_THE_RESTART;
 using rtype::server::testing::SPEED_OF_A_SCROLLING_LEVEL;
@@ -44,6 +53,7 @@ using rtype::server::testing::TICKS_UNTIL_BOTH_CAME_IN;
 using rtype::server::testing::TICKS_UNTIL_THE_LATE_ONE_COMES_IN_AGAIN;
 using rtype::server::testing::TICKS_UNTIL_THE_TRANSITION_ENDS;
 using rtype::server::testing::TRANSITION_LEFT_AS_IT_STARTS;
+using rtype::server::testing::TRAVELLED_TO_THE_DECLARED_START;
 using rtype::server::testing::UNREGISTERED_LEVEL;
 using rtype::server::testing::WHERE_THE_DRIFTER_APPEARS_X;
 using rtype::server::testing::WHERE_THE_DRIFTER_IS_PLACED;
@@ -396,4 +406,66 @@ TEST_F(LevelDirectorFixture, LetsTheScrollMoveOnOnceTheTransitionEnded) {
   ASSERT_THAT(changes(), SizeIs(2));
   EXPECT_GT(changes().back().scrollSpeed, 0.0F);
   EXPECT_EQ(changes().back().transitionLeft, 0);
+}
+
+/**
+ * Given a level whose script declares no start, and a game set to its first
+ * stage
+ * When the start of that stage is asked for
+ * Then there is none: the game starts at the start of the level
+ */
+TEST_F(LevelDirectorFixture, AGameAtTheFirstStageStartsAtTheStartOfTheLevel) {
+  direct(LEVEL_OF_TWO_STAGES);
+
+  EXPECT_FALSE(startOfStage(*scripts().levels().entryOf(DIRECTED_LEVEL),
+                            std::string{DIRECTED_LEVEL}, FIRST_STAGE)
+                   .has_value());
+}
+
+/**
+ * Given a level whose second stage starts at 600 units of scroll in the caves
+ * When the start of its second stage is asked for
+ * Then it is that stage, counted from 0, in the caves begun at 600 units
+ */
+TEST_F(LevelDirectorFixture, AGameAtADeclaredStageStartsWhereItIsDeclared) {
+  direct(LEVEL_WITH_A_DECLARED_START);
+
+  const auto start = startOfStage(*scripts().levels().entryOf(DIRECTED_LEVEL),
+                                  std::string{DIRECTED_LEVEL}, SECOND_STAGE);
+
+  ASSERT_TRUE(start.has_value());
+  const rtype::game::LevelCheckpoint found =
+      start.value_or(rtype::game::LevelCheckpoint{});
+  EXPECT_EQ(found.stage, SECOND_STAGE_FROM_ZERO);
+  EXPECT_EQ(found.biome, CAVES_BIOME);
+  EXPECT_FLOAT_EQ(found.biomeSince, SCROLL_OF_THE_DECLARED_START);
+}
+
+/**
+ * Given a level whose second stage starts at 600 units of scroll
+ * When the start of its second stage is asked for
+ * Then the level has scrolled the 5 s of those 600 units at 120 per second
+ */
+TEST_F(LevelDirectorFixture, ADeclaredStartScrolledTheTimeOfItsScroll) {
+  direct(LEVEL_WITH_A_DECLARED_START);
+
+  const auto start = startOfStage(*scripts().levels().entryOf(DIRECTED_LEVEL),
+                                  std::string{DIRECTED_LEVEL}, SECOND_STAGE);
+
+  EXPECT_EQ(start.value_or(rtype::game::LevelCheckpoint{}).travelled,
+            TRAVELLED_TO_THE_DECLARED_START);
+}
+
+/**
+ * Given a level of two stages whose script declares no start
+ * When the start of its second stage is asked for
+ * Then it is refused
+ */
+TEST_F(LevelDirectorFixture, RefusesAStageWithoutADeclaredStart) {
+  direct(LEVEL_OF_TWO_STAGES);
+
+  EXPECT_THROW(static_cast<void>(
+                   startOfStage(*scripts().levels().entryOf(DIRECTED_LEVEL),
+                                std::string{DIRECTED_LEVEL}, SECOND_STAGE)),
+               UnknownLevelStartException);
 }
