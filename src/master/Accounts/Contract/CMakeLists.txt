@@ -1,0 +1,5 @@
+add_library(rtype_master_accounts_contract INTERFACE)
+
+target_include_directories(rtype_master_accounts_contract INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(rtype_master_accounts_contract INTERFACE rtype_network_master_messages)

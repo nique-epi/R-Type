@@ -16,10 +16,7 @@ using rtype::client::DisplayMode;
 using rtype::client::PlayerSettings;
 using rtype::client::readSettingsText;
 using rtype::client::settingsText;
-using rtype::client::testing::A_BALANCE;
-using rtype::client::testing::A_BALANCE_LINE;
 using rtype::client::testing::ANY_VOLUME;
-using rtype::client::testing::BALANCE_PAST_THE_LARGEST_FILE;
 using rtype::client::testing::BARE_HEAD_FILE;
 using rtype::client::testing::CHANGED_CHAT_BACKGROUND;
 using rtype::client::testing::CHANGED_CHAT_CLOSED_LINES;
@@ -30,7 +27,6 @@ using rtype::client::testing::CHANGED_EFFECTS_VOLUME;
 using rtype::client::testing::CHANGED_LAGOMETER_BACKGROUND;
 using rtype::client::testing::CHANGED_LAGOMETER_SCALE;
 using rtype::client::testing::CHANGED_MUSIC_VOLUME;
-using rtype::client::testing::CHAPKA_ITEM;
 using rtype::client::testing::CHAT_LINES_PAST_THEIR_RANGES;
 using rtype::client::testing::CHAT_PAST_ITS_RANGES_FILE;
 using rtype::client::testing::CROWN_AND_SHADES_FILE;
@@ -38,6 +34,7 @@ using rtype::client::testing::CROWN_AS_A_HULL_FILE;
 using rtype::client::testing::CROWN_LINE;
 using rtype::client::testing::EARLIER_MASTER_LINE;
 using rtype::client::testing::EARLIER_PREDICTION_LINE;
+using rtype::client::testing::FILE_WITH_THE_OLD_BALANCES;
 using rtype::client::testing::FILE_WITHOUT_A_HULL;
 using rtype::client::testing::FIRST_LAUNCH_FILE;
 using rtype::client::testing::FIRST_LAUNCH_MUSIC_VOLUME;
@@ -50,16 +47,12 @@ using rtype::client::testing::INVALID_FIRST_LINE;
 using rtype::client::testing::LAGOMETER_LINES_PAST_THEIR_RANGES;
 using rtype::client::testing::LAGOMETER_PAST_ITS_RANGES_FILE;
 using rtype::client::testing::LOWEST_VOLUME;
-using rtype::client::testing::NEGATIVE_BALANCE_FILE;
 using rtype::client::testing::SHADES_ON_THE_HEAD_FILE;
 using rtype::client::testing::SMALLER_WINDOW;
 using rtype::client::testing::UNKNOWN_FIRST_LINE;
-using rtype::client::testing::VOSTOK_AND_CHAPKA_LOCKER;
-using rtype::client::testing::VOSTOK_ITEM;
 using rtype::client::testing::WEARS_CROWN;
 using rtype::client::testing::WEARS_NOTHING;
 using rtype::client::testing::WEARS_SHADES;
-using rtype::client::testing::WORDS_AS_A_BALANCE_FILE;
 using Scan = sf::Keyboard::Scan;
 
 /**
@@ -369,74 +362,6 @@ TEST(SettingsTextTest, NoneTakesTheItemOff) {
 }
 
 /**
- * Given the settings of a first launch
- * When they are read
- * Then the locker holds the starter kit: the top hat, the cool shades and the
- * mustache, and no other item
- */
-TEST(SettingsTextTest, AFirstLaunchHoldsTheStarterKit) {
-  const PlayerSettings settings;
-
-  EXPECT_EQ(settings.shipLocker.items.count(), 3U);
-  EXPECT_TRUE(settings.shipLocker.items.test(0));
-  EXPECT_TRUE(settings.shipLocker.items.test(8));
-  EXPECT_TRUE(settings.shipLocker.items.test(9));
-}
-
-/**
- * Given a locker holding the top hat, the crown, the shades and the mustache
- * When the settings are written
- * Then the line lists the items by their names, in the order of the catalog
- */
-TEST(SettingsTextTest, TheLockerIsWrittenByItsItemNames) {
-  PlayerSettings settings;
-  settings.shipLocker.items.set(2);
-
-  EXPECT_NE(settingsText(settings).find(
-                "ship_locker=top_hat,crown,cool_shades,mustache\n"),
-            std::string::npos);
-}
-
-/**
- * Given a file whose locker line names the crown and the shades
- * When it is read
- * Then the locker holds those two items alone
- */
-TEST(SettingsTextTest, TheLockerReadsBackByItsNames) {
-  const rtype::client::SettingsReading reading =
-      readSettingsText("ship_locker=crown,cool_shades\n", PlayerSettings{});
-
-  EXPECT_EQ(reading.settings.shipLocker.items.count(), 2U);
-  EXPECT_TRUE(reading.settings.shipLocker.items.test(2));
-  EXPECT_TRUE(reading.settings.shipLocker.items.test(8));
-}
-
-/**
- * Given a locker line that names the crown and an item no one knows
- * When it is read
- * Then the crown is in the locker and the unknown name is skipped
- */
-TEST(SettingsTextTest, AnUnknownNameInTheLockerIsSkipped) {
-  const rtype::client::SettingsReading reading =
-      readSettingsText("ship_locker=crown,tiara\n", PlayerSettings{});
-
-  EXPECT_EQ(reading.settings.shipLocker.items.count(), 1U);
-  EXPECT_TRUE(reading.settings.shipLocker.items.test(2));
-}
-
-/**
- * Given a locker line holding none
- * When it is read
- * Then the locker is empty
- */
-TEST(SettingsTextTest, NoneIsAnEmptyLocker) {
-  const rtype::client::SettingsReading reading =
-      readSettingsText("ship_locker=none\n", PlayerSettings{});
-
-  EXPECT_TRUE(reading.settings.shipLocker.items.none());
-}
-
-/**
  * Given settings whose ship flies the golden ace
  * When they are written
  * Then the line of the hull names it
@@ -486,47 +411,15 @@ TEST(SettingsTextTest, AnAccessoryIsNoHull) {
 }
 
 /**
- * Given a locker line naming a new accessory and a hull
+ * Given a file written while the balances and the locker were kept in it
  * When it is read
- * Then the locker holds both, and nothing else
+ * Then its other settings are read, and no line is listed as ignored: the
+ * balances and the looks now live on the account
  */
-TEST(SettingsTextTest, TheLockerHoldsHullsAndNewAccessories) {
-  const rtype::client::SettingsReading reading =
-      readSettingsText(VOSTOK_AND_CHAPKA_LOCKER, PlayerSettings{});
+TEST(SettingsTextTest, AFileWithTheOldBalancesLoadsWithoutComplaint) {
+  const auto reading =
+      readSettingsText(FILE_WITH_THE_OLD_BALANCES, PlayerSettings{});
 
-  EXPECT_EQ(reading.settings.shipLocker.items.count(), 2U);
-  EXPECT_TRUE(reading.settings.shipLocker.items.test(CHAPKA_ITEM));
-  EXPECT_TRUE(reading.settings.shipLocker.items.test(VOSTOK_ITEM));
-}
-
-/**
- * Given settings whose player holds 1250 kopecks
- * When they are written, then read back
- * Then the file holds the line of the balance, and the balance reads back
- */
-TEST(SettingsTextTest, TheBalanceIsWrittenAndReadBack) {
-  PlayerSettings settings;
-  settings.kopecks = A_BALANCE;
-
-  EXPECT_NE(settingsText(settings).find(A_BALANCE_LINE), std::string::npos);
-  EXPECT_EQ(readSettingsText(A_BALANCE_LINE, PlayerSettings{}).settings.kopecks,
-            A_BALANCE);
-}
-
-/**
- * Given files whose balance is words, is negative, or passes the largest
- * When each is read
- * Then the player holds no kopeck and the line is listed as invalid
- */
-TEST(SettingsTextTest, ABalanceThatIsNoBalanceLeavesNone) {
-  for (const char* const file : {WORDS_AS_A_BALANCE_FILE, NEGATIVE_BALANCE_FILE,
-                                 BALANCE_PAST_THE_LARGEST_FILE}) {
-    SCOPED_TRACE(file);
-    const rtype::client::SettingsReading reading =
-        readSettingsText(file, PlayerSettings{});
-
-    EXPECT_EQ(reading.settings.kopecks, 0U);
-    EXPECT_EQ(reading.ignoredLines,
-              std::vector<std::string>{INVALID_FIRST_LINE});
-  }
+  EXPECT_EQ(reading.settings.musicVolume, CHANGED_MUSIC_VOLUME);
+  EXPECT_TRUE(reading.ignoredLines.empty());
 }

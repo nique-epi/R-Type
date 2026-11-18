@@ -1,13 +1,11 @@
 #pragma once
 
-#include <cstdint>
 #include <optional>
 #include "ColorMode.hpp"
 #include "DisplayMode.hpp"
 #include "KeyBindings.hpp"
 #include "PixelSize.hpp"
 #include "SettingsConstants.hpp"
-#include "ShipLocker.hpp"
 #include "ShipLook.hpp"
 
 namespace rtype::client {
@@ -30,8 +28,9 @@ namespace rtype::client {
  * layer under the open chat, in percent.
  * lagometerScale: how many times larger than its smallest the lagometer is
  * drawn. lagometerBackground: the opacity of its panel, in percent.
- * shipLook wears nothing: the player dresses the ship in the hangar.
- * shipLocker holds the starter kit: the other items are won in a game.
+ * shipLook wears nothing: the player dresses the ship in the hangar, among
+ * the looks the account owns on the master; the balances and those looks
+ * live on the account, never in the settings.
  */
 struct PlayerSettings {
   int musicVolume = DEFAULT_MUSIC_VOLUME;
@@ -55,9 +54,6 @@ struct PlayerSettings {
   int lagometerScale = DEFAULT_LAGOMETER_SCALE;
   int lagometerBackground = DEFAULT_LAGOMETER_BACKGROUND;
   identifiers::ShipLook shipLook;
-  ShipLocker shipLocker;
-  /** @brief What the player may spend at the shop, 0 to MAXIMUM_KOPECKS. */
-  std::uint32_t kopecks = 0;
 
   bool operator==(const PlayerSettings& other) const = default;
 };

@@ -5,16 +5,31 @@
 #include <utility>
 #include <vector>
 #include "ConnectedPlayer.hpp"
+#include "GameOutcome.hpp"
 #include "GameResult.hpp"
 #include "GameSettings.hpp"
 #include "GameState.hpp"
 #include "GameStateChanged.hpp"
+#include "GameTicket.hpp"
 #include "IResultsArchive.hpp"
 #include "PlayerRoster.hpp"
+#include "ShipLookConstants.hpp"
+#include "ShipLookNumbers.hpp"
 
 namespace rtype::server {
 
 namespace {
+
+/** @returns The names of the items @p player won, in the order it won them. */
+std::vector<std::string> wonLooksOf(const ConnectedPlayer& player) {
+  std::vector<std::string> names;
+  names.reserve(player.wonLookNumbers.size());
+  for (const std::uint8_t number : player.wonLookNumbers) {
+    names.emplace_back(
+        identifiers::SHIP_LOOK_ITEM_NAMES.at(identifiers::lookIndexOf(number)));
+  }
+  return names;
+}
 
 /**
  * @returns What @p player leaves of the game. LifeKeeper is the only one to
@@ -26,7 +41,9 @@ PlayerResult resultOf(const ConnectedPlayer& player, std::uint8_t lives) {
   return PlayerResult{
       .nickname = player.nickname,
       .score = player.score,
-      .deaths = static_cast<std::uint32_t>(lives - player.livesWithoutShip)};
+      .deaths = static_cast<std::uint32_t>(lives - player.livesWithoutShip),
+      .wonLooks = wonLooksOf(player),
+      .ticket = network::gameTicketText(player.ticket)};
 }
 
 }  // namespace
@@ -52,7 +69,7 @@ void GameResultKeeper::onStateChanged(const GameStateChanged& change) {
     startCounting();
   } else if (change.previous == GameState::InProgress &&
              change.current == GameState::Finished) {
-    recordTheGame();
+    recordTheGame(change.outcome == GameOutcome::Victory);
   }
 }
 
@@ -60,7 +77,7 @@ void GameResultKeeper::startCounting() {
   playersAtStart_ = static_cast<std::uint8_t>(roster_.connected().size());
 }
 
-void GameResultKeeper::recordTheGame() {
+void GameResultKeeper::recordTheGame(bool victory) {
   std::vector<PlayerResult> players = std::exchange(departed_, {});
   for (const ConnectedPlayer* const player : roster_.connected()) {
     players.push_back(resultOf(*player, lives_));
@@ -74,7 +91,8 @@ void GameResultKeeper::recordTheGame() {
                  .endedAt = std::chrono::floor<std::chrono::seconds>(
                      std::chrono::system_clock::now()),
                  .players = std::move(players),
-                 .vanilla = vanilla_});
+                 .vanilla = vanilla_,
+                 .victory = victory});
 }
 
 }  // namespace rtype::server

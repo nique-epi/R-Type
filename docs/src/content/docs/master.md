@@ -18,11 +18,13 @@ This page tells you where to look when you need to change something. It describe
 | The games of a server, for the client, `GET /api/servers/{id}/games` | Available | `src/master/Servers/`, `src/network/Master/` |
 | The statuses of the servers, their list and their history, `GET /api/servers` | Available; the route that puts a server in maintenance is not written | `src/master/Servers/`, `src/network/Master/` |
 | The probe of the UDP port of each game server, module `probe` | Available | `src/master/Probe/`, `src/master/Servers/`, `src/server/Master/` |
-| The web site, a Next.js server of its own that calls the API | Available: the pages of the design in French and English (home, download, sector map, a server, hosting, sign-up, leaderboard, wiki, team); the hosting page creates a server with `POST /api/servers`, the sign-up page an account with `POST /api/users`, the leaderboard reads `GET /api/leaderboard` | `web/` |
+| The web site, a Next.js server of its own that calls the API | Available: the pages of the design in French and English (home, download, sector map, a server, hosting, sign-up, leaderboard, wiki, team); the hosting page creates a server with `POST /api/servers`, the sign-up page an account with `POST /api/users`, the sign-in page a session with `POST /api/sessions`, the page `/link` connects a game to an account, the leaderboard reads `GET /api/leaderboard` | `web/` |
 | The results of the games and the global leaderboard, `PUT /api/servers/me/results/{gameId}` and `GET /api/leaderboard` | Available; a game server sends its vanilla games after its heartbeats | `src/master/Leaderboard/`, `src/network/Master/` |
 | The master on AWS, installed from each release | Available; see [Deploying the master](/R-Type/deploy-master/) | `infra/`, `.github/workflows/deploy-master.yaml` |
 | A machine of game servers created for a LAN | Available; see [Game servers for a LAN](/R-Type/deploy-game-servers/) | `infra/game-servers/`, `infra/terraform-game/` |
-| Accounts and sessions, over HTTPS only, `POST /api/users` and `POST /api/sessions` | Available; optional module `accounts`, without whose key `RT_PASSWORD_KEY` the master does not start; the client and the web site do not sign in yet | `src/master/Accounts/`, `src/network/Master/`, `src/network/Hashing/` |
+| Accounts and sessions, over HTTPS only, `POST /api/users` and `POST /api/sessions` | Available; optional module `accounts`, without whose key `RT_PASSWORD_KEY` the master does not start; the web site signs in, and the game client signs in through it with a device link, or with a token given at launch (`--session`) | `src/master/Accounts/`, `src/network/Master/`, `src/network/Hashing/` |
+| Wallets of the accounts: kopecks, chips and owned looks, the cashier and the purchase of a look, over HTTPS only, `/api/users/me/wallet` and `/api/users/me/looks` | Available; optional module `wallet`; the games of a signed-in player credit it, and the game client reads and spends it | `src/master/Wallet/`, `src/network/Master/Economy/` |
+| The casino: roulette rooms whose rounds follow the clock of the master, `/api/casino/rooms` | Available; optional module `casino`; the game client plays it | `src/master/Casino/`, `src/network/Master/Casino/` |
 | Administration | Not yet written | |
 
 ## Starting the master
@@ -33,7 +35,7 @@ This page tells you where to look when you need to change something. It describe
 RT_PASSWORD_KEY=$(cat ~/.rtype-password-key) ./r-type_server --mode master -p 8081
 ```
 
-The master stops at its start without the key of the passwords of its accounts, `RT_PASSWORD_KEY`: draw it once with `openssl rand -hex 32` and keep it, since another key makes every stored password unreadable. A master that needs no accounts, such as one for a LAN, runs without a key once its `master.cfg` holds `module accounts off` (see [Accounts and sessions](#accounts-and-sessions-accountsmodule)).
+The master stops at its start without the key of the passwords of its accounts, `RT_PASSWORD_KEY`: draw it once with `openssl rand -hex 32` and keep it, since another key makes every stored password unreadable. A master that needs no accounts, such as one for a LAN, runs without a key once its `master.cfg` holds `module casino off`, `module wallet off` and `module accounts off`, in that order, since the casino needs the wallet and the wallet the accounts (see [Accounts and sessions](#accounts-and-sessions-accountsmodule)).
 
 | Option | Effect |
 |---|---|
@@ -55,6 +57,14 @@ The master reads `master.cfg`, in the folder it is started from, between the ins
 | `port` | 0 to 65535 | 8080 | The TCP port the HTTP API listens on, on every interface; 0 lets the system choose a free one, which the journal names. |
 | `database` | a path | empty | The SQLite file of the master; empty for `r-type_master.db` next to the executable. |
 | `site-key` | a text | empty | The secret the web site names itself by when it creates a server or an account, or signs in, for a visitor (see [Creating a game server](#creating-a-game-server-post-apiservers)); empty, the master reads nothing the site says of its visitor. The `http` module declares it. Set it in `master.cfg`, never on the command line, which every user of the machine can read. |
+| `site-url` | an address starting with `https://` or `http://` | `https://rtype.app` | The web site whose page `/link` validates the device links a game signs in through (module `accounts`, see [Device links](#device-links-signing-a-game-in-through-the-site)); the master writes it in each link it opens, without the slash at its end. |
+| `wallet-starting-kopecks` | 0 to 999999 | 0 | The kopecks a wallet holds when it opens, at the first read of its account (module `wallet`); a wallet already open keeps its balances. |
+| `wallet-starting-chips` | 0 to 999999 | 500 | The chips a wallet holds when it opens. |
+| `casino-rooms` | 1 to 16 | 3 | The roulette rooms the casino runs (module `casino`). |
+| `casino-seats` | 1 to 32 | 8 | The players each room seats. |
+| `casino-betting-seconds` | 5 to 600 | 20 | The seconds the bets of a round stay open. |
+| `casino-spinning-seconds` | 1 to 60 | 6 | The seconds the wheel spins once the bets close. |
+| `casino-result-seconds` | 1 to 60 | 5 | The seconds the result shows before the next round opens its bets. |
 
 `master.cfg` also takes `admin <nickname>`, a command of the module `accounts`, which makes that account an admin when the master starts (see [Accounts and sessions](#accounts-and-sessions-accountsmodule)). The key of the passwords is no setting: it comes from the environment variable `RT_PASSWORD_KEY`, so it is never written in a file of the master or on its command line.
 
@@ -69,8 +79,12 @@ The master reads `master.cfg`, in the folder it is started from, between the ins
 | `probe` | `MasterProbeModule` | `logger` | a UDP socket on a port the system picks, and ProbeWire, the thread that sends the probes on it |
 | `http` | `MasterHttpModule` | `logger` | the port, and the thread that listens on it |
 | `servers` | `ServersModule` | `logger`, `storage`, `probe`, `http` | `StatusWatch`, the thread of `ServerStatusJob`; its routes run once `http` listens |
-| `leaderboard` | `LeaderboardModule` | `storage`, `http`, `servers` | nothing; its routes run once `http` listens |
-| `accounts` | `AccountsModule` | `logger`, `storage`, `http` | nothing; it makes admins of the accounts `admin` lines name, and its routes run once `http` listens. Optional: `RTYPE_MODULE_ACCOUNTS` |
+| `accounts` | `AccountsModule` | `logger`, `storage`, `http` | nothing; it makes admins of the accounts `admin` lines name, provides `ISessionAccounts`, and its routes run once `http` listens. Optional: `RTYPE_MODULE_ACCOUNTS` |
+| `wallet` | `WalletModule` | `logger`, `storage`, `http`, `accounts` | nothing; it provides `IAccountWallet`, and its routes run once `http` listens. Optional: `RTYPE_MODULE_WALLET`, off whenever `RTYPE_MODULE_ACCOUNTS` is |
+| `leaderboard` | `LeaderboardModule` | `logger`, `storage`, `http`, `servers`; `wallet` when it is on | nothing; its routes run once `http` listens |
+| `casino` | `CasinoModule` | `logger`, `storage`, `http`, `accounts`, `wallet` | CasinoClock, the thread of `CasinoRoundJob`; its routes run once `http` listens. Optional: `RTYPE_MODULE_CASINO`, off whenever `RTYPE_MODULE_WALLET` is |
+
+The leaderboard comes after the wallet, so it finds the `IAccountWallet` it credits the games with (`find()`, see [Crediting the games](#crediting-the-games)); without the module `wallet` it keeps the results and credits nothing. The modules of another module read it through its `Contract/` folder, which is compiled even when the module is off (see [Project layout](/R-Type/project-layout/#the-code-of-a-module-used-elsewhere)): `ISessionAccounts` (`src/master/Accounts/Contract/`), the account a session token names, and `IAccountWallet` (`src/master/Wallet/Contract/`), the chips the casino stakes and pays and the credit of a game.
 
 The storage starts before the HTTP API, so a database the master cannot open stops it before its port opens, and the API stops before the database closes. The probes start before the HTTP API too, so a heartbeat a route accepts always has its probe sent, and they stop after the routes.
 
@@ -111,6 +125,8 @@ The web site is a program of its own: a Next.js server, in `web/` (see [Web site
 | `/servers/{id}` | the games of a server, its figures, the load of its machine (see [The load of a server](#the-load-of-a-server)) and the pilots of its last 100 samples (the master keeps one sample a second, a page of the list holds 100); a server created and not registered yet shows a waiting notice | the list, `GET /api/servers/{id}/samples` |
 | `/host` | the form that creates a server, with no account, then its key, shown once with a button that copies it, and the two lines of `server.cfg` that hold it; the home page, the hosting guide of the wiki and the key H of the sector map lead to it | nothing; it writes with `POST /api/servers` |
 | `/signup` | the form that creates an account: a nickname, a password and the same password again, then a welcome; the menu of the site leads to it | nothing; it writes with `POST /api/users` |
+| `/signin` | the form that signs in, a nickname and a password, then the page `?next=` names, a path of the site only, the home page otherwise | nothing; it writes with `POST /api/sessions` |
+| `/link` | the page a game sends its player to, `?code=KQFB-WZPM`: a visitor with no session is sent to `/signin` first, then sees the code and the time the game asked, and connects or refuses it; without a code, or with one no link holds, a field for the code the game shows | `GET /api/device-links/{code}`; it writes with `PUT /api/device-links/{code}/decision` |
 | `/leaderboard` | the leaderboard screen of the game, by server or for everyone; the scope and the filters are in the address (`?scope=server&server=7&difficulty=hard&pilots=3`) and the page reads the ten best players again at each address | the leaderboard, and the list of servers for the first tab |
 | `/wiki/{keys,enemies,accessibility,host}` | the controls, the bestiary, the pilot palettes, the guide to host a server | nothing |
 | `/team` | the four members and their GitHub | nothing |
@@ -122,6 +138,9 @@ The web site is a program of its own: a Next.js server, in `web/` (see [Web site
 - **The site names the visitor it creates a server for**: when `MASTER_SITE_KEY` is set, the request carries it in `X-Site-Key`, and in `X-Site-Client-Address` the last address of the `X-Forwarded-For` the host of the site wrote, which Vercel overwrites with the public address of the client. The master counts the creation under that visitor when the key matches its `site-key` setting (see [Creating a game server](#creating-a-game-server-post-apiservers)). The site must run behind a host that overwrites `X-Forwarded-For`, or a visitor chooses the address it is counted under.
 - **The lines of `server.cfg` the page gives** are `set master-url`, with `PUBLIC_MASTER_URL` (`https://master.rtype.app` by default, as `server.cfg.example` writes it), and `set master-key` with the key. `MASTER_URL` is never shown: it may be an address only the site reaches.
 - **An account is created on the site, never in the game.** The form and the server action check the same zod schema (`credentialsSchema`, `web/src/lib/rtype/sign-up.ts`), the rules of the master: a nickname of 1 to 16 bytes of printable UTF-8, the blanks around it left out, and a password of 8 to 128 bytes kept as typed. A sign-up the master would refuse never reaches it. An account has no e-mail, so the form asks the password twice and says that a forgotten one cannot be recovered. The password goes from the action to the master alone: it is written in no journal, and the form is gone once the account exists. A nickname taken (409), the quota (429), a refusal (400) and a master that does not answer each have a message, and what was typed stays. The site names its visitor with the site key, as for a server.
+
+- **A session of the site is a cookie the site alone reads.** The sign-in action keeps the token of the master in `rtype_session` (`web/src/lib/session/session-cookie.ts`), `HttpOnly`, `Secure`, `SameSite=Lax`, until the expiry the master gave; the server of the site sends it to the master as Bearer, and it never reaches a page or a script. Leaving the page `/link` with another account closes the session on the master, then forgets the cookie.
+- **The page `/link` says what it connects.** It writes the code and the time the game asked in the zone of the browser, and tells the player to connect only a game in front of them: the guard RFC 8628 (section 5.4) gives against a code someone else made a player validate.
 
 ### The components of the site
 
@@ -167,6 +186,15 @@ The storage module opens its file with `rtype_storage` (`openDatabaseFile()`, se
 | 6 | `users` | each account: its nickname, unique without case, the 128 bytes kept of its password, its role, the address and the date of its creation |
 | 6 | `sessions` | each open session: the fingerprint of its token, its user, the address it was opened from, when it opened and when it expires |
 | 6 | `sign_in_failures` | each failed sign-in: its address and its second, forgotten once it no longer counts |
+| 7 | `wallets` | the kopecks and the chips of each account, 0 to 999999 each, a `CHECK` refusing any other value, and when the wallet opened |
+| 7 | `wallet_movements` | the journal of the wallets: a line per change of a balance, its currency, its signed amount, its reason and the reference of the fact that made it; a line is never changed, so the lines of a currency add up to its balance |
+| 7 | `owned_looks` | the looks each account owns, and how it came to own each: `starter`, `purchase` or `game` |
+| 7 | `credited_results` | the reference of each result of a game already credited to an account |
+| 8 | `casino_seats` | the seats taken in each room of the casino, and when each was last renewed |
+| 8 | `casino_bets` | the bets of each account on a round of a room: the kind, the first number and the chips of each |
+| 8 | `casino_rounds` | the number each round of a room drew, written once, when its bets close |
+| 9 | `game_tickets` | each game ticket given and not yet expired: the fingerprint of the ticket, never the ticket, its account, when it was given, when it expires, and when a result used it |
+| 10 | `device_links` | each device link a game asked for: its short code, the key, the fingerprint of its secret, never the secret, the address that asked, when it opened, expires and was last read, and once a player decided, its account and its decision; forgotten an hour after it expired |
 | 4 | `game_results` | a row per player of each vanilla game a server reported: its server, the id of the game, the nickname, the account, the score, the date, the difficulty and the number of players; the key is the server, the game and the nickname, compared without case |
 
 ## The load of a server
@@ -337,8 +365,8 @@ The leaderboard module (`src/master/Leaderboard/`) gathers the results of every 
 | `GET /api/leaderboard?difficulty=normal&playerCount=2` | the best score of each player, by rank, a page at a time, to anyone; `difficulty` and `playerCount` each filter only when given, so a query without them reads every game; `server=<id>` reads one server, `player=<nickname>` adds the row of that player | 200; 400 when a parameter given is out of its bounds, an empty `difficulty` included |
 
 ```json
-{"playedAt":1800000000,"difficulty":"normal","playerCount":2,"vanilla":true,
- "players":[{"nickname":"ACE","score":12000},{"nickname":"R9","accountId":"account-42","score":800}]}
+{"playedAt":1800000000,"difficulty":"normal","playerCount":2,"vanilla":true,"victory":true,
+ "players":[{"nickname":"ACE","score":12000,"wonLooks":[]},{"nickname":"R9","score":800,"wonLooks":["crown"],"ticket":"rtt_202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f"}]}
 ```
 
 The answer to `GET /api/leaderboard?difficulty=normal&playerCount=2&limit=1&player=R9`, when this game is the only one of that leaderboard:
@@ -351,27 +379,38 @@ The answer to `GET /api/leaderboard?difficulty=normal&playerCount=2&limit=1&play
 - **The route is a `PUT` on the id the server drew**, since the server, not the master, names the game. A game is kept whole and once per server: a result sent again changes nothing, even with other players or scores, and answers 204 as the first time, so a server may send again whatever it is not sure arrived. A second send never replaces or completes the first.
 - **The master keeps vanilla games only**: a body with `"vanilla":false` answers 400, and a game that is not vanilla stays in the leaderboard of its server. The master cannot check a score: it trusts the server an admin gave a key to.
 - **A row keeps its server**, so `server=<id>` reads one server, each row of the answer names the server of its game, and the rows of a server can be erased with it.
-- **One player, one row**: an account is one player under any nickname, its id compared as written; a guest is one player per nickname, whatever the server. Nicknames are compared as a game server compares them (`nicknameKey()`, SQLite's `NOCASE`): ASCII letters without case, every other character as it is, so `ACE` and `ace` are one guest, `ÉLODIE` and `élodie` two. Among the rows of a player, its best score counts, the earliest game first when two are equal. Equal scores share a rank, and the next rank skips them (1, 1, 3).
+- **One player, one row**: a row a server wrote with an `accountId` is one player under any nickname, its id compared as written (a game server of this version writes none, see below); a guest is one player per nickname, whatever the server. Nicknames are compared as a game server compares them (`nicknameKey()`, SQLite's `NOCASE`): ASCII letters without case, every other character as it is, so `ACE` and `ace` are one guest, `ÉLODIE` and `élodie` two. Among the rows of a player, its best score counts, the earliest game first when two are equal. Equal scores share a rank, and the next rank skips them (1, 1, 3).
 - **`player`** names a nickname, compared the same way; the row of the player who played under it in any game of that leaderboard comes in `player` wherever it ranks, under the nickname of its best score, and `player` is left out when it names no one with a score there. A page is `limit` and `offset`, as for [the list of the servers](#listing-the-servers-and-their-history).
-- **Bounds of a result**: `playedAt` in seconds since 1970 UTC, from 0 to 2^63 − 1; `difficulty` and each `nickname`, nicknames of the protocol; `playerCount`, the players when the game started, 1 to `MAXIMUM_PLAYERS` (4); 1 to 4 `players`, no more than `playerCount`, since a game server lets nobody in once a game runs, and no nickname twice; `accountId`, left out for a guest, else 1 to `MAXIMUM_ACCOUNT_ID_SIZE` (64) bytes of printable UTF-8; `score`, 0 to 2^32 − 1, what a game server keeps.
+- **Bounds of a result**: `playedAt` in seconds since 1970 UTC, from 0 to 2^63 − 1; `difficulty` and each `nickname`, nicknames of the protocol; `playerCount`, the players when the game started, 1 to `MAXIMUM_PLAYERS` (4); 1 to 4 `players`, no more than `playerCount`, since a game server lets nobody in once a game runs, and no nickname twice; `ticket`, left out for a guest, else a game ticket as the master writes it (`rtt_` and 64 lowercase hexadecimal digits, `isWellFormedGameTicket()`), read as none when missing; `accountId`, left out, else 1 to `MAXIMUM_ACCOUNT_ID_SIZE` (64) bytes of printable UTF-8; `score`, 0 to 2^32 − 1, what a game server keeps; `victory`, a boolean, read as `false` when missing; `wonLooks`, the look items the player won, names of `SHIP_LOOK_ITEM_NAMES`, at most `MAXIMUM_WON_LOOKS` (30, the whole catalog, since a game server names each item once), read as none when missing, so a game server older than these two members still reports. A game server writes the `ticket` its player joined with, and leaves `accountId` out: a server cannot know an account, only the ticket a player hands it. The master still reads an `accountId` a server writes, for the ranking above, and never pays it.
 
 The key of a result is checked by the `ServersService` the servers module provides, which tells the server of a key; the controller reuses the reading of a request the servers module writes (`RouteAnswers.hpp`, `src/master/Servers/Controllers/`).
 
+### Crediting the games
+
+When the module `wallet` is on, `LeaderboardService::credit()` pays the players of a result the leaderboard keeps for the first time; a result sent again is not new, so it pays nothing. Each player who names a `ticket` pays, through `IAccountWallet::creditGame()`, the account the master gave that ticket to (see [Game tickets](#game-tickets)), when the ticket was never used and has not expired when the result arrives:
+
+- **Kopecks**: one per `SCORE_POINTS_PER_KOPECK` (10) points of its score, a part of a kopeck lost, and `VICTORY_BONUS_PERCENT` (25 %) of that more when `victory` is true (`kopecksFor()` and `withVictoryBonus()`, `rtype_network_master_economy`, `src/network/Master/Economy/`, which the client also uses to show the gain on its end screen). The balance stops at `MAXIMUM_KOPECKS` (999999).
+- **Looks**: each name of `wonLooks`, owned from then on with the origin `game`; a name of no look is skipped, and a look already owned stays as it was.
+
+A credit is one transaction: it marks the ticket used (`used_at`), then writes the kopecks, the looks and the reference `game:<server>:<game>:<nickname>` in `credited_results`, so neither the ticket nor the result pays twice. A guest, a ticket the master never gave, one a result already used and one that expired get nothing, and the `accountId` of a player is never read for a credit. The journal writes `game:<server>:<game>:<nickname> credited through its ticket: <n> kopecks, <m> looks`, or that it paid nothing and why, never the ticket; a credit that fails is written at the `error` level and is not tried again, since the result it pays is kept. A ticket names only the account that asked for it, so no client can name another account; a dishonest host can still invent the score of a ticket it was handed, once, the same trust as the leaderboard.
+
 ## Accounts and sessions: `AccountsModule`
 
-A player creates an account named by its nickname, then opens sessions with its password; the session token names the account to the master. Nothing reads an account yet: the client and the web site do not sign in, and playing never asks for one. The module is optional (`RTYPE_MODULE_ACCOUNTS`), and every route of it answers over HTTPS only.
+A player creates an account named by its nickname, then opens sessions with its password; the session token names the account to the master. The account holds a wallet (see [Wallets](#wallets-walletmodule)) and plays at the casino (see [The casino](#the-casino-casinomodule)); playing a game never asks for one, and a guest earns nothing. The web site signs a visitor in and keeps the token in a cookie of its own (see [The pages of the site](#the-pages-of-the-site)); the game client signs in through the site with a device link (see [Device links](#device-links-signing-a-game-in-through-the-site)), or with the token `--session` gives it (see [Client](/R-Type/client/#account-clientaccountmodule-iaccountsession-iwallet)). The module is optional (`RTYPE_MODULE_ACCOUNTS`), and every route of it answers over HTTPS only.
+
+The other modules read an account through `ISessionAccounts` (`rtype_master_accounts_contract`, `src/master/Accounts/Contract/`), which `AccountsService` implements: `userOfToken(token, now)` gives the account of a session, or nothing for a token that is malformed, unknown or expired, and extends the session as `GET /api/users/me` does. A controller answers a route of an account through `answerAsAccountOf()` (`RouteAnswers.hpp`), which answers 401, with `WWW-Authenticate: Bearer`, when the request carries no token or no session has it, before the body is read.
 
 | Route | Does | Answers |
 |---|---|---|
 | `POST /api/users` | creates an account from `{"nickname":"ACE","password":"…"}` | 201, `Location: /api/users/<id>`, and `{"id":1,"nickname":"ACE","role":"player"}`; 409 for a nickname taken, 429 over the quota of creations |
-| `POST /api/sessions` | opens a session for the same body | 201, `Location: /api/sessions/me`, and `{"token":"rts_<64 hexadecimal digits>","expiresAt":1800604800,"user":{…}}`; 401 for a wrong nickname or password, 429 after too many failures |
+| `POST /api/sessions` | opens a session for the same body | 201, `Location: /api/sessions/me`, and `{"token":"rts_<64 hexadecimal digits>","expiresAt":1800604800,"account":{…}}`; 401 for a wrong nickname or password, 429 after too many failures |
 | `GET /api/users/me` | reads the account of the token sent as `Authorization: Bearer <token>` | 200 and the account; 401 without a session |
 | `DELETE /api/sessions/me` | closes the session of the token | 204, for a session already closed too; 401 without a token |
 
 A body the master cannot read answers 400 naming the member. The token is sent as a Bearer header, never as a cookie: the callers are the game client and the server of the web site, so there is no CORS and no form to forge.
 
 - **Over HTTPS only.** Each route is `MasterRoute::httpsOnly`, and `MasterHttpServer` answers 403 to a request that did not come over HTTPS (`ApiRequest::overHttps`, see [Network](/R-Type/network/#http-server-httpserver)): the master speaks no TLS, so only a request Caddy forwards from the machine counts. A master on a LAN, without Caddy, answers 403 to every route of the accounts.
-- **The key of the passwords** is read from the environment variable `RT_PASSWORD_KEY` when the master starts (`PASSWORD_KEY_VARIABLE`): 64 hexadecimal digits, as `openssl rand -hex 32` draws them. It is never in the database, the repository or the journal. Unset or empty, the master stops at its start, before its port opens (`MissingPasswordKeyException`), and so does any other text that is no key (`InvalidPasswordKeyException`); the error names the variable, never its value. A master that must run without accounts turns them off with `module accounts off`. Another key makes every stored password unreadable.
+- **The key of the passwords** is read from the environment variable `RT_PASSWORD_KEY` when the master starts (`PASSWORD_KEY_VARIABLE`): 64 hexadecimal digits, as `openssl rand -hex 32` draws them. It is never in the database, the repository or the journal. Unset or empty, the master stops at its start, before its port opens (`MissingPasswordKeyException`), and so does any other text that is no key (`InvalidPasswordKeyException`); the error names the variable, never its value. A master that must run without accounts turns them off with `module accounts off`, after `module casino off` and `module wallet off`. Another key makes every stored password unreadable.
 - **A nickname** is a nickname of the protocol, 1 to 16 bytes of printable UTF-8, and names one account, compared as a game server compares nicknames: `ACE` and `ace` are one account. **A password** is `MINIMUM_PASSWORD_SIZE` to `MAXIMUM_PASSWORD_SIZE` bytes of printable UTF-8 (8 to 128, the defaults of Better Auth).
 - **The database keeps 128 bytes per password**: `hydro_pwhash_create()` of libhydrogen, with a salt of its own and `PASSWORD_HASH_ROUNDS` (200 000, about 60 ms in a release build on an Apple M4 Pro), encrypted with the key (`passwordHashOf()`, `src/network/Hashing/`). A stolen database tests no password without the key. A password never reaches the journal.
 - **A session** lives `SESSION_LIFETIME` (7 days). A use more than `SESSION_REFRESH_AGE` (1 day) after its expiry last moved moves it to 7 days after that use, so a player who plays every week never signs in again, and a session read often is written once a day: the defaults of Better Auth. The token is `rts_` and 32 random bytes in hexadecimal, shown once; the database keeps its fingerprint (`sessionFingerprintOf()`), so a copy of the file opens no session. Opening a session removes the expired ones.
@@ -380,7 +419,84 @@ A body the master cannot read answers 400 naming the member. The token is sent a
 - **The journal** names each sign-in, `ACE signed in from 203.0.113.7`, and each refusal, `sign-in as ACE from 203.0.113.7 refused: wrong nickname or password`.
 - **Roles.** An account is a `player` when it is created. A line `admin <nickname>` of `master.cfg` makes that account an `admin` when the master starts, and the journal says so; a line that names no account yet is written in the journal and applies at the next start after the account exists. Removing the line takes the role from nobody. Nothing reads the role yet: the administration is not written.
 
-The module is laid out as `ServersModule`: `AccountsController`, `AccountsService` (the quotas and the sessions; `Services/Helpers/`, the token and the key), one repository per table (`UserRepository` for `users`, `SessionRepository`, `SignInFailureRepository`), and the plain structs of `Models/`.
+The module is laid out as `ServersModule`: `AccountsController` and `DeviceLinksController`, `AccountsService` and `DeviceLinksService` (the quotas, the sessions and the links; `Services/Helpers/`, the token, the key and the secret of a link), one repository per table (`UserRepository` for `users`, `SessionRepository`, `SignInFailureRepository`, `DeviceLinkRepository`), and the plain structs of `Models/`.
+
+### Device links: signing a game in through the site
+
+A game never asks for a password: it signs in through the web site, with the OAuth 2.0 Device Authorization Grant of RFC 8628. The game asks for a link and shows its short code; a player signed in on the site approves it on the page `/link`; the game, which reads its link every few seconds, then trades it for a session. The links live in the module `accounts`, since the trade opens a session and the approval reads one.
+
+| Route | Caller | Answers |
+|---|---|---|
+| `POST /api/device-links` | the game, no credential | 201, `Location: /api/device-links/me`, and `{"secret":"rtd_…","userCode":"KQFB-WZPM","verificationUri":"<site-url>/link","verificationUriComplete":"<site-url>/link?code=KQFB-WZPM","expiresAt":…,"interval":5}`; 429 over the quota |
+| `GET /api/device-links/me` | the game, its secret as `Authorization: Bearer rtd_…` | 200 and `{"userCode","status","createdAt","expiresAt","interval"}`, `status` one of `pending`, `approved`, `denied`, `expired`; 401 for no link of that secret; 429 with `Retry-After: 5` for a read before the interval |
+| `DELETE /api/device-links/me` | the game, its secret | 204, for a link already gone too; 401 without a secret |
+| `GET /api/device-links/{code}` | the site, the session of the player | 200 and the state of the link; 401 without a session; 404 for no link of that code |
+| `PUT /api/device-links/{code}/decision` | the site, the session of the player | `{"decision":"approved"}` or `"denied"`: 200 and the state; the same decision sent again is answered the same; 409 once decided otherwise, or expired undecided; 400 for any other word |
+| `POST /api/sessions` | the game, its secret, no body | 201 and the session of the account that approved the link, as for a sign-in; 401 for no link of that secret, 409 while it waits, 403 once refused, 410 once expired |
+
+- **The secret names the link of a game, never a path.** It is `rtd_` and 32 random bytes in hexadecimal, shown once; the database keeps its fingerprint (`deviceLinkFingerprintOf()`). A player names a link by its short code, which only a signed-in account may read or decide on.
+- **A short code** is 8 letters of `DEVICE_LINK_USER_CODE_ALPHABET`, the 20 consonants RFC 8628 suggests, `KQFB-WZPM`, drawn without bias; the master reads it in any case, with or without its dash (`deviceLinkUserCodeOf()`). A code another live link holds is drawn again, `MAXIMUM_USER_CODE_DRAWS` (8) times at most.
+- **A link lives `DEVICE_LINK_LIFETIME` (10 minutes).** Its game reads it every `DEVICE_LINK_INTERVAL` (5 s); a read within `DEVICE_LINK_SHORTEST_READ_GAP` (4 s) of the last one answers 429, RFC 8628's `slow_down`, and leaves the last read as it was. A refusal stays `denied` past the expiry, so the game says it was refused.
+- **One link, one session.** The trade reads the link and removes it in one transaction, so a secret sent twice opens one session; the session then opens as a sign-in does (`AccountsService::openSession()`), counted under the address of the game.
+- **A decision is written once**, on a link no one decided and not expired: the update names the decider in the same step, so two players who answer at once leave one decision.
+- **Quota.** An address asks for `MAXIMUM_DEVICE_LINKS_PER_ADDRESS` (10) links per `DEVICE_LINK_CREATION_WINDOW` (1 hour) at most. A link is forgotten `DEVICE_LINK_KEPT_AFTER_EXPIRY` (1 hour) after it expired, so the quota still counts it. The reads of codes by a signed-in account are not counted: a guess needs an account, and 20 to the 8th codes over 10 minutes leave it nothing to find.
+- **The journal** names each session opened through a link, `ACE signed in through a device link from 203.0.113.7`, never a secret, a short code or a token.
+
+## Wallets: `WalletModule`
+
+The wallet module (`src/master/Wallet/`) keeps what an account holds: kopecks, which games pay and the shop spends, chips, which the casino stakes, and the looks the account owns, which the hangar of the client lets it wear. The client only reads and asks: no route lets a player add money, and kopecks come from games and the cashier, chips from the cashier and the casino. The module is optional (`RTYPE_MODULE_WALLET`), needs the accounts, and every route of it answers over HTTPS only, to the account of the token sent as `Authorization: Bearer <token>`, with 401 without a session.
+
+| Route | Does | Answers |
+|---|---|---|
+| `GET /api/users/me/wallet` | reads the balances | 200 and `{"kopecks":0,"chips":500}` |
+| `GET /api/users/me/wallet/movements` | reads the journal, newest first, a page at a time (`?limit&offset`, as [the list of the servers](#listing-the-servers-and-their-history)) | 200 and `{"movements":[{"id":3,"currency":"chips","amount":-25,"reason":"stake","madeAt":1800000000}]}`; 400 for a page out of its bounds |
+| `POST /api/users/me/wallet/exchanges` | the cashier: changes `{"from":"kopecks","amount":500}` into the other currency, one for one | 201, `Location: /api/users/me/wallet/exchanges/<id>`, and the exchange with the balances it left in `wallet`; 422 for an amount of none or past 999999, 409 when the balance it takes from holds less, or the other would pass 999999 |
+| `GET /api/users/me/wallet/exchanges/{id}` | reads an exchange of the account | 200 and `{"id":4,"from":"kopecks","amount":500,"madeAt":1800000000}`; 404 for an id that names no exchange of the account |
+| `GET /api/users/me/looks` | the looks the account owns, in the order of the catalog | 200 and `{"items":["top_hat","cool_shades","mustache"]}` |
+| `PUT /api/users/me/looks/{item}` | buys the look of that name at its price; a look owned costs nothing again | 201 bought, 200 already owned, each with `{"item":"crown","wallet":{…}}`; 404 for a name of no look, 422 for a look the shop does not sell, 409 for too few kopecks |
+| `POST /api/users/me/tickets` | gives the account a game ticket (see [Game tickets](#game-tickets)) | 201, `Location: /api/users/me/tickets/<fingerprint>`, and `{"ticket":"rtt_202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f","expiresAt":1800021600}`; 429 past 30 tickets in the last hour |
+| `GET /api/users/me/tickets/{fingerprint}` | reads a ticket the account was given | 200 and `{"expiresAt":1800021600,"used":false}`; 404 for a fingerprint of no ticket of the account, or of one expired and forgotten |
+
+- **A wallet opens at its first read or use**, with `wallet-starting-kopecks` (0) and `wallet-starting-chips` (500) and the starter kit, the top hat, the cool shades and the mustache (`STARTER_LOCKER_ITEMS`, origin `starter`). A wallet already open keeps its balances when the settings change.
+- **The journal is the truth, the balance its cache.** Each change writes the balance and its line of `wallet_movements` in one transaction, so the lines of a currency add up to its balance. A line gives a `reason`: `opening`, `game`, `exchange`, `purchase`, `stake`, `refund` or `payout`. Its reference names the fact that made it (`exchange:<id>`, `look:<name>`, `game:…`, `round:<room>:<round>`), and a fact that must apply once is looked up before it is written.
+- **No balance leaves 0 to 999999** (`MAXIMUM_KOPECKS`, `MAXIMUM_CHIPS`): a spending that would go under 0 is refused, the `CHECK` of the table refuses what the rules would let through, and a credit stops at the largest balance.
+- **An exchange** writes two lines naming one exchange, whose id is the number of the line that took the amount. **A purchase** takes the price of the look (`lookItemPrice()`, `ShipLookPriceConstants.hpp`, `src/network/Master/Economy/`) and makes the look owned (origin `purchase`) in one transaction, so a `PUT` sent twice takes the price once.
+- **What the other modules move** goes through `IAccountWallet` (`rtype_master_wallet_contract`, `src/master/Wallet/Contract/`), which `WalletService` implements: `applyChips()` stakes, hands back or pays chips inside the transaction its caller opened, and refuses a movement meant to apply once, such as a payout, when a line of the same reason and reference is in the journal; `creditGame()` credits a game in a transaction of its own (see [Crediting the games](#crediting-the-games)).
+
+### Game tickets
+
+A game ticket is how a game pays the right account. A signed-in client asks one (`POST /api/users/me/tickets`) right before it joins a game, and sends it to the game server in its `ConnectionRequest` (see [Protocol](/R-Type/protocol/#version-18)); the server keeps it with the player and reports it with the result, and the master pays the account it gave the ticket to (see [Crediting the games](#crediting-the-games)). The id of an account would name any account its sender likes; a ticket names only the account that asked for it.
+
+- **A ticket is `rtt_` and 32 random bytes** in lowercase hexadecimal, drawn by `fillWithRandomBytes()` as the tokens of the sessions are (`newGameTicket()`, `src/master/Wallet/Services/Helpers/`), and shown once. The master keeps its fingerprint, its keyed hash in its own context (`gameTicketFingerprintOf()`), so a copy of the file presents no ticket; `Location` names the ticket by that fingerprint, never by the ticket.
+- **A ticket pays one result**, before `GAME_TICKET_LIFETIME` (6 hours) passed since it was given, counted when the result arrives: the credit marks it used in its own transaction, so two results that present it at once pay one. A player who plays several games in one session joins every one of them with the ticket of that session, so only its first game pays.
+- **Quota, per account**: `MAXIMUM_GAME_TICKETS_PER_WINDOW` (30) tickets per `GAME_TICKET_WINDOW` (1 hour), 429 past it. Giving a ticket forgets the tickets expired, so an account holds 180 rows at most.
+- **`GET` of the `Location`** answers the account the ticket was given to only: any other account gets 404, as for a fingerprint of no ticket.
+
+The module is laid out as `ServersModule`: `WalletController` and `GameTicketController`, `WalletService` and `GameTicketService` (`Services/Helpers/`, the drawing and the fingerprint of a ticket), `WalletRepository`, `WalletMovementRepository`, `OwnedLookRepository`, `CreditedResultRepository` and `GameTicketRepository`, and the plain structs of `Models/`.
+
+## The casino: `CasinoModule`
+
+The casino module (`src/master/Casino/`) runs the roulette rooms every player of every server shares: fixed rooms, `casino-rooms` (3) of them, each seating `casino-seats` (8) players, named `Bydo Palace`, `Nebula Lounge`, `Wave Cannon Club` and on (`CASINO_ROOM_NAMES`), then `Room <n>`. The master times the rounds, draws the numbers and settles the chips; the client only reads and asks, again every `CASINO_ROOM_POLL_INTERVAL` (500 ms) after the previous answer (see [Client](/R-Type/client/#casino-casinoentrancescreen-cashierscreen-roulettescreen)). The module is optional (`RTYPE_MODULE_CASINO`) and needs the accounts and the wallet.
+
+| Route | Does | Answers |
+|---|---|---|
+| `GET /api/casino/rooms` | lists the rooms, to anyone, over HTTP too | 200 and `{"rooms":[{"id":1,"name":"Bydo Palace","seats":8,"seated":2,"round":58064516,"phase":"betting"}]}` |
+| `GET /api/casino/rooms/{room}` | the state of a room, to anyone, over HTTP too (below) | 200; 404 for a room the casino does not run |
+| `PUT /api/casino/rooms/{room}/seats/me` | seats the account of the token, or renews its seat | 201 seated, 200 renewed, each with the state of the room; 409 when every seat is taken by others; 404 |
+| `DELETE /api/casino/rooms/{room}/seats/me` | gets the account up | 204, for an account already up too |
+| `PUT /api/casino/rooms/{room}/rounds/{round}/bets/me` | replaces every bet the account holds on that round by `{"bets":[{"kind":"straight","firstNumber":17,"amount":10}]}`; `{"bets":[]}` takes them all back | 200 and `{"round":…,"bets":[…],"stake":10,"chips":490}`; 409 for closed bets or no seat, 422 for a broken rule or too few chips; 404 |
+| `GET /api/casino/rooms/{room}/rounds/{round}/bets/me` | the bets of the account on that round, and what they paid | 200 and `{"round":…,"bets":[…],"stake":10,"payout":360,"winningNumber":17}`, `payout` and `winningNumber` null until the round is drawn; 404 |
+
+The seats and the bets answer over HTTPS only, to the account of a session, with 401 without one; but for `DELETE`, a room that is no number from 1 to `casino-rooms`, or a round that is no whole number from 0, answers 404. The state of a room holds its `id`, `name`, `seats`, `round` and `phase`, the dates of its phases in milliseconds since 1970 (`closesAt`, `resultAt`, `endsAt`) with `serverTime`, the clock of the master when it answered, so a client counts down without trusting its own clock, `winningNumber`, null until the round is drawn, `history`, the last `CASINO_HISTORY_LENGTH` (10) numbers drawn before this round, newest first, and `players`, each seated player with its `nickname`, its `stake` on the round and its `payout`, null until the round is drawn.
+
+**The round follows the clock.** A round lasts `casino-betting-seconds` (20 s), then `casino-spinning-seconds` (6 s), then `casino-result-seconds` (5 s): 31 s. Round n starts n cycles after 1970 (`scheduledRoundAt()`, `Services/Helpers/RouletteSchedule.hpp`), so every room plays the same round, a client and the master always agree on the phase, no timer is kept, and a master that restarts falls back on the right round. Its bets are open from its start to `closesAt` excluded, the wheel spins until `resultAt`, and the result shows until `endsAt`, the start of the next round. A round goes on with nobody seated. A change of a duration changes the number of every round.
+
+- **The draw.** `CasinoRoundJob` runs on CasinoClock, its own thread, which the module starts with the master and stops with it: at once, then every `CASINO_ROUND_INTERVAL` (250 ms), it asks `RouletteDealer` for every round due, the round of each room whose bets closed and every earlier round that holds bets and was never drawn, such as one whose bets closed while the master was down. Each round is drawn in one transaction: the number of `IRouletteDraw` (`SystemRouletteDraw`, `src/network/Master/Casino/Draw/`, every number as likely as another) written in `casino_rounds`, and each payout added to the wallets under the reference `round:<room>:<round>`. A round already drawn is never drawn again. The journal writes `round <round> of room <room> drew <number>`; a pass that fails is written there and tried again an interval later.
+- **The bets.** `PUT …/bets/me` is one transaction: the round must be the one whose bets are open and must hold no row of `casino_rounds`, the check that keeps a bet off a round the job draws at the same moment, since both go through the lock of the database; the account must be seated. The bets it held are handed back (`refund`), then the new ones checked: on the cloth (`isPlaceableBet()`, `src/network/Master/Casino/Cloth/`) with at least one chip each, `MAXIMUM_ROULETTE_BETS` (32) at most, `MAXIMUM_ROUND_STAKE` (5000) chips at most in all, and no more chips than the wallet holds; then they are staked (`stake`). A refusal writes nothing. A winning bet returns its stake times its return, the stake included (`payoutOf()`): 36 for a straight, 18 a split, 12 a street, 9 a corner, 6 a six line, 3 a dozen or a column, 2 an even chance.
+- **The seats.** A seat counts while it was renewed in the last `CASINO_SEAT_LIFETIME` (30 s); the client renews it every `CASINO_SEAT_RENEWAL_INTERVAL` (10 s), so a player who left without getting up frees its place.
+- **Tidying.** Once it drew a round, the dealer removes the seats not seen for 30 s, the bets of rounds drawn more than `DRAWN_BETS_KEPT_FOR` (24 hours) ago, and the rounds of each room older than its last 10 that no kept bet names.
+
+The module is laid out as `ServersModule`, with `Jobs/` for `CasinoRoundJob`; `RouletteDealer` sits in `Services/` beside `CasinoService`, and `Services/Helpers/` holds the schedule, the payouts of a round, the names of the rooms and the reference of a round. The rules of the cloth, its constants (`RouletteConstants.hpp`) and the draw are in `src/network/Master/Casino/`, so the client lays the bets the master takes.
 
 ## The client of the master: `MasterClient`
 
@@ -396,6 +512,8 @@ master.sendResult(gameId, finishedGame);  // PUT /api/servers/me/results/{gameId
 rtype::network::ServerListing servers = master.listServers();  // no key needed
 rtype::network::GameListing listing = master.listGames(serverId);
 ```
+
+Two more clients in the same library serve the game client, each taking the token of a session as an argument, sent as Bearer and never kept: `MasterAccountClient`, the account of the token, its wallet, its looks, a purchase and an exchange, and `MasterCasinoClient`, the rooms, their state, a seat and the bets of a round. The routes of an account answer over HTTPS only, so their url names an `https://` master, or one behind a proxy that ends TLS. All three send through `MasterTransport`, which holds the connection and its timeouts.
 
 `listServers()` reads every page of `GET /api/servers`, `MAXIMUM_PAGE_SIZE` (100) servers each, up to `MAXIMUM_LISTED_SERVER_PAGES` (10) pages, and returns them in one listing.
 
@@ -429,6 +547,14 @@ void RouteAddingModule::install(rtype::engine::InstallContext& context) {
 | Add a table | a migration at the end of `MASTER_MIGRATIONS`, never an edit of one a master already applied |
 | Answer a route over HTTPS only | `.httpsOnly = true` in its `MasterRoute`; `MasterHttpServer` answers 403 to a request in clear |
 | Change the quotas of the accounts, or how long a session lives | `src/master/Accounts/Services/AccountsServiceConstants.hpp` |
+| Change what a wallet opens with | the settings `wallet-starting-kopecks` and `wallet-starting-chips`; their defaults in `src/master/Wallet/WalletModuleConstants.hpp`; the starter kit in `src/network/Master/Economy/StarterLookConstants.hpp` |
+| Change what a game pays, or the price of a look | `SCORE_POINTS_PER_KOPECK` and `VICTORY_BONUS_PERCENT` in `src/network/Master/Economy/KopecksConstants.hpp`, `ShipLookPriceConstants.hpp` beside it: the master and the client both read them |
+| Change the rules of the wallets, the cashier or a purchase | `WalletService` in `src/master/Wallet/Services/` |
+| Change the rooms of the casino or the length of a round | the settings `casino-rooms`, `casino-seats` and `casino-*-seconds`; their defaults and bounds in `src/master/Casino/CasinoModuleConstants.hpp`, the names in `Services/Helpers/CasinoHelpersConstants.hpp` |
+| Change the rules of the cloth, the limits of a round or the returns of a bet | `src/network/Master/Casino/Cloth/`: `RouletteRules.cpp` and `RouletteConstants.hpp`, shared with the client |
+| Change how a round is drawn and paid, or what is tidied | `RouletteDealer` in `src/master/Casino/Services/`, `CASINO_ROUND_INTERVAL` in `src/master/Casino/Jobs/CasinoRoundJobConstants.hpp` |
+| Change how long a seat lasts | `CASINO_SEAT_LIFETIME` and `CASINO_SEAT_RENEWAL_INTERVAL` in `src/network/Master/Casino/Table/CasinoRoomConstants.hpp` |
+| Read the account of a session in another module | `ISessionAccounts` in `src/master/Accounts/Contract/`, and `answerAsAccountOf()` in `RouteAnswers.hpp` |
 | Change the bounds of a password, or the cost of its hash | `MINIMUM_PASSWORD_SIZE` and `MAXIMUM_PASSWORD_SIZE` in `MasterMessageConstants.hpp`; `PASSWORD_HASH_ROUNDS` in `src/network/Hashing/HashingConstants.hpp` |
 | Change what a server sends, or its bounds | `src/network/Master/`: `MasterMessageText.cpp` and `MasterMessageConstants.hpp` |
 | Change what a creation, a registration or a heartbeat answers | `ServersController` (`src/master/Servers/Controllers/`) |

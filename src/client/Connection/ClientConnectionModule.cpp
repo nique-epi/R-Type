@@ -10,8 +10,12 @@
 #include "ContentPackCacheConstants.hpp"
 #include "ContentPlaces.hpp"
 #include "ExecutablePath.hpp"
+#include "IAccountLink.hpp"
+#include "ICasinoLink.hpp"
+#include "IDeviceLinkFlow.hpp"
 #include "IGameCatalog.hpp"
 #include "IServerCatalog.hpp"
+#include "ITicketLink.hpp"
 #include "InstallContext.hpp"
 #include "MasterAccess.hpp"
 #include "MasterLeaderboard.hpp"
@@ -69,6 +73,10 @@ void ClientConnectionModule::install(engine::InstallContext& context) {
   context.provide<IServerCatalog>(servers_);
   context.provide<IGameCatalog>(games_);
   context.provide(globalLeaderboard_);
+  context.provide<IAccountLink>(accountLink_);
+  context.provide<IDeviceLinkFlow>(deviceLinkFlow_);
+  context.provide<ITicketLink>(ticketLink_);
+  context.provide<ICasinoLink>(casinoLink_);
   context.addWork(NETWORK_STAGE, [this](engine::Duration elapsed) {
     connection_.update(elapsed);
     servers_.update(elapsed);
@@ -82,13 +90,25 @@ void ClientConnectionModule::start() {
   try {
     masterLink_.start(
         network::MasterAccess{.url = masterUrl_->text(), .key = std::string{}});
+    accountLink_.start(masterUrl_->text());
+    deviceLinkFlow_.start(masterUrl_->text());
+    ticketLink_.start(masterUrl_->text());
+    casinoLink_.start(masterUrl_->text());
   } catch (const std::exception&) {
+    ticketLink_.stop();
+    deviceLinkFlow_.stop();
+    accountLink_.stop();
+    masterLink_.stop();
     connection_.network().close();
     throw;
   }
 }
 
 void ClientConnectionModule::stop() {
+  casinoLink_.stop();
+  ticketLink_.stop();
+  deviceLinkFlow_.stop();
+  accountLink_.stop();
   masterLink_.stop();
   try {
     connection_.leave();

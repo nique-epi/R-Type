@@ -13,6 +13,7 @@
 #include "IScreen.hpp"
 #include "IScreenNavigator.hpp"
 #include "IServerCatalog.hpp"
+#include "IWallet.hpp"
 #include "KeyChip.hpp"
 #include "MotionPreference.hpp"
 #include "PlanetPose.hpp"
@@ -25,8 +26,6 @@
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
-
-struct PlayerSettings;
 
 /**
  * @brief The map of the servers PLAY opens over the title, and RETRY under the
@@ -52,10 +51,10 @@ struct PlayerSettings;
  * does; ADDRESS opens the connection form, BACK goes one stage back, then
  * closes the map.
  *
- * The list is read when the map opens, again every
- * SERVER_LIST_REFRESH_INTERVAL, on REFRESH_KEY, and GAMES_RECHECK_DELAY after
- * the player came back from a server (SessionEndWatch). A key that changes the
- * map acts once per hold.
+ * The list, and the wallet of the account whose kopecks it shows, are read
+ * when the map opens, again every SERVER_LIST_REFRESH_INTERVAL, on REFRESH_KEY,
+ * and GAMES_RECHECK_DELAY after the player came back from a server
+ * (SessionEndWatch). A key that changes the map acts once per hold.
  */
 class ServerMapScreen : public IScreen {
  public:
@@ -96,7 +95,7 @@ class ServerMapScreen : public IScreen {
   IScreenNavigator* navigator_;
   AmbienceScope ambience_;
   IServerCatalog* servers_;
-  const PlayerSettings* settings_;
+  IWallet* wallet_;
   IGameCatalog* games_;
   ServerChoice* choice_;
   std::unique_ptr<IInterfaceCanvas> canvas_;

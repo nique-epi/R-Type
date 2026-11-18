@@ -4,16 +4,20 @@
 #include <memory>
 #include "BlankRenderTarget.hpp"
 #include "EntitySpriteConstants.hpp"
+#include "FakeAccountSession.hpp"
+#include "FakeWallet.hpp"
 #include "KeyPress.hpp"
 #include "MenuScreenIdConstants.hpp"
 #include "MotionPreference.hpp"
 #include "PlayStart.hpp"
 #include "PlayerSettings.hpp"
 #include "PointerEvents.hpp"
+#include "RecordingDeviceLinkFlow.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingSoundPlayer.hpp"
 #include "ScreenConstants.hpp"
+#include "SignInReturn.hpp"
 #include "SoundConstants.hpp"
 #include "SquadronStart.hpp"
 #include "SquadronTestConstants.hpp"
@@ -35,6 +39,7 @@ using rtype::client::PlayerSettings;
 using rtype::client::PlayStart;
 using rtype::client::QUIT_CONFIRMATION_SCREEN;
 using rtype::client::SERVER_MAP_SCREEN;
+using rtype::client::SignInReturn;
 using rtype::client::SquadronStart;
 using rtype::client::TitleScreen;
 using rtype::client::TitleScreenParts;
@@ -72,11 +77,19 @@ TEST(TitleScreen, ASquadronInPlaceShowsItsShipsOnTheFirstFrame) {
   RecordingSoundPlayer sounds;
   InterfaceCanvasRecord canvas;
   const PlayerSettings settings;
+  const FakeWallet wallet;
+  FakeAccountSession account;
+  RecordingDeviceLinkFlow deviceLinks;
+  SignInReturn signInReturn;
 
   const TitleScreen title(
       TitleScreenParts{.navigator = navigator,
                        .sounds = sounds,
                        .settings = settings,
+                       .wallet = wallet,
+                       .account = account,
+                       .deviceLinks = deviceLinks,
+                       .signInReturn = signInReturn,
                        .playfieldPointAt = samePlayfieldPoint,
                        .motion = MotionPreference::Full,
                        .seed = TITLE_SEED,

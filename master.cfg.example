@@ -19,16 +19,41 @@ set database ""
 # site the same value (MASTER_SITE_KEY), and keep this file private.
 set site-key ""
 
+# The web site whose page /link validates the device links a game signs in
+# through (module accounts): an address starting with https:// or http://,
+# without the slash at its end. The master writes it in each link it opens.
+set site-url "https://rtype.app"
+
+# What the wallet of an account holds when it opens, at the first read of its
+# kopecks, chips or looks (module wallet): kopecks and chips, each 0 to
+# 999999. A wallet already open keeps its balances when these change.
+set wallet-starting-kopecks 0
+set wallet-starting-chips 500
+
+# The casino (module casino): roulette rooms, 1 to 16, and the players each
+# seats, 1 to 32. Every room plays the same rounds, on the clock: the bets
+# stay open casino-betting-seconds (5 to 600), the wheel spins
+# casino-spinning-seconds, then the result shows casino-result-seconds (each
+# 1 to 60), and the next round opens its bets.
+set casino-rooms 3
+set casino-seats 8
+set casino-betting-seconds 20
+set casino-spinning-seconds 6
+set casino-result-seconds 5
+
 # Make the account of a nickname an admin when the master starts (module
 # accounts). The account must exist; a line that names none waits for the next
 # start. The key of the passwords is no setting: give it in the environment
 # variable RT_PASSWORD_KEY (openssl rand -hex 32, drawn once and kept); without
-# it the master does not start, unless the accounts are off (module accounts
-# off, below).
+# it the master does not start, unless the accounts are off (module casino off,
+# then module wallet off, then module accounts off, below).
 # admin ACE
 
 # Turn a module off (it is never installed). Refused when a module
 # that stays on depends on it: storage, probe and http need logger; servers
-# needs storage, probe and http; leaderboard needs storage, http and servers;
-# accounts needs logger, storage and http.
+# needs storage, probe and http; leaderboard needs logger, storage, http and
+# servers, and credits the games through the wallet when it is on;
+# accounts needs logger, storage and http; wallet needs logger, storage, http
+# and accounts, so it goes off before the accounts; casino needs logger,
+# storage, http, accounts and wallet, so it goes off before the wallet.
 # module http off

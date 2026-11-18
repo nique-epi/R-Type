@@ -6,9 +6,11 @@
 #include <array>
 #include <filesystem>
 #include <string>
+#include <vector>
 #include "AssetLibrary.hpp"
 #include "AssetLoadingStep.hpp"
 #include "BackgroundCatalog.hpp"
+#include "CasinoSpriteConstants.hpp"
 #include "EffectConstants.hpp"
 #include "EntityAppearances.hpp"
 #include "EntitySpriteConstants.hpp"
@@ -29,6 +31,7 @@
 using rtype::client::AssetLibrary;
 using rtype::client::AssetLoadingStep;
 using rtype::client::BackgroundCatalog;
+using rtype::client::CASINO_TEXTURES;
 using rtype::client::EFFECT_SHEET_ID;
 using rtype::client::ENTITY_SHEET_ID;
 using rtype::client::EntityAppearances;
@@ -52,11 +55,13 @@ using rtype::client::SHOP_SCENE_ID;
 using rtype::client::SHOP_TICKET_SHEET_ID;
 using rtype::client::SMALL_FONT_ID;
 using rtype::client::titleAssets;
+using rtype::client::WHEEL_ROTOR_TURN_ID;
+using rtype::client::WHEEL_ROTOR_TURN_SHEET_SIZE;
 using rtype::client::withBackgroundImages;
 using rtype::client::withEntitySheets;
 using ::testing::Contains;
 using ::testing::IsSupersetOf;
-using ::testing::UnorderedElementsAre;
+using ::testing::UnorderedElementsAreArray;
 
 /**
  * Given the assets folder of the repository
@@ -200,12 +205,64 @@ TEST(ScreenAssets, AGameKeepsEveryTextureOfTheTitle) {
  * of the servers, and the effect sheet of its explosions
  */
 TEST(ScreenAssets, TheIntroLoadsTheTitleAndTheEffectSheet) {
-  EXPECT_THAT(introAssets().textures,
-              UnorderedElementsAre(
-                  LOGO_ID, ENTITY_SHEET_ID, HUD_SHEET_ID, PROFESSOR_SHEET_ID,
-                  LEADERBOARD_SHEET_ID, SHIP_LOOK_SHEET_ID, SHIP_HULL_SHEET_ID,
-                  SECTOR_MAP_SHEET_ID, SHOP_SCENE_ID, SHOP_KEEPER_SHEET_ID,
-                  SHOP_FRONT_ID, SHOP_TICKET_SHEET_ID, EFFECT_SHEET_ID));
+  std::vector<std::string> expected{LOGO_ID,
+                                    ENTITY_SHEET_ID,
+                                    HUD_SHEET_ID,
+                                    PROFESSOR_SHEET_ID,
+                                    LEADERBOARD_SHEET_ID,
+                                    SHIP_LOOK_SHEET_ID,
+                                    SHIP_HULL_SHEET_ID,
+                                    SECTOR_MAP_SHEET_ID,
+                                    SHOP_SCENE_ID,
+                                    SHOP_KEEPER_SHEET_ID,
+                                    SHOP_FRONT_ID,
+                                    SHOP_TICKET_SHEET_ID,
+                                    EFFECT_SHEET_ID};
+  expected.insert(expected.end(), CASINO_TEXTURES.begin(),
+                  CASINO_TEXTURES.end());
+
+  EXPECT_THAT(introAssets().textures, UnorderedElementsAreArray(expected));
+}
+
+/**
+ * Given the assets of the title screen
+ * When their textures are listed
+ * Then they hold every picture of the casino, the turns of the rotor
+ * included, so the casino opens without loading
+ */
+TEST(ScreenAssets, TheTitleLoadsThePicturesOfTheCasino) {
+  const std::vector<std::string> textures = titleAssets().textures;
+
+  EXPECT_THAT(textures, IsSupersetOf(CASINO_TEXTURES));
+  EXPECT_THAT(textures, Contains(WHEEL_ROTOR_TURN_ID));
+}
+
+/**
+ * Given the sheet of the turns of the rotor of the repository
+ * When it is read
+ * Then it has the size the roulette cuts its frames from
+ */
+TEST(ScreenAssets, TheRotorSheetHasTheSizeTheRouletteCuts) {
+  sf::Image sheet;
+
+  ASSERT_TRUE(sheet.loadFromFile(repositoryAssets() / WHEEL_ROTOR_TURN_ID));
+
+  EXPECT_EQ(sf::Vector2i(sheet.getSize()), WHEEL_ROTOR_TURN_SHEET_SIZE);
+}
+
+/**
+ * Given the sheet of the turns of the rotor of the repository
+ * When it is read
+ * Then neither of its sides passes the largest side some graphics cards take
+ * for one texture
+ */
+TEST(ScreenAssets, TheRotorSheetFitsEveryGraphicsCard) {
+  sf::Image sheet;
+
+  ASSERT_TRUE(sheet.loadFromFile(repositoryAssets() / WHEEL_ROTOR_TURN_ID));
+
+  EXPECT_LE(sheet.getSize().x, LARGEST_TEXTURE_SIDE);
+  EXPECT_LE(sheet.getSize().y, LARGEST_TEXTURE_SIDE);
 }
 
 /**

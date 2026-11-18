@@ -15,8 +15,10 @@
 namespace rtype::server::testing {
 
 PlayerResult playerNamed(std::string_view nickname, std::uint32_t score) {
-  return PlayerResult{
-      .nickname = std::string{nickname}, .score = score, .deaths = 0};
+  return PlayerResult{.nickname = std::string{nickname},
+                      .score = score,
+                      .deaths = 0,
+                      .wonLooks = {}};
 }
 
 GameResult normalGame(std::vector<PlayerResult> players,

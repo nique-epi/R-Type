@@ -10,6 +10,7 @@
 #include "EncodedMessage.hpp"
 #include "Endpoint.hpp"
 #include "GameRules.hpp"
+#include "GameTicket.hpp"
 #include "Heartbeat.hpp"
 #include "MasterProbe.hpp"
 #include "MessagePayload.hpp"
@@ -66,6 +67,16 @@ std::vector<std::byte> requestDatagramOf(const std::string& nickname,
       rtype::network::PacketHeader{},
       rtype::network::ConnectionRequest{.cookie = cookie,
                                         .nickname = nickname});
+}
+
+std::vector<std::byte> requestDatagramWithTicket(
+    const rtype::network::GameTicket& ticket, std::uint64_t cookie) {
+  return rtype::network::DatagramCodec::encode(
+      rtype::network::PacketHeader{},
+      rtype::network::ConnectionRequest{
+          .cookie = cookie,
+          .nickname = std::string{rtype::server::testing::PLAYER_NICKNAME},
+          .ticket = ticket});
 }
 
 std::vector<std::byte> informationRequestDatagram(

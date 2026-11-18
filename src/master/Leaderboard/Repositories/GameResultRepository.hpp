@@ -18,8 +18,9 @@ class GameResultRepository {
    * master keeps a row of that game of that server already: a game is kept
    * whole and once, so a result sent again changes nothing, even with other
    * players or scores.
+   * @returns Whether it added the rows: false for a game kept already.
    */
-  void add(const ServerGameResult& result);
+  bool add(const ServerGameResult& result);
 
   /** @returns The rows of the page of @p query, by rank, and the row of the
    * player it names, wherever it ranks. */

@@ -2,7 +2,6 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "ClientConstants.hpp"
 #include "ConnectionPhase.hpp"
 #include "ConnectionStatus.hpp"
 #include "HangarScreen.hpp"
@@ -17,10 +16,6 @@
 #include "ScreenBuilding.hpp"
 #include "ScreenContext.hpp"
 #include "ScreenRegistry.hpp"
-#include "SettingsService.hpp"
-#include "ShipLookExchange.hpp"
-#include "TimeConstants.hpp"
-#include "WonItems.hpp"
 
 namespace rtype::client {
 
@@ -41,6 +36,8 @@ std::unique_ptr<IScreen> buildHangarScreen(const ScreenContext& context) {
           .sounds = soundsOf(context),
           .audio = context.services.audio.get(),
           .settings = context.services.settingsService.get(),
+          .account = context.services.account.get(),
+          .wallet = context.services.wallet.get(),
           .playfieldPointAt = playfieldMappingOf(context),
           .palette = playerPaletteOf(context.services.settings.get()),
           .shipColor = shipColorOf(context.services.connection.get().status()),
@@ -61,12 +58,6 @@ std::vector<std::string> ClientHangarModule::dependencies() const {
 
 void ClientHangarModule::install(engine::InstallContext& context) {
   context.require<ScreenRegistry>().add(HANGAR_SCREEN, buildHangarScreen);
-  shipLooks_ = &context.require<ShipLookExchange>();
-  settings_ = &context.require<SettingsService>();
-  context.addWork(UPDATE_STAGE,
-                  [this]([[maybe_unused]] engine::Duration elapsed) {
-                    storeWonItems(*shipLooks_, *settings_);
-                  });
 }
 
 void ClientHangarModule::start() {}

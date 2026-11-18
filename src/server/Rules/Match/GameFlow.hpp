@@ -151,8 +151,8 @@ class GameFlow final : public IGameFlow {
 
   /**
    * @brief Ends the game in progress without telling its players a result:
-   * only a game that ends by itself does (see finishIfOver). Does nothing in
-   * any other state.
+   * only a game that ends by itself does (see finishIfOver). The change it
+   * publishes says Defeat. Does nothing in any other state.
    */
   void finish() override;
 

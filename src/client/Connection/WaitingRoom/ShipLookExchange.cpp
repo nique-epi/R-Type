@@ -1,13 +1,10 @@
 #include "ShipLookExchange.hpp"
 #include <cstdint>
 #include <span>
-#include <utility>
-#include <vector>
 #include "ConnectionConstants.hpp"
 #include "ISessionOutbox.hpp"
 #include "IWaitingRoom.hpp"
 #include "LobbyState.hpp"
-#include "LookItemWon.hpp"
 #include "MessageDispatcher.hpp"
 #include "MessageOrigin.hpp"
 #include "PlayerLooks.hpp"
@@ -37,10 +34,6 @@ ShipLookExchange::ShipLookExchange(network::MessageDispatcher& dispatcher,
           looks_ = looks.players;
         }
       });
-  dispatcher.registerHandler<network::LookItemWon>(
-      [this](const network::MessageOrigin&, const network::LookItemWon& won) {
-        wonItems_.push_back(won.item);
-      });
 }
 
 void ShipLookExchange::chooseLook(identifiers::ShipLook look) {
@@ -53,10 +46,6 @@ void ShipLookExchange::chooseLook(identifiers::ShipLook look) {
 
 std::span<const network::PlayerLook> ShipLookExchange::playerLooks() const {
   return looks_;
-}
-
-std::vector<std::uint8_t> ShipLookExchange::takeWonItems() {
-  return std::exchange(wonItems_, {});
 }
 
 void ShipLookExchange::sessionOpened(const network::LobbyPlayer& ownPlayer,

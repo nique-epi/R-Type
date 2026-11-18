@@ -15,14 +15,13 @@
 
 namespace rtype::client::testing {
 
-ShopBoothFixture::ShopBoothFixture()
-    : service_(settings_, storage_), audio_(sounds_) {
+ShopBoothFixture::ShopBoothFixture() : audio_(sounds_) {
   audio_.setAmbience(Ambience::Space);
   screen_ = std::make_unique<ShopScreen>(
       ShopScreenParts{.navigator = navigator_,
                       .sounds = sounds_,
                       .audio = audio_,
-                      .settings = service_,
+                      .wallet = wallet_,
                       .playfieldPointAt = samePlayfieldPoint,
                       .motion = MotionPreference::Full},
       std::make_unique<RecordingInterfaceCanvas>(painting_));
@@ -34,7 +33,7 @@ void ShopBoothFixture::reopenWithLessMotion() {
       ShopScreenParts{.navigator = navigator_,
                       .sounds = sounds_,
                       .audio = audio_,
-                      .settings = service_,
+                      .wallet = wallet_,
                       .playfieldPointAt = samePlayfieldPoint,
                       .motion = MotionPreference::Reduced},
       std::make_unique<RecordingInterfaceCanvas>(painting_));

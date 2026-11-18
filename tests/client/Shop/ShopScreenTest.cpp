@@ -5,13 +5,18 @@
 #include <string>
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
+#include "ScreenTestConstants.hpp"
 #include "ShopScreenConstants.hpp"
 #include "ShopScreenFixture.hpp"
 #include "ShopScreenTestConstants.hpp"
+#include "WalletChangeReading.hpp"
+#include "WalletRefusal.hpp"
 
+using rtype::client::MASTER_SILENT_STATUS;
 using rtype::client::PURCHASE_SOUND_ID;
+using rtype::client::WalletChangeReading;
+using rtype::client::WalletRefusal;
 using rtype::client::testing::A_FORTUNE;
-using rtype::client::testing::A_FORTUNE_LESS_THE_PARTY_HAT;
 using rtype::client::testing::ALMOST_THE_STAMP_TIME;
 using rtype::client::testing::ALREADY_YOURS_LINE;
 using rtype::client::testing::ALREADY_YOURS_WORD;
@@ -63,22 +68,20 @@ TEST_F(ShopScreenFixture, EnterPutsTheChosenLookInTheLocker) {
 
   buyChosen();
 
-  EXPECT_TRUE(settings().shipLocker.items.test(PARTY_HAT_ITEM));
+  EXPECT_THAT(wallet().boughtItems, Contains(PARTY_HAT_ITEM));
 }
 
 /**
  * Given a rich player, the party hat chosen
  * When Enter is pressed, then BUY on its ticket
- * Then 150 kopecks leave the balance, and the settings are saved once with
- * what is left
+ * Then the master is asked to buy it once
  */
-TEST_F(ShopScreenFixture, APurchaseTakesItsPriceAndIsSaved) {
+TEST_F(ShopScreenFixture, APurchaseAsksTheMasterOnce) {
   give(A_FORTUNE);
 
   buyChosen();
 
-  ASSERT_EQ(storage().saves().size(), 1U);
-  EXPECT_EQ(storage().saves().back().kopecks, A_FORTUNE_LESS_THE_PARTY_HAT);
+  EXPECT_EQ(wallet().boughtItems.size(), 1U);
 }
 
 /**
@@ -111,16 +114,14 @@ TEST_F(ShopScreenFixture, APoorPlayerIsToldWhatIsMissing) {
 /**
  * Given a player one kopeck short of the party hat
  * When Enter is pressed, then BUY on its ticket
- * Then nothing is bought, saved or heard as a purchase
+ * Then nothing is asked of the master, or heard as a purchase
  */
 TEST_F(ShopScreenFixture, ARefusedPurchaseChangesNothing) {
   give(ONE_KOPECK_UNDER_THE_PARTY_HAT);
 
   buyChosen();
 
-  EXPECT_FALSE(settings().shipLocker.items.test(PARTY_HAT_ITEM));
-  EXPECT_EQ(settings().kopecks, ONE_KOPECK_UNDER_THE_PARTY_HAT);
-  EXPECT_TRUE(storage().saves().empty());
+  EXPECT_THAT(wallet().boughtItems, Not(Contains(PARTY_HAT_ITEM)));
   EXPECT_THAT(sounds().played(), Not(Contains(std::string{PURCHASE_SOUND_ID})));
 }
 
@@ -137,7 +138,7 @@ TEST_F(ShopScreenFixture, AHeldEnterShowsTheTicketAndBuysNothing) {
   hold(Key::Enter);
 
   EXPECT_TRUE(showsATicket(painting()));
-  EXPECT_FALSE(settings().shipLocker.items.test(PARTY_HAT_ITEM));
+  EXPECT_THAT(wallet().boughtItems, Not(Contains(PARTY_HAT_ITEM)));
 }
 
 /**
@@ -181,7 +182,7 @@ TEST_F(ShopScreenFixture, AClickThenBuyBuysTheLookUnderIt) {
   pointAt(SECOND_CELL_MIDDLE, true);
   pointAt(BUY_BUTTON_MIDDLE, true);
 
-  EXPECT_TRUE(settings().shipLocker.items.test(CROWN_ITEM));
+  EXPECT_THAT(wallet().boughtItems, Contains(CROWN_ITEM));
 }
 
 /**
@@ -196,7 +197,7 @@ TEST_F(ShopScreenFixture, ThePointerChoosesTheLookItMovesOver) {
 
   buyChosen();
 
-  EXPECT_TRUE(settings().shipLocker.items.test(CROWN_ITEM));
+  EXPECT_THAT(wallet().boughtItems, Contains(CROWN_ITEM));
 }
 
 /**
@@ -210,7 +211,7 @@ TEST_F(ShopScreenFixture, AClickOnAStallThenBuyBuysItsHull) {
   pointAt(FIRST_STALL_MIDDLE_OF_THE_SHOP, true);
   pointAt(BUY_BUTTON_MIDDLE, true);
 
-  EXPECT_TRUE(settings().shipLocker.items.test(CHEAPEST_HULL_ITEM));
+  EXPECT_THAT(wallet().boughtItems, Contains(CHEAPEST_HULL_ITEM));
 }
 
 /**
@@ -281,8 +282,7 @@ TEST_F(ShopScreenFixture, EnterShowsTheTicketBeforeAnyPurchase) {
   press(Key::Enter);
 
   EXPECT_TRUE(showsATicket(painting()));
-  EXPECT_FALSE(settings().shipLocker.items.test(PARTY_HAT_ITEM));
-  EXPECT_TRUE(storage().saves().empty());
+  EXPECT_THAT(wallet().boughtItems, Not(Contains(PARTY_HAT_ITEM)));
 }
 
 /**
@@ -297,7 +297,7 @@ TEST_F(ShopScreenFixture, EscapeOnTheTicketCancelsItAndKeepsTheShop) {
   press(Key::Escape);
 
   EXPECT_FALSE(showsATicket(painting()));
-  EXPECT_FALSE(settings().shipLocker.items.test(PARTY_HAT_ITEM));
+  EXPECT_THAT(wallet().boughtItems, Not(Contains(PARTY_HAT_ITEM)));
   EXPECT_TRUE(navigator().calls().empty());
 }
 
@@ -314,7 +314,7 @@ TEST_F(ShopScreenFixture, EnterOnCancelBuysNothing) {
   press(Key::Enter);
 
   EXPECT_FALSE(showsATicket(painting()));
-  EXPECT_FALSE(settings().shipLocker.items.test(PARTY_HAT_ITEM));
+  EXPECT_THAT(wallet().boughtItems, Not(Contains(PARTY_HAT_ITEM)));
 }
 
 /**
@@ -329,7 +329,7 @@ TEST_F(ShopScreenFixture, AClickOnCancelBuysNothing) {
   pointAt(CANCEL_BUTTON_MIDDLE, true);
 
   EXPECT_FALSE(showsATicket(painting()));
-  EXPECT_FALSE(settings().shipLocker.items.test(PARTY_HAT_ITEM));
+  EXPECT_THAT(wallet().boughtItems, Not(Contains(PARTY_HAT_ITEM)));
 }
 
 /**
@@ -344,11 +344,12 @@ TEST_F(ShopScreenFixture, AClickOffTheTicketCancelsIt) {
   pointAt(OFF_THE_TICKET, true);
 
   EXPECT_FALSE(showsATicket(painting()));
-  EXPECT_FALSE(settings().shipLocker.items.test(PARTY_HAT_ITEM));
+  EXPECT_THAT(wallet().boughtItems, Not(Contains(PARTY_HAT_ITEM)));
 }
 
 /**
- * Given a rich player who just pressed BUY on the ticket of the party hat
+ * Given a rich player who just pressed BUY on the ticket of the party hat,
+ * which the master made
  * When a frame shorter than the stamp time passes, then the rest of it
  * Then the paid ticket shows its stamp until its time is up, then goes
  */
@@ -356,6 +357,11 @@ TEST_F(ShopScreenFixture, APaidTicketShowsItsStampThenGoes) {
   give(A_FORTUNE);
   press(Key::Enter);
   press(Key::Enter);
+  wallet().purchaseAnswer =
+      WalletChangeReading{.ask = wallet().boughtItems.size(),
+                          .wallet = wallet().balances,
+                          .refusal = std::nullopt};
+  wait(ONE_FRAME);
 
   wait(ALMOST_THE_STAMP_TIME);
   EXPECT_TRUE(showsATicket(painting()));
@@ -392,4 +398,40 @@ TEST_F(ShopScreenFixture, AHullTooDearHasItsOwnRefusal) {
 
   EXPECT_NE(writingOf(painting(), WAR_SHARK_TOO_EXPENSIVE_WORD), nullptr);
   EXPECT_EQ(writingOf(painting(), FIRST_TOO_EXPENSIVE_WORD), nullptr);
+}
+
+/**
+ * Given a rich player who pressed BUY on the ticket of the party hat
+ * When Enter is pressed again before the master answered
+ * Then the master is asked once: the ticket waits for the answer
+ */
+TEST_F(ShopScreenFixture, ASecondBuyWaitsForTheAnswerOfTheFirst) {
+  give(A_FORTUNE);
+  press(Key::Enter);
+  press(Key::Enter);
+
+  press(Key::Enter);
+
+  EXPECT_EQ(wallet().boughtItems.size(), 1U);
+  EXPECT_TRUE(showsATicket(painting()));
+}
+
+/**
+ * Given a rich player who pressed BUY on the ticket of the party hat
+ * When the master answers that it could not be reached
+ * Then the status line says no answer came, and no purchase is heard
+ */
+TEST_F(ShopScreenFixture, APurchaseTheMasterDidNotMakeSaysWhy) {
+  give(A_FORTUNE);
+  press(Key::Enter);
+  press(Key::Enter);
+
+  wallet().purchaseAnswer =
+      WalletChangeReading{.ask = wallet().boughtItems.size(),
+                          .wallet = std::nullopt,
+                          .refusal = WalletRefusal::MasterUnreachable};
+  wait(ONE_FRAME);
+
+  EXPECT_NE(writingOf(painting(), MASTER_SILENT_STATUS), nullptr);
+  EXPECT_THAT(sounds().played(), Not(Contains(std::string{PURCHASE_SOUND_ID})));
 }

@@ -4,6 +4,8 @@
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <memory>
+#include "FakeAccountSession.hpp"
+#include "FakeWallet.hpp"
 #include "HangarScreen.hpp"
 #include "MotionPreference.hpp"
 #include "PlayerSettings.hpp"
@@ -41,8 +43,14 @@ class HangarScreenFixture : public ::testing::Test {
   [[nodiscard]] const RecordingSoundPlayer& sounds() const;
   [[nodiscard]] const RecordingAudioService& audio() const;
   [[nodiscard]] const InterfaceCanvasRecord& painting() const;
+  /** @returns The wallet of the player, whose looks a test may change. */
+  [[nodiscard]] FakeWallet& wallet();
 
  private:
+  /** @brief The account of the player, a guest until holdEveryItem(), and
+   * the looks its wallet owns. */
+  FakeAccountSession account_;
+  FakeWallet wallet_;
   PlayerSettings settings_;
   RecordingSettingsStorage storage_;
   SettingsService service_;

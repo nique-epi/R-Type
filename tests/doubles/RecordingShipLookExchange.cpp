@@ -1,5 +1,4 @@
 #include "RecordingShipLookExchange.hpp"
-#include <cstdint>
 #include <span>
 #include <utility>
 #include <vector>
@@ -15,17 +14,9 @@ RecordingShipLookExchange::playerLooks() const {
   return playerLooks_;
 }
 
-std::vector<std::uint8_t> RecordingShipLookExchange::takeWonItems() {
-  return std::exchange(wonItems_, {});
-}
-
 void RecordingShipLookExchange::setPlayerLooks(
     std::vector<rtype::network::PlayerLook> looks) {
   playerLooks_ = std::move(looks);
-}
-
-void RecordingShipLookExchange::setWonItems(std::vector<std::uint8_t> items) {
-  wonItems_ = std::move(items);
 }
 
 const std::vector<rtype::identifiers::ShipLook>&

@@ -24,6 +24,8 @@ class GameResultKeeperFixture : public ::testing::Test {
   /** @brief Moves the game along the states of a start, tick by tick. */
   void startTheGame();
   void finishTheGame();
+  /** @brief Finishes the game with its level cleared. */
+  void winTheGame();
   void waitForPlayersAgain();
 
   [[nodiscard]] const RecordingResultsArchive& archive() const;

@@ -1,0 +1,2 @@
+rtype_add_test(NAME client_casino_channel_tests SOURCES CasinoChannelTest.cpp CasinoChannelFixture.cpp ${RTYPE_TEST_SOURCE_DIR}/doubles/FakeAccountSession.cpp ${RTYPE_TEST_SOURCE_DIR}/doubles/RecordingCasinoLink.cpp ${RTYPE_TEST_SOURCE_DIR}/doubles/FakeWallet.cpp LIBS rtype_client_casino_channel rtype_network_protocol rtype_test_support)
+target_include_directories(client_casino_channel_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${RTYPE_TEST_SOURCE_DIR}/doubles)

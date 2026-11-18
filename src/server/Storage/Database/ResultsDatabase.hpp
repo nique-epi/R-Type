@@ -51,8 +51,8 @@ class ResultsDatabase {
 
   /**
    * @returns The @p gameLimit oldest vanilla games neither sent to the master
-   * nor refused by it, the oldest first, each with all its rows. A guest is
-   * the only kind of player read: no game writes account_id yet.
+   * nor refused by it, the oldest first, each with all its rows, the account
+   * and the won looks of each player and the outcome included.
    * @throws SQLite::Exception when SQLite refuses it.
    */
   [[nodiscard]] std::vector<UnsentGame> unsentVanillaGames(

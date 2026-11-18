@@ -1,5 +1,6 @@
 #pragma once
 
+#include "GameOutcome.hpp"
 #include "GameState.hpp"
 
 namespace rtype::server {
@@ -12,6 +13,10 @@ namespace rtype::server {
 struct GameStateChanged {
   GameState previous{GameState::WaitingForPlayers};
   GameState current{GameState::WaitingForPlayers};
+  /** @brief How the game ended, when current is Finished: Victory only when
+   * its players cleared the level; a game the server ends by itself
+   * (GameFlow::finish()) is a Defeat. Defeat in every other change. */
+  GameOutcome outcome{GameOutcome::Defeat};
 
   bool operator==(const GameStateChanged&) const = default;
 };

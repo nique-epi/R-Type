@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <optional>
 #include <string_view>
 #include "RowWindow.hpp"
 #include "ShipLocker.hpp"
@@ -16,7 +17,9 @@ struct ShopView {
   ShopSpot chosen;
   RowWindow rows;
   ShipLocker owned;
-  std::uint32_t kopecks{};
+  /** @brief The kopecks of the account; nothing until the master answered
+   * them. */
+  std::optional<std::uint32_t> kopecks;
   std::string_view status;
   /** @brief How the shopkeeper stands now. */
   ShopkeeperPose keeper;

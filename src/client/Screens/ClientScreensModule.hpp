@@ -13,7 +13,9 @@
 #include "EventListeners.hpp"
 #include "FrameLoop.hpp"
 #include "GameWindow.hpp"
+#include "IAccountSession.hpp"
 #include "IAudioService.hpp"
+#include "IDeviceLinkFlow.hpp"
 #include "IEntityTypeTable.hpp"
 #include "IGameCatalog.hpp"
 #include "IModule.hpp"
@@ -21,6 +23,8 @@
 #include "IServerCatalog.hpp"
 #include "IServerTicks.hpp"
 #include "ISessionBackgrounds.hpp"
+#include "ITicketLink.hpp"
+#include "IWallet.hpp"
 #include "InstallContext.hpp"
 #include "Logger.hpp"
 #include "MasterLeaderboard.hpp"
@@ -34,6 +38,7 @@
 #include "SettingValue.hpp"
 #include "SettingsService.hpp"
 #include "ShipLookExchange.hpp"
+#include "SignInReturn.hpp"
 #include "SilentAudioService.hpp"
 #include "SubscriptionHandle.hpp"
 #include "TimeConstants.hpp"
@@ -108,7 +113,7 @@ class ClientScreensModule final : public engine::IModule,
   /** @returns What the screens are built from: the services install() found,
    * and a choice that starts with @p server, the nickname setting and the game
    * given at launch. */
-  [[nodiscard]] ScreenServices services(const network::Endpoint& server) const;
+  [[nodiscard]] ScreenServices services(const network::Endpoint& server);
 
   ServerChoice launch_;
   PlayStart playStart_;
@@ -135,6 +140,11 @@ class ClientScreensModule final : public engine::IModule,
   const IServerTicks* serverTicks_{nullptr};
   IServerCatalog* serverCatalog_{nullptr};
   IGameCatalog* gameCatalog_{nullptr};
+  IAccountSession* account_{nullptr};
+  ITicketLink* tickets_{nullptr};
+  IDeviceLinkFlow* deviceLinks_{nullptr};
+  SignInReturn signInReturn_;
+  IWallet* wallet_{nullptr};
   FrameLoop* loop_{nullptr};
   EventListeners* listeners_{nullptr};
   /** @brief Declared before screens_, which keep a reference to it. */

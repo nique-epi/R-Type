@@ -23,7 +23,8 @@ rtype::network::FinishedGamePlayer guestScoring(std::string_view nickname,
                                                 std::uint32_t score) {
   return rtype::network::FinishedGamePlayer{.nickname = std::string{nickname},
                                             .accountId = std::nullopt,
-                                            .score = score};
+                                            .score = score,
+                                            .wonLooks = {}};
 }
 
 rtype::network::FinishedGame normalGameOfTwo(

@@ -28,6 +28,8 @@ ConnectionScreenFixture::ConnectionScreenFixture(ConnectionGoal goal)
       screen_(ConnectionScreenParts{.navigator = navigator_,
                                     .sounds = sounds_,
                                     .connection = connection_,
+                                    .account = account_,
+                                    .tickets = tickets_,
                                     .playfieldPointAt = samePlayfieldPoint,
                                     .choice = choice_,
                                     .goal = goal},

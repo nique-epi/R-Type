@@ -20,4 +20,12 @@ if(RTYPE_MODULE_ACCOUNTS)
   target_link_libraries(rtype_master_modules PRIVATE rtype_master_accounts_module)
 endif()
 
+if(RTYPE_MODULE_WALLET)
+  target_link_libraries(rtype_master_modules PRIVATE rtype_master_wallet_module)
+endif()
+
+if(RTYPE_MODULE_CASINO)
+  target_link_libraries(rtype_master_modules PRIVATE rtype_master_casino_module)
+endif()
+
 rtype_enable_warnings(rtype_master_modules)

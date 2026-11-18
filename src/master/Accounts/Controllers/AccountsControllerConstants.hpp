@@ -14,7 +14,5 @@ constexpr std::string_view WRONG_CREDENTIALS_DETAIL =
     "wrong nickname or password";
 constexpr std::string_view SIGN_IN_QUOTA_DETAIL =
     "too many failed sign-ins from this address: wait before the next";
-constexpr std::string_view NO_SESSION_DETAIL =
-    "no valid session token in an Authorization: Bearer header";
 
 }  // namespace rtype::master

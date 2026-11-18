@@ -214,12 +214,151 @@ CREATE INDEX sign_in_failures_by_date ON sign_in_failures (failed_at);
 )sql";
 
 /**
+ * @brief The seventh version: the wallets of the accounts, the journal of what
+ * moved their balances, the looks they own, and the results of games already
+ * credited.
+ *
+ * A wallet holds two balances, 0 to network::MAXIMUM_KOPECKS (999999) each;
+ * the CHECK refuses a write that would leave one out of them. Each change of a
+ * balance writes a line of the journal in the same transaction, and a line is
+ * never changed: the sum of the lines of a currency is its balance. The
+ * reference of a line names the fact that moved it (a game, a round of the
+ * casino, an exchange), so a fact that must apply once is looked up before.
+ * A result of a game is credited once: its reference is the key of
+ * credited_results. The tables are created even when the module wallet is
+ * off, as those of the accounts are.
+ */
+constexpr std::string_view WALLET_MIGRATION = R"sql(
+CREATE TABLE wallets (
+  user_id   INTEGER PRIMARY KEY REFERENCES users (id),
+  kopecks   INTEGER NOT NULL CHECK (kopecks BETWEEN 0 AND 999999),
+  chips     INTEGER NOT NULL CHECK (chips BETWEEN 0 AND 999999),
+  opened_at INTEGER NOT NULL
+) STRICT;
+
+CREATE TABLE wallet_movements (
+  id        INTEGER PRIMARY KEY,
+  user_id   INTEGER NOT NULL REFERENCES users (id),
+  currency  TEXT    NOT NULL,
+  amount    INTEGER NOT NULL,
+  reason    TEXT    NOT NULL,
+  reference TEXT    NOT NULL,
+  made_at   INTEGER NOT NULL
+) STRICT;
+
+CREATE INDEX wallet_movements_by_user ON wallet_movements (user_id, id);
+
+CREATE TABLE owned_looks (
+  user_id     INTEGER NOT NULL REFERENCES users (id),
+  item        TEXT    NOT NULL,
+  origin      TEXT    NOT NULL,
+  acquired_at INTEGER NOT NULL,
+  PRIMARY KEY (user_id, item)
+) STRICT, WITHOUT ROWID;
+
+CREATE TABLE credited_results (
+  reference   TEXT    PRIMARY KEY,
+  user_id     INTEGER NOT NULL REFERENCES users (id),
+  credited_at INTEGER NOT NULL
+) STRICT, WITHOUT ROWID;
+)sql";
+
+/**
+ * @brief The tables of the casino (migration 8): the seats taken in each room,
+ * the bets of each player on a round, and the number each round drew, written
+ * once, when its bets close. A seat counts while it was seen in the last
+ * network::CASINO_SEAT_LIFETIME; a bet holds its kind as text, as JSON writes
+ * it.
+ */
+constexpr std::string_view CASINO_MIGRATION = R"sql(
+CREATE TABLE casino_seats (
+  room    INTEGER NOT NULL,
+  user_id INTEGER NOT NULL REFERENCES users (id),
+  seen_at INTEGER NOT NULL,
+  PRIMARY KEY (room, user_id)
+) STRICT, WITHOUT ROWID;
+
+CREATE TABLE casino_bets (
+  room         INTEGER NOT NULL,
+  round        INTEGER NOT NULL,
+  user_id      INTEGER NOT NULL REFERENCES users (id),
+  position     INTEGER NOT NULL,
+  kind         TEXT    NOT NULL,
+  first_number INTEGER NOT NULL,
+  amount       INTEGER NOT NULL CHECK (amount > 0),
+  PRIMARY KEY (room, round, user_id, position)
+) STRICT, WITHOUT ROWID;
+
+CREATE TABLE casino_rounds (
+  room           INTEGER NOT NULL,
+  round          INTEGER NOT NULL,
+  winning_number INTEGER NOT NULL,
+  drawn_at       INTEGER NOT NULL,
+  PRIMARY KEY (room, round)
+) STRICT, WITHOUT ROWID;
+)sql";
+
+/**
+ * @brief The game tickets (migration 9): what the master gave a signed-in
+ * player before it joins a game, which a game server reports with the result
+ * so the master credits that account and no other.
+ *
+ * A ticket is keyed by its fingerprint, never the ticket, so a copy of the
+ * file presents no ticket; the table has no rowid, as sessions. used_at is
+ * null until a result paid through the ticket, which then pays nothing more.
+ * The first index counts the tickets an account was given in the last hour,
+ * the second finds the expired ones, which the master forgets.
+ */
+constexpr std::string_view GAME_TICKETS_MIGRATION = R"sql(
+CREATE TABLE game_tickets (
+  fingerprint TEXT    PRIMARY KEY,
+  user_id     INTEGER NOT NULL REFERENCES users (id),
+  issued_at   INTEGER NOT NULL,
+  expires_at  INTEGER NOT NULL,
+  used_at     INTEGER
+) STRICT, WITHOUT ROWID;
+
+CREATE INDEX game_tickets_by_user ON game_tickets (user_id, issued_at);
+CREATE INDEX game_tickets_by_expiry ON game_tickets (expires_at);
+)sql";
+
+/**
+ * @brief The device links (migration 10): what a game asked for to sign in
+ * through the web site, which a signed-in player approves or denies there.
+ *
+ * A link is keyed by its short code, unique among the links kept; its secret
+ * is kept as its fingerprint, never the secret, so a copy of the file claims
+ * no link. user_id and decision stay null until a player decides, and are
+ * written once. read_at is when the game last read the link, so a game that
+ * reads it too often is slowed down. A link is forgotten once it expired long
+ * enough for the game to have read it expired; the first index counts the
+ * links an address asked for in the last hour, the second finds the old ones.
+ */
+constexpr std::string_view DEVICE_LINKS_MIGRATION = R"sql(
+CREATE TABLE device_links (
+  user_code          TEXT    PRIMARY KEY,
+  secret_fingerprint TEXT    NOT NULL UNIQUE,
+  address            TEXT    NOT NULL,
+  created_at         INTEGER NOT NULL,
+  expires_at         INTEGER NOT NULL,
+  read_at            INTEGER NOT NULL,
+  user_id            INTEGER REFERENCES users (id),
+  decision           TEXT
+) STRICT, WITHOUT ROWID;
+
+CREATE INDEX device_links_by_address ON device_links (address, created_at);
+CREATE INDEX device_links_by_expiry ON device_links (expires_at);
+)sql";
+
+/**
  * @brief The migrations of the database of the master, in order:
  * MASTER_MIGRATIONS[0] is version 1. A change adds a migration at the end and
  * never edits one a master already applied.
  */
-constexpr std::array<std::string_view, 6> MASTER_MIGRATIONS{
-    SERVERS_MIGRATION, STATUSES_MIGRATION,     PROBES_MIGRATION,
-    RESULTS_MIGRATION, MACHINE_LOAD_MIGRATION, ACCOUNTS_MIGRATION};
+constexpr std::array<std::string_view, 10> MASTER_MIGRATIONS{
+    SERVERS_MIGRATION,     STATUSES_MIGRATION,     PROBES_MIGRATION,
+    RESULTS_MIGRATION,     MACHINE_LOAD_MIGRATION, ACCOUNTS_MIGRATION,
+    WALLET_MIGRATION,      CASINO_MIGRATION,       GAME_TICKETS_MIGRATION,
+    DEVICE_LINKS_MIGRATION};
 
 }  // namespace rtype::master

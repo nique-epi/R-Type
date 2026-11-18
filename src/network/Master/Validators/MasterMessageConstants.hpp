@@ -7,6 +7,7 @@
 #include <limits>
 #include <string_view>
 #include "NetworkConstants.hpp"
+#include "ShipLookConstants.hpp"
 
 namespace rtype::network {
 
@@ -145,6 +146,13 @@ constexpr std::string_view VANILLA_MEMBER = "vanilla";
 constexpr std::string_view NICKNAME_MEMBER = "nickname";
 constexpr std::string_view ACCOUNT_ID_MEMBER = "accountId";
 constexpr std::string_view SCORE_MEMBER = "score";
+constexpr std::string_view VICTORY_MEMBER = "victory";
+constexpr std::string_view WON_LOOKS_MEMBER = "wonLooks";
+
+/** @brief The most look items a row of a result may name: a game server
+ * reports each item a player won once, and the catalog holds
+ * identifiers::SHIP_LOOK_ITEM_COUNT of them. */
+constexpr std::size_t MAXIMUM_WON_LOOKS = identifiers::SHIP_LOOK_ITEM_COUNT;
 
 /** @brief The bounds of the rank of a row of a leaderboard: 1 for the best
  * score, at most one rank per player kept, whom a column INTEGER of SQLite
@@ -178,6 +186,11 @@ constexpr std::string_view TOKEN_MEMBER = "token";
 constexpr std::string_view EXPIRES_AT_MEMBER = "expiresAt";
 constexpr std::string_view USER_MEMBER = "account";
 
+/** @brief The members of a game ticket: the ticket itself, and whether a
+ * result already paid through it. */
+constexpr std::string_view TICKET_MEMBER = "ticket";
+constexpr std::string_view USED_MEMBER = "used";
+
 /**
  * @brief The bounds of a password, in bytes of printable UTF-8: the bounds
  * Better Auth sets by default, 8 to 128. A password is hashed whatever its
@@ -201,6 +214,60 @@ constexpr std::string_view SESSION_TOKEN_PREFIX = "rts_";
 constexpr std::size_t SESSION_TOKEN_BYTES = 32;
 constexpr std::size_t SESSION_TOKEN_SIZE =
     SESSION_TOKEN_PREFIX.size() + (SESSION_TOKEN_BYTES * HEX_DIGITS_PER_BYTE);
+
+/**
+ * @brief The secret of a device link, which only the game keeps:
+ * DEVICE_LINK_SECRET_PREFIX, then DEVICE_LINK_SECRET_BYTES random bytes in
+ * lowercase hexadecimal, DEVICE_LINK_SECRET_SIZE characters in all.
+ */
+constexpr std::string_view DEVICE_LINK_SECRET_PREFIX = "rtd_";
+constexpr std::size_t DEVICE_LINK_SECRET_BYTES = 32;
+constexpr std::size_t DEVICE_LINK_SECRET_SIZE =
+    DEVICE_LINK_SECRET_PREFIX.size() +
+    (DEVICE_LINK_SECRET_BYTES * HEX_DIGITS_PER_BYTE);
+
+/**
+ * @brief The short code of a device link, which a player reads and types:
+ * DEVICE_LINK_USER_CODE_LETTERS letters of DEVICE_LINK_USER_CODE_ALPHABET, the
+ * consonants RFC 8628 (section 6.1) suggests so no two letters look alike and
+ * no word is spelled, in two groups of DEVICE_LINK_USER_CODE_GROUP joined by
+ * DEVICE_LINK_USER_CODE_SEPARATOR: 20 to the 8th codes, `KQFB-WZPM`.
+ */
+constexpr std::string_view DEVICE_LINK_USER_CODE_ALPHABET =
+    "BCDFGHJKLMNPQRSTVWXZ";
+constexpr std::size_t DEVICE_LINK_USER_CODE_LETTERS = 8;
+constexpr std::size_t DEVICE_LINK_USER_CODE_GROUP = 4;
+constexpr char DEVICE_LINK_USER_CODE_SEPARATOR = '-';
+constexpr std::size_t DEVICE_LINK_USER_CODE_SIZE =
+    DEVICE_LINK_USER_CODE_LETTERS + 1;
+
+/** @brief The members of a device link, of its state and of a decision. */
+constexpr std::string_view SECRET_MEMBER = "secret";
+constexpr std::string_view USER_CODE_MEMBER = "userCode";
+constexpr std::string_view VERIFICATION_URI_MEMBER = "verificationUri";
+constexpr std::string_view VERIFICATION_URI_COMPLETE_MEMBER =
+    "verificationUriComplete";
+constexpr std::string_view CREATED_AT_MEMBER = "createdAt";
+constexpr std::string_view INTERVAL_MEMBER = "interval";
+constexpr std::string_view DECISION_MEMBER = "decision";
+
+/** @brief How each DeviceLinkStatus is written, in the order of the enum. */
+constexpr std::string_view PENDING_LINK_TEXT = "pending";
+constexpr std::string_view APPROVED_LINK_TEXT = "approved";
+constexpr std::string_view DENIED_LINK_TEXT = "denied";
+constexpr std::string_view EXPIRED_LINK_TEXT = "expired";
+constexpr auto DEVICE_LINK_STATUS_TEXTS =
+    std::to_array<std::string_view>({PENDING_LINK_TEXT, APPROVED_LINK_TEXT,
+                                     DENIED_LINK_TEXT, EXPIRED_LINK_TEXT});
+
+/** @brief How each DeviceLinkDecision is written, in the order of the enum:
+ * the words of the statuses it leads to. */
+constexpr auto DEVICE_LINK_DECISION_TEXTS =
+    std::to_array<std::string_view>({APPROVED_LINK_TEXT, DENIED_LINK_TEXT});
+
+/** @brief The longest interval between two reads of a device link a master
+ * may ask for, in seconds. */
+constexpr std::uint64_t MAXIMUM_DEVICE_LINK_INTERVAL = 60;
 
 /** @brief The bounds of a score, what a server keeps of one (32 bits). */
 constexpr std::uint64_t LOWEST_SCORE = 0;
@@ -254,5 +321,84 @@ constexpr std::chrono::milliseconds MASTER_HEARTBEAT_INTERVAL{5'000};
  * change; the master probes one address and port at most this often.
  */
 constexpr std::chrono::milliseconds MINIMUM_NOTICE_GAP{1'000};
+
+/** @brief The members of a wallet, of a line of its journal, of an exchange
+ * and of the looks an account owns. */
+constexpr std::string_view KOPECKS_MEMBER = "kopecks";
+constexpr std::string_view CHIPS_MEMBER = "chips";
+constexpr std::string_view MOVEMENTS_MEMBER = "movements";
+constexpr std::string_view CURRENCY_MEMBER = "currency";
+constexpr std::string_view AMOUNT_MEMBER = "amount";
+constexpr std::string_view REASON_MEMBER = "reason";
+constexpr std::string_view MADE_AT_MEMBER = "madeAt";
+constexpr std::string_view FROM_MEMBER = "from";
+constexpr std::string_view WALLET_MEMBER = "wallet";
+constexpr std::string_view ITEMS_MEMBER = "items";
+constexpr std::string_view ITEM_MEMBER = "item";
+
+/** @brief How each Currency is written, in the order of the enum. */
+constexpr std::string_view KOPECKS_CURRENCY_TEXT = "kopecks";
+constexpr std::string_view CHIPS_CURRENCY_TEXT = "chips";
+constexpr auto CURRENCY_TEXTS = std::to_array<std::string_view>(
+    {KOPECKS_CURRENCY_TEXT, CHIPS_CURRENCY_TEXT});
+
+/** @brief How each MovementReason is written, in the order of the enum. */
+constexpr auto MOVEMENT_REASON_TEXTS = std::to_array<std::string_view>(
+    {"opening", "game", "exchange", "purchase", "stake", "refund", "payout"});
+
+/** @brief The largest amount a request of the cashier may name: any amount
+ * the wire carries; the master refuses one of none, or one past the largest
+ * balance, as an amount it cannot change. */
+constexpr std::uint64_t MAXIMUM_EXCHANGE_AMOUNT =
+    std::numeric_limits<std::uint32_t>::max();
+
+/** @brief The members of the rooms of the casino, of their state, and of
+ * the bets of a round. */
+constexpr std::string_view ROOMS_MEMBER = "rooms";
+constexpr std::string_view SEATS_MEMBER = "seats";
+constexpr std::string_view SEATED_MEMBER = "seated";
+constexpr std::string_view ROUND_MEMBER = "round";
+constexpr std::string_view PHASE_MEMBER = "phase";
+constexpr std::string_view CLOSES_AT_MEMBER = "closesAt";
+constexpr std::string_view RESULT_AT_MEMBER = "resultAt";
+constexpr std::string_view ENDS_AT_MEMBER = "endsAt";
+constexpr std::string_view SERVER_TIME_MEMBER = "serverTime";
+constexpr std::string_view WINNING_NUMBER_MEMBER = "winningNumber";
+constexpr std::string_view HISTORY_MEMBER = "history";
+constexpr std::string_view STAKE_MEMBER = "stake";
+constexpr std::string_view PAYOUT_MEMBER = "payout";
+constexpr std::string_view BETS_MEMBER = "bets";
+constexpr std::string_view KIND_MEMBER = "kind";
+constexpr std::string_view FIRST_NUMBER_MEMBER = "firstNumber";
+
+/** @brief The longest name of a room of the casino, in bytes of UTF-8. */
+constexpr std::size_t MAXIMUM_CASINO_ROOM_NAME_SIZE = 32;
+
+/** @brief How each RouletteBetKind is written, in the order of the enum. */
+constexpr auto ROULETTE_BET_KIND_TEXTS = std::to_array<std::string_view>(
+    {"straight", "split", "splitAcross", "street", "corner", "sixLine", "dozen",
+     "column", "red", "black", "even", "odd", "low", "high"});
+
+/** @brief How each RoulettePhase is written, in the order of the enum. */
+constexpr auto ROULETTE_PHASE_TEXTS =
+    std::to_array<std::string_view>({"betting", "spinning", "result"});
+
+/**
+ * @brief The most bets a body of bets may list, and the most chips one bet of
+ * it may hold, as the wire carries them. The master reads a list up to twice
+ * MAXIMUM_ROULETTE_BETS, so it answers a list just over the limit, or a bet
+ * over the cap of a round, with the rule it breaks; a longer list is refused
+ * as a malformed body.
+ */
+constexpr std::size_t MAXIMUM_READ_ROULETTE_BETS = 64;
+constexpr std::uint64_t MAXIMUM_READ_BET_AMOUNT =
+    std::numeric_limits<std::uint32_t>::max();
+
+/** @brief The largest round a message may name, and the largest date in
+ * milliseconds: any whole number of 64 signed bits. */
+constexpr std::uint64_t HIGHEST_ROUND =
+    std::numeric_limits<std::int64_t>::max();
+constexpr std::uint64_t LATEST_MILLISECONDS =
+    std::numeric_limits<std::int64_t>::max();
 
 }  // namespace rtype::network

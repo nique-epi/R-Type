@@ -2,6 +2,7 @@
 #include <functional>
 #include <string>
 #include <vector>
+#include "IAccountWallet.hpp"
 #include "InstallContext.hpp"
 #include "LeaderboardController.hpp"
 #include "MasterDatabase.hpp"
@@ -17,13 +18,18 @@ std::string LeaderboardModule::name() const {
 }
 
 std::vector<std::string> LeaderboardModule::dependencies() const {
-  return {std::string{STORAGE_MODULE_NAME}, std::string{HTTP_MODULE_NAME},
-          std::string{SERVERS_MODULE_NAME}};
+  return {std::string{LOGGER_MODULE_NAME}, std::string{STORAGE_MODULE_NAME},
+          std::string{HTTP_MODULE_NAME}, std::string{SERVERS_MODULE_NAME}};
+}
+
+std::vector<std::string> LeaderboardModule::optionalDependencies() const {
+  return {std::string{WALLET_MODULE_NAME}};
 }
 
 void LeaderboardModule::install(engine::InstallContext& context) {
   LeaderboardController& controller = controller_.emplace(
-      context.require<MasterDatabase>(), context.require<ServersService>());
+      context.require<MasterDatabase>(), context.require<ServersService>(),
+      context.find<IAccountWallet>());
   auto& server = context.require<MasterHttpServer>();
   server.add(
       network::KEEP_OWN_RESULT_ROUTE,

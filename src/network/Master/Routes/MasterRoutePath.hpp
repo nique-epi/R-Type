@@ -4,6 +4,7 @@
 #include <string>
 #include <string_view>
 #include "MasterRoute.hpp"
+#include "RoomRound.hpp"
 #include "RouteMethod.hpp"
 
 namespace rtype::network {
@@ -34,6 +35,36 @@ namespace rtype::network {
  */
 [[nodiscard]] std::string gamePathOf(MasterRoute route,
                                      std::string_view gameId);
+
+/**
+ * @returns The path a client calls @p route by when its path names the room
+ * @p room of the casino: `/api/casino/rooms/2/seats/me` for
+ * TAKE_OWN_SEAT_ROUTE and 2.
+ */
+[[nodiscard]] std::string roomPathOf(MasterRoute route, std::uint8_t room);
+
+/**
+ * @returns The path a client calls @p route by when its path names a room
+ * and a round: `/api/casino/rooms/2/rounds/815/bets/me` for
+ * PLACE_OWN_BETS_ROUTE, room 2 and round 815.
+ */
+[[nodiscard]] std::string roundPathOf(MasterRoute route, RoomRound roomRound);
+
+/**
+ * @returns The path a client calls @p route by when its path names the look
+ * @p item: `/api/users/me/looks/crown` for BUY_OWN_LOOK_ROUTE. The names of
+ * the looks are lowercase letters, written as they come.
+ */
+[[nodiscard]] std::string lookPathOf(MasterRoute route, std::string_view item);
+
+/**
+ * @returns The path a client calls @p route by when its path names the device
+ * link of the short code @p userCode: `/api/device-links/KQ7F-4ZPB/decision`
+ * for REPLACE_DEVICE_LINK_DECISION_ROUTE. The code is written as it comes; the
+ * master refuses one that is no short code.
+ */
+[[nodiscard]] std::string deviceLinkPathOf(MasterRoute route,
+                                           std::string_view userCode);
 
 /** @returns How HTTP names @p method: GET_METHOD, POST_METHOD, PUT_METHOD or
  * DELETE_METHOD. */

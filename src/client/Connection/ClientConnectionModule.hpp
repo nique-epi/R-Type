@@ -6,8 +6,12 @@
 #include "IModule.hpp"
 #include "InstallContext.hpp"
 #include "Logger.hpp"
+#include "MasterAccountLink.hpp"
+#include "MasterCasinoLink.hpp"
+#include "MasterDeviceLinkFlow.hpp"
 #include "MasterLeaderboard.hpp"
 #include "MasterLink.hpp"
+#include "MasterTicketLink.hpp"
 #include "NetworkConditions.hpp"
 #include "PlayerConnection.hpp"
 #include "ServerCatalog.hpp"
@@ -26,8 +30,12 @@ namespace rtype::client {
  * ping, and IGameCatalog, the games of one of them, read from the master by a
  * MasterLink of its own and updated in NETWORK_STAGE; the MasterLeaderboard,
  * the leaderboard of the master, read by the same MasterLink and updated in
- * NETWORK_STAGE too. They all read the master the `master-url` setting
- * names.
+ * NETWORK_STAGE too. It provides IAccountLink, the calls to the account of a
+ * session, made by a MasterAccountLink of its own, ITicketLink, the asks for
+ * the game ticket a signed-in player joins a game with, made by a
+ * MasterTicketLink of its own, and ICasinoLink, the calls to the casino, made
+ * by a MasterCasinoLink of its own. They all read the master the `master-url`
+ * setting names.
  *
  * Building it reads the content of the assets folder, the client's own, and
  * keeps the packs of the servers it meets in PACK_CACHE_FOLDER_NAME of the
@@ -37,17 +45,21 @@ namespace rtype::client {
  * It provides those parts, over a socket still closed, and adds to
  * NETWORK_STAGE the work that reads what the server sent and sends what is
  * due. start() opens the socket on every IPv4 interface, on a port the system
- * picks, and starts the network thread, then the thread of the MasterLink, on
- * the master of `master-url` once the configuration was read; when that one
- * cannot start, it closes the socket again before the exception leaves. stop()
- * ends the MasterLink, then leaves the session with the
- * server, if any (see PlayerConnection::leave()): it returns once every copy of
- * the Disconnection went out, so the server frees the place of the player as
- * soon as one copy reaches it; then it closes the socket. Over a simulated
- * network, the copies still in flight then never arrive (see
- * NetworkThread::close()), and the server frees the place once the player was
- * silent for SESSION_SILENCE_LIMIT, counted in the ticks it runs, so longer
- * when the server stalls. A failure while leaving is logged, never thrown.
+ * picks, and starts the network thread, then the threads of the MasterLink, of
+ * the MasterAccountLink, of the MasterTicketLink and of the MasterCasinoLink,
+ * on the master of
+ * `master-url` once the configuration was read; when one cannot start, it stops
+ * what it started and closes the socket again before the exception leaves.
+ * stop() ends the MasterCasinoLink, the MasterTicketLink, the
+ * MasterAccountLink and the MasterLink,
+ * then leaves the session with the server, if any (see
+ * PlayerConnection::leave()): it returns once every copy of the Disconnection
+ * went out, so the server frees the place of the player as soon as one copy
+ * reaches it; then it closes the socket. Over a simulated network, the copies
+ * still in flight then never arrive (see NetworkThread::close()), and the
+ * server frees the place once the player was silent for SESSION_SILENCE_LIMIT,
+ * counted in the ticks it runs, so longer when the server stalls. A failure
+ * while leaving is logged, never thrown.
  */
 class ClientConnectionModule final : public engine::IModule {
  public:
@@ -71,6 +83,10 @@ class ClientConnectionModule final : public engine::IModule {
  private:
   PlayerConnection connection_;
   MasterLink masterLink_;
+  MasterAccountLink accountLink_;
+  MasterDeviceLinkFlow deviceLinkFlow_;
+  MasterTicketLink ticketLink_;
+  MasterCasinoLink casinoLink_;
   ServerCatalog servers_;
   /** @brief The master-url setting, declared by install(). */
   const engine::SettingValue* masterUrl_{nullptr};

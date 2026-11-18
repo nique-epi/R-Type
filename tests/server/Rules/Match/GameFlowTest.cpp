@@ -4,6 +4,7 @@
 #include "ConnectedPlayer.hpp"
 #include "EntityIdConstants.hpp"
 #include "GameFlowFixture.hpp"
+#include "GameFlowTestConstants.hpp"
 #include "GameInstanceConstants.hpp"
 #include "GameRuleConstants.hpp"
 #include "GameState.hpp"
@@ -20,6 +21,7 @@ using rtype::server::FINISHED_STATE_TICKS;
 using rtype::server::GameState;
 using rtype::server::GameStateChanged;
 using rtype::server::START_BARRIER_TICKS;
+using rtype::server::testing::A_WON_LOOK_NUMBER;
 using rtype::server::testing::FIRST_PLAYER;
 using rtype::server::testing::FOURTH_PLAYER;
 using rtype::server::testing::GameFlowFixture;
@@ -237,6 +239,25 @@ TEST_F(GameFlowFixture, ResetsTheWorldBetweenTwoGames) {
 
   EXPECT_EQ(flow().world().entityCount(), 2);
   EXPECT_EQ(flow().tick(), 0);
+}
+
+/**
+ * Given a game finished by a player who won an item
+ * When it waits for players again
+ * Then the player starts the next game with no item won
+ */
+TEST_F(GameFlowFixture, ForgetsTheItemsWonBetweenTwoGames) {
+  startGameWith({FIRST_PLAYER});
+  roster().find(playerEndpoint(FIRST_PLAYER))->wonLookNumbers = {
+      A_WON_LOOK_NUMBER};
+  flow().finish();
+
+  runTicks(FINISHED_STATE_TICKS);
+
+  const ConnectedPlayer* const player =
+      roster().find(playerEndpoint(FIRST_PLAYER));
+  ASSERT_NE(player, nullptr);
+  EXPECT_TRUE(player->wonLookNumbers.empty());
 }
 
 /**

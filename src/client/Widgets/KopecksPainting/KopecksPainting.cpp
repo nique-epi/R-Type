@@ -2,6 +2,7 @@
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <cstdint>
+#include <optional>
 #include <string>
 #include "CutCornerBox.hpp"
 #include "EntitySprites.hpp"
@@ -26,15 +27,10 @@ std::string writtenAmountOf(const KopecksLabel& label) {
   return std::string{label.prefix} + kopecksText(label.amount);
 }
 
-}  // namespace
-
-int kopecksLabelWidth(const KopecksLabel& label) {
-  return KOPECK_FRAME.width + KOPECKS_COIN_GAP +
-         regularTextWidth(writtenAmountOf(label));
-}
-
-void paintKopecks(IInterfaceCanvas& canvas, const KopecksLabel& label) {
-  const std::string written = writtenAmountOf(label);
+/** @brief Writes @p written where @p label places its amount, and the coin
+ * left of it. */
+void paintCoinAndText(IInterfaceCanvas& canvas, const std::string& written,
+                      const KopecksLabel& label) {
   const int width =
       KOPECK_FRAME.width + KOPECKS_COIN_GAP + regularTextWidth(written);
   canvas.write(written, label.topRight,
@@ -49,8 +45,23 @@ void paintKopecks(IInterfaceCanvas& canvas, const KopecksLabel& label) {
       INTERFACE_AREA);
 }
 
+}  // namespace
+
+int kopecksLabelWidth(const KopecksLabel& label) {
+  return KOPECK_FRAME.width + KOPECKS_COIN_GAP +
+         regularTextWidth(writtenAmountOf(label));
+}
+
+void paintKopecks(IInterfaceCanvas& canvas, const KopecksLabel& label) {
+  paintCoinAndText(canvas, writtenAmountOf(label), label);
+}
+
+void paintUnknownKopecks(IInterfaceCanvas& canvas, const KopecksLabel& label) {
+  paintCoinAndText(canvas, std::string{UNKNOWN_KOPECKS_TEXT}, label);
+}
+
 void paintKopecksBalance(IInterfaceCanvas& canvas, sf::Vector2i topRight,
-                         std::uint32_t balance) {
+                         std::optional<std::uint32_t> balance) {
   CutCornerBox(sf::IntRect({topRight.x - KOPECKS_FRAME_SIZE.x, topRight.y},
                            KOPECKS_FRAME_SIZE),
                {.border = KOPECKS_FRAME_BORDER_COLOR,
@@ -58,10 +69,15 @@ void paintKopecksBalance(IInterfaceCanvas& canvas, sf::Vector2i topRight,
       .paint(canvas);
   const sf::Vector2i amountEnd(topRight.x - KOPECKS_FRAME_PADDING.x,
                                topRight.y + KOPECKS_FRAME_PADDING.y);
-  paintKopecks(canvas, KopecksLabel{.topRight = amountEnd,
-                                    .amount = balance,
-                                    .prefix = {},
-                                    .outlined = false});
+  const KopecksLabel label{.topRight = amountEnd,
+                           .amount = balance.value_or(0),
+                           .prefix = {},
+                           .outlined = false};
+  if (balance.has_value()) {
+    paintKopecks(canvas, label);
+  } else {
+    paintUnknownKopecks(canvas, label);
+  }
   canvas.write(
       KOPECKS_CAPTION,
       {amountEnd.x, amountEnd.y + KOPECKS_LABEL_HEIGHT + KOPECKS_CAPTION_GAP},

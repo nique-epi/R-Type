@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
 #include <chrono>
+#include <optional>
 #include <string>
+#include <vector>
 #include "ConnectedPlayer.hpp"
 #include "GameInstanceTestConstants.hpp"
 #include "GameResult.hpp"
@@ -11,6 +13,7 @@
 #include "GameSettings.hpp"
 #include "GameState.hpp"
 #include "GameStateChanged.hpp"
+#include "GameTicketBytesTestConstants.hpp"
 #include "PlayerRoster.hpp"
 #include "RecordingResultsArchive.hpp"
 #include "SentDatagrams.hpp"
@@ -37,7 +40,8 @@ TEST_F(GameResultKeeperFixture, RecordsThePlayersWhenTheGameFinishes) {
   EXPECT_EQ(result.players.at(0),
             (PlayerResult{.nickname = std::string{NICKNAMES.at(FIRST_PLAYER)},
                           .score = KEEPER_SCORE,
-                          .deaths = EVERY_LIFE_LOST}));
+                          .deaths = EVERY_LIFE_LOST,
+                          .wonLooks = {}}));
 }
 
 /**
@@ -259,6 +263,87 @@ TEST_F(GameResultKeeperFixture, DatesAndNamesTheResultAtTheEnd) {
   EXPECT_EQ(result.difficulty, KEEPER_DIFFICULTY);
   EXPECT_GE(result.endedAt, before);
   EXPECT_LE(result.endedAt, std::chrono::system_clock::now());
+}
+
+/**
+ * Given a player who joined with a game ticket, and a guest
+ * When the game finishes
+ * Then the row of the player names its ticket as the master writes it, and
+ * the row of the guest none
+ */
+TEST_F(GameResultKeeperFixture, RecordsTheTicketOfAPlayer) {
+  seat(FIRST_PLAYER).ticket = network::testing::SOME_TICKET;
+  seat(SECOND_PLAYER);
+  startTheGame();
+
+  finishTheGame();
+
+  EXPECT_EQ(onlyResult().players.at(0).ticket,
+            std::optional{std::string{network::testing::SOME_TICKET_TEXT}});
+  EXPECT_EQ(onlyResult().players.at(1).ticket, std::nullopt);
+}
+
+/**
+ * Given a player who won the crown, then the halo
+ * When the game finishes
+ * Then its row names both items of the catalog, in that order
+ */
+TEST_F(GameResultKeeperFixture, RecordsTheLooksAPlayerWon) {
+  ConnectedPlayer& player = seat(FIRST_PLAYER);
+  startTheGame();
+  player.wonLookNumbers = {CROWN_LOOK_NUMBER, HALO_LOOK_NUMBER};
+
+  finishTheGame();
+
+  EXPECT_EQ(onlyResult().players.at(0).wonLooks,
+            (std::vector<std::string>{std::string{CROWN_LOOK_NAME},
+                                      std::string{HALO_LOOK_NAME}}));
+}
+
+/**
+ * Given a player who won the crown, then left before the end
+ * When the game finishes
+ * Then the row it left names the crown
+ */
+TEST_F(GameResultKeeperFixture, RecordsTheLooksOfAPlayerWhoLeft) {
+  ConnectedPlayer& player = seat(FIRST_PLAYER);
+  seat(SECOND_PLAYER);
+  startTheGame();
+  player.wonLookNumbers = {CROWN_LOOK_NUMBER};
+  leave(FIRST_PLAYER);
+
+  finishTheGame();
+
+  EXPECT_EQ(onlyResult().players.at(0).wonLooks,
+            (std::vector<std::string>{std::string{CROWN_LOOK_NAME}}));
+}
+
+/**
+ * Given a game in progress
+ * When its players clear the level
+ * Then its result says it was won
+ */
+TEST_F(GameResultKeeperFixture, RecordsAWonGame) {
+  seat(FIRST_PLAYER);
+  startTheGame();
+
+  winTheGame();
+
+  EXPECT_TRUE(onlyResult().victory);
+}
+
+/**
+ * Given a game in progress
+ * When it finishes without its level cleared
+ * Then its result says it was not won
+ */
+TEST_F(GameResultKeeperFixture, RecordsALostGame) {
+  seat(FIRST_PLAYER);
+  startTheGame();
+
+  finishTheGame();
+
+  EXPECT_FALSE(onlyResult().victory);
 }
 
 }  // namespace rtype::server::testing

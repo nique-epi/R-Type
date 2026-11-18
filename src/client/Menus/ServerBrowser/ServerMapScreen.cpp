@@ -31,7 +31,6 @@
 #include "MenuBuilder.hpp"
 #include "MenuScreenIdConstants.hpp"
 #include "PlanetPose.hpp"
-#include "PlayerSettings.hpp"
 #include "RingedPlanet.hpp"
 #include "SectorMapPainting.hpp"
 #include "ServerCompatibility.hpp"
@@ -44,6 +43,7 @@
 #include "ServerMapStage.hpp"
 #include "ServerRow.hpp"
 #include "TimeConstants.hpp"
+#include "WalletPurse.hpp"
 #include "WidgetConstants.hpp"
 
 namespace rtype::client {
@@ -219,7 +219,7 @@ ServerMapScreen::ServerMapScreen(ServerMapScreenParts parts,
     : navigator_(&parts.navigator.get()),
       ambience_(parts.audio.get(), Ambience::Space),
       servers_(&parts.servers.get()),
-      settings_(&parts.settings.get()),
+      wallet_(&parts.wallet.get()),
       games_(&parts.games.get()),
       choice_(&parts.choice.get()),
       canvas_(std::move(canvas)),
@@ -240,6 +240,7 @@ ServerMapScreen::ServerMapScreen(ServerMapScreenParts parts,
           [this] { navigator_->push(CONNECTION_SCREEN); }, parts.sounds)),
       backChip_(backChipParts([this] { stepBack(); }, parts.sounds)) {
   servers_->refresh();
+  wallet_->askWallet();
   repaint();
 }
 
@@ -368,6 +369,7 @@ void ServerMapScreen::stepBack() {
 void ServerMapScreen::refresh() {
   sinceRefresh_ = engine::Duration::zero();
   servers_->refresh();
+  wallet_->askWallet();
   const std::optional<ServerRow> chosen = map_.chosen();
   if (map_.stage() == ServerMapStage::Games && chosen.has_value()) {
     games_->ask(*chosen);
@@ -379,7 +381,7 @@ void ServerMapScreen::repaint() {
   const ServerListPhase phase = servers_->snapshot().phase;
   tabs_.paint(*canvas_);
   paintKopecksBalance(*canvas_, SERVER_MAP_KOPECKS_TOP_RIGHT,
-                      settings_->kopecks);
+                      walletKopecks(*wallet_));
   paintServerMapHeader(*canvas_);
   if (phase == ServerListPhase::Ready) {
     const PlanetPose pose = planetPoseIn(

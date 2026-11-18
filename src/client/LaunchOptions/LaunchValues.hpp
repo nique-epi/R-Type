@@ -28,6 +28,9 @@ struct LaunchValues {
   std::optional<std::filesystem::path> trafficCsvFile;
   /** @brief The lines of the command `set` the options force, in order. */
   std::vector<std::string> forcedLines;
+  /** @brief The token given after `--session`, kept in memory only;
+   * nothing when none was given. */
+  std::optional<std::string> sessionToken;
   /** @brief Whether `--help` was given. */
   bool helpRequested{false};
 };

@@ -45,7 +45,6 @@ constexpr std::string_view CROWN_NAME = "crown";
 constexpr std::string_view TOP_HAT_NAME = "top_hat";
 constexpr std::uint32_t CROWN_PRICE_PAID = 600;
 constexpr std::uint32_t RICH_BALANCE = 1000;
-constexpr std::uint32_t BALANCE_AFTER_THE_CROWN = 400;
 constexpr std::uint32_t ONE_KOPECK_SHORT_OF_THE_CROWN = 599;
 
 }  // namespace rtype::client::testing

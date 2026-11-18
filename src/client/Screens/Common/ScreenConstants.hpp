@@ -61,6 +61,13 @@ constexpr const char* EXPELLED_MESSAGE = "THE HOST EXPELLED YOU.";
 constexpr const char* RETRY_LABEL = "RETRY";
 constexpr const char* OK_LABEL = "OK";
 
+/** @brief Texts of the dialog that tells a guest the kopecks, the chips and
+ * the looks live on an account of the master. */
+constexpr const char* SIGN_IN_HEADING = "SIGN IN NEEDED";
+constexpr const char* SIGN_IN_MESSAGE = "SIGN IN TO SPEND KOPECKS.";
+/** @brief The button of that dialog that opens SIGN_IN_SCREEN. */
+constexpr const char* SIGN_IN_LABEL = "SIGN IN";
+
 /**
  * @brief The word after a number of pilots, as the waiting room counts its
  * players and the leaderboard names a number of players at the start.

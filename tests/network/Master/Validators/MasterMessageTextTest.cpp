@@ -8,7 +8,9 @@
 #include <string_view>
 #include "CreatedServer.hpp"
 #include "DatedStatus.hpp"
+#include "ExchangeReceipt.hpp"
 #include "GlobalLeaderboard.hpp"
+#include "LookPurchase.hpp"
 #include "MasterMessageText.hpp"
 #include "MasterMessageTextFixtures.hpp"
 #include "MasterMessageTextTestConstants.hpp"
@@ -25,6 +27,9 @@ using rtype::network::CreatedServer;
 using rtype::network::createdServerFromText;
 using rtype::network::createdServerText;
 using rtype::network::DatedStatus;
+using rtype::network::ExchangeReceipt;
+using rtype::network::exchangeReceiptFromText;
+using rtype::network::exchangeReceiptText;
 using rtype::network::finishedGameFromText;
 using rtype::network::finishedGameText;
 using rtype::network::gameListingFromText;
@@ -37,6 +42,9 @@ using rtype::network::heartbeatText;
 using rtype::network::isWellFormedGameId;
 using rtype::network::isWellFormedServerKey;
 using rtype::network::isWellFormedSessionToken;
+using rtype::network::LookPurchase;
+using rtype::network::lookPurchaseFromText;
+using rtype::network::lookPurchaseText;
 using rtype::network::problemDetailOf;
 using rtype::network::registrationFromText;
 using rtype::network::registrationText;
@@ -56,12 +64,17 @@ using rtype::network::statusListingText;
 using rtype::network::UserCredentials;
 using rtype::network::userCredentialsFromText;
 using rtype::network::userCredentialsText;
+using rtype::network::walletFromText;
+using rtype::network::walletText;
+using rtype::network::testing::A_LOOK_BOUGHT;
 using rtype::network::testing::ACCOUNT_ID_OF_65_BYTES;
 using rtype::network::testing::ACCOUNT_NICKNAME;
 using rtype::network::testing::ACCOUNT_NICKNAME_POINTER;
 using rtype::network::testing::ACCOUNT_SESSION_TOKEN;
 using rtype::network::testing::ADDRESS_POINTER;
+using rtype::network::testing::anExchange;
 using rtype::network::testing::AVERAGE_PING_POINTER;
+using rtype::network::testing::aWallet;
 using rtype::network::testing::CONFLICT_DETAIL;
 using rtype::network::testing::CONFLICT_PROBLEM;
 using rtype::network::testing::CPU_ABOVE_ALL;
@@ -76,10 +89,13 @@ using rtype::network::testing::difficultyNames;
 using rtype::network::testing::EMPTY_ACCOUNT_ID;
 using rtype::network::testing::EMPTY_GAME_NAME;
 using rtype::network::testing::EMPTY_LEADERBOARD_TEXT;
+using rtype::network::testing::EXCHANGE_FROM_POINTER;
+using rtype::network::testing::exchangeRequestRefusal;
 using rtype::network::testing::FIFTH_PILOT;
 using rtype::network::testing::finishedGameRefusal;
 using rtype::network::testing::finishedGameTextOfPlayers;
 using rtype::network::testing::finishedGameTextWith;
+using rtype::network::testing::finishedGameTextWithout;
 using rtype::network::testing::FIRST_GAME_DIFFICULTY_POINTER;
 using rtype::network::testing::FIRST_GAME_FIRST_PLAYER_POINTER;
 using rtype::network::testing::FIRST_GAME_FRIENDLY_FIRE_POINTER;
@@ -107,6 +123,7 @@ using rtype::network::testing::gameListingTextWith;
 using rtype::network::testing::GAMES_ABOVE_THE_MOST;
 using rtype::network::testing::GAMES_POINTER;
 using rtype::network::testing::globalLeaderboardRefusal;
+using rtype::network::testing::GOLD_EXCHANGE_TEXT;
 using rtype::network::testing::heartbeatRefusal;
 using rtype::network::testing::heartbeatTextOfGames;
 using rtype::network::testing::heartbeatTextWith;
@@ -119,6 +136,10 @@ using rtype::network::testing::KEY_WITHOUT_PREFIX;
 using rtype::network::testing::LARGEST_PROBE_TOKEN;
 using rtype::network::testing::LONG_GAME_ID;
 using rtype::network::testing::LONGEST_PASSWORD_SIZE;
+using rtype::network::testing::LOOK_OUTSIDE_THE_CATALOG;
+using rtype::network::testing::lookNames;
+using rtype::network::testing::LOOKS_OF_THE_WHOLE_CATALOG;
+using rtype::network::testing::LOOKS_WITH_AN_UNKNOWN_TEXT;
 using rtype::network::testing::LOSS_ABOVE_ALL;
 using rtype::network::testing::LOSS_PERCENT_POINTER;
 using rtype::network::testing::LOWEST_KEPT_PROBE_SECRET;
@@ -139,8 +160,10 @@ using rtype::network::testing::NO_PLAYERS;
 using rtype::network::testing::NO_SERVER_ID;
 using rtype::network::testing::NOT_JSON;
 using rtype::network::testing::OFFLINE_TEXT;
+using rtype::network::testing::ONE_LOOK_PAST_THE_CATALOG;
 using rtype::network::testing::ONE_PLAYER_AT_THE_START;
 using rtype::network::testing::ONLINE_TEXT;
+using rtype::network::testing::ownedLooksRefusal;
 using rtype::network::testing::PARIS_DIFFICULTY;
 using rtype::network::testing::PARIS_GAME_ID;
 using rtype::network::testing::PARIS_GAME_LISTING_TEXT;
@@ -184,9 +207,12 @@ using rtype::network::testing::SAMPLE_DATE;
 using rtype::network::testing::SCORE_ABOVE_ITS_RANGE;
 using rtype::network::testing::SECOND_DIFFICULTY_POINTER;
 using rtype::network::testing::SECOND_GAME_NUMBER_POINTER;
+using rtype::network::testing::SECOND_ITEM_POINTER;
 using rtype::network::testing::SECOND_PILOT;
 using rtype::network::testing::SECOND_PLAYER_ACCOUNT_POINTER;
+using rtype::network::testing::SECOND_PLAYER_FIRST_LOOK_POINTER;
 using rtype::network::testing::SECOND_PLAYER_NICKNAME_POINTER;
+using rtype::network::testing::SECOND_PLAYER_WON_LOOKS_POINTER;
 using rtype::network::testing::serverListingRefusal;
 using rtype::network::testing::serverListingTextOfServers;
 using rtype::network::testing::serverListingTextWith;
@@ -215,6 +241,7 @@ using rtype::network::testing::USED_MEMORY_POINTER;
 using rtype::network::testing::userCredentialsRefusal;
 using rtype::network::testing::VANILLA_AS_TEXT;
 using rtype::network::testing::VANILLA_POINTER;
+using rtype::network::testing::VICTORY_POINTER;
 using rtype::network::testing::WAITING_GAME_NUMBER;
 using ::testing::HasSubstr;
 using ::testing::IsEmpty;
@@ -965,13 +992,84 @@ TEST(MasterMessageText, WritesAStatusWithItsDate) {
 }
 
 /**
- * Given the game "Paris 1" reports, a guest and a player with an account
+ * Given the game "Paris 1" reports, won, by a guest and a player with an
+ * account who won two items
  * When it is written, then read
  * Then it is the game written, the guest still without an account
  */
 TEST(MasterMessageText, ReadsBackAWrittenFinishedGame) {
   EXPECT_EQ(finishedGameFromText(finishedGameText(parisFinishedGame())),
             parisFinishedGame());
+}
+
+/**
+ * Given the game "Paris 1" reports, won, without its victory member, as a
+ * server older than the member writes it
+ * When it is read
+ * Then it reads as a lost game
+ */
+TEST(MasterMessageText, ReadsAGameThatDoesNotSayItWasWonAsLost) {
+  EXPECT_FALSE(
+      finishedGameFromText(finishedGameTextWithout(VICTORY_POINTER)).victory);
+}
+
+/**
+ * Given a game whose victory is written as text
+ * When it is read
+ * Then the refusal names victory
+ */
+TEST(MasterMessageText, RefusesAVictoryWrittenAsText) {
+  EXPECT_THAT(finishedGameRefusal(
+                  finishedGameTextWith(VICTORY_POINTER, VANILLA_AS_TEXT)),
+              HasSubstr(quoted(VICTORY_POINTER)));
+}
+
+/**
+ * Given a player who won two items, written without its wonLooks member, as a
+ * server older than the member writes it
+ * When the game is read
+ * Then that player reads as one who won no item
+ */
+TEST(MasterMessageText, ReadsAPlayerThatDoesNotSayWhatItWonAsWinningNothing) {
+  EXPECT_TRUE(finishedGameFromText(
+                  finishedGameTextWithout(SECOND_PLAYER_WON_LOOKS_POINTER))
+                  .players.at(1)
+                  .wonLooks.empty());
+}
+
+/**
+ * Given a player whose first won item is a name the catalog does not hold
+ * When the game is read
+ * Then the refusal names that item
+ */
+TEST(MasterMessageText, RefusesAWonLookOutsideTheCatalog) {
+  EXPECT_THAT(finishedGameRefusal(finishedGameTextWith(
+                  SECOND_PLAYER_FIRST_LOOK_POINTER, LOOK_OUTSIDE_THE_CATALOG)),
+              HasSubstr(quoted(SECOND_PLAYER_FIRST_LOOK_POINTER)));
+}
+
+/**
+ * Given a player who won the 30 items of the whole catalog
+ * When the game is read
+ * Then it is accepted
+ */
+TEST(MasterMessageText, AcceptsAPlayerWhoWonTheWholeCatalog) {
+  EXPECT_EQ(finishedGameRefusal(
+                finishedGameTextWith(SECOND_PLAYER_WON_LOOKS_POINTER,
+                                     lookNames(LOOKS_OF_THE_WHOLE_CATALOG))),
+            std::string{});
+}
+
+/**
+ * Given a player who names 31 won items, one more than the catalog holds
+ * When the game is read
+ * Then the refusal names its won items
+ */
+TEST(MasterMessageText, RefusesMoreWonLooksThanTheCatalogHolds) {
+  EXPECT_THAT(finishedGameRefusal(
+                  finishedGameTextWith(SECOND_PLAYER_WON_LOOKS_POINTER,
+                                       lookNames(ONE_LOOK_PAST_THE_CATALOG))),
+              HasSubstr(quoted(SECOND_PLAYER_WON_LOOKS_POINTER)));
 }
 
 /**
@@ -1244,4 +1342,56 @@ TEST(MasterMessageText, RefusesATokenShapedAlmostRight) {
     SCOPED_TRACE(token);
     EXPECT_FALSE(isWellFormedSessionToken(token));
   }
+}
+
+/**
+ * Given a wallet of 1250 kopecks and 500 chips
+ * When it is written as the master answers it, then read back
+ * Then it reads as the same wallet
+ */
+TEST(MasterMessageText, AWalletReadsBackAsItWasWritten) {
+  EXPECT_EQ(walletFromText(walletText(aWallet())), aWallet());
+}
+
+/**
+ * Given an exchange of 200 kopecks and the wallet it left
+ * When the receipt is written, then read back
+ * Then it reads as the same exchange and wallet
+ */
+TEST(MasterMessageText, AnExchangeReceiptReadsBackAsItWasWritten) {
+  const ExchangeReceipt receipt{.exchange = anExchange(), .wallet = aWallet()};
+
+  EXPECT_EQ(exchangeReceiptFromText(exchangeReceiptText(receipt)), receipt);
+}
+
+/**
+ * Given the party hat bought and the wallet it left
+ * When the purchase is written, then read back
+ * Then it reads as the same purchase
+ */
+TEST(MasterMessageText, ALookPurchaseReadsBackAsItWasWritten) {
+  const LookPurchase purchase{.item = std::string{A_LOOK_BOUGHT},
+                              .wallet = aWallet()};
+
+  EXPECT_EQ(lookPurchaseFromText(lookPurchaseText(purchase)), purchase);
+}
+
+/**
+ * Given a request of the cashier in gold
+ * When it is read
+ * Then the currency is refused
+ */
+TEST(MasterMessageText, RefusesAnExchangeInACurrencyNoWalletHolds) {
+  EXPECT_THAT(exchangeRequestRefusal(GOLD_EXCHANGE_TEXT),
+              HasSubstr(quoted(EXCHANGE_FROM_POINTER)));
+}
+
+/**
+ * Given owned looks whose second has the name of no look
+ * When they are read
+ * Then the second is refused
+ */
+TEST(MasterMessageText, RefusesAnOwnedLookOfNoName) {
+  EXPECT_THAT(ownedLooksRefusal(LOOKS_WITH_AN_UNKNOWN_TEXT),
+              HasSubstr(quoted(SECOND_ITEM_POINTER)));
 }

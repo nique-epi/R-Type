@@ -1,13 +1,15 @@
 #include "ShopStatus.hpp"
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <string>
 #include "Kopecks.hpp"
-#include "LookItemPurchase.hpp"
+#include "LookItems.hpp"
 #include "PurchaseRefusal.hpp"
 #include "Purse.hpp"
 #include "ShipLooks.hpp"
 #include "ShopScreenConstants.hpp"
+#include "WalletRefusal.hpp"
 
 namespace rtype::client {
 
@@ -17,7 +19,7 @@ std::string wareLineOf(std::size_t item, const Purse& purse) {
     return line.append(OWNED_HINT);
   }
   return line.append(BUY_HINT_START)
-      .append(kopecksText(lookItemPrice(item)))
+      .append(kopecksText(network::lookItemPrice(item)))
       .append(BUY_HINT_END);
 }
 
@@ -37,6 +39,40 @@ std::string refusalLineOf(PurchaseRefusal refusal, std::uint32_t missing) {
   return std::string(NOT_ENOUGH_STATUS_START)
       .append(kopecksText(missing))
       .append(NOT_ENOUGH_STATUS_END);
+}
+
+std::string masterRefusalLineOf(WalletRefusal refusal) {
+  switch (refusal) {
+    case WalletRefusal::BalanceRefused:
+      return std::string(NOT_ENOUGH_KOPECKS_STATUS);
+    case WalletRefusal::NotForSale:
+    case WalletRefusal::UnknownItem:
+      return std::string(NOT_FOR_SALE_STATUS);
+    case WalletRefusal::SignedOut:
+      return std::string(SESSION_ENDED_STATUS);
+    case WalletRefusal::InvalidAmount:
+    case WalletRefusal::MasterRefused:
+      return std::string(MASTER_REFUSED_STATUS);
+    case WalletRefusal::MasterUnreachable:
+      return std::string(MASTER_SILENT_STATUS);
+  }
+  return std::string(MASTER_REFUSED_STATUS);
+}
+
+std::optional<PurchaseRefusal> purchaseRefusalOf(WalletRefusal refusal) {
+  switch (refusal) {
+    case WalletRefusal::BalanceRefused:
+      return PurchaseRefusal::TooExpensive;
+    case WalletRefusal::NotForSale:
+    case WalletRefusal::UnknownItem:
+      return PurchaseRefusal::NotForSale;
+    case WalletRefusal::InvalidAmount:
+    case WalletRefusal::SignedOut:
+    case WalletRefusal::MasterRefused:
+    case WalletRefusal::MasterUnreachable:
+      return std::nullopt;
+  }
+  return std::nullopt;
 }
 
 }  // namespace rtype::client

@@ -1,34 +1,23 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include <cstddef>
-#include <cstdint>
 #include "ConnectionConstants.hpp"
 #include "GameStarted.hpp"
-#include "LookItemWon.hpp"
 #include "PlayerLooks.hpp"
 #include "ServerSessionTestConstants.hpp"
 #include "ShipLook.hpp"
 #include "ShipLookChoice.hpp"
 #include "ShipLookExchangeFixture.hpp"
+#include "ShipLookExchangeTestConstants.hpp"
 #include "TimeTestConstants.hpp"
 
 namespace rtype::client {
 
-using identifiers::ShipLook;
 using testing::ACCEPTED_PLAYER_NUMBER;
 using ::testing::ElementsAre;
 using testing::FIRST_SEQUENCE;
 using ::testing::IsEmpty;
-using testing::SECOND_SEQUENCE;
+using testing::PARTY_HAT_LOOK;
 using testing::ShipLookExchangeFixture;
-
-namespace {
-
-constexpr ShipLook PARTY_HAT_LOOK{.head = 2};
-constexpr std::uint8_t FIRST_WON_ITEM = 3;
-constexpr std::uint8_t SECOND_WON_ITEM = 8;
-
-}  // namespace
 
 /**
  * Given a session the server accepted
@@ -137,24 +126,6 @@ TEST_F(ShipLookExchangeFixture, ForgetsTheLooksWhenTheSessionCloses) {
   update();
 
   EXPECT_THAT(shipLooks().playerLooks(), IsEmpty());
-}
-
-/**
- * Given a session
- * When the server sends two LookItemWon
- * Then takeWonItems() hands both over in the order they came, then none
- */
-TEST_F(ShipLookExchangeFixture, KeepsTheWonItemsUntilTaken) {
-  accept();
-  deliverInSession(network::LookItemWon{.item = FIRST_WON_ITEM},
-                   FIRST_SEQUENCE);
-  deliverInSession(network::LookItemWon{.item = SECOND_WON_ITEM},
-                   SECOND_SEQUENCE);
-  update();
-
-  EXPECT_THAT(shipLooks().takeWonItems(),
-              ElementsAre(FIRST_WON_ITEM, SECOND_WON_ITEM));
-  EXPECT_THAT(shipLooks().takeWonItems(), IsEmpty());
 }
 
 /**

@@ -3,6 +3,7 @@
 #include <optional>
 #include "ConnectionRequest.hpp"
 #include "GameRules.hpp"
+#include "GameTicket.hpp"
 
 namespace rtype::client {
 
@@ -11,11 +12,16 @@ namespace rtype::client {
  * them: those the player chose for a NewGame; the default rules for AnyGame,
  * since a server only places such a player in a game played by them; those
  * the master lists for a game chosen in the panel of the games; nothing for a
- * game named at launch.
+ * game named at launch. It also holds the game ticket the master gave the
+ * player for this attempt, which the request carries to the game; it is kept
+ * in memory only, never logged and never written.
  */
 struct GameRequest {
   network::GameChoice game{network::ANY_GAME_CHOICE};
   std::optional<network::GameRules> rules = std::nullopt;
+  /** @brief The ticket of the attempt; network::GUEST_TICKET while the
+   * player plays as a guest, or when the master gave no ticket in time. */
+  network::GameTicket ticket{network::GUEST_TICKET};
 
   bool operator==(const GameRequest&) const = default;
 };

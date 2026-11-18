@@ -6,6 +6,7 @@
 #include "ApiRequest.hpp"
 #include "ApiResponse.hpp"
 #include "HttpConstants.hpp"
+#include "IAccountWallet.hpp"
 #include "KnownServer.hpp"
 #include "LeaderboardControllerConstants.hpp"
 #include "LeaderboardQuery.hpp"
@@ -119,8 +120,9 @@ std::optional<LeaderboardQuery> queryOf(const network::ApiRequest& request,
 }  // namespace
 
 LeaderboardController::LeaderboardController(MasterDatabase& database,
-                                             ServersService& servers)
-    : service_(database), servers_(servers) {}
+                                             ServersService& servers,
+                                             IAccountWallet* wallet)
+    : service_(database, wallet), servers_(servers) {}
 
 network::ApiResponse LeaderboardController::keepOwnResult(
     const network::ApiRequest& request) {
@@ -130,10 +132,12 @@ network::ApiResponse LeaderboardController::keepOwnResult(
         if (!gameId.has_value()) {
           return invalidGameIdRefusal();
         }
-        if (!service_.keepResult(ServerGameResult{
-                .serverId = server.id,
-                .gameId = *gameId,
-                .game = network::finishedGameFromText(request.body)})) {
+        if (!service_.keepResult(
+                ServerGameResult{
+                    .serverId = server.id,
+                    .gameId = *gameId,
+                    .game = network::finishedGameFromText(request.body)},
+                currentSecond())) {
           return refusal(BAD_REQUEST_STATUS, NOT_VANILLA_DETAIL);
         }
         return network::ApiResponse{.status = NO_CONTENT_STATUS, .body = {}};

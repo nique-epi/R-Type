@@ -4,7 +4,6 @@ add_subdirectory(Dock)
 add_library(rtype_client_hangar_module STATIC
   ClientHangarModule.cpp
   HangarScreen.cpp
-  WonItems.cpp
 )
 
 target_include_directories(rtype_client_hangar_module PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
@@ -13,6 +12,7 @@ target_link_libraries(rtype_client_hangar_module
   PUBLIC
     SFML::Graphics
     SFML::Window
+    rtype_client_account_wallet
     rtype_client_audio_contract_service
     rtype_client_hangar_dock
     rtype_client_hangar_locker

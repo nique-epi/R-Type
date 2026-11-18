@@ -27,5 +27,14 @@ constexpr std::string_view ALREADY_YOURS_STATUS = "ALREADY YOURS";
 constexpr std::string_view NOT_FOR_SALE_STATUS = "NOT FOR SALE";
 constexpr std::string_view NOT_ENOUGH_STATUS_START = "NOT ENOUGH KOPECKS: ";
 constexpr std::string_view NOT_ENOUGH_STATUS_END = " MISSING";
+/** @brief What the status line says while the master is asked: the wallet
+ * not read yet, a purchase not answered yet; and what the master answered
+ * when it made no purchase for another reason than the price. */
+constexpr std::string_view READING_WALLET_STATUS = "READING YOUR WALLET...";
+constexpr std::string_view BUYING_STATUS = "BUYING...";
+constexpr std::string_view NOT_ENOUGH_KOPECKS_STATUS = "NOT ENOUGH KOPECKS";
+constexpr std::string_view MASTER_SILENT_STATUS = "NO ANSWER FROM THE MASTER";
+constexpr std::string_view MASTER_REFUSED_STATUS = "THE MASTER REFUSED";
+constexpr std::string_view SESSION_ENDED_STATUS = "SIGN IN AGAIN TO BUY";
 
 }  // namespace rtype::client

@@ -384,8 +384,13 @@ class MasterRefusedException : public NetworkException {
   /** @returns The HTTP status the master answered, 400 or more. */
   [[nodiscard]] int status() const;
 
+  /** @returns The `detail` of its problem document, which tells two refusals
+   * of one status apart; empty when it gave none. */
+  [[nodiscard]] const std::string& detail() const;
+
  private:
   int status_;
+  std::string detail_;
 };
 
 /**

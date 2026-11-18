@@ -11,7 +11,6 @@ LoneGameParts::LoneGameParts() { seatThreePilots(connection, waitingRoom); }
 GameScreenParts LoneGameParts::parts() {
   return GameScreenParts{.navigator = navigator,
                          .settings = settings,
-                         .settingsService = settingsService,
                          .inputs = inputs,
                          .entityMessages = entityMessages,
                          .serverTicks = serverTicks,

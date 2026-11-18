@@ -2,9 +2,11 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <string>
 #include "PurchaseRefusal.hpp"
 #include "Purse.hpp"
+#include "WalletRefusal.hpp"
 
 namespace rtype::client {
 
@@ -19,5 +21,14 @@ namespace rtype::client {
  * @p missing is how many kopecks a too expensive ware lacks. */
 [[nodiscard]] std::string refusalLineOf(PurchaseRefusal refusal,
                                         std::uint32_t missing);
+
+/** @returns The status line of a purchase the master did not make for
+ * @p refusal. */
+[[nodiscard]] std::string masterRefusalLineOf(WalletRefusal refusal);
+
+/** @returns The refusal the shopkeeper answers a purchase the master did not
+ * make for @p refusal with; nothing when the master, not the shop, refused. */
+[[nodiscard]] std::optional<PurchaseRefusal> purchaseRefusalOf(
+    WalletRefusal refusal);
 
 }  // namespace rtype::client

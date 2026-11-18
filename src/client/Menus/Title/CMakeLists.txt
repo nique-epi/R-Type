@@ -3,6 +3,7 @@ add_library(rtype_client_title STATIC
   EndpointForm.cpp
   DialogMenus.cpp
   IntroScreen.cpp
+  JoinTicketWait.cpp
   TitleScreen.cpp
 )
 
@@ -11,8 +12,11 @@ target_include_directories(rtype_client_title PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
 target_link_libraries(rtype_client_title
   PUBLIC
     SFML::Graphics
+    rtype_client_account_wallet
+    rtype_client_account_session
     rtype_client_audio_contract_music
     rtype_client_audio_contract_sounds
+    rtype_client_connection_ticket
     rtype_client_camera_shake
     rtype_client_handshake
     rtype_client_interface

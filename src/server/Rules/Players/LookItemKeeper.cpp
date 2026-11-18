@@ -1,6 +1,7 @@
 #include "LookItemKeeper.hpp"
 #include <algorithm>
 #include <cstddef>
+#include <cstdint>
 #include <optional>
 #include <span>
 #include <utility>
@@ -21,6 +22,15 @@
 namespace rtype::server {
 
 namespace {
+
+/** @brief Adds @p lookNumber to the items @p player won in this game, unless
+ * it already won that item. */
+void keepWon(ConnectedPlayer& player, std::uint8_t lookNumber) {
+  if (std::ranges::find(player.wonLookNumbers, lookNumber) ==
+      player.wonLookNumbers.end()) {
+    player.wonLookNumbers.push_back(lookNumber);
+  }
+}
 
 /** @returns The claim of the pilot of the ship of @p touched on the item,
  * when the item is in @p world and the ship belongs to a player of @p roster.
@@ -111,6 +121,7 @@ void LookItemKeeper::giveItem(std::span<const LookItemClaim> claims) {
   events_.publish(game::EntityDestruction{
       .networkId = winner->itemId, .cause = game::DestructionCause::Removed});
   ConnectedPlayer* const player = roster_.findByNumber(winner->playerNumber);
+  keepWon(*player, winner->lookNumber);
   guaranteeToPlayer(*player, send_,
                     network::encodedMessage(
                         network::LookItemWon{.item = winner->lookNumber}));

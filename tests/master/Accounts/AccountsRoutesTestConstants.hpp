@@ -32,10 +32,12 @@ constexpr std::string_view PASSWORD_POINTER_TEXT = "/password";
 constexpr std::size_t ALLOWED_SIGN_IN_FAILURES = 5;
 constexpr std::size_t ALLOWED_ACCOUNT_CREATIONS = 5;
 
-/** @brief The line of master.cfg that makes ACE an admin, and the one that
- * turns the accounts off. */
+/** @brief The line of master.cfg that makes ACE an admin, the one that turns
+ * the accounts off, and the one that turns off the wallets, which need them. */
 constexpr std::string_view ACE_ADMIN_LINE = "admin ACE";
 constexpr std::string_view ACCOUNTS_OFF_LINE = "module accounts off";
+constexpr std::string_view WALLET_OFF_LINE = "module wallet off";
+constexpr std::string_view CASINO_OFF_LINE = "module casino off";
 
 /** @brief A key of the passwords one byte short: 62 hexadecimal digits. */
 constexpr std::string_view PASSWORD_KEY_ONE_BYTE_SHORT =

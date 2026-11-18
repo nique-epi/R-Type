@@ -1,4 +1,5 @@
 #include "RouteAnswers.hpp"
+#include <chrono>
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -17,6 +18,10 @@
 
 namespace rtype::master {
 
+network::ApiResponse okResponse(std::string body) {
+  return network::ApiResponse{.status = OK_STATUS, .body = std::move(body)};
+}
+
 network::ApiResponse refusal(int status, std::string_view detail) {
   return network::ApiResponse{
       .status = status, .body = {}, .detail = std::string{detail}};
@@ -30,6 +35,20 @@ network::ApiResponse unauthorizedResponse(std::string_view detail) {
       .header =
           network::HttpHeader{.name = std::string{WWW_AUTHENTICATE_HEADER},
                               .value = std::string{network::BEARER_SCHEME}}};
+}
+
+std::chrono::sys_seconds currentSecond() {
+  return std::chrono::floor<std::chrono::seconds>(
+      std::chrono::system_clock::now());
+}
+
+std::optional<std::string> pathTextOf(const network::ApiRequest& request,
+                                      std::string_view name) {
+  const auto parameter = request.pathParameters.find(std::string{name});
+  if (parameter == request.pathParameters.end()) {
+    return std::nullopt;
+  }
+  return parameter->second;
 }
 
 std::optional<std::string> queryTextOf(const network::ApiRequest& request,
@@ -50,6 +69,16 @@ std::optional<std::int64_t> boundedNumberIn(std::string_view text,
     return std::nullopt;
   }
   return static_cast<std::int64_t>(*number);
+}
+
+std::optional<std::int64_t> pathNumberOf(const network::ApiRequest& request,
+                                         std::string_view name,
+                                         QueryBounds bounds) {
+  const std::optional<std::string> text = pathTextOf(request, name);
+  if (!text.has_value()) {
+    return std::nullopt;
+  }
+  return boundedNumberIn(*text, bounds);
 }
 
 std::optional<std::int64_t> queryNumberOf(const network::ApiRequest& request,

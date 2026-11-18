@@ -11,26 +11,14 @@
 #include "LatestValue.hpp"
 #include "MasterAccess.hpp"
 #include "MasterAsks.hpp"
+#include "MasterCalls.hpp"
 #include "MasterClient.hpp"
 #include "MasterReadings.hpp"
-#include "NetworkException.hpp"
-#include "ServerListConstants.hpp"
 #include "ServerListReading.hpp"
 
 namespace rtype::client {
 
 namespace {
-
-/** @returns What @p call reads, or nothing when the master does not answer,
- * refuses, or answers what cannot be read. */
-template <typename Call>
-auto listingOrNothing(Call call) -> std::optional<decltype(call())> {
-  try {
-    return call();
-  } catch (const network::NetworkException&) {
-    return std::nullopt;
-  }
-}
 
 /** @brief Answers the ask for servers of @p asks with @p client when it is
  * newer than the one @p readings served. */
@@ -41,7 +29,7 @@ void serveServers(network::MasterClient& client, const MasterAsks& asks,
   }
   readings.servers.publish(ServerListReading{
       .ask = asks.serverAsk,
-      .listing = listingOrNothing([&client] { return client.listServers(); })});
+      .listing = readingOrNothing([&client] { return client.listServers(); })});
   readings.served.serverAsk = asks.serverAsk;
 }
 
@@ -53,7 +41,7 @@ void serveGames(network::MasterClient& client, const MasterAsks& asks,
     return;
   }
   readings.games.publish(GameListReading{
-      .ask = asks.gameAsk, .listing = listingOrNothing([&client, &asks] {
+      .ask = asks.gameAsk, .listing = readingOrNothing([&client, &asks] {
                              return client.listGames(asks.gameServerId);
                            })});
   readings.served.gameAsk = asks.gameAsk;
@@ -68,7 +56,7 @@ void serveLeaderboard(network::MasterClient& client, const MasterAsks& asks,
   }
   readings.leaderboard.publish(GlobalLeaderboardReading{
       .ask = asks.leaderboardAsk,
-      .leaderboard = listingOrNothing([&client, &asks] {
+      .leaderboard = readingOrNothing([&client, &asks] {
         return client.readLeaderboard(asks.leaderboardQuery);
       })});
   readings.served.leaderboardAsk = asks.leaderboardAsk;
@@ -121,16 +109,11 @@ std::optional<GlobalLeaderboardReading> MasterLink::leaderboard() const {
 
 void MasterLink::run(const std::stop_token& stop,
                      std::unique_ptr<network::MasterClient> client) {
-  std::uint64_t seen = 0;
-  while (!stop.stop_requested()) {
-    seen = asks_.waitForNewer(seen, MASTER_ASK_WAIT, stop);
-    const std::optional<MasterAsks> asks = asks_.value();
-    if (asks.has_value()) {
-      serveServers(*client, *asks, readings_);
-      serveGames(*client, *asks, readings_);
-      serveLeaderboard(*client, *asks, readings_);
-    }
-  }
+  serveAsksUntilStopped(stop, asks_, [this, &client](const MasterAsks& asks) {
+    serveServers(*client, asks, readings_);
+    serveGames(*client, asks, readings_);
+    serveLeaderboard(*client, asks, readings_);
+  });
 }
 
 }  // namespace rtype::client

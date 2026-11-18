@@ -6,8 +6,11 @@
 #include "ConnectionPhase.hpp"
 #include "ConnectionRequest.hpp"
 #include "ConnectionStatus.hpp"
+#include "JoinTicketWaitConstants.hpp"
 #include "RecordingServerConnection.hpp"
 #include "ServerConnectionRequest.hpp"
+#include "TimeConstants.hpp"
+#include "WidgetConstants.hpp"
 
 namespace rtype::client::testing {
 
@@ -73,5 +76,19 @@ constexpr std::size_t HALF_RECEIVED = 75'000;
  * read, as a player sees them: the bounds of the lives written out. */
 constexpr std::string_view BAD_DIFFICULTY_REFUSAL = "REFUSED: BAD DIFFICULTY";
 constexpr std::string_view LIVES_BOUNDS_REFUSAL = "REFUSED: LIVES 1 TO 9";
+
+/**
+ * @brief Just under the wait for a ticket: confirm() lets PRESS_DURATION go
+ * by, so PRESS_DURATION and JUST_UNDER_THE_TICKET_WAIT make TICKET_WAIT, 2 s,
+ * less ONE_NANOSECOND.
+ */
+constexpr rtype::engine::Duration ONE_NANOSECOND{1};
+constexpr rtype::engine::Duration JUST_UNDER_THE_TICKET_WAIT =
+    rtype::client::TICKET_WAIT - rtype::client::PRESS_DURATION - ONE_NANOSECOND;
+
+/** @brief The account a signed-in player plays under, and its token. */
+constexpr std::uint64_t SIGNED_IN_PLAYER_ACCOUNT_ID = 42;
+constexpr std::string_view SIGNED_IN_TOKEN =
+    "rt_00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff";
 
 }  // namespace rtype::client::testing

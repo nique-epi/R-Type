@@ -20,7 +20,7 @@ target_link_libraries(rtype_client_shop_module
     rtype_client_interface
     rtype_client_key_chip
     rtype_client_screens_module
-    rtype_client_settings_module
+    rtype_client_account_wallet
     rtype_client_shop_shelves
     rtype_client_shop_speech
     rtype_client_shop_ticket

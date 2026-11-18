@@ -1,18 +1,17 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <algorithm>
-#include <cstddef>
-#include "LookItemPurchase.hpp"
+#include "LookItems.hpp"
 #include "ShopCatalogue.hpp"
 #include "ShopCatalogueTestConstants.hpp"
 #include "ShopWares.hpp"
 
-using rtype::client::lookItemPrice;
 using rtype::client::ShopWares;
 using rtype::client::waresForSale;
 using rtype::client::testing::HULLS_FOR_SALE;
 using rtype::client::testing::LOOKS_FOR_SALE;
 using rtype::client::testing::TOP_HAT_ITEM;
+using rtype::network::lookItemPrice;
 using ::testing::Contains;
 using ::testing::Not;
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -7,14 +8,19 @@
 #include "ApiRequest.hpp"
 #include "ApiResponse.hpp"
 #include "HttpConstants.hpp"
+#include "ISessionAccounts.hpp"
 #include "KnownServer.hpp"
 #include "NetworkException.hpp"
 #include "PageRequest.hpp"
 #include "QueryBounds.hpp"
 #include "ServersControllerConstants.hpp"
 #include "ServersService.hpp"
+#include "User.hpp"
 
 namespace rtype::master {
+
+/** @returns An answer of 200 whose body is @p body. */
+[[nodiscard]] network::ApiResponse okResponse(std::string body);
 
 /** @returns An answer of @p status with no body: the problem document of
  * @p status, whose detail is @p detail. */
@@ -24,6 +30,15 @@ namespace rtype::master {
  * issued: 401, with `WWW-Authenticate: Bearer`, whose detail is @p detail. */
 [[nodiscard]] network::ApiResponse unauthorizedResponse(
     std::string_view detail);
+
+/** @returns The second the master answers at: the clock of the system, its
+ * part of a second dropped. */
+[[nodiscard]] std::chrono::sys_seconds currentSecond();
+
+/** @returns The text of the parameter @p name of the path of @p request,
+ * nothing when the path names none. */
+[[nodiscard]] std::optional<std::string> pathTextOf(
+    const network::ApiRequest& request, std::string_view name);
 
 /** @returns The text of the parameter @p name of the query of @p request,
  * nothing when the request leaves it out. A parameter given twice keeps its
@@ -35,6 +50,13 @@ namespace rtype::master {
  * number from bounds.lowest to bounds.highest; bounds.absent is not read. */
 [[nodiscard]] std::optional<std::int64_t> boundedNumberIn(std::string_view text,
                                                           QueryBounds bounds);
+
+/** @returns The parameter @p name of the path of @p request, nothing when the
+ * path names none or it is no whole number from bounds.lowest to
+ * bounds.highest; bounds.absent is not read. */
+[[nodiscard]] std::optional<std::int64_t> pathNumberOf(
+    const network::ApiRequest& request, std::string_view name,
+    QueryBounds bounds);
 
 /**
  * @returns The parameter @p name of the query of @p request: bounds.absent
@@ -79,6 +101,26 @@ network::ApiResponse answerAsServerOfKey(ServersService& service,
     return unauthorizedResponse(UNKNOWN_KEY_DETAIL);
   }
   return answerOrRefuse([&answer, &server] { return answer(*server); });
+}
+
+/**
+ * @returns What @p answer gives for the account of the session of the token
+ * of @p request, and the second it is answered at (currentSecond()), at which
+ * the session is read: 401, with `WWW-Authenticate: Bearer`, when the request
+ * carries no token or no session has it, checked before the body is read; or
+ * 400 naming the member @p answer refused.
+ */
+template <typename Answer>
+network::ApiResponse answerAsAccountOf(ISessionAccounts& accounts,
+                                       const network::ApiRequest& request,
+                                       Answer answer) {
+  const std::chrono::sys_seconds now = currentSecond();
+  const std::optional<network::User> user =
+      accounts.userOfToken(request.bearerToken.value_or(std::string{}), now);
+  if (!user.has_value()) {
+    return unauthorizedResponse(NO_SESSION_DETAIL);
+  }
+  return answerOrRefuse([&answer, &user, now] { return answer(*user, now); });
 }
 
 }  // namespace rtype::master

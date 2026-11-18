@@ -11,6 +11,8 @@
 #include "ServerHeartbeat.hpp"
 #include "ServerListing.hpp"
 #include "ServerRegistration.hpp"
+#include "Wallet.hpp"
+#include "WalletExchange.hpp"
 
 namespace rtype::network::testing {
 
@@ -119,6 +121,14 @@ namespace rtype::network::testing {
 [[nodiscard]] std::string finishedGameTextWith(std::string_view pointer,
                                                const nlohmann::json& value);
 
+/** @returns The game of parisFinishedGame() as JSON, without the member at
+ * @p pointer. */
+[[nodiscard]] std::string finishedGameTextWithout(std::string_view pointer);
+
+/** @returns A JSON array of @p count names of the catalog of the ship looks,
+ * in its order, from its first item again past its last. */
+[[nodiscard]] nlohmann::json lookNames(std::size_t count);
+
 /** @returns The game of parisFinishedGame() as JSON, started by
  * PLAYERS_OF_A_FULL_GAME players, its players the first @p playerCount of
  * FIVE_PILOTS, at most five. */
@@ -139,5 +149,17 @@ namespace rtype::network::testing {
 
 /** @returns @p pointer between the quotes a refusal writes around it. */
 [[nodiscard]] std::string quoted(std::string_view pointer);
+
+/** @returns A wallet of A_WALLET_KOPECKS kopecks and A_WALLET_CHIPS chips. */
+[[nodiscard]] Wallet aWallet();
+
+/** @returns An exchange of AN_EXCHANGE_AMOUNT kopecks into chips. */
+[[nodiscard]] WalletExchange anExchange();
+
+/** @returns What exchangeRequestFromText() says of @p text, as above. */
+[[nodiscard]] std::string exchangeRequestRefusal(std::string_view text);
+
+/** @returns What ownedLooksFromText() says of @p text, as above. */
+[[nodiscard]] std::string ownedLooksRefusal(std::string_view text);
 
 }  // namespace rtype::network::testing

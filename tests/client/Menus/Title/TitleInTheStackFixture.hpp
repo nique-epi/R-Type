@@ -4,14 +4,18 @@
 #include <SFML/System/Vector2.hpp>
 #include <memory>
 #include <vector>
+#include "FakeAccountSession.hpp"
+#include "FakeWallet.hpp"
 #include "IScreen.hpp"
 #include "PlayerSettings.hpp"
+#include "RecordingDeviceLinkFlow.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingScreen.hpp"
 #include "RecordingSoundPlayer.hpp"
 #include "ScreenId.hpp"
 #include "ScreenStack.hpp"
+#include "SignInReturn.hpp"
 
 /**
  * @brief The title screen alone in a stack, with the screens it opens to put
@@ -48,5 +52,9 @@ class TitleInTheStackFixture : public ::testing::Test {
   std::vector<JournalEntry> journal_;
   RecordingSoundPlayer sounds_;
   rtype::client::PlayerSettings settings_;
+  FakeWallet wallet_;
+  FakeAccountSession account_;
+  RecordingDeviceLinkFlow deviceLinks_;
+  rtype::client::SignInReturn signInReturn_;
   rtype::client::ScreenStack screens_;
 };

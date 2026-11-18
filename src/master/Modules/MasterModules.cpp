@@ -16,6 +16,12 @@
 #if RTYPE_MODULE_ACCOUNTS
 #include "AccountsModule.hpp"
 #endif
+#if RTYPE_MODULE_WALLET
+#include "WalletModule.hpp"
+#endif
+#if RTYPE_MODULE_CASINO
+#include "CasinoModule.hpp"
+#endif
 
 namespace rtype::master {
 
@@ -29,9 +35,15 @@ std::vector<std::unique_ptr<engine::IModule>> masterModules(
   modules.push_back(std::make_unique<MasterProbeModule>());
   modules.push_back(std::make_unique<MasterHttpModule>(onFailure));
   modules.push_back(std::make_unique<ServersModule>());
-  modules.push_back(std::make_unique<LeaderboardModule>());
 #if RTYPE_MODULE_ACCOUNTS
   modules.push_back(std::make_unique<AccountsModule>(passwordKeyText));
+#endif
+#if RTYPE_MODULE_WALLET
+  modules.push_back(std::make_unique<WalletModule>());
+#endif
+  modules.push_back(std::make_unique<LeaderboardModule>());
+#if RTYPE_MODULE_CASINO
+  modules.push_back(std::make_unique<CasinoModule>());
 #endif
   return modules;
 }

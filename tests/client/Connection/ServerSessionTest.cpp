@@ -19,7 +19,9 @@
 #include "Expulsion.hpp"
 #include "FixedEntityTypeSourceConstants.hpp"
 #include "GameLoaded.hpp"
+#include "GameRequest.hpp"
 #include "GameStarted.hpp"
+#include "GameTicketBytesTestConstants.hpp"
 #include "Heartbeat.hpp"
 #include "LobbyState.hpp"
 #include "NetworkTestConstants.hpp"
@@ -124,6 +126,17 @@ TEST_F(ServerSessionFixture, SendsARequestWithoutCookieAtOnce) {
             (network::ConnectionRequest{.cookie = 0,
                                         .nickname = std::string{NICKNAME}}));
   EXPECT_EQ(phase(), ConnectionPhase::Connecting);
+}
+
+/**
+ * Given a connection with no attempt
+ * When it connects to a server with the game ticket the master gave
+ * Then the request carries that ticket
+ */
+TEST_F(ServerSessionFixture, SendsTheTicketOfTheAttempt) {
+  connect(GameRequest{.ticket = network::testing::SOME_TICKET});
+
+  EXPECT_EQ(lastRequest().ticket, network::testing::SOME_TICKET);
 }
 
 /**

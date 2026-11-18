@@ -3,9 +3,11 @@
 #include <functional>
 #include "ConnectionGoal.hpp"
 #include "ConnectionStart.hpp"
+#include "IAccountSession.hpp"
 #include "IScreenNavigator.hpp"
 #include "IServerConnection.hpp"
 #include "ISoundPlayer.hpp"
+#include "ITicketLink.hpp"
 #include "PlayfieldMapping.hpp"
 #include "ServerChoice.hpp"
 
@@ -21,6 +23,12 @@ struct ConnectionScreenParts {
   /** @brief Connection the attempts go through, which must outlive the
    * screen. */
   std::reference_wrapper<IServerConnection> connection;
+  /** @brief The account every attempt is made under, which must outlive the
+   * screen. */
+  std::reference_wrapper<const IAccountSession> account;
+  /** @brief Asks the master the game ticket of a signed-in player, which must
+   * outlive the screen. */
+  std::reference_wrapper<ITicketLink> tickets;
   /** @brief Gives the point of the playfield under a pixel of the window. */
   PlayfieldMapping playfieldPointAt;
   /** @brief Address, port and nickname the fields start with, and the game

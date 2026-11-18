@@ -6,6 +6,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include "Currency.hpp"
 #include "FinishedGame.hpp"
 #include "FinishedGamePlayer.hpp"
 #include "GameListing.hpp"
@@ -26,6 +27,9 @@
 #include "ServerRegistration.hpp"
 #include "ServerSample.hpp"
 #include "ServerStatus.hpp"
+#include "ShipLookConstants.hpp"
+#include "Wallet.hpp"
+#include "WalletExchange.hpp"
 
 namespace rtype::network::testing {
 
@@ -262,18 +266,35 @@ FinishedGame parisFinishedGame() {
       .difficulty = std::string{PARIS_DIFFICULTY},
       .playerCount = PLAYING_GAME_PLAYER_COUNT,
       .vanilla = true,
-      .players = {
-          FinishedGamePlayer{.nickname = std::string{FIRST_PILOT},
-                             .accountId = std::nullopt,
-                             .score = FIRST_PILOT_SCORE},
-          FinishedGamePlayer{.nickname = std::string{SECOND_PILOT},
-                             .accountId = std::string{SECOND_PILOT_ACCOUNT},
-                             .score = SECOND_PILOT_SCORE}}};
+      .players = {FinishedGamePlayer{.nickname = std::string{FIRST_PILOT},
+                                     .accountId = std::nullopt,
+                                     .score = FIRST_PILOT_SCORE,
+                                     .wonLooks = {}},
+                  FinishedGamePlayer{
+                      .nickname = std::string{SECOND_PILOT},
+                      .accountId = std::string{SECOND_PILOT_ACCOUNT},
+                      .score = SECOND_PILOT_SCORE,
+                      .wonLooks = {std::string{SECOND_PILOT_FIRST_LOOK},
+                                   std::string{SECOND_PILOT_SECOND_LOOK}}}},
+      .victory = PARIS_GAME_WON};
 }
 
 std::string finishedGameTextWith(std::string_view pointer,
                                  const nlohmann::json& value) {
   return withValueAt(finishedGameText(parisFinishedGame()), pointer, value);
+}
+
+std::string finishedGameTextWithout(std::string_view pointer) {
+  return withoutValueAt(finishedGameText(parisFinishedGame()), pointer);
+}
+
+nlohmann::json lookNames(std::size_t count) {
+  nlohmann::json names = nlohmann::json::array();
+  for (std::size_t index = 0; index < count; ++index) {
+    names.push_back(identifiers::SHIP_LOOK_ITEM_NAMES.at(
+        index % identifiers::SHIP_LOOK_ITEM_NAMES.size()));
+  }
+  return names;
 }
 
 std::string finishedGameTextOfPlayers(std::size_t playerCount) {
@@ -284,7 +305,8 @@ std::string finishedGameTextOfPlayers(std::size_t playerCount) {
     game.players.push_back(
         FinishedGamePlayer{.nickname = std::string{FIVE_PILOTS.at(index)},
                            .accountId = std::nullopt,
-                           .score = FIRST_PILOT_SCORE});
+                           .score = FIRST_PILOT_SCORE,
+                           .wonLooks = {}});
   }
   return finishedGameText(game);
 }
@@ -326,6 +348,35 @@ std::string finishedGameRefusal(std::string_view text) {
 std::string quoted(std::string_view pointer) {
   return std::string{POINTER_QUOTE} + std::string{pointer} +
          std::string{POINTER_QUOTE};
+}
+
+Wallet aWallet() {
+  return Wallet{.kopecks = A_WALLET_KOPECKS, .chips = A_WALLET_CHIPS};
+}
+
+WalletExchange anExchange() {
+  return WalletExchange{.id = AN_EXCHANGE_ID,
+                        .from = Currency::Kopecks,
+                        .amount = AN_EXCHANGE_AMOUNT,
+                        .madeAt = AN_EXCHANGE_DATE};
+}
+
+std::string exchangeRequestRefusal(std::string_view text) {
+  try {
+    static_cast<void>(exchangeRequestFromText(text));
+  } catch (const InvalidMasterMessageException& refusal) {
+    return refusal.what();
+  }
+  return {};
+}
+
+std::string ownedLooksRefusal(std::string_view text) {
+  try {
+    static_cast<void>(ownedLooksFromText(text));
+  } catch (const InvalidMasterMessageException& refusal) {
+    return refusal.what();
+  }
+  return {};
 }
 
 }  // namespace rtype::network::testing

@@ -1,0 +1,7 @@
+add_library(rtype_network_master_casino_draw STATIC SystemRouletteDraw.cpp)
+
+target_include_directories(rtype_network_master_casino_draw PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(rtype_network_master_casino_draw PRIVATE rtype_network_master_casino_cloth)
+
+rtype_enable_warnings(rtype_network_master_casino_draw)

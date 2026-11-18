@@ -1,9 +1,7 @@
 #include "MasterLinkFixture.hpp"
-#include <chrono>
 #include <cstdint>
 #include <optional>
 #include <string>
-#include <thread>
 #include "CreatedServer.hpp"
 #include "GlobalLeaderboardReading.hpp"
 #include "MasterAccess.hpp"
@@ -15,6 +13,7 @@
 #include "ServerCreation.hpp"
 #include "ServerListReading.hpp"
 #include "ServerRegistration.hpp"
+#include "ValueSoon.hpp"
 
 namespace rtype::client::testing {
 
@@ -46,28 +45,18 @@ network::CreatedServer MasterLinkFixture::registeredServer() const {
 
 std::optional<ServerListReading> MasterLinkFixture::serversSoon(
     std::uint64_t ask) const {
-  const auto deadline = std::chrono::steady_clock::now() + READING_DEADLINE;
-  while (std::chrono::steady_clock::now() < deadline) {
-    const std::optional<ServerListReading> reading = link_.servers();
-    if (reading.has_value() && reading->ask == ask) {
-      return reading;
-    }
-    std::this_thread::sleep_for(POLL_STEP);
-  }
-  return std::nullopt;
+  return valueSoon(READING_DEADLINE, [this, ask] {
+    std::optional<ServerListReading> reading = link_.servers();
+    return reading.has_value() && reading->ask == ask ? reading : std::nullopt;
+  });
 }
 
 std::optional<GlobalLeaderboardReading> MasterLinkFixture::leaderboardSoon(
     std::uint64_t ask) const {
-  const auto deadline = std::chrono::steady_clock::now() + READING_DEADLINE;
-  while (std::chrono::steady_clock::now() < deadline) {
-    const std::optional<GlobalLeaderboardReading> reading = link_.leaderboard();
-    if (reading.has_value() && reading->ask == ask) {
-      return reading;
-    }
-    std::this_thread::sleep_for(POLL_STEP);
-  }
-  return std::nullopt;
+  return valueSoon(READING_DEADLINE, [this, ask] {
+    std::optional<GlobalLeaderboardReading> reading = link_.leaderboard();
+    return reading.has_value() && reading->ask == ask ? reading : std::nullopt;
+  });
 }
 
 RunningMaster& MasterLinkFixture::master() { return master_; }

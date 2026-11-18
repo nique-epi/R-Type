@@ -130,3 +130,7 @@ constexpr std::uint16_t GAME_THREE_NUMBER = 3;
 constexpr std::string_view GAME_ZERO_ARGUMENT = "0";
 constexpr std::string_view GAME_PAST_THE_LAST_ARGUMENT = "65536";
 constexpr std::string_view WORD_GAME_ARGUMENT = "abc";
+
+/** @brief A token of a session of the master given after `--session`. */
+constexpr std::string_view SESSION_TOKEN_ARGUMENT =
+    "rt_0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <array>
-#include <cstdint>
 #include <optional>
 #include "ColorMode.hpp"
 #include "DisplayMode.hpp"
@@ -11,7 +10,6 @@
 #include "SettingId.hpp"
 #include "SettingRange.hpp"
 #include "SettingsConstants.hpp"
-#include "ShipLocker.hpp"
 #include "ShipLook.hpp"
 
 namespace rtype::client {
@@ -116,19 +114,6 @@ constexpr Setting<int> LAGOMETER_BACKGROUND_SETTING{
     .id = SettingId::LagometerBackground,
     .range = LAGOMETER_BACKGROUND_RANGE};
 
-constexpr Setting<ShipLocker> SHIP_LOCKER_SETTING{
-    .member = &PlayerSettings::shipLocker,
-    .id = SettingId::ShipLocker,
-    .range = std::nullopt};
-
-/** @brief The balance of the player: none to MAXIMUM_KOPECKS. */
-constexpr SettingRange KOPECKS_RANGE{
-    .minimum = 0, .maximum = static_cast<int>(MAXIMUM_KOPECKS)};
-constexpr Setting<std::uint32_t> KOPECKS_SETTING{
-    .member = &PlayerSettings::kopecks,
-    .id = SettingId::Kopecks,
-    .range = KOPECKS_RANGE};
-
 /** @brief Every setting a listener can be told about. */
 constexpr std::array ALL_SETTING_IDS{
     SettingId::MusicVolume,
@@ -152,8 +137,6 @@ constexpr std::array ALL_SETTING_IDS{
     SettingId::LagometerScale,
     SettingId::LagometerBackground,
     SettingId::ShipLook,
-    SettingId::ShipLocker,
-    SettingId::Kopecks,
 };
 
 }  // namespace rtype::client

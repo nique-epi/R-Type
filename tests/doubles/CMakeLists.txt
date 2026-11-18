@@ -2,4 +2,4 @@ target_sources(engine_tests PRIVATE ClockAdvancingSystem.cpp OptionallyDependent
 add_subdirectory(Plugins)
 target_sources(network_tests PRIVATE SeededLoss.cpp RecordingDatagramSocket.cpp)
 target_sources(game_tests PRIVATE ActionRequestingBehaviour.cpp RecordingBehaviourState.cpp RecordingHitHandler.cpp ViewRecordingBehaviour.cpp)
-target_sources(master_tests PRIVATE HttpPortProbe.cpp HttpPortRecordingModule.cpp RouteAddingModule.cpp UdpTestClient.cpp)
+target_sources(master_tests PRIVATE FakeAccountMaster.cpp LoopbackListener.cpp HttpPortProbe.cpp HttpPortRecordingModule.cpp OneSessionAccounts.cpp RouteAddingModule.cpp ScriptedRouletteDraw.cpp UdpTestClient.cpp)

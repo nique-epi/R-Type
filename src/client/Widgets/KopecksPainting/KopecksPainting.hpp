@@ -2,6 +2,7 @@
 
 #include <SFML/System/Vector2.hpp>
 #include <cstdint>
+#include <optional>
 #include "IInterfaceCanvas.hpp"
 #include "KopecksLabel.hpp"
 
@@ -15,9 +16,14 @@ namespace rtype::client {
  * ending at its top-right corner, and the coin left of it. */
 void paintKopecks(IInterfaceCanvas& canvas, const KopecksLabel& label);
 
+/** @brief Writes UNKNOWN_KOPECKS_TEXT in place of the amount of @p label,
+ * as paintKopecks() writes an amount, the coin left of it. */
+void paintUnknownKopecks(IInterfaceCanvas& canvas, const KopecksLabel& label);
+
 /** @brief Paints the balance of a player in its frame, whose top-right
- * corner is @p topRight: the amount, and KOPECKS_CAPTION under it. */
+ * corner is @p topRight: the amount, UNKNOWN_KOPECKS_TEXT when there is
+ * none, and KOPECKS_CAPTION under it. */
 void paintKopecksBalance(IInterfaceCanvas& canvas, sf::Vector2i topRight,
-                         std::uint32_t balance);
+                         std::optional<std::uint32_t> balance);
 
 }  // namespace rtype::client

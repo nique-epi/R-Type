@@ -43,6 +43,12 @@ constexpr std::string_view GAME_OPTION = "--game";
 constexpr std::string_view NEW_GAME_VALUE = "new";
 
 /**
+ * @brief Launch option followed by the token of a session of the master: the
+ * client signs in with it at start, and keeps it in memory only.
+ */
+constexpr std::string_view SESSION_OPTION = "--session";
+
+/**
  * @brief The file of commands the client reads when it starts; a missing file
  * is not an error.
  */

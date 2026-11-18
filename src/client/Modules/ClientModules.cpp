@@ -3,7 +3,9 @@
 #include <vector>
 #include "AssetLoad.hpp"
 #include "BuiltModuleConstants.hpp"
+#include "ClientAccountModule.hpp"
 #include "ClientAssetsModule.hpp"
+#include "ClientCasinoModule.hpp"
 #include "ClientConnectionModule.hpp"
 #include "ClientGameModule.hpp"
 #include "ClientHangarModule.hpp"
@@ -53,6 +55,8 @@ std::vector<std::unique_ptr<engine::IModule>> clientModules(
   modules.push_back(std::make_unique<ClientWindowModule>(loop));
   modules.push_back(std::make_unique<ClientConnectionModule>(
       launchOptions.networkConditions()));
+  modules.push_back(
+      std::make_unique<ClientAccountModule>(launchOptions.sessionToken()));
 #if RTYPE_MODULE_METRICS
   modules.push_back(std::make_unique<ClientMetricsModule>(
       std::make_shared<engine::SystemClock>(), launchOptions.trafficCsvFile()));
@@ -70,6 +74,7 @@ std::vector<std::unique_ptr<engine::IModule>> clientModules(
   modules.push_back(std::make_unique<ClientLobbyModule>());
   modules.push_back(std::make_unique<ClientHangarModule>());
   modules.push_back(std::make_unique<ClientShopModule>());
+  modules.push_back(std::make_unique<ClientCasinoModule>());
   modules.push_back(std::make_unique<ClientGameModule>());
 #if RTYPE_MODULE_DEBUG
   modules.push_back(std::make_unique<ClientDebugModule>());

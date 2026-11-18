@@ -86,6 +86,8 @@ void ConnectionScreenChoiceFixture::openWith(ConnectionStart start) {
       ConnectionScreenParts{.navigator = navigator_,
                             .sounds = sounds_,
                             .connection = connection_,
+                            .account = account_,
+                            .tickets = tickets_,
                             .playfieldPointAt = samePlayfieldPoint,
                             .choice = choice_,
                             .start = start},

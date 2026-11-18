@@ -1,6 +1,7 @@
 target_sources(master_tests PRIVATE MasterDatabaseFile.cpp RunningMaster.cpp)
 
 add_subdirectory(Accounts)
+add_subdirectory(Casino)
 add_subdirectory(Http)
 add_subdirectory(LaunchOptions)
 add_subdirectory(Leaderboard)
@@ -8,3 +9,4 @@ add_subdirectory(Modules)
 add_subdirectory(Probe)
 add_subdirectory(Servers)
 add_subdirectory(Storage)
+add_subdirectory(Wallet)

@@ -18,6 +18,9 @@ constexpr int UNAUTHORIZED_STATUS = network::UNAUTHORIZED_STATUS;
 constexpr int FORBIDDEN_STATUS = network::FORBIDDEN_STATUS;
 constexpr int NOT_FOUND_STATUS = network::NOT_FOUND_STATUS;
 constexpr int CONFLICT_STATUS = network::CONFLICT_STATUS;
+constexpr int GONE_STATUS = network::GONE_STATUS;
+constexpr int UNPROCESSABLE_CONTENT_STATUS =
+    network::UNPROCESSABLE_CONTENT_STATUS;
 constexpr int TOO_MANY_REQUESTS_STATUS = network::TOO_MANY_REQUESTS_STATUS;
 
 /** @brief What a route answered over HTTPS only says to a request in clear.
@@ -28,6 +31,7 @@ constexpr std::string_view HTTPS_REQUIRED_DETAIL =
 /** @brief The headers only the master writes (see MasterHttpConstants.hpp). */
 constexpr std::string_view LOCATION_HEADER = "Location";
 constexpr std::string_view WWW_AUTHENTICATE_HEADER = "WWW-Authenticate";
+constexpr std::string_view RETRY_AFTER_HEADER = "Retry-After";
 
 /**
  * @brief The headers the web site sends with a creation: the secret it names

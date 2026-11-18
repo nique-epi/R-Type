@@ -1,0 +1,2 @@
+rtype_add_test(NAME client_device_link_tests SOURCES MasterDeviceLinkFlowTest.cpp MasterDeviceLinkFlowFixture.cpp ${RTYPE_TEST_SOURCE_DIR}/doubles/FakeAccountMaster.cpp ${RTYPE_TEST_SOURCE_DIR}/doubles/LoopbackListener.cpp LIBS rtype_client_connection_device_link rtype_network_master_validators httplib::httplib rtype_test_support TIMEOUT ${RTYPE_THREAD_TEST_TIMEOUT_SECONDS})
+target_include_directories(client_device_link_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${RTYPE_TEST_SOURCE_DIR}/doubles)
