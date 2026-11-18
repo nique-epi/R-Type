@@ -5,8 +5,8 @@
 #include "BackgroundReadingFixtures.hpp"
 #include "ColoredPixel.hpp"
 #include "LayerFrame.hpp"
+#include "LayerParticle.hpp"
 #include "LayerTestConstants.hpp"
-#include "Particle.hpp"
 #include "ParticleLayer.hpp"
 #include "ParticleLayerParts.hpp"
 #include "RecordedFrame.hpp"
@@ -14,7 +14,7 @@
 
 using rtype::client::ColoredPixel;
 using rtype::client::LayerFrame;
-using rtype::client::Particle;
+using rtype::client::LayerParticle;
 using rtype::client::ParticleLayer;
 using rtype::client::ParticleLayerParts;
 
@@ -40,7 +40,7 @@ std::vector<RecordedFrame> spritesPaintedBy(const ParticleLayer& layer,
 
 int particlesDrawnWith(const ParticleLayer& layer, std::size_t sprite) {
   int drawn = 0;
-  for (const Particle& particle : layer.particles()) {
+  for (const LayerParticle& particle : layer.particles()) {
     if (particle.sprite == sprite) {
       ++drawn;
     }

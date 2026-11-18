@@ -9,8 +9,8 @@
 #include <vector>
 #include "ILayerCanvas.hpp"
 #include "LayerFrame.hpp"
+#include "LayerParticle.hpp"
 #include "PaintedParticle.hpp"
-#include "Particle.hpp"
 #include "ParticleContent.hpp"
 #include "ParticleLayerParts.hpp"
 #include "ParticleMotion.hpp"
@@ -38,10 +38,10 @@ void ParticleLayer::advance(engine::Duration elapsed, const LayerFrame& frame) {
     return;
   }
   const float seconds = std::chrono::duration<float>(elapsed).count();
-  for (Particle& particle : particles_) {
+  for (LayerParticle& particle : particles_) {
     moveParticle(particle, description_, seconds);
   }
-  std::erase_if(particles_, [this, &frame](const Particle& particle) {
+  std::erase_if(particles_, [this, &frame](const LayerParticle& particle) {
     return hasEnded(particle, description_, frame.column);
   });
 }
@@ -49,7 +49,7 @@ void ParticleLayer::advance(engine::Duration elapsed, const LayerFrame& frame) {
 void ParticleLayer::paint(ILayerCanvas& canvas, const LayerFrame& frame) const {
   const std::int64_t step =
       std::chrono::duration_cast<StarTwinkleStep>(age_).count();
-  for (const Particle& particle : particles_) {
+  for (const LayerParticle& particle : particles_) {
     const bool twinkling =
         description_.twinkleSteps > 0 &&
         (step + particle.twinklePhase) % description_.twinkleSteps == 0;
@@ -71,11 +71,11 @@ void ParticleLayer::emit() {
 
 std::size_t ParticleLayer::aliveCount() const { return particles_.size(); }
 
-const std::vector<Particle>& ParticleLayer::particles() const {
+const std::vector<LayerParticle>& ParticleLayer::particles() const {
   return particles_;
 }
 
-sf::Vector2f ParticleLayer::placeOf(const Particle& particle,
+sf::Vector2f ParticleLayer::placeOf(const LayerParticle& particle,
                                     int column) const {
   const auto moved = static_cast<float>(column);
   if (description_.population == 0) {
@@ -97,7 +97,7 @@ int ParticleLayer::lapOf(float home, int column) const {
 }
 
 void ParticleLayer::bringBack(int column) {
-  for (Particle& particle : particles_) {
+  for (LayerParticle& particle : particles_) {
     const int lap = lapOf(particle.position.x, column);
     if (lap != particle.lap) {
       particle.lap = lap;

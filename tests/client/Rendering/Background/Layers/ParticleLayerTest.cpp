@@ -5,8 +5,8 @@
 #include <vector>
 #include "ColoredPixel.hpp"
 #include "LayerFrame.hpp"
+#include "LayerParticle.hpp"
 #include "LayerTestConstants.hpp"
-#include "Particle.hpp"
 #include "ParticleLayer.hpp"
 #include "ParticleLayerFixtures.hpp"
 #include "ParticleLayerTestConstants.hpp"
@@ -14,7 +14,7 @@
 
 using rtype::client::ColoredPixel;
 using rtype::client::LayerFrame;
-using rtype::client::Particle;
+using rtype::client::LayerParticle;
 using rtype::client::ParticleLayer;
 
 /**
@@ -37,7 +37,7 @@ TEST(ParticleLayer, HoldsItsPopulationFromTheStart) {
 TEST(ParticleLayer, SettlesItsPopulationInItsAreaOnWholeColumns) {
   const ParticleLayer stars = particleLayerOf(THE_FAR_STARS, STAR_REPEAT);
 
-  for (const Particle& star : stars.particles()) {
+  for (const LayerParticle& star : stars.particles()) {
     EXPECT_GE(star.position.x, 0.0F);
     EXPECT_LT(star.position.x, WIDTH_OF_THE_BACKGROUND);
     EXPECT_FLOAT_EQ(star.position.x, std::floor(star.position.x));
@@ -168,7 +168,7 @@ TEST(ParticleLayer, KeepsAPopulationWithinTheBandOfItsRepeat) {
 
   for (int moved = 1; moved <= COLUMNS_OF_A_LONG_FLIGHT; ++moved) {
     stars.advance(ONE_FRAME_OF_LAYER, LayerFrame{.column = -moved});
-    for (const Particle& star : stars.particles()) {
+    for (const LayerParticle& star : stars.particles()) {
       const float column = stars.placeOf(star, -moved).x;
       ASSERT_GE(column, -HIDDEN_ON_EACH_SIDE);
       ASSERT_LT(column, WIDTH_OF_THE_BACKGROUND + HIDDEN_ON_EACH_SIDE);
@@ -260,7 +260,7 @@ TEST(ParticleLayer, AParticleIsBornInItsArea) {
   }
 
   ASSERT_EQ(events.aliveCount(), A_HUNDRED_BIRTHS);
-  for (const Particle& particle : events.particles()) {
+  for (const LayerParticle& particle : events.particles()) {
     EXPECT_GE(particle.position.x, LEFT_OF_THE_BOX);
     EXPECT_LE(particle.position.x, RIGHT_OF_THE_BOX);
     EXPECT_GE(particle.position.y, TOP_OF_THE_BOX);
@@ -323,7 +323,7 @@ TEST(ParticleLayer, AParticleDriftsByAtMostItsDrift) {
 
   ASSERT_EQ(events.aliveCount(), A_HUNDRED_BIRTHS);
   bool apart = false;
-  for (const Particle& particle : events.particles()) {
+  for (const LayerParticle& particle : events.particles()) {
     const float drifted = particle.position.y - BIRTH_POINT.y;
     EXPECT_LE(std::abs(drifted), MOST_DRIFT + ROUNDING_OF_A_FLIGHT);
     apart =

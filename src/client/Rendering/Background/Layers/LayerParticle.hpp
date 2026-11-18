@@ -7,7 +7,7 @@
 namespace rtype::client {
 
 /** @brief One particle of a layer of particles. */
-struct Particle {
+struct LayerParticle {
   /** Where it lies in its layer, in background pixels. */
   sf::Vector2f position;
   /** In background pixels per second. */

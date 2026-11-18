@@ -1,7 +1,7 @@
 #pragma once
 
 #include <SFML/System/Vector2.hpp>
-#include "Particle.hpp"
+#include "LayerParticle.hpp"
 
 namespace rtype::client {
 
@@ -9,7 +9,7 @@ namespace rtype::client {
  * background, the streak it leaves while its layer warps, and whether it
  * twinkles now. */
 struct PaintedParticle {
-  Particle particle;
+  LayerParticle particle;
   sf::Vector2f place;
   int streak{};
   bool twinkling{};

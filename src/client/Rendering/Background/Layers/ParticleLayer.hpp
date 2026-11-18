@@ -8,7 +8,7 @@
 #include "ILayerContent.hpp"
 #include "IParticleEmitter.hpp"
 #include "LayerFrame.hpp"
-#include "Particle.hpp"
+#include "LayerParticle.hpp"
 #include "ParticleContent.hpp"
 #include "ParticleLayerParts.hpp"
 #include "TimeConstants.hpp"
@@ -42,12 +42,12 @@ class ParticleLayer final : public ILayerContent, public IParticleEmitter {
   [[nodiscard]] std::size_t aliveCount() const override;
 
   /** @returns The particles, in the order they were born. */
-  [[nodiscard]] const std::vector<Particle>& particles() const;
+  [[nodiscard]] const std::vector<LayerParticle>& particles() const;
 
   /** @returns Where @p particle lies on the background when the origin of
    * the layer lies on @p column: for one of a population, on the copy of the
    * layer that shows. */
-  [[nodiscard]] sf::Vector2f placeOf(const Particle& particle,
+  [[nodiscard]] sf::Vector2f placeOf(const LayerParticle& particle,
                                      int column) const;
 
  private:
@@ -63,7 +63,7 @@ class ParticleLayer final : public ILayerContent, public IParticleEmitter {
   ParticleContent description_;
   int repeat_;
   std::mt19937 random_;
-  std::vector<Particle> particles_;
+  std::vector<LayerParticle> particles_;
   engine::Duration age_{};
 };
 

@@ -11,7 +11,7 @@
 #include <vector>
 #include "DecimalRange.hpp"
 #include "DurationRange.hpp"
-#include "Particle.hpp"
+#include "LayerParticle.hpp"
 #include "ParticleContent.hpp"
 #include "ParticleSprite.hpp"
 #include "ParticleTrail.hpp"
@@ -59,7 +59,7 @@ std::size_t drawnSprite(const ParticleContent& description,
 
 /** @brief Draws from @p random the sprite @p particle is drawn with and,
  * when that sprite loops, its frame rate and the frame it starts on. */
-void drawSprite(const ParticleContent& description, Particle& particle,
+void drawSprite(const ParticleContent& description, LayerParticle& particle,
                 std::mt19937& random) {
   particle.sprite = drawnSprite(description, random);
   if (description.sprites.empty()) {
@@ -74,7 +74,7 @@ void drawSprite(const ParticleContent& description, Particle& particle,
 }
 
 /** @returns Whether @p particle has a life and has lived it. */
-bool hasLivedItsLife(const Particle& particle) {
+bool hasLivedItsLife(const LayerParticle& particle) {
   return particle.life > 0.0F && particle.age >= particle.life;
 }
 
@@ -87,9 +87,9 @@ bool isOutOfTheBackground(sf::Vector2f place, float margin) {
 
 }  // namespace
 
-Particle settledParticle(const ParticleContent& description,
-                         std::mt19937& random) {
-  Particle particle{};
+LayerParticle settledParticle(const ParticleContent& description,
+                              std::mt19937& random) {
+  LayerParticle particle{};
   const sf::Vector2f point = drawnPoint(description, random);
   particle.position = {std::floor(point.x), point.y};
   if (description.twinkleSteps > 0) {
@@ -101,9 +101,9 @@ Particle settledParticle(const ParticleContent& description,
   return particle;
 }
 
-Particle emittedParticle(const ParticleContent& description,
-                         std::mt19937& random) {
-  Particle particle{};
+LayerParticle emittedParticle(const ParticleContent& description,
+                              std::mt19937& random) {
+  LayerParticle particle{};
   particle.position = drawnPoint(description, random);
   const float speed = drawnIn(description.speed, random);
   const sf::Angle angle = sf::degrees(drawnIn(description.angle, random));
@@ -124,7 +124,7 @@ float drawnHeight(const ParticleContent& description, std::mt19937& random) {
   return randomBetween(random, area.position.y, area.position.y + area.size.y);
 }
 
-void moveParticle(Particle& particle, const ParticleContent& description,
+void moveParticle(LayerParticle& particle, const ParticleContent& description,
                   float seconds) {
   particle.position += particle.velocity * seconds;
   particle.age += seconds;
@@ -141,7 +141,7 @@ void moveParticle(Particle& particle, const ParticleContent& description,
   }
 }
 
-bool hasEnded(const Particle& particle, const ParticleContent& description,
+bool hasEnded(const LayerParticle& particle, const ParticleContent& description,
               int column) {
   if (particle.life > 0.0F) {
     return hasLivedItsLife(particle) &&

@@ -5,8 +5,8 @@
 #include <cmath>
 #include <cstddef>
 #include "ILayerCanvas.hpp"
+#include "LayerParticle.hpp"
 #include "PaintedParticle.hpp"
-#include "Particle.hpp"
 #include "ParticleContent.hpp"
 #include "ParticleSprite.hpp"
 #include "ParticleTrail.hpp"
@@ -69,7 +69,7 @@ void paintTrail(ILayerCanvas& canvas, const ParticleContent& description,
  * on, its share of its life, or its second while it twinkles. */
 std::size_t shownFrame(const ParticleSprite& sprite,
                        const PaintedParticle& painted) {
-  const Particle& particle = painted.particle;
+  const LayerParticle& particle = painted.particle;
   if (sprite.framesPerSecond.has_value()) {
     return static_cast<std::size_t>(particle.frame) % sprite.frames;
   }
