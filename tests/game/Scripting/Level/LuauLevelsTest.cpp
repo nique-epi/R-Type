@@ -58,7 +58,7 @@ TEST(LuauLevels, ReadsTheLevelTheRepositoryShips) {
 /**
  * Given the scripts of the resource fosse the repository ships
  * When they run
- * Then the level fosse is registered, with its five stages
+ * Then the level fosse is registered, with its six stages
  */
 TEST(LuauLevels, ReadsTheFosseLevelTheRepositoryShips) {
   FailureLog log;

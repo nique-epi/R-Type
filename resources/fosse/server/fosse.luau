@@ -1,13 +1,16 @@
 --!strict
--- The level fosse, named after the biome it leads into: five stages a team
+-- The level fosse, named after the biome it leads into: six stages a team
 -- plays one after the other, each one after the first starting at a
--- checkpoint. A server plays it with `set level fosse`.
+-- checkpoint, in two parts. A server plays it with `set level fosse`, and
+-- starts it at a stage with `--stage <n>`: 3 at the transition, 4 in the Pit.
 --
--- The first two stages cross open space, with the stars alone; the second
--- ends on a mini-boss, the Bydo Tyrant with 40 % of its health. The third
--- stage enters the Pit through its cave, where the mobs of the Pit join the
--- Bydos (server/fosse_mobs.luau), and the last ends on the boss of the Pit,
--- the Necromancer (server/necromancer.luau). In the Pit, the enemies keep to
+-- The first part crosses open space, with the stars alone, and ends on the
+-- Bydo Tyrant. The third stage is the transition between the two parts: the
+-- ships fly out to the right with the warp of the stars, then back in from
+-- the left (level.transition), and the Pit enters through its cave. The
+-- second part plays in the Pit, where the mobs of the Pit join the Bydos
+-- (server/fosse_mobs.luau), and ends on its boss, the Necromancer
+-- (server/necromancer.luau). In the Pit, the enemies keep to
 -- the rows the maps leave free, from 192 to 848 logical units: the Stalagmaw
 -- crawls along the top one, the Sporecap walks along the bottom one. The
 -- positions are written here until the level places its enemies in its LDtk
@@ -16,8 +19,12 @@
 -- Past the right edge of the playfield, where a Bydo enters.
 local ENTRY_COLUMN = 1984
 
--- The share of its health the Bydo Tyrant has as a mini-boss.
-local MINI_BOSS_HEALTH_PERCENT = 40
+-- The scroll the first part ends at, where the Bydo Tyrant is fought and
+-- the transition begins and ends: the scroll is paused through both.
+local END_OF_THE_FIRST_PART = 5400
+
+-- How long the transition between the two parts lasts, in milliseconds.
+local TRANSITION_MS = 3500
 
 -- Where the center of a boss appears: half its 512-unit frame past the right
 -- edge, on the middle row of the area of play.
@@ -113,12 +120,15 @@ level.register("fosse", {
 	end,
 	function()
 		play(BYDO_FIELD)
-		level.wait_scroll(5400)
+		level.wait_scroll(END_OF_THE_FIRST_PART)
 		wait_for_a_clear_sky()
-		fight("bydo_tyrant", BOSS_ENTRY, { health_percent = MINI_BOSS_HEALTH_PERCENT })
+		fight("bydo_tyrant", BOSS_ENTRY)
 	end,
 	function()
+		level.transition(TRANSITION_MS)
 		level.biome("fosse")
+	end,
+	function()
 		play(INTO_THE_PIT)
 		level.wait_scroll(10680)
 	end,
@@ -130,4 +140,9 @@ level.register("fosse", {
 	function()
 		fight("necromancer", NECROMANCER_ENTRY)
 	end,
+}, {
+	starts = {
+		[3] = { scroll = END_OF_THE_FIRST_PART },
+		[4] = { scroll = END_OF_THE_FIRST_PART, biome = "fosse" },
+	},
 })
