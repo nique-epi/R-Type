@@ -3,6 +3,7 @@
 #include <chrono>
 #include <cstdint>
 #include <string_view>
+#include "ProtocolConstants.hpp"
 
 namespace rtype::client::testing {
 
@@ -34,12 +35,11 @@ constexpr std::uint32_t PILOT_FINAL_SCORE = 1200;
  * not speak.
  */
 constexpr std::uint64_t SESSION_TOKEN = 0x0123456789abcdef;
-
-/** @brief The account of a player signed in to the master. */
-constexpr std::uint8_t NEXT_PROTOCOL_VERSION = 19;
+constexpr std::uint8_t NEXT_PROTOCOL_VERSION =
+    rtype::network::PROTOCOL_VERSION + 1;
 
 /** @brief The version a server of this protocol writes in its headers. */
-constexpr std::uint8_t SERVER_VERSION = 18;
+constexpr std::uint8_t SERVER_VERSION = rtype::network::PROTOCOL_VERSION;
 
 /**
  * @brief Another session token, as a datagram forging the address of the

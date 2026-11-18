@@ -20,8 +20,10 @@ constexpr std::size_t INT16_WIRE_SIZE = sizeof(std::int16_t);
 constexpr std::uint32_t PROTOCOL_ID = 0x52545950;
 
 /**
- * @brief The version of the protocol this code speaks. Version 18 adds the
- * game ticket of the player to ConnectionRequest, see the Version 18 section;
+ * @brief The version of the protocol this code speaks. Version 19 adds the
+ * time left of a transition to LevelStatus, see the Version 19 section;
+ * version 18 adds the game ticket of the player to ConnectionRequest, see the
+ * Version 18 section;
  * version 17 adds the hull to a ship look, see the Version 17 section; version
  * 16 adds the look of each entity to WorldState and DeltaWorldState, and
  * EffectPlayed, see the Version 16 section; version 15 removes the ban: the
@@ -50,7 +52,7 @@ constexpr std::uint32_t PROTOCOL_ID = 0x52545950;
  * frame, see the Compression section; version 3 adds the outcome of a game to
  * GameEnded, see the Version 3 section.
  */
-constexpr std::uint8_t PROTOCOL_VERSION = 18;
+constexpr std::uint8_t PROTOCOL_VERSION = 19;
 
 /**
  * @brief The session token of a datagram sent before the connection is

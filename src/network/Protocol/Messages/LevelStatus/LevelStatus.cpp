@@ -45,6 +45,7 @@ void encodePayload(ByteWriter& writer, const LevelStatus& message) {
   writer.writeFloat(message.scrollPosition);
   writer.writeFloat(message.scrollSpeed);
   writer.writeFloat(message.biomeSince);
+  writer.writeUint16(message.transitionLeft);
 }
 
 LevelStatus decodePayload(
@@ -55,11 +56,13 @@ LevelStatus decodePayload(
   const float scrollPosition = reader.readFloat();
   const float scrollSpeed = reader.readFloat();
   const float biomeSince = reader.readFloat();
+  const std::uint16_t transitionLeft = reader.readUint16();
   requireFullyRead(reader);
   LevelStatus message{.biome = std::move(biome),
                       .scrollPosition = scrollPosition,
                       .scrollSpeed = scrollSpeed,
-                      .biomeSince = biomeSince};
+                      .biomeSince = biomeSince,
+                      .transitionLeft = transitionLeft};
   validate(message);
   return message;
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <span>
 #include <string>
 #include <type_traits>
@@ -20,7 +21,10 @@ namespace rtype::network {
  * identifiers::isBiomeName()). The scroll position, in logical units, the
  * scroll speed, in logical units per second, 0 while the scroll is paused,
  * and the position of the scroll when the biome began, where its decor starts
- * sliding in, are finite and never negative.
+ * sliding in, are finite and never negative. The time left of the transition
+ * the level plays between two of its parts, in milliseconds, is 0 when it
+ * plays none: its players are held while it lasts, and a client plays the
+ * cinematic of the transition from it.
  */
 struct LevelStatus {
   static constexpr MessageType TYPE = MessageType::LevelStatus;
@@ -29,13 +33,15 @@ struct LevelStatus {
   float scrollPosition{};
   float scrollSpeed{};
   float biomeSince{};
+  std::uint16_t transitionLeft{};
 
   bool operator==(const LevelStatus&) const = default;
 };
 
 /**
  * @brief Writes the biome, as a short string, then the scroll position, the
- * scroll speed and the position the biome began at.
+ * scroll speed, the position the biome began at and the time left of the
+ * transition.
  * @throws InvalidFieldValueException when the status breaks a rule of
  * LevelStatus; nothing is written then.
  */
@@ -43,9 +49,9 @@ void encodePayload(ByteWriter& writer, const LevelStatus& message);
 
 /**
  * @brief Reads a LevelStatus from the whole of @p payload.
- * @throws BufferUnderflowException when @p payload ends before the position
- * the biome began at.
- * @throws TrailingBytesException when bytes follow that position.
+ * @throws BufferUnderflowException when @p payload ends before the time left
+ * of the transition.
+ * @throws TrailingBytesException when bytes follow that time.
  * @throws InvalidFieldValueException when the status breaks a rule of
  * LevelStatus.
  */

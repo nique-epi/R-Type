@@ -13,20 +13,22 @@ namespace rtype::network::testing {
  * units per second
  * When its status is encoded
  * Then the payload is the length 5 and the letters of the biome, then 240,
- * 120 and 96 as big-endian floats
+ * 120 and 96 as big-endian floats, then 2500 ms of transition, 09 C4
  */
-TEST(LevelStatus, EncodesTheBiomeThenTheScroll) {
+TEST(LevelStatus, EncodesTheBiomeThenTheScrollThenTheTransition) {
   EXPECT_EQ(
       encodeMessage(LevelStatus{.biome = std::string{STATUS_BIOME},
                                 .scrollPosition = STATUS_SCROLL_POSITION,
                                 .scrollSpeed = STATUS_SCROLL_SPEED,
-                                .biomeSince = STATUS_BIOME_SINCE}),
-      byteSequence({0x05, 0x77, 0x72, 0x65, 0x63, 0x6B, 0x43, 0x70, 0x00, 0x00,
-                    0x42, 0xF0, 0x00, 0x00, 0x42, 0xC0, 0x00, 0x00}));
+                                .biomeSince = STATUS_BIOME_SINCE,
+                                .transitionLeft = STATUS_TRANSITION_LEFT}),
+      byteSequence({0x05, 0x77, 0x72, 0x65, 0x63, 0x6B, 0x43,
+                    0x70, 0x00, 0x00, 0x42, 0xF0, 0x00, 0x00,
+                    0x42, 0xC0, 0x00, 0x00, 0x09, 0xC4}));
 }
 
 /**
- * Given a status with a biome and a moving scroll
+ * Given a status with a biome, a moving scroll and a transition
  * When it is encoded then decoded
  * Then the decoded status equals the original
  */
@@ -34,7 +36,8 @@ TEST(LevelStatus, DecodesWhatItEncoded) {
   const LevelStatus status{.biome = std::string{STATUS_BIOME},
                            .scrollPosition = STATUS_SCROLL_POSITION,
                            .scrollSpeed = STATUS_SCROLL_SPEED,
-                           .biomeSince = STATUS_BIOME_SINCE};
+                           .biomeSince = STATUS_BIOME_SINCE,
+                           .transitionLeft = STATUS_TRANSITION_LEFT};
 
   EXPECT_EQ(decodeMessage<LevelStatus>(encodeMessage(status)), status);
 }
@@ -56,10 +59,11 @@ TEST(LevelStatus, CarriesALevelWithoutBiomeWhoseScrollIsPaused) {
  * Then it is refused
  */
 TEST(LevelStatus, RefusesABiomeThatIsNoBiomeName) {
-  EXPECT_THROW(static_cast<void>(decodeMessage<LevelStatus>(byteSequence(
-                   {0x05, 0x57, 0x72, 0x65, 0x63, 0x6B, 0x43, 0x70, 0x00, 0x00,
-                    0x42, 0xF0, 0x00, 0x00, 0x42, 0xC0, 0x00, 0x00}))),
-               InvalidFieldValueException);
+  EXPECT_THROW(
+      static_cast<void>(decodeMessage<LevelStatus>(byteSequence(
+          {0x05, 0x57, 0x72, 0x65, 0x63, 0x6B, 0x43, 0x70, 0x00, 0x00,
+           0x42, 0xF0, 0x00, 0x00, 0x42, 0xC0, 0x00, 0x00, 0x00, 0x00}))),
+      InvalidFieldValueException);
 }
 
 /**
@@ -101,35 +105,37 @@ TEST(LevelStatus, RefusesAScrollSpeedThatIsNoNumber) {
  * Then it is refused
  */
 TEST(LevelStatus, RefusesANegativeScrollSpeedReceived) {
-  EXPECT_THROW(static_cast<void>(decodeMessage<LevelStatus>(byteSequence(
-                   {0x05, 0x77, 0x72, 0x65, 0x63, 0x6B, 0x43, 0x70, 0x00, 0x00,
-                    0xBF, 0x80, 0x00, 0x00, 0x42, 0xC0, 0x00, 0x00}))),
-               InvalidFieldValueException);
+  EXPECT_THROW(
+      static_cast<void>(decodeMessage<LevelStatus>(byteSequence(
+          {0x05, 0x77, 0x72, 0x65, 0x63, 0x6B, 0x43, 0x70, 0x00, 0x00,
+           0xBF, 0x80, 0x00, 0x00, 0x42, 0xC0, 0x00, 0x00, 0x00, 0x00}))),
+      InvalidFieldValueException);
 }
 
 /**
- * Given a payload that ends one byte before the end of the position the
- * biome began at
+ * Given a payload that ends one byte before the end of the time left of the
+ * transition
  * When it is decoded
  * Then it is refused as too short
  */
 TEST(LevelStatus, RefusesAPayloadThatEndsTooSoon) {
   EXPECT_THROW(static_cast<void>(decodeMessage<LevelStatus>(byteSequence(
                    {0x05, 0x77, 0x72, 0x65, 0x63, 0x6B, 0x43, 0x70, 0x00, 0x00,
-                    0x42, 0xF0, 0x00, 0x00, 0x42, 0xC0, 0x00}))),
+                    0x42, 0xF0, 0x00, 0x00, 0x42, 0xC0, 0x00, 0x00, 0x09}))),
                BufferUnderflowException);
 }
 
 /**
- * Given a payload with one byte after the position the biome began at
+ * Given a payload with one byte after the time left of the transition
  * When it is decoded
  * Then it is refused for its trailing byte
  */
-TEST(LevelStatus, RefusesBytesAfterThePositionTheBiomeBeganAt) {
-  EXPECT_THROW(static_cast<void>(decodeMessage<LevelStatus>(byteSequence(
-                   {0x05, 0x77, 0x72, 0x65, 0x63, 0x6B, 0x43, 0x70, 0x00, 0x00,
-                    0x42, 0xF0, 0x00, 0x00, 0x42, 0xC0, 0x00, 0x00, 0x00}))),
-               TrailingBytesException);
+TEST(LevelStatus, RefusesBytesAfterTheTimeLeftOfTheTransition) {
+  EXPECT_THROW(
+      static_cast<void>(decodeMessage<LevelStatus>(byteSequence(
+          {0x05, 0x77, 0x72, 0x65, 0x63, 0x6B, 0x43, 0x70, 0x00, 0x00, 0x42,
+           0xF0, 0x00, 0x00, 0x42, 0xC0, 0x00, 0x00, 0x09, 0xC4, 0x00}))),
+      TrailingBytesException);
 }
 
 /**
@@ -149,10 +155,24 @@ TEST(LevelStatus, RefusesANegativePositionTheBiomeBeganAt) {
  * Then it is refused
  */
 TEST(LevelStatus, RefusesAPositionTheBiomeBeganAtThatIsNoNumber) {
-  EXPECT_THROW(static_cast<void>(decodeMessage<LevelStatus>(byteSequence(
-                   {0x05, 0x77, 0x72, 0x65, 0x63, 0x6B, 0x43, 0x70, 0x00, 0x00,
-                    0x42, 0xF0, 0x00, 0x00, 0x7F, 0xC0, 0x00, 0x00}))),
-               InvalidFieldValueException);
+  EXPECT_THROW(
+      static_cast<void>(decodeMessage<LevelStatus>(byteSequence(
+          {0x05, 0x77, 0x72, 0x65, 0x63, 0x6B, 0x43, 0x70, 0x00, 0x00,
+           0x42, 0xF0, 0x00, 0x00, 0x7F, 0xC0, 0x00, 0x00, 0x00, 0x00}))),
+      InvalidFieldValueException);
+}
+
+/**
+ * Given a status playing the longest transition a status carries, 65535 ms
+ * When it is encoded then decoded
+ * Then the decoded status holds that time left
+ */
+TEST(LevelStatus, CarriesTheLongestTransition) {
+  const LevelStatus status{.biome = {},
+                           .transitionLeft = LONGEST_TRANSITION_LEFT};
+
+  EXPECT_EQ(decodeMessage<LevelStatus>(encodeMessage(status)).transitionLeft,
+            LONGEST_TRANSITION_LEFT);
 }
 
 }  // namespace rtype::network::testing
