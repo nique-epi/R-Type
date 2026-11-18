@@ -7,6 +7,7 @@
 #include <string_view>
 #include <vector>
 #include "DataFilePlace.hpp"
+#include "DecimalRange.hpp"
 #include "ErrorText.hpp"
 #include "WholeNumberRange.hpp"
 
@@ -141,6 +142,22 @@ DataFileValueOutOfRangeException::DataFileValueOutOfRangeException(
     const DataFilePlace& place, WholeNumberRange range)
     : EngineException(placeText(place) + ": " + place.key +
                       " must be an integer from " + rangeText(range)) {}
+
+DataFileDecimalOutOfRangeException::DataFileDecimalOutOfRangeException(
+    const DataFilePlace& place, DecimalRange range)
+    : EngineException(placeText(place) + ": " + place.key +
+                      " must be a number from " + rangeText(range)) {}
+
+DataFileRangeExpectedException::DataFileRangeExpectedException(
+    const DataFilePlace& place, DecimalRange bounds)
+    : EngineException(placeText(place) + ": " + place.key +
+                      " must be two numbers from " + rangeText(bounds) +
+                      ", the lowest first") {}
+
+DataFileFlagExpectedException::DataFileFlagExpectedException(
+    const DataFilePlace& place)
+    : EngineException(placeText(place) + ": " + place.key +
+                      " must be true or false") {}
 
 DataFileTextExpectedException::DataFileTextExpectedException(
     const DataFilePlace& place)

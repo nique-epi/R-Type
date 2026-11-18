@@ -3,10 +3,12 @@
 #include <SFML/Graphics/Image.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <algorithm>
+#include <array>
 #include <filesystem>
 #include <string>
 #include "AssetLibrary.hpp"
 #include "AssetLoadingStep.hpp"
+#include "BackgroundCatalog.hpp"
 #include "EffectConstants.hpp"
 #include "EntityAppearances.hpp"
 #include "EntitySpriteConstants.hpp"
@@ -26,6 +28,7 @@
 
 using rtype::client::AssetLibrary;
 using rtype::client::AssetLoadingStep;
+using rtype::client::BackgroundCatalog;
 using rtype::client::EFFECT_SHEET_ID;
 using rtype::client::ENTITY_SHEET_ID;
 using rtype::client::EntityAppearances;
@@ -49,6 +52,7 @@ using rtype::client::SHOP_SCENE_ID;
 using rtype::client::SHOP_TICKET_SHEET_ID;
 using rtype::client::SMALL_FONT_ID;
 using rtype::client::titleAssets;
+using rtype::client::withBackgroundImages;
 using rtype::client::withEntitySheets;
 using ::testing::Contains;
 using ::testing::IsSupersetOf;
@@ -256,4 +260,29 @@ TEST(ScreenAssets, TheSheetOfANewAppearanceIsLoadedWithTheGame) {
 
   EXPECT_THAT(withEntitySheets(gameAssets(), added).textures,
               Contains(std::string{NEW_ENTITY_SHEET_ID}));
+}
+
+/**
+ * Given the backgrounds of the repository, as the pack of a server may bring
+ * some
+ * When their images are added to the assets of a game
+ * Then the planet of the sky is listed, so the game screen loads it
+ */
+TEST(ScreenAssets, TheImagesOfTheSessionBackgroundsAreLoadedWithTheGame) {
+  const std::array folders{repositoryAssets()};
+  const BackgroundCatalog backgrounds =
+      BackgroundCatalog::ofLastFolder(folders);
+
+  EXPECT_THAT(withBackgroundImages(gameAssets(), &backgrounds).textures,
+              Contains(std::string{SHIPPED_PLANET_ID}));
+}
+
+/**
+ * Given a session whose server brings no background
+ * When its backgrounds are added to the assets of a game
+ * Then the assets of a game are left as they are
+ */
+TEST(ScreenAssets, ASessionWithoutBackgroundsAddsNoImage) {
+  EXPECT_EQ(withBackgroundImages(gameAssets(), nullptr).textures,
+            gameAssets().textures);
 }

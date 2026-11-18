@@ -20,6 +20,7 @@
 #include "IOptionalDependencies.hpp"
 #include "IServerCatalog.hpp"
 #include "IServerTicks.hpp"
+#include "ISessionBackgrounds.hpp"
 #include "InstallContext.hpp"
 #include "Logger.hpp"
 #include "MasterLeaderboard.hpp"
@@ -119,6 +120,7 @@ class ClientScreensModule final : public engine::IModule,
   SettingsService* settingsService_{nullptr};
   AssetLibrary* assets_{nullptr};
   const IEntityTypeTable* entityTable_{nullptr};
+  const ISessionBackgrounds* sessionBackgrounds_{nullptr};
   SilentAudioService silence_;
   IAudioService* audio_{nullptr};
   GameWindow* window_{nullptr};

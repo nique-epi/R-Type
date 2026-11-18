@@ -10,6 +10,7 @@ target_link_libraries(rtype_client_rendering_interfaces
     SFML::Graphics
 )
 
+add_subdirectory(Pixels)
 add_subdirectory(Dither)
 add_subdirectory(Easing)
 add_subdirectory(Typing)

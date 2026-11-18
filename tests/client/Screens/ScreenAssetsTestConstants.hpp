@@ -11,6 +11,10 @@ constexpr std::string_view SHIPPED_ENTITY_SHEET_FOLDER = "entities";
 constexpr std::string_view NEW_ENTITY_TYPE_NAME = "voltjelly";
 constexpr std::string_view NEW_ENTITY_SHEET_ID = "sprites/voltjelly.png";
 
+/** @brief An image a background of the repository names, which no list of
+ * the game names. */
+constexpr std::string_view SHIPPED_PLANET_ID = "backgrounds/space/planet.png";
+
 /** @brief The text of its sheet, around the asset id of its sprite sheet. */
 constexpr std::string_view NEW_APPEARANCE_BEFORE_SHEET =
     "[gameplay]\n[appearance]\nsheet = \"";

@@ -11,6 +11,7 @@
 #include "IGameCatalog.hpp"
 #include "IServerCatalog.hpp"
 #include "IServerTicks.hpp"
+#include "ISessionBackgrounds.hpp"
 #include "MasterLeaderboard.hpp"
 #include "PlayStart.hpp"
 #include "PlayerSettings.hpp"
@@ -42,6 +43,9 @@ struct ScreenServices {
   /** @brief The content of the session: a game loads the sprite sheets of
    * its appearances. */
   std::reference_wrapper<const IEntityTypeTable> entityTable;
+  /** @brief The backgrounds the pack of the server of the session brings:
+   * a game loads their images, and the sky lays them over its own. */
+  std::reference_wrapper<const ISessionBackgrounds> sessionBackgrounds;
   std::reference_wrapper<IAudioService> audio;
   std::reference_wrapper<GameWindow> window;
   std::reference_wrapper<ServerSession> connection;

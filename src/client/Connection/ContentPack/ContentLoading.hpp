@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <filesystem>
 #include <memory>
 #include <optional>
 #include <span>
@@ -27,7 +28,9 @@ namespace rtype::client {
  */
 class ContentLoading {
  public:
-  explicit ContentLoading(ContentPackCache cache);
+  /** @param assetFolder The assets of the client, where a background of a
+   * pack finds a file the pack does not bring. */
+  ContentLoading(ContentPackCache cache, std::filesystem::path assetFolder);
 
   /**
    * @brief Starts loading @p announced, served at @p host.
@@ -58,6 +61,7 @@ class ContentLoading {
       std::span<const identifiers::ContentFile> files);
 
   ContentPackCache cache_;
+  std::filesystem::path assetFolder_;
   network::ContentAnnouncement announced_;
   std::unique_ptr<ContentPackDownload> download_;
   std::optional<PackContent> content_;

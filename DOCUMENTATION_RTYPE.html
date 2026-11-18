@@ -1601,8 +1601,8 @@ for (tick in ticks) {
 <article class="feature" id="f-starfield">
 <h4>Fond étoilé défilant</h4>
 <p class="pitch">Trois couches d'étoiles en parallaxe, une planète à anneaux, et des événements du ciel (étoiles filantes, comètes…).</p>
-<p class="refs">PR #51 · doc : <code>client.md</code> § Scrolling background</p>
-<div class="block b-where"><div class="label">Où</div><p><code>ScrollingBackground</code>, <code>Starfield</code>, <code>ISky</code>, <code>GaussianBlur</code> (<code>src/client/Rendering/Background/</code>).</p></div>
+<p class="refs">PR #51 · doc : <code>client.md</code> § Sky, <code>backgrounds.md</code></p>
+<div class="block b-where"><div class="label">Où</div><p><code>Sky</code>, <code>ISky</code>, <code>ShownBackgrounds</code>, <code>GaussianBlur</code> (<code>src/client/Rendering/Background/</code>) ; le ciel est décrit dans <code>assets/backgrounds/space.toml</code>.</p></div>
 <div class="block b-how"><div class="label">Comment</div><p>Peint sur le canevas 480×270 ; halo = ciel flouté par un flou gaussien en deux passes, ajouté à 70 %. Purement local (graine aléatoire, rien sur le réseau). Accélère au départ d'une partie (effet de « warp ») et tremble avec la caméra.</p></div>
 <div class="block b-terms"><div class="label">Termes</div><dl class="terms">
 <dt>Parallaxe</dt><dd>Des couches qui défilent à des vitesses différentes donnent une impression de profondeur.</dd>

@@ -1,19 +1,25 @@
 #include "PackContentReading.hpp"
+#include <algorithm>
+#include <array>
 #include <filesystem>
 #include <fstream>
 #include <ios>
+#include <memory>
 #include <set>
 #include <span>
 #include <string>
 #include <system_error>
 #include <utility>
 #include <vector>
+#include "BackgroundCatalog.hpp"
+#include "BackgroundFiles.hpp"
 #include "ClientException.hpp"
 #include "ContentFile.hpp"
 #include "ContentFiles.hpp"
 #include "EntityAppearances.hpp"
 #include "NumberedEntityTypes.hpp"
 #include "PackContent.hpp"
+#include "PackFolders.hpp"
 #include "PathText.hpp"
 #include "SheetText.hpp"
 #include "ShipGunReading.hpp"
@@ -41,8 +47,9 @@ void write(const identifiers::ContentFile& file,
   }
 }
 
-/** @returns Whether @p path names a sprite sheet of a pack: any file but a
- * sheet and the mask file of a sheet. */
+/** @returns Whether @p path names a file a pack writes below its folder, a
+ * sprite sheet or a file of a background: any file but a sheet and the mask
+ * file of a sheet. */
 bool isSpriteSheetPath(const std::string& path) {
   return !game::isSheetPath(path) && !game::isMaskPath(path);
 }
@@ -72,23 +79,38 @@ void requireOwnSpriteSheets(const EntityAppearances& appearances,
   }
 }
 
+/** @returns The backgrounds of the pack written below the pack folder of
+ * @p folders, laid over its assets; nullptr when @p files hold none. */
+std::shared_ptr<const BackgroundCatalog> backgroundsOf(
+    std::span<const identifiers::ContentFile> files,
+    const PackFolders& folders) {
+  if (std::ranges::none_of(files, game::isBackgroundPath,
+                           &identifiers::ContentFile::path)) {
+    return nullptr;
+  }
+  const std::array contentFolders{folders.assets, folders.pack};
+  return std::make_shared<const BackgroundCatalog>(
+      BackgroundCatalog::ofLastFolder(contentFolders));
+}
+
 }  // namespace
 
 PackContent packContentOf(std::span<const identifiers::ContentFile> files,
-                          const std::filesystem::path& spriteFolder) {
+                          const PackFolders& folders) {
   const std::vector<game::SheetText> sheets =
-      game::sheetTextsOf(files, spriteFolder);
+      game::sheetTextsOf(files, folders.pack);
   EntityAppearances appearances =
-      EntityAppearances::fromTexts(sheets, spriteFolder);
-  requireOwnSpriteSheets(appearances, spriteSheetsOf(files, spriteFolder));
+      EntityAppearances::fromTexts(sheets, folders.pack);
+  requireOwnSpriteSheets(appearances, spriteSheetsOf(files, folders.pack));
   for (const identifiers::ContentFile& file : files) {
     if (isSpriteSheetPath(file.path)) {
-      write(file, spriteFolder);
+      write(file, folders.pack);
     }
   }
   return PackContent{.appearances = std::move(appearances),
                      .types = game::numberedEntityTypesOf(sheets),
-                     .gun = game::shipGunOrNoneOf(sheets)};
+                     .gun = game::shipGunOrNoneOf(sheets),
+                     .backgrounds = backgroundsOf(files, folders)};
 }
 
 }  // namespace rtype::client

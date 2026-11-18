@@ -1,6 +1,7 @@
 #pragma once
 
 #include "AssetList.hpp"
+#include "BackgroundCatalog.hpp"
 #include "EntityAppearances.hpp"
 
 namespace rtype::client {
@@ -21,10 +22,10 @@ class AssetLibrary;
 /** @brief The assets a game needs, loaded by the loading screen when the
  * player enters it: those of the title, kept whole so a title built after a
  * game opens without a loading screen, which would close what is pushed over it
- * when it gives way; then the effect sheet, the plug icon of the status band,
- * the sheet of the flight log, so the end screen opens without loading, and
- * the layers of the decor of every biome (see BIOMES); the end screen keeps
- * them all, so the next game opens without loading too. */
+ * when it gives way; then the effect sheet, the plug icon of the status band
+ * and the sheet of the flight log, so the end screen opens without loading;
+ * the end screen keeps them all, so the next game opens without loading
+ * too. */
 [[nodiscard]] AssetList gameAssets();
 
 /**
@@ -36,12 +37,32 @@ class AssetLibrary;
                                          const EntityAppearances& appearances);
 
 /**
+ * @returns @p assets, with every image the backgrounds of @p backgrounds name
+ * that it does not list yet, after its own textures: a game screen loads
+ * them, so the sky shows the backgrounds of the pack of its server.
+ * @p assets itself for nullptr, a session without such backgrounds.
+ */
+[[nodiscard]] AssetList withBackgroundImages(
+    AssetList assets, const BackgroundCatalog* backgrounds);
+
+/**
  * @brief Loads the interface assets, then makes them permanent.
  *
  * @throws AssetLoadingException naming every interface asset that could not
  * be loaded.
  */
 void loadInterfaceAssets(AssetLibrary& library);
+
+/**
+ * @brief Loads every image the backgrounds of @p catalog name, then makes
+ * them permanent: the sky shows behind every screen, and a level may enter
+ * any biome. Nothing loaded before is released.
+ *
+ * @throws AssetLoadingException naming every image that could not be
+ * loaded.
+ */
+void loadBackgroundAssets(AssetLibrary& library,
+                          const BackgroundCatalog& catalog);
 
 /** @brief The assets of the intro: those of the title screen, which comes
  * after it, and the effect sheet of its explosions. */

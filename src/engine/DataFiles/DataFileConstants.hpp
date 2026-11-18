@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <string_view>
 
 namespace rtype::engine {
@@ -16,6 +17,10 @@ constexpr char DATA_FILE_KEY_SEPARATOR = '.';
  */
 constexpr char DATA_FILE_INDEX_OPENING = '[';
 constexpr char DATA_FILE_INDEX_CLOSING = ']';
+
+/** @brief The numbers a range of a data file holds: its lowest and its
+ * highest. */
+constexpr std::size_t DECIMAL_RANGE_ENDS = 2;
 
 /** @brief The extension of a data file: dataFilesIn() lists the files that end
  * with it. */

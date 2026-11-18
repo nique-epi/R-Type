@@ -28,7 +28,9 @@ using rtype::game::SheetText;
 using rtype::game::sheetTextsOf;
 using rtype::game::testing::ART_SPRITE_SHEET;
 using rtype::game::testing::ASSETS_OF_THE_STACK;
+using rtype::game::testing::BACKGROUND_SHOWING_THE_CRIMSON_BYDOS;
 using rtype::game::testing::BYDO_PIXELS;
+using rtype::game::testing::CRIMSON_BACKGROUND_FILE;
 using rtype::game::testing::CRIMSON_PIXELS;
 using rtype::game::testing::CRIMSON_SHEET_FILE;
 using rtype::game::testing::CRIMSON_SPRITE_SHEET;
@@ -39,6 +41,7 @@ using rtype::game::testing::EXAMPLE_RESOURCE_SPRITES;
 using rtype::game::testing::FILES_OF_A_SHEET_ITS_MASK_AND_ITS_IMAGE;
 using rtype::game::testing::FILES_OF_ONE_SHEET_AND_ITS_IMAGE;
 using rtype::game::testing::FILES_OF_THE_STACK;
+using rtype::game::testing::FILES_OF_THE_STACK_AND_A_BACKGROUND;
 using rtype::game::testing::FILES_OF_TWO_SHEETS_AND_ONE_IMAGE;
 using rtype::game::testing::HUD_PIXELS;
 using rtype::game::testing::LISTED_ONCE;
@@ -238,6 +241,34 @@ TEST(ContentFiles, LaysTheSheetsOfAResourceOverTheAssets) {
   EXPECT_EQ(files[3].bytes, BYDO_PIXELS);
   EXPECT_EQ(files[4].path, CRIMSON_SPRITE_SHEET);
   EXPECT_EQ(files[4].bytes, CRIMSON_PIXELS);
+}
+
+/**
+ * Given the same assets and resource, the resource also holding a background
+ * that shows the sprite sheet it brings
+ * When the content of both folders is listed
+ * Then it holds the background too, first by its path, and the sprite sheet
+ * once
+ */
+TEST(ContentFiles, ListsTheBackgroundsOfAResourceWithItsSheets) {
+  const TemporaryFolder root;
+  const std::array folders{root.path() / ASSETS_OF_THE_STACK,
+                           root.path() / RESOURCE_OF_THE_STACK};
+  root.write(folders[0] / WEAVER_SHEET_FILE, SHEET_NAMING_THE_BYDOS);
+  root.write(folders[0] / SHARED_SPRITE_SHEET, BYDO_PIXELS);
+  root.write(folders[1] / DRIFTER_SHEET_FILE, SHEET_NAMING_THE_BYDOS);
+  root.write(folders[1] / CRIMSON_SHEET_FILE, SHEET_NAMING_THE_CRIMSON_BYDOS);
+  root.write(folders[1] / CRIMSON_SPRITE_SHEET, CRIMSON_PIXELS);
+  root.write(folders[1] / CRIMSON_BACKGROUND_FILE,
+             BACKGROUND_SHOWING_THE_CRIMSON_BYDOS);
+
+  const std::vector<ContentFile> files = contentFilesIn(folders);
+
+  ASSERT_EQ(files.size(), FILES_OF_THE_STACK_AND_A_BACKGROUND);
+  EXPECT_EQ(files[0].path, CRIMSON_BACKGROUND_FILE);
+  EXPECT_EQ(files[0].bytes, BACKGROUND_SHOWING_THE_CRIMSON_BYDOS);
+  EXPECT_EQ(std::ranges::count(files, CRIMSON_SPRITE_SHEET, &ContentFile::path),
+            LISTED_ONCE);
 }
 
 /**

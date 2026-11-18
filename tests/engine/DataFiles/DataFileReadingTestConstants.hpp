@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <string_view>
+#include "DecimalRange.hpp"
 #include "WholeNumberRange.hpp"
 
 /** @brief The name the tests give their data file, which the errors show. */
@@ -143,3 +144,68 @@ constexpr std::string_view MISSING_FOLDER = "no-such-folder/entities";
 /** @brief A file whose bytes include a CRLF line ending, read back as is. */
 constexpr std::string_view CRLF_FILE = "crlf.toml";
 constexpr std::string_view CRLF_CONTENT = "side = \"enemy\"\r\n";
+
+/**
+ * @brief Files that hold decimal numbers under `[motion]`, and the range a
+ * parallax is read in: 0 to 4, both included. `parallax = ` puts its value on
+ * column 12.
+ */
+constexpr std::string_view MOTION_TABLE = "motion";
+constexpr std::string_view PARALLAX_KEY = "parallax";
+constexpr std::string_view REPEAT_KEY = "repeat";
+constexpr rtype::engine::DecimalRange PARALLAX_RANGE{.lowest = 0.0,
+                                                     .highest = 4.0};
+constexpr rtype::engine::DecimalRange REPEAT_RANGE{.lowest = 1.0,
+                                                   .highest = 65536.0};
+constexpr std::string_view A_QUARTER_PARALLAX = "[motion]\nparallax = 0.25\n";
+constexpr std::string_view A_REPEAT_AS_AN_INTEGER = "[motion]\nrepeat = 488\n";
+constexpr std::string_view BOTH_BOUNDS_OF_PARALLAX =
+    "[motion]\nlowest = 0\nhighest = 4.0\n";
+constexpr std::string_view A_PARALLAX_OVER_ITS_RANGE =
+    "[motion]\nparallax = 4.5\n";
+constexpr std::string_view A_PARALLAX_UNDER_ITS_RANGE =
+    "[motion]\nparallax = -0.5\n";
+constexpr std::string_view A_PARALLAX_AS_A_TEXT =
+    "[motion]\nparallax = \"half\"\n";
+constexpr double A_QUARTER = 0.25;
+constexpr double REPEAT_OF_488 = 488.0;
+constexpr double LOWEST_PARALLAX = 0.0;
+constexpr double HIGHEST_PARALLAX = 4.0;
+constexpr std::string_view PARALLAX_OVER_ITS_RANGE_MESSAGE =
+    "sheet.toml:2:12: motion.parallax must be a number from 0 to 4";
+
+/**
+ * @brief Files that hold a range under `[motion]`, two numbers with the
+ * lowest first, and the bounds a speed is read in: 0 to 8192. `speed = ` puts
+ * its value on column 9.
+ */
+constexpr std::string_view SPEED_KEY = "speed";
+constexpr rtype::engine::DecimalRange SPEED_BOUNDS{.lowest = 0.0,
+                                                   .highest = 8192.0};
+constexpr std::string_view A_SPEED_RANGE = "[motion]\nspeed = [300, 510.5]\n";
+constexpr std::string_view A_SINGLE_SPEED = "[motion]\nspeed = [60, 60]\n";
+constexpr std::string_view A_SPEED_RANGE_REVERSED =
+    "[motion]\nspeed = [510, 300]\n";
+constexpr std::string_view THREE_SPEEDS = "[motion]\nspeed = [1, 2, 3]\n";
+constexpr std::string_view ONE_SPEED = "[motion]\nspeed = [300]\n";
+constexpr std::string_view A_SPEED_OVER_ITS_BOUNDS =
+    "[motion]\nspeed = [300, 9000]\n";
+constexpr std::string_view A_SPEED_AS_A_NUMBER = "[motion]\nspeed = 300\n";
+constexpr std::string_view A_TEXT_AMONG_THE_SPEEDS =
+    "[motion]\nspeed = [300, \"fast\"]\n";
+constexpr double SLOWEST_SPEED = 300.0;
+constexpr double FASTEST_SPEED = 510.5;
+constexpr double SINGLE_SPEED = 60.0;
+constexpr std::string_view SPEED_RANGE_REVERSED_MESSAGE =
+    "sheet.toml:2:9: motion.speed must be two numbers from 0 to 8192, the "
+    "lowest first";
+
+/** @brief Files that hold a flag under `[motion]`. `warps = ` puts its value
+ * on column 9. */
+constexpr std::string_view WARPS_KEY = "warps";
+constexpr std::string_view A_LAYER_THAT_WARPS = "[motion]\nwarps = true\n";
+constexpr std::string_view A_LAYER_THAT_DOES_NOT_WARP =
+    "[motion]\nwarps = false\n";
+constexpr std::string_view WARPS_AS_A_NUMBER = "[motion]\nwarps = 1\n";
+constexpr std::string_view WARPS_AS_A_NUMBER_MESSAGE =
+    "sheet.toml:2:9: motion.warps must be true or false";

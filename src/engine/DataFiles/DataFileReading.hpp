@@ -12,6 +12,7 @@
 #include "DataFilePlace.hpp"
 #include "DataFileTable.hpp"
 #include "DataFileText.hpp"
+#include "DecimalRange.hpp"
 #include "TimeConstants.hpp"
 #include "WholeNumberRange.hpp"
 
@@ -136,6 +137,35 @@ void refuseUnknownKeys(const DataFileTable& table,
 [[nodiscard]] Duration millisecondsAt(const DataFileTable& table,
                                       std::string_view key,
                                       WholeNumberRange range);
+
+/**
+ * @returns The number @p key of @p table holds, a TOML integer or float:
+ * `repeat = 488` and `parallax = 0.25` are both read.
+ * @throws MissingDataFileKeyException when it holds nothing, and
+ * DataFileDecimalOutOfRangeException, at the value, when it holds anything
+ * but a number of @p range.
+ */
+[[nodiscard]] double decimalAt(const DataFileTable& table, std::string_view key,
+                               DecimalRange range);
+
+/**
+ * @returns The range @p key of @p table holds, an array of two numbers with
+ * the lowest first (`speed = [300, 510]`); both may be equal.
+ * @throws MissingDataFileKeyException when it holds nothing, and
+ * DataFileRangeExpectedException, at the value, when it holds anything but
+ * two numbers of @p bounds in that order.
+ */
+[[nodiscard]] DecimalRange decimalRangeAt(const DataFileTable& table,
+                                          std::string_view key,
+                                          DecimalRange bounds);
+
+/**
+ * @returns Whether @p key of @p table holds `true`.
+ * @throws MissingDataFileKeyException when it holds nothing, and
+ * DataFileFlagExpectedException, at the value, when it holds anything but a
+ * TOML boolean.
+ */
+[[nodiscard]] bool flagAt(const DataFileTable& table, std::string_view key);
 
 /**
  * @returns The text @p key of @p table holds.

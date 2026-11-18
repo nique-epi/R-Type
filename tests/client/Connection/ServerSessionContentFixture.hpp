@@ -2,6 +2,7 @@
 
 #include <gtest/gtest.h>
 #include <cstdint>
+#include <filesystem>
 #include <memory>
 #include <string>
 #include <vector>
@@ -70,7 +71,8 @@ class ServerSessionContentFixture : public ::testing::Test {
   network::MessageDispatcher dispatcher_;
   GameLoadedReminder gameLoaded_;
   SessionEntityTypes entityTypes_{testLocalContent()};
-  ContentLoading content_{ContentPackCache{cacheFolder_.path()}};
+  ContentLoading content_{ContentPackCache{cacheFolder_.path()},
+                          std::filesystem::path{}};
   ArrivalTally arrivals_;
   ServerSession session_{ServerSessionParts{.link = link_,
                                             .dispatcher = dispatcher_,

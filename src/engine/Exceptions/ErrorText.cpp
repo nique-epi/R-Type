@@ -1,9 +1,11 @@
 #include "ErrorText.hpp"
 #include <span>
+#include <sstream>
 #include <string>
 #include <string_view>
 #include <vector>
 #include "DataFilePlace.hpp"
+#include "DecimalRange.hpp"
 #include "WholeNumberRange.hpp"
 
 namespace rtype::engine {
@@ -32,6 +34,12 @@ std::string listText(const std::vector<std::string>& names) {
 
 std::string rangeText(WholeNumberRange range) {
   return std::to_string(range.lowest) + " to " + std::to_string(range.highest);
+}
+
+std::string rangeText(DecimalRange range) {
+  std::ostringstream text;
+  text << range.lowest << " to " << range.highest;
+  return text.str();
 }
 
 }  // namespace rtype::engine

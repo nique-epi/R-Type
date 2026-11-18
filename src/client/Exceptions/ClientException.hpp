@@ -1,9 +1,11 @@
 #pragma once
 
+#include <cstddef>
 #include <stdexcept>
 #include <string>
 #include <string_view>
 #include <vector>
+#include "DataFilePlace.hpp"
 
 namespace rtype::client {
 
@@ -27,6 +29,33 @@ class ClientException : public std::runtime_error {
 class ForeignSpriteSheetException : public ClientException {
  public:
   explicit ForeignSpriteSheetException(const std::string& sheet);
+};
+
+/** @brief A background file holds keys that do not go together: two
+ * contents in one layer, a group nothing declares, a second entrance. */
+class InconsistentBackgroundException : public ClientException {
+ public:
+  /** @param rule What the file breaks at @p place, in the message. */
+  InconsistentBackgroundException(const engine::DataFilePlace& place,
+                                  std::string_view rule);
+};
+
+/** @brief An array of tables of a background file holds more tables than a
+ * background may. */
+class TooManyBackgroundTablesException : public ClientException {
+ public:
+  /** @param most The most tables the array at @p place may hold. */
+  TooManyBackgroundTablesException(const engine::DataFilePlace& place,
+                                   std::size_t most);
+};
+
+/** @brief A background names a file no content folder holds. */
+class MissingBackgroundFileException : public ClientException {
+ public:
+  /** @param background How the errors name the file of the background.
+   * @param file The asset id it names. */
+  MissingBackgroundFileException(const std::string& background,
+                                 const std::string& file);
 };
 
 /** @brief A file of a content pack could not be written below the folder
@@ -58,12 +87,12 @@ class RenderTextureNotCreatedException : public ClientException {
   RenderTextureNotCreatedException(unsigned int width, unsigned int height);
 };
 
-/** @brief The LDtk project of the maps of a biome cannot be read, or lacks a
- * layer the biome draws. */
-class BiomeMapException : public ClientException {
+/** @brief The LDtk project a layer of a background names cannot be read, or
+ * lacks the layer it shows. */
+class LdtkProjectException : public ClientException {
  public:
   /** @param project The file, as UTF-8 text; @param reason What is wrong. */
-  BiomeMapException(std::string_view project, std::string_view reason);
+  LdtkProjectException(std::string_view project, std::string_view reason);
 };
 
 /** @brief Two modules registered a screen under the same identifier. */
