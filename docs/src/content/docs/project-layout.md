@@ -118,6 +118,7 @@ src/game/
 ├── Components/       Position, SteadyMotion, CollisionBox, Health...
 ├── Contacts/         where a body is touched: its box, then its collision mask laid on the pixels of its sprite, rolled with the ship
 ├── EntityTypes/      the gameplay of the entity sheets, read and numbered
+├── Backgrounds/      the background files the resources bring, listed for the content pack
 ├── Systems/          movement, collisions, damage, shooting, score, the bodies that do not take part yet
 ├── Spawning/         where ships, enemies, missiles and bonuses appear, the orders to create or remove bodies (IEntityOrders), and the placed enemies as the level scrolls
 ├── Waves/            when and which enemies appear
@@ -211,7 +212,7 @@ src/client/
 │   ├── Transport/       datagrams between the socket and the frame loop
 │   ├── Session/         what crosses a session, in and out
 │   ├── Handshake/       the request to join a server and its state
-│   ├── EntityTypes/     the content of the session: its types and appearances
+│   ├── EntityTypes/     the content of the session: its types, its appearances and the backgrounds of its pack
 │   ├── ContentPack/     the pack of a server: download, cache and reading
 │   ├── WaitingRoom/     the waiting room until the game starts, and the looks it carries
 │   ├── Leaderboard/     the best scores of a server

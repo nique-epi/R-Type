@@ -12,7 +12,7 @@ The client reads the folder `backgrounds` (`BACKGROUND_FOLDER_IN_ASSETS`) of its
 | Part | State | Where |
 |---|---|---|
 | Backgrounds of the client: `space`, the sky, and `fosse`, the Pit | Available | `assets/backgrounds/` |
-| A background a resource of a server brings, sent to the players | Not yet written: a new background needs a new client | none |
+| A background a resource of a server brings, sent to the players | Available | `resources/<name>/backgrounds/`, see [A background of a resource](#a-background-of-a-resource) |
 
 ## A file
 
@@ -136,7 +136,23 @@ At each deadline, the group draws one of its layers by their weights and a parti
 
 A color is one of five names (`PALETTE_NAMES`): `deep_blue`, `blue`, `pale_blue`, `star_white` and `star_gold`. Any other look is an image.
 
-A file is named by its asset id: lowercase letters, digits and `_-.`, its folders separated by `/`, from the `assets/` folder (see [Client](/R-Type/client/#assets-the-folder-and-the-ids)). A file the folder does not hold stops the client when it starts.
+A file is named by its asset id: lowercase letters, digits and `_-.`, its folders separated by `/`, from the `assets/` folder (see [Client](/R-Type/client/#assets-the-folder-and-the-ids)). A file the folder does not hold stops the client when it starts. In a resource, the same id is the path of the file from the folder of the resource.
+
+## A background of a resource
+
+A resource of a server may bring backgrounds: `resources/<name>/backgrounds/<background>.toml`, written as any other, with the images and the LDtk projects it names in the folder of the resource. The supervisor adds them to the content pack its players download (see [Protocol](/R-Type/protocol/#content-pack)), so a player sees a new background without a new client.
+
+| What the resource holds | What happens |
+|---|---|
+| A background whose name no background of the client has | it is added: `level.biome("<name>")` shows it |
+| A background named as one of the client, `space` or `fosse` | it replaces it for the players of that server; of two resources that hold the same name, the last started wins |
+| A file a background names | it is sent when a resource holds it, read in the last started that does; a file only the assets hold is not sent, every client has it |
+
+- The backgrounds of the assets are never sent, and a resource replaces none of their files alone: a server changes a background by bringing a whole one of the same name.
+- A background that names a file no folder holds stops the supervisor at its start, with the file.
+- A path of the pack holds at most 64 characters, and the pack 510 files and 8 MiB, sheets and sprite sheets included.
+
+The client reads the pack when the server accepts it, and a background it cannot read refuses the pack: the player does not join. The loading screen of a game loads the images, and the sky shows the backgrounds of the pack from then to the end of the session; before the first game, the waiting room still shows the sky of the client. How the client lays them over its own is told in [Client](/R-Type/client/#from-a-file-to-the-screen).
 
 ## When a file is wrong
 
@@ -154,6 +170,8 @@ A file holds at most 32 layers and 8 groups, a layer of particles 16 sprites and
 |---|---|
 | Change the sky or the Pit | `assets/backgrounds/space.toml`, `assets/backgrounds/fosse.toml` |
 | Add a background for a biome | a file `assets/backgrounds/<biome>.toml`, and `level.biome("<biome>")` in the script of the level |
+| Bring a background with a resource | `resources/<name>/backgrounds/`, see [A background of a resource](#a-background-of-a-resource) |
+| Change which files of a background a pack carries | `backgroundFilesIn()` in `src/game/Backgrounds/BackgroundFiles.cpp` |
 | Add a key, or change a range | `BackgroundFileConstants.hpp` and `BackgroundReading.cpp` in `src/client/Rendering/Background/Description/` |
 | Add a color to the palette | `PALETTE_NAMES` and `PALETTE_COLORS` in `BackgroundFileConstants.hpp` |
 | Change how a content is drawn | its class in `src/client/Rendering/Background/Layers/` |
