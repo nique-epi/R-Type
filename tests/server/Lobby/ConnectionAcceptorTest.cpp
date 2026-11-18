@@ -21,6 +21,7 @@
 #include "DatagramCodec.hpp"
 #include "DebugJournal.hpp"
 #include "Endpoint.hpp"
+#include "GameTicketBytesTestConstants.hpp"
 #include "IncomingDatagram.hpp"
 #include "LogFormat.hpp"
 #include "MessageType.hpp"
@@ -39,6 +40,8 @@
 
 namespace rtype::server {
 
+using network::testing::GUEST_TICKET_ON_THE_PAGE;
+using network::testing::SOME_TICKET;
 using testing::A_FIFTH_OF_A_SECOND_LATER;
 using testing::A_TENTH_OF_A_SECOND_LATER;
 using testing::ACCEPTANCE_REPEAT_TIME;
@@ -63,6 +66,32 @@ using testing::playerEndpoint;
 using testing::REFUSAL_DATAGRAM_SIZE;
 using testing::REQUEST_TIME;
 using testing::SHORTEST_NICKNAME;
+
+/**
+ * Given a sender that got a challenge
+ * When it sends its request again with the cookie and a game ticket
+ * Then the player it seats keeps that ticket
+ */
+TEST_F(ConnectionAcceptorFixture, SeatsThePlayerWithTheTicketOfItsRequest) {
+  const std::uint64_t cookie = challengeCookie(playerEndpoint(0));
+
+  receive(playerEndpoint(0), requestDatagramWithTicket(SOME_TICKET, cookie));
+
+  ASSERT_NE(roster().find(playerEndpoint(0)), nullptr);
+  EXPECT_EQ(roster().find(playerEndpoint(0))->ticket, SOME_TICKET);
+}
+
+/**
+ * Given a sender that got a challenge
+ * When it sends its request again with the cookie, as a guest
+ * Then the player it seats holds the ticket of a guest, 32 bytes of 0
+ */
+TEST_F(ConnectionAcceptorFixture, SeatsAGuestWithoutATicket) {
+  connect(playerEndpoint(0));
+
+  ASSERT_NE(roster().find(playerEndpoint(0)), nullptr);
+  EXPECT_EQ(roster().find(playerEndpoint(0))->ticket, GUEST_TICKET_ON_THE_PAGE);
+}
 
 /**
  * Given an acceptor with nobody connected

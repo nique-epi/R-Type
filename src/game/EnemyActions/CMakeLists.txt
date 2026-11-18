@@ -1,4 +1,4 @@
-add_library(rtype_game_enemy_actions STATIC EnemyActions.cpp)
+add_library(rtype_game_enemy_actions STATIC EnemyActions.cpp SummoningStart.cpp)
 
 target_include_directories(rtype_game_enemy_actions PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 

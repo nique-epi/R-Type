@@ -1,0 +1,1 @@
+rtype_add_test(NAME client_background_composition_tests SOURCES SeamCoverTest.cpp SeamCoverFixtures.cpp LIBS rtype_client_background_composition)

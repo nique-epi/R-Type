@@ -36,9 +36,13 @@ class PlayfieldExitSystemFixture : public ::testing::Test {
    * box of its sheet, that a pilot steers towards @p heading. */
   engine::Entity addSteeredMissile(Position position, Direction heading);
 
+  /** @returns A new networked obstacle at @p positionX, on the row the tests
+   * use, that collides with @p box. */
+  engine::Entity addObstacle(float positionX, CollisionBox box);
+
   /** @returns A new networked enemy at @p positionX, on the row the tests
-   * use, that is a boss. */
-  engine::Entity addBoss(float positionX);
+   * use, that StaysOutside. */
+  engine::Entity addEnemyThatStaysOutside(float positionX);
 
   /** @brief Runs the system for one tick, then delivers what it published. */
   void updateAndDispatch();

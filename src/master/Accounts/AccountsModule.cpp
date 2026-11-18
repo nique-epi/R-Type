@@ -1,16 +1,18 @@
 #include "AccountsModule.hpp"
-#include <functional>
 #include <span>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
-#include "AccountRoute.hpp"
-#include "AccountsController.hpp"
 #include "AccountsModuleConstants.hpp"
 #include "AccountsService.hpp"
 #include "CommandDefinition.hpp"
 #include "CommandInterpreter.hpp"
+#include "ConfigurationRegistry.hpp"
+#include "ControllerRoute.hpp"
+#include "DeviceLinksService.hpp"
 #include "EngineException.hpp"
+#include "ISessionAccounts.hpp"
 #include "InstallContext.hpp"
 #include "MasterConstants.hpp"
 #include "MasterDatabase.hpp"
@@ -18,20 +20,31 @@
 #include "MasterModuleConstants.hpp"
 #include "PasswordKey.hpp"
 #include "PasswordKeyText.hpp"
+#include "SettingValue.hpp"
 #include "SiteVisitors.hpp"
+#include "TextSettingDefinition.hpp"
 #include "WireTypes.hpp"
 
 namespace rtype::master {
 
 namespace {
 
-/** @brief Adds every route of ACCOUNT_ROUTES to @p server, answered by
- * @p controller. */
-void addRoutes(MasterHttpServer& server, AccountsController& controller) {
-  for (const AccountRoute& accountRoute : ACCOUNT_ROUTES) {
-    server.add(accountRoute.route,
-               std::bind_front(accountRoute.answer, &controller));
+/** @throws engine::CommandRefusedException when @p url starts with neither
+ * HTTPS_SCHEME nor HTTP_SCHEME. */
+void requireWebAddress(std::string_view url) {
+  if (!url.starts_with(HTTPS_SCHEME) && !url.starts_with(HTTP_SCHEME)) {
+    throw engine::CommandRefusedException(std::string{SITE_URL_REFUSED_TEXT});
   }
+}
+
+/** @returns The `site-url` setting, declared in @p configuration. */
+const engine::SettingValue& declareSiteUrl(
+    engine::ConfigurationRegistry& configuration) {
+  return configuration.declareText(engine::TextSettingDefinition{
+      .name = std::string{SITE_URL_SETTING_NAME},
+      .defaultValue = std::string{DEFAULT_SITE_URL},
+      .help = std::string{SITE_URL_HELP},
+      .validate = requireWebAddress});
 }
 
 }  // namespace
@@ -52,10 +65,20 @@ std::vector<std::string> AccountsModule::dependencies() const {
 void AccountsModule::install(engine::InstallContext& context) {
   const network::PasswordKey key = passwordKeyFromText(passwordKeyText_);
   addAdminCommand(context.require<engine::CommandInterpreter>());
-  AccountsController& controller = controller_.emplace(
-      service_.emplace(context.require<MasterDatabase>(), key),
-      context.require<SiteVisitors>());
-  addRoutes(context.require<MasterHttpServer>(), controller);
+  const engine::SettingValue& siteUrl =
+      declareSiteUrl(context.require<engine::ConfigurationRegistry>());
+  AccountsService& service =
+      service_.emplace(context.require<MasterDatabase>(), key);
+  context.provide<ISessionAccounts>(service);
+  DeviceLinksService& links =
+      links_.emplace(context.require<MasterDatabase>(), service,
+                     [&siteUrl] { return siteUrl.text(); });
+  auto& server = context.require<MasterHttpServer>();
+  const auto& visitors = context.require<SiteVisitors>();
+  addRoutes(server, ACCOUNT_ROUTES,
+            controller_.emplace(service, links, visitors));
+  addRoutes(server, DEVICE_LINK_ROUTES,
+            linksController_.emplace(links, service, visitors));
 }
 
 void AccountsModule::start() {

@@ -16,7 +16,8 @@ namespace rtype::server {
 /**
  * @brief Follows a game from its start to its end and records what it leaves:
  * a row per player connected when it started, as that player was when it left
- * or when the game ended.
+ * or when the game ended (its account and the look items it won included),
+ * and whether the game was won.
  *
  * It reads the score at the tick of the end, before the bus delivers anything
  * more, so a player finds in the leaderboard the score GameEnded told them. A
@@ -49,7 +50,8 @@ class GameResultKeeper {
 
  private:
   void startCounting();
-  void recordTheGame();
+  /** @brief Records the game, won when @p victory is true. */
+  void recordTheGame(bool victory);
 
   PlayerRoster& roster_;
   IResultsArchive& archive_;

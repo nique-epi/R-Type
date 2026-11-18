@@ -23,37 +23,26 @@
 #include "MasterRoutePath.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PageRequest.hpp"
+#include "QueryBounds.hpp"
 #include "RouteAnswers.hpp"
 #include "ServerRecord.hpp"
 #include "ServerRegistration.hpp"
 #include "ServersControllerConstants.hpp"
 #include "ServersService.hpp"
 #include "SiteVisitors.hpp"
-#include "WholeNumberText.hpp"
 
 namespace rtype::master {
 
 namespace {
 
-std::chrono::sys_seconds now() {
-  return std::chrono::floor<std::chrono::seconds>(
-      std::chrono::system_clock::now());
-}
-
 /** @returns The id the path of @p request names, nothing when it is no id. */
 std::optional<std::int64_t> serverIdOf(const network::ApiRequest& request) {
-  const auto parameter = request.pathParameters.find(
-      std::string{network::SERVER_ID_PATH_PARAMETER});
-  if (parameter == request.pathParameters.end()) {
-    return std::nullopt;
-  }
-  const std::optional<std::uint64_t> serverId =
-      network::wholeNumberIn<std::uint64_t>(parameter->second);
-  if (!serverId.has_value() || *serverId < network::FIRST_SERVER_ID ||
-      *serverId > network::HIGHEST_SERVER_ID) {
-    return std::nullopt;
-  }
-  return static_cast<std::int64_t>(*serverId);
+  return pathNumberOf(
+      request, network::SERVER_ID_PATH_PARAMETER,
+      QueryBounds{
+          .lowest = static_cast<std::int64_t>(network::FIRST_SERVER_ID),
+          .highest = static_cast<std::int64_t>(network::HIGHEST_SERVER_ID),
+          .absent = static_cast<std::int64_t>(network::FIRST_SERVER_ID)});
 }
 
 /**
@@ -77,7 +66,7 @@ network::ApiResponse answerOfServerPage(const network::ApiRequest& request,
   if (!listing.has_value()) {
     return refusal(NOT_FOUND_STATUS, UNKNOWN_SERVER_DETAIL);
   }
-  return network::ApiResponse{.status = OK_STATUS, .body = write(*listing)};
+  return okResponse(write(*listing));
 }
 
 network::ApiResponse createdResponse(const network::CreatedServer& created) {
@@ -106,13 +95,13 @@ network::ApiResponse serverResponse(
   nlohmann::json server =
       nlohmann::json::parse(network::registrationText(registration));
   server[network::ID_MEMBER] = serverId;
-  return network::ApiResponse{.status = OK_STATUS, .body = server.dump()};
+  return okResponse(server.dump());
 }
 
 network::ApiResponse heartbeatAnswer() {
   nlohmann::json answer;
   answer[network::COMMANDS_MEMBER] = nlohmann::json::array();
-  return network::ApiResponse{.status = OK_STATUS, .body = answer.dump()};
+  return okResponse(answer.dump());
 }
 
 }  // namespace
@@ -131,7 +120,7 @@ network::ApiResponse ServersController::createServer(
         service_.createServer(CreationAttempt{
             .creation = network::serverCreationFromText(request.body),
             .address = siteVisitors_.addressOf(request),
-            .requestedAt = now()});
+            .requestedAt = currentSecond()});
     if (!created.has_value()) {
       return refusal(TOO_MANY_REQUESTS_STATUS, CREATION_QUOTA_DETAIL);
     }
@@ -145,9 +134,10 @@ network::ApiResponse ServersController::replaceOwnServer(
       service_, request, [this, &request](const KnownServer& server) {
         const network::ServerRegistration registration =
             registrationOf(request);
-        service_.replaceOwnServer(ServerRecord{.serverId = server.id,
-                                               .registration = registration,
-                                               .registeredAt = now()});
+        service_.replaceOwnServer(
+            ServerRecord{.serverId = server.id,
+                         .registration = registration,
+                         .registeredAt = currentSecond()});
         return serverResponse(server.id, registration);
       });
 }
@@ -156,7 +146,7 @@ network::ApiResponse ServersController::replaceOwnHeartbeat(
     const network::ApiRequest& request) {
   return answerAsServerOfKey(
       service_, request, [this, &request](const KnownServer& server) {
-        const std::chrono::sys_seconds receivedAt = now();
+        const std::chrono::sys_seconds receivedAt = currentSecond();
         if (!service_.replaceOwnHeartbeat(
                 server, network::heartbeatFromText(request.body), receivedAt)) {
           return refusal(CONFLICT_STATUS, UNREGISTERED_SERVER_DETAIL);

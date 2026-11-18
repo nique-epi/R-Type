@@ -18,6 +18,7 @@ target_link_libraries(rtype_master_leaderboard_module
     rtype_master_http_module
     rtype_master_servers_services
     rtype_master_storage_module
+    rtype_master_wallet_contract
     rtype_network_master_routes
 )
 

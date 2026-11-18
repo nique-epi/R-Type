@@ -17,6 +17,7 @@
 #include "LuauLevelRunState.hpp"
 #include "LuauLevels.hpp"
 #include "NetworkIdentity.hpp"
+#include "ScrollingBodies.hpp"
 #include "ServerException.hpp"
 #include "TimeConstants.hpp"
 
@@ -50,7 +51,10 @@ void LevelDirector::onTick() {
     logger_.warn("the level ", parts_.level, " failed: ", run_.failure());
   }
   spawnDuePlacements();
+  const float scrolledBefore = progress_.scroll.position();
   progress_.scroll.advance(engine::SIMULATION_TICK_DURATION);
+  game::carryAlongTheScroll(parts_.world.get().components(),
+                            progress_.scroll.position() - scrolledBefore);
   announceChange();
 }
 

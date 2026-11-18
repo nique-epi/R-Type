@@ -8,7 +8,9 @@
 #include <cstdint>
 #include <filesystem>
 #include <optional>
+#include <ranges>
 #include <string>
+#include <string_view>
 #include <vector>
 #include "DatabaseFile.hpp"
 #include "GameResult.hpp"
@@ -33,12 +35,57 @@ void bindGame(SQLite::Statement& insert, const GameResult& result,
   insert.bind(DIFFICULTY_PARAMETER, result.difficulty);
   insert.bind(PLAYER_COUNT_PARAMETER, result.playerCount);
   insert.bind(VANILLA_PARAMETER, static_cast<std::int32_t>(result.vanilla));
+  insert.bind(VICTORY_PARAMETER, static_cast<std::int32_t>(result.victory));
+}
+
+/** @returns @p looks as won_looks keeps them: separated by
+ * WON_LOOKS_SEPARATOR, empty when there is none. */
+std::string joinedLooks(const std::vector<std::string>& looks) {
+  std::string joined;
+  for (const std::string& look : looks) {
+    if (!joined.empty()) {
+      joined += WON_LOOKS_SEPARATOR;
+    }
+    joined += look;
+  }
+  return joined;
+}
+
+/** @returns The names @p joined keeps, as joinedLooks() writes them. */
+std::vector<std::string> splitLooks(std::string_view joined) {
+  std::vector<std::string> looks;
+  for (const auto look : std::views::split(joined, WON_LOOKS_SEPARATOR)) {
+    if (!look.empty()) {
+      looks.emplace_back(look.begin(), look.end());
+    }
+  }
+  return looks;
+}
+
+/** @brief Binds @p ticket, or null for a guest. */
+void bindTicket(SQLite::Statement& insert,
+                const std::optional<std::string>& ticket) {
+  if (!ticket.has_value()) {
+    insert.bind(TICKET_PARAMETER);
+    return;
+  }
+  insert.bind(TICKET_PARAMETER, *ticket);
+}
+
+/** @returns The ticket @p column keeps; none for a null, a guest. */
+std::optional<std::string> ticketOf(const SQLite::Column& column) {
+  if (column.isNull()) {
+    return std::nullopt;
+  }
+  return column.getString();
 }
 
 void bindPlayer(SQLite::Statement& insert, const PlayerResult& player) {
   insert.bind(NICKNAME_PARAMETER, player.nickname);
+  bindTicket(insert, player.ticket);
   insert.bind(SCORE_PARAMETER, player.score);
   insert.bind(DEATHS_PARAMETER, player.deaths);
+  insert.bind(WON_LOOKS_PARAMETER, joinedLooks(player.wonLooks));
 }
 
 /** @brief Binds the filters of @p request; one that asks for every value
@@ -74,14 +121,18 @@ UnsentGame unsentGameOf(const SQLite::Statement& query) {
           .endedAt = std::chrono::sys_seconds{std::chrono::seconds{
               query.getColumn(PLAYED_AT_COLUMN).getInt64()}},
           .players = {},
-          .vanilla = true}};
+          .vanilla = true,
+          .victory = query.getColumn(VICTORY_COLUMN).getInt() != 0}};
 }
 
 /** @returns The player of the row @p query is on. */
 PlayerResult playerOf(const SQLite::Statement& query) {
-  return PlayerResult{.nickname = query.getColumn(NICKNAME_COLUMN).getString(),
-                      .score = query.getColumn(SCORE_COLUMN).getUInt(),
-                      .deaths = query.getColumn(DEATHS_COLUMN).getUInt()};
+  return PlayerResult{
+      .nickname = query.getColumn(NICKNAME_COLUMN).getString(),
+      .score = query.getColumn(SCORE_COLUMN).getUInt(),
+      .deaths = query.getColumn(DEATHS_COLUMN).getUInt(),
+      .wonLooks = splitLooks(query.getColumn(WON_LOOKS_COLUMN).getString()),
+      .ticket = ticketOf(query.getColumn(TICKET_COLUMN))};
 }
 
 /** @brief Writes @p answeredAt on every row of @p gameId with @p update. */

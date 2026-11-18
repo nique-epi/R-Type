@@ -1,12 +1,13 @@
 #include "ScreenAssets.hpp"
 #include <algorithm>
 #include <string>
+#include "AssetKind.hpp"
 #include "AssetLibrary.hpp"
 #include "AssetList.hpp"
 #include "AssetLoadingStep.hpp"
-#include "Biome.hpp"
-#include "BiomeConstants.hpp"
-#include "BiomeLayer.hpp"
+#include "AssetProblemReport.hpp"
+#include "BackgroundCatalog.hpp"
+#include "CasinoSpriteConstants.hpp"
 #include "EffectConstants.hpp"
 #include "EntityAppearances.hpp"
 #include "EntitySpriteConstants.hpp"
@@ -34,6 +35,14 @@ void loadAtOnce(AssetLibrary& library, const AssetList& assets) {
   }
 }
 
+/** @brief Adds @p texture to the textures of @p assets, unless it is listed
+ * already. */
+void addTexture(AssetList& assets, const std::string& texture) {
+  if (std::ranges::find(assets.textures, texture) == assets.textures.end()) {
+    assets.textures.push_back(texture);
+  }
+}
+
 }  // namespace
 
 AssetList interfaceAssets() {
@@ -41,11 +50,15 @@ AssetList interfaceAssets() {
 }
 
 AssetList titleAssets() {
-  return AssetList{
+  AssetList assets{
       .textures = {LOGO_ID, ENTITY_SHEET_ID, HUD_SHEET_ID, PROFESSOR_SHEET_ID,
                    LEADERBOARD_SHEET_ID, SHIP_LOOK_SHEET_ID, SHIP_HULL_SHEET_ID,
                    SECTOR_MAP_SHEET_ID, SHOP_SCENE_ID, SHOP_KEEPER_SHEET_ID,
                    SHOP_FRONT_ID, SHOP_TICKET_SHEET_ID}};
+  for (const char* texture : CASINO_TEXTURES) {
+    assets.textures.emplace_back(texture);
+  }
+  return assets;
 }
 
 AssetList gameAssets() {
@@ -53,19 +66,22 @@ AssetList gameAssets() {
   assets.textures.emplace_back(EFFECT_SHEET_ID);
   assets.textures.emplace_back(PLUG_ICON_ID);
   assets.textures.emplace_back(FLIGHT_LOG_SHEET_ID);
-  for (const Biome& biome : BIOMES) {
-    for (const BiomeLayer& layer : biome.layers) {
-      assets.textures.emplace_back(layer.tileset);
-    }
-  }
   return assets;
 }
 
 AssetList withEntitySheets(AssetList assets,
                            const EntityAppearances& appearances) {
   for (const std::string& sheet : appearances.sheets()) {
-    if (std::ranges::find(assets.textures, sheet) == assets.textures.end()) {
-      assets.textures.push_back(sheet);
+    addTexture(assets, sheet);
+  }
+  return assets;
+}
+
+AssetList withBackgroundImages(AssetList assets,
+                               const BackgroundCatalog* backgrounds) {
+  if (backgrounds != nullptr) {
+    for (const std::string& image : backgrounds->images()) {
+      addTexture(assets, image);
     }
   }
   return assets;
@@ -74,6 +90,17 @@ AssetList withEntitySheets(AssetList assets,
 void loadInterfaceAssets(AssetLibrary& library) {
   loadAtOnce(library, interfaceAssets());
   library.keepPermanently(interfaceAssets());
+}
+
+void loadBackgroundAssets(AssetLibrary& library,
+                          const BackgroundCatalog& catalog) {
+  const AssetList images{.textures = catalog.images()};
+  AssetProblemReport problems(library);
+  for (const std::string& image : images.textures) {
+    problems.record(image, library.load(AssetKind::Texture, image));
+  }
+  problems.throwIfAny();
+  library.keepPermanently(images);
 }
 
 AssetList introAssets() {

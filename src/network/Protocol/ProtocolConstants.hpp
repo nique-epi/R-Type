@@ -20,35 +20,37 @@ constexpr std::size_t INT16_WIRE_SIZE = sizeof(std::int16_t);
 constexpr std::uint32_t PROTOCOL_ID = 0x52545950;
 
 /**
- * @brief The version of the protocol this code speaks. Version 17 adds the
- * hull to a ship look, see the Version 17 section; version 16 adds the
- * look of each entity to WorldState and DeltaWorldState, and EffectPlayed,
- * see the Version 16 section; version 15 removes the ban: the reason Banned of
- * ConnectionRefused (9), Expulsion (2) and PlayerLeft (4) is invalid again, see
- * the Version 15 section; version 14 added it; version 13 adds the expulsion of
- * a player: ExpulsionOrder from the supervisor to a game, Expulsion to the
- * player and the departure reason Expelled, see the Version 13 section; version
- * 12 makes a ConnectionRequest for a NewGame carry the rules of that game, and
- * adds the refusals UnknownDifficulty and LivesOutOfRange, see the Version 12
- * section; version 11 makes EntitySpawned name the player and the input that
- * fired a missile, and PlayerInput the tick its client shows, so a client can
- * predict its own missiles and the server test them where the player saw the
- * enemies, see the Version 11 section; version 10 makes a ConnectionAccepted
- * announce the content pack of the game in place of the table of its entity
- * types, see the Version 10 section; version 9 makes a ConnectionRequest name
- * the game it asks for, and adds the refusals GameNotFound and ServerFull, see
- * the Version 9 section; version 8 makes a GameStatus carry the nicknames of
- * the players of its game and the measures of its process, see the Version 8
- * section; version 7 numbers the guaranteed messages and delivers them in
- * order, see the Ordered messages section; version 6 names the entity types by
- * a table ConnectionAccepted carries, so the type of EntitySpawned, WorldState
- * and DeltaWorldState is a number of that table, see the Version 6 section of
- * the protocol page; version 5 makes a PlayerInput repeat the inputs the server
- * has not confirmed, see the Inputs section; version 4 lets the server send the
- * body of a datagram as a zstd frame, see the Compression section; version 3
- * adds the outcome of a game to GameEnded, see the Version 3 section.
+ * @brief The version of the protocol this code speaks. Version 18 adds the
+ * game ticket of the player to ConnectionRequest, see the Version 18 section;
+ * version 17 adds the hull to a ship look, see the Version 17 section; version
+ * 16 adds the look of each entity to WorldState and DeltaWorldState, and
+ * EffectPlayed, see the Version 16 section; version 15 removes the ban: the
+ * reason Banned of ConnectionRefused (9), Expulsion (2) and PlayerLeft (4) is
+ * invalid again, see the Version 15 section; version 14 added it; version 13
+ * adds the expulsion of a player: ExpulsionOrder from the supervisor to a game,
+ * Expulsion to the player and the departure reason Expelled, see the Version 13
+ * section; version 12 makes a ConnectionRequest for a NewGame carry the rules
+ * of that game, and adds the refusals UnknownDifficulty and LivesOutOfRange,
+ * see the Version 12 section; version 11 makes EntitySpawned name the player
+ * and the input that fired a missile, and PlayerInput the tick its client
+ * shows, so a client can predict its own missiles and the server test them
+ * where the player saw the enemies, see the Version 11 section; version 10
+ * makes a ConnectionAccepted announce the content pack of the game in place of
+ * the table of its entity types, see the Version 10 section; version 9 makes a
+ * ConnectionRequest name the game it asks for, and adds the refusals
+ * GameNotFound and ServerFull, see the Version 9 section; version 8 makes a
+ * GameStatus carry the nicknames of the players of its game and the measures of
+ * its process, see the Version 8 section; version 7 numbers the guaranteed
+ * messages and delivers them in order, see the Ordered messages section;
+ * version 6 names the entity types by a table ConnectionAccepted carries, so
+ * the type of EntitySpawned, WorldState and DeltaWorldState is a number of that
+ * table, see the Version 6 section of the protocol page; version 5 makes a
+ * PlayerInput repeat the inputs the server has not confirmed, see the Inputs
+ * section; version 4 lets the server send the body of a datagram as a zstd
+ * frame, see the Compression section; version 3 adds the outcome of a game to
+ * GameEnded, see the Version 3 section.
  */
-constexpr std::uint8_t PROTOCOL_VERSION = 17;
+constexpr std::uint8_t PROTOCOL_VERSION = 18;
 
 /**
  * @brief The session token of a datagram sent before the connection is
@@ -425,12 +427,13 @@ constexpr std::uint16_t UNUSED_GAME_NUMBER = 0;
 
 /**
  * @brief The size of the smallest datagram holding a ConnectionRequest: a
- * cookie, a nickname of one byte, then the kind and the number of the game.
+ * cookie, a nickname of one byte, the game ticket, then the kind and the
+ * number of the game.
  */
 constexpr std::size_t SMALLEST_CONNECTION_REQUEST_DATAGRAM_SIZE =
     PACKET_HEADER_SIZE + MESSAGE_PREFIX_SIZE + UINT64_WIRE_SIZE +
-    SHORT_STRING_PREFIX_SIZE + MINIMUM_NICKNAME_SIZE + UINT8_WIRE_SIZE +
-    UINT16_WIRE_SIZE;
+    SHORT_STRING_PREFIX_SIZE + MINIMUM_NICKNAME_SIZE + GAME_TICKET_BYTES +
+    UINT8_WIRE_SIZE + UINT16_WIRE_SIZE;
 
 /**
  * @brief The size of the largest datagram the server sends a sender that did

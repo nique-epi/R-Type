@@ -1,0 +1,9 @@
+add_library(rtype_master_casino_models INTERFACE)
+
+target_include_directories(rtype_master_casino_models INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(rtype_master_casino_models
+  INTERFACE
+    rtype_network_master_messages
+    rtype_network_master_routes
+)

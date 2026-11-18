@@ -8,6 +8,7 @@
 #include "ConnectionRequest.hpp"
 #include "Endpoint.hpp"
 #include "GameRules.hpp"
+#include "GameTicket.hpp"
 #include "Heartbeat.hpp"
 #include "PacketHeader.hpp"
 #include "PlayerInput.hpp"
@@ -32,6 +33,11 @@
  * asks for @p nickname. */
 [[nodiscard]] std::vector<std::byte> requestDatagramOf(
     const std::string& nickname, std::uint64_t cookie);
+
+/** @returns A datagram holding a ConnectionRequest that carries @p cookie and
+ * PLAYER_NICKNAME, from a player who joins with the game ticket @p ticket. */
+[[nodiscard]] std::vector<std::byte> requestDatagramWithTicket(
+    const rtype::network::GameTicket& ticket, std::uint64_t cookie);
 
 /** @returns A datagram holding a ServerInformationRequest sent at
  * @p sentAt. */

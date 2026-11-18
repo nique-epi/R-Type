@@ -45,6 +45,12 @@ class GameFlowBrokenLevelFixture : public GameFlowLevelFixture {
   GameFlowBrokenLevelFixture();
 };
 
+/** @brief A game that plays `fights_a_bydo`. */
+class GameFlowFightingLevelFixture : public GameFlowLevelFixture {
+ public:
+  GameFlowFightingLevelFixture();
+};
+
 /** @brief A game that plays `sends_a_bydo`. */
 class GameFlowSendingLevelFixture : public GameFlowLevelFixture {
  public:

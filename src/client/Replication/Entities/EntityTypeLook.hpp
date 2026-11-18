@@ -2,10 +2,12 @@
 
 #include <functional>
 #include <memory>
+#include <optional>
 #include <span>
 #include "CollisionBox.hpp"
 #include "EntityAppearance.hpp"
 #include "EntityType.hpp"
+#include "ObstacleContact.hpp"
 #include "PixelMask.hpp"
 
 namespace rtype::client {
@@ -28,6 +30,9 @@ struct EntityTypeLook {
   game::CollisionBox hitbox{};
   std::span<const game::CollisionBox> hitboxParts;
   std::shared_ptr<const engine::PixelMask> mask;
+  /** @brief What it does to a ship, for an obstacle, which the replicator
+   * gives it as its game::Obstacle; nothing for any other body. */
+  std::optional<game::ObstacleContact> obstacle = std::nullopt;
 };
 
 }  // namespace rtype::client

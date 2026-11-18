@@ -22,6 +22,16 @@ class DatabaseClosedException : public MasterException {
 };
 
 /**
+ * @brief Every short code drawn for a new device link was held by another
+ * link: with 20 to the 8th codes, only a table full of live links or a broken
+ * source of randomness does it.
+ */
+class UserCodesExhaustedException : public MasterException {
+ public:
+  UserCodesExhaustedException();
+};
+
+/**
  * @brief The master was launched without a key of the passwords while its
  * module accounts is on: it stops at its start, before its port opens.
  */

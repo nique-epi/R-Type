@@ -9,6 +9,7 @@
 #include <vector>
 #include "Endpoint.hpp"
 #include "IModule.hpp"
+#include "ListeningPortRecordingModule.hpp"
 #include "ModuleConstants.hpp"
 #include "NetworkConditions.hpp"
 #include "NetworkConstants.hpp"
@@ -37,6 +38,7 @@ ServerNetworkModuleFixture::networkModulesOver(
   modules.push_back(std::make_unique<rtype::server::ServerNetworkModule>(
       port, stopRequest_, conditions));
   modules.push_back(std::move(probe));
+  modules.push_back(std::make_unique<ListeningPortRecordingModule>(port_));
   return modules;
 }
 
@@ -72,6 +74,8 @@ bool ServerNetworkModuleFixture::waitForPasses(const std::atomic<int>& passes,
 rtype::server::StopRequest& ServerNetworkModuleFixture::stopRequest() {
   return stopRequest_;
 }
+
+std::uint16_t ServerNetworkModuleFixture::port() const { return port_; }
 
 rtype::network::Endpoint ServerNetworkModuleFixture::loopbackOnPort(
     std::uint16_t port) {

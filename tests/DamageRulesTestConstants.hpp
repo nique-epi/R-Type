@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string_view>
 #include "ActionKey.hpp"
 #include "EnemyPhase.hpp"
 #include "MissileOwner.hpp"
@@ -26,6 +27,20 @@ constexpr int ONE_HEALTH_POINT = 1;
 constexpr MissileOwner FIRST_PLAYER{.playerNumber = 1};
 constexpr MissileOwner SECOND_PLAYER{.playerNumber = SECOND_PLAYER_NUMBER};
 
+/** @brief A Bydo of five health points, a missile whose sheet makes it take
+ * three, and the two points the rule leaves the Bydo. */
+constexpr int FIVE_HEALTH_POINTS = 5;
+constexpr int DAMAGE_OF_THREE = 3;
+constexpr int TWO_HEALTH_POINTS_LEFT = 2;
+
+/** @brief The name of the handler the reaction tests tell of the hits, a Bydo
+ * of two points that a missile of three destroys, and the wall of steel they
+ * hit. */
+constexpr std::string_view CRACK_HANDLER = "crack";
+constexpr int TWO_HEALTH_POINTS = 2;
+constexpr int NO_POINT_LEFT = 0;
+constexpr std::uint32_t WALL_ID = 41;
+
 /** @brief What destroying a Bydo of the tests is worth. */
 constexpr std::uint32_t BYDO_POINTS = 200;
 
@@ -34,5 +49,13 @@ constexpr std::uint32_t BYDO_POINTS = 200;
 constexpr int FOUR_HEALTH_POINTS = 4;
 constexpr ActionKey STUNNED{.attack = 0, .phase = EnemyPhase::Recover};
 constexpr ActionKey CHARGING{.attack = 0, .phase = EnemyPhase::Strike};
+
+/** @brief A Bydo armored in its attack 2, and the signal and the strike of
+ * that attack. */
+constexpr std::uint8_t ARMORED_ATTACK = 2;
+constexpr ActionKey ARMORED_SIGNAL{.attack = ARMORED_ATTACK,
+                                   .phase = EnemyPhase::Signal};
+constexpr ActionKey ARMORED_STRIKE{.attack = ARMORED_ATTACK,
+                                   .phase = EnemyPhase::Strike};
 
 }  // namespace rtype::game::testing

@@ -12,8 +12,10 @@
 #include "EntityType.hpp"
 #include "GunSheet.hpp"
 #include "HurtZone.hpp"
+#include "IHitHandler.hpp"
 #include "MaskSheet.hpp"
 #include "MotionSheet.hpp"
+#include "ObstacleContact.hpp"
 #include "PilotSheet.hpp"
 #include "SheetVisualNames.hpp"
 #include "VolleySheet.hpp"
@@ -69,6 +71,8 @@ struct EntitySheet {
   /** @brief The action in which any hit destroys it; nothing for a body that
    * loses one point a hit all the time. */
   std::optional<ActionKey> fragileIn{std::nullopt};
+  /** @brief Whether leaving the playfield never removes it. */
+  bool staysOutside{false};
   /** @brief How it bursts into shards; nothing for a body that does not. */
   std::optional<BurstSheet> burst{std::nullopt};
   /** @brief The volleys it fires as it enters some of its actions, in the
@@ -83,6 +87,15 @@ struct EntitySheet {
   /** @brief The effects and the looks its `[appearance]` names, which a
    * script of a body of this type may ask the client to draw. */
   SheetVisualNames visualNames;
+  /** @brief The health points it takes from what it hits, a missile only;
+   * nothing for a missile that takes MISSILE_DAMAGE. */
+  std::optional<int> damage{std::nullopt};
+  /** @brief What it does to a ship that touches it, a body of side obstacle
+   * only. */
+  std::optional<ObstacleContact> obstacle{std::nullopt};
+  /** @brief The handler `on_hit` names, which the registry the sheet was read
+   * with owns; nullptr without the key. */
+  IHitHandler* onHit{nullptr};
 };
 
 }  // namespace rtype::game

@@ -44,7 +44,7 @@ Server settings. Only the supervisor reads `server.cfg`: it runs the lines of it
 
 | Setting | Read by | Value | Default | Effect |
 |---|---|---|---|---|
-| `port` | the supervisor | 1 to 65535 | 4242 | The UDP port the server listens on. |
+| `port` | the supervisor | 0 to 65535 | 4242 | The UDP port the server listens on; 0 lets the system choose a free one, which the journal names. |
 | `seed` | the games | 0 to 4294967295, or `none` | `none` | The seed of each game; `none` draws one at random. |
 | `state-rate` | the games | 2 to 60 | 20 | The world states sent to each player per second. |
 | `state-encoding` | the games | `delta` or `full` | `delta` | How each world state is written: as the difference from the newest one the player acknowledged, or with every entity. `delta` also writes a state with every entity when the player acknowledged none, or when the newest it acknowledged is more than 60 ticks older (`MAXIMUM_REFERENCE_DISTANCE`). |
@@ -75,6 +75,14 @@ Master settings (see [Master](/R-Type/master/#configuration-mastercfg)):
 |---|---|---|---|
 | `port` | 0 to 65535 | 8080 | The TCP port the HTTP API listens on, on every interface; 0 lets the system choose a free one, which the journal names. |
 | `database` | a path | empty | The SQLite file of the master; empty for `r-type_master.db` next to the executable. |
+| `site-key` | a text | empty | The secret the web site names its visitors by when it creates a server for them; empty, the master reads nothing the site says of a visitor. |
+| `wallet-starting-kopecks` | 0 to 999999 | 0 | Declared by the module `wallet`: the kopecks a wallet holds when it opens. |
+| `wallet-starting-chips` | 0 to 999999 | 500 | Declared by the module `wallet`: the chips a wallet holds when it opens. |
+| `casino-rooms` | 1 to 16 | 3 | Declared by the module `casino`: the roulette rooms it runs. |
+| `casino-seats` | 1 to 32 | 8 | Declared by the module `casino`: the players each room seats. |
+| `casino-betting-seconds` | 5 to 600 | 20 | Declared by the module `casino`: the seconds the bets of a round stay open. |
+| `casino-spinning-seconds` | 1 to 60 | 6 | Declared by the module `casino`: the seconds the wheel spins once the bets close. |
+| `casino-result-seconds` | 1 to 60 | 5 | Declared by the module `casino`: the seconds the result shows before the next round. |
 
 ### `module`
 
@@ -131,11 +139,14 @@ Client modules:
 | `logger` | nothing |
 | `assets` | `logger` |
 | `connection` | `logger` |
+| `account` | `connection` |
 | `settings` | `logger` |
 | `window` | `settings` |
 | `audio` | `assets`, `settings` |
-| `screens` | `assets`, `settings`, `window`, `connection`; it uses `audio` when it is on, and plays nothing otherwise |
-| `menus`, `lobby`, `game` | `screens` |
+| `screens` | `assets`, `settings`, `window`, `connection`, `account`; it uses `audio` when it is on, and plays nothing otherwise |
+| `menus`, `lobby`, `shop`, `game` | `screens` |
+| `hangar` | `screens`, `connection`, `settings` |
+| `casino` | `screens`, `connection`, `account` |
 
 Master modules:
 
@@ -146,8 +157,10 @@ Master modules:
 | `probe` | `logger` | Opens the UDP socket the probes of the game servers leave from. |
 | `http` | `logger` | Opens the port of the HTTP API, and reads the `site-key` with which the web site names its visitors. |
 | `servers` | `logger`, `storage`, `probe`, `http` | Creates the game servers with their keys, takes their registration and their heartbeats, and probes their UDP port. |
-| `leaderboard` | `storage`, `http`, `servers` | Keeps the results of the vanilla games and ranks them in the global leaderboard. |
 | `accounts` | `logger`, `storage`, `http` | Keeps the accounts of the players and their sessions, over HTTPS only. Optional: `RTYPE_MODULE_ACCOUNTS`. |
+| `wallet` | `logger`, `storage`, `http`, `accounts` | Keeps the kopecks, the chips and the looks of each account, over HTTPS only. Optional: `RTYPE_MODULE_WALLET`. |
+| `leaderboard` | `logger`, `storage`, `http`, `servers` | Keeps the results of the vanilla games and ranks them in the global leaderboard; credits the wallets when `wallet` is on. |
+| `casino` | `logger`, `storage`, `http`, `accounts`, `wallet` | Runs the roulette rooms of the casino. Optional: `RTYPE_MODULE_CASINO`. |
 
 Turning off a module the program cannot run without is accepted when nothing that stays on needs it, and the program then does less. For example, `module lobby off` on the server leaves a server that accepts nobody. On the client, `menus`, `lobby` and `game` need `screens`, and `screens` needs five modules, so turning one of those off is refused until the modules that need it are off first.
 

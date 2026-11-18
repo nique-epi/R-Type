@@ -1,4 +1,5 @@
 add_library(rtype_master_accounts_repositories STATIC
+  DeviceLinkRepository.cpp
   UserRepository.cpp
   UserRow.cpp
   SessionRepository.cpp

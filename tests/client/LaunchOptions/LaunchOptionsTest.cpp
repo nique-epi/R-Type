@@ -32,9 +32,11 @@ using rtype::client::GAME_OPTION;
 using rtype::client::InvalidGameOptionException;
 using rtype::client::InvalidNicknameOptionException;
 using rtype::client::LaunchOptions;
+using rtype::client::launchUsage;
 using rtype::client::NICKNAME_OPTION;
 using rtype::client::NO_SOUND_OPTION;
 using rtype::client::PlayStart;
+using rtype::client::SESSION_OPTION;
 using rtype::engine::HELP_OPTION;
 using rtype::engine::InvalidLaunchOptionValueException;
 using rtype::engine::MissingLaunchOptionValueException;
@@ -264,7 +266,7 @@ TEST(ClientLaunchOptions, NoSoundOptionLeavesTheOtherOptionsAlone) {
  * Then each option starts a line of it
  */
 TEST(ClientLaunchOptions, UsageNamesEveryOption) {
-  const std::string usage = LaunchOptions::usage();
+  const std::string usage = launchUsage();
 
   for (const std::string_view option :
        {ADDRESS_OPTION, PORT_OPTION, NICKNAME_OPTION, GAME_OPTION,
@@ -282,8 +284,7 @@ TEST(ClientLaunchOptions, UsageNamesEveryOption) {
  * Then it tells what an address is and gives the default one
  */
 TEST(ClientLaunchOptions, UsageGivesTheDefaultAddress) {
-  EXPECT_NE(LaunchOptions::usage().find(DEFAULT_ADDRESS_LINE),
-            std::string::npos);
+  EXPECT_NE(launchUsage().find(DEFAULT_ADDRESS_LINE), std::string::npos);
 }
 
 /**
@@ -292,7 +293,7 @@ TEST(ClientLaunchOptions, UsageGivesTheDefaultAddress) {
  * Then it gives the range of a port and the default one
  */
 TEST(ClientLaunchOptions, UsageGivesTheDefaultPort) {
-  EXPECT_NE(LaunchOptions::usage().find(DEFAULT_PORT_LINE), std::string::npos);
+  EXPECT_NE(launchUsage().find(DEFAULT_PORT_LINE), std::string::npos);
 }
 
 /**
@@ -359,8 +360,7 @@ TEST(ClientLaunchOptions, NicknameOptionWithoutValueIsRejected) {
  * Then it gives the size of a nickname and the default one
  */
 TEST(ClientLaunchOptions, UsageGivesTheDefaultNickname) {
-  EXPECT_NE(LaunchOptions::usage().find(DEFAULT_NICKNAME_LINE),
-            std::string::npos);
+  EXPECT_NE(launchUsage().find(DEFAULT_NICKNAME_LINE), std::string::npos);
 }
 
 /**
@@ -434,8 +434,7 @@ TEST(ClientLaunchOptions, SetOptionRefusesAnInvalidAssignment) {
  * Then it names the set option
  */
 TEST(ClientLaunchOptions, UsageNamesTheSetOption) {
-  EXPECT_NE(LaunchOptions::usage().find(std::string(SET_OPTION)),
-            std::string::npos);
+  EXPECT_NE(launchUsage().find(std::string(SET_OPTION)), std::string::npos);
 }
 
 /**
@@ -577,8 +576,7 @@ TEST_F(LogLaunchOptionsFixture, ClientReadsTheLoggingOptionsBesideItsOwn) {
  * Then it holds the whole part that describes the network simulator
  */
 TEST(ClientLaunchOptions, UsageHoldsTheNetworkSimulatorOptions) {
-  EXPECT_NE(LaunchOptions::usage().find(
-                rtype::network::SimulatorLaunchOptions::usage()),
+  EXPECT_NE(launchUsage().find(rtype::network::SimulatorLaunchOptions::usage()),
             std::string::npos);
 }
 
@@ -610,7 +608,7 @@ TEST(ClientLaunchOptions, TrafficOptionGivesTheFile) {
  * Then it lists the traffic option
  */
 TEST(ClientLaunchOptions, UsageListsTheTrafficOption) {
-  EXPECT_NE(LaunchOptions::usage().find(TRAFFIC_CSV_OPTION), std::string::npos);
+  EXPECT_NE(launchUsage().find(TRAFFIC_CSV_OPTION), std::string::npos);
 }
 
 /**
@@ -717,4 +715,48 @@ TEST(ClientLaunchOptions, AnAddressGivenWithSetKeepsTheMap) {
       LaunchOptions::read(Arguments{SET_OPTION, ADDRESS_ASSIGNMENT_ARGUMENT});
 
   EXPECT_EQ(options.playStart(), PlayStart::ServerMap);
+}
+
+/**
+ * Given no argument
+ * When the launch options are read
+ * Then no token is given, so the player plays as a guest
+ */
+TEST(ClientLaunchOptions, NoArgumentGivesNoSessionToken) {
+  const LaunchOptions options = LaunchOptions::read(Arguments{});
+
+  EXPECT_FALSE(options.sessionToken().has_value());
+}
+
+/**
+ * Given the session option and a token
+ * When the launch options are read
+ * Then the token is the one the client signs in with
+ */
+TEST(ClientLaunchOptions, SessionOptionGivesTheToken) {
+  const LaunchOptions options =
+      LaunchOptions::read(Arguments{SESSION_OPTION, SESSION_TOKEN_ARGUMENT});
+
+  EXPECT_EQ(options.sessionToken(), std::string(SESSION_TOKEN_ARGUMENT));
+}
+
+/**
+ * Given the session option and a token
+ * When the launch options are read
+ * Then no setting is forced, so the token never reaches a setting
+ */
+TEST(ClientLaunchOptions, SessionOptionForcesNoSetting) {
+  const LaunchOptions options =
+      LaunchOptions::read(Arguments{SESSION_OPTION, SESSION_TOKEN_ARGUMENT});
+
+  EXPECT_TRUE(options.forcedLines().empty());
+}
+
+/**
+ * Given the usage of the client
+ * When it is read
+ * Then it names the session option
+ */
+TEST(ClientLaunchOptions, UsageNamesTheSessionOption) {
+  EXPECT_NE(launchUsage().find(SESSION_OPTION), std::string::npos);
 }

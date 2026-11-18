@@ -92,6 +92,8 @@ Each optional module has a CMake option, on by default. Off, its folder is not c
 | `RTYPE_MODULE_PLUGINS` | the loading of plugins | `plugin` and `plugin-folder` are unknown commands |
 | `RTYPE_MODULE_GAME_STATISTICS` | the `game-statistics` plugin; off whenever `RTYPE_MODULE_PLUGINS` is | no `game-statistics` file in `plugins/` |
 | `RTYPE_MODULE_ACCOUNTS` | the accounts and sessions of the master | the master answers 404 to `/api/users` and `/api/sessions`, and `admin` is an unknown command of `master.cfg` |
+| `RTYPE_MODULE_WALLET` | the wallets of the accounts of the master: kopecks, chips and owned looks; off whenever `RTYPE_MODULE_ACCOUNTS` is | the master answers 404 to `/api/users/me/wallet` and `/api/users/me/looks`, credits no game, and refuses `set wallet-starting-kopecks` and `set wallet-starting-chips` |
+| `RTYPE_MODULE_CASINO` | the casino of the master: roulette rooms whose rounds follow the clock; off whenever `RTYPE_MODULE_WALLET` is | the master answers 404 to `/api/casino/rooms`, and refuses the `casino-*` settings |
 
 ```bash
 cmake --preset default -DRTYPE_MODULE_AUDIO=OFF
@@ -198,6 +200,12 @@ The client is given the IPv4 address and the port of the server, `127.0.0.1` and
 `--game new` asks the server for a game of its own, which other players may join; `--game <n>` joins the game the server numbers `n` (`GAME 2` in the list of the master), and the connection screen says `REFUSED: NO SUCH GAME` when there is none. Without `--game` the client takes any game with a free seat. A game starts once all its connected players are ready, whoever opened it.
 
 `--no-sound` starts the client without sound: the screens and the volumes work as usual, and nothing plays.
+
+```bash
+./r-type_client --session rts_<64 hexadecimal digits>
+```
+
+`--session` signs the client in to the account of a session of the master, the token `POST /api/sessions` answers (see [the master page](https://nique-epi.github.io/R-Type/master/#accounts-and-sessions-accountsmodule)): its games then credit kopecks and looks to that account, and the shop, the hangar and the casino read and spend what it holds on the master. The token stays in memory, never in a file or the journal. Without it the player is a guest: it wears the starter kit, earns nothing, and the shop and the casino ask it to sign in. The routes of an account answer over HTTPS only, so the master is one behind Caddy, as `https://master.rtype.app` is.
 
 ```bash
 ./r-type_client --network bad

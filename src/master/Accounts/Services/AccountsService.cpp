@@ -19,6 +19,7 @@
 #include "NewSession.hpp"
 #include "NewUser.hpp"
 #include "PasswordKey.hpp"
+#include "SessionOrigin.hpp"
 #include "SessionToken.hpp"
 #include "SignInFailure.hpp"
 #include "StoredUser.hpp"
@@ -66,7 +67,8 @@ AccountsService::createSession(const CredentialsAttempt& request) {
     return CredentialsRefusal::WrongCredentials;
   }
   logger_.info(user->nickname, SIGNED_IN_TEXT, request.address);
-  return createdSessionFor(*user, request);
+  return openSession(*user, SessionOrigin{.address = request.address,
+                                          .openedAt = request.requestedAt});
 }
 
 std::optional<network::User> AccountsService::userOfToken(
@@ -136,16 +138,15 @@ void AccountsService::recordFailure(const CredentialsAttempt& request) {
                request.address, WRONG_CREDENTIALS_TEXT);
 }
 
-network::CreatedSession AccountsService::createdSessionFor(
-    const network::User& user, const CredentialsAttempt& request) {
+network::CreatedSession AccountsService::openSession(
+    const network::User& user, const SessionOrigin& origin) {
   std::string token = newSessionToken();
-  const std::chrono::sys_seconds expiresAt =
-      request.requestedAt + SESSION_LIFETIME;
+  const std::chrono::sys_seconds expiresAt = origin.openedAt + SESSION_LIFETIME;
   sessions_.addRemovingExpired(
       NewSession{.tokenFingerprint = sessionFingerprintOf(token),
                  .userId = user.id,
-                 .address = request.address,
-                 .createdAt = request.requestedAt,
+                 .address = origin.address,
+                 .createdAt = origin.openedAt,
                  .expiresAt = expiresAt});
   return network::CreatedSession{
       .token = std::move(token), .expiresAt = expiresAt, .user = user};

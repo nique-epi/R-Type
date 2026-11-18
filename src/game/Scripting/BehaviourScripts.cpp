@@ -4,7 +4,6 @@
 #include <cstdint>
 #include <exception>
 #include <limits>
-#include <memory>
 #include <optional>
 #include <span>
 #include <string>
@@ -14,19 +13,22 @@
 #include "BuiltInBehaviours.hpp"
 #include "GameScriptingConstants.hpp"
 #include "IEntityOrders.hpp"
-#include "LuauBehaviour.hpp"
 #include "LuauBehaviourParts.hpp"
+#include "LuauDeclarations.hpp"
 #include "LuauEventBindings.hpp"
+#include "LuauHitHandlerParts.hpp"
 #include "LuauLevels.hpp"
 #include "LuauPreHit.hpp"
 #include "LuauResumeContext.hpp"
 #include "LuauSetting.hpp"
+#include "PercentConstants.hpp"
 #include "Position.hpp"
 #include "ScriptFailureReport.hpp"
 #include "ScriptFunction.hpp"
 #include "ScriptLimits.hpp"
 #include "ScriptSource.hpp"
 #include "ScriptWait.hpp"
+#include "SpawnOptions.hpp"
 #include "WholeNumberRange.hpp"
 #include "lua.h"
 #include "lualib.h"
@@ -136,16 +138,38 @@ Position spawnPositionOf(lua_State* state) {
   return Position{.x = across, .y = down};
 }
 
-/** @brief `behaviours.spawn(type, position)`: returns the network id of the
- * body, which appears once the bodies of this tick were steered. */
+/** @returns The options at the argument SPAWN_OPTIONS_ARGUMENT, those of a
+ * body made as its sheet says without them; raises an error when its
+ * `health_percent` is not a whole number from 1 to 100. */
+SpawnOptions spawnOptionsOf(lua_State* state) {
+  if (lua_isnoneornil(state, SPAWN_OPTIONS_ARGUMENT)) {
+    return SpawnOptions{};
+  }
+  luaL_checktype(state, SPAWN_OPTIONS_ARGUMENT, LUA_TTABLE);
+  const int type =
+      lua_rawgetfield(state, SPAWN_OPTIONS_ARGUMENT, SPAWN_HEALTH_PERCENT_KEY);
+  const double percent =
+      type == LUA_TNIL ? double{WHOLE_PERCENT} : lua_tonumber(state, -1);
+  lua_pop(state, 1);
+  if ((type != LUA_TNIL && type != LUA_TNUMBER) ||
+      percent != std::floor(percent) ||
+      percent < MINIMUM_SPAWN_HEALTH_PERCENT || percent > WHOLE_PERCENT) {
+    raise(state, std::string{WRONG_SPAWN_HEALTH_PERCENT_MESSAGE});
+  }
+  return SpawnOptions{.healthPercent = static_cast<int>(percent)};
+}
+
+/** @brief `behaviours.spawn(type, position, options)`: returns the network
+ * id of the body, which appears once the bodies of this tick were steered. */
 int spawnBody(lua_State* state) {
   IEntityOrders& orders = ordersOf(state);
   const char* const type = luaL_checkstring(state, SPAWN_TYPE_ARGUMENT);
   const Position position = spawnPositionOf(state);
+  const SpawnOptions options = spawnOptionsOf(state);
   std::uint32_t networkId = 0;
   std::string refusal;
   try {
-    networkId = orders.spawn(type, position);
+    networkId = orders.spawn(type, position, options);
   } catch (const std::exception& error) {
     refusal = error.what();
   }
@@ -202,6 +226,20 @@ int declarePreHit(lua_State* state) {
   return 0;
 }
 
+/** @brief `behaviours.on_hit(name, function)`: keeps a hit handler a sheet may
+ * name in `on_hit`, in the BehaviourScripts of its upvalue. */
+int declareHitHandler(lua_State* state) {
+  BehaviourScripts& scripts = scriptsOf(state);
+  std::string name = luaL_checkstring(state, ON_HIT_NAME_ARGUMENT);
+  luaL_checktype(state, ON_HIT_FUNCTION_ARGUMENT, LUA_TFUNCTION);
+  scripts.declarations().hitHandler(
+      LuauHitHandlerParts{.machine = scripts.machine(),
+                          .name = std::move(name),
+                          .function = lua_ref(state, ON_HIT_FUNCTION_ARGUMENT),
+                          .reportFailure = scripts.reportFailure()});
+  return 0;
+}
+
 /** @brief `behaviours.register(name, settings, steer)`: keeps a behaviour in
  * the BehaviourScripts of its upvalue. */
 int registerBehaviour(lua_State* state) {
@@ -210,13 +248,14 @@ int registerBehaviour(lua_State* state) {
   std::vector<LuauSetting> settings = settingsOf(state);
   luaL_checktype(state, REGISTER_STEER_ARGUMENT, LUA_TFUNCTION);
   const int steer = lua_ref(state, REGISTER_STEER_ARGUMENT);
-  scripts.declare(LuauBehaviourParts{.machine = scripts.machine(),
-                                     .name = std::move(name),
-                                     .settings = std::move(settings),
-                                     .steer = steer,
-                                     .reportFailure = scripts.reportFailure(),
-                                     .resumeContext = scripts.resumeContext(),
-                                     .eventBindings = scripts.eventBindings()});
+  scripts.declarations().behaviour(
+      LuauBehaviourParts{.machine = scripts.machine(),
+                         .name = std::move(name),
+                         .settings = std::move(settings),
+                         .steer = steer,
+                         .reportFailure = scripts.reportFailure(),
+                         .resumeContext = scripts.resumeContext(),
+                         .eventBindings = scripts.eventBindings()});
   return 0;
 }
 
@@ -237,7 +276,9 @@ BehaviourScripts::BehaviourScripts(ScriptFailureReport reportFailure)
       engine::ScriptFunction{.name = DESTROY_FUNCTION_NAME,
                              .function = destroyBody},
       engine::ScriptFunction{.name = PRE_HIT_FUNCTION_NAME,
-                             .function = declarePreHit}};
+                             .function = declarePreHit},
+      engine::ScriptFunction{.name = ON_HIT_FUNCTION_NAME,
+                             .function = declareHitHandler}};
   machine_.expose(BEHAVIOURS_TABLE, functions, this);
 }
 
@@ -247,9 +288,7 @@ void BehaviourScripts::run(std::span<const engine::ScriptSource> sources) {
   }
 }
 
-void BehaviourScripts::declare(LuauBehaviourParts parts) {
-  declared_.push_back(std::make_unique<LuauBehaviour>(std::move(parts)));
-}
+LuauDeclarations& BehaviourScripts::declarations() { return declarations_; }
 
 engine::ScriptMachine& BehaviourScripts::machine() { return machine_; }
 
@@ -278,10 +317,7 @@ const ScriptFailureReport& BehaviourScripts::reportFailure() const {
 
 BehaviourRegistry BehaviourScripts::behaviours() {
   BehaviourRegistry registry = builtInBehaviours();
-  for (std::unique_ptr<LuauBehaviour>& behaviour : declared_) {
-    registry.add(std::move(behaviour));
-  }
-  declared_.clear();
+  declarations_.handOverTo(registry);
   return registry;
 }
 

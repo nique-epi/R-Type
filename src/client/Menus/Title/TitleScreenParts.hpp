@@ -2,12 +2,16 @@
 
 #include <cstdint>
 #include <functional>
+#include "IAccountSession.hpp"
+#include "IDeviceLinkFlow.hpp"
 #include "IScreenNavigator.hpp"
 #include "ISoundPlayer.hpp"
 #include "IUpdateNotice.hpp"
+#include "IWallet.hpp"
 #include "MotionPreference.hpp"
 #include "PlayStart.hpp"
 #include "PlayfieldMapping.hpp"
+#include "SignInReturn.hpp"
 #include "SquadronStart.hpp"
 
 namespace rtype::client {
@@ -32,6 +36,18 @@ struct TitleScreenParts {
   /** @brief Settings of the player, read at every repaint: the squadron is
    * painted in the palette of its color mode. They must outlive the screen. */
   std::reference_wrapper<const PlayerSettings> settings;
+  /** @brief The wallet of the account signed in, whose kopecks the title
+   * shows; it must outlive the screen. */
+  std::reference_wrapper<const IWallet> wallet;
+  /** @brief The account the player plays under, whose nickname the account
+   * bar shows; it must outlive the screen. */
+  std::reference_wrapper<IAccountSession> account;
+  /** @brief Closes the session of the account on the master when the player
+   * signs out; it must outlive the screen. */
+  std::reference_wrapper<IDeviceLinkFlow> deviceLinks;
+  /** @brief Where SIGN_IN_SCREEN leads once signed in, which the title
+   * empties before it opens it; it must outlive the screen. */
+  std::reference_wrapper<SignInReturn> signInReturn;
   /** @brief Gives the point of the playfield under a pixel of the window. */
   PlayfieldMapping playfieldPointAt;
   /** @brief MotionPreference::Reduced shows the squadron at rest. */

@@ -4,7 +4,6 @@
 #include <memory>
 #include "KeyPress.hpp"
 #include "MotionPreference.hpp"
-#include "PlayerSettings.hpp"
 #include "PointerEvents.hpp"
 #include "RecordingAudioService.hpp"
 #include "RecordingGameCatalog.hpp"
@@ -17,12 +16,13 @@
 #include "ServerMapScreenParts.hpp"
 #include "ServerMapScreenTestConstants.hpp"
 #include "TimeConstants.hpp"
+#include "Wallet.hpp"
 
 namespace rtype::client::testing {
 
 void ServerMapScreenFixture::openOn(const ServerListSnapshot& list) {
   servers_.show(list);
-  settings_.kopecks = PLAYER_KOPECKS;
+  wallet_.balances = network::Wallet{.kopecks = PLAYER_KOPECKS, .chips = 0};
   screen_ = std::make_unique<ServerMapScreen>(
       ServerMapScreenParts{.navigator = navigator_,
                            .sounds = sounds_,
@@ -31,7 +31,7 @@ void ServerMapScreenFixture::openOn(const ServerListSnapshot& list) {
                            .games = games_,
                            .choice = choice_,
                            .connection = connection_,
-                           .settings = settings_,
+                           .wallet = wallet_,
                            .playfieldPointAt = samePlayfieldPoint,
                            .motion = MotionPreference::Reduced},
       std::make_unique<RecordingInterfaceCanvas>(painting_));
@@ -81,5 +81,7 @@ const ServerChoice& ServerMapScreenFixture::choice() const { return choice_; }
 const InterfaceCanvasRecord& ServerMapScreenFixture::painting() const {
   return painting_;
 }
+
+FakeWallet& ServerMapScreenFixture::wallet() { return wallet_; }
 
 }  // namespace rtype::client::testing

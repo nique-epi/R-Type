@@ -1,0 +1,5 @@
+add_library(rtype_network_master_casino_table STATIC RoulettePhaseDates.cpp)
+
+target_include_directories(rtype_network_master_casino_table PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+rtype_enable_warnings(rtype_network_master_casino_table)

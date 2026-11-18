@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 4.2)
 
-project(r-type VERSION 1.1.1 LANGUAGES CXX)
+project(r-type VERSION 1.2.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -26,6 +26,8 @@ option(RTYPE_MODULE_CHAT "Build the chat module of the games" ON)
 option(RTYPE_MODULE_PLUGINS "Build the loading of plugins: the plugin and plugin-folder commands" ON)
 option(RTYPE_MODULE_ACCOUNTS "Build the accounts and sessions of the master" ON)
 cmake_dependent_option(RTYPE_MODULE_GAME_STATISTICS "Build the game-statistics plugin" ON "RTYPE_MODULE_PLUGINS" OFF)
+cmake_dependent_option(RTYPE_MODULE_WALLET "Build the wallet of the accounts of the master: kopecks, chips and owned looks" ON "RTYPE_MODULE_ACCOUNTS" OFF)
+cmake_dependent_option(RTYPE_MODULE_CASINO "Build the casino of the master: roulette rooms whose rounds follow the clock" ON "RTYPE_MODULE_WALLET" OFF)
 
 add_feature_info(audio RTYPE_MODULE_AUDIO "the sound of the client")
 add_feature_info(metrics RTYPE_MODULE_METRICS "the metrics of the client and of the game processes")
@@ -37,6 +39,8 @@ add_feature_info(chat RTYPE_MODULE_CHAT "the chat of the games")
 add_feature_info(plugins RTYPE_MODULE_PLUGINS "the loading of plugins")
 add_feature_info(accounts RTYPE_MODULE_ACCOUNTS "the accounts and sessions of the master")
 add_feature_info(game-statistics RTYPE_MODULE_GAME_STATISTICS "the game-statistics plugin")
+add_feature_info(wallet RTYPE_MODULE_WALLET "the wallets and owned looks of the accounts of the master")
+add_feature_info(casino RTYPE_MODULE_CASINO "the casino of the master")
 
 if(NOT CMAKE_RUNTIME_OUTPUT_DIRECTORY)
   set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR})

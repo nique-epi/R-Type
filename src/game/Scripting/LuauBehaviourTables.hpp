@@ -2,6 +2,7 @@
 
 #include <span>
 #include <string>
+#include "AppliedHit.hpp"
 #include "BehaviourView.hpp"
 #include "IncomingHit.hpp"
 #include "Intent.hpp"
@@ -16,7 +17,7 @@ namespace rtype::game {
  * `{x, y}` in logical units, times in milliseconds, the values of the settings
  * by their @p settingNames, the action as `{attack, phase}` with the phase
  * named as in PHASE_NAMES, `health_share` the share of its health left, 0 to 1,
- * `enraged` whether it is a boss that enraged, `actions_ended` how many
+ * `enraged` whether it enraged, that is has a Rage, `actions_ended` how many
  * actions it ended, `nearest_ship` and `action` absent when there is none.
  */
 void pushViewTable(lua_State* state, const BehaviourView& view,
@@ -26,6 +27,12 @@ void pushViewTable(lua_State* state, const BehaviourView& view,
  * `missile` the network id of the missile, `offset` where it lies from the
  * center of the body, `{x, y}` in logical units. */
 void pushHitTable(lua_State* state, const IncomingHit& hit);
+
+/** @brief Pushes on @p state the table an on_hit function reads of a hit
+ * applied: `id` the network id of the body hit, `missile` that of the
+ * missile, `damage` the health points it took, `health` those the body has
+ * left, absent for a body without Health, and `destroyed`. */
+void pushAppliedHitTable(lua_State* state, const AppliedHit& hit);
 
 /**
  * @returns The intent the table at @p index of @p state describes, read with

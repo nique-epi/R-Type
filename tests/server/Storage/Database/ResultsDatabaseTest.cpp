@@ -25,7 +25,8 @@ using network::MAXIMUM_LEADERBOARD_ROWS;
 /**
  * Given a finished game
  * When it is saved
- * Then its row holds what the issue lists: a game identifier, an empty account,
+ * Then its row holds what the issue lists: a game identifier, an empty account
+ * and no ticket for a guest,
  * the score, the deaths, the date, the difficulty and the count of players, not
  * vanilla, and not sent to the master
  */
@@ -33,7 +34,8 @@ TEST_F(ResultsDatabaseFixture, SavesARowWithEveryFieldOfTheResult) {
   ResultsDatabase database{file()};
   database.save(normalGame({PlayerResult{.nickname = std::string{ACE},
                                          .score = HIGH_SCORE,
-                                         .deaths = TWO_DEATHS}},
+                                         .deaths = TWO_DEATHS,
+                                         .wonLooks = {}}},
                            SOME_DATE));
 
   const SQLite::Database reader{file().string()};
@@ -41,6 +43,7 @@ TEST_F(ResultsDatabaseFixture, SavesARowWithEveryFieldOfTheResult) {
   ASSERT_TRUE(row.executeStep());
   EXPECT_EQ(row.getColumn("game_id").getString().size(), GAME_ID_SIZE);
   EXPECT_TRUE(row.getColumn("account_id").isNull());
+  EXPECT_TRUE(row.getColumn("ticket").isNull());
   EXPECT_EQ(row.getColumn("score").getUInt(), HIGH_SCORE);
   EXPECT_EQ(row.getColumn("deaths").getUInt(), TWO_DEATHS);
   EXPECT_EQ(row.getColumn("played_at").getInt64(),
@@ -184,6 +187,34 @@ TEST_F(ResultsDatabaseFixture, ListsEachPlayerOnceWithTheirBestScore) {
   ASSERT_EQ(answer.rows.size(), 1U);
   EXPECT_EQ(answer.rows.at(0).score, HIGH_SCORE);
   EXPECT_EQ(answer.rows.at(0).playedAt, LATER_DATE.time_since_epoch().count());
+}
+
+/**
+ * Given ACE, who played two games under two game tickets, and BOB, who played
+ * under the first of those tickets
+ * When the leaderboard is read
+ * Then ACE appears once, with its best score, and BOB once: the server ranks
+ * nicknames, and reads no ticket
+ */
+TEST_F(ResultsDatabaseFixture, RanksANicknameOnceWhateverItsTickets) {
+  ResultsDatabase database{file()};
+  PlayerResult first = playerNamed(ACE, LOW_SCORE);
+  first.ticket = std::string{SAVED_TICKET};
+  PlayerResult second = playerNamed(ACE, HIGH_SCORE);
+  second.ticket = std::string{OTHER_SAVED_TICKET};
+  PlayerResult other = playerNamed(BOB, MIDDLE_SCORE);
+  other.ticket = std::string{SAVED_TICKET};
+  database.save(normalGame({first}, SOME_DATE));
+  database.save(normalGame({second}, LATER_DATE));
+  database.save(normalGame({other}, EVEN_LATER_DATE));
+
+  const LeaderboardAnswer answer =
+      database.leaderboard(normalBoard(), std::string{STRANGER});
+
+  ASSERT_EQ(answer.rows.size(), 2U);
+  EXPECT_EQ(answer.rows.at(0).nickname, ACE);
+  EXPECT_EQ(answer.rows.at(0).score, HIGH_SCORE);
+  EXPECT_EQ(answer.rows.at(1).nickname, BOB);
 }
 
 /**
@@ -358,12 +389,14 @@ TEST_F(ResultsDatabaseFixture, AddsUpEveryGameOfAPlayerInItsStatistics) {
   ResultsDatabase database{file()};
   database.save(normalGame({PlayerResult{.nickname = std::string{ACE},
                                          .score = LOW_SCORE,
-                                         .deaths = TWO_DEATHS}},
+                                         .deaths = TWO_DEATHS,
+                                         .wonLooks = {}}},
                            SOME_DATE));
   GameResult hard =
       normalGame({PlayerResult{.nickname = std::string{ACE_IN_LOWERCASE},
                                .score = MIDDLE_SCORE,
-                               .deaths = ONE_DEATH}},
+                               .deaths = ONE_DEATH,
+                               .wonLooks = {}}},
                  LATER_DATE);
   hard.difficulty = std::string{HARD};
   database.save(hard);

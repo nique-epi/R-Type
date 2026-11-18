@@ -427,9 +427,9 @@ A route reads an `ApiRequest` (the body, the key of an `Authorization: Bearer` h
 
 ## Content pack: `encodeContentPack`, `decodeContentPack`
 
-`src/network/Content/` holds what a client and a supervisor share of the content pack, the file of sheets and sprite sheets a client downloads when it lacks the content of a server (see [Protocol](/R-Type/protocol/#content-pack)). It needs neither Asio nor the game: the files come as `identifiers::ContentFile`, a path and its bytes, which `game::contentFilesIn()` lists from the assets folder and the resources a server starts.
+`src/network/Content/` holds what a client and a supervisor share of the content pack, the file of sheets, sprite sheets and backgrounds a client downloads when it lacks the content of a server (see [Protocol](/R-Type/protocol/#content-pack)). It needs neither Asio nor the game: the files come as `identifiers::ContentFile`, a path and its bytes, which `game::contentFilesIn()` lists from the assets folder and the resources a server starts.
 
-- `encodeContentPack(files)` writes the pack; it throws when a path fails `isContentPath()`, the paths are not in strict order, there are more than `MAXIMUM_CONTENT_PACK_FILES` (64), or the pack would pass `MAXIMUM_CONTENT_PACK_BYTES` (8 MiB).
+- `encodeContentPack(files)` writes the pack; it throws when a path fails `isContentPath()`, the paths are not in strict order, there are more than `MAXIMUM_CONTENT_PACK_FILES` (510), or the pack would pass `MAXIMUM_CONTENT_PACK_BYTES` (8 MiB).
 - `decodeContentPack(pack)` reads one back, every count and size bounded before it is read, and throws an `InvalidContentPackException` for a pack the rules refuse, or `BufferUnderflowException` for one cut short.
 - `contentFingerprintOf(pack)` is the `ContentFingerprint` of the bytes, `hashOf()` in the context `CONTENT_FINGERPRINT_CONTEXT` (`rtpack01`); `fingerprintText()` and `fingerprintFromText()` write and read it as 64 lowercase hexadecimal digits.
 - `ContentAnnouncement` is what a `ConnectionAccepted` carries of it: the fingerprint, the size and the TCP port. `CONTENT_PACK_ROUTE` (`ContentRouteConstants.hpp`) is the route a supervisor serves it at, `GET /api/packs/:fingerprint`, and `contentPackPathOf(fingerprint)` the path a client asks for.
@@ -538,7 +538,7 @@ After the line of a bot, the report gives one line for each game in which the bo
 | `bot alive … s` | How long the bot had a life left while the boss fought. |
 | `… lives lost` | The lives the bot lost while the boss fought, not those it lost before: a bot that came to the boss with fewer lives is out after fewer. |
 
-The health of the boss grows with the players, 25 % for each one past the first (see [Server and game](/R-Type/server/#boss-bossstage-and-bossphasesystem)), so two runs are compared with the same number of bots. `--boss` starts every game at its boss but keeps the ships invulnerable, so it tells nothing of how long a bot lives. To meet the boss with ships that can die, a resource lays a short level over `normal`, one Bydo then the Bydo Tyrant (see [Waves of a resource](/R-Type/waves-file/#waves-of-a-resource)):
+The health of the boss grows with the players, 25 % for each one past the first (see [Server and game](/R-Type/server/#boss-bosssystem-and-bossstage)), so two runs are compared with the same number of bots. `--boss` starts every game at its boss but keeps the ships invulnerable, so it tells nothing of how long a bot lives. To meet the boss with ships that can die, a resource lays a short level over `normal`, one Bydo then the Bydo Tyrant (see [Waves of a resource](/R-Type/waves-file/#waves-of-a-resource)):
 
 ```toml
 # resources/boss-duel/waves/waves.toml

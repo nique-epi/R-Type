@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+#include "Bounds.hpp"
 #include "ISystem.hpp"
 #include "TimeConstants.hpp"
 
@@ -16,8 +18,11 @@ namespace rtype::game {
  * a SteadyMotion; an entity with neither does not move.
  *
  * An entity with a ShipMotion moves by the directions its Intent holds, as
- * shipAfter() computes it, whichever controller wrote the Intent; it is kept
- * inside the playfield.
+ * shipAfter() computes it, whichever controller wrote the Intent; it is then
+ * stopped against the boxes of every Obstacle whose contact is blocking
+ * (collectBlockingBoxes(), blockedByObstacles()), and kept inside the
+ * playfield: a ship a wall pushes past an edge stays over the wall, which
+ * CollisionRules then turns into a contact.
  *
  * An entity with a SteadyMotion moves by its top speed times the share its
  * Intent asks for on each axis, a share beyond FULL_STEERING counting as
@@ -29,6 +34,11 @@ class MovementSystem final : public engine::ISystem {
  public:
   void update(engine::ComponentRegistry& components,
               engine::Duration elapsed) override;
+
+ private:
+  /** @brief The boxes of the blocking obstacles of the update in progress,
+   * kept so their room is reused from one update to the next. */
+  std::vector<engine::Bounds> blockingBoxes_;
 };
 
 }  // namespace rtype::game

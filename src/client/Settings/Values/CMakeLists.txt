@@ -6,4 +6,5 @@ target_link_libraries(rtype_client_settings_values
   INTERFACE
     rtype_client_input_keys
     rtype_identifiers
+    rtype_network_master_economy
 )

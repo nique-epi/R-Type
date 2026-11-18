@@ -1,25 +1,13 @@
 #include <gtest/gtest.h>
-#include <cstddef>
 #include <cstdint>
 #include <vector>
 #include "ConnectedPlayer.hpp"
 #include "EntityIdConstants.hpp"
 #include "LookItemKeeperFixture.hpp"
+#include "LookItemKeeperTestConstants.hpp"
 #include "LookItemWon.hpp"
 
 namespace rtype::server::testing {
-
-namespace {
-
-/** @brief The seats of the tests, from 0. */
-constexpr std::size_t FIRST_SEAT = 0;
-constexpr std::size_t SECOND_SEAT = 1;
-
-/** @brief The number of the crown among the items of the locker: its place
- * in the catalog, 2, plus one. */
-constexpr std::uint8_t CROWN_NUMBER = 3;
-
-}  // namespace
 
 /**
  * Given the ships of players 1 and 2 and a crown, and the touches published
@@ -41,6 +29,37 @@ TEST_F(LookItemKeeperFixture,
   EXPECT_EQ(wonBy(FIRST_SEAT),
             (std::vector<network::LookItemWon>{{.item = CROWN_NUMBER}}));
   EXPECT_TRUE(wonBy(SECOND_SEAT).empty());
+}
+
+/**
+ * Given the ship of player 1 and a crown it touched, delivered
+ * When the keeper runs its next tick
+ * Then player 1 keeps the crown among the items it won in the game
+ */
+TEST_F(LookItemKeeperFixture, TheWinnerKeepsTheItemForTheResults) {
+  const ConnectedPlayer& first = join(FIRST_SEAT);
+  publishTouch(first, spawnACrown());
+  deliver();
+
+  tick();
+
+  EXPECT_EQ(first.wonLookNumbers, (std::vector<std::uint8_t>{CROWN_NUMBER}));
+}
+
+/**
+ * Given the ship of player 1 and two crowns it touched in one tick, delivered
+ * When the keeper runs its next tick
+ * Then player 1 keeps the crown once among the items it won
+ */
+TEST_F(LookItemKeeperFixture, AnItemWonTwiceIsKeptOnce) {
+  const ConnectedPlayer& first = join(FIRST_SEAT);
+  publishTouch(first, spawnACrown());
+  publishTouch(first, spawnACrown());
+  deliver();
+
+  tick();
+
+  EXPECT_EQ(first.wonLookNumbers, (std::vector<std::uint8_t>{CROWN_NUMBER}));
 }
 
 /**

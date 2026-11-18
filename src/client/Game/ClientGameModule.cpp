@@ -27,10 +27,13 @@ namespace rtype::client {
 namespace {
 
 /** @returns The assets of a game, with the sprite sheet of every entity
- * appearance of the content of the session (see withEntitySheets()). */
+ * appearance of the content of the session (see withEntitySheets()) and the
+ * images of the backgrounds its pack brings (see withBackgroundImages()). */
 AssetList gameAssetsOf(const ScreenContext& context) {
-  return withEntitySheets(gameAssets(),
-                          context.services.entityTable.get().appearances());
+  return withBackgroundImages(
+      withEntitySheets(gameAssets(),
+                       context.services.entityTable.get().appearances()),
+      context.services.sessionBackgrounds.get().backgrounds().get());
 }
 
 /** @returns The loading screen of gameAssetsOf() while some are not loaded,
@@ -48,7 +51,6 @@ std::unique_ptr<IScreen> buildGameScreen(const ScreenContext& context,
   return std::make_unique<GameScreen>(
       GameScreenParts{.navigator = context.navigator.get(),
                       .settings = context.services.settings.get(),
-                      .settingsService = context.services.settingsService.get(),
                       .inputs = connection,
                       .entityMessages = context.services.entityMessages.get(),
                       .serverTicks = context.services.serverTicks.get(),

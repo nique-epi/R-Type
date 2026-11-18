@@ -11,6 +11,7 @@
 #include "EntityTypeLook.hpp"
 #include "FixedEntityTypeSourceConstants.hpp"
 #include "MaskPixel.hpp"
+#include "ObstacleContact.hpp"
 #include "PixelMask.hpp"
 #include "ShipGun.hpp"
 
@@ -53,6 +54,8 @@ std::optional<EntityType> sideNumbered(std::uint8_t number) {
       return EntityType::Player;
     case rtype::client::testing::LOOK_ITEM_TYPE_NUMBER:
       return EntityType::LookItem;
+    case rtype::client::testing::BLOCKING_WALL_TYPE_NUMBER:
+      return EntityType::Obstacle;
     default:
       return std::nullopt;
   }
@@ -69,6 +72,7 @@ rtype::game::CollisionBox boxOfSide(EntityType side) {
       return rtype::client::testing::ENEMY_MISSILE_BOX;
     case EntityType::Enemy:
     case EntityType::LookItem:
+    case EntityType::Obstacle:
       return rtype::client::testing::BYDO_BOX;
   }
   return rtype::client::testing::BYDO_BOX;
@@ -81,6 +85,16 @@ std::span<const rtype::game::CollisionBox> partsNumbered(std::uint8_t number) {
     return rtype::client::testing::TWO_BOX_ENEMY_PARTS;
   }
   return {};
+}
+
+/** @returns What the type the double numbers @p number does to a ship: the
+ * blocking wall blocks it; nothing for any other type. */
+std::optional<rtype::game::ObstacleContact> obstacleNumbered(
+    std::uint8_t number) {
+  if (number == rtype::client::testing::BLOCKING_WALL_TYPE_NUMBER) {
+    return rtype::game::ObstacleContact::Blocking;
+  }
+  return std::nullopt;
 }
 
 /** @returns The mask of the hollow enemy: HOLLOW_ENEMY_SIDE pixels a side,
@@ -131,6 +145,7 @@ const EntityAppearance& appearanceOfSide(EntityType side) {
       return enemyMissile;
     case EntityType::Enemy:
     case EntityType::LookItem:
+    case EntityType::Obstacle:
       break;
   }
   return bydo;
@@ -146,7 +161,8 @@ std::optional<EntityTypeLook> FixedEntityTypeSource::lookOf(
                         .appearance = appearanceOfSide(*side),
                         .hitbox = boxOfSide(*side),
                         .hitboxParts = partsNumbered(number),
-                        .mask = maskNumbered(number)};
+                        .mask = maskNumbered(number),
+                        .obstacle = obstacleNumbered(number)};
 }
 
 rtype::game::ShipGun FixedEntityTypeSource::shipGun() const {

@@ -32,7 +32,8 @@ void RecordingServerConnection::connect(
                     .server = server,
                     .nickname = std::string(nickname),
                     .game = request.game,
-                    .rules = request.rules});
+                    .rules = request.rules,
+                    .ticket = request.ticket});
 }
 
 void RecordingServerConnection::cancel() {

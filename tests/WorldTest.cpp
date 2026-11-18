@@ -11,6 +11,7 @@
 #include "ComponentRegistry.hpp"
 #include "Entity.hpp"
 #include "EntityIdConstants.hpp"
+#include "EntitySheet.hpp"
 #include "EntityType.hpp"
 #include "EntityTypeNumber.hpp"
 #include "EntityTypesTestConstants.hpp"
@@ -19,6 +20,7 @@
 #include "Intent.hpp"
 #include "Lives.hpp"
 #include "LookItem.hpp"
+#include "MissileDamage.hpp"
 #include "MissileOwner.hpp"
 #include "NetworkIdentity.hpp"
 #include "Pilot.hpp"
@@ -34,16 +36,20 @@
 
 using rtype::game::STRAIGHT_BEHAVIOUR_NAME;
 using rtype::game::WEAVE_BEHAVIOUR_NAME;
+using rtype::game::testing::A_SINGLE_HEALTH_POINT;
 using rtype::game::testing::AWAY_FROM_THE_ORIGIN;
 using rtype::game::testing::behaviourNameOf;
 using rtype::game::testing::BYDO_SHOT_INTERVAL_TICKS;
 using rtype::game::testing::BYDO_UNITS_PER_SECOND;
 using rtype::game::testing::componentOf;
 using rtype::game::testing::DRIFTER_SHEET;
+using rtype::game::testing::EIGHTY_HEALTH_POINTS;
 using rtype::game::testing::ENEMY_MISSILE_SHEET;
 using rtype::game::testing::ENEMY_MISSILE_UNITS_PER_SECOND;
+using rtype::game::testing::FORTY_PERCENT;
 using rtype::game::testing::LOOK_CROWN_SHEET;
 using rtype::game::testing::MISSILE_UNITS_PER_SECOND;
+using rtype::game::testing::ONE_PERCENT;
 using rtype::game::testing::OTHER_X;
 using rtype::game::testing::OTHER_Y;
 using rtype::game::testing::pilotSettingsOf;
@@ -57,6 +63,7 @@ using rtype::game::testing::REQUIRED_PLAYER_MISSILE_WIDTH;
 using rtype::game::testing::REQUIRED_RIGHT_HEADING;
 using rtype::game::testing::REQUIRED_WEAVER_POINTS;
 using rtype::game::testing::SECOND_PLAYER_NUMBER;
+using rtype::game::testing::SHEET_DAMAGE_POINTS;
 using rtype::game::testing::SHIP_SHEET;
 using rtype::game::testing::SHIP_SHOT_INTERVAL_TICKS;
 using rtype::game::testing::shippedEntitySheets;
@@ -65,6 +72,7 @@ using rtype::game::testing::SOME_Y;
 using rtype::game::testing::STEERING_ORIGIN;
 using rtype::game::testing::THREE_HEALTH_POINTS;
 using rtype::game::testing::THREE_LIVES;
+using rtype::game::testing::TWO_HUNDRED_HEALTH_POINTS;
 using rtype::game::testing::WEAVER_SHEET;
 
 /**
@@ -346,6 +354,49 @@ TEST(World, SpawnedBydoHasThreeHealthPoints) {
         EXPECT_EQ(health.points, THREE_HEALTH_POINTS);
       });
   EXPECT_EQ(bydosWithHealth, 1);
+}
+
+/**
+ * Given a sheet that gives 200 health points
+ * When a body of it is placed at 40 percent of its health
+ * Then it has 80 health points, all of them
+ */
+TEST(World, APlacedBodyHasThePercentOfTheHealthOfItsSheet) {
+  rtype::game::World world;
+  rtype::game::EntitySheet sheet = shippedEntitySheets().named(DRIFTER_SHEET);
+  sheet.health = TWO_HUNDRED_HEALTH_POINTS;
+  const rtype::game::Position place{.x = SOME_X, .y = SOME_Y};
+
+  const std::uint32_t entityId = world.spawnFrom(
+      sheet,
+      rtype::game::BodyPlacement{
+          .position = place, .origin = place, .healthPercent = FORTY_PERCENT});
+
+  const rtype::game::Health health =
+      componentOf<rtype::game::Health>(world, entityId)
+          .value_or(rtype::game::Health{});
+  EXPECT_EQ(health.points, EIGHTY_HEALTH_POINTS);
+  EXPECT_EQ(health.full, EIGHTY_HEALTH_POINTS);
+}
+
+/**
+ * Given the sheet of a Drifter, which gives three health points
+ * When a body of it is placed at one percent of its health
+ * Then it has one health point: a percent never leaves a body without any
+ */
+TEST(World, AHealthPercentLeavesABodyOnePointAtLeast) {
+  rtype::game::World world;
+  const rtype::game::Position place{.x = SOME_X, .y = SOME_Y};
+
+  const std::uint32_t entityId = world.spawnFrom(
+      shippedEntitySheets().named(DRIFTER_SHEET),
+      rtype::game::BodyPlacement{
+          .position = place, .origin = place, .healthPercent = ONE_PERCENT});
+
+  EXPECT_EQ(componentOf<rtype::game::Health>(world, entityId)
+                .value_or(rtype::game::Health{})
+                .points,
+            A_SINGLE_HEALTH_POINT);
 }
 
 /**
@@ -896,4 +947,41 @@ TEST(World, ASpawnedBodyCarriesTheCollisionFilterOfItsSheet) {
       componentOf<rtype::engine::CollisionFilter>(world, drifter);
   ASSERT_TRUE(filter.has_value());
   EXPECT_EQ(filter.value_or(rtype::engine::CollisionFilter{}), ENEMY_FILTER);
+}
+
+/**
+ * Given the sheet of the missile of a player made to take 3 health points
+ * When a missile of that sheet is spawned
+ * Then it carries a MissileDamage of 3
+ */
+TEST(World, GivesAMissileTheDamageOfItsSheet) {
+  rtype::game::World world;
+  rtype::game::EntitySheet sheet =
+      shippedEntitySheets().named(PLAYER_MISSILE_SHEET);
+  sheet.damage = SHEET_DAMAGE_POINTS;
+
+  const std::uint32_t missileId =
+      world.spawn(sheet, rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+
+  const std::optional<rtype::game::MissileDamage> damage =
+      componentOf<rtype::game::MissileDamage>(world, missileId);
+  ASSERT_TRUE(damage.has_value());
+  EXPECT_EQ(damage.value_or(rtype::game::MissileDamage{}).points,
+            SHEET_DAMAGE_POINTS);
+}
+
+/**
+ * Given the shipped sheet of the missile of a player, which names no damage
+ * When a missile of that sheet is spawned
+ * Then it carries no MissileDamage: it takes MISSILE_DAMAGE
+ */
+TEST(World, AMissileWhoseSheetNamesNoDamageCarriesNone) {
+  rtype::game::World world;
+
+  const std::uint32_t missileId =
+      world.spawn(shippedEntitySheets().named(PLAYER_MISSILE_SHEET),
+                  rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+
+  EXPECT_FALSE(
+      componentOf<rtype::game::MissileDamage>(world, missileId).has_value());
 }

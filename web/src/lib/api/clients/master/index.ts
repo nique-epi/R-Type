@@ -7,6 +7,7 @@ import { problemSchema } from '../../schemas/master';
 import {
   leaderboardEndpointsSchema,
   serversEndpointsSchema,
+  sessionsEndpointsSchema,
   usersEndpointsSchema,
 } from './endpoints';
 
@@ -22,6 +23,7 @@ const MASTER_TIMEOUT_MILLISECONDS = 5000;
 const masterSchema = createSchema({
   ...leaderboardEndpointsSchema,
   ...serversEndpointsSchema,
+  ...sessionsEndpointsSchema,
   ...usersEndpointsSchema,
 });
 

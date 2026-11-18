@@ -5,20 +5,22 @@
 #include <SFML/Window/Event.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <optional>
 #include <string>
+#include "AccountLinkConstants.hpp"
 #include "AmbienceScope.hpp"
 #include "IAudioService.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "IScreen.hpp"
 #include "IScreenNavigator.hpp"
 #include "ISoundPlayer.hpp"
+#include "IWallet.hpp"
 #include "KeyChip.hpp"
 #include "MotionPreference.hpp"
 #include "PlayfieldMapping.hpp"
 #include "PurchaseTicket.hpp"
-#include "SettingsService.hpp"
 #include "ShopScreenParts.hpp"
 #include "ShopSelection.hpp"
 #include "ShopWares.hpp"
@@ -36,10 +38,13 @@ namespace rtype::client {
  * price; the arrows, the wheel and the pointer choose a ware (see
  * ShopSelection). Enter, once per hold, or a click on a ware shows its sales
  * slip (see PurchaseTicket), which takes every event while it shows; its BUY
- * buys the ware: its price leaves the kopecks, the ware joins the locker of
- * the hangar, and the settings are saved. A ware the player owns is refused
- * at once, and one the player cannot pay is refused once BUY is pressed, on
- * the status line. Escape or BACK closes the shop. It hides the screens
+ * asks the master to buy the ware for the account signed in (see IWallet):
+ * the slip ignores every event until the master answers, then is stamped
+ * paid, the price gone from the kopecks and the ware in the locker of the
+ * hangar, or closes, the status line saying why. A ware the player owns is
+ * refused at once, and one the player cannot pay is refused once BUY is
+ * pressed, from the balances the master read last. The shop reads the wallet
+ * again when it opens. Escape or BACK closes the shop. It hides the screens
  * below.
  *
  * The shopkeeper breathes, blinks and glances around behind his counter,
@@ -80,12 +85,14 @@ class ShopScreen final : public IScreen {
   /** @brief Shows the sales slip of the chosen ware, or says at once why it
    * cannot be bought when the player owns it or it is not for sale. */
   void offer();
-  /** @brief Buys the chosen ware, or says on the status line why not.
-   * @returns Whether it was bought. */
+  /** @brief Asks the master to buy the chosen ware, or says on the status
+   * line why not.
+   * @returns Whether it was asked. */
   bool buy();
+  /** @brief Shows the answer of the master to the purchase asked, once it
+   * came: the slip stamped paid, or closed with the reason. */
+  void settle();
   void repaint();
-  /** @returns The chosen ware, a position in SHIP_LOOK_ITEM_NAMES. */
-  [[nodiscard]] std::size_t chosenItem() const;
 
   IScreenNavigator* navigator_;
   ISoundPlayer* sounds_;
@@ -93,7 +100,7 @@ class ShopScreen final : public IScreen {
   /** @brief Plays the music of the shop for as long as the shop lives, then
    * gives the screen below its ambience back. */
   AmbienceScope music_;
-  SettingsService* settings_;
+  IWallet* wallet_;
   MotionPreference motion_;
   /** @brief What the shopkeeper says over his head. */
   ShopkeeperSpeech speech_;
@@ -112,6 +119,10 @@ class ShopScreen final : public IScreen {
   std::optional<sf::Keyboard::Key> heldKey_;
   /** @brief The sales slip of the ware offered, while it shows. */
   PurchaseTicket ticket_;
+  /** @brief The purchase the master has not answered yet, NO_ACCOUNT_ASK
+   * when none, and the ware it buys. */
+  std::uint64_t purchaseAsk_{NO_ACCOUNT_ASK};
+  std::size_t purchaseItem_{};
 };
 
 }  // namespace rtype::client

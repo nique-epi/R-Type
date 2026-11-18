@@ -5,6 +5,7 @@
 #include "ByteWriter.hpp"
 #include "ConnectionRequest.hpp"
 #include "GameRules.hpp"
+#include "GameTicket.hpp"
 #include "ProtocolTestConstants.hpp"
 
 namespace rtype::network::testing {
@@ -33,7 +34,8 @@ GameRules hardRulesWithFriendlyFire() {
                    .friendlyFire = true};
 }
 
-void writeAnyGameChoice(ByteWriter& writer) {
+void writeGuestAskingForAnyGame(ByteWriter& writer) {
+  writer.writeBytes(GUEST_TICKET.bytes);
   writer.writeUint8(ANY_GAME_KIND_BYTE);
   writer.writeUint16(NO_NAMED_GAME);
 }
@@ -41,6 +43,7 @@ void writeAnyGameChoice(ByteWriter& writer) {
 void writeRequestFor(ByteWriter& writer, const GameChoice& game) {
   writer.writeUint64(SOME_COOKIE);
   writer.writeString(ONE_BYTE_NICKNAME);
+  writer.writeBytes(GUEST_TICKET.bytes);
   writer.writeUint8(static_cast<std::uint8_t>(game.kind));
   writer.writeUint16(game.number);
 }

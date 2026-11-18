@@ -24,6 +24,7 @@ void ConnectionAttempt::sendRequest(ISessionOutbox& outbox) {
   sendMessage(outbox,
               network::ConnectionRequest{.cookie = cookie_,
                                          .nickname = nickname_,
+                                         .ticket = request_.ticket,
                                          .game = request_.game,
                                          .rules = rulesSentFor(request_)});
   sinceRequest_ = engine::Duration::zero();

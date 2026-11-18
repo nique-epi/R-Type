@@ -4,7 +4,6 @@
 #include <span>
 #include "BehaviourView.hpp"
 #include "BodyMasks.hpp"
-#include "Boss.hpp"
 #include "CollisionBox.hpp"
 #include "ComponentRegistry.hpp"
 #include "CurrentAction.hpp"
@@ -20,6 +19,7 @@
 #include "Pilot.hpp"
 #include "PilotConstants.hpp"
 #include "Position.hpp"
+#include "Rage.hpp"
 #include "SheetVisualNames.hpp"
 #include "ShownLook.hpp"
 #include "SteadyMotion.hpp"
@@ -101,9 +101,6 @@ void reshapeAsAsked(engine::ComponentRegistry& components, engine::Entity body,
   }
 }
 
-/** @returns Whether @p boss enraged; false for a body that is no boss. */
-bool isEnraged(const Boss* boss) { return boss != nullptr && boss->enraged; }
-
 /** @returns @p view with what the components of @p body tell of it: its
  * health, its rage, the actions it ended and its network id, and with the
  * body itself, for a behaviour that reaches its components. */
@@ -113,7 +110,7 @@ BehaviourView withConditionOf(BehaviourView view,
   const Health* const health = components.get<Health>(body);
   view.wounded = isWounded(health);
   view.healthShare = healthShareOf(health);
-  view.enraged = isEnraged(components.get<Boss>(body));
+  view.enraged = components.has<Rage>(body);
   const CurrentAction* const current = components.get<CurrentAction>(body);
   view.actionsEnded = current == nullptr ? 0U : current->ended;
   const NetworkIdentity* const identity = components.get<NetworkIdentity>(body);

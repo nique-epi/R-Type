@@ -34,6 +34,28 @@ constexpr std::string_view PORT_SETTING_NAME = "port";
 constexpr std::string_view DATABASE_SETTING_NAME = "database";
 constexpr std::string_view SITE_KEY_SETTING_NAME = "site-key";
 
+/** @brief The setting of the module accounts: the address of the web site,
+ * whose page `/link` validates the device links. */
+constexpr std::string_view SITE_URL_SETTING_NAME = "site-url";
+
+/** @brief The settings of the module wallet: what a wallet holds when it
+ * opens, at the first read of an account. */
+constexpr std::string_view WALLET_STARTING_KOPECKS_SETTING_NAME =
+    "wallet-starting-kopecks";
+constexpr std::string_view WALLET_STARTING_CHIPS_SETTING_NAME =
+    "wallet-starting-chips";
+
+/** @brief The settings of the module casino: how many roulette rooms it runs,
+ * the players each seats, and how long each phase of a round lasts. */
+constexpr std::string_view CASINO_ROOMS_SETTING_NAME = "casino-rooms";
+constexpr std::string_view CASINO_SEATS_SETTING_NAME = "casino-seats";
+constexpr std::string_view CASINO_BETTING_SECONDS_SETTING_NAME =
+    "casino-betting-seconds";
+constexpr std::string_view CASINO_SPINNING_SECONDS_SETTING_NAME =
+    "casino-spinning-seconds";
+constexpr std::string_view CASINO_RESULT_SECONDS_SETTING_NAME =
+    "casino-result-seconds";
+
 /** @brief Every setting of the master, in the order its usage lists them. */
 constexpr std::array MASTER_SETTING_NAMES{
     PORT_SETTING_NAME, DATABASE_SETTING_NAME, SITE_KEY_SETTING_NAME};

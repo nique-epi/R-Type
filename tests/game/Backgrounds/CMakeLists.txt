@@ -1,0 +1,1 @@
+rtype_add_test(NAME game_backgrounds_tests SOURCES BackgroundFilesTest.cpp LIBS rtype_game_backgrounds rtype_engine_exceptions rtype_test_support)

@@ -1,1 +1,1 @@
-target_sources(master_tests PRIVATE MasterClientTest.cpp MasterClientFixture.cpp)
+target_sources(master_tests PRIVATE MasterClientTest.cpp MasterClientFixture.cpp MasterAccountClientTest.cpp MasterAccountClientFixture.cpp MasterAccountClientFixtures.cpp MasterCasinoClientTest.cpp MasterCasinoClientFixture.cpp)

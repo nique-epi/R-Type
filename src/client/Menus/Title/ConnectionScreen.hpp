@@ -13,6 +13,7 @@
 #include "IScreenNavigator.hpp"
 #include "IServerConnection.hpp"
 #include "ISoundPlayer.hpp"
+#include "JoinTicketWait.hpp"
 #include "Menu.hpp"
 #include "PlayfieldMapping.hpp"
 #include "ServerChoice.hpp"
@@ -42,14 +43,16 @@ namespace rtype::client {
  * MENU_CONFIRM_KEY on a field, or CONNECT, checks the fields: an address that
  * is not IPv4, a port outside LOWEST_PORT to HIGHEST_PORT or an empty nickname
  * is named on the status line, and the attempt in progress is dropped without a
- * new one. Otherwise a new attempt replaces it. At each update the status line
- * shows the status of the connection. A screen of the server map whose server
- * answers that it is full starts the attempt again, with the same nickname, on
- * the next server QUICK PLAY kept (ServerChoice::nextServers), until one takes
- * the player or none is left, and shows the refusal of the last one only. Once
- * the server has accepted the player
- * for ACCEPTED_STATUS_DURATION, the screen follows its ConnectionGoal, once per
- * attempt: it opens the waiting room over itself, or closes. BACK, or
+ * new one. Otherwise a new attempt replaces it: at once for a guest; for a
+ * signed-in player once the master gave it a game ticket, or as a guest after
+ * TICKET_WAIT (JoinTicketWait), the status line saying CONNECTING meanwhile. At
+ * each update the status line shows the status of the connection. A screen of
+ * the server map whose server answers that it is full starts the attempt again,
+ * with the same nickname, on the next server QUICK PLAY kept
+ * (ServerChoice::nextServers), until one takes the player or none is left, and
+ * shows the refusal of the last one only. Once the server has accepted the
+ * player for ACCEPTED_STATUS_DURATION, the screen follows its ConnectionGoal,
+ * once per attempt: it opens the waiting room over itself, or closes. BACK, or
  * MENU_CANCEL_KEY, drops the attempt and closes the screen.
  */
 class ConnectionScreen : public IScreen {
@@ -110,6 +113,7 @@ class ConnectionScreen : public IScreen {
   std::string_view fieldProblem_;
   engine::Duration acceptedFor_{};
   bool goalReached_ = false;
+  JoinTicketWait ticketWait_;
   Menu menu_;
 };
 

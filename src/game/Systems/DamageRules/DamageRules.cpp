@@ -2,8 +2,8 @@
 #include <algorithm>
 #include <cstdint>
 #include <optional>
-#include "Boss.hpp"
-#include "BossHealthChanged.hpp"
+#include "AppliedHit.hpp"
+#include "Armored.hpp"
 #include "ComponentRegistry.hpp"
 #include "CurrentAction.hpp"
 #include "DamageConstants.hpp"
@@ -14,6 +14,9 @@
 #include "EventBus.hpp"
 #include "Fragile.hpp"
 #include "Health.hpp"
+#include "HitReaction.hpp"
+#include "IHitHandler.hpp"
+#include "MissileDamage.hpp"
 #include "MissileHit.hpp"
 #include "MissileOwner.hpp"
 #include "NetworkIdentity.hpp"
@@ -53,28 +56,45 @@ std::optional<std::uint8_t> shooterOf(engine::ComponentRegistry& components,
   return owner->playerNumber;
 }
 
-/** @returns Whether @p target is a boss in any phase of its arrival. */
+/** @returns Whether @p target is Armored and in any phase of the attack it
+ * is armored in. */
 bool isArmored(engine::ComponentRegistry& components, engine::Entity target) {
-  const auto* const boss = components.get<Boss>(target);
+  const auto* const armored = components.get<Armored>(target);
   const auto* const current = components.get<CurrentAction>(target);
-  return boss != nullptr && current != nullptr && current->key.has_value() &&
-         current->key->attack == boss->arrivalAttack;
+  return armored != nullptr && current != nullptr && current->key.has_value() &&
+         current->key->attack == armored->attack;
 }
 
-/** @returns What a hit takes from @p target, which has @p health: nothing
- * while it is armored, MISSILE_DAMAGE, or every point left while @p target is
- * Fragile and in the action it is fragile in. */
+/** @returns The points @p missile takes from what it hits: those of its
+ * MissileDamage, MISSILE_DAMAGE without one. */
+int missileDamageOf(engine::ComponentRegistry& components,
+                    engine::Entity missile) {
+  const auto* const damage = components.get<MissileDamage>(missile);
+  return damage == nullptr ? MISSILE_DAMAGE : damage->points;
+}
+
+/** @returns What a hit dealing @p dealt takes from @p target, which has
+ * Health: nothing while it is armored, every point left while it is Fragile
+ * and in the action it is fragile in, @p dealt otherwise. */
 int damageOf(engine::ComponentRegistry& components, engine::Entity target,
-             const Health& health) {
+             int dealt) {
   if (isArmored(components, target)) {
     return 0;
   }
   const auto* const fragile = components.get<Fragile>(target);
   const auto* const current = components.get<CurrentAction>(target);
   if (fragile == nullptr || current == nullptr || current->key != fragile->in) {
-    return MISSILE_DAMAGE;
+    return dealt;
   }
-  return health.points;
+  return components.get<Health>(target)->points;
+}
+
+/** @returns The handler the sheet of @p target names in `on_hit`; nullptr for
+ * a target without one. */
+IHitHandler* reactionOf(engine::ComponentRegistry& components,
+                        engine::Entity target) {
+  const auto* const reaction = components.get<HitReaction>(target);
+  return reaction == nullptr ? nullptr : reaction->handler;
 }
 
 }  // namespace
@@ -95,26 +115,44 @@ void DamageRules::onMissileHit(const MissileHit& hit) {
   }
   const std::optional<std::uint8_t> shooter =
       shooterOf(components_, hit.missile);
+  IHitHandler* const reaction = reactionOf(components_, hit.target);
+  AppliedHit applied{.targetNetworkId = ids->target,
+                     .missileNetworkId = ids->missile,
+                     .damage = missileDamageOf(components_, hit.missile)};
   removeMissile(hit.missile, ids->missile);
-  if (components_.has<Shootable>(hit.target)) {
-    killTarget(hit.target, ids->target, shooter);
+  hurtTarget(hit.target, shooter, applied);
+  if (reaction != nullptr) {
+    reaction->onHit(applied);
+  }
+}
+
+void DamageRules::hurtTarget(engine::Entity target,
+                             std::optional<std::uint8_t> shooter,
+                             AppliedHit& applied) {
+  if (components_.has<Shootable>(target)) {
+    applied.damage = 0;
+    applied.destroyed = true;
+    killTarget(target, applied.targetNetworkId, shooter);
     return;
   }
-  auto* const health = components_.get<Health>(hit.target);
+  auto* const health = components_.get<Health>(target);
   if (health == nullptr) {
+    applied.damage = 0;
     return;
   }
-  const int damage = damageOf(components_, hit.target, *health);
-  if (damage == 0) {
+  const int dealt = applied.damage;
+  applied.damage = damageOf(components_, target, dealt);
+  health->points -= applied.damage;
+  applied.healthLeft = std::max(health->points, 0);
+  if (applied.damage == 0) {
     return;
   }
-  health->points -= damage;
-  announceBossHealth(hit.target, ids->target, *health);
   if (health->points > 0) {
-    events_.publish(EntityDamage{.networkId = ids->target});
+    events_.publish(EntityDamage{.networkId = applied.targetNetworkId});
     return;
   }
-  killTarget(hit.target, ids->target, shooter);
+  applied.destroyed = true;
+  killTarget(target, applied.targetNetworkId, shooter);
 }
 
 void DamageRules::removeMissile(engine::Entity missile,
@@ -134,20 +172,6 @@ void DamageRules::killTarget(engine::Entity target, std::uint32_t networkId,
   if (shooter.has_value() && points > 0) {
     events_.publish(EnemyKilled{.playerNumber = *shooter, .points = points});
   }
-}
-
-void DamageRules::announceBossHealth(engine::Entity target,
-                                     std::uint32_t networkId,
-                                     const Health& health) {
-  const auto* const boss = components_.get<Boss>(target);
-  if (boss == nullptr) {
-    return;
-  }
-  events_.publish(BossHealthChanged{
-      .networkId = networkId,
-      .points = static_cast<std::uint16_t>(std::max(health.points, 0)),
-      .full = static_cast<std::uint16_t>(health.full),
-      .enraged = boss->enraged});
 }
 
 }  // namespace rtype::game

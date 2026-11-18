@@ -8,10 +8,12 @@
 #include "CreatedSession.hpp"
 #include "CredentialsAttempt.hpp"
 #include "CredentialsRefusal.hpp"
+#include "ISessionAccounts.hpp"
 #include "Logger.hpp"
 #include "MasterDatabase.hpp"
 #include "NewUser.hpp"
 #include "PasswordKey.hpp"
+#include "SessionOrigin.hpp"
 #include "SessionRepository.hpp"
 #include "SignInFailureRepository.hpp"
 #include "User.hpp"
@@ -26,7 +28,7 @@ namespace rtype::master {
  * only when its account exists: a nickname is public anyway, on every
  * leaderboard, and a creation says whether it is taken.
  */
-class AccountsService {
+class AccountsService final : public ISessionAccounts {
  public:
   /** @param key The key every password hash is encrypted with. */
   AccountsService(MasterDatabase& database, const network::PasswordKey& key);
@@ -61,8 +63,8 @@ class AccountsService {
    * a token not well formed, unknown or expired. A session last moved more
    * than SESSION_REFRESH_AGE ago expires SESSION_LIFETIME after @p now.
    */
-  std::optional<network::User> userOfToken(std::string_view token,
-                                           std::chrono::sys_seconds now);
+  [[nodiscard]] std::optional<network::User> userOfToken(
+      std::string_view token, std::chrono::sys_seconds now) override;
 
   /** @brief Closes the session of @p token; nothing for a token no session
    * has. */
@@ -71,6 +73,15 @@ class AccountsService {
   /** @brief Makes the account named @p nickname an admin.
    * @returns Whether an account has that nickname. */
   bool makeAdmin(const std::string& nickname);
+
+  /**
+   * @brief Opens a session of SESSION_LIFETIME for @p user, counted under the
+   * address of @p origin, as a sign-in does once the password matched; a
+   * device link the player approved opens one this way too.
+   * @returns The session and its token, shown this once.
+   */
+  network::CreatedSession openSession(const network::User& user,
+                                      const SessionOrigin& origin);
 
  private:
   [[nodiscard]] NewUser newUserOf(const CredentialsAttempt& request) const;
@@ -86,10 +97,6 @@ class AccountsService {
   /** @brief Counts the failed sign-in of @p request, and writes it in the
    * journal. */
   void recordFailure(const CredentialsAttempt& request);
-
-  /** @returns A new session of @p user, opened as @p request asks. */
-  network::CreatedSession createdSessionFor(const network::User& user,
-                                            const CredentialsAttempt& request);
 
   network::PasswordKey key_;
   UserRepository users_;

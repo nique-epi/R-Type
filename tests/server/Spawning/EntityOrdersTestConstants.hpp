@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <string_view>
 #include "Position.hpp"
+#include "SpawnOptions.hpp"
 
 namespace rtype::server::testing {
 
@@ -11,6 +12,12 @@ namespace rtype::server::testing {
 constexpr std::string_view DRIFTER_SHEET = "drifter";
 constexpr std::string_view SHIP_SHEET = "ship";
 constexpr std::string_view UNKNOWN_SHEET = "no_such_sheet";
+
+/** @brief The Bydo Tyrant, whose sheet gives 240 health points, asked for at
+ * 40 percent of them: 96. */
+constexpr std::string_view TYRANT_SHEET = "bydo_tyrant";
+constexpr game::SpawnOptions AT_FORTY_PERCENT{.healthPercent = 40};
+constexpr int FORTY_PERCENT_OF_THE_TYRANT = 96;
 
 /** @brief Where the bodies of the tests appear. */
 constexpr game::Position WHERE_A_SCRIPT_PUTS_IT{.x = 900.0F, .y = 300.0F};

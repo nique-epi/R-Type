@@ -73,4 +73,8 @@ constexpr ScreenId SERVER_MAP_SCREEN{"server map"};
  * room. */
 constexpr ScreenId LEADERBOARD_SCREEN{"leaderboard"};
 
+/** @brief The dialog that says a sign-in is needed, pushed by what a guest
+ * cannot do: wear a look past the starter kit, shop, change chips. */
+constexpr ScreenId SIGN_IN_NEEDED_SCREEN{"sign in needed"};
+
 }  // namespace rtype::client

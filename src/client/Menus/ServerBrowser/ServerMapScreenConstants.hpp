@@ -7,6 +7,7 @@
 #include <chrono>
 #include <cstddef>
 #include <optional>
+#include "CasinoScreenIdConstants.hpp"
 #include "HangarScreenIdConstants.hpp"
 #include "InterfaceConstants.hpp"
 #include "KopecksLabelConstants.hpp"
@@ -29,12 +30,12 @@ constexpr sf::Vector2i SERVER_MAP_TITLE_ANCHOR{
 /**
  * @brief The tabs over the map, the Tab Rail v2 of the design system: SECTORS,
  * the map itself, open; HANGAR, opened by HANGAR_KEY; SHOP, opened by
- * SHOP_KEY; CASINO, locked until the casino exists, CASINO_KEY making it
- * shake. The row is centred between the safe margin and the kopecks balance,
- * BUTTON_GAP short of its frame, its labels at SERVER_MAP_TABS_TOP, halfway
- * into the safe margin, so the bar under them stands well clear of the title.
- * The kopecks frame rises with them: its amount, KOPECKS_FRAME_PADDING under
- * its top, sits on the row of the labels.
+ * SHOP_KEY; CASINO, opened by CASINO_KEY. Signed out, the shop and the casino
+ * open the dialog that asks to sign in. The row is centred between the safe
+ * margin and the kopecks balance, BUTTON_GAP short of its frame, its labels at
+ * SERVER_MAP_TABS_TOP, halfway into the safe margin, so the bar under them
+ * stands well clear of the title. The kopecks frame rises with them: its
+ * amount, KOPECKS_FRAME_PADDING under its top, sits on the row of the labels.
  */
 constexpr const char* SECTORS_TAB_LABEL = "SECTORS";
 constexpr const char* CASINO_TAB_LABEL = "CASINO";
@@ -50,9 +51,9 @@ constexpr std::array<ServerMapTab, 4> SERVER_MAP_TABS{
     ServerMapTab{.tab = {.label = SHOP_LABEL, .locked = false},
                  .key = SHOP_KEY,
                  .screen = SHOP_SCREEN},
-    ServerMapTab{.tab = {.label = CASINO_TAB_LABEL, .locked = true},
+    ServerMapTab{.tab = {.label = CASINO_TAB_LABEL, .locked = false},
                  .key = CASINO_KEY,
-                 .screen = std::nullopt}};
+                 .screen = CASINO_SCREEN}};
 constexpr int SERVER_MAP_TABS_TOP = SAFE_MARGIN / 2;
 constexpr sf::Vector2i SERVER_MAP_TABS_TOP_MIDDLE{
     (SAFE_MARGIN + KOPECKS_BALANCE_TOP_RIGHT.x - KOPECKS_FRAME_SIZE.x -

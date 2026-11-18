@@ -8,6 +8,9 @@ namespace rtype::master {
  */
 constexpr std::string_view UNKNOWN_KEY_DETAIL =
     "no valid server key in an Authorization: Bearer header";
+/** @brief What a route of an account answers a request without a session. */
+constexpr std::string_view NO_SESSION_DETAIL =
+    "no valid session token in an Authorization: Bearer header";
 constexpr std::string_view UNREGISTERED_SERVER_DETAIL =
     "this server has not registered: PUT /api/servers/me first";
 constexpr std::string_view UNKNOWN_SERVER_DETAIL = "no game server has this id";

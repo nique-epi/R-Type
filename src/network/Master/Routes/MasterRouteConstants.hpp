@@ -75,6 +75,130 @@ constexpr MasterRoute CREATE_SESSION_ROUTE{
 constexpr MasterRoute DELETE_OWN_SESSION_ROUTE{
     .method = RouteMethod::Delete, .path = "/sessions/me", .httpsOnly = true};
 
+/**
+ * @brief Opens a device link for a game, which a player validates on the web
+ * site; the answer holds its secret, the only time it is shown, and its short
+ * code. The routes of the device links are answered over HTTPS only.
+ */
+constexpr MasterRoute CREATE_DEVICE_LINK_ROUTE{
+    .method = RouteMethod::Post, .path = "/device-links", .httpsOnly = true};
+/** @brief The device link of the secret the game sends as Bearer. */
+constexpr MasterRoute READ_OWN_DEVICE_LINK_ROUTE{
+    .method = RouteMethod::Get, .path = "/device-links/me", .httpsOnly = true};
+/** @brief Forgets the device link of the secret; forgetting it again
+ * succeeds. */
+constexpr MasterRoute DELETE_OWN_DEVICE_LINK_ROUTE{
+    .method = RouteMethod::Delete,
+    .path = "/device-links/me",
+    .httpsOnly = true};
+/** @brief The parameter of a path that names a device link by its short
+ * code. */
+constexpr std::string_view DEVICE_LINK_CODE_PATH_PARAMETER = "code";
+/** @brief The device link of the short code in the path, read by a signed-in
+ * player on the web site before deciding. */
+constexpr MasterRoute READ_DEVICE_LINK_ROUTE{.method = RouteMethod::Get,
+                                             .path = "/device-links/:code",
+                                             .httpsOnly = true};
+/** @brief Replaces the decision on the device link of the short code in the
+ * path, made by the account of the session: approved or denied, once. */
+constexpr MasterRoute REPLACE_DEVICE_LINK_DECISION_ROUTE{
+    .method = RouteMethod::Put,
+    .path = "/device-links/:code/decision",
+    .httpsOnly = true};
+/**
+ * @brief The balances of the wallet of the account of the token, opened at
+ * its first read. The routes of the wallet are answered over HTTPS only, to
+ * the account of a session.
+ */
+constexpr MasterRoute READ_OWN_WALLET_ROUTE{
+    .method = RouteMethod::Get, .path = "/users/me/wallet", .httpsOnly = true};
+/** @brief The journal of the wallet of the account of the token, a page at a
+ * time, newest first. */
+constexpr MasterRoute LIST_OWN_MOVEMENTS_ROUTE{
+    .method = RouteMethod::Get,
+    .path = "/users/me/wallet/movements",
+    .httpsOnly = true};
+/** @brief Changes kopecks into chips, or chips into kopecks, one for one, at
+ * the cashier. */
+constexpr MasterRoute CREATE_OWN_EXCHANGE_ROUTE{
+    .method = RouteMethod::Post,
+    .path = "/users/me/wallet/exchanges",
+    .httpsOnly = true};
+/** @brief The parameter of a path that names an exchange of the cashier. */
+constexpr std::string_view EXCHANGE_ID_PATH_PARAMETER = "exchange";
+/** @brief An exchange the cashier made for the account of the token. */
+constexpr MasterRoute READ_OWN_EXCHANGE_ROUTE{
+    .method = RouteMethod::Get,
+    .path = "/users/me/wallet/exchanges/:exchange",
+    .httpsOnly = true};
+/** @brief Gives the account of the token a game ticket, which a game server
+ * reports with the result of a game so the master pays that account. */
+constexpr MasterRoute CREATE_OWN_TICKET_ROUTE{.method = RouteMethod::Post,
+                                              .path = "/users/me/tickets",
+                                              .httpsOnly = true};
+/** @brief The parameter of a path that names a game ticket by its
+ * fingerprint. */
+constexpr std::string_view TICKET_PATH_PARAMETER = "ticket";
+/** @brief A game ticket the master gave the account of the token, named by
+ * its fingerprint. */
+constexpr MasterRoute READ_OWN_TICKET_ROUTE{.method = RouteMethod::Get,
+                                            .path = "/users/me/tickets/:ticket",
+                                            .httpsOnly = true};
+/** @brief The looks the account of the token owns. */
+constexpr MasterRoute LIST_OWN_LOOKS_ROUTE{
+    .method = RouteMethod::Get, .path = "/users/me/looks", .httpsOnly = true};
+/** @brief The parameter of a path that names a look by its name. */
+constexpr std::string_view LOOK_ITEM_PATH_PARAMETER = "item";
+/**
+ * @brief Makes the look named in the path one the account of the token owns,
+ * buying it at its price; sent again, it buys nothing more.
+ */
+constexpr MasterRoute BUY_OWN_LOOK_ROUTE{.method = RouteMethod::Put,
+                                         .path = "/users/me/looks/:item",
+                                         .httpsOnly = true};
+
+/** @brief The parameters of a path that name a room of the casino and a
+ * round of its wheel. */
+constexpr std::string_view ROOM_PATH_PARAMETER = "room";
+constexpr std::string_view ROUND_PATH_PARAMETER = "round";
+/** @brief The roulette rooms of the casino of the master, with their round
+ * and phase; open to everyone, over plain HTTP too. */
+constexpr MasterRoute LIST_CASINO_ROOMS_ROUTE{.method = RouteMethod::Get,
+                                              .path = "/casino/rooms"};
+/** @brief The state of one room: its round, the dates of its phases, the
+ * number drawn once the bets closed, the last numbers and the players seated;
+ * open to everyone. */
+constexpr MasterRoute READ_CASINO_ROOM_ROUTE{.method = RouteMethod::Get,
+                                             .path = "/casino/rooms/:room"};
+/**
+ * @brief Seats the account of the token in the room, or renews its seat: a
+ * seat not renewed for CASINO_SEAT_LIFETIME is lost. The routes of the seats
+ * and of the bets are answered over HTTPS only, to the account of a session.
+ */
+constexpr MasterRoute TAKE_OWN_SEAT_ROUTE{
+    .method = RouteMethod::Put,
+    .path = "/casino/rooms/:room/seats/me",
+    .httpsOnly = true};
+/** @brief Gets the account of the token up from the room; leaving again
+ * succeeds. */
+constexpr MasterRoute LEAVE_OWN_SEAT_ROUTE{
+    .method = RouteMethod::Delete,
+    .path = "/casino/rooms/:room/seats/me",
+    .httpsOnly = true};
+/** @brief Replaces every bet the account of the token holds on a round of a
+ * room, while its bets are open: the bets it held are handed back, the new
+ * ones staked. */
+constexpr MasterRoute PLACE_OWN_BETS_ROUTE{
+    .method = RouteMethod::Put,
+    .path = "/casino/rooms/:room/rounds/:round/bets/me",
+    .httpsOnly = true};
+/** @brief The bets the account of the token holds on a round of a room, and
+ * what the round paid them once drawn. */
+constexpr MasterRoute READ_OWN_BETS_ROUTE{
+    .method = RouteMethod::Get,
+    .path = "/casino/rooms/:room/rounds/:round/bets/me",
+    .httpsOnly = true};
+
 /** @brief The parameter of a path that names a game of a server. */
 constexpr std::string_view GAME_ID_PATH_PARAMETER = "gameId";
 

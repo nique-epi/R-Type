@@ -412,6 +412,95 @@ export const frPages = {
       welcome: 'Bienvenue, {nickname}. Votre pseudo est réservé.',
     },
   },
+  signInPage: {
+    eyebrow: 'Compte pilote',
+    title: 'Connexion',
+    lede: 'Connectez-vous avec votre pseudo et votre mot de passe.',
+    form: {
+      title: 'Se connecter',
+      nickname: 'Pseudo',
+      password: 'Mot de passe',
+      submit: 'Se connecter',
+      pending: 'Connexion...',
+      problems: {
+        nicknameRequired: 'Saisissez votre pseudo',
+        passwordRequired: 'Saisissez votre mot de passe',
+      },
+    },
+    problems: {
+      wrong: {
+        title: 'Identifiants refusés',
+        text: 'Ce pseudo et ce mot de passe ne vont pas ensemble. Vérifiez-les et réessayez.',
+      },
+      quota: {
+        title: 'Trop d’essais',
+        text: 'Trop de connexions ont échoué depuis votre adresse. Patientez quelques minutes.',
+      },
+      unreachable: {
+        title: 'Master injoignable',
+        text: 'Le master ne répond pas. Réessayez dans un instant.',
+      },
+    },
+    signedIn: 'Vous êtes connecté.',
+  },
+  linkPage: {
+    eyebrow: 'Compte pilote',
+    title: 'Connecter un jeu',
+    lede: 'Reliez le jeu qui affiche un code à votre compte, sans taper votre mot de passe dans le jeu.',
+    codeForm: {
+      label: 'Code affiché par le jeu',
+      placeholder: 'KQFB-WZPM',
+      submit: 'Continuer',
+    },
+    unknown: {
+      title: 'Code inconnu',
+      text: 'Aucun jeu n’attend ce code : il a expiré ou il est mal recopié. Demandez un nouveau code dans le jeu.',
+    },
+    unreachable: 'Le master ne répond pas. Réessayez dans un instant.',
+    link: {
+      title: 'Un jeu demande à se connecter',
+      request:
+        'Un jeu a demandé à {time} à se connecter à votre compte. Son code : {code}.',
+      expiry: 'Ce code expire à {time}.',
+      warningTitle: 'Attention',
+      warning:
+        'Ne connectez qu’un jeu que vous avez devant vous, qui affiche ce code. Si quelqu’un vous a envoyé ce code, refusez.',
+      approve: 'Connecter ce jeu',
+      deny: 'Refuser',
+      pending: 'Envoi...',
+      signOut: 'Utiliser un autre compte',
+      outcomes: {
+        approved: {
+          title: 'Jeu connecté',
+          text: 'Retournez au jeu : il se connecte à votre compte dans quelques secondes.',
+        },
+        denied: {
+          title: 'Connexion refusée',
+          text: 'Le jeu ne sera pas connecté à votre compte.',
+        },
+        decided: {
+          title: 'Déjà décidé',
+          text: 'Ce code a déjà reçu une autre réponse, ou il a expiré.',
+        },
+        unknown: {
+          title: 'Code inconnu',
+          text: 'Aucun jeu n’attend plus ce code. Demandez un nouveau code dans le jeu.',
+        },
+        signedOut: {
+          title: 'Session terminée',
+          text: 'Votre session a expiré. Reconnectez-vous, puis recommencez.',
+        },
+        unreachable: {
+          title: 'Master injoignable',
+          text: 'Le master ne répond pas. Réessayez dans un instant.',
+        },
+        expired: {
+          title: 'Code expiré',
+          text: 'Ce code a expiré. Demandez un nouveau code dans le jeu.',
+        },
+      },
+    },
+  },
   teamPage: {
     eyebrow: 'Projet Epitech tek3',
     title: 'Equipe',

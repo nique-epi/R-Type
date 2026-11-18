@@ -14,6 +14,7 @@ constexpr std::string_view WAIT_FUNCTION_NAME = "wait";
 constexpr std::string_view SPAWN_FUNCTION_NAME = "spawn";
 constexpr std::string_view DESTROY_FUNCTION_NAME = "destroy";
 constexpr std::string_view PRE_HIT_FUNCTION_NAME = "pre_hit";
+constexpr std::string_view ON_HIT_FUNCTION_NAME = "on_hit";
 
 /** @brief The folder of a content folder that holds its server scripts, and
  * their extension. */
@@ -30,8 +31,11 @@ constexpr int WAIT_INTENT_ARGUMENT = 2;
 constexpr int WAIT_YIELDED_VALUES = 1;
 constexpr int SPAWN_TYPE_ARGUMENT = 1;
 constexpr int SPAWN_POSITION_ARGUMENT = 2;
+constexpr int SPAWN_OPTIONS_ARGUMENT = 3;
 constexpr int DESTROY_ID_ARGUMENT = 1;
 constexpr int PRE_HIT_FUNCTION_ARGUMENT = 1;
+constexpr int ON_HIT_NAME_ARGUMENT = 1;
+constexpr int ON_HIT_FUNCTION_ARGUMENT = 2;
 
 /** @brief The keys of the view a script reads. */
 constexpr const char* VIEW_ID_KEY = "id";
@@ -48,6 +52,14 @@ constexpr const char* VIEW_WOUNDED_KEY = "wounded";
 constexpr const char* VIEW_HEALTH_SHARE_KEY = "health_share";
 constexpr const char* VIEW_ENRAGED_KEY = "enraged";
 constexpr const char* VIEW_ACTIONS_ENDED_KEY = "actions_ended";
+
+/** @brief The option of `behaviours.spawn` that gives the health of the
+ * body, in percent of the health of its sheet: a whole number from
+ * MINIMUM_SPAWN_HEALTH_PERCENT to WHOLE_PERCENT, and what refuses another. */
+constexpr const char* SPAWN_HEALTH_PERCENT_KEY = "health_percent";
+constexpr double MINIMUM_SPAWN_HEALTH_PERCENT = 1.0;
+constexpr std::string_view WRONG_SPAWN_HEALTH_PERCENT_MESSAGE =
+    "the health_percent of a body is a whole number from 1 to 100";
 
 /** @brief The keys of a point and of an action, in the view and the intent. */
 constexpr const char* POINT_X_KEY = "x";
@@ -73,6 +85,21 @@ constexpr const char* BOX_HEIGHT_KEY = "height";
 /** @brief The keys of the hit a pre_hit function reads. */
 constexpr const char* HIT_MISSILE_KEY = "missile";
 constexpr const char* HIT_OFFSET_KEY = "offset";
+
+/** @brief The keys of the hit an on_hit function reads, besides the missile
+ * of HIT_MISSILE_KEY, and how many the table holds at most. */
+constexpr const char* APPLIED_HIT_ID_KEY = "id";
+constexpr const char* APPLIED_HIT_DAMAGE_KEY = "damage";
+constexpr const char* APPLIED_HIT_HEALTH_KEY = "health";
+constexpr const char* APPLIED_HIT_DESTROYED_KEY = "destroyed";
+constexpr int APPLIED_HIT_FIELDS = 5;
+
+/** @brief Why an on_hit function was refused, and how the failure of one is
+ * reported: "the on_hit function <name> failed: <reason>". */
+constexpr std::string_view WAIT_IN_ON_HIT_MESSAGE =
+    "an on_hit function may not wait";
+constexpr std::string_view ON_HIT_FAILURE_PREFIX = "the on_hit function ";
+constexpr std::string_view ON_HIT_FAILURE_SEPARATOR = " failed: ";
 
 /** @brief Why `behaviours.pre_hit` or a pre_hit function was refused, and
  * what starts the failure the next step of its body stops on. */

@@ -1,2 +1,3 @@
 rtype_add_test(NAME server_results_tests SOURCES GameResultKeeperTest.cpp GameResultKeeperFixture.cpp LeaderboardDeskTest.cpp LeaderboardDeskFixture.cpp LeaderboardSamples.cpp ${RTYPE_TEST_SOURCE_DIR}/doubles/RecordingResultsArchive.cpp LIBS rtype_test_shipped_entity_sheets rtype_server_results_module server_test_datagrams)
 target_include_directories(server_results_tests PRIVATE ${RTYPE_TEST_SOURCE_DIR} ${RTYPE_TEST_SOURCE_DIR}/doubles ${RTYPE_TEST_SOURCE_DIR}/server ${RTYPE_TEST_SOURCE_DIR}/server/Instances)
+target_include_directories(server_results_tests PRIVATE ${RTYPE_TEST_SOURCE_DIR}/network/Protocol)

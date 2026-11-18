@@ -1,9 +1,11 @@
 #pragma once
 
 #include <functional>
+#include "IAccountSession.hpp"
 #include "IAudioService.hpp"
 #include "IScreenNavigator.hpp"
 #include "ISoundPlayer.hpp"
+#include "IWallet.hpp"
 #include "MotionPreference.hpp"
 #include "PlayerPalette.hpp"
 #include "PlayfieldMapping.hpp"
@@ -30,6 +32,12 @@ struct HangarScreenParts {
   /** @brief Holds and saves what the ship wears; it must outlive the screen.
    */
   std::reference_wrapper<SettingsService> settings;
+  /** @brief The account the player plays under: a guest wears the starter
+   * kit only. It must outlive the screen. */
+  std::reference_wrapper<const IAccountSession> account;
+  /** @brief The looks the account owns on the master, read again when the
+   * hangar opens; it must outlive the screen. */
+  std::reference_wrapper<IWallet> wallet;
   /** @brief Gives the point of the playfield under a pixel of the window. */
   PlayfieldMapping playfieldPointAt;
   /** @brief The palette the ship is painted in: a constant. */

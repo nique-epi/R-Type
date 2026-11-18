@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <vector>
+#include "Armored.hpp"
 #include "CollisionScene.hpp"
 #include "CurrentAction.hpp"
 #include "DamageRules.hpp"
@@ -12,39 +13,54 @@
 #include "EntityType.hpp"
 #include "Fragile.hpp"
 #include "Health.hpp"
+#include "MissileDamage.hpp"
 #include "MissileHit.hpp"
 #include "MissileOwner.hpp"
 #include "NetworkIdentity.hpp"
+#include "RecordingHitHandler.hpp"
 #include "WorldTestConstants.hpp"
 
 using rtype::engine::Entity;
+using rtype::game::Armored;
 using rtype::game::CurrentAction;
 using rtype::game::EnemyKilled;
 using rtype::game::EntityDamage;
 using rtype::game::EntityType;
 using rtype::game::Fragile;
 using rtype::game::Health;
+using rtype::game::MissileDamage;
 using rtype::game::MissileHit;
 using rtype::game::NetworkIdentity;
 using rtype::game::testing::Announcement;
+using rtype::game::testing::ARMORED_ATTACK;
+using rtype::game::testing::ARMORED_SIGNAL;
+using rtype::game::testing::ARMORED_STRIKE;
 using rtype::game::testing::BYDO_ID;
 using rtype::game::testing::BYDO_POINTS;
 using rtype::game::testing::CHARGING;
+using rtype::game::testing::CRACK_HANDLER;
+using rtype::game::testing::DAMAGE_OF_THREE;
 using rtype::game::testing::DamageScene;
 using rtype::game::testing::ENEMY_MISSILE_ID;
 using rtype::game::testing::FIRST_PLAYER;
+using rtype::game::testing::FIVE_HEALTH_POINTS;
 using rtype::game::testing::FOUR_HEALTH_POINTS;
 using rtype::game::testing::killed;
 using rtype::game::testing::MISSILE_ID;
+using rtype::game::testing::NO_POINT_LEFT;
 using rtype::game::testing::ONE_HEALTH_POINT;
 using rtype::game::testing::OTHER_BYDO_ID;
 using rtype::game::testing::OTHER_MISSILE_ID;
+using rtype::game::testing::RecordingHitHandler;
 using rtype::game::testing::removed;
 using rtype::game::testing::SECOND_PLAYER;
 using rtype::game::testing::SECOND_PLAYER_NUMBER;
 using rtype::game::testing::SHIP_ID;
 using rtype::game::testing::STUNNED;
 using rtype::game::testing::THREE_HEALTH_POINTS;
+using rtype::game::testing::TWO_HEALTH_POINTS;
+using rtype::game::testing::TWO_HEALTH_POINTS_LEFT;
+using rtype::game::testing::WALL_ID;
 
 /**
  * Given a Bydo with three health points and a missile
@@ -330,6 +346,90 @@ TEST(DamageRules, AFragileEnemyOutOfItsActionLosesOnePoint) {
 }
 
 /**
+ * Given a Bydo with four health points, armored in its attack 2 and in the
+ * signal of that attack
+ * When a missile hits it
+ * Then it keeps its four points
+ */
+TEST(DamageRules, AnArmoredEnemyInItsArmoredAttackLosesNothing) {
+  DamageScene damage;
+  const Entity missile = damage.missile(MISSILE_ID);
+  const Entity bydo =
+      damage.bydo(BYDO_ID, Health{.points = FOUR_HEALTH_POINTS});
+  damage.scene.components.add(bydo, Armored{.attack = ARMORED_ATTACK});
+  damage.scene.components.add(bydo, CurrentAction{.key = ARMORED_SIGNAL});
+
+  damage.hit(missile, bydo);
+
+  ASSERT_NE(damage.scene.components.get<Health>(bydo), nullptr);
+  EXPECT_EQ(damage.scene.components.get<Health>(bydo)->points,
+            FOUR_HEALTH_POINTS);
+}
+
+/**
+ * Given a Bydo armored in its attack 2 and in the strike of that attack
+ * When a missile hits it
+ * Then the missile is announced as removed, and nothing else is announced
+ */
+TEST(DamageRules, AMissileOnAnArmoredEnemyIsRemoved) {
+  DamageScene damage;
+  const Entity missile = damage.missile(MISSILE_ID);
+  const Entity bydo =
+      damage.bydo(BYDO_ID, Health{.points = FOUR_HEALTH_POINTS});
+  damage.scene.components.add(bydo, Armored{.attack = ARMORED_ATTACK});
+  damage.scene.components.add(bydo, CurrentAction{.key = ARMORED_STRIKE});
+
+  damage.hit(missile, bydo);
+
+  const std::vector<Announcement> expected{removed(MISSILE_ID)};
+  EXPECT_EQ(damage.announced, expected);
+}
+
+/**
+ * Given a Bydo with four health points, armored in its attack 2 but in the
+ * strike of its attack 0
+ * When a missile hits it
+ * Then it loses one point, as any enemy
+ */
+TEST(DamageRules, AnArmoredEnemyOutOfItsArmoredAttackLosesOnePoint) {
+  DamageScene damage;
+  const Entity missile = damage.missile(MISSILE_ID);
+  const Entity bydo =
+      damage.bydo(BYDO_ID, Health{.points = FOUR_HEALTH_POINTS});
+  damage.scene.components.add(bydo, Armored{.attack = ARMORED_ATTACK});
+  damage.scene.components.add(bydo, CurrentAction{.key = CHARGING});
+
+  damage.hit(missile, bydo);
+
+  ASSERT_NE(damage.scene.components.get<Health>(bydo), nullptr);
+  EXPECT_EQ(damage.scene.components.get<Health>(bydo)->points,
+            THREE_HEALTH_POINTS);
+}
+
+/**
+ * Given a Bydo with four health points, armored in its attack 2 and in the
+ * signal of that attack, that reacts to its hits
+ * When a missile hits it
+ * Then the handler is told of a hit that took nothing and left its four points
+ */
+TEST(DamageRules, AnArmoredEnemyIsToldOfAHitThatTookNothing) {
+  DamageScene damage;
+  RecordingHitHandler handler{CRACK_HANDLER};
+  const Entity bydo =
+      damage.bydo(BYDO_ID, Health{.points = FOUR_HEALTH_POINTS});
+  damage.scene.components.add(bydo, Armored{.attack = ARMORED_ATTACK});
+  damage.scene.components.add(bydo, CurrentAction{.key = ARMORED_SIGNAL});
+  damage.reactingTo(bydo, handler);
+
+  damage.hit(damage.missile(MISSILE_ID), bydo);
+
+  ASSERT_EQ(handler.told().size(), 1U);
+  EXPECT_EQ(handler.told()[0].damage, 0);
+  EXPECT_EQ(handler.told()[0].healthLeft.value_or(-1), FOUR_HEALTH_POINTS);
+  EXPECT_FALSE(handler.told()[0].destroyed);
+}
+
+/**
  * Given a missile of a player and a Shootable missile of an enemy, which has
  * no health
  * When the first hits the second
@@ -373,4 +473,112 @@ TEST(DamageRules, ASecondShotOnTheSameMissileFliesOn) {
                                            killed(ENEMY_MISSILE_ID)};
   EXPECT_EQ(damage.announced, expected);
   EXPECT_NE(damage.scene.components.get<EntityType>(secondShot), nullptr);
+}
+
+/**
+ * Given a Bydo of five health points and a missile whose sheet makes it take
+ * three
+ * When the missile hits it
+ * Then the Bydo has two points left
+ */
+TEST(DamageRules, AMissileTakesTheDamageItsSheetNames) {
+  DamageScene damage;
+  const Entity bydo = damage.bydo(BYDO_ID, Health{.points = FIVE_HEALTH_POINTS,
+                                                  .full = FIVE_HEALTH_POINTS});
+  const Entity missile = damage.missileDealing(
+      MISSILE_ID, MissileDamage{.points = DAMAGE_OF_THREE});
+
+  damage.hit(missile, bydo);
+
+  ASSERT_NE(damage.scene.components.get<Health>(bydo), nullptr);
+  EXPECT_EQ(damage.scene.components.get<Health>(bydo)->points,
+            TWO_HEALTH_POINTS_LEFT);
+}
+
+/**
+ * Given a wall of steel, without Health, whose sheet names an on_hit, and a
+ * missile that deals 3
+ * When the missile hits it
+ * Then the handler is told of a hit on the wall by the missile that took
+ * nothing and left nothing to read
+ */
+TEST(DamageRules, AWallWithoutHealthIsToldOfAHitThatTookNothing) {
+  DamageScene damage;
+  RecordingHitHandler handler{CRACK_HANDLER};
+  const Entity wall = damage.steelWall(WALL_ID);
+  damage.reactingTo(wall, handler);
+
+  damage.hit(damage.missileDealing(MISSILE_ID,
+                                   MissileDamage{.points = DAMAGE_OF_THREE}),
+             wall);
+
+  ASSERT_EQ(handler.told().size(), 1U);
+  EXPECT_EQ(handler.told()[0].targetNetworkId, WALL_ID);
+  EXPECT_EQ(handler.told()[0].missileNetworkId, MISSILE_ID);
+  EXPECT_EQ(handler.told()[0].damage, 0);
+  EXPECT_FALSE(handler.told()[0].healthLeft.has_value());
+  EXPECT_FALSE(handler.told()[0].destroyed);
+}
+
+/**
+ * Given a Bydo of five health points that reacts to its hits, and a missile
+ * that deals 3
+ * When the missile hits it
+ * Then the handler is told the hit took 3 and left 2
+ */
+TEST(DamageRules, ABydoIsToldWhatAHitTookAndWhatIsLeft) {
+  DamageScene damage;
+  RecordingHitHandler handler{CRACK_HANDLER};
+  const Entity bydo = damage.bydo(BYDO_ID, Health{.points = FIVE_HEALTH_POINTS,
+                                                  .full = FIVE_HEALTH_POINTS});
+  damage.reactingTo(bydo, handler);
+
+  damage.hit(damage.missileDealing(MISSILE_ID,
+                                   MissileDamage{.points = DAMAGE_OF_THREE}),
+             bydo);
+
+  ASSERT_EQ(handler.told().size(), 1U);
+  EXPECT_EQ(handler.told()[0].damage, DAMAGE_OF_THREE);
+  EXPECT_EQ(handler.told()[0].healthLeft.value_or(-1), TWO_HEALTH_POINTS_LEFT);
+  EXPECT_FALSE(handler.told()[0].destroyed);
+}
+
+/**
+ * Given a Bydo of two health points that reacts to its hits, and a missile
+ * that deals 3
+ * When the missile hits it
+ * Then the handler is told the hit took 3, left 0 and destroyed it
+ */
+TEST(DamageRules, ABydoIsToldOfTheHitThatDestroyedIt) {
+  DamageScene damage;
+  RecordingHitHandler handler{CRACK_HANDLER};
+  const Entity bydo = damage.bydo(
+      BYDO_ID, Health{.points = TWO_HEALTH_POINTS, .full = TWO_HEALTH_POINTS});
+  damage.reactingTo(bydo, handler);
+
+  damage.hit(damage.missileDealing(MISSILE_ID,
+                                   MissileDamage{.points = DAMAGE_OF_THREE}),
+             bydo);
+
+  ASSERT_EQ(handler.told().size(), 1U);
+  EXPECT_EQ(handler.told()[0].damage, DAMAGE_OF_THREE);
+  EXPECT_EQ(handler.told()[0].healthLeft.value_or(-1), NO_POINT_LEFT);
+  EXPECT_TRUE(handler.told()[0].destroyed);
+}
+
+/**
+ * Given a Bydo of five health points whose sheet names no on_hit, beside a
+ * handler
+ * When a missile hits it
+ * Then the handler is told nothing
+ */
+TEST(DamageRules, ABodyThatNamesNoOnHitTellsNoHandler) {
+  DamageScene damage;
+  const RecordingHitHandler handler{CRACK_HANDLER};
+  const Entity bydo = damage.bydo(BYDO_ID, Health{.points = FIVE_HEALTH_POINTS,
+                                                  .full = FIVE_HEALTH_POINTS});
+
+  damage.hit(damage.missile(MISSILE_ID), bydo);
+
+  EXPECT_TRUE(handler.told().empty());
 }

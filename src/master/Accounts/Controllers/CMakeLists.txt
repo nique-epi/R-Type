@@ -1,4 +1,7 @@
-add_library(rtype_master_accounts_controllers STATIC AccountsController.cpp)
+add_library(rtype_master_accounts_controllers STATIC
+  AccountsController.cpp
+  DeviceLinksController.cpp
+)
 
 target_include_directories(rtype_master_accounts_controllers PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 

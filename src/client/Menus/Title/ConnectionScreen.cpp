@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -26,6 +27,7 @@
 #include "LobbyScreenIdConstants.hpp"
 #include "Menu.hpp"
 #include "MenuBuilder.hpp"
+#include "PendingJoin.hpp"
 #include "PlayfieldMapping.hpp"
 #include "ProtocolConstants.hpp"
 #include "ScreenId.hpp"
@@ -151,6 +153,11 @@ bool movesToTheNextServer(const ConnectionStatus& status, ServerChoice& choice,
   return true;
 }
 
+/** @brief Starts the attempt @p join on @p connection. */
+void startJoin(IServerConnection& connection, const PendingJoin& join) {
+  connection.connect(join.server, join.nickname, join.request);
+}
+
 }  // namespace
 
 ConnectionScreen::ConnectionScreen(ConnectionScreenParts parts,
@@ -162,6 +169,7 @@ ConnectionScreen::ConnectionScreen(ConnectionScreenParts parts,
       start_(parts.start),
       canvas_(std::move(canvas)),
       playfieldPointAt_(std::move(parts.playfieldPointAt)),
+      ticketWait_(parts.account.get(), parts.tickets.get()),
       menu_(buildMenu(parts.sounds.get(),
                       shownServerOf(parts.choice.get(), parts.start))) {
   connection_->cancel();
@@ -177,6 +185,9 @@ void ConnectionScreen::handleEvent(const sf::Event& event) {
 
 void ConnectionScreen::update(engine::Duration elapsed) {
   menu_.advance(elapsed);
+  if (const std::optional<PendingJoin> ready = ticketWait_.advance(elapsed)) {
+    startJoin(*connection_, *ready);
+  }
   if (movesToTheNextServer(connection_->status(), *choice_, start_)) {
     connect();
   }
@@ -213,6 +224,7 @@ Menu ConnectionScreen::buildMenu(ISoundPlayer& sounds,
 
 void ConnectionScreen::connect() {
   connection_->cancel();
+  ticketWait_.drop();
   acceptedFor_ = engine::Duration::zero();
   goalReached_ = false;
   const EndpointReading reading = serverOf(menu_, *choice_, start_);
@@ -234,11 +246,17 @@ void ConnectionScreen::connect() {
     choice_->server = server;
   }
   choice_->nickname = std::string(nickname);
-  connection_->connect(server, nickname, request);
+  if (const std::optional<PendingJoin> now =
+          ticketWait_.begin(PendingJoin{.server = server,
+                                        .nickname = std::string(nickname),
+                                        .request = request})) {
+    startJoin(*connection_, *now);
+  }
 }
 
 void ConnectionScreen::leave() {
   connection_->cancel();
+  ticketWait_.drop();
   navigator_->pop();
 }
 
@@ -262,6 +280,9 @@ void ConnectionScreen::followConnection(const ConnectionStatus& status,
 std::string ConnectionScreen::statusLine(const ConnectionStatus& status) const {
   if (!fieldProblem_.empty()) {
     return std::string(fieldProblem_);
+  }
+  if (ticketWait_.waiting()) {
+    return CONNECTING_STATUS;
   }
   switch (status.phase) {
     case ConnectionPhase::Connecting:

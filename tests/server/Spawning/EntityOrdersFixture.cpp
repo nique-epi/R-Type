@@ -12,14 +12,37 @@
 #include "EntityDestruction.hpp"
 #include "EntityOrdersParts.hpp"
 #include "EntitySpawned.hpp"
+#include "Health.hpp"
 #include "NetworkIdentity.hpp"
 #include "OutgoingDatagram.hpp"
 #include "Position.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
 #include "ShippedEntitySheets.hpp"
+#include "SpawnOptions.hpp"
+#include "World.hpp"
 
 namespace rtype::server::testing {
+
+namespace {
+
+/** @returns The @p Component of the body of @p networkId in @p world;
+ * nothing when no body has that id or it has no such component. */
+template <typename Component>
+std::optional<Component> componentOf(game::World& world,
+                                     std::uint32_t networkId) {
+  std::optional<Component> found;
+  world.components().forEach<game::NetworkIdentity, Component>(
+      [&found, networkId](engine::Entity, const game::NetworkIdentity& identity,
+                          const Component& component) {
+        if (identity.networkId == networkId) {
+          found = component;
+        }
+      });
+  return found;
+}
+
+}  // namespace
 
 EntityOrdersFixture::EntityOrdersFixture() : bodies_(partsFor(nullptr)) {
   static_cast<void>(events_.subscribe<game::EntityDestruction>(
@@ -38,8 +61,9 @@ void EntityOrdersFixture::connectPlayers(std::size_t count) {
 }
 
 std::uint32_t EntityOrdersFixture::spawnByScript(std::string_view sheet,
-                                                 game::Position position) {
-  return bodies_.spawn(sheet, position);
+                                                 game::Position position,
+                                                 game::SpawnOptions options) {
+  return bodies_.spawn(sheet, position, options);
 }
 
 void EntityOrdersFixture::removeByScript(std::uint32_t networkId) {
@@ -59,15 +83,16 @@ std::uint32_t EntityOrdersFixture::placeDirectly(std::string_view sheet,
 
 std::optional<game::Position> EntityOrdersFixture::positionOf(
     std::uint32_t networkId) {
-  std::optional<game::Position> found;
-  world_.components().forEach<game::NetworkIdentity, game::Position>(
-      [&found, networkId](engine::Entity, const game::NetworkIdentity& identity,
-                          const game::Position& position) {
-        if (identity.networkId == networkId) {
-          found = position;
-        }
-      });
-  return found;
+  return componentOf<game::Position>(world_, networkId);
+}
+
+std::optional<int> EntityOrdersFixture::healthOf(std::uint32_t networkId) {
+  const std::optional<game::Health> health =
+      componentOf<game::Health>(world_, networkId);
+  if (!health.has_value()) {
+    return std::nullopt;
+  }
+  return health->points;
 }
 
 std::vector<network::EntitySpawned> EntityOrdersFixture::spawnsSentTo(

@@ -17,6 +17,7 @@ using rtype::server::ConnectedPlayer;
 using rtype::server::GameState;
 using rtype::server::testing::FIRST_PLAYER;
 using rtype::server::testing::GameFlowBrokenLevelFixture;
+using rtype::server::testing::GameFlowFightingLevelFixture;
 using rtype::server::testing::GameFlowOneStageFixture;
 using rtype::server::testing::GameFlowSendingLevelFixture;
 using rtype::server::testing::GameFlowTwoStagesFixture;
@@ -24,6 +25,7 @@ using rtype::server::testing::LIVES_OF_THE_RULES;
 using rtype::server::testing::playerEndpoint;
 using rtype::server::testing::TICKS_BEFORE_THE_CHECKPOINT;
 using rtype::server::testing::TICKS_PAST_THE_CHECKPOINT;
+using rtype::server::testing::TICKS_WHILE_THE_BYDO_LIVES;
 
 /**
  * Given a game that plays a level, before its first checkpoint
@@ -112,6 +114,21 @@ TEST_F(GameFlowSendingLevelFixture, BringsInTheBodiesAStageCreates) {
   runTicks(1);
 
   EXPECT_EQ(enemiesInPlay(), 1U);
+}
+
+/**
+ * Given a game that plays a level whose only stage creates a Drifter, waits,
+ * then ends once no enemy is left
+ * When a third of a second of ticks runs, the Drifter still in the world
+ * Then the game goes on: the stage counts the body it created
+ */
+TEST_F(GameFlowFightingLevelFixture, IsNotWonWhileTheBodyAStageCreatedLives) {
+  startGameWith({FIRST_PLAYER});
+
+  runTicks(TICKS_WHILE_THE_BYDO_LIVES);
+
+  EXPECT_EQ(enemiesInPlay(), 1U);
+  EXPECT_EQ(flow().state(), GameState::InProgress);
 }
 
 /**

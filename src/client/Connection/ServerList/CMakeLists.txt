@@ -19,6 +19,7 @@ target_link_libraries(rtype_client_server_list
     rtype_network_server_information
     rtype_network_transport
   PRIVATE
+    rtype_client_connection_master_calls
     rtype_network_datagram_codec
     rtype_network_exceptions
     rtype_network_protocol

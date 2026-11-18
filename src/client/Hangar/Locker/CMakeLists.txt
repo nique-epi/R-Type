@@ -10,6 +10,7 @@ target_link_libraries(rtype_client_hangar_locker
   PUBLIC
     SFML::Window
     rtype_client_background
+    rtype_client_economy
     rtype_client_interface
     rtype_client_row_window
     rtype_client_settings_values

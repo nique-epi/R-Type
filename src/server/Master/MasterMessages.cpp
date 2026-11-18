@@ -54,13 +54,16 @@ network::FinishedGame finishedGameOf(const GameResult& result) {
   for (const PlayerResult& player : result.players) {
     players.push_back(network::FinishedGamePlayer{.nickname = player.nickname,
                                                   .accountId = std::nullopt,
-                                                  .score = player.score});
+                                                  .score = player.score,
+                                                  .wonLooks = player.wonLooks,
+                                                  .ticket = player.ticket});
   }
   return network::FinishedGame{.playedAt = result.endedAt,
                                .difficulty = result.difficulty,
                                .playerCount = result.playerCount,
                                .vanilla = result.vanilla,
-                               .players = std::move(players)};
+                               .players = std::move(players),
+                               .victory = result.victory};
 }
 
 }  // namespace rtype::server

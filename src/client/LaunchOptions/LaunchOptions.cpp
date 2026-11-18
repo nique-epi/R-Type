@@ -116,6 +116,17 @@ engine::LaunchOption gameOption(LaunchValues& values) {
                               }};
 }
 
+/** @returns `--session <token>`, which signs the client in with the token
+ * of a session of the master; it is kept, never forced as a setting, so it
+ * reaches no file. */
+engine::LaunchOption sessionOption(LaunchValues& values) {
+  return engine::LaunchOption{.name = SESSION_OPTION,
+                              .takesValue = true,
+                              .record = [&values](std::string_view token) {
+                                values.sessionToken = std::string(token);
+                              }};
+}
+
 /** @returns `--no-sound`, which starts the client without sound. */
 engine::LaunchOption noSoundOption(LaunchValues& values) {
   return engine::LaunchOption{
@@ -153,6 +164,10 @@ std::string connectionOptionEntries() {
           std::to_string(network::FIRST_HOSTED_GAME_NUMBER) +
           " joins the game of that number. Default: any game with a free "
           "seat.");
+  text += engine::usageEntry(
+      std::string(SESSION_OPTION) + " <token>",
+      "Token of a session of the master to sign in with, kept in memory "
+      "only. Default: none, the player plays as a guest.");
   text += engine::setOptionEntry(CLIENT_CONFIGURATION_FILE_NAME,
                                  CLIENT_SETTING_NAMES);
   return text;
@@ -199,6 +214,7 @@ LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
       .audioMode = AudioMode::Enabled,
       .trafficCsvFile = std::nullopt,
       .forcedLines = {},
+      .sessionToken = std::nullopt,
       .helpRequested = false}};
   const std::array launchOptions{
       addressOption(options.values_),
@@ -206,6 +222,7 @@ LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
       nicknameOption(options.values_),
       gameOption(options.values_),
       engine::setOption(options.values_.forcedLines),
+      sessionOption(options.values_),
       noSoundOption(options.values_),
       engine::pathOption(network::TRAFFIC_CSV_OPTION,
                          options.values_.trafficCsvFile),
@@ -219,7 +236,7 @@ LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
   return options;
 }
 
-std::string LaunchOptions::usage() {
+std::string launchUsage() {
   std::string text = engine::usageHeader(PROGRAM_NAME);
   text += connectionOptionEntries();
   text += engine::usageEntry(std::string(NO_SOUND_OPTION),
@@ -264,5 +281,9 @@ const std::optional<std::filesystem::path>& LaunchOptions::trafficCsvFile()
 
 LaunchOptions::LaunchOptions(LaunchValues values)
     : values_(std::move(values)), logOptions_(defaultJournal()) {}
+
+const std::optional<std::string>& LaunchOptions::sessionToken() const {
+  return values_.sessionToken;
+}
 
 }  // namespace rtype::client

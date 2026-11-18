@@ -32,4 +32,10 @@ constexpr std::array LAGOMETER_NUMBERS{
                 .setting = &LAGOMETER_BACKGROUND_SETTING},
 };
 
+/** @brief The lines an older file may hold and the settings no longer keep:
+ * the locker, the kopecks and the chips, which live on the account of the
+ * master. They are skipped in silence, never listed as ignored. */
+constexpr std::array RETIRED_SETTING_NAMES{SHIP_LOCKER_NAME, KOPECKS_NAME,
+                                           CHIPS_NAME};
+
 }  // namespace rtype::client

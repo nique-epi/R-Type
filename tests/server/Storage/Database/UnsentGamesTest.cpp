@@ -2,6 +2,7 @@
 #include <SQLiteCpp/Statement.h>
 #include <gtest/gtest.h>
 #include <array>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -11,6 +12,7 @@
 #include "ResultsDatabaseConstants.hpp"
 #include "ResultsDatabaseFixture.hpp"
 #include "ResultsDatabaseTestConstants.hpp"
+#include "ServerMigrationsConstants.hpp"
 #include "StorageConstants.hpp"
 #include "UnsentGame.hpp"
 
@@ -26,10 +28,12 @@ TEST_F(ResultsDatabaseFixture, ReadsAVanillaGameTheMasterHasNotAnswered) {
   ResultsDatabase database{file()};
   database.save(vanillaGame({PlayerResult{.nickname = std::string{ACE},
                                           .score = HIGH_SCORE,
-                                          .deaths = TWO_DEATHS},
+                                          .deaths = TWO_DEATHS,
+                                          .wonLooks = {}},
                              PlayerResult{.nickname = std::string{BOB},
                                           .score = LOW_SCORE,
-                                          .deaths = ONE_DEATH}},
+                                          .deaths = ONE_DEATH,
+                                          .wonLooks = {}}},
                             SOME_DATE));
 
   const std::vector<UnsentGame> games =
@@ -45,10 +49,57 @@ TEST_F(ResultsDatabaseFixture, ReadsAVanillaGameTheMasterHasNotAnswered) {
       games[0].result.players,
       (std::vector<PlayerResult>{PlayerResult{.nickname = std::string{ACE},
                                               .score = HIGH_SCORE,
-                                              .deaths = TWO_DEATHS},
+                                              .deaths = TWO_DEATHS,
+                                              .wonLooks = {}},
                                  PlayerResult{.nickname = std::string{BOB},
                                               .score = LOW_SCORE,
-                                              .deaths = ONE_DEATH}}));
+                                              .deaths = ONE_DEATH,
+                                              .wonLooks = {}}}));
+}
+
+/**
+ * Given a won vanilla game of a player who joined with a game ticket and won
+ * two look items, saved
+ * When the games the master has not answered are read
+ * Then the game says it was won, and its row keeps the ticket and both items
+ * in their order
+ */
+TEST_F(ResultsDatabaseFixture, ReadsTheTicketTheLooksAndTheVictoryOfAGame) {
+  ResultsDatabase database{file()};
+  GameResult won = vanillaGame(
+      {PlayerResult{.nickname = std::string{ACE},
+                    .score = HIGH_SCORE,
+                    .deaths = TWO_DEATHS,
+                    .wonLooks = {std::string{WON_HALO}, std::string{WON_CROWN}},
+                    .ticket = std::string{SAVED_TICKET}}},
+      SOME_DATE);
+  won.victory = true;
+  database.save(won);
+
+  const std::vector<UnsentGame> games =
+      database.unsentVanillaGames(EVERY_WAITING_GAME);
+
+  ASSERT_EQ(games.size(), 1U);
+  EXPECT_TRUE(games[0].result.victory);
+  EXPECT_EQ(games[0].result.players, won.players);
+}
+
+/**
+ * Given a lost vanilla game of a guest who won nothing, saved
+ * When the games the master has not answered are read
+ * Then the game says it was lost, and its row names no ticket and no item
+ */
+TEST_F(ResultsDatabaseFixture, ReadsALostGameOfAGuest) {
+  ResultsDatabase database{file()};
+  database.save(vanillaGame({playerNamed(ACE, HIGH_SCORE)}, SOME_DATE));
+
+  const std::vector<UnsentGame> games =
+      database.unsentVanillaGames(EVERY_WAITING_GAME);
+
+  ASSERT_EQ(games.size(), 1U);
+  EXPECT_FALSE(games[0].result.victory);
+  EXPECT_EQ(games[0].result.players.at(0).ticket, std::nullopt);
+  EXPECT_TRUE(games[0].result.players.at(0).wonLooks.empty());
 }
 
 /**
@@ -154,6 +205,31 @@ TEST_F(ResultsDatabaseFixture, ReadsTheGamesOfAFileOfTheFirstVersion) {
 
   ASSERT_EQ(games.size(), 1U);
   EXPECT_EQ(games[0].gameId, ID_OF_THE_FIRST_VERSION_GAME);
+}
+
+/**
+ * Given a file of the fourth version holding a vanilla game, as a server built
+ * before the accounts left it
+ * When it is opened and the games the master has not answered are read
+ * Then that game reads as lost, by a guest who won no item
+ */
+TEST_F(ResultsDatabaseFixture, ReadsAGameOfTheFourthVersionAsLostByAGuest) {
+  {
+    SQLite::Database fourthVersion = storage::openDatabaseFile(
+        file().string(),
+        std::array{RESULTS_TABLE_MIGRATION, UNSENT_GAMES_MIGRATION,
+                   BANS_TABLE_MIGRATION, DROP_BANS_TABLE_MIGRATION});
+    fourthVersion.exec(std::string{INSERT_VANILLA_ROW_OF_ACE});
+  }
+  const ResultsDatabase database{file()};
+
+  const std::vector<UnsentGame> games =
+      database.unsentVanillaGames(EVERY_WAITING_GAME);
+
+  ASSERT_EQ(games.size(), 1U);
+  EXPECT_FALSE(games[0].result.victory);
+  EXPECT_EQ(games[0].result.players.at(0).ticket, std::nullopt);
+  EXPECT_TRUE(games[0].result.players.at(0).wonLooks.empty());
 }
 
 }  // namespace rtype::server::testing

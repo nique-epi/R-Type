@@ -11,12 +11,17 @@ MasterException::MasterException(const std::string& message)
 DatabaseClosedException::DatabaseClosedException()
     : MasterException("the database of the master is not open") {}
 
+UserCodesExhaustedException::UserCodesExhaustedException()
+    : MasterException("every short code drawn for a device link is taken") {}
+
 MissingPasswordKeyException::MissingPasswordKeyException(
     std::string_view variable)
     : MasterException(std::string{variable} +
                       " is not set: give the master the key of the passwords "
                       "of its accounts (`openssl rand -hex 32`), or turn them "
-                      "off with `module accounts off` in master.cfg") {}
+                      "off with `module accounts off` in master.cfg, after "
+                      "the modules that need them, such as "
+                      "`module casino off` and `module wallet off`") {}
 
 InvalidPasswordKeyException::InvalidPasswordKeyException(
     std::string_view variable)

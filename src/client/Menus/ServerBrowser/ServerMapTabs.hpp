@@ -14,9 +14,9 @@
 namespace rtype::client {
 
 /**
- * @brief The tabs over the server map: SECTORS, the map itself, open; HANGAR
- * and SHOP, which push HANGAR_SCREEN and SHOP_SCREEN over the map, so their
- * BACK comes back to it; CASINO, locked, which shakes and opens nothing.
+ * @brief The tabs over the server map: SECTORS, the map itself, open; HANGAR,
+ * SHOP and CASINO, which push HANGAR_SCREEN, SHOP_SCREEN and CASINO_SCREEN over
+ * the map, so their BACK comes back to it.
  *
  * A tab opens on a click, or on its key: HANGAR_KEY, SHOP_KEY, CASINO_KEY.
  * Tab and the arrows already move the choice of the map, and Q is QUICK

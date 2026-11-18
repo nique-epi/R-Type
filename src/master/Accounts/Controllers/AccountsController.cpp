@@ -10,23 +10,23 @@
 #include "CreatedSession.hpp"
 #include "CredentialsAttempt.hpp"
 #include "CredentialsRefusal.hpp"
+#include "DeviceLinkRefusal.hpp"
+#include "DeviceLinksControllerConstants.hpp"
+#include "DeviceLinksService.hpp"
 #include "HttpConstants.hpp"
 #include "HttpHeader.hpp"
 #include "MasterMessageText.hpp"
 #include "MasterRouteConstants.hpp"
 #include "MasterRoutePath.hpp"
 #include "RouteAnswers.hpp"
+#include "ServersControllerConstants.hpp"
+#include "SessionOrigin.hpp"
 #include "SiteVisitors.hpp"
 #include "User.hpp"
 
 namespace rtype::master {
 
 namespace {
-
-std::chrono::sys_seconds now() {
-  return std::chrono::floor<std::chrono::seconds>(
-      std::chrono::system_clock::now());
-}
 
 /** @returns What @p request asks, counted under the visitor of the web site
  * it names, or the client it came from. */
@@ -35,7 +35,7 @@ CredentialsAttempt credentialsAttemptOf(const network::ApiRequest& request,
   return CredentialsAttempt{
       .credentials = network::userCredentialsFromText(request.body),
       .address = siteVisitors.addressOf(request),
-      .requestedAt = now()};
+      .requestedAt = currentSecond()};
 }
 
 network::ApiResponse refusalOf(CredentialsRefusal reason) {
@@ -63,6 +63,38 @@ network::ApiResponse answerOf(
   return refusalOf(std::get<CredentialsRefusal>(outcome));
 }
 
+/** @returns Why a device link opened no session, as a problem document: 401
+ * for no link of that secret, 409 while it waits, 403 once refused, 410 once
+ * expired. */
+network::ApiResponse linkRefusalResponse(DeviceLinkRefusal reason) {
+  switch (reason) {
+    case DeviceLinkRefusal::Pending:
+      return refusal(CONFLICT_STATUS, LINK_PENDING_DETAIL);
+    case DeviceLinkRefusal::Denied:
+      return refusal(FORBIDDEN_STATUS, LINK_DENIED_DETAIL);
+    case DeviceLinkRefusal::Expired:
+      return refusal(GONE_STATUS, LINK_EXPIRED_DETAIL);
+    case DeviceLinkRefusal::TooManyCreations:
+    case DeviceLinkRefusal::Unknown:
+    case DeviceLinkRefusal::TooSoon:
+    case DeviceLinkRefusal::AlreadyDecided:
+      break;
+  }
+  return unauthorizedResponse(NO_DEVICE_LINK_DETAIL);
+}
+
+/** @returns What @p answer writes of the session @p outcome opened, or why
+ * the device link opened none. */
+template <typename Answer>
+network::ApiResponse answerOf(
+    const std::variant<network::CreatedSession, DeviceLinkRefusal>& outcome,
+    Answer answer) {
+  if (const auto* session = std::get_if<network::CreatedSession>(&outcome)) {
+    return answer(*session);
+  }
+  return linkRefusalResponse(std::get<DeviceLinkRefusal>(outcome));
+}
+
 network::ApiResponse createdUserResponse(const network::User& user) {
   return network::ApiResponse{
       .status = CREATED_STATUS,
@@ -84,11 +116,23 @@ network::ApiResponse createdSessionResponse(
           .value = network::apiPathOf(network::DELETE_OWN_SESSION_ROUTE)}};
 }
 
+/** @returns The secret of the device link @p request trades for a session:
+ * a request with no body and the secret of a link as Bearer; nothing for any
+ * other request. */
+std::optional<std::string> tradedSecretOf(const network::ApiRequest& request) {
+  if (!request.body.empty() || !request.bearerToken.has_value() ||
+      !network::isWellFormedDeviceLinkSecret(*request.bearerToken)) {
+    return std::nullopt;
+  }
+  return request.bearerToken;
+}
+
 }  // namespace
 
 AccountsController::AccountsController(AccountsService& service,
+                                       DeviceLinksService& links,
                                        const SiteVisitors& siteVisitors)
-    : service_(service), siteVisitors_(siteVisitors) {}
+    : service_(service), links_(links), siteVisitors_(siteVisitors) {}
 
 network::ApiResponse AccountsController::createUser(
     const network::ApiRequest& request) {
@@ -101,17 +145,22 @@ network::ApiResponse AccountsController::createUser(
 
 network::ApiResponse AccountsController::readOwnUser(
     const network::ApiRequest& request) {
-  const std::optional<network::User> user =
-      service_.userOfToken(request.bearerToken.value_or(std::string{}), now());
-  if (!user.has_value()) {
-    return unauthorizedResponse(NO_SESSION_DETAIL);
-  }
-  return network::ApiResponse{.status = OK_STATUS,
-                              .body = network::userText(*user)};
+  return answerAsAccountOf(
+      service_, request,
+      [](const network::User& user, std::chrono::sys_seconds /*now*/) {
+        return okResponse(network::userText(user));
+      });
 }
 
 network::ApiResponse AccountsController::createSession(
     const network::ApiRequest& request) {
+  if (const std::optional<std::string> secret = tradedSecretOf(request)) {
+    return answerOf(
+        links_.openSession(
+            *secret, SessionOrigin{.address = siteVisitors_.addressOf(request),
+                                   .openedAt = currentSecond()}),
+        createdSessionResponse);
+  }
   return answerOrRefuse([this, &request] {
     return answerOf(
         service_.createSession(credentialsAttemptOf(request, siteVisitors_)),

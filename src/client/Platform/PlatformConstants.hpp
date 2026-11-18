@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <string_view>
 
 namespace rtype::client {
@@ -24,6 +25,23 @@ constexpr const char* GNOME_ANIMATIONS_COMMAND =
     "gsettings get org.gnome.desktop.interface enable-animations 2>/dev/null";
 constexpr std::string_view GNOME_ANIMATIONS_OFF = "false";
 constexpr std::size_t GNOME_ANSWER_LENGTH = 16;
+
+/**
+ * @brief How the client asks the system to open a web page: the beginnings
+ * of the only addresses it hands over; the program that opens one on macOS
+ * and on Linux, started without a shell; and on Windows the verb of
+ * ShellExecuteW and the value above which its result means success
+ * (ShellExecuteW, "Return value").
+ */
+constexpr std::string_view HTTPS_URL_START = "https://";
+constexpr std::string_view HTTP_URL_START = "http://";
+#ifdef __APPLE__
+constexpr const char* BROWSER_OPENER_COMMAND = "open";
+#else
+constexpr const char* BROWSER_OPENER_COMMAND = "xdg-open";
+#endif
+constexpr const wchar_t* WINDOWS_OPEN_VERB = L"open";
+constexpr std::int64_t SHELL_EXECUTE_FIRST_SUCCESS = 32;
 
 /** @brief Mode that opens a command to read what it prints. */
 constexpr const char* COMMAND_READ_MODE = "r";

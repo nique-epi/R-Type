@@ -68,7 +68,7 @@ int main(int argumentCount, char** arguments) {
         rtype::client::LaunchOptions::read(
             rtype::engine::processArguments(argumentCount, arguments));
     if (launchOptions.helpRequested()) {
-      std::cout << rtype::client::LaunchOptions::usage();
+      std::cout << rtype::client::launchUsage();
       return 0;
     }
     return runClient(launchOptions);

@@ -10,17 +10,21 @@
 #include "Endpoint.hpp"
 #include "GameRequest.hpp"
 #include "GameRules.hpp"
+#include "GameTicket.hpp"
 #include "IServerConnection.hpp"
 #include "ServerConnectionRequest.hpp"
 
 /** @brief What a screen asked of the connection: to start an attempt, with its
- * server, its nickname, its game and the rules it sends, or to drop it. */
+ * server, its nickname, its game, the rules it sends and its ticket, or to
+ * drop it. */
 struct ServerConnectionCall {
   ServerConnectionRequest request{};
   rtype::network::Endpoint server;
   std::string nickname;
   rtype::network::GameChoice game{rtype::network::ANY_GAME_CHOICE};
   std::optional<rtype::network::GameRules> rules = std::nullopt;
+  /** @brief The game ticket the attempt carries. */
+  rtype::network::GameTicket ticket{rtype::network::GUEST_TICKET};
 
   bool operator==(const ServerConnectionCall& other) const = default;
 };

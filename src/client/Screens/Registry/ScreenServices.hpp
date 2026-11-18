@@ -5,12 +5,17 @@
 #include "ChatChannel.hpp"
 #include "EntityMessageQueue.hpp"
 #include "GameWindow.hpp"
+#include "IAccountSession.hpp"
 #include "IAudioService.hpp"
+#include "IDeviceLinkFlow.hpp"
 #include "IEntityTypeSource.hpp"
 #include "IEntityTypeTable.hpp"
 #include "IGameCatalog.hpp"
 #include "IServerCatalog.hpp"
 #include "IServerTicks.hpp"
+#include "ISessionBackgrounds.hpp"
+#include "ITicketLink.hpp"
+#include "IWallet.hpp"
 #include "MasterLeaderboard.hpp"
 #include "PlayStart.hpp"
 #include "PlayerSettings.hpp"
@@ -19,6 +24,7 @@
 #include "ServerSession.hpp"
 #include "SettingsService.hpp"
 #include "ShipLookExchange.hpp"
+#include "SignInReturn.hpp"
 #include "WaitingRoom.hpp"
 
 namespace rtype::client {
@@ -42,6 +48,9 @@ struct ScreenServices {
   /** @brief The content of the session: a game loads the sprite sheets of
    * its appearances. */
   std::reference_wrapper<const IEntityTypeTable> entityTable;
+  /** @brief The backgrounds the pack of the server of the session brings:
+   * a game loads their images, and the sky lays them over its own. */
+  std::reference_wrapper<const ISessionBackgrounds> sessionBackgrounds;
   std::reference_wrapper<IAudioService> audio;
   std::reference_wrapper<GameWindow> window;
   std::reference_wrapper<ServerSession> connection;
@@ -62,6 +71,18 @@ struct ScreenServices {
    * one of them, for the server map. */
   std::reference_wrapper<IServerCatalog> serverCatalog;
   std::reference_wrapper<IGameCatalog> gameCatalog;
+  /** @brief The account the player plays under, and what it holds on the
+   * master: the shop, the hangar, the cashier and the balances read it. */
+  std::reference_wrapper<IAccountSession> account;
+  std::reference_wrapper<IWallet> wallet;
+  /** @brief Asks the master the game ticket a signed-in player joins a game
+   * with: the connection screens read it. */
+  std::reference_wrapper<ITicketLink> tickets;
+  /** @brief Signs the game in through the web site: SIGN_IN_SCREEN reads it.
+   */
+  std::reference_wrapper<IDeviceLinkFlow> deviceLinks;
+  /** @brief The screen SIGN_IN_SCREEN opens again once signed in. */
+  std::reference_wrapper<SignInReturn> signInReturn;
   /** @brief The server, the nickname and the game the first connection
    * screen starts with. */
   ServerChoice choice;

@@ -7,6 +7,8 @@
 #include "ConnectionGoal.hpp"
 #include "ConnectionScreen.hpp"
 #include "ConnectionStatus.hpp"
+#include "FakeAccountSession.hpp"
+#include "FakeTicketLink.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingServerConnection.hpp"
@@ -46,6 +48,9 @@ class ConnectionScreenFixture : public ::testing::Test {
   [[nodiscard]] const RecordingSoundPlayer& sounds() const;
 
  private:
+  /** @brief The account the attempts are made under: a guest. */
+  FakeAccountSession account_;
+  FakeTicketLink tickets_;
   RecordingNavigator navigator_;
   RecordingServerConnection connection_;
   InterfaceCanvasRecord canvas_;

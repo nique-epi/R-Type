@@ -5,21 +5,19 @@
 #include <SFML/Window/Keyboard.hpp>
 #include <cstdint>
 #include <memory>
-#include "PlayerSettings.hpp"
+#include "FakeWallet.hpp"
 #include "RecordingAudioService.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
-#include "RecordingSettingsStorage.hpp"
 #include "RecordingSoundPlayer.hpp"
-#include "SettingsService.hpp"
 #include "ShopScreen.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client::testing {
 
-/** @brief A shop over settings saved to a recording storage, a recording
- * navigator, a recording audio service and a recording canvas; the player
- * starts with the starter kit and no kopeck. */
+/** @brief A shop over a wallet the test sets, a recording navigator, a
+ * recording audio service and a recording canvas; the player starts with the
+ * starter kit and no kopeck. */
 class ShopScreenFixture : public ::testing::Test {
  protected:
   ShopScreenFixture();
@@ -34,23 +32,22 @@ class ShopScreenFixture : public ::testing::Test {
    * frame. */
   void pointAt(sf::Vector2i pixel, bool clicked);
   /** @brief Presses Enter to show the ticket of the chosen ware, then Enter
-   * again to press its BUY, then runs a frame as long as its stamp shows. */
+   * again to press its BUY; the master then makes the purchase asked, if any,
+   * its price leaving the kopecks; then runs a frame as long as its stamp
+   * shows. */
   void buyChosen();
   /** @brief Runs a frame @p elapsed long. */
   void wait(engine::Duration elapsed);
   /** @brief Gives the player @p kopecks, then runs a frame. */
   void give(std::uint32_t kopecks);
 
-  [[nodiscard]] const PlayerSettings& settings() const;
-  [[nodiscard]] const RecordingSettingsStorage& storage() const;
+  [[nodiscard]] FakeWallet& wallet();
   [[nodiscard]] const RecordingNavigator& navigator() const;
   [[nodiscard]] const RecordingSoundPlayer& sounds() const;
   [[nodiscard]] const InterfaceCanvasRecord& painting() const;
 
  private:
-  PlayerSettings settings_;
-  RecordingSettingsStorage storage_;
-  SettingsService service_;
+  FakeWallet wallet_;
   RecordingNavigator navigator_;
   RecordingSoundPlayer sounds_;
   RecordingAudioService audio_;

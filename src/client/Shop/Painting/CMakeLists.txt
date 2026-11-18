@@ -8,6 +8,7 @@ target_include_directories(rtype_client_shop_painting PUBLIC ${CMAKE_CURRENT_SOU
 
 target_link_libraries(rtype_client_shop_painting
   PUBLIC
+    rtype_client_economy
     rtype_client_interface
     rtype_client_row_window
     rtype_client_settings_values
@@ -15,7 +16,6 @@ target_link_libraries(rtype_client_shop_painting
     rtype_engine_time
   PRIVATE
     rtype_client_background
-    rtype_client_economy
     rtype_client_entity_sprites
     rtype_client_kopecks_painting
     rtype_client_outline

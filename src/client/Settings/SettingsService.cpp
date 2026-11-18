@@ -99,10 +99,6 @@ template bool SettingsService::apply<std::optional<PixelSize>>(
     const Setting<std::optional<PixelSize>>&, const std::optional<PixelSize>&);
 template bool SettingsService::apply<ShipLook>(const Setting<ShipLook>&,
                                                const ShipLook&);
-template bool SettingsService::apply<ShipLocker>(const Setting<ShipLocker>&,
-                                                 const ShipLocker&);
-template bool SettingsService::apply<std::uint32_t>(
-    const Setting<std::uint32_t>&, const std::uint32_t&);
 
 void SettingsService::bindKey(BoundAction action, sf::Keyboard::Scancode key) {
   settings_->keys.bind(action, key);

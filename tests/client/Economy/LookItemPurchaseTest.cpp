@@ -1,20 +1,18 @@
 #include <gtest/gtest.h>
 #include <cstddef>
+#include <optional>
 #include "LookItemPurchase.hpp"
 #include "LookItemPurchaseFixtures.hpp"
 #include "LookItemPurchaseTestConstants.hpp"
+#include "LookItems.hpp"
 #include "NamedPrice.hpp"
-#include "Purchase.hpp"
 #include "PurchaseRefusal.hpp"
 #include "Purse.hpp"
 #include "ShipLookConstants.hpp"
 
-using rtype::client::buyLookItem;
-using rtype::client::lookItemPrice;
-using rtype::client::Purchase;
+using rtype::client::lookRefusalOf;
 using rtype::client::PurchaseRefusal;
 using rtype::client::Purse;
-using rtype::client::testing::BALANCE_AFTER_THE_CROWN;
 using rtype::client::testing::CATALOGUE_PRICES;
 using rtype::client::testing::CROWN_NAME;
 using rtype::client::testing::CROWN_PRICE_PAID;
@@ -25,6 +23,7 @@ using rtype::client::testing::purseWithAnEmptyLocker;
 using rtype::client::testing::RICH_BALANCE;
 using rtype::client::testing::TOP_HAT_NAME;
 using rtype::identifiers::SHIP_LOOK_ITEM_COUNT;
+using rtype::network::lookItemPrice;
 
 /**
  * Given the catalogue of thirty items
@@ -43,57 +42,48 @@ TEST(LookItemPurchase, EveryItemHasItsDecidedPrice) {
 
 /**
  * Given a purse of 1000 kopecks that does not hold the crown
- * When it buys the crown, 600 kopecks
- * Then 400 kopecks are left and the locker holds the crown
+ * When it tries the crown, 600 kopecks
+ * Then nothing refuses it
  */
-TEST(LookItemPurchase, BuyingTakesThePriceAndFillsTheLocker) {
-  const Purchase bought =
-      buyLookItem(purseWithAnEmptyLocker(RICH_BALANCE), itemNamed(CROWN_NAME));
-
-  EXPECT_FALSE(bought.refusal.has_value());
-  EXPECT_EQ(bought.purse.kopecks, BALANCE_AFTER_THE_CROWN);
-  EXPECT_TRUE(bought.purse.locker.items.test(itemNamed(CROWN_NAME)));
+TEST(LookItemPurchase, AnItemTheBalancePaysIsRefusedNothing) {
+  EXPECT_EQ(lookRefusalOf(purseWithAnEmptyLocker(RICH_BALANCE),
+                          itemNamed(CROWN_NAME)),
+            std::nullopt);
 }
 
 /**
  * Given a purse of exactly the price of the crown
- * When it buys the crown
- * Then the crown is bought and nothing is left
+ * When it tries the crown
+ * Then nothing refuses it
  */
 TEST(LookItemPurchase, TheExactPriceBuys) {
-  const Purchase bought = buyLookItem(purseWithAnEmptyLocker(CROWN_PRICE_PAID),
-                                      itemNamed(CROWN_NAME));
-
-  EXPECT_FALSE(bought.refusal.has_value());
-  EXPECT_EQ(bought.purse.kopecks, 0U);
+  EXPECT_EQ(lookRefusalOf(purseWithAnEmptyLocker(CROWN_PRICE_PAID),
+                          itemNamed(CROWN_NAME)),
+            std::nullopt);
 }
 
 /**
  * Given a purse one kopeck short of the crown
  * When it buys the crown
- * Then the shop refuses, too expensive, and the purse is as it was
+ * Then the shop refuses, too expensive
  */
 TEST(LookItemPurchase, AnItemAboveTheBalanceIsTooExpensive) {
   const Purse purse = purseWithAnEmptyLocker(ONE_KOPECK_SHORT_OF_THE_CROWN);
 
-  const Purchase refused = buyLookItem(purse, itemNamed(CROWN_NAME));
-
-  EXPECT_EQ(refused.refusal, PurchaseRefusal::TooExpensive);
-  EXPECT_EQ(refused.purse, purse);
+  EXPECT_EQ(lookRefusalOf(purse, itemNamed(CROWN_NAME)),
+            PurchaseRefusal::TooExpensive);
 }
 
 /**
  * Given a rich purse whose locker already holds the top hat
  * When it buys the top hat
- * Then the shop refuses, already owned, and takes nothing
+ * Then the shop refuses, already owned
  */
 TEST(LookItemPurchase, AnItemHeldIsNotSoldAgain) {
   const Purse purse{.kopecks = RICH_BALANCE, .locker = {}};
 
-  const Purchase refused = buyLookItem(purse, itemNamed(TOP_HAT_NAME));
-
-  EXPECT_EQ(refused.refusal, PurchaseRefusal::AlreadyOwned);
-  EXPECT_EQ(refused.purse, purse);
+  EXPECT_EQ(lookRefusalOf(purse, itemNamed(TOP_HAT_NAME)),
+            PurchaseRefusal::AlreadyOwned);
 }
 
 /**
@@ -103,8 +93,7 @@ TEST(LookItemPurchase, AnItemHeldIsNotSoldAgain) {
  * Then the shop refuses: it is not for sale
  */
 TEST(LookItemPurchase, AStarterItemIsNotForSale) {
-  const Purchase refused = buyLookItem(purseWithAnEmptyLocker(RICH_BALANCE),
-                                       itemNamed(TOP_HAT_NAME));
-
-  EXPECT_EQ(refused.refusal, PurchaseRefusal::NotForSale);
+  EXPECT_EQ(lookRefusalOf(purseWithAnEmptyLocker(RICH_BALANCE),
+                          itemNamed(TOP_HAT_NAME)),
+            PurchaseRefusal::NotForSale);
 }

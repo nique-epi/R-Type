@@ -1,4 +1,5 @@
 target_sources(master_tests PRIVATE RouteCallFixtures.cpp ServersFixtures.cpp ServersRoutesTest.cpp ServersRoutesFixture.cpp SiteCreationRoutesTest.cpp SiteCreationRoutesFixtures.cpp)
 
+add_subdirectory(Controllers)
 add_subdirectory(Jobs)
 add_subdirectory(Services)

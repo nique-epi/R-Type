@@ -4,6 +4,7 @@
 #include "GameEnded.hpp"
 #include "GameFlowFixture.hpp"
 #include "GameFlowTestConstants.hpp"
+#include "GameOutcome.hpp"
 #include "GameState.hpp"
 #include "Instances/GameInstanceTestConstants.hpp"
 #include "PlayerRoster.hpp"
@@ -13,6 +14,7 @@
 using rtype::game::testing::TICKS_TO_THE_WHOLE_FIRST_WAVE;
 using rtype::network::GameEnded;
 using rtype::network::WireGameOutcome;
+using rtype::server::GameOutcome;
 using rtype::server::GameState;
 using rtype::server::testing::A_SECOND_OF_TICKS;
 using rtype::server::testing::FIRST_PLAYER;
@@ -82,6 +84,39 @@ TEST_F(GameFlowOneWaveLevelFixture, TellsThePlayersTheGameWasWon) {
   const std::vector<GameEnded> ends = endsSentTo(FIRST_PLAYER);
   ASSERT_FALSE(ends.empty());
   EXPECT_EQ(ends.front().outcome, WireGameOutcome::Victory);
+}
+
+/**
+ * Given a game on a level of one wave, every Bydo of the wave killed
+ * When the ticks that find the sky clear run
+ * Then the change to Finished says Victory
+ */
+TEST_F(GameFlowOneWaveLevelFixture, AnnouncesTheEndOfAWonGameAsAVictory) {
+  startGameWith({FIRST_PLAYER});
+  runTicks(TICKS_TO_THE_WHOLE_FIRST_WAVE);
+  clearTheBydos();
+
+  runTicks(TICKS_TO_FIND_THE_SKY_CLEAR + 1);
+
+  ASSERT_EQ(flow().state(), GameState::Finished);
+  ASSERT_FALSE(changes().empty());
+  EXPECT_EQ(changes().back().outcome, GameOutcome::Victory);
+}
+
+/**
+ * Given a game on a level of one wave, whose player loses every life
+ * When the tick that finds no life left runs
+ * Then the change to Finished says Defeat
+ */
+TEST_F(GameFlowOneWaveLevelFixture, AnnouncesTheEndOfALostGameAsADefeat) {
+  startGameWith({FIRST_PLAYER});
+  takeEveryLifeOf(*roster().find(playerEndpoint(FIRST_PLAYER)));
+
+  runTicks(1);
+
+  ASSERT_EQ(flow().state(), GameState::Finished);
+  ASSERT_FALSE(changes().empty());
+  EXPECT_EQ(changes().back().outcome, GameOutcome::Defeat);
 }
 
 /**

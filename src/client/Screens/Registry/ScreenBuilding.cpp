@@ -1,6 +1,7 @@
 #include "ScreenBuilding.hpp"
 #include <SFML/System/Vector2.hpp>
 #include <memory>
+#include <optional>
 #include <utility>
 #include "AssetLibrary.hpp"
 #include "AssetList.hpp"
@@ -8,16 +9,22 @@
 #include "GameWindow.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "IScreen.hpp"
+#include "IScreenNavigator.hpp"
 #include "ISoundPlayer.hpp"
 #include "InterfaceCanvas.hpp"
 #include "LoadingScreen.hpp"
 #include "LoadingScreenParts.hpp"
 #include "Menu.hpp"
+#include "MenuBuilder.hpp"
 #include "MotionPreference.hpp"
 #include "PlayfieldMapping.hpp"
 #include "ReducedMotion.hpp"
+#include "ScreenConstants.hpp"
 #include "ScreenContext.hpp"
 #include "ScreenId.hpp"
+#include "ScreenRegistry.hpp"
+#include "SignInReturn.hpp"
+#include "SignInScreenIdConstants.hpp"
 
 namespace rtype::client {
 
@@ -45,6 +52,35 @@ std::unique_ptr<IScreen> dialogScreenOf(const ScreenContext& context,
                                         Menu menu) {
   return std::make_unique<DialogScreen>(
       std::move(menu), playfieldMappingOf(context), interfaceCanvasOf(context));
+}
+
+std::unique_ptr<IScreen> signInNeededScreenOf(const ScreenContext& context,
+                                              std::optional<ScreenId> asking) {
+  IScreenNavigator& navigator = context.navigator.get();
+  SignInReturn& signInReturn = context.services.signInReturn.get();
+  return dialogScreenOf(
+      context,
+      MenuBuilder(MenuBuilder::Frame::Dialog, &soundsOf(context))
+          .heading(SIGN_IN_HEADING)
+          .message(SIGN_IN_MESSAGE)
+          .button({.label = SIGN_IN_LABEL},
+                  [&navigator, &signInReturn, asking] {
+                    signInReturn =
+                        SignInReturn{.closesAsking = true, .screen = asking};
+                    navigator.push(SIGN_IN_SCREEN);
+                  })
+          .cancelButton({.label = OK_LABEL}, [&navigator] { navigator.pop(); })
+          .build());
+}
+
+ScreenRegistry::Builder signedInOnly(ScreenRegistry::Builder builder,
+                                     ScreenId asking) {
+  return [builder = std::move(builder), asking](const ScreenContext& context) {
+    if (!context.services.account.get().signedIn()) {
+      return signInNeededScreenOf(context, asking);
+    }
+    return builder(context);
+  };
 }
 
 std::unique_ptr<IScreen> loadingScreenUnlessLoaded(const ScreenContext& context,
