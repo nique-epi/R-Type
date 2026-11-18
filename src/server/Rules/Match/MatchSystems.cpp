@@ -15,6 +15,7 @@
 #include "GameSettings.hpp"
 #include "IEntityOrders.hpp"
 #include "IHitArbitration.hpp"
+#include "LevelConstants.hpp"
 #include "LevelDirector.hpp"
 #include "LevelDirectorParts.hpp"
 #include "LifeKeeper.hpp"
@@ -25,6 +26,7 @@
 #include "PlayerController.hpp"
 #include "ServerException.hpp"
 #include "TimeConstants.hpp"
+#include "TransitionHold.hpp"
 #include "VolleySystem.hpp"
 #include "VolleySystemParts.hpp"
 #include "WaveSpawner.hpp"
@@ -44,6 +46,24 @@ namespace {
 void runWorldSystems(GameContext& game, game::World& world) {
   silenceAwayShips(world, game.roster.get());
   game.systems.get().run(world.components(), engine::SIMULATION_TICK_DURATION);
+}
+
+/**
+ * @brief Holds the ships of @p world while the level @p director directs plays
+ * a transition (see holdEveryShip()), and puts them back at their start once
+ * LEVEL_TRANSITION_RETURN_TICKS are left of it; nothing in a game that plays
+ * its waves.
+ */
+void holdTheShipsOfATransition(GameContext& game, game::World& world,
+                               const LevelDirector* director) {
+  if (director == nullptr || !director->progress().transition.has_value()) {
+    return;
+  }
+  const std::uint32_t ticksLeft = director->progress().transition->ticksLeft;
+  holdEveryShip(world, game.roster.get(), ticksLeft);
+  if (ticksLeft == game::LEVEL_TRANSITION_RETURN_TICKS) {
+    returnEveryShip(world, game.roster.get());
+  }
 }
 
 /** @returns The boss stage of the level played in @p world, its boss created
@@ -189,6 +209,7 @@ void MatchSystems::onTick(IHitArbitration& arbitration, std::uint32_t tick) {
   if (levelDirector_ != nullptr) {
     levelDirector_->onTick();
   }
+  holdTheShipsOfATransition(game, world_, levelDirector_.get());
   runWorldSystems(game, world_);
   weaponSystem_->onTick();
   volleySystem_->onTick();

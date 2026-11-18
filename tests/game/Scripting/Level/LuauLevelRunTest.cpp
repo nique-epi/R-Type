@@ -18,6 +18,7 @@ using rtype::game::LdtkField;
 using rtype::game::LdtkFieldValue;
 using rtype::game::LdtkPlacement;
 using rtype::game::LevelCheckpoint;
+using rtype::game::LevelTransition;
 using rtype::game::LuauLevelRunState;
 using ::testing::HasSubstr;
 
@@ -444,4 +445,72 @@ TEST_F(LuauLevelRunFixture, ARestartKeepsThePlacedEnemiesAsked) {
   static_cast<void>(run().restartFromCheckpoint());
 
   EXPECT_TRUE(progress().placedEnemiesAsked);
+}
+
+/**
+ * Given a level whose stage plays a transition of 3 s
+ * When the tick that starts it passes
+ * Then the level plays a transition of the 180 ticks of 3 s
+ */
+TEST_F(LuauLevelRunFixture, AStagePlaysATransitionOfItsTicks) {
+  play(PLAYS_A_TRANSITION);
+
+  tick(1);
+
+  ASSERT_TRUE(progress().transition.has_value());
+  EXPECT_EQ(progress().transition.value_or(LevelTransition{}).ticksLeft,
+            TICKS_OF_THE_TRANSITION);
+}
+
+/**
+ * Given a level whose stage plays a transition
+ * When the tick that starts it passes
+ * Then the scroll is paused
+ */
+TEST_F(LuauLevelRunFixture, ATransitionPausesTheScroll) {
+  play(PLAYS_A_TRANSITION);
+
+  tick(1);
+
+  EXPECT_FLOAT_EQ(progress().scroll.speed(), 0.0F);
+}
+
+/**
+ * Given a level whose stage plays a transition of 180 ticks, then names a biome
+ * When the last tick of the transition passes
+ * Then the stage still waits: the level keeps the biome it named before
+ */
+TEST_F(LuauLevelRunFixture, AStageWaitsWhileItsTransitionLasts) {
+  play(PLAYS_A_TRANSITION);
+
+  tick(TICKS_UNTIL_THE_LAST_OF_THE_TRANSITION);
+
+  EXPECT_EQ(progress().biome, BIOME_BEFORE_THE_TRANSITION);
+}
+
+/**
+ * Given a level whose stage plays a transition of 180 ticks, then names a biome
+ * When the tick after the transition passes
+ * Then the stage goes on and names it
+ */
+TEST_F(LuauLevelRunFixture, AStageGoesOnOnceItsTransitionEnded) {
+  play(PLAYS_A_TRANSITION);
+
+  tick(TICKS_UNTIL_THE_TRANSITION_IS_OVER);
+
+  EXPECT_EQ(progress().biome, BIOME_AFTER_THE_TRANSITION);
+}
+
+/**
+ * Given a level whose stage plays a transition a millisecond shorter than 3 s
+ * When the tick that asks for it passes
+ * Then the stage fails, and says the transition was refused
+ */
+TEST_F(LuauLevelRunFixture, RefusesATransitionShorterThanItsThreeParts) {
+  play(PLAYS_A_SHORT_TRANSITION);
+
+  tick(1);
+
+  EXPECT_EQ(run().state(), LuauLevelRunState::Failed);
+  EXPECT_THAT(run().failure(), HasSubstr(WORD_OF_A_REFUSED_TRANSITION));
 }

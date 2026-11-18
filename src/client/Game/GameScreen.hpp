@@ -32,6 +32,7 @@
 #include "ISky.hpp"
 #include "InterpolationClock.hpp"
 #include "InterpolationTally.hpp"
+#include "LevelTransitionScene.hpp"
 #include "Logger.hpp"
 #include "MissionBanner.hpp"
 #include "OwnPrediction.hpp"
@@ -74,8 +75,12 @@ struct PlayerSettings;
  * warpSpeedFactorAt(), 1 when the player reduced flashes), and the shake of the
  * camera, which also shifts the entity layer, never the status band; each
  * LevelStatus of the server gives it the biome and the scroll of the level,
- * whose decor it then draws. The sky is put back at its speed and place,
- * without any decor, when the screen goes.
+ * whose decor it then draws, and the transition the level plays between two of
+ * its parts: while it lasts the player holds nothing, the ships of the pilots
+ * fly out to the right and back from the left (see shipShiftAt()), and the
+ * stars warp (see transitionWarpAt(), 1 when the player reduced flashes). The
+ * sky is put back at its speed and place, without any decor, when the screen
+ * goes.
  *
  * The status band of the players lies over the entities: it is painted when
  * the screen is built, from the waiting room the game started from, then
@@ -194,6 +199,7 @@ class GameScreen : public IScreen {
   EnemyActionPlayer enemyActions_;
   EffectPlayer namedEffects_;
   BossPresentation boss_;
+  LevelTransitionScene transition_;
   engine::SystemScheduler systems_;
   PlayerCommands playerCommands_;
   IPlayerInputLink* inputs_;

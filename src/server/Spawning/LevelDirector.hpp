@@ -30,12 +30,14 @@ namespace rtype::server {
  * Each onTick() steps the stage due, makes the placed enemies due appear once
  * a stage asked for them with `level.spawn_placed()` (see
  * game::PlacedEnemySpawner), then scrolls the level by one tick unless its
- * script paused the scroll, and carries every body that follows the scroll
- * as far as the level scrolled (game::carryAlongTheScroll()), before the
- * world moves its ships and tests its collisions. A game::LevelChange is
- * published on
- * the bus of the game at the first tick, then each time the biome changes,
- * the scroll stops or starts again, or the level restarts from a checkpoint.
+ * script paused the scroll, carries every body that follows the scroll as far
+ * as the level scrolled (game::carryAlongTheScroll()), then counts down the
+ * transition a stage plays with `level.transition(ms)`, if any, and lets the
+ * scroll move on once it ended, before the world moves its ships and tests its
+ * collisions. A game::LevelChange is published on the bus of the game at the
+ * first tick, then each time the biome changes, the scroll stops or starts
+ * again, a transition starts or ends, or the level restarts from a checkpoint,
+ * which forgets the transition it played.
  *
  * The level is cleared once its last stage returned and no enemy is left in
  * the world. A stage that fails makes the level failed, for good, which the
@@ -75,6 +77,7 @@ class LevelDirector {
 
  private:
   void spawnDuePlacements();
+  void advanceTransition();
   void announceChange();
   void removeEveryBodyButTheShips() const;
 
@@ -89,6 +92,7 @@ class LevelDirector {
    * and after a restart, so the next tick publishes one. */
   std::optional<std::string> announcedBiome_;
   bool announcedMoving_{false};
+  bool announcedTransitioning_{false};
 };
 
 }  // namespace rtype::server

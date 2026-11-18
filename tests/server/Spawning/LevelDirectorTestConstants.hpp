@@ -150,4 +150,18 @@ level.register("directed", {
 })
 )";
 
+/**
+ * @brief A level whose stage plays a transition of 3 s, 180 ticks, then waits.
+ * The director counts down the tick that starts it, so it tells 179 ticks
+ * left, 2983 ms; the transition ends at tick 180, and the scroll moves on.
+ */
+constexpr std::string_view LEVEL_THAT_PLAYS_A_TRANSITION = R"(
+level.register("directed", { function()
+  level.transition(3000)
+  level.wait(60000)
+end })
+)";
+constexpr std::uint16_t TRANSITION_LEFT_AS_IT_STARTS = 2983;
+constexpr std::size_t TICKS_UNTIL_THE_TRANSITION_ENDS = 180;
+
 }  // namespace rtype::server::testing

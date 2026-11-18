@@ -4,6 +4,7 @@
 #include <string>
 #include "LevelCheckpoint.hpp"
 #include "LevelScroll.hpp"
+#include "LevelTransition.hpp"
 
 namespace rtype::game {
 
@@ -13,7 +14,7 @@ namespace rtype::game {
  * biome began, in logical units, the last checkpoint it reached, nothing
  * before the first, and whether a stage asked that the enemies the level
  * places come in as the scroll reaches them, which a restart from a
- * checkpoint keeps.
+ * checkpoint keeps, and the transition it plays, nothing while it plays none.
  */
 struct LevelProgress {
   LevelScroll scroll;
@@ -21,6 +22,7 @@ struct LevelProgress {
   float biomeSince{};
   std::optional<LevelCheckpoint> checkpoint = std::nullopt;
   bool placedEnemiesAsked{false};
+  std::optional<LevelTransition> transition = std::nullopt;
 };
 
 }  // namespace rtype::game

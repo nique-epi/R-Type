@@ -116,7 +116,8 @@ EventMessage eventMessageOf(const game::LevelChange& event) {
   const network::LevelStatus message{.biome = event.biome,
                                      .scrollPosition = event.scrollPosition,
                                      .scrollSpeed = event.scrollSpeed,
-                                     .biomeSince = event.biomeSince};
+                                     .biomeSince = event.biomeSince,
+                                     .transitionLeft = event.transitionLeft};
   return EventMessage{.message = network::encodedMessage(message),
                       .guaranteed = true};
 }

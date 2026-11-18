@@ -21,6 +21,7 @@ using rtype::server::testing::LEVEL_OF_TWO_STAGES_THAT_SPAWNS_THE_PLACED;
 using rtype::server::testing::LEVEL_SHIP_SHEET;
 using rtype::server::testing::LEVEL_THAT_FAILS;
 using rtype::server::testing::LEVEL_THAT_PAUSES;
+using rtype::server::testing::LEVEL_THAT_PLAYS_A_TRANSITION;
 using rtype::server::testing::LEVEL_THAT_SPAWNS_THE_PLACED;
 using rtype::server::testing::LEVEL_THAT_WAITS;
 using rtype::server::testing::LevelDirectorFixture;
@@ -41,6 +42,8 @@ using rtype::server::testing::TICKS_OF_ONE_SECOND;
 using rtype::server::testing::TICKS_PAST_THE_PAUSE;
 using rtype::server::testing::TICKS_UNTIL_BOTH_CAME_IN;
 using rtype::server::testing::TICKS_UNTIL_THE_LATE_ONE_COMES_IN_AGAIN;
+using rtype::server::testing::TICKS_UNTIL_THE_TRANSITION_ENDS;
+using rtype::server::testing::TRANSITION_LEFT_AS_IT_STARTS;
 using rtype::server::testing::UNREGISTERED_LEVEL;
 using rtype::server::testing::WHERE_THE_DRIFTER_APPEARS_X;
 using rtype::server::testing::WHERE_THE_DRIFTER_IS_PLACED;
@@ -364,4 +367,33 @@ TEST_F(LevelDirectorFixture, OnlyTheEnemiesPlacedAfterTheCheckpointComeBack) {
 
   ASSERT_THAT(spawned(), SizeIs(SPAWNS_AFTER_THE_RESTART));
   EXPECT_FLOAT_EQ(spawned().back().position.y, WHERE_THE_LATE_DRIFTER_IS.y);
+}
+
+/**
+ * Given a level whose stage plays a transition of 3 s at its first tick
+ * When that tick passes
+ * Then the game is told the time left of the transition, 2983 ms
+ */
+TEST_F(LevelDirectorFixture, TellsTheTimeLeftOfATransitionAsItStarts) {
+  direct(LEVEL_THAT_PLAYS_A_TRANSITION);
+
+  tick(1);
+
+  ASSERT_THAT(changes(), SizeIs(1));
+  EXPECT_EQ(changes().back().transitionLeft, TRANSITION_LEFT_AS_IT_STARTS);
+}
+
+/**
+ * Given a level whose stage plays a transition of 3 s
+ * When its 180 ticks pass
+ * Then the game is told the scroll moves again, with no transition left
+ */
+TEST_F(LevelDirectorFixture, LetsTheScrollMoveOnOnceTheTransitionEnded) {
+  direct(LEVEL_THAT_PLAYS_A_TRANSITION);
+
+  tick(TICKS_UNTIL_THE_TRANSITION_ENDS);
+
+  ASSERT_THAT(changes(), SizeIs(2));
+  EXPECT_GT(changes().back().scrollSpeed, 0.0F);
+  EXPECT_EQ(changes().back().transitionLeft, 0);
 }

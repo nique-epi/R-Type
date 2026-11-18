@@ -21,6 +21,7 @@ constexpr std::string_view LEVEL_BIOME_FUNCTION_NAME = "biome";
 constexpr std::string_view LEVEL_ENEMIES_FUNCTION_NAME = "enemies";
 constexpr std::string_view LEVEL_PLACEMENTS_FUNCTION_NAME = "placements";
 constexpr std::string_view LEVEL_SPAWN_PLACED_FUNCTION_NAME = "spawn_placed";
+constexpr std::string_view LEVEL_TRANSITION_FUNCTION_NAME = "transition";
 
 /** @brief Where the functions of `level` take their arguments. */
 constexpr int LEVEL_NAME_ARGUMENT = 1;
@@ -65,9 +66,12 @@ constexpr const char* DUPLICATE_LEVEL_MESSAGE =
 constexpr const char* WRONG_LEVEL_STAGES_MESSAGE =
     "the stages of a level are a list of 1 to 64 functions";
 constexpr const char* LEVEL_WAIT_OUTSIDE_STAGE_MESSAGE =
-    "level.wait and level.wait_scroll only run in a stage of a level";
+    "level.wait, level.wait_scroll and level.transition only run in a stage "
+    "of a level";
 constexpr const char* WRONG_LEVEL_WAIT_MESSAGE =
     "a wait is a finite number of milliseconds, from 0";
+constexpr const char* WRONG_LEVEL_TRANSITION_MESSAGE =
+    "a transition lasts 3000 to 60000 milliseconds";
 constexpr const char* WRONG_SCROLL_POSITION_MESSAGE =
     "a scroll position is a finite number of logical units, from 0";
 constexpr const char* NO_LEVEL_PLAYED_MESSAGE =

@@ -1,6 +1,7 @@
 #include "LuauLevels.hpp"
 #include <algorithm>
 #include <array>
+#include <chrono>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -19,7 +20,9 @@
 #include "LdtkField.hpp"
 #include "LdtkFieldValue.hpp"
 #include "LdtkPlacement.hpp"
+#include "LevelConstants.hpp"
 #include "LevelProgress.hpp"
+#include "LevelTransition.hpp"
 #include "LuauLevelConstants.hpp"
 #include "LuauLevelEntry.hpp"
 #include "LuauLevelStep.hpp"
@@ -27,6 +30,7 @@
 #include "ScriptFunction.hpp"
 #include "ScriptMachine.hpp"
 #include "ScriptWait.hpp"
+#include "TimeConstants.hpp"
 #include "lua.h"
 #include "lualib.h"
 
@@ -179,6 +183,38 @@ int waitOfStage(lua_State* state) {
   return lua_yield(state, 0);
 }
 
+/** @returns The ticks of a transition of @p milliseconds; nothing unless it
+ * lasts SHORTEST_LEVEL_TRANSITION to LONGEST_LEVEL_TRANSITION. */
+std::optional<std::uint32_t> transitionTicksOf(double milliseconds) {
+  const double shortest =
+      std::chrono::duration<double, std::milli>(SHORTEST_LEVEL_TRANSITION)
+          .count();
+  const double longest =
+      std::chrono::duration<double, std::milli>(LONGEST_LEVEL_TRANSITION)
+          .count();
+  if (!std::isfinite(milliseconds) || milliseconds < shortest ||
+      milliseconds > longest) {
+    return std::nullopt;
+  }
+  return engine::scriptWaitTicks(milliseconds);
+}
+
+/** @brief `level.transition(ms)`: pauses the scroll, plays a transition of
+ * that time, and stops the stage that steps until it ends. */
+int playTransition(lua_State* state) {
+  LuauLevelStep& step = stepOfStage(state);
+  const std::optional<std::uint32_t> ticks =
+      transitionTicksOf(luaL_checknumber(state, LEVEL_WAIT_ARGUMENT));
+  if (!ticks.has_value()) {
+    throw engine::ScriptException(WRONG_LEVEL_TRANSITION_MESSAGE);
+  }
+  LevelProgress& progress = progressOf(state);
+  progress.scroll.pause();
+  progress.transition = LevelTransition{.ticksLeft = *ticks};
+  step.wait = LuauLevelWait{.ticks = *ticks};
+  return lua_yield(state, 0);
+}
+
 /** @brief `level.wait_scroll(position)`: stops the stage that steps until
  * the level scrolled that far. */
 int waitForScroll(lua_State* state) {
@@ -311,7 +347,9 @@ LuauLevels::LuauLevels(engine::ScriptMachine& machine) {
       engine::ScriptFunction{.name = LEVEL_PLACEMENTS_FUNCTION_NAME,
                              .function = placementsOfLevel},
       engine::ScriptFunction{.name = LEVEL_SPAWN_PLACED_FUNCTION_NAME,
-                             .function = spawnPlaced}};
+                             .function = spawnPlaced},
+      engine::ScriptFunction{.name = LEVEL_TRANSITION_FUNCTION_NAME,
+                             .function = playTransition}};
   machine.expose(LEVEL_TABLE, functions, this);
 }
 

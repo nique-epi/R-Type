@@ -1,4 +1,6 @@
 #include "LevelDirector.hpp"
+#include <chrono>
+#include <cstdint>
 #include <string>
 #include <utility>
 #include "BehaviourScripts.hpp"
@@ -22,6 +24,21 @@
 #include "TimeConstants.hpp"
 
 namespace rtype::server {
+
+namespace {
+
+/** @returns The milliseconds left of the transition @p progress plays, 0 when
+ * it plays none; LONGEST_LEVEL_TRANSITION keeps them within 16 bits. */
+std::uint16_t transitionLeftOf(const game::LevelProgress& progress) {
+  if (!progress.transition.has_value()) {
+    return 0;
+  }
+  const auto left = std::chrono::duration_cast<std::chrono::milliseconds>(
+      engine::SIMULATION_TICK_DURATION * progress.transition->ticksLeft);
+  return static_cast<std::uint16_t>(left.count());
+}
+
+}  // namespace
 
 const game::LuauLevelEntry& entryOfLevel(const game::LuauLevels& levels,
                                          const std::string& level) {
@@ -55,6 +72,7 @@ void LevelDirector::onTick() {
   progress_.scroll.advance(engine::SIMULATION_TICK_DURATION);
   game::carryAlongTheScroll(parts_.world.get().components(),
                             progress_.scroll.position() - scrolledBefore);
+  advanceTransition();
   announceChange();
 }
 
@@ -73,6 +91,7 @@ bool LevelDirector::restartFromCheckpoint() {
   }
   removeEveryBodyButTheShips();
   placer_.restartAt(progress_.scroll.position());
+  progress_.transition.reset();
   announcedBiome_.reset();
   logger_.info("the level ", parts_.level,
                " restarts from its last checkpoint, at ",
@@ -89,19 +108,36 @@ void LevelDirector::spawnDuePlacements() {
   placer_.spawnDue(progress_.scroll.position(), parts_.orders.get());
 }
 
+void LevelDirector::advanceTransition() {
+  if (!progress_.transition.has_value()) {
+    return;
+  }
+  game::LevelTransition& transition = *progress_.transition;
+  if (transition.ticksLeft > 0) {
+    --transition.ticksLeft;
+  }
+  if (transition.ticksLeft == 0) {
+    progress_.transition.reset();
+    progress_.scroll.resume();
+  }
+}
+
 void LevelDirector::announceChange() {
   const bool moving = progress_.scroll.speed() > 0.0F;
+  const bool transitioning = progress_.transition.has_value();
   if (announcedBiome_.has_value() && *announcedBiome_ == progress_.biome &&
-      announcedMoving_ == moving) {
+      announcedMoving_ == moving && announcedTransitioning_ == transitioning) {
     return;
   }
   announcedBiome_ = progress_.biome;
   announcedMoving_ = moving;
+  announcedTransitioning_ = transitioning;
   parts_.events.get().publish(
       game::LevelChange{.biome = progress_.biome,
                         .scrollPosition = progress_.scroll.position(),
                         .scrollSpeed = progress_.scroll.speed(),
-                        .biomeSince = progress_.biomeSince});
+                        .biomeSince = progress_.biomeSince,
+                        .transitionLeft = transitionLeftOf(progress_)});
 }
 
 void LevelDirector::removeEveryBodyButTheShips() const {
