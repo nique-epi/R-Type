@@ -266,14 +266,14 @@ The repository ships two levels:
 
 | Level | Resource | What it plays |
 |---|---|---|
-| `fosse` | `resources/fosse/` | named after the biome it leads into: six stages, each one after the first at a checkpoint, in two parts: two stages in open space, the second ending on the Bydo Tyrant, then a stage that plays the transition between the parts and enters the Pit through its cave, then two in the Pit, where the mobs of the Pit join the Bydos, and a last stage on the boss of the Pit, the Necromancer. It declares the starts of its third and fourth stages: `--stage 3` opens on the transition, `--stage 4` in the Pit (see [The mobs of the Pit](#the-mobs-of-the-pit-and-the-necromancer)). The positions of its enemies are written in the script until a level places them in its LDtk project. |
+| `fosse` | `resources/fosse/` | named after the biome it leads into: six stages, each one after the first at a checkpoint, in two parts: two stages in open space, the second ending on the Bydo Tyrant, then a stage that plays the transition between the parts and enters the Pit through its cave, then two in the Pit, where only the mobs of the Pit come, and a last stage on the boss of the Pit, the Necromancer. It declares the starts of its third to sixth stages, `--stage 3` opening on the transition, `--stage 4` in the Pit, `--stage 5` in its depths and `--stage 6` on the Necromancer, and the band of the Pit, its ceiling on row 192 and its floor on row 848, which no ship flies past (see [The mobs of the Pit](#the-mobs-of-the-pit-and-the-necromancer)). The positions of its enemies are written in the script until a level places them in its LDtk project. |
 | `training_run` | `resources/training-run/` | two stages, fifteen enemies placed in `levels/training_run.ldtk`, a pause of the scroll on each Reaper until it is destroyed, a checkpoint, the stars and then the biome `fosse` |
 
 Play one with `ensure fosse` and `set level fosse` in `server.cfg`, or `ensure training-run` and `set level training_run`.
 
 ### The mobs of the Pit and the Necromancer
 
-The resource fosse brings its own enemies: their sheets in `entities/`, their sprites in `sprites/fosse/`, and the behaviours that steer them in `server/fosse_mobs.luau` and `server/necromancer.luau`. Every mob crosses the playfield from the right to the left, some along a wave, and plays its idle loop while it moves; an attack is three actions of attack 0, `signal`, `strike` and `recover`, whose lengths in the sheet are those of their animations.
+The resource fosse brings its own enemies: their sheets in `entities/`, their sprites in `sprites/fosse/`, and the behaviours that steer them in `server/fosse_mobs.luau`, `server/gloomwyrm.luau` and `server/necromancer.luau`. Every mob but the Gloomwyrm crosses the playfield from the right to the left, some along a wave, and plays its idle loop while it moves; an attack is three actions of attack 0, `signal`, `strike` and `recover`, whose lengths in the sheet are those of their animations.
 
 | Sheet | Pilot | What it does |
 |---|---|---|
@@ -282,17 +282,19 @@ The resource fosse brings its own enemies: their sheets in `entities/`, their sp
 | `stalagmaw` | `stalagmaw_drop` | crawls left along the top row at `crawl_speed`; a ship below it within `reach` makes it shake, then fall at `fall_speed`, and it is removed below the playfield |
 | `ruin_warden` | `warden_float` | floats left, bobbing (`bob`, `bob_ms`); left of `fire_from_x` and rested, its rune lights up and it fires one `ruin_warden_bolt` |
 | `glowmoth` | `weave` | flutters left in a wave, in swarms; it does not attack |
+| `gloomwyrm` | `gloomwyrm_head` | a serpent of bones: its skull spawns `length` bodies in a line behind it, `gloomwyrm_segment` vertebrae and a `gloomwyrm_tail`, swims left along a wave (`wave` units down and back every `wave_ms`, `waves` times), turns back along a half circle of `radius` units, down when it entered above row 520 and up otherwise, and swims out to the right along a wave. Its skull is the weak point: once it is killed, every body left bursts in turn, from the neck to the tail |
+| `gloomwyrm_segment`, `gloomwyrm_tail` | `gloomwyrm_body` | follow the path of the skull, each `LINK_TICKS` (10) ticks of path behind the body before it, so the wyrm moves as one; each is shot down on its own (3 points of health for a vertebra, 6 for the tail), and the wyrm swims on without it; once the skull is killed, each plays its `burst` effect `BURST_TICKS` (5) ticks after the body before it, and is removed. A skull that swims out of the playfield is removed without a kill, and its bodies swim out after it |
 
-The Necromancer (`necromancer`, pilot `necromancer_rite`) is the boss of the last stage. It slides in from the right to `rest_x` (its arrival, attack 5), then plays its attacks in place: the rings (attack 0), the fist (1), the raise of the dead (2) and the gaze (3), each once in that order and then at random. Only its mask is hurt: its `pre_hit` stops a missile that hits it elsewhere, or while the mask is covered, and the mask is uncovered during the strike of the rings and the recovers of the fist and of the gaze. Below half its health it hides in its hood for `rage_ms` (attack 4) and pairs its attacks: rings with the fist, skeleton arms under the gaze. What leaves it is a body of its own, which a ship touches and which stops missiles or lets them through:
+The Necromancer (`necromancer`, pilot `necromancer_rite`) is the boss of the last stage. It rises from below the playfield to `rest_y` over `rise_ms`, on the column it appears on (its arrival, attack 5), then plays its attacks in place: the rings (attack 0), the fist (1), the raise of the dead (2) and the gaze (3), each once in that order and then at random. Only its mask is hurt: a missile on the rows of the mask hurts it, wherever it touches the hood, and its `pre_hit` stops any other missile, and every missile while it rises or hides in its hood. Below half its health it hides in its hood for `rage_ms` (attack 4) and pairs its attacks: rings with the fist, skeleton arms under the gaze. What leaves it is a body of its own, which a ship touches and which stops missiles or lets them through:
 
 | Sheet | Pilot | What it does |
 |---|---|---|
 | `necromancer_ring` | `necromancer_ring` | flies left along its lane to `turn_x`, sweeps to `middle_y`, flies back right and is removed at `return_x`; it stops missiles |
-| `bone_spike` | `necromancer_effect` | erupts beside the fist, and hurts during its strike |
+| `bone_spike` | `necromancer_effect` | eight of them erupt one after the other along the floor, from the impact of the fist to the left edge, 120 units and 90 ms apart, and each hurts during its strike |
 | `bone_arm` | `necromancer_effect` | opens a fissure for `strike_after_ms`, then bursts up and hurts during its strike; three of them rise, moved together each time |
-| `necromancer_beam` | `necromancer_effect` | draws the beam of the gaze for `life_ms`; the beam that hurts is the `hurt_zone.beam` of the Necromancer |
+| `necromancer_beam` | `necromancer_gaze` | comes with the signal of the gaze and shows its look `aim` for `aim_ms`, a thin pink line that blinks where the beam will burn, then burns for `burn_ms`, one sprite 1600 units long from the mask to the left edge, and is removed; the beam that hurts is the `hurt_zone.beam` of the Necromancer, during the strike of the gaze |
 
-The fist hurts through a box of the Necromancer's `hurt_zone`, the first 333 ms of its strike. A body of `necromancer_effect` keeps its hitbox 1024 units below its center, out of the playfield, so only its hurt zone touches a ship. The values of these sheets are **provisional** until gameplay tunes them.
+The fist hurts through a box of the Necromancer's `hurt_zone`, the first 333 ms of its strike. A body of `necromancer_effect` or `necromancer_gaze` keeps its hitbox 1024 units below its center, out of the playfield, so only its hurt zone touches a ship. The values of these sheets are **provisional** until gameplay tunes them.
 
 ## Placing the enemies in LDtk
 

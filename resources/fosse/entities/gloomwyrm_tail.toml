@@ -1,0 +1,63 @@
+# The entity type gloomwyrm_tail, brought by the resource fosse: the tail of
+# the Gloomwyrm, its last body, steered by server/gloomwyrm.luau like its
+# vertebrae.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy"
+layer = "enemy"
+hits = ["player"]
+pilot = "gloomwyrm_body"
+
+[gameplay.hitbox]
+width = 72
+height = 40
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 360
+
+[gameplay.health]
+points = 6
+
+[gameplay.score]
+points = 500
+
+[gameplay.survives_contact]
+
+[appearance]
+sheet = "sprites/fosse/gloomwyrm_tail.png"
+
+# Idle: it sways, its tip trailing to the right while the wyrm swims left.
+[appearance.idle]
+left = 0
+top = 16
+width = 22
+height = 14
+frames = 8
+spacing = 2
+frame_ms = 60
+
+# The same, its tip trailing to the left, once the wyrm swims back to the
+# right.
+[appearance.looks.right]
+left = 0
+top = 0
+width = 22
+height = 14
+frames = 8
+spacing = 2
+frame_ms = 60
+
+# The burst it plays when the death of the skull blows the wyrm apart; its
+# version without flash is the row under it.
+[appearance.effects.burst]
+left = 0
+top = 32
+width = 24
+height = 24
+frames = 6
+spacing = 2
+frame_ms = 70

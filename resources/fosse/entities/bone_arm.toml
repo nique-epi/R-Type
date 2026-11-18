@@ -21,19 +21,19 @@ offset_y = 1024
 kind = "steady"
 top_speed = 1
 
-# The fissure opens with the signal of the raise, 1992 ms, then the arm
-# bursts up for its strike, 1660 ms.
+# The fissure opens with the signal of the raise, 1909 ms, then the arm
+# bursts up for its strike, 1577 ms.
 [gameplay.behaviour]
-strike_after_ms = 1992
-life_ms = 3652
+strike_after_ms = 1909
+life_ms = 3486
 
 [gameplay.survives_contact]
 
 [[gameplay.hurt_zone.box]]
 offset_x = 0
-offset_y = 42
-width = 128
-height = 528
+offset_y = 21
+width = 64
+height = 264
 attack = 0
 phase = "strike"
 from_ms = 250
@@ -46,8 +46,8 @@ sheet = "sprites/fosse/bone_arm.png"
 [appearance.idle]
 left = 0
 top = 0
-width = 58
-height = 167
+width = 29
+height = 84
 frames = 14
 spacing = 2
 frame_ms = 83
@@ -55,11 +55,11 @@ frame_ms = 83
 # Strike: the skeleton arm bursts up, claws the air, then sinks.
 [appearance.attack_0.strike]
 left = 0
-top = 169
-width = 58
-height = 167
-frames = 11
+top = 86
+width = 29
+height = 84
+frames = 22
 spacing = 2
-frame_ms = 166
+frame_ms = 83
 playback = "once"
 afterwards = "idle"

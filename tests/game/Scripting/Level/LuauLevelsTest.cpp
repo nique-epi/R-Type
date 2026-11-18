@@ -355,6 +355,26 @@ TEST(LuauLevels, KeepsTheBandOfABiome) {
 }
 
 /**
+ * Given the scripts of the resource fosse
+ * When they run
+ * Then the level fosse closes its biome with the ceiling and the floor of the
+ * Pit
+ */
+TEST(LuauLevels, ClosesThePitWithItsCeilingAndItsFloor) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+  const std::array folders{
+      std::filesystem::path{RTYPE_SOURCE_RESOURCES_FOLDER} / FOSSE_RESOURCE};
+
+  scripts.run(rtype::game::scriptSourcesIn(folders));
+
+  const LuauLevelEntry* const entry = scripts.levels().entryOf(FOSSE_LEVEL);
+  ASSERT_NE(entry, nullptr);
+  ASSERT_TRUE(entry->bands.contains(FOSSE_BIOME));
+  EXPECT_EQ(entry->bands.find(FOSSE_BIOME)->second, FOSSE_BAND);
+}
+
+/**
  * Given a script whose band is narrower than a ship
  * When it runs
  * Then it fails, saying what the bands of a level are

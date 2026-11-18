@@ -2,14 +2,16 @@
 -- The level fosse, named after the biome it leads into: six stages a team
 -- plays one after the other, each one after the first starting at a
 -- checkpoint, in two parts. A server plays it with `set level fosse`, and
--- starts it at a stage with `--stage <n>`: 3 at the transition, 4 in the Pit.
+-- starts it at a stage with `--stage <n>`: 3 at the transition, 4 in the Pit,
+-- 5 in its depths, 6 on the Necromancer.
 --
 -- The first part crosses open space, with the stars alone, and ends on the
 -- Bydo Tyrant. The third stage is the transition between the two parts: the
 -- ships fly out to the right with the warp of the stars, then back in from
 -- the left (level.transition), and the Pit enters through its cave. The
--- second part plays in the Pit, where the mobs of the Pit join the Bydos
--- (server/fosse_mobs.luau), and ends on its boss, the Necromancer
+-- second part plays in the Pit, where only the mobs of the Pit come
+-- (server/fosse_mobs.luau and the Gloomwyrm of server/gloomwyrm.luau), and
+-- ends on its boss, the Necromancer
 -- (server/necromancer.luau). In the Pit, the enemies keep to
 -- the rows the maps leave free, from 192 to 848 logical units: the Stalagmaw
 -- crawls along the top one, the Sporecap walks along the bottom one. The
@@ -23,6 +25,11 @@ local ENTRY_COLUMN = 1984
 -- the transition begins and ends: the scroll is paused through both.
 local END_OF_THE_FIRST_PART = 5400
 
+-- The scroll the entry into the Pit and its depths end at, where the next
+-- stage begins.
+local END_OF_THE_PIT_ENTRY = 10680
+local END_OF_THE_DEPTHS = 16200
+
 -- How long the transition between the two parts lasts, in milliseconds.
 local TRANSITION_MS = 3500
 
@@ -30,11 +37,13 @@ local TRANSITION_MS = 3500
 -- edge, on the middle row of the area of play.
 local BOSS_ENTRY = { x = 2176, y = 492 }
 
--- Where the center of the Necromancer appears: half its 1132-unit frame past
--- the right edge, its smoke on the floor of the Pit.
-local NECROMANCER_ENTRY = { x = 2486, y = 542 }
+-- Where the center of the Necromancer appears: below the bottom edge, past
+-- half its 440-unit frame, on the column it then rises along, its right side
+-- by the right edge.
+local NECROMANCER_ENTRY = { x = 1600, y = 1310 }
 
--- The top and the bottom rows the maps of the Pit leave free.
+-- The top and the bottom rows the maps of the Pit leave free: its ceiling and
+-- its floor, which no ship flies past (the band of the biome).
 local CEILING_ROW, FLOOR_ROW = 192, 848
 
 -- How often a stage looks at the sky, in milliseconds.
@@ -92,13 +101,14 @@ local BYDO_FIELD: { Wave } = {
 local INTO_THE_PIT: { Wave } = {
 	{ at = 5880, sheet = "glowmoth", rows = { 300, 380, 460, 540, 620 } },
 	{ at = 6600, sheet = "sporecap", rows = { FLOOR_ROW } },
-	{ at = 6600, sheet = "drifter", rows = { 300, 540 } },
+	{ at = 6600, sheet = "glowmoth", rows = { 300, 380, 460, 540, 620 } },
 	{ at = 7320, sheet = "lanternfin", rows = { 360, 720 } },
 	{ at = 8040, sheet = "stalagmaw", rows = { CEILING_ROW } },
-	{ at = 8040, sheet = "weaver", rows = { 480, 720 } },
+	{ at = 8040, sheet = "lanternfin", rows = { 480, 720 } },
 	{ at = 8760, sheet = "ruin_warden", rows = { 540 } },
+	{ at = 9120, sheet = "gloomwyrm", rows = { 260 } },
 	{ at = 9480, sheet = "glowmoth", rows = { 520, 600, 680, 760, 840 } },
-	{ at = 10200, sheet = "drillback", rows = { 540 } },
+	{ at = 10200, sheet = "ruin_warden", rows = { 360, 720 } },
 }
 
 local DEPTHS: { Wave } = {
@@ -107,7 +117,8 @@ local DEPTHS: { Wave } = {
 	{ at = 11880, sheet = "stalagmaw", rows = { CEILING_ROW } },
 	{ at = 12600, sheet = "lanternfin", rows = { 300, 540, 760 } },
 	{ at = 13320, sheet = "glowmoth", rows = { 240, 320, 400, 480, 560 } },
-	{ at = 14040, sheet = "bydomancer", rows = { 540 } },
+	{ at = 13680, sheet = "gloomwyrm", rows = { 690 } },
+	{ at = 14040, sheet = "ruin_warden", rows = { 540 } },
 	{ at = 14760, sheet = "stalagmaw", rows = { CEILING_ROW } },
 	{ at = 14760, sheet = "sporecap", rows = { FLOOR_ROW } },
 	{ at = 15480, sheet = "lanternfin", rows = { 360, 720 } },
@@ -130,11 +141,11 @@ level.register("fosse", {
 	end,
 	function()
 		play(INTO_THE_PIT)
-		level.wait_scroll(10680)
+		level.wait_scroll(END_OF_THE_PIT_ENTRY)
 	end,
 	function()
 		play(DEPTHS)
-		level.wait_scroll(16200)
+		level.wait_scroll(END_OF_THE_DEPTHS)
 		wait_for_a_clear_sky()
 	end,
 	function()
@@ -144,5 +155,10 @@ level.register("fosse", {
 	starts = {
 		[3] = { scroll = END_OF_THE_FIRST_PART },
 		[4] = { scroll = END_OF_THE_FIRST_PART, biome = "fosse" },
+		[5] = { scroll = END_OF_THE_PIT_ENTRY, biome = "fosse", biome_since = END_OF_THE_FIRST_PART },
+		[6] = { scroll = END_OF_THE_DEPTHS, biome = "fosse", biome_since = END_OF_THE_FIRST_PART },
+	},
+	bands = {
+		fosse = { top = CEILING_ROW, bottom = FLOOR_ROW },
 	},
 })

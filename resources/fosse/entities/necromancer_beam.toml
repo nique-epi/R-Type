@@ -7,7 +7,7 @@
 [gameplay]
 side = "enemy"
 layer = "boss_effect"
-pilot = "necromancer_effect"
+pilot = "necromancer_gaze"
 
 # Only its hurt zone touches a ship: its hitbox lies far below the
 # playfield, where no ship flies.
@@ -20,19 +20,34 @@ offset_y = 1024
 kind = "steady"
 top_speed = 1
 
+# It aims through the signal of the gaze, 1494 ms, then burns through its
+# strike, 830 ms.
 [gameplay.behaviour]
-strike_after_ms = 830
-life_ms = 830
+aim_ms = 1494
+burn_ms = 830
 
 [appearance]
 sheet = "sprites/fosse/necromancer_beam.png"
 
-# Idle: the beam of the gaze, its right end at the mask.
+# Idle: the beam of the gaze, 1600 units long, its right end at the mask; it
+# starts thin, then burns at full width, its core pulsing and its edge
+# streaming left.
 [appearance.idle]
 left = 0
 top = 0
-width = 236
-height = 36
+width = 400
+height = 14
 frames = 10
 spacing = 2
-frame_ms = 83
+frame_ms = 42
+
+# Its aim, shown while the boss signals its gaze: a thin pink line that blinks
+# and streams left where the beam will burn.
+[appearance.looks.aim]
+left = 0
+top = 16
+width = 400
+height = 14
+frames = 10
+spacing = 2
+frame_ms = 60

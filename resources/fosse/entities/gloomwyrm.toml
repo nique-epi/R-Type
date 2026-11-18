@@ -1,0 +1,62 @@
+# The entity type gloomwyrm, brought by the resource fosse: the skull head of
+# a serpent of bones, steered by server/gloomwyrm.luau. It enters from the
+# right with its body behind it, swims left along a wave, turns back along a
+# half circle and swims out to the right; its vertebrae follow its path.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy"
+layer = "enemy"
+hits = ["player"]
+pilot = "gloomwyrm_head"
+
+[gameplay.hitbox]
+width = 112
+height = 64
+
+# The speed of the whole wyrm: its vertebrae and its tail give the same.
+[gameplay.motion]
+kind = "steady"
+top_speed = 360
+
+# It waves 90 units down and back every 1.2 s, 4 times, then turns along a
+# half circle of 150 units, drawing 8 bodies behind it, the last its tail.
+[gameplay.behaviour]
+wave = 90
+wave_ms = 1200
+waves = 4
+radius = 150
+length = 8
+
+[gameplay.health]
+points = 12
+
+[gameplay.score]
+points = 2000
+
+[gameplay.survives_contact]
+
+[appearance]
+sheet = "sprites/fosse/gloomwyrm.png"
+
+# Idle: its jaw opens and shuts, its eye glows; it faces left.
+[appearance.idle]
+left = 0
+top = 0
+width = 36
+height = 24
+frames = 8
+spacing = 2
+frame_ms = 60
+
+# The same, facing right, once it swims back to the right.
+[appearance.looks.right]
+left = 0
+top = 26
+width = 36
+height = 24
+frames = 8
+spacing = 2
+frame_ms = 60

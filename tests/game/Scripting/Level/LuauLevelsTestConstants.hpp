@@ -28,6 +28,11 @@ constexpr std::string_view FOSSE_RESOURCE = "fosse";
 constexpr std::string_view FOSSE_LEVEL = "fosse";
 constexpr std::size_t STAGES_OF_THE_FOSSE_LEVEL = 6;
 
+/** @brief The band the level fosse declares for its biome: the ceiling and
+ * the floor its maps leave free, rows 192 and 848. */
+constexpr std::string_view FOSSE_BIOME = "fosse";
+constexpr rtype::game::PlayBand FOSSE_BAND{.top = 192.0F, .bottom = 848.0F};
+
 /** @brief A level no script registers. */
 constexpr std::string_view UNKNOWN_LEVEL = "nowhere";
 
