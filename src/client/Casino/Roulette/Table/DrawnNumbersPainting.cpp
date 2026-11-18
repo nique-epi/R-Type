@@ -10,6 +10,7 @@
 #include "CasinoPainting.hpp"
 #include "CasinoPaintingConstants.hpp"
 #include "IInterfaceCanvas.hpp"
+#include "LastNumberBox.hpp"
 #include "PocketColors.hpp"
 #include "PocketShades.hpp"
 #include "RouletteColorConstants.hpp"
@@ -34,15 +35,23 @@ PocketShades boxShadesOf(std::uint8_t number) {
   return shades;
 }
 
-/** @brief Paints the box of @p number at @p place of the numbers drawn. */
+/** @returns The box of the number at @p place of the numbers drawn, the
+ * newest first. */
+LastNumberBox lastNumberBoxAt(std::size_t place) {
+  return LastNumberBox{
+      .area = sf::IntRect(
+          {LAST_FIRST_BOX.x + (static_cast<int>(place) * LAST_NUMBER_STEP),
+           LAST_FIRST_BOX.y},
+          LAST_BOX_SIZE),
+      .edge = place == 0 ? STAR_GOLD : CASINO_BRONZE};
+}
+
+/** @brief Paints @p number in @p where, a box of the numbers drawn. */
 void paintLastNumber(IInterfaceCanvas& canvas, std::uint8_t number,
-                     std::size_t place) {
-  const sf::IntRect box(
-      {LAST_FIRST_BOX.x + (static_cast<int>(place) * LAST_NUMBER_STEP),
-       LAST_FIRST_BOX.y},
-      LAST_BOX_SIZE);
+                     const LastNumberBox& where) {
+  const sf::IntRect box = where.area;
   canvas.fill(box, boxShadesOf(number).base);
-  paintEdges(canvas, box, place == 0 ? STAR_GOLD : CASINO_BRONZE);
+  paintEdges(canvas, box, where.edge);
   canvas.write(std::to_string(number),
                {box.position.x + (box.size.x / SIDES_PER_AXIS) + 1,
                 box.position.y + LAST_NUMBER_TOP},
@@ -83,7 +92,7 @@ void paintLastNumbers(IInterfaceCanvas& canvas,
   canvas.write(LAST_CAPTION_TEXT, LAST_CAPTION,
                TextStyle{.font = TextFont::Small, .color = PALE_BLUE});
   for (std::size_t place = 0; place < numbers.size(); ++place) {
-    paintLastNumber(canvas, numbers.at(place), place);
+    paintLastNumber(canvas, numbers.at(place), lastNumberBoxAt(place));
   }
 }
 

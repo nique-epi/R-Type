@@ -36,7 +36,8 @@ TEST_F(CasinoRoutesFixture, ListsTheRoomsToEveryone) {
   ASSERT_EQ(listing.at(std::string{ROOMS_MEMBER_NAME}).size(), TEST_ROOM_COUNT);
   EXPECT_EQ(listing.at(std::string{ROOMS_MEMBER_NAME})
                 .at(0)
-                .at(std::string{NAME_MEMBER_NAME}),
+                .at(std::string{NAME_MEMBER_NAME})
+                .get<std::string>(),
             FIRST_ROOM_NAME);
 }
 
