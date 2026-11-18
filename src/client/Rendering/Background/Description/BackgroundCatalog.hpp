@@ -21,24 +21,27 @@ namespace rtype::client {
 class BackgroundCatalog {
  public:
   /**
-   * @brief Reads the backgrounds of every content folder, the assets first,
-   * then what is laid over them: each `.toml` file of the
-   * BACKGROUND_FOLDER_IN_ASSETS folder of a content folder that has one,
-   * named after its background, as readBackground() reads it. A later folder
-   * replaces the background of the same name an earlier one holds, and adds
-   * the others.
+   * @brief Reads the backgrounds of the last of @p contentFolders: the
+   * assets when they are alone, or what is laid over the folders before it,
+   * as the pack of a server over the assets. Each `.toml` file of its
+   * BACKGROUND_FOLDER_IN_ASSETS folder, when it has one, is a background
+   * named after the file, as readBackground() reads it. The backgrounds of
+   * the folders before it are not read.
    *
    * Each file a background names is looked for from the last folder to the
-   * first, so a later folder replaces an image too. Found in the first
-   * folder, the assets, it keeps its asset id; found in another, it is named
-   * by its whole path, which AssetLibrary::fileOf() keeps as it is.
+   * first. Found in the first folder, the assets, it keeps its asset id;
+   * found in another, it is named by its whole path, which the asset library
+   * loads as it is.
    *
-   * @throws engine::UnreadableDataFileException when a folder of backgrounds
-   * cannot be listed or a file cannot be read; what readBackground() throws,
-   * naming the file by its absolute path; and MissingBackgroundFileException
-   * when a background names a file no folder holds.
+   * @param contentFolders The assets folder, then what is laid over it;
+   * never empty.
+   * @throws engine::UnreadableDataFileException when the folder of
+   * backgrounds cannot be listed or a file cannot be read; what
+   * readBackground() throws, naming the file by its absolute path; and
+   * MissingBackgroundFileException when a background names a file no folder
+   * holds.
    */
-  [[nodiscard]] static BackgroundCatalog fromFolders(
+  [[nodiscard]] static BackgroundCatalog ofLastFolder(
       std::span<const std::filesystem::path> contentFolders);
 
   /** @returns The background named @p name, or nullptr when no folder holds
@@ -52,13 +55,14 @@ class BackgroundCatalog {
    * names it, each once, in alphabetical order: the images of the layers,
    * the tilesets, the sprites of the particles. The client loads them before
    * the sky draws them. */
-  [[nodiscard]] std::vector<std::string> images() const;
+  [[nodiscard]] const std::vector<std::string>& images() const;
 
  private:
   explicit BackgroundCatalog(
       std::map<std::string, BackgroundDescription, std::less<>> backgrounds);
 
   std::map<std::string, BackgroundDescription, std::less<>> backgrounds_;
+  std::vector<std::string> images_;
 };
 
 }  // namespace rtype::client

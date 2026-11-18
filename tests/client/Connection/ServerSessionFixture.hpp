@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
 #include <optional>
 #include <vector>
 #include "ArrivalTally.hpp"
@@ -122,7 +123,8 @@ class ServerSessionFixture : public ::testing::Test {
   SimulatedClock clock_;
   RoundTripWatch roundTrips_{dispatcher_, clock_};
   SessionEntityTypes entityTypes_{testLocalContent()};
-  ContentLoading content_{ContentPackCache{unusedCacheFolder()}};
+  ContentLoading content_{ContentPackCache{unusedCacheFolder()},
+                          std::filesystem::path{}};
   ArrivalTally arrivals_;
   ServerSession session_{ServerSessionParts{
       .link = link_,

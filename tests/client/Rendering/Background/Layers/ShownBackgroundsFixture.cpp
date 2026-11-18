@@ -1,6 +1,10 @@
 #include "ShownBackgroundsFixture.hpp"
+#include <array>
+#include <filesystem>
+#include <memory>
 #include <string>
 #include <string_view>
+#include "BackgroundCatalog.hpp"
 #include "BackgroundCatalogFixture.hpp"
 #include "BackgroundDescription.hpp"
 #include "LayeredBackgroundFixture.hpp"
@@ -8,6 +12,7 @@
 #include "ShownBackgroundsTestConstants.hpp"
 #include "SkyLevel.hpp"
 
+using rtype::client::BackgroundCatalog;
 using rtype::client::BackgroundDescription;
 using rtype::client::ShownBackgrounds;
 using rtype::client::SkyLevel;
@@ -23,6 +28,15 @@ const BackgroundDescription& ShownBackgroundsFixture::described(
     std::string_view name) const {
   const BackgroundDescription* const found = shipped_.named(name);
   return found == nullptr ? *shipped_.named(SHIPPED_SKY) : *found;
+}
+
+std::shared_ptr<const BackgroundCatalog> ShownBackgroundsFixture::packOf(
+    std::string_view file, std::string_view text) const {
+  pack_.write(file, text);
+  const std::array folders{std::filesystem::path{RTYPE_SOURCE_ASSETS_FOLDER},
+                           pack_.path()};
+  return std::make_shared<const BackgroundCatalog>(
+      BackgroundCatalog::ofLastFolder(folders));
 }
 
 SkyLevel levelInThePit(float unitsIn) {

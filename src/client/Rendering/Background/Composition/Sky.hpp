@@ -3,6 +3,7 @@
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <cstddef>
+#include <memory>
 #include "BackgroundCatalog.hpp"
 #include "GaussianBlur.hpp"
 #include "ISky.hpp"
@@ -47,6 +48,14 @@ class Sky final : public ISky {
   void setSpeedFactor(float factor) override;
   void setOffset(sf::Vector2i pixels) override;
   void showLevel(const SkyLevel& level) override;
+
+  /** @brief Lays the backgrounds of the pack of a server over those of the
+   * sky, or takes them off for nullptr, see ShownBackgrounds::layOver(). */
+  void layOver(std::shared_ptr<const BackgroundCatalog> backgrounds);
+
+  /** @returns The catalog laid over the backgrounds of the sky; nullptr when
+   * none is. */
+  [[nodiscard]] const BackgroundCatalog* laidOver() const;
 
   /**
    * @brief Draws the sky over the whole playfield.

@@ -5,6 +5,7 @@
 #include "EntityTypeConstants.hpp"
 #include "NumberedEntityType.hpp"
 #include "PackContentReading.hpp"
+#include "PackFolders.hpp"
 #include "SessionEntityTypes.hpp"
 #include "SessionEntityTypesFixtures.hpp"
 #include "SessionEntityTypesTestConstants.hpp"
@@ -14,11 +15,16 @@
 namespace rtype::client {
 
 using identifiers::NO_ENTITY_TYPE;
+using testing::ASSETS_BELOW_A_PACK;
+using testing::BACKGROUND_SHOWING_THE_LANCERS;
 using testing::DRAWN_ENEMY_NAME;
 using testing::DRAWN_SHIP_NAME;
 using testing::FIRST_TYPE_NUMBER;
+using testing::FOLDER_OF_A_PACK;
+using testing::LAIR_NAME;
 using testing::LANCER_TYPE;
 using testing::lancerFiles;
+using testing::lancerFilesWithABackground;
 using testing::LOCAL_SHIP_GUN;
 using testing::SECOND_TYPE_NUMBER;
 using testing::testLocalContent;
@@ -72,7 +78,8 @@ TEST(SessionEntityTypes, NumbersTheTypesOfThePackItPlays) {
   const TemporaryFolder folder;
   SessionEntityTypes table{testLocalContent()};
 
-  table.use(packContentOf(lancerFiles(), folder.path()));
+  table.use(packContentOf(lancerFiles(),
+                          PackFolders{.assets = {}, .pack = folder.path()}));
 
   const game::NumberedEntityType* const entry =
       table.entryNumbered(FIRST_TYPE_NUMBER);
@@ -89,7 +96,8 @@ TEST(SessionEntityTypes, NumbersTheTypesOfThePackItPlays) {
 TEST(SessionEntityTypes, ComesBackToItsOwnTypesOnceForgotten) {
   const TemporaryFolder folder;
   SessionEntityTypes table{testLocalContent()};
-  table.use(packContentOf(lancerFiles(), folder.path()));
+  table.use(packContentOf(lancerFiles(),
+                          PackFolders{.assets = {}, .pack = folder.path()}));
 
   table.forget();
 
@@ -120,7 +128,8 @@ TEST(SessionEntityTypes, ArmsTheShipsWithTheGunOfThePackItPlays) {
   const TemporaryFolder folder;
   SessionEntityTypes table{testLocalContent()};
 
-  table.use(packContentOf(lancerFiles(), folder.path()));
+  table.use(packContentOf(lancerFiles(),
+                          PackFolders{.assets = {}, .pack = folder.path()}));
 
   EXPECT_EQ(table.shipGun(), game::ShipGun{});
 }
@@ -133,11 +142,59 @@ TEST(SessionEntityTypes, ArmsTheShipsWithTheGunOfThePackItPlays) {
 TEST(SessionEntityTypes, ComesBackToItsOwnGunOnceForgotten) {
   const TemporaryFolder folder;
   SessionEntityTypes table{testLocalContent()};
-  table.use(packContentOf(lancerFiles(), folder.path()));
+  table.use(packContentOf(lancerFiles(),
+                          PackFolders{.assets = {}, .pack = folder.path()}));
 
   table.forget();
 
   EXPECT_EQ(table.shipGun(), LOCAL_SHIP_GUN);
+}
+
+/**
+ * Given the client's own content
+ * When the backgrounds of the session are asked for
+ * Then there is none: the sky keeps its own
+ */
+TEST(SessionEntityTypes, BringsNoBackgroundsWithItsOwnContent) {
+  const SessionEntityTypes table{testLocalContent()};
+
+  EXPECT_EQ(table.backgrounds(), nullptr);
+}
+
+/**
+ * Given a session that plays the pack of a server that brings a background
+ * When the backgrounds of the session are asked for
+ * Then they hold the background of the pack
+ */
+TEST(SessionEntityTypes, BringsTheBackgroundsOfThePackItPlays) {
+  const TemporaryFolder folder;
+  SessionEntityTypes table{testLocalContent()};
+
+  table.use(
+      packContentOf(lancerFilesWithABackground(BACKGROUND_SHOWING_THE_LANCERS),
+                    PackFolders{.assets = folder.path() / ASSETS_BELOW_A_PACK,
+                                .pack = folder.path() / FOLDER_OF_A_PACK}));
+
+  ASSERT_NE(table.backgrounds(), nullptr);
+  EXPECT_NE(table.backgrounds()->named(LAIR_NAME), nullptr);
+}
+
+/**
+ * Given a session that played the pack of a server that brings a background
+ * When the session is forgotten
+ * Then it brings no background any more
+ */
+TEST(SessionEntityTypes, BringsNoBackgroundsOnceForgotten) {
+  const TemporaryFolder folder;
+  SessionEntityTypes table{testLocalContent()};
+  table.use(
+      packContentOf(lancerFilesWithABackground(BACKGROUND_SHOWING_THE_LANCERS),
+                    PackFolders{.assets = folder.path() / ASSETS_BELOW_A_PACK,
+                                .pack = folder.path() / FOLDER_OF_A_PACK}));
+
+  table.forget();
+
+  EXPECT_EQ(table.backgrounds(), nullptr);
 }
 
 }  // namespace rtype::client

@@ -12,6 +12,7 @@
 #include "IServerPingProbe.hpp"
 #include "IServerTicks.hpp"
 #include "ISessionArrivals.hpp"
+#include "ISessionBackgrounds.hpp"
 #include "InstallContext.hpp"
 #include "LocalContentReading.hpp"
 #include "NetworkConditions.hpp"
@@ -43,7 +44,7 @@ PlayerConnection::PlayerConnection(const network::NetworkConditions& conditions,
       leaderboard_(dispatcher_),
       chat_(dispatcher_, waitingRoom_),
       entityTypes_(localContentOf(places.assetFolder)),
-      content_(ContentPackCache{places.cacheFolder}),
+      content_(ContentPackCache{places.cacheFolder}, places.assetFolder),
       session_(ServerSessionParts{
           .link = router_.addRoute(),
           .dispatcher = dispatcher_,
@@ -80,6 +81,7 @@ void PlayerConnection::provideParts(engine::InstallContext& context) {
   context.provide<IOwnRoundTrip>(roundTrips_);
   context.provide<ISessionArrivals>(arrivals_);
   context.provide<IEntityTypeTable>(entityTypes_);
+  context.provide<ISessionBackgrounds>(entityTypes_);
   context.provide(network_.traffic());
 }
 

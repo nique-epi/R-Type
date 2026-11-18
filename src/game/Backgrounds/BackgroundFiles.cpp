@@ -15,6 +15,7 @@
 #include <vector>
 #include "BackgroundFileKeyConstants.hpp"
 #include "ContentFile.hpp"
+#include "DataFileConstants.hpp"
 #include "DataFileReading.hpp"
 #include "DataFileTable.hpp"
 #include "EngineException.hpp"
@@ -152,6 +153,12 @@ void addNamedFile(BytesByPath& files,
 }
 
 }  // namespace
+
+bool isBackgroundPath(const std::string& path) {
+  const std::filesystem::path file{path};
+  return file.parent_path() == BACKGROUND_FOLDER_IN_ASSETS &&
+         file.extension() == engine::DATA_FILE_EXTENSION;
+}
 
 std::vector<identifiers::ContentFile> backgroundFilesIn(
     std::span<const std::filesystem::path> contentFolders) {

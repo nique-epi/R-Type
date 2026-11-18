@@ -37,6 +37,15 @@ class AssetLibrary;
                                          const EntityAppearances& appearances);
 
 /**
+ * @returns @p assets, with every image the backgrounds of @p backgrounds name
+ * that it does not list yet, after its own textures: a game screen loads
+ * them, so the sky shows the backgrounds of the pack of its server.
+ * @p assets itself for nullptr, a session without such backgrounds.
+ */
+[[nodiscard]] AssetList withBackgroundImages(
+    AssetList assets, const BackgroundCatalog* backgrounds);
+
+/**
  * @brief Loads the interface assets, then makes them permanent.
  *
  * @throws AssetLoadingException naming every interface asset that could not

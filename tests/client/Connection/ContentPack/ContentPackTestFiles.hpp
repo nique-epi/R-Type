@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <string_view>
 #include <vector>
 #include "ContentFile.hpp"
 #include "ContentFingerprint.hpp"
@@ -17,6 +18,11 @@ namespace rtype::client::testing {
  * the pack. */
 [[nodiscard]] std::vector<identifiers::ContentFile>
 lancerFilesNamingAFileOutside();
+
+/** @returns The files of the lancer, with a background whose text is
+ * @p background, by path. */
+[[nodiscard]] std::vector<identifiers::ContentFile> lancerFilesWithABackground(
+    std::string_view background);
 
 /** @returns The pack of the lancer, encoded. */
 [[nodiscard]] std::vector<std::byte> lancerPack();

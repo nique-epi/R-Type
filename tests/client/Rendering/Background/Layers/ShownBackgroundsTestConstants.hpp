@@ -10,6 +10,16 @@ constexpr std::string_view SHIPPED_SKY = "space";
 constexpr std::string_view SHIPPED_PIT = "fosse";
 constexpr std::string_view BIOME_WITHOUT_A_BACKGROUND = "nowhere";
 
+/** @brief What the pack of a server may bring: a background named as the
+ * sky, or a nebula of its own, each a sky of the planet the repository
+ * ships. */
+constexpr std::string_view SPACE_OF_A_PACK = "backgrounds/space.toml";
+constexpr std::string_view NEBULA_OF_A_PACK = "backgrounds/nebula.toml";
+constexpr std::string_view NEBULA_OF_THE_PACK = "nebula";
+constexpr std::string_view A_SKY_OF_THE_SHIPPED_PLANET =
+    "[[layer]]\nname = \"planet\"\n"
+    "image = { file = \"backgrounds/space/planet.png\" }\n";
+
 /** @brief A folder that does not exist: its catalog holds no background. */
 constexpr std::string_view FOLDER_WITHOUT_BACKGROUNDS = "no-such-assets";
 

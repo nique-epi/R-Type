@@ -19,8 +19,7 @@ class BackgroundCatalogFixture : public ::testing::Test {
   /** @returns The backgrounds of the assets alone. */
   [[nodiscard]] rtype::client::BackgroundCatalog catalogOfTheAssets() const;
 
-  /** @returns The backgrounds of the assets, then of the resource laid over
-   * them. */
+  /** @returns The backgrounds of the resource, laid over the assets. */
   [[nodiscard]] rtype::client::BackgroundCatalog catalogOfBothFolders() const;
 
   /** @returns The whole path of the file @p file of the temporary folder, as

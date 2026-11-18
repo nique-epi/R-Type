@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <array>
 #include <filesystem>
+#include <string>
 #include <vector>
 #include "BackgroundFiles.hpp"
 #include "BackgroundFilesTestConstants.hpp"
@@ -10,6 +11,7 @@
 
 using rtype::engine::UnreadableDataFileException;
 using rtype::game::backgroundFilesIn;
+using rtype::game::isBackgroundPath;
 using rtype::game::testing::A_BACKGROUND_ALONE;
 using rtype::game::testing::A_BACKGROUND_AND_ITS_IMAGE;
 using rtype::game::testing::ASSETS_BELOW_THE_RESOURCES;
@@ -27,6 +29,7 @@ using rtype::game::testing::MOON_BACKGROUND_FILE;
 using rtype::game::testing::MOON_IMAGE;
 using rtype::game::testing::MOON_PIXELS;
 using rtype::game::testing::MOON_RESOURCE;
+using rtype::game::testing::NOTES_BELOW_THE_BACKGROUNDS;
 using rtype::game::testing::THE_CAVE_AND_ITS_THREE_FILES;
 using rtype::identifiers::ContentFile;
 
@@ -175,4 +178,31 @@ TEST(BackgroundFiles, RefusesABackgroundNamingAFileNoFolderHolds) {
 
   EXPECT_THROW(static_cast<void>(backgroundFilesIn(folders)),
                UnreadableDataFileException);
+}
+
+/**
+ * Given the path of a `.toml` file right in the folder of the backgrounds
+ * When it is asked whether it names a background
+ * Then it does
+ */
+TEST(BackgroundPath, IsATomlFileRightInTheFolderOfTheBackgrounds) {
+  EXPECT_TRUE(isBackgroundPath(std::string{MOON_BACKGROUND_FILE}));
+}
+
+/**
+ * Given the path of an image a background names
+ * When it is asked whether it names a background
+ * Then it does not
+ */
+TEST(BackgroundPath, IsNotAnImageABackgroundNames) {
+  EXPECT_FALSE(isBackgroundPath(std::string{MOON_IMAGE}));
+}
+
+/**
+ * Given the path of a `.toml` file of a folder below the backgrounds
+ * When it is asked whether it names a background
+ * Then it does not: a background lies right in the folder
+ */
+TEST(BackgroundPath, IsNotATomlFileOfAFolderBelow) {
+  EXPECT_FALSE(isBackgroundPath(std::string{NOTES_BELOW_THE_BACKGROUNDS}));
 }

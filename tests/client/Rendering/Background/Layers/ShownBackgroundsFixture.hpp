@@ -1,11 +1,13 @@
 #pragma once
 
 #include <gtest/gtest.h>
+#include <memory>
 #include <string_view>
 #include "BackgroundCatalog.hpp"
 #include "BackgroundDescription.hpp"
 #include "ShownBackgrounds.hpp"
 #include "SkyLevel.hpp"
+#include "TemporaryFolder.hpp"
 
 /** @brief The backgrounds the repository ships, as the sky shows them. */
 class ShownBackgroundsFixture : public ::testing::Test {
@@ -18,8 +20,15 @@ class ShownBackgroundsFixture : public ::testing::Test {
   [[nodiscard]] const rtype::client::BackgroundDescription& described(
       std::string_view name) const;
 
+  /** @returns The backgrounds of the pack of a server, laid over the assets
+   * of the repository: the one background whose file @p file holds
+   * @p text. */
+  [[nodiscard]] std::shared_ptr<const rtype::client::BackgroundCatalog> packOf(
+      std::string_view file, std::string_view text) const;
+
  private:
   rtype::client::BackgroundCatalog shipped_;
+  TemporaryFolder pack_;
 
  public:
   ShownBackgroundsFixture();

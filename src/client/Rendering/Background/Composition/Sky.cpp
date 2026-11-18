@@ -5,6 +5,7 @@
 #include <SFML/Graphics/Sprite.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <cstddef>
+#include <memory>
 #include <optional>
 #include <utility>
 #include "BackgroundCatalog.hpp"
@@ -33,6 +34,14 @@ void Sky::setSpeedFactor(float factor) { backgrounds_.setSpeedFactor(factor); }
 void Sky::setOffset(sf::Vector2i pixels) { offset_ = pixels; }
 
 void Sky::showLevel(const SkyLevel& level) { backgrounds_.show(level); }
+
+void Sky::layOver(std::shared_ptr<const BackgroundCatalog> backgrounds) {
+  backgrounds_.layOver(std::move(backgrounds));
+}
+
+const BackgroundCatalog* Sky::laidOver() const {
+  return backgrounds_.laidOver();
+}
 
 void Sky::draw(sf::RenderTarget& target) {
   const LayeredBackground* const leaving = backgrounds_.leaving();

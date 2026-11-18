@@ -2,6 +2,7 @@
 
 #include <filesystem>
 #include <span>
+#include <string>
 #include <vector>
 #include "ContentFile.hpp"
 
@@ -31,5 +32,9 @@ namespace rtype::game {
  */
 [[nodiscard]] std::vector<identifiers::ContentFile> backgroundFilesIn(
     std::span<const std::filesystem::path> contentFolders);
+
+/** @returns Whether @p path names a background: a `.toml` file right in
+ * BACKGROUND_FOLDER_IN_ASSETS, as backgroundFilesIn() lists it. */
+[[nodiscard]] bool isBackgroundPath(const std::string& path);
 
 }  // namespace rtype::game

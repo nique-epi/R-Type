@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <array>
 #include <filesystem>
+#include <memory>
 #include <string>
 #include "BackgroundCatalog.hpp"
 #include "LayeredBackground.hpp"
@@ -225,13 +226,96 @@ TEST_F(ShownBackgroundsFixture, ASpeedFactorBelowZeroStopsTheLayersThatWarp) {
 }
 
 /**
+ * Given the sky, and the pack of a server whose space is a sky of one planet
+ * When the backgrounds of the pack are laid over
+ * Then the background shown is the space of the pack
+ */
+TEST_F(ShownBackgroundsFixture, ABackgroundLaidOverReplacesTheOneOfItsName) {
+  ShownBackgrounds backgrounds = shippedSky();
+  const std::shared_ptr<const BackgroundCatalog> pack =
+      packOf(SPACE_OF_A_PACK, A_SKY_OF_THE_SHIPPED_PLANET);
+  ASSERT_NE(pack->named(SHIPPED_SKY), nullptr);
+
+  backgrounds.layOver(pack);
+
+  ASSERT_NE(backgrounds.shown(), nullptr);
+  EXPECT_TRUE(backgrounds.shown()->shows(*pack->named(SHIPPED_SKY)));
+}
+
+/**
+ * Given the sky, with the pack of a server that brings a nebula laid over
+ * When a level in the biome of the nebula is shown
+ * Then the background shown is the nebula of the pack
+ */
+TEST_F(ShownBackgroundsFixture, ABackgroundLaidOverIsShownForItsBiome) {
+  ShownBackgrounds backgrounds = shippedSky();
+  const std::shared_ptr<const BackgroundCatalog> pack =
+      packOf(NEBULA_OF_A_PACK, A_SKY_OF_THE_SHIPPED_PLANET);
+  ASSERT_NE(pack->named(NEBULA_OF_THE_PACK), nullptr);
+  backgrounds.layOver(pack);
+
+  backgrounds.show(SkyLevel{.biome = std::string{NEBULA_OF_THE_PACK}});
+
+  ASSERT_NE(backgrounds.shown(), nullptr);
+  EXPECT_TRUE(backgrounds.shown()->shows(*pack->named(NEBULA_OF_THE_PACK)));
+}
+
+/**
+ * Given the space of the pack of a server laid over the sky
+ * When what is laid over is taken off
+ * Then the background shown is the sky of the client again, and nothing is
+ * laid over
+ */
+TEST_F(ShownBackgroundsFixture, TakingOffWhatIsLaidOverShowsTheSkyAgain) {
+  ShownBackgrounds backgrounds = shippedSky();
+  backgrounds.layOver(packOf(SPACE_OF_A_PACK, A_SKY_OF_THE_SHIPPED_PLANET));
+
+  backgrounds.layOver(nullptr);
+
+  ASSERT_NE(backgrounds.shown(), nullptr);
+  EXPECT_TRUE(backgrounds.shown()->shows(described(SHIPPED_SKY)));
+  EXPECT_EQ(backgrounds.laidOver(), nullptr);
+}
+
+/**
+ * Given the sky, shown for one second: its planet drifted 1.8 pixels
+ * When the pack of a server that brings only a nebula is laid over
+ * Then the sky goes on from where it was, its planet still 1.8 pixels left
+ */
+TEST_F(ShownBackgroundsFixture, LayingOverKeepsTheBackgroundItLeavesGoing) {
+  ShownBackgrounds backgrounds = shippedSky();
+  passOneSecond(backgrounds);
+
+  backgrounds.layOver(packOf(NEBULA_OF_A_PACK, A_SKY_OF_THE_SHIPPED_PLANET));
+
+  ASSERT_NE(backgrounds.shown(), nullptr);
+  EXPECT_NEAR(whereLies(*backgrounds.shown(), PLANET_OF_THE_SKY),
+              PLANET_AFTER_ONE_SECOND_OF_SKY, ROUNDING_OF_THE_SKY);
+}
+
+/**
+ * Given the Pit arriving over the sky, which is leaving behind it
+ * When the pack of a server whose space replaces the sky is laid over
+ * Then no background is leaving: the one that was is built anew
+ */
+TEST_F(ShownBackgroundsFixture, LayingOverLeavesNoBackgroundBehind) {
+  ShownBackgrounds backgrounds = shippedSky();
+  backgrounds.show(levelInThePit(0.0F));
+  ASSERT_NE(backgrounds.leaving(), nullptr);
+
+  backgrounds.layOver(packOf(SPACE_OF_A_PACK, A_SKY_OF_THE_SHIPPED_PLANET));
+
+  EXPECT_EQ(backgrounds.leaving(), nullptr);
+}
+
+/**
  * Given a folder that holds no background
  * When its backgrounds are shown, a level is shown and time passes
  * Then nothing is shown, and nothing is thrown
  */
 TEST(ShownBackgrounds, ACatalogWithoutBackgroundsShowsNothing) {
   const std::array folders{std::filesystem::path{FOLDER_WITHOUT_BACKGROUNDS}};
-  const BackgroundCatalog none = BackgroundCatalog::fromFolders(folders);
+  const BackgroundCatalog none = BackgroundCatalog::ofLastFolder(folders);
   ShownBackgrounds backgrounds{none, shippedSources()};
 
   backgrounds.show(levelInThePit(0.0F));

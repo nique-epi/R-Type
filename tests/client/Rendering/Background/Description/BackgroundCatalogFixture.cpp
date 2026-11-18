@@ -20,13 +20,13 @@ void BackgroundCatalogFixture::write(const std::filesystem::path& file,
 
 BackgroundCatalog BackgroundCatalogFixture::catalogOfTheAssets() const {
   const std::array folders{folder_.path() / ASSET_FOLDER};
-  return BackgroundCatalog::fromFolders(folders);
+  return BackgroundCatalog::ofLastFolder(folders);
 }
 
 BackgroundCatalog BackgroundCatalogFixture::catalogOfBothFolders() const {
   const std::array folders{folder_.path() / ASSET_FOLDER,
                            folder_.path() / RESOURCE_FOLDER};
-  return BackgroundCatalog::fromFolders(folders);
+  return BackgroundCatalog::ofLastFolder(folders);
 }
 
 std::string BackgroundCatalogFixture::wholePathOf(std::string_view file) const {
@@ -51,5 +51,5 @@ std::string firstImageFileOf(const BackgroundDescription* background) {
 
 BackgroundCatalog shippedBackgrounds() {
   const std::array folders{std::filesystem::path{RTYPE_SOURCE_ASSETS_FOLDER}};
-  return BackgroundCatalog::fromFolders(folders);
+  return BackgroundCatalog::ofLastFolder(folders);
 }

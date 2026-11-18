@@ -80,10 +80,10 @@ TEST_F(BackgroundCatalogFixture, ALaterFolderReplacesABackgroundOfTheSameName) {
 
 /**
  * Given assets that hold space, and a resource that holds nebula
- * When the backgrounds of both are read
- * Then both are found, each under its name
+ * When the backgrounds of the resource, laid over the assets, are read
+ * Then nebula is found, and space is not: only the last folder is read
  */
-TEST_F(BackgroundCatalogFixture, ALaterFolderAddsItsOwnBackgrounds) {
+TEST_F(BackgroundCatalogFixture, TheBackgroundsOfTheFoldersBelowAreLeftOut) {
   write(SPACE_OF_THE_ASSETS, A_SKY_OF_ONE_PLANET);
   write(PLANET_OF_THE_ASSETS, ANY_IMAGE);
   write(NEBULA_OF_THE_RESOURCE, A_SKY_OF_ONE_MOON);
@@ -91,17 +91,17 @@ TEST_F(BackgroundCatalogFixture, ALaterFolderAddsItsOwnBackgrounds) {
 
   const BackgroundCatalog catalog = catalogOfBothFolders();
 
-  EXPECT_EQ(firstLayerNameOf(catalog.named(SPACE_NAME)), PLANET_LAYER_NAME);
+  EXPECT_EQ(catalog.named(SPACE_NAME), nullptr);
   EXPECT_EQ(firstLayerNameOf(catalog.named(NEBULA_NAME)), MOON_LAYER_NAME);
 }
 
 /**
- * Given a background whose image lies in the assets alone
+ * Given a background of a resource whose image lies in the assets alone
  * When the backgrounds are read
  * Then the image keeps the asset id the file gives it
  */
 TEST_F(BackgroundCatalogFixture, AFileOfTheAssetsKeepsItsAssetId) {
-  write(SPACE_OF_THE_ASSETS, A_SKY_OF_ONE_PLANET);
+  write(SPACE_OF_THE_RESOURCE, A_SKY_OF_ONE_PLANET);
   write(PLANET_OF_THE_ASSETS, ANY_IMAGE);
 
   const BackgroundCatalog catalog = catalogOfBothFolders();
@@ -125,13 +125,13 @@ TEST_F(BackgroundCatalogFixture, AFileOfALaterFolderIsNamedByItsWholePath) {
 }
 
 /**
- * Given a background of the assets whose image lies in the assets and in a
- * resource too
+ * Given a background of a resource whose image lies in the assets and in
+ * the resource too
  * When the backgrounds are read
  * Then the image is the one of the resource, named by its whole path
  */
 TEST_F(BackgroundCatalogFixture, AFileALaterFolderHoldsTooIsTakenThere) {
-  write(SPACE_OF_THE_ASSETS, A_SKY_OF_ONE_PLANET);
+  write(SPACE_OF_THE_RESOURCE, A_SKY_OF_ONE_PLANET);
   write(PLANET_OF_THE_ASSETS, ANY_IMAGE);
   write(PLANET_OF_THE_RESOURCE, ANY_IMAGE);
 
@@ -147,7 +147,7 @@ TEST_F(BackgroundCatalogFixture, AFileALaterFolderHoldsTooIsTakenThere) {
  * Then a MissingBackgroundFileException names that image
  */
 TEST_F(BackgroundCatalogFixture, RefusesAFileNoFolderHolds) {
-  write(SPACE_OF_THE_ASSETS, A_SKY_OF_ONE_PLANET);
+  write(SPACE_OF_THE_RESOURCE, A_SKY_OF_ONE_PLANET);
 
   EXPECT_THAT([this] { static_cast<void>(catalogOfBothFolders()); },
               ThrowsMessage<MissingBackgroundFileException>(
@@ -155,13 +155,12 @@ TEST_F(BackgroundCatalogFixture, RefusesAFileNoFolderHolds) {
 }
 
 /**
- * Given assets that hold space, and a resource that holds nebula
- * When the names of their backgrounds are asked for
+ * Given a resource that holds space and nebula
+ * When the names of its backgrounds are asked for
  * Then they are both, in alphabetical order
  */
 TEST_F(BackgroundCatalogFixture, NamesItsBackgroundsInAlphabeticalOrder) {
-  write(SPACE_OF_THE_ASSETS, A_SKY_OF_ONE_PLANET);
-  write(PLANET_OF_THE_ASSETS, ANY_IMAGE);
+  write(SPACE_OF_THE_RESOURCE, A_SKY_OF_ONE_MOON);
   write(NEBULA_OF_THE_RESOURCE, A_SKY_OF_ONE_MOON);
   write(MOON_OF_THE_RESOURCE, ANY_IMAGE);
 

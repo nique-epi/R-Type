@@ -20,6 +20,11 @@ constexpr std::string_view BACKGROUND_SHOWING_THE_MOON =
     "image = { file = \"backgrounds/moon/moon.png\" }\n";
 constexpr std::string_view MOON_PIXELS = "\x89PNG\r\n\x1a\nmoon";
 
+/** @brief A `.toml` file of a folder below the one of the backgrounds,
+ * which is no background. */
+constexpr std::string_view NOTES_BELOW_THE_BACKGROUNDS =
+    "backgrounds/moon/notes.toml";
+
 /** @brief What a later resource holds under the same names. */
 constexpr std::string_view BACKGROUND_OF_THE_LATER_RESOURCE =
     "[[layer]]\nname = \"later moon\"\n"

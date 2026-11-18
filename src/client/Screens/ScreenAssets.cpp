@@ -34,6 +34,14 @@ void loadAtOnce(AssetLibrary& library, const AssetList& assets) {
   }
 }
 
+/** @brief Adds @p texture to the textures of @p assets, unless it is listed
+ * already. */
+void addTexture(AssetList& assets, const std::string& texture) {
+  if (std::ranges::find(assets.textures, texture) == assets.textures.end()) {
+    assets.textures.push_back(texture);
+  }
+}
+
 }  // namespace
 
 AssetList interfaceAssets() {
@@ -59,8 +67,16 @@ AssetList gameAssets() {
 AssetList withEntitySheets(AssetList assets,
                            const EntityAppearances& appearances) {
   for (const std::string& sheet : appearances.sheets()) {
-    if (std::ranges::find(assets.textures, sheet) == assets.textures.end()) {
-      assets.textures.push_back(sheet);
+    addTexture(assets, sheet);
+  }
+  return assets;
+}
+
+AssetList withBackgroundImages(AssetList assets,
+                               const BackgroundCatalog* backgrounds) {
+  if (backgrounds != nullptr) {
+    for (const std::string& image : backgrounds->images()) {
+      addTexture(assets, image);
     }
   }
   return assets;

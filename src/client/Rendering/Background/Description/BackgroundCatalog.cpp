@@ -120,19 +120,34 @@ std::vector<BackgroundText> backgroundTextsIn(
   return texts;
 }
 
+/** @returns Every image a layer of @p backgrounds names, each once, in
+ * alphabetical order. */
+std::vector<std::string> imagesOf(
+    const std::map<std::string, BackgroundDescription, std::less<>>&
+        backgrounds) {
+  std::set<std::string> distinct;
+  for (const BackgroundDescription& background :
+       std::views::values(backgrounds)) {
+    for (const LayerDescription& layer : background.layers) {
+      std::visit(
+          [&distinct](const auto& content) { addImagesOf(content, distinct); },
+          layer.content);
+    }
+  }
+  return {distinct.begin(), distinct.end()};
+}
+
 }  // namespace
 
-BackgroundCatalog BackgroundCatalog::fromFolders(
+BackgroundCatalog BackgroundCatalog::ofLastFolder(
     std::span<const std::filesystem::path> contentFolders) {
   std::map<std::string, BackgroundDescription, std::less<>> backgrounds;
-  for (const std::filesystem::path& folder : contentFolders) {
-    for (const BackgroundText& text : backgroundTextsIn(folder)) {
-      BackgroundDescription background = readBackground(text);
-      for (LayerDescription& layer : background.layers) {
-        locateFilesOf(layer, text.source, contentFolders);
-      }
-      backgrounds.insert_or_assign(text.name, std::move(background));
+  for (const BackgroundText& text : backgroundTextsIn(contentFolders.back())) {
+    BackgroundDescription background = readBackground(text);
+    for (LayerDescription& layer : background.layers) {
+      locateFilesOf(layer, text.source, contentFolders);
     }
+    backgrounds.insert_or_assign(text.name, std::move(background));
   }
   return BackgroundCatalog{std::move(backgrounds)};
 }
@@ -152,21 +167,12 @@ std::vector<std::string> BackgroundCatalog::names() const {
   return names;
 }
 
-std::vector<std::string> BackgroundCatalog::images() const {
-  std::set<std::string> distinct;
-  for (const BackgroundDescription& background :
-       std::views::values(backgrounds_)) {
-    for (const LayerDescription& layer : background.layers) {
-      std::visit(
-          [&distinct](const auto& content) { addImagesOf(content, distinct); },
-          layer.content);
-    }
-  }
-  return {distinct.begin(), distinct.end()};
+const std::vector<std::string>& BackgroundCatalog::images() const {
+  return images_;
 }
 
 BackgroundCatalog::BackgroundCatalog(
     std::map<std::string, BackgroundDescription, std::less<>> backgrounds)
-    : backgrounds_(std::move(backgrounds)) {}
+    : backgrounds_(std::move(backgrounds)), images_(imagesOf(backgrounds_)) {}
 
 }  // namespace rtype::client

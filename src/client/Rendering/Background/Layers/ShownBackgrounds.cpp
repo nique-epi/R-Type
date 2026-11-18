@@ -1,8 +1,12 @@
 #include "ShownBackgrounds.hpp"
 #include <algorithm>
 #include <chrono>
+#include <functional>
+#include <map>
+#include <memory>
 #include <string>
 #include <string_view>
+#include <utility>
 #include "BackgroundCatalog.hpp"
 #include "BackgroundConstants.hpp"
 #include "BackgroundDescription.hpp"
@@ -23,17 +27,25 @@ float scrolledBy(const SkyLevel& level) {
   return (level.scrollPosition - level.biomeSince) / BACKGROUND_PIXEL_SIZE;
 }
 
-}  // namespace
-
-ShownBackgrounds::ShownBackgrounds(const BackgroundCatalog& catalog,
-                                   const LayerSources& sources)
-    : logger_(std::string{BACKGROUND_LOGGER_NAME}) {
+/** @brief Builds into @p built every background of @p catalog from
+ * @p sources. */
+void buildInto(std::map<std::string, LayeredBackground, std::less<>>& built,
+               const BackgroundCatalog& catalog, const LayerSources& sources) {
   for (const std::string& name : catalog.names()) {
     const BackgroundDescription* const description = catalog.named(name);
     if (description != nullptr) {
-      built_.try_emplace(name, *description, sources);
+      built.try_emplace(name, *description, sources);
     }
   }
+}
+
+}  // namespace
+
+ShownBackgrounds::ShownBackgrounds(const BackgroundCatalog& catalog,
+                                   LayerSources sources)
+    : sources_(std::move(sources)),
+      logger_(std::string{BACKGROUND_LOGGER_NAME}) {
+  buildInto(built_, catalog, sources_);
   shown_ = backgroundOf(level_.biome);
 }
 
@@ -78,19 +90,55 @@ const LayeredBackground* ShownBackgrounds::shown() const { return shown_; }
 
 const LayeredBackground* ShownBackgrounds::leaving() const { return leaving_; }
 
+void ShownBackgrounds::layOver(
+    std::shared_ptr<const BackgroundCatalog> catalog) {
+  if (catalog == laidOverCatalog_) {
+    return;
+  }
+  const bool showsItsOwn = std::ranges::any_of(
+      built_,
+      [this](const auto& background) { return &background.second == shown_; });
+  laidOver_.clear();
+  laidOverCatalog_ = std::move(catalog);
+  if (laidOverCatalog_ != nullptr) {
+    buildInto(laidOver_, *laidOverCatalog_, sources_);
+  }
+  leaving_ = nullptr;
+  LayeredBackground* const next = backgroundOf(level_.biome);
+  if (showsItsOwn && next == shown_) {
+    return;
+  }
+  shown_ = next;
+  if (shown_ != nullptr) {
+    shown_->restart();
+  }
+}
+
+const BackgroundCatalog* ShownBackgrounds::laidOver() const {
+  return laidOverCatalog_.get();
+}
+
 LayeredBackground* ShownBackgrounds::backgroundOf(std::string_view biome) {
   const std::string_view name = biome.empty() ? DEFAULT_BACKGROUND_NAME : biome;
-  const auto found = built_.find(name);
-  if (found != built_.end()) {
-    return &found->second;
+  LayeredBackground* const found = builtNamed(name);
+  if (found != nullptr) {
+    return found;
   }
   if (unknownBiome_ != name) {
     unknownBiome_ = name;
     logger_.warn("no background is named ", name, ": the sky shows ",
                  DEFAULT_BACKGROUND_NAME);
   }
-  const auto fallback = built_.find(DEFAULT_BACKGROUND_NAME);
-  return fallback == built_.end() ? nullptr : &fallback->second;
+  return builtNamed(DEFAULT_BACKGROUND_NAME);
+}
+
+LayeredBackground* ShownBackgrounds::builtNamed(std::string_view name) {
+  const auto laid = laidOver_.find(name);
+  if (laid != laidOver_.end()) {
+    return &laid->second;
+  }
+  const auto own = built_.find(name);
+  return own == built_.end() ? nullptr : &own->second;
 }
 
 BackgroundPace ShownBackgrounds::paceOfTheShown() const {
