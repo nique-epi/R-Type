@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <string_view>
 #include "MessageType.hpp"
+#include "ProtocolConstants.hpp"
 
 namespace rtype::network::testing {
 
@@ -101,19 +102,20 @@ constexpr std::uint16_t SOME_SEQUENCE = 0x0A0B;
  * @brief Values for the header fields, all different, so a round trip shows
  * each one at its place. SOME_FLAGS sets bits 2 and 3: bit 2 is the flag only
  * the transport sees and bit 3 is unknown, so no header above the transport
- * holds either.
+ * holds either. SOME_OTHER_VERSION follows the version of this build, so it
+ * never is that version.
  */
-constexpr std::uint8_t SOME_OTHER_VERSION = 19;
+constexpr std::uint8_t SOME_OTHER_VERSION = PROTOCOL_VERSION + 1;
 constexpr std::uint32_t SOME_OTHER_PROTOCOL_ID = 0x52545951;
 constexpr std::uint8_t SOME_FLAGS = 0x0C;
 constexpr std::uint16_t SOME_ACKNOWLEDGED_SEQUENCE = 0x0D0E;
 constexpr std::uint32_t SOME_ACKNOWLEDGEMENT_BITS = 0x0F101112;
 
 /**
- * @brief The 22 bytes of a default header: RTYP, version 18, then zeros.
+ * @brief The 22 bytes of a default header: RTYP, version 19, then zeros.
  */
 constexpr auto DEFAULT_HEADER_BYTES = std::to_array<std::uint8_t>(
-    {0x52, 0x54, 0x59, 0x50, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    {0x52, 0x54, 0x59, 0x50, 0x13, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00});
 
 /**
