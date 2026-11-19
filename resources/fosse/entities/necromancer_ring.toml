@@ -16,7 +16,7 @@ height = 74
 
 [gameplay.motion]
 kind = "steady"
-top_speed = 1100
+top_speed = 700
 
 # Out along its lane to x 96, back along the middle lane, row 530, to x 1400.
 [gameplay.behaviour]
