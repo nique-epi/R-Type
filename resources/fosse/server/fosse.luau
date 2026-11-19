@@ -35,9 +35,9 @@ local END_OF_THE_DEPTHS = 10800
 local BOSS_ENTRY = { x = 2176, y = 492 }
 
 -- Where the center of the Necromancer appears: below the bottom edge, past
--- half its 440-unit frame, on the column it then rises along, its right side
+-- half its 556-unit frame, on the column it then rises along, its right side
 -- by the right edge.
-local NECROMANCER_ENTRY = { x = 1600, y = 1310 }
+local NECROMANCER_ENTRY = { x = 1544, y = 1370 }
 
 -- The top and the bottom rows the maps of the Pit leave free: its ceiling and
 -- its floor.

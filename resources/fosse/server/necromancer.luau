@@ -11,7 +11,7 @@
 -- its attacks: rings with the fist, skeleton arms under the gaze.
 --
 -- Every place below is measured from the center of its body, in logical units
--- (a pixel of the sheet is 4 units), the boss resting at {1600, 640}: what
+-- (a pixel of the sheet is 4 units), the boss resting at {1544, 598}: what
 -- comes out of its body (its hands, its fist, its mask) is placed on its
 -- frames, and what reaches across the Pit (the lanes of the rings, the
 -- fissures, the spikes, the beam) on the playfield, so its attacks cover the
@@ -38,31 +38,31 @@ local FIRST_ORDER = { RINGS, FIST, GAZE, RAISE }
 -- Where the hands throw the rings from, and the rows the rings fly along: the
 -- top lane, row 300, and the floor lane, row 760; they come back through the
 -- middle lane of their sheet, row 530.
-local RING_START = { x = -247, y = 29 }
-local TOP_LANE, FLOOR_LANE = -340, 120
+local RING_START = { x = -296, y = 35 }
+local TOP_LANE, FLOOR_LANE = -298, 162
 local RING_DELAY_MS = 500
 
 -- The bone spikes erupt as the fist lands, SPIKE_DELAY_MS into its strike,
 -- then one after the other, SPIKE_STEP_MS apart, along the floor towards the
 -- left edge: SPIKE_COUNT of them, the first SPIKE_FIRST from the center of the
--- body (x 1107, left of the impact of the fist at x 1227), SPIKE_GAP apart. A
+-- body (x 976, left of the impact of the fist at x 1096), SPIKE_GAP apart. A
 -- spike stands on the floor of the Pit (row 848): its center is SPIKE_ROW
 -- below the center of the body (row 782).
-local SPIKE_FIRST, SPIKE_GAP, SPIKE_COUNT = -493, 120, 8
-local SPIKE_ROW = 142
+local SPIKE_FIRST, SPIKE_GAP, SPIKE_COUNT = -568, 120, 8
+local SPIKE_ROW = 184
 local SPIKE_DELAY_MS = 250
 local SPIKE_STEP_MS = 90
 
 -- The fissures the skeleton arms rise from: three of them across the left of
 -- the floor, from x 160, 288 units apart, moved together by 0 to 2 steps of 72
 -- units each time; and their row.
-local FISSURE_FIRST, FISSURE_GAP, FISSURE_STEP = -1440, 288, 72
-local FISSURE_ROW = 56
+local FISSURE_FIRST, FISSURE_GAP, FISSURE_STEP = -1384, 288, 72
+local FISSURE_ROW = 98
 
 -- Where the beam of the gaze lies: its 1600 units end at the mask, on the
 -- row of its eyes, so it crosses the Pit to the left edge. It comes with the
 -- signal of the gaze and shows its aim until the strike (necromancer_gaze).
-local BEAM = { x = -821, y = -99 }
+local BEAM = { x = -825, y = -119 }
 
 -- How long a body at `speed` units per second takes to cross `distance`
 -- units, in milliseconds: one tick at least.

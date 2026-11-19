@@ -13,25 +13,25 @@ pilot = "necromancer_rite"
 # The hood and the cape; its script lets a hit apply on either, once it has
 # risen and while it does not hide in its hood.
 [[gameplay.hitbox.box]]
-width = 210
-height = 160
-offset_x = 8
-offset_y = -131
+width = 252
+height = 192
+offset_x = 10
+offset_y = -157
 
 [[gameplay.hitbox.box]]
-width = 370
-height = 260
-offset_x = 18
-offset_y = 79
+width = 444
+height = 312
+offset_x = 22
+offset_y = 95
 
 [gameplay.motion]
 kind = "steady"
 top_speed = 900
 
-# It rises from below the playfield to y 640 over 2 s, rests 0.9 s between
+# It rises from below the playfield to y 598 over 2 s, rests 0.9 s between
 # two attacks, 0.4 s once enraged, and hides 2 s in its hood when it enrages.
 [gameplay.behaviour]
-rest_y = 640
+rest_y = 598
 rise_ms = 2000
 rest_ms = 900
 enraged_rest_ms = 400
@@ -55,10 +55,10 @@ arrival_attack = 5
 # The fist (attack 1) crushes a column in front of it as it lands, the first
 # 333 ms of its strike.
 [[gameplay.hurt_zone.box]]
-offset_x = -373
-offset_y = 29
-width = 160
-height = 360
+offset_x = -448
+offset_y = 35
+width = 192
+height = 432
 attack = 1
 phase = "strike"
 from_ms = 0
@@ -68,8 +68,8 @@ until_ms = 333
 # the left edge of the playfield, the whole strike: the beam necromancer_beam
 # draws, its core and its glow.
 [[gameplay.hurt_zone.beam]]
-offset_x = -21
-offset_y = -99
+offset_x = -25
+offset_y = -119
 length = 1600
 thickness = 48
 from_deg = 0
@@ -86,8 +86,8 @@ boss_name = "NECROMANCER"
 [appearance.idle]
 left = 0
 top = 0
-width = 142
-height = 110
+width = 170
+height = 131
 frames = 12
 spacing = 2
 frame_ms = 83
@@ -95,9 +95,9 @@ frame_ms = 83
 # Phase 2, below half its health: pink halo and mask, swollen smoke, a second pair of hands.
 [appearance.enraged_idle]
 left = 0
-top = 112
-width = 146
-height = 115
+top = 133
+width = 173
+height = 137
 frames = 12
 spacing = 2
 frame_ms = 83
@@ -105,9 +105,9 @@ frame_ms = 83
 # Rings, signal.
 [appearance.attack_0.signal]
 left = 0
-top = 229
-width = 142
-height = 115
+top = 272
+width = 170
+height = 138
 frames = 10
 spacing = 2
 frame_ms = 83
@@ -118,77 +118,77 @@ anchor_y = -3
 # Rings, strike.
 [appearance.attack_0.strike]
 left = 0
-top = 346
-width = 175
-height = 115
-frames = 23
+top = 412
+width = 209
+height = 138
+frames = 19
 spacing = 2
-frame_ms = 87
+frame_ms = 105
 playback = "hold"
 afterwards = "stay"
-anchor_x = -16
+anchor_x = -20
 anchor_y = -3
 
 # Rings, recover.
 [appearance.attack_0.recover]
 left = 0
-top = 463
-width = 164
-height = 109
+top = 552
+width = 197
+height = 131
 frames = 8
 spacing = 2
 frame_ms = 83
 playback = "once"
 afterwards = "idle"
-anchor_x = -11
+anchor_x = -14
 
 # Fist, signal.
 [appearance.attack_1.signal]
 left = 0
-top = 574
-width = 176
-height = 110
+top = 685
+width = 211
+height = 131
 frames = 16
 spacing = 2
 frame_ms = 83
 playback = "loop"
 afterwards = "stay"
-anchor_x = -17
+anchor_x = -21
 
 # Fist, strike.
 [appearance.attack_1.strike]
 left = 0
-top = 686
-width = 184
-height = 113
+top = 818
+width = 220
+height = 135
 frames = 11
 spacing = 2
 frame_ms = 83
 playback = "hold"
 afterwards = "stay"
-anchor_x = -21
-anchor_y = 2
+anchor_x = -25
+anchor_y = 3
 
 # Fist, recover.
 [appearance.attack_1.recover]
 left = 0
-top = 801
-width = 175
-height = 113
+top = 955
+width = 210
+height = 135
 frames = 17
 spacing = 2
 frame_ms = 83
 playback = "once"
 afterwards = "idle"
-anchor_x = -17
-anchor_y = 2
+anchor_x = -20
+anchor_y = 3
 
 # Raise the Dead, signal.
 [appearance.attack_2.signal]
 left = 0
-top = 916
-width = 144
-height = 116
+top = 1092
+width = 172
+height = 139
 frames = 23
 spacing = 2
 frame_ms = 83
@@ -200,37 +200,36 @@ anchor_y = -2
 # Raise the Dead, strike.
 [appearance.attack_2.strike]
 left = 0
-top = 1034
-width = 144
-height = 115
+top = 1233
+width = 172
+height = 137
 frames = 19
 spacing = 2
 frame_ms = 83
 playback = "hold"
 afterwards = "stay"
 anchor_x = -1
-anchor_y = -4
+anchor_y = -6
 
 # Raise the Dead, recover.
 [appearance.attack_2.recover]
 left = 0
-top = 1151
-width = 145
-height = 109
+top = 1372
+width = 173
+height = 131
 frames = 8
 spacing = 2
 frame_ms = 83
 playback = "once"
 afterwards = "idle"
-anchor_x = -2
-anchor_y = -1
+anchor_x = -3
 
 # Gaze, signal.
 [appearance.attack_3.signal]
 left = 0
-top = 1262
-width = 143
-height = 116
+top = 1505
+width = 171
+height = 139
 frames = 18
 spacing = 2
 frame_ms = 83
@@ -242,36 +241,37 @@ anchor_y = -3
 # Gaze, strike.
 [appearance.attack_3.strike]
 left = 0
-top = 1380
-width = 122
-height = 116
+top = 1646
+width = 146
+height = 139
 frames = 10
 spacing = 2
 frame_ms = 83
 playback = "hold"
 afterwards = "stay"
 anchor_x = 2
-anchor_y = -3
+anchor_y = -2
 
 # Gaze, recover.
 [appearance.attack_3.recover]
 left = 0
-top = 1498
-width = 142
-height = 111
+top = 1787
+width = 170
+height = 133
 frames = 20
 spacing = 2
 frame_ms = 83
 playback = "once"
 afterwards = "idle"
-anchor_y = 1
+anchor_x = -1
+anchor_y = 2
 
 # The death: a flash, then the robe breaks apart and settles onto the smoke; the row under it is without flash.
 [appearance.death]
 left = 0
-top = 1611
-width = 142
-height = 110
+top = 1922
+width = 170
+height = 131
 frames = 6
 spacing = 2
 frame_ms = 110
