@@ -60,3 +60,14 @@ height = 24
 frames = 8
 spacing = 2
 frame_ms = 60
+
+# The death, its burst of bone centered on the body; the row under it is the
+# same death without flash.
+[appearance.death]
+left = 0
+top = 52
+width = 24
+height = 24
+frames = 6
+spacing = 2
+frame_ms = 70
