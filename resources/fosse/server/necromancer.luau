@@ -5,11 +5,10 @@
 --
 -- It rises from below the playfield, then rests in place and plays its four
 -- attacks, each in three beats: a signal the players learn, a strike that
--- always leaves a lane free, and a recover. Its only weak point is its mask: a
--- missile on the rows of the mask hurts it, any other is stopped, and so is
--- every missile while it rises or hides in its hood. Below half its health it
--- hides in its hood (attack 4), then pairs its attacks: rings with the fist,
--- skeleton arms under the gaze.
+-- always leaves a lane free, and a recover. A missile that touches its hood or
+-- its cape hurts it; every missile is stopped while it rises or hides in its
+-- hood. Below half its health it hides in its hood (attack 4), then pairs
+-- its attacks: rings with the fist, skeleton arms under the gaze.
 --
 -- Every place below is measured from the center of its body, in logical units
 -- (a pixel of the sheet is 4 units), the boss resting at {1600, 640}: what
@@ -35,12 +34,6 @@ local BEATS = {
 
 -- The order of the first attacks; the next ones are drawn at random.
 local FIRST_ORDER = { RINGS, FIST, GAZE, RAISE }
-
--- The rows of the mask, from the center of the body: its center row and half
--- its height, with a margin for the box of a missile. A missile comes from the
--- left, so it touches the front of the hood before it reaches the mask: a hit
--- on these rows is a hit on the mask, whatever the column it touched.
-local MASK = { y = -99, half_height = 50 }
 
 -- Where the hands throw the rings from, and the rows the rings fly along: the
 -- top lane, row 300, and the floor lane, row 760; they come back through the
@@ -118,7 +111,7 @@ behaviours.register("necromancer_rite", {
 	local settings = e.settings
 	local uncovered = false
 	behaviours.pre_hit(function(hit)
-		if uncovered and math.abs(hit.offset.y - MASK.y) <= MASK.half_height then
+		if uncovered then
 			return true
 		end
 		behaviours.destroy(hit.missile)

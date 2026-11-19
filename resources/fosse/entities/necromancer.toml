@@ -10,7 +10,8 @@ layer = "enemy"
 hits = ["player"]
 pilot = "necromancer_rite"
 
-# The hood and the cape; its script lets a hit apply on the mask only.
+# The hood and the cape; its script lets a hit apply on either, once it has
+# risen and while it does not hide in its hood.
 [[gameplay.hitbox.box]]
 width = 210
 height = 160
@@ -95,7 +96,7 @@ frame_ms = 42
 [appearance.enraged_idle]
 left = 0
 top = 112
-width = 144
+width = 146
 height = 115
 frames = 24
 spacing = 2
@@ -222,6 +223,7 @@ frame_ms = 42
 playback = "once"
 afterwards = "idle"
 anchor_x = -2
+anchor_y = -1
 
 # Gaze, signal.
 [appearance.attack_3.signal]
@@ -234,6 +236,7 @@ spacing = 2
 frame_ms = 83
 playback = "loop"
 afterwards = "stay"
+anchor_x = -1
 anchor_y = -3
 
 # Gaze, strike.
