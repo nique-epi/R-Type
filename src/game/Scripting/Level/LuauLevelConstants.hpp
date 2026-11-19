@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstddef>
 #include <string_view>
 
@@ -50,20 +51,26 @@ constexpr const char* START_BIOME_SINCE_KEY = "biome_since";
  * logical units from the top edge of the playfield. */
 constexpr const char* LEVEL_BANDS_KEY = "bands";
 
+constexpr const char* BAND_TOP_KEY = "top";
+constexpr const char* BAND_BOTTOM_KEY = "bottom";
+
 /** @brief The option that makes a level a map the players of a waiting room
  * vote for, and the rules of its name, which the room shows: 1 to
  * MAXIMUM_MAP_NAME_SIZE characters, each a capital letter, a digit or a space,
  * so it is also a name the protocol carries. */
 constexpr const char* LEVEL_MAP_KEY = "map";
+constexpr std::size_t MAXIMUM_MAP_NAME_SIZE = 16;
+constexpr std::string_view MAP_NAME_CHARACTERS =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ";
 
 /** @brief The option that names the biome a level opens in: its players start
  * inside it, as if it began long before, and see no entrance. */
 constexpr const char* LEVEL_OPENING_BIOME_KEY = "biome";
-constexpr std::size_t MAXIMUM_MAP_NAME_SIZE = 16;
-constexpr std::string_view MAP_NAME_CHARACTERS =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ";
-constexpr const char* BAND_TOP_KEY = "top";
-constexpr const char* BAND_BOTTOM_KEY = "bottom";
+
+/** @brief Every option of a level; any other key is refused. */
+constexpr std::array<std::string_view, 5> LEVEL_OPTION_KEYS{
+    LEVEL_LDTK_KEY, LEVEL_STARTS_KEY, LEVEL_BANDS_KEY, LEVEL_MAP_KEY,
+    LEVEL_OPENING_BIOME_KEY};
 
 /** @brief The part of a path that leaves its folder. */
 constexpr std::string_view PARENT_FOLDER_PART = "..";

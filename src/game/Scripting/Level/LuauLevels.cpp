@@ -126,11 +126,9 @@ void refuseUnknownOptions(lua_State* state) {
   while (lua_next(state, LEVEL_OPTIONS_ARGUMENT) != 0) {
     const bool known =
         lua_type(state, -2) == LUA_TSTRING &&
-        (std::string_view{lua_tostring(state, -2)} == LEVEL_LDTK_KEY ||
-         std::string_view{lua_tostring(state, -2)} == LEVEL_STARTS_KEY ||
-         std::string_view{lua_tostring(state, -2)} == LEVEL_BANDS_KEY ||
-         std::string_view{lua_tostring(state, -2)} == LEVEL_MAP_KEY ||
-         std::string_view{lua_tostring(state, -2)} == LEVEL_OPENING_BIOME_KEY);
+        std::ranges::find(LEVEL_OPTION_KEYS,
+                          std::string_view{lua_tostring(state, -2)}) !=
+            LEVEL_OPTION_KEYS.end();
     lua_pop(state, 1);
     if (!known) {
       lua_pop(state, 1);
@@ -319,41 +317,40 @@ bool isMapName(std::string_view name) {
          name.find_first_not_of(MAP_NAME_CHARACTERS) == std::string_view::npos;
 }
 
-/** @returns The name the options at LEVEL_OPTIONS_ARGUMENT give under
- * LEVEL_MAP_KEY; nothing without options or without that key.
- * @throws engine::ScriptException unless it is a text isMapName() accepts. */
-std::optional<std::string> mapNameOf(lua_State* state) {
+/** @returns The text the options at LEVEL_OPTIONS_ARGUMENT give under
+ * @p key, empty for a value that is no text; nothing without options or
+ * without that key. */
+std::optional<std::string> textOptionOf(lua_State* state, const char* key) {
   if (lua_isnoneornil(state, LEVEL_OPTIONS_ARGUMENT)) {
     return std::nullopt;
   }
-  lua_rawgetfield(state, LEVEL_OPTIONS_ARGUMENT, LEVEL_MAP_KEY);
+  lua_rawgetfield(state, LEVEL_OPTIONS_ARGUMENT, key);
   const int type = lua_type(state, -1);
-  std::string name = type == LUA_TSTRING ? lua_tostring(state, -1) : "";
+  std::string text = type == LUA_TSTRING ? lua_tostring(state, -1) : "";
   lua_pop(state, 1);
   if (type == LUA_TNIL) {
     return std::nullopt;
   }
-  if (!isMapName(name)) {
+  return text;
+}
+
+/** @returns The name the options give under LEVEL_MAP_KEY, nothing without it.
+ * @throws engine::ScriptException unless it is a text isMapName() accepts. */
+std::optional<std::string> mapNameOf(lua_State* state) {
+  std::optional<std::string> name = textOptionOf(state, LEVEL_MAP_KEY);
+  if (name.has_value() && !isMapName(*name)) {
     throw engine::ScriptException(WRONG_LEVEL_MAP_MESSAGE);
   }
   return name;
 }
 
-/** @returns The biome the options at LEVEL_OPTIONS_ARGUMENT open the level in,
- * under LEVEL_OPENING_BIOME_KEY; nothing without options or without that key.
+/** @returns The biome the options open the level in, under
+ * LEVEL_OPENING_BIOME_KEY; nothing without it.
  * @throws engine::ScriptException unless it is a biome name. */
 std::optional<std::string> openingBiomeOf(lua_State* state) {
-  if (lua_isnoneornil(state, LEVEL_OPTIONS_ARGUMENT)) {
-    return std::nullopt;
-  }
-  lua_rawgetfield(state, LEVEL_OPTIONS_ARGUMENT, LEVEL_OPENING_BIOME_KEY);
-  const int type = lua_type(state, -1);
-  std::string biome = type == LUA_TSTRING ? lua_tostring(state, -1) : "";
-  lua_pop(state, 1);
-  if (type == LUA_TNIL) {
-    return std::nullopt;
-  }
-  if (!identifiers::isBiomeName(biome)) {
+  std::optional<std::string> biome =
+      textOptionOf(state, LEVEL_OPENING_BIOME_KEY);
+  if (biome.has_value() && !identifiers::isBiomeName(*biome)) {
     throw engine::ScriptException(WRONG_BIOME_NAME_MESSAGE);
   }
   return biome;

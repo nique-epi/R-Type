@@ -53,7 +53,8 @@ class LobbyStateAnnouncer {
  private:
   PlayerRoster* roster_{nullptr};
   Send send_;
-  std::vector<std::string> maps_;
+  /** @brief The room sent last; its maps, set when the announcer is built,
+   * never change, so a tick only builds and compares its players. */
   network::LobbyState lastSent_;
   std::size_t ticksSinceLastSend_{0};
 };

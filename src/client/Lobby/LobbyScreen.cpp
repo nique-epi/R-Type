@@ -3,7 +3,6 @@
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Event.hpp>
-#include <SFML/Window/Keyboard.hpp>
 #include <SFML/Window/Mouse.hpp>
 #include <algorithm>
 #include <cstddef>
@@ -33,6 +32,7 @@
 #include "InterfaceConstants.hpp"
 #include "InterfacePixel.hpp"
 #include "KeyChipParts.hpp"
+#include "KeyDown.hpp"
 #include "LobbyPartAreas.hpp"
 #include "LobbyPlace.hpp"
 #include "LobbyScreenConstants.hpp"
@@ -100,21 +100,6 @@ std::string statusLine(std::span<const network::LobbyPlayer> players,
     return YOU_NOT_READY_STATUS;
   }
   return waiting->nickname + PILOT_NOT_READY_STATUS;
-}
-
-/** @returns Whether @p event presses (true) or releases (false) @p key;
- * nothing for any other event. */
-std::optional<bool> readyKeyDownOf(const sf::Event& event,
-                                   sf::Keyboard::Scancode key) {
-  if (const auto* pressed = event.getIf<sf::Event::KeyPressed>();
-      pressed != nullptr && pressed->scancode == key) {
-    return true;
-  }
-  if (const auto* released = event.getIf<sf::Event::KeyReleased>();
-      released != nullptr && released->scancode == key) {
-    return false;
-  }
-  return std::nullopt;
 }
 
 /** @brief Tells each of @p widgets that the events stop reaching it, so none
@@ -334,7 +319,7 @@ void LobbyScreen::handleEvent(const sf::Event& event) {
     dropHeldInput(playfieldPointAt_, leaderboardChip_, hangarChip_, menu_);
     return;
   }
-  if (const std::optional<bool> down = readyKeyDownOf(event, readyKey_)) {
+  if (const std::optional<bool> down = keyDownOf(event, readyKey_)) {
     if (*down && !readyKeyHeld_) {
       sounds_->play(CLICK_SOUND_ID);
       toggleReady();

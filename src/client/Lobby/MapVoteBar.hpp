@@ -2,6 +2,7 @@
 
 #include <SFML/Window/Event.hpp>
 #include <cstdint>
+#include <optional>
 #include <string>
 #include "IMapBallot.hpp"
 #include "ISoundPlayer.hpp"
@@ -45,8 +46,13 @@ class MapVoteBar {
   [[nodiscard]] std::string label() const;
 
  private:
-  /** @returns The map shown, numbered from 1; NO_MAP_VOTE while closed. */
+  /** @returns The map shown, numbered from 1, the bar open: the one voted
+   * for, or else the one leading the vote. */
   [[nodiscard]] std::uint8_t shownMap() const;
+
+  /** @returns The map the player asked to vote for, from 1; nothing before a
+   * vote, for a vote taken back, or for a map the room does not list. */
+  [[nodiscard]] std::optional<std::uint8_t> votedMap() const;
 
   IMapBallot* ballot_;
   const IWaitingRoom* room_;

@@ -9,6 +9,7 @@
 #include "IMapBallot.hpp"
 #include "ISoundPlayer.hpp"
 #include "IWaitingRoom.hpp"
+#include "KeyDown.hpp"
 #include "LobbyScreenConstants.hpp"
 #include "LobbyState.hpp"
 #include "ProtocolConstants.hpp"
@@ -36,20 +37,6 @@ std::uint8_t leadingMap(std::span<const network::LobbyPlayer> players,
   return leading;
 }
 
-/** @returns Whether @p event presses (true) or releases (false) MAP_KEY;
- * nothing for any other event. */
-std::optional<bool> mapKeyDownOf(const sf::Event& event) {
-  if (const auto* pressed = event.getIf<sf::Event::KeyPressed>();
-      pressed != nullptr && pressed->scancode == MAP_KEY) {
-    return true;
-  }
-  if (const auto* released = event.getIf<sf::Event::KeyReleased>();
-      released != nullptr && released->scancode == MAP_KEY) {
-    return false;
-  }
-  return std::nullopt;
-}
-
 }  // namespace
 
 MapVoteBar::MapVoteBar(IMapBallot& ballot, const IWaitingRoom& room,
@@ -57,7 +44,7 @@ MapVoteBar::MapVoteBar(IMapBallot& ballot, const IWaitingRoom& room,
     : ballot_(&ballot), room_(&room), sounds_(&sounds) {}
 
 bool MapVoteBar::handleEvent(const sf::Event& event) {
-  const std::optional<bool> down = mapKeyDownOf(event);
+  const std::optional<bool> down = keyDownOf(event, MAP_KEY);
   if (!down.has_value()) {
     keyHeld_ = keyHeld_ && !event.is<sf::Event::FocusLost>();
     return false;
@@ -74,14 +61,11 @@ void MapVoteBar::press() {
   if (!isOpen()) {
     return;
   }
-  const std::uint8_t shown = shownMap();
-  const std::optional<std::uint8_t> requested = ballot_->requestedMap();
-  if (!requested.has_value() || *requested == network::NO_MAP_VOTE) {
-    ballot_->voteFor(shown);
-    return;
-  }
+  const std::optional<std::uint8_t> voted = votedMap();
   const std::size_t mapCount = room_->lobbyMaps().size();
-  ballot_->voteFor(static_cast<std::uint8_t>((shown % mapCount) + 1));
+  ballot_->voteFor(voted.has_value()
+                       ? static_cast<std::uint8_t>((*voted % mapCount) + 1)
+                       : shownMap());
 }
 
 bool MapVoteBar::isOpen() const { return !room_->lobbyMaps().empty(); }
@@ -94,13 +78,17 @@ std::string MapVoteBar::label() const {
 }
 
 std::uint8_t MapVoteBar::shownMap() const {
-  const std::size_t mapCount = room_->lobbyMaps().size();
+  return votedMap().value_or(
+      leadingMap(room_->lobbyPlayers(), room_->lobbyMaps().size()));
+}
+
+std::optional<std::uint8_t> MapVoteBar::votedMap() const {
   const std::optional<std::uint8_t> requested = ballot_->requestedMap();
-  if (requested.has_value() && *requested != network::NO_MAP_VOTE &&
-      *requested <= mapCount) {
-    return *requested;
+  if (!requested.has_value() || *requested == network::NO_MAP_VOTE ||
+      *requested > room_->lobbyMaps().size()) {
+    return std::nullopt;
   }
-  return leadingMap(room_->lobbyPlayers(), mapCount);
+  return requested;
 }
 
 }  // namespace rtype::client

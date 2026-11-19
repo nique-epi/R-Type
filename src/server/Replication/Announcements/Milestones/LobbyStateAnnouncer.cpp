@@ -16,42 +16,42 @@ namespace rtype::server {
 namespace {
 
 /**
- * @returns The room @p players make: each of them, in the order given, with
- * its number, its ready state, its nickname and its map vote, then the maps
- * @p maps.
+ * @returns The lines of the room @p players make: each of them, in the order
+ * given, with its number, its ready state, its nickname and its map vote.
  */
-network::LobbyState roomOf(const ConnectedPlayers& players,
-                           const std::vector<std::string>& maps) {
-  network::LobbyState room{.players = {}, .maps = maps};
-  room.players.reserve(players.size());
+std::vector<network::LobbyPlayer> roomOf(const ConnectedPlayers& players) {
+  std::vector<network::LobbyPlayer> lines;
+  lines.reserve(players.size());
   for (const ConnectedPlayer* const player : players) {
-    room.players.push_back(
-        network::LobbyPlayer{.playerNumber = player->playerNumber,
-                             .ready = player->ready,
-                             .nickname = player->nickname,
-                             .mapVote = player->mapVote});
+    lines.push_back(network::LobbyPlayer{.playerNumber = player->playerNumber,
+                                         .ready = player->ready,
+                                         .nickname = player->nickname,
+                                         .mapVote = player->mapVote});
   }
-  return room;
+  return lines;
 }
 
 }  // namespace
 
 LobbyStateAnnouncer::LobbyStateAnnouncer(PlayerRoster& roster, Send send,
                                          std::vector<std::string> maps)
-    : roster_(&roster), send_(std::move(send)), maps_(std::move(maps)) {}
+    : roster_(&roster),
+      send_(std::move(send)),
+      lastSent_{.players = {}, .maps = std::move(maps)} {}
 
 void LobbyStateAnnouncer::onWaitingTick() {
   const ConnectedPlayers players = roster_->connected();
-  network::LobbyState room = roomOf(players, maps_);
+  std::vector<network::LobbyPlayer> lines = roomOf(players);
   ++ticksSinceLastSend_;
-  if (room == lastSent_ && ticksSinceLastSend_ < TICKS_PER_LOBBY_STATE) {
+  if (lines == lastSent_.players &&
+      ticksSinceLastSend_ < TICKS_PER_LOBBY_STATE) {
     return;
   }
-  const std::vector<std::byte> payload = network::encodeMessage(room);
+  lastSent_.players = std::move(lines);
+  const std::vector<std::byte> payload = network::encodeMessage(lastSent_);
   for (ConnectedPlayer* const player : players) {
     send_(sessionDatagram(*player, network::LobbyState::TYPE, payload));
   }
-  lastSent_ = std::move(room);
   ticksSinceLastSend_ = 0;
 }
 

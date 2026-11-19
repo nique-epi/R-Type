@@ -32,8 +32,6 @@ namespace rtype::server {
 
 namespace {
 
-/** @returns The milliseconds left of the transition @p progress plays, 0 when
- * it plays none; LONGEST_LEVEL_TRANSITION keeps them within 16 bits. */
 /** @brief Puts @p progress inside the biome @p entry opens in, begun
  * OPENING_BIOME_LEAD before the start of the scroll, so its entrance has left
  * the screen; nothing for a level that opens in no biome. */
@@ -45,6 +43,8 @@ void openInBiome(game::LevelProgress& progress,
   }
 }
 
+/** @returns The milliseconds left of the transition @p progress plays, 0 when
+ * it plays none; LONGEST_LEVEL_TRANSITION keeps them within 16 bits. */
 std::uint16_t transitionLeftOf(const game::LevelProgress& progress) {
   if (!progress.transition.has_value()) {
     return 0;

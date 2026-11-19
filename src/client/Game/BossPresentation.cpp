@@ -17,12 +17,12 @@
 #include "Entity.hpp"
 #include "EntityAppearance.hpp"
 #include "EntityDestroyed.hpp"
+#include "EntityWithAppearance.hpp"
 #include "FlashPreference.hpp"
 #include "IAudioService.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "ISoundPlayer.hpp"
 #include "InterfacePixel.hpp"
-#include "NetworkIdentity.hpp"
 #include "Position.hpp"
 #include "SoundConstants.hpp"
 #include "TimeConstants.hpp"
@@ -41,19 +41,16 @@ bool isArriving(const BossTracker& tracker, engine::Duration now) {
 }
 
 /** @returns The name the sheet of the entity of network id @p bossId gives
- * its bar; empty when the client has no such entity, or its sheet names
- * none. */
-std::string bossNameOf(engine::ComponentRegistry& components,
-                       std::uint32_t bossId) {
-  std::string name;
-  components.forEach<game::NetworkIdentity, AppearanceReference>(
-      [&name, bossId](engine::Entity, const game::NetworkIdentity& identity,
-                      const AppearanceReference& reference) {
-        if (identity.networkId == bossId && reference.appearance != nullptr) {
-          name = reference.appearance->bossName;
-        }
-      });
-  return name;
+ * its bar, empty when its sheet names none; nothing while the client has no
+ * such entity drawn from a sheet. */
+std::optional<std::string> bossNameOf(engine::ComponentRegistry& components,
+                                      std::uint32_t bossId) {
+  const std::optional<engine::Entity> boss =
+      entityWithAppearance(components, bossId);
+  if (!boss.has_value()) {
+    return std::nullopt;
+  }
+  return components.get<AppearanceReference>(*boss)->appearance->bossName;
 }
 
 }  // namespace
@@ -69,14 +66,12 @@ void BossPresentation::apply(const network::BossStatus& status) {
   if (status.stage == network::BossStage::Arriving) {
     roarAt_.reset();
     chargeSignalledAt_.reset();
-    bossName_.clear();
-  }
-  if (bossName_.empty()) {
-    bossName_ = bossNameOf(*components_, status.bossEntityId);
+    bossName_.reset();
   }
   tracker_.follow(status, now_);
   if (status.stage != network::BossStage::Arriving) {
     bossInPlay_ = status.bossEntityId;
+    findBossName();
   }
   if (status.stage != network::BossStage::Arriving && shielded_.has_value()) {
     effects_.shield(*shielded_, false);
@@ -116,7 +111,7 @@ void BossPresentation::apply(const network::EntityDestroyed& destroyed) {
   }
   tracker_.forget();
   bossInPlay_.reset();
-  bossName_.clear();
+  bossName_.reset();
   roarAt_.reset();
   chargeSignalledAt_.reset();
   if (bossMusicStarted_) {
@@ -126,6 +121,7 @@ void BossPresentation::apply(const network::EntityDestroyed& destroyed) {
 }
 
 void BossPresentation::advance(engine::Duration elapsed) {
+  findBossName();
   const std::optional<engine::Duration> before = tracker_.sinceArrival(now_);
   now_ += elapsed;
   const std::optional<engine::Duration> since = tracker_.sinceArrival(now_);
@@ -140,6 +136,12 @@ void BossPresentation::advance(engine::Duration elapsed) {
 }
 
 void BossPresentation::followLevel() { playsALevel_ = true; }
+
+void BossPresentation::findBossName() {
+  if (bossInPlay_.has_value() && !bossName_.has_value()) {
+    bossName_ = bossNameOf(*components_, *bossInPlay_);
+  }
+}
 
 void BossPresentation::endGame() {
   gameEnded_ = true;
@@ -160,7 +162,7 @@ BossLook BossPresentation::look(FlashPreference preference) const {
                                                         *chargeSignalledAt_}
                       : std::nullopt},
           preference)};
-  look.bar.name = bossName_;
+  look.bar.name = bossName_.value_or(std::string{});
   const std::optional<engine::Duration> since = tracker_.sinceArrival(now_);
   if (since.has_value()) {
     look.warning = warningBannerAt(*since, preference);

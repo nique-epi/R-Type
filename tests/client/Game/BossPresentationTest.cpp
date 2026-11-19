@@ -223,6 +223,23 @@ TEST_F(BossPresentationFixture, TheBarWritesTheNameTheSheetGives) {
 }
 
 /**
+ * Given a boss fighting before the client has its entity
+ * When its entity, drawn from a sheet that names it, appears and an update
+ * passes
+ * Then its bar writes that name: no status needs to come again
+ */
+TEST_F(BossPresentationFixture, TheNameComesWithTheEntityAfterTheStatus) {
+  presentation().apply(PRESENTED_BOSS_ARRIVING);
+  presentation().apply(PRESENTED_BOSS_FIGHTING);
+
+  placeNamedBoss();
+  presentation().advance(ONE_UPDATE);
+
+  EXPECT_EQ(presentation().look(FlashPreference::Full).bar.name,
+            PRESENTED_BOSS_NAME);
+}
+
+/**
  * Given a boss the client has no entity for, arriving
  * When the first status of its fight arrives
  * Then its bar writes no name

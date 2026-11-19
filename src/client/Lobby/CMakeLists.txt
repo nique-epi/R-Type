@@ -1,5 +1,6 @@
 add_library(rtype_client_lobby_module STATIC
   ClientLobbyModule.cpp
+  KeyDown.cpp
   LobbyScreen.cpp
   MapVoteBar.cpp
 )

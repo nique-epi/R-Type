@@ -115,7 +115,6 @@ GameStateChanged finishing(GameState& state, std::size_t& finishedTicks,
                           .outcome = outcome};
 }
 
-/** @brief Writes that the game started, with how many players. */
 /** @brief Plays the map the vote of the players of @p game chose, its draws
  * from @p seed (see votedMapOf()): its level becomes the level of the game,
  * and @p logger says which. Nothing for a game that offers no map. */
@@ -140,6 +139,17 @@ void shipEveryPlayer(PlayerRoster& roster, IGameReplication& replication) {
   }
 }
 
+/** @brief Gives a game that offers maps, and has played none yet, the level
+ * of its first map, for the world of its waiting room: the vote chooses the
+ * level its game plays as it starts (see playVotedMap()). */
+void playTheFirstMapUntilTheVote(GameContext& game) {
+  if (game.settings.level.has_value() || game.settings.maps.empty()) {
+    return;
+  }
+  game.settings.level = game.settings.maps.front().level;
+}
+
+/** @brief Writes that the game started, with how many players. */
 void logStart(const logging::Logger& logger, PlayerRoster& roster) {
   logger.info("game started, players connected: ", roster.connected().size());
 }
@@ -179,6 +189,7 @@ void GameFlow::advanceState() {
         break;
       }
       if (!game_.settings.maps.empty()) {
+        playVotedMap(game_, game_.settings.seed + worldsBuilt_, logger_);
         buildWorld();
         shipEveryPlayer(game_.roster.get(), replication_);
       }
@@ -234,7 +245,7 @@ void GameFlow::finishIfOver() {
 }
 
 void GameFlow::buildWorld() {
-  playVotedMap(game_, game_.settings.seed + worldsBuilt_, logger_);
+  playTheFirstMapUntilTheVote(game_);
   game::World& world = worldSlot_.renew();
   replication_.onWorldBuilt(world);
   systems_ = std::make_unique<MatchSystems>(
@@ -257,9 +268,8 @@ void GameFlow::startNewWorld() {
     player->wonLookNumbers.clear();
     player->livesWithoutShip = game_.settings.rules.lives;
     player->ticksUntilRespawn = 0;
-    player->shipEntityId = identifiers::NO_ENTITY_ID;
-    replication_.onPlayerJoined(*player);
   }
+  shipEveryPlayer(game_.roster.get(), replication_);
 }
 
 }  // namespace rtype::server

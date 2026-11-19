@@ -31,8 +31,7 @@ void requireFiniteValue(std::string_view field, float value) {
 /** @brief Refuses @p value, the field @p field of a scroll, when it is not a
  * finite number from 0; the exception holds its bits. */
 void requireScrollValue(std::string_view field, float value) {
-  requireFiniteValue(field, value);
-  if (value < 0.0F) {
+  if (!std::isfinite(value) || value < 0.0F) {
     throw InvalidFieldValueException(field,
                                      std::bit_cast<std::uint32_t>(value));
   }
