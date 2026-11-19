@@ -62,7 +62,7 @@ local FISSURE_ROW = 98
 -- Where the beam of the gaze lies: its 1600 units end at the mask, on the
 -- row of its eyes, so it crosses the Pit to the left edge. It comes with the
 -- signal of the gaze and shows its aim until the strike (necromancer_gaze).
-local BEAM = { x = -825, y = -119 }
+local BEAM = { x = -825, y = -110 }
 
 -- How long a body at `speed` units per second takes to cross `distance`
 -- units, in milliseconds: one tick at least.

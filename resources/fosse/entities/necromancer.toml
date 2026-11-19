@@ -69,7 +69,7 @@ until_ms = 333
 # draws, its core and its glow.
 [[gameplay.hurt_zone.beam]]
 offset_x = -25
-offset_y = -119
+offset_y = -110
 length = 1600
 thickness = 48
 from_deg = 0
