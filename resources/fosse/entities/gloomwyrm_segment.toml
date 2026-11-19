@@ -37,9 +37,9 @@ left = 0
 top = 0
 width = 18
 height = 18
-frames = 8
+frames = 4
 spacing = 2
-frame_ms = 60
+frame_ms = 120
 
 # The burst it plays when the death of the skull blows the wyrm apart; its
 # version without flash is the row under it.
