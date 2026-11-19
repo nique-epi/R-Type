@@ -179,6 +179,7 @@ Paths below are relative to `.claude/rules/`.
 - `fix/reasoning/fix-reasoning-a-weak-point-is-reached-from-where-shots-come.md`
 - `fix/reasoning/fix-reasoning-an-anchor-is-measured-against-every-idle-it-leaves.md`
 - `fix/reasoning/fix-reasoning-a-value-sent-keeps-the-rules-of-its-message.md`
+- `fix/reasoning/fix-reasoning-a-letter-on-a-keycap-is-read-by-its-code.md`
 - `fix/reasoning/fix-reasoning-verify-the-premise-before-fixing-downstream.md`
 
 **Execution (shell, git, build) — `fix/execution/`**
