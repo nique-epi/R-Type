@@ -133,7 +133,7 @@ level.register("space", {
 		wait_for_a_clear_sky()
 		fight("bydo_tyrant", BOSS_ENTRY)
 	end,
-}, { map = "OPEN SPACE" })
+}, { map = "OPEN SPACE", preview = "open_space" })
 
 level.register("fosse", {
 	function()
@@ -150,6 +150,7 @@ level.register("fosse", {
 	end,
 }, {
 	map = "THE PIT",
+	preview = "the_pit",
 	biome = "fosse",
 	starts = {
 		[2] = { scroll = END_OF_THE_PIT_ENTRY, biome = "fosse", biome_since = 0 },
