@@ -29,7 +29,8 @@ class LobbyMapVoteFixture : public ::testing::Test {
   void open(std::vector<rtype::network::LobbyPlayer> players,
             std::vector<std::string> maps);
 
-  /** @brief Presses MAP_KEY, then releases it unless @p held. */
+  /** @brief Presses MAP_KEY as an AZERTY keyboard sends it, the letter M at
+   * the place of a QWERTY semicolon, then releases it unless @p held. */
   void pressMapKey(bool held);
 
   /** @brief Clicks the window at @p pixel, then lets a press go by. */

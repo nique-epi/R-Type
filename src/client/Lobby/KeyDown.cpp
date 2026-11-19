@@ -18,4 +18,16 @@ std::optional<bool> keyDownOf(const sf::Event& event,
   return std::nullopt;
 }
 
+std::optional<bool> keyDownOf(const sf::Event& event, sf::Keyboard::Key key) {
+  if (const auto* pressed = event.getIf<sf::Event::KeyPressed>();
+      pressed != nullptr && pressed->code == key) {
+    return true;
+  }
+  if (const auto* released = event.getIf<sf::Event::KeyReleased>();
+      released != nullptr && released->code == key) {
+    return false;
+  }
+  return std::nullopt;
+}
+
 }  // namespace rtype::client

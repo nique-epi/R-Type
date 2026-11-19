@@ -40,7 +40,7 @@ constexpr int LOBBY_BARS_WIDTH =
  * protocol allows (MAXIMUM_MAP_NAME_SIZE, 16 capitals) does not fit the bar:
  * the maps of a server keep their names short.
  */
-constexpr sf::Keyboard::Scancode MAP_KEY = sf::Keyboard::Scan::M;
+constexpr sf::Keyboard::Key MAP_KEY = sf::Keyboard::Key::M;
 constexpr const char* MAP_KEY_NAME = "M";
 constexpr const char* MAP_BAR_PREFIX = "MAP: ";
 constexpr const char* MAP_BAR_CLOSED = "MAP: FIXED";

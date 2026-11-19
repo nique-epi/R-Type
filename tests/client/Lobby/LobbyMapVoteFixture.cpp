@@ -1,6 +1,5 @@
 #include "LobbyMapVoteFixture.hpp"
 #include <SFML/System/Vector2.hpp>
-#include <SFML/Window/Keyboard.hpp>
 #include <cstdint>
 #include <memory>
 #include <optional>
@@ -29,7 +28,8 @@ using rtype::client::LobbyScreenParts;
 using rtype::client::MotionPreference;
 using rtype::client::PLAYER_COLORS;
 using rtype::client::PRESS_DURATION;
-using rtype::client::testing::MAP_KEY;
+using rtype::client::testing::AZERTY_M_PLACE;
+using rtype::client::testing::MAP_KEY_CODE;
 using rtype::client::testing::OWN_NUMBER;
 using rtype::network::LobbyPlayer;
 
@@ -61,9 +61,9 @@ void LobbyMapVoteFixture::open(std::vector<LobbyPlayer> players,
 }
 
 void LobbyMapVoteFixture::pressMapKey(bool held) {
-  screen_->handleEvent(keyPress(sf::Keyboard::Key::M, MAP_KEY));
+  screen_->handleEvent(keyPress(MAP_KEY_CODE, AZERTY_M_PLACE));
   if (!held) {
-    screen_->handleEvent(keyRelease(sf::Keyboard::Key::M, MAP_KEY));
+    screen_->handleEvent(keyRelease(MAP_KEY_CODE, AZERTY_M_PLACE));
   }
   screen_->update(ONE_FRAME);
 }

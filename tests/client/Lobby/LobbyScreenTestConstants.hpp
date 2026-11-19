@@ -78,7 +78,11 @@ constexpr const char* FIRST_MAP_BAR = "MAP: OPEN SPACE";
 constexpr const char* SECOND_MAP_BAR = "MAP: THE PIT";
 constexpr const char* NO_MAP_BAR = "MAP: FIXED";
 constexpr const char* SECOND_MAP_VOTE_LINE = "VOTE: THE PIT";
-constexpr sf::Keyboard::Scancode MAP_KEY = sf::Keyboard::Scan::M;
+constexpr sf::Keyboard::Key MAP_KEY_CODE = sf::Keyboard::Key::M;
+/** @brief Where the M of an AZERTY keyboard lies: the place of the semicolon
+ * of a QWERTY one, so a test of MAP presses the M of a layout where the place
+ * and the letter differ. */
+constexpr sf::Keyboard::Scancode AZERTY_M_PLACE = sf::Keyboard::Scan::Semicolon;
 constexpr sf::Vector2i MAP_BAR_MIDDLE =
     sf::Vector2i(324, 184) * INTERFACE_PIXEL;
 
