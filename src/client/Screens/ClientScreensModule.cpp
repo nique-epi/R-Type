@@ -33,6 +33,7 @@
 #include "IWallet.hpp"
 #include "InstallContext.hpp"
 #include "IntegerSettingDefinition.hpp"
+#include "Logger.hpp"
 #include "MasterLeaderboard.hpp"
 #include "ModuleConstants.hpp"
 #include "NetworkConstants.hpp"
@@ -54,6 +55,32 @@
 namespace rtype::client {
 
 namespace {
+
+/** @brief Writes to the journal, at the debug level, each key, button and
+ * focus event the screens receive, with the code and the scancode of a key:
+ * a press whose release never comes, or comes with another code, shows there
+ * (`--log-level debug`). */
+void logInputEvent(const logging::Logger& logger, const sf::Event& event) {
+  if (const auto* pressed = event.getIf<sf::Event::KeyPressed>()) {
+    logger.debug("key pressed: code ", static_cast<int>(pressed->code),
+                 " scancode ", static_cast<int>(pressed->scancode));
+  } else if (const auto* released = event.getIf<sf::Event::KeyReleased>()) {
+    logger.debug("key released: code ", static_cast<int>(released->code),
+                 " scancode ", static_cast<int>(released->scancode));
+  } else if (const auto* clicked =
+                 event.getIf<sf::Event::MouseButtonPressed>()) {
+    logger.debug("button pressed: ", static_cast<int>(clicked->button), " at ",
+                 clicked->position.x, ", ", clicked->position.y);
+  } else if (const auto* unclicked =
+                 event.getIf<sf::Event::MouseButtonReleased>()) {
+    logger.debug("button released: ", static_cast<int>(unclicked->button),
+                 " at ", unclicked->position.x, ", ", unclicked->position.y);
+  } else if (event.is<sf::Event::FocusLost>()) {
+    logger.debug("focus lost");
+  } else if (event.is<sf::Event::FocusGained>()) {
+    logger.debug("focus gained");
+  }
+}
 
 /**
  * @throws engine::CommandRefusedException when @p nickname is not a nickname
@@ -206,6 +233,7 @@ void ClientScreensModule::start() {
   }
   screens_ = std::make_unique<ClientScreens>(services(server), registry_);
   listenerHandle_ = listeners_->add([this](const sf::Event& event) {
+    logInputEvent(logger_, event);
     screens_->handleEvent(event);
     return EventUse::Kept;
   });
