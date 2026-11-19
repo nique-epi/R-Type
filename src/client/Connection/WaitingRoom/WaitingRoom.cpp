@@ -9,6 +9,7 @@
 #include "GameLoadedReminder.hpp"
 #include "GameStarted.hpp"
 #include "ISessionOutbox.hpp"
+#include "LobbyMap.hpp"
 #include "LobbyState.hpp"
 #include "MessageDispatcher.hpp"
 #include "MessageOrigin.hpp"
@@ -55,7 +56,9 @@ std::span<const network::LobbyPlayer> WaitingRoom::lobbyPlayers() const {
   return players_;
 }
 
-std::span<const std::string> WaitingRoom::lobbyMaps() const { return maps_; }
+std::span<const network::LobbyMap> WaitingRoom::lobbyMaps() const {
+  return maps_;
+}
 
 void WaitingRoom::setReady(bool ready) {
   if (outbox_ == nullptr || gameStarted_) {

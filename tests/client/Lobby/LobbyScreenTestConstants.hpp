@@ -86,4 +86,18 @@ constexpr sf::Keyboard::Scancode AZERTY_M_PLACE = sf::Keyboard::Scan::Semicolon;
 constexpr sf::Vector2i MAP_BAR_MIDDLE =
     sf::Vector2i(324, 184) * INTERFACE_PIXEL;
 
+/**
+ * @brief The previews of the two maps, their path in the pack; what the card
+ * says while nobody voted; a point
+ * of the card left of its preview, 5 pixels into the card that starts where
+ * the MAP bar does (324 less half of its 160); and the size of the pip of a
+ * vote.
+ */
+constexpr const char* FIRST_MAP_PREVIEW = "previews/open_space.png";
+constexpr const char* SECOND_MAP_PREVIEW = "previews/the_pit.png";
+constexpr const char* NO_MAP_CHOSEN = "RANDOM";
+constexpr sf::Vector2i LEFT_OF_THE_PREVIEW =
+    sf::Vector2i(249, 184) * INTERFACE_PIXEL;
+constexpr sf::Vector2i VOTE_PIP = sf::Vector2i(4, 4);
+
 }  // namespace rtype::client::testing

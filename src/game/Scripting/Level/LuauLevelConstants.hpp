@@ -67,10 +67,15 @@ constexpr std::string_view MAP_NAME_CHARACTERS =
  * inside it, as if it began long before, and see no entrance. */
 constexpr const char* LEVEL_OPENING_BIOME_KEY = "biome";
 
+/** @brief The option that names the preview a map shows in the waiting room:
+ * a content name, the file identifiers::MAP_PREVIEW_FOLDER/<name>.png of its
+ * resource. */
+constexpr const char* LEVEL_MAP_PREVIEW_KEY = "preview";
+
 /** @brief Every option of a level; any other key is refused. */
-constexpr std::array<std::string_view, 5> LEVEL_OPTION_KEYS{
-    LEVEL_LDTK_KEY, LEVEL_STARTS_KEY, LEVEL_BANDS_KEY, LEVEL_MAP_KEY,
-    LEVEL_OPENING_BIOME_KEY};
+constexpr std::array<std::string_view, 6> LEVEL_OPTION_KEYS{
+    LEVEL_LDTK_KEY, LEVEL_STARTS_KEY,        LEVEL_BANDS_KEY,
+    LEVEL_MAP_KEY,  LEVEL_OPENING_BIOME_KEY, LEVEL_MAP_PREVIEW_KEY};
 
 /** @brief The part of a path that leaves its folder. */
 constexpr std::string_view PARENT_FOLDER_PART = "..";
@@ -121,13 +126,17 @@ constexpr const char* LEVEL_YIELD_MESSAGE =
     "level.transition";
 constexpr const char* WRONG_LEVEL_OPTIONS_MESSAGE =
     "the options of a level are a table whose keys are ldtk, starts, bands, "
-    "map and biome";
+    "map, biome and preview";
 constexpr const char* WRONG_LEVEL_STARTS_MESSAGE =
     "the starts of a level map a stage from 2 to its last to a table of a "
     "scroll, a biome and a biome_since, finite numbers from 0 and a biome name";
 constexpr const char* WRONG_LEVEL_MAP_MESSAGE =
     "the map of a level is the name the waiting room shows: 1 to 16 capital "
     "letters, digits and spaces";
+constexpr const char* WRONG_LEVEL_PREVIEW_MESSAGE =
+    "the preview of a map is the name of its image in the previews folder of "
+    "its resource, without .png: 1 to 24 lowercase letters, digits and "
+    "underscores, and only on a level given a map";
 constexpr const char* WRONG_LEVEL_BANDS_MESSAGE =
     "the bands of a level map a biome name to a table of a top and a bottom, "
     "rows from 0 to the bottom of the play area, at least a ship apart";

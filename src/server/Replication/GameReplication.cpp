@@ -1,13 +1,13 @@
 #include "GameReplication.hpp"
 #include <cstdint>
 #include <memory>
-#include <string>
 #include <vector>
 #include "ComponentRegistry.hpp"
 #include "ConnectedPlayer.hpp"
 #include "GameContext.hpp"
 #include "GameEndAnnouncer.hpp"
 #include "GameOutcome.hpp"
+#include "LobbyMap.hpp"
 #include "LobbyStateAnnouncer.hpp"
 #include "MapChoice.hpp"
 #include "ServerConstants.hpp"
@@ -20,14 +20,16 @@ namespace rtype::server {
 
 namespace {
 
-/** @returns The names the waiting room shows for @p maps, in their order. */
-std::vector<std::string> namesOf(const std::vector<MapChoice>& maps) {
-  std::vector<std::string> names;
-  names.reserve(maps.size());
+/** @returns The maps the waiting room shows for @p maps, in their order: the
+ * name and the preview of each. */
+std::vector<network::LobbyMap> lobbyMapsOf(const std::vector<MapChoice>& maps) {
+  std::vector<network::LobbyMap> shown;
+  shown.reserve(maps.size());
   for (const MapChoice& map : maps) {
-    names.push_back(map.name);
+    shown.push_back(
+        network::LobbyMap{.name = map.name, .preview = map.preview});
   }
-  return names;
+  return shown;
 }
 
 }  // namespace
@@ -36,7 +38,7 @@ GameReplication::GameReplication(GameContext& game)
     : roster_(game.roster.get()),
       send_(game.send),
       ship_(game.settings.types.get().named(SHIP_SHEET_NAME)),
-      mapNames_(namesOf(game.settings.maps)),
+      lobbyMaps_(lobbyMapsOf(game.settings.maps)),
       worldStateSender_(
           roster_, send_,
           StateSending{.statesPerSecond = game.settings.statesPerSecond,
@@ -47,7 +49,7 @@ void GameReplication::onWorldBuilt(game::World& world) {
       std::make_unique<ShipSpawnAnnouncer>(ShipSpawnAnnouncerParts{
           .world = world, .roster = roster_, .send = send_, .ship = ship_});
   lobbyStateAnnouncer_ =
-      std::make_unique<LobbyStateAnnouncer>(roster_, send_, mapNames_);
+      std::make_unique<LobbyStateAnnouncer>(roster_, send_, lobbyMaps_);
   gameEndAnnouncer_.reset();
 }
 

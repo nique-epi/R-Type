@@ -4,6 +4,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "LobbyMap.hpp"
 #include "LobbyState.hpp"
 #include "LobbyStateAnnouncerTestConstants.hpp"
 #include "ProtocolConstants.hpp"
@@ -20,10 +21,16 @@ network::LobbyPlayer lobbyPlayer(std::size_t index, bool ready) {
                               .mapVote = network::NO_MAP_VOTE};
 }
 
+std::vector<network::LobbyMap> announcedMaps() {
+  return {network::LobbyMap{.name = std::string{FIRST_ANNOUNCED_MAP},
+                            .preview = std::string{FIRST_ANNOUNCED_PREVIEW}},
+          network::LobbyMap{.name = std::string{SECOND_ANNOUNCED_MAP},
+                            .preview = std::string{SECOND_ANNOUNCED_PREVIEW}}};
+}
+
 network::LobbyState announcedRoom(std::vector<network::LobbyPlayer> players) {
   return network::LobbyState{.players = std::move(players),
-                             .maps = {std::string{FIRST_ANNOUNCED_MAP},
-                                      std::string{SECOND_ANNOUNCED_MAP}}};
+                             .maps = announcedMaps()};
 }
 
 std::size_t ticksInTheLongestGap() {

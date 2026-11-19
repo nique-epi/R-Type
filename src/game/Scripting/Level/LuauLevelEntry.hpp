@@ -34,6 +34,9 @@ struct LuauLevelEntry {
   /** @brief The biome the level opens in, its entrance behind the players;
    * nothing for a level that opens in no biome. */
   std::optional<std::string> openingBiome = std::nullopt;
+  /** @brief The content name of the preview the map shows in the waiting
+   * room (see LEVEL_MAP_PREVIEW_KEY); nothing for a map without one. */
+  std::optional<std::string> mapPreview = std::nullopt;
 };
 
 }  // namespace rtype::game

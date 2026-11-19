@@ -1,9 +1,9 @@
 #include "RecordingWaitingRoom.hpp"
 #include <optional>
 #include <span>
-#include <string>
 #include <utility>
 #include <vector>
+#include "LobbyMap.hpp"
 #include "LobbyState.hpp"
 
 std::span<const rtype::network::LobbyPlayer>
@@ -11,7 +11,8 @@ RecordingWaitingRoom::lobbyPlayers() const {
   return lobbyPlayers_;
 }
 
-std::span<const std::string> RecordingWaitingRoom::lobbyMaps() const {
+std::span<const rtype::network::LobbyMap> RecordingWaitingRoom::lobbyMaps()
+    const {
   return lobbyMaps_;
 }
 
@@ -31,7 +32,8 @@ void RecordingWaitingRoom::setLobbyPlayers(
   lobbyPlayers_ = std::move(players);
 }
 
-void RecordingWaitingRoom::setLobbyMaps(std::vector<std::string> maps) {
+void RecordingWaitingRoom::setLobbyMaps(
+    std::vector<rtype::network::LobbyMap> maps) {
   lobbyMaps_ = std::move(maps);
 }
 

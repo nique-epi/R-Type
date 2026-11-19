@@ -14,7 +14,7 @@
 #include "IMapBallot.hpp"
 #include "IServerCatalog.hpp"
 #include "IServerTicks.hpp"
-#include "ISessionBackgrounds.hpp"
+#include "ISessionPack.hpp"
 #include "ITicketLink.hpp"
 #include "IWallet.hpp"
 #include "MasterLeaderboard.hpp"
@@ -49,9 +49,10 @@ struct ScreenServices {
   /** @brief The content of the session: a game loads the sprite sheets of
    * its appearances. */
   std::reference_wrapper<const IEntityTypeTable> entityTable;
-  /** @brief The backgrounds the pack of the server of the session brings:
-   * a game loads their images, and the sky lays them over its own. */
-  std::reference_wrapper<const ISessionBackgrounds> sessionBackgrounds;
+  /** @brief What the pack of the server of the session brings: a game loads
+   * the images of its backgrounds, and the sky lays them over its own; the
+   * waiting room reads the previews of its maps from its files. */
+  std::reference_wrapper<const ISessionPack> sessionPack;
   std::reference_wrapper<IAudioService> audio;
   std::reference_wrapper<GameWindow> window;
   std::reference_wrapper<ServerSession> connection;

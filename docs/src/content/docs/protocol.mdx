@@ -174,7 +174,7 @@ The type identifies a message in both directions: `Disconnection` and `Heartbeat
 | 3 | `ConnectionRefused` | `reason` `u8`: 1 `GameFull`, 2 `GameInProgress`, 3 `IncompatibleVersion`, 4 `NicknameTaken`, 5 `GameNotFound`, 6 `ServerFull`, 7 `UnknownDifficulty`, 8 `LivesOutOfRange` | in answer to a request |
 | 4 | `Disconnection` | none | when the server shuts down, three times 50 ms apart |
 | 5 | `Heartbeat` | `sentAt` `u32`, `echoes` `bool`, `echo.sentAt` `u32`, `echo.heldFor` `u32`, `ticks` `bool`, `tick` `u32` (see [Round trip](#round-trip) and [Clock of the server](#clock-of-the-server)) | every 500 ms, whatever else it sends; `ticks` is 1 only while a game is in progress |
-| 7 | `LobbyState` | `playerCount` `u8`, then per player `playerNumber` `u8`, `ready` `bool`, `nickname` `string`, `mapVote` `u8`; then `mapCount` `u8`, then per map its `name` `string` (see [Map vote](#map-vote)) | on every change, and at least every 500 ms while no game runs |
+| 7 | `LobbyState` | `playerCount` `u8`, then per player `playerNumber` `u8`, `ready` `bool`, `nickname` `string`, `mapVote` `u8`; then `mapCount` `u8`, then per map its `name` `string` and its `preview` `string` (see [Map vote](#map-vote)) | on every change, and at least every 500 ms while no game runs |
 | 8 | `GameStarted` | none | when every connected player is ready, then every 500 ms to the players that did not send `GameLoaded` yet |
 | 10 | `WorldState` | see [World state](#world-state) | not sent by the server since `DeltaWorldState`; a client still reads it |
 | 11 | `EntitySpawned` | `entityId` `u32`, `entityType` `u8` (a number of the [entity types](#entity-types)), `position`, `owner` `u8` (0 to 4), `firingInput` `u32`; see [Own missiles](#own-missiles) | when an entity appears; the ship of a player, when the player is accepted; the ship of a player again, when it comes back after a hit; a Bydo, every time one appears; a missile, every time one is fired |
@@ -206,7 +206,7 @@ A message is accepted only when its payload has exactly the size its fields add 
 |---|---|
 | `ConnectionRequest` | the nickname follows the rules of [Connection](#connection): 1 to 16 bytes of valid UTF-8, no control character; any `ticket` is read; `kind` is 1 to 3; `number` is 1 to 65535 with `ExistingGame`, and 0 with `AnyGame` and `NewGame`; the rules follow `number` with `NewGame` and with no other kind; their `difficulty` follows the rules of a nickname. Any `lives` byte is read: the supervisor refuses those it does not accept (see [Supervisor](#supervisor)) |
 | `ConnectionAccepted` | `playerNumber` is 1 to 4; `size` is 8388608 at most; the payload is 39 bytes |
-| `LobbyState` | at most 4 players, each `playerNumber` 1 to 4 and listed once, each nickname valid as above; at most 8 maps (`MAXIMUM_LOBBY_MAPS`), each name valid as a nickname; each `mapVote` 0 or a number of a listed map |
+| `LobbyState` | at most 4 players, each `playerNumber` 1 to 4 and listed once, each nickname valid as above; at most 8 maps (`MAXIMUM_LOBBY_MAPS`), each name valid as a nickname, each preview empty or a path of the content pack (1 to 64 bytes, see [Content pack](#content-pack)); each `mapVote` 0 or a number of a listed map |
 | `MapVote` | `map` 0 to 8 |
 | `GameEnded` | `outcome` is 1 or 2; at most 4 players, each `playerNumber` 1 to 4 and listed once |
 | `WorldState` | at most 4 players, each `playerNumber` 1 to 4 and listed once; `motion` follows [World state](#world-state) |
@@ -270,7 +270,7 @@ Alternative considered: a `GameEvent` kind for the item won. It needs no new typ
 
 ### Map vote
 
-A server that offers maps lets the players of its waiting room choose the one the game plays. A map is a level a script registered with the option `map` (see [Scripting](/R-Type/scripting/#directing-a-level)): `LobbyState` lists their names, in the order of the names of their levels, and the vote of each player, 0 until it votes. A server that names its level (`set level`) offers none, and a room of no map plays that level.
+A server that offers maps lets the players of its waiting room choose the one the game plays. A map is a level a script registered with the option `map` (see [Scripting](/R-Type/scripting/#directing-a-level)): `LobbyState` lists their names, in the order of the names of their levels, each with the path of its preview in the content pack (`previews/<name>.png`, empty for a map without one), and the vote of each player, 0 until it votes. A server that names its level (`set level`) offers none, and a room of no map plays that level.
 
 - **Voting.** The server reads a `MapVote` only from a player with a session, while the game takes the choices of the waiting room, as it does a `ReadyState`, and only for 0 or a listed map; any other is ignored. The value is absolute: a vote replaces the one before, and 0 takes it back.
 - **Sending again.** A client MUST send its vote again every 500 ms (`MAP_VOTE_INTERVAL`) until `LobbyState` shows it, and sends nothing once the game started.
@@ -331,7 +331,7 @@ A type is named by the sheet it is read from (`assets/entities/drifter.toml` is 
 
 ### Content pack
 
-The content of a server is what a client needs to draw the games it runs: every sheet of the `entities` folder of its assets, with its mask file of `entities/masks/` when it has one, and every sprite sheet their `[appearance]` names (`sheet`), each kept once however many sheets name it. The server hands it over as one file, the content pack, named by its fingerprint. `ConnectionAccepted` announces the pack of the game in three fields:
+The content of a server is what a client needs to draw the games it runs: every sheet of the `entities` folder of its assets, with its mask file of `entities/masks/` when it has one, and every sprite sheet their `[appearance]` names (`sheet`), each kept once however many sheets name it, then the previews of the maps of its resources (`previews/<name>.png`, see [Map vote](#map-vote)). The server hands it over as one file, the content pack, named by its fingerprint. `ConnectionAccepted` announces the pack of the game in three fields:
 
 | Field | Holds |
 |---|---|
@@ -910,7 +910,7 @@ Version 18 lets a player who signed in to the master earn from its games: `Conne
 
 ## Version 19
 
-Version 19 gives `LevelStatus` three last fields, each a `u16`: `transitionLeft`, the milliseconds left of the transition its level plays, 0 when it plays none, then `bandTop` and `bandBottom`, the rows the ships fly between in its biome (see [Level status](#level-status)). It gives `LobbyState` the vote of each player and the names of the maps of the room, and adds `MapVote` (type 40, see [Map vote](#map-vote)). A peer of version 18 would read the new bytes as trailing bytes and drop the message, so `version` became 19, and the server answers a client of version 18 with `ConnectionRefused` (`IncompatibleVersion`). The layout of the header and of every other message is the same as in version 18.
+Version 19 gives `LevelStatus` three last fields, each a `u16`: `transitionLeft`, the milliseconds left of the transition its level plays, 0 when it plays none, then `bandTop` and `bandBottom`, the rows the ships fly between in its biome (see [Level status](#level-status)). It gives `LobbyState` the vote of each player and the maps of the room, each a name and the path of its preview, and adds `MapVote` (type 40, see [Map vote](#map-vote)). A peer of version 18 would read the new bytes as trailing bytes and drop the message, so `version` became 19, and the server answers a client of version 18 with `ConnectionRefused` (`IncompatibleVersion`). The layout of the header and of every other message is the same as in version 18.
 
 ## Implementation status
 

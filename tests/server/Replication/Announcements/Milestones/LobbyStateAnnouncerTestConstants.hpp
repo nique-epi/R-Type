@@ -12,10 +12,12 @@ namespace rtype::server::testing {
  */
 constexpr std::chrono::milliseconds LONGEST_LOBBY_STATE_GAP{500};
 
-/** @brief The maps the announcer lists, in order, and the number of the
- * second, from 1. */
+/** @brief The maps the announcer lists, in order, with their previews, and the
+ * number of the second, from 1. */
 constexpr std::string_view FIRST_ANNOUNCED_MAP = "OPEN SPACE";
 constexpr std::string_view SECOND_ANNOUNCED_MAP = "THE PIT";
+constexpr std::string_view FIRST_ANNOUNCED_PREVIEW = "previews/open_space.png";
+constexpr std::string_view SECOND_ANNOUNCED_PREVIEW = "previews/the_pit.png";
 constexpr std::uint8_t SECOND_ANNOUNCED_MAP_NUMBER = 2;
 
 }  // namespace rtype::server::testing

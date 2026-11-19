@@ -9,6 +9,7 @@
 #include "ChatWindow.hpp"
 #include "HelpWalkthrough.hpp"
 #include "IInterfaceCanvas.hpp"
+#include "IMapPreviews.hpp"
 #include "IScreen.hpp"
 #include "IScreenNavigator.hpp"
 #include "IServerConnection.hpp"
@@ -19,7 +20,7 @@
 #include "LobbyPlace.hpp"
 #include "LobbyScreenParts.hpp"
 #include "LobbyState.hpp"
-#include "MapVoteBar.hpp"
+#include "MapVoteCard.hpp"
 #include "Menu.hpp"
 #include "MotionPreference.hpp"
 #include "PlayerPalette.hpp"
@@ -47,9 +48,11 @@ struct HangarBay;
  * who is not ready: a game starts as soon as every listed pilot is, however
  * many they are.
  *
- * MAP, the bar beside READY, or MAP_KEY votes for the map the game will play
- * (MapVoteBar); each bay writes the map its pilot voted for. On a server that
- * plays one level, MAP says so and is disabled.
+ * MAP, the bar beside READY under the card of the map, a click on the card,
+ * or MAP_KEY votes for the map the game will play (MapVoteCard); the card
+ * shows the preview of the map, and each bay writes the map its pilot voted
+ * for. On a server that plays one level, MAP says so and is disabled. The
+ * status line lies under READY, as wide, so it never reaches the card.
  *
  * Once the connection learns that the game started, the screen asks for the
  * game in place of every screen, once. BACK, or MENU_CANCEL_KEY, leaves the
@@ -80,8 +83,11 @@ class LobbyScreen : public IScreen {
   /**
    * @param canvas Picture the waiting room is painted on, never null: the
    * screen owns it, so it comes apart from the parts it borrows.
+   * @param previews Gives the preview of each map, never null: the screen
+   * owns it.
    */
-  LobbyScreen(LobbyScreenParts parts, std::unique_ptr<IInterfaceCanvas> canvas);
+  LobbyScreen(LobbyScreenParts parts, std::unique_ptr<IInterfaceCanvas> canvas,
+              std::unique_ptr<IMapPreviews> previews);
 
   /** @brief The actions of the menu point at the screen, so it never moves. */
   LobbyScreen(const LobbyScreen&) = delete;
@@ -149,7 +155,8 @@ class LobbyScreen : public IScreen {
   const identifiers::ShipLook* look_;
   KeyChip hangarChip_;
   ChatWindow chat_;
-  MapVoteBar mapVoteBar_;
+  std::unique_ptr<IMapPreviews> previews_;
+  MapVoteCard mapVoteCard_;
 };
 
 }  // namespace rtype::client

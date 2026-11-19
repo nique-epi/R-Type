@@ -8,6 +8,7 @@
 #include "GameEnded.hpp"
 #include "GameLoaded.hpp"
 #include "GameStarted.hpp"
+#include "LobbyMap.hpp"
 #include "LobbyMessagesFixtures.hpp"
 #include "LobbyState.hpp"
 #include "MessagePayload.hpp"
@@ -25,8 +26,10 @@ using testing::fullLobby;
 using testing::LARGEST_LOBBY_DATAGRAM_SIZE;
 using testing::LAST_PLAYER_NUMBER;
 using testing::lobbyPlayer;
+using testing::ONE_BYTE_MAP_PREVIEW;
 using testing::ONE_BYTE_NICKNAME;
 using testing::PLAYER_NUMBER_ABOVE_THE_LAST;
+using testing::PREVIEW_OUTSIDE_THE_PACK;
 using testing::SECOND_MAP;
 using testing::SOME_SCORE_OF_DISTINCT_BYTES;
 
@@ -137,19 +140,19 @@ TEST(LobbyState, DecodesWhatItEncoded) {
  * Then the same bytes come back
  */
 TEST(LobbyState, EncodesAgainTheBytesItDecoded) {
-  const auto bytes = byteSequence(
-      {0x01, 0x03, 0x01, 0x01, 0x41, 0x02, 0x02, 0x01, 0x42, 0x01, 0x43});
+  const auto bytes = byteSequence({0x01, 0x03, 0x01, 0x01, 0x41, 0x02, 0x02,
+                                   0x01, 0x42, 0x00, 0x01, 0x43, 0x00});
 
   EXPECT_EQ(encodeMessage(decodeMessage<LobbyState>(bytes)), bytes);
 }
 
 /**
  * Given the largest room: four players and eight maps, every name sixteen
- * bytes long
+ * bytes long, every preview the longest path of a pack
  * When its datagram is encoded
- * Then it holds 243 bytes, well within a datagram
+ * Then it holds 763 bytes, within a datagram
  */
-TEST(LobbyState, LargestRoomDatagramHoldsTwoHundredAndFortyThreeBytes) {
+TEST(LobbyState, LargestRoomDatagramHoldsSevenHundredAndSixtyThreeBytes) {
   EXPECT_EQ(DatagramCodec::encode(PacketHeader{}, fullLobby()).size(),
             LARGEST_LOBBY_DATAGRAM_SIZE);
 }
@@ -288,9 +291,12 @@ TEST(LobbyState, EncodesTheMapsAfterThePlayers) {
                    .ready = false,
                    .nickname = std::string{ONE_BYTE_NICKNAME},
                    .mapVote = SECOND_MAP}},
-      .maps = {"A", "B"}};
-  const auto expected = byteSequence(
-      {0x01, 0x01, 0x00, 0x01, 0x41, 0x02, 0x02, 0x01, 0x41, 0x01, 0x42});
+      .maps = {
+          LobbyMap{.name = "A", .preview = ""},
+          LobbyMap{.name = "B", .preview = std::string{ONE_BYTE_MAP_PREVIEW}}}};
+  const auto expected =
+      byteSequence({0x01, 0x01, 0x00, 0x01, 0x41, 0x02, 0x02, 0x01, 0x41, 0x00,
+                    0x01, 0x42, 0x01, 0x70});
 
   EXPECT_EQ(encodeMessage(lobby), expected);
 }
@@ -314,8 +320,8 @@ TEST(LobbyState, RefusesToReadNineMapsBeforeReadingThem) {
  * Then an InvalidFieldValueException is raised
  */
 TEST(LobbyState, RefusesToReadAVotePastTheLastMap) {
-  const auto bytes =
-      byteSequence({0x01, 0x01, 0x00, 0x01, 0x41, 0x02, 0x01, 0x01, 0x41});
+  const auto bytes = byteSequence(
+      {0x01, 0x01, 0x00, 0x01, 0x41, 0x02, 0x01, 0x01, 0x41, 0x00});
 
   EXPECT_THROW((void)decodeMessage<LobbyState>(bytes),
                InvalidFieldValueException);
@@ -327,9 +333,26 @@ TEST(LobbyState, RefusesToReadAVotePastTheLastMap) {
  * Then an InvalidFieldValueException is raised
  */
 TEST(LobbyState, RefusesToReadAnEmptyMapName) {
-  const auto bytes = byteSequence({0x00, 0x01, 0x00});
+  const auto bytes = byteSequence({0x00, 0x01, 0x00, 0x00});
 
   EXPECT_THROW((void)decodeMessage<LobbyState>(bytes),
+               InvalidFieldValueException);
+}
+
+/**
+ * Given a payload without players whose one map, named A, names a preview
+ * that leaves the folder of the pack
+ * When it is decoded
+ * Then an InvalidFieldValueException is raised
+ */
+TEST(LobbyState, RefusesToReadAPreviewOutsideThePack) {
+  ByteWriter writer;
+  writer.writeUint8(0);
+  writer.writeUint8(1);
+  writer.writeString("A");
+  writer.writeString(PREVIEW_OUTSIDE_THE_PACK);
+
+  EXPECT_THROW((void)decodeMessage<LobbyState>(writer.bytes()),
                InvalidFieldValueException);
 }
 
@@ -339,7 +362,8 @@ TEST(LobbyState, RefusesToReadAnEmptyMapName) {
  * Then an InvalidFieldValueException is raised
  */
 TEST(LobbyState, RefusesToWriteAVotePastTheLastMap) {
-  LobbyState lobby{.players = {lobbyPlayer(1)}, .maps = {"A"}};
+  LobbyState lobby{.players = {lobbyPlayer(1)},
+                   .maps = {LobbyMap{.name = "A", .preview = ""}}};
   lobby.players.front().mapVote = SECOND_MAP;
 
   EXPECT_THROW((void)encodeMessage(lobby), InvalidFieldValueException);
@@ -539,6 +563,20 @@ TEST(GameEnded, RefusesToWriteAnUnknownOutcome) {
                         .players = {}};
 
   EXPECT_THROW((void)encodeMessage(ended), InvalidFieldValueException);
+}
+
+/**
+ * Given a room of one map whose preview leaves the folder of the pack
+ * When it is encoded
+ * Then an InvalidFieldValueException is raised, naming the preview
+ */
+TEST(LobbyState, RefusesToWriteAPreviewOutsideThePack) {
+  const LobbyState lobby{
+      .players = {lobbyPlayer(1)},
+      .maps = {LobbyMap{.name = "A",
+                        .preview = std::string{PREVIEW_OUTSIDE_THE_PACK}}}};
+
+  EXPECT_THROW((void)encodeMessage(lobby), InvalidFieldValueException);
 }
 
 }  // namespace rtype::network

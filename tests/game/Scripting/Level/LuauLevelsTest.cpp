@@ -160,6 +160,52 @@ TEST(LuauLevels, ALevelWithoutTheOptionIsNoMap) {
 }
 
 /**
+ * Given a script that registers the map THE CAVES with the preview the_caves
+ * When it runs
+ * Then the map names that preview
+ */
+TEST(LuauLevels, ReadsThePreviewOfAMap) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+
+  scripts.run(scriptsOf(REGISTERS_A_MAP_WITH_A_PREVIEW));
+
+  const LuauLevelEntry* const entry = scripts.levels().entryOf(CAVES_LEVEL);
+  ASSERT_NE(entry, nullptr);
+  EXPECT_EQ(entry->mapPreview.value_or(""), CAVES_PREVIEW);
+}
+
+/**
+ * Given a script whose preview names a file outside the previews folder
+ * When it runs
+ * Then it fails, saying what the option is
+ */
+TEST(LuauLevels, RefusesAPreviewOutsideItsFolder) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+
+  EXPECT_THAT(
+      [&] { scripts.run(scriptsOf(REGISTERS_A_PREVIEW_OUTSIDE_ITS_FOLDER)); },
+      ThrowsMessage<ScriptException>(
+          HasSubstr(rtype::game::WRONG_LEVEL_PREVIEW_MESSAGE)));
+}
+
+/**
+ * Given a script that gives a preview to a level that is no map
+ * When it runs
+ * Then it fails, saying what the option is
+ */
+TEST(LuauLevels, RefusesAPreviewWithoutAMap) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+
+  EXPECT_THAT(
+      [&] { scripts.run(scriptsOf(REGISTERS_A_PREVIEW_WITHOUT_A_MAP)); },
+      ThrowsMessage<ScriptException>(
+          HasSubstr(rtype::game::WRONG_LEVEL_PREVIEW_MESSAGE)));
+}
+
+/**
  * Given a script whose map name is written in small letters
  * When it runs
  * Then it fails, saying what the option is

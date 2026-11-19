@@ -18,6 +18,7 @@
 #include <vector>
 #include "BiomeName.hpp"
 #include "ComponentRegistry.hpp"
+#include "ContentName.hpp"
 #include "EnemyCount.hpp"
 #include "EngineException.hpp"
 #include "GameScriptingConstants.hpp"
@@ -356,6 +357,21 @@ std::optional<std::string> openingBiomeOf(lua_State* state) {
   return biome;
 }
 
+/** @returns The preview the options give under LEVEL_MAP_PREVIEW_KEY, nothing
+ * without it.
+ * @throws engine::ScriptException unless it is a content name, given with a
+ * map. */
+std::optional<std::string> mapPreviewOf(lua_State* state,
+                                        const std::optional<std::string>& map) {
+  std::optional<std::string> preview =
+      textOptionOf(state, LEVEL_MAP_PREVIEW_KEY);
+  if (preview.has_value() &&
+      (!map.has_value() || !identifiers::isContentName(*preview))) {
+    throw engine::ScriptException(WRONG_LEVEL_PREVIEW_MESSAGE);
+  }
+  return preview;
+}
+
 /** @brief `level.register(name, stages, options)`: an exception that leaves
  * it is an error of the script, as Luau makes of any exception a C function
  * throws. */
@@ -369,14 +385,16 @@ int registerLevel(lua_State* state) {
     throw engine::ScriptException(DUPLICATE_LEVEL_MESSAGE);
   }
   const int count = stageCountOf(state);
-  levels.declare(std::move(name),
-                 LuauLevelEntry{.stages = stageReferences(state, count),
-                                .ldtkFile = ldtkFileOf(state),
-                                .placements = {},
-                                .starts = startsOf(state, count),
-                                .bands = bandsOf(state),
-                                .mapName = mapNameOf(state),
-                                .openingBiome = openingBiomeOf(state)});
+  LuauLevelEntry entry{.stages = stageReferences(state, count),
+                       .ldtkFile = ldtkFileOf(state),
+                       .placements = {},
+                       .starts = startsOf(state, count),
+                       .bands = bandsOf(state),
+                       .mapName = mapNameOf(state),
+                       .openingBiome = openingBiomeOf(state),
+                       .mapPreview = std::nullopt};
+  entry.mapPreview = mapPreviewOf(state, entry.mapName);
+  levels.declare(std::move(name), std::move(entry));
   return 0;
 }
 

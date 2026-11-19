@@ -63,8 +63,8 @@ constexpr std::array HELP_STEPS{
              .text = "PRESS {READY} OR *READY* WHEN YOU ARE READY TO FLY."},
     HelpStep{.scene = HelpScene::Lobby,
              .part = HelpPart::Map,
-             .text = "{M} OR *MAP* VOTES FOR A MAP. THE MAP WITH THE MOST "
-                     "VOTES IS PLAYED."},
+             .text = "{M} OR A CLICK ON THE *MAP* VOTES FOR A MAP. THE MAP "
+                     "WITH THE MOST VOTES IS PLAYED."},
     HelpStep{.scene = HelpScene::Lobby,
              .part = HelpPart::Status,
              .text = "THIS LINE SAYS WHO IS *NOT* *READY*. THE GAME STARTS "

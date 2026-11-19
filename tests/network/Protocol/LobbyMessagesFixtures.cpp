@@ -1,6 +1,7 @@
 #include "LobbyMessagesFixtures.hpp"
 #include <cstdint>
 #include <string>
+#include "LobbyMap.hpp"
 #include "LobbyState.hpp"
 #include "ProtocolConstants.hpp"
 #include "ProtocolTestConstants.hpp"
@@ -21,7 +22,9 @@ LobbyState fullLobby() {
   for (LobbyPlayer& player : lobby.players) {
     player.mapVote = MAXIMUM_LOBBY_MAPS;
   }
-  lobby.maps.assign(MAXIMUM_LOBBY_MAPS, std::string{SIXTEEN_BYTE_NICKNAME});
+  lobby.maps.assign(MAXIMUM_LOBBY_MAPS,
+                    LobbyMap{.name = std::string{SIXTEEN_BYTE_NICKNAME},
+                             .preview = std::string{LONGEST_MAP_PREVIEW}});
   return lobby;
 }
 

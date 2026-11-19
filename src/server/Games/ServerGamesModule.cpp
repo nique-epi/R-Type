@@ -43,6 +43,7 @@
 #include "LuauLevelEntry.hpp"
 #include "LuauLevels.hpp"
 #include "MapChoice.hpp"
+#include "MapPreviewPath.hpp"
 #include "ModuleConstants.hpp"
 #include "PathText.hpp"
 #include "PlayerDatagrams.hpp"
@@ -83,7 +84,12 @@ std::vector<MapChoice> mapsOf(game::BehaviourScripts* scripts) {
     const game::LuauLevelEntry* const entry = scripts->levels().entryOf(name);
     if (entry != nullptr && entry->mapName.has_value() &&
         maps.size() < network::MAXIMUM_LOBBY_MAPS) {
-      maps.push_back(MapChoice{.level = name, .name = *entry->mapName});
+      maps.push_back(
+          MapChoice{.level = name,
+                    .name = *entry->mapName,
+                    .preview = entry->mapPreview.has_value()
+                                   ? game::mapPreviewPathOf(*entry->mapPreview)
+                                   : std::string{}});
     }
   }
   return maps;

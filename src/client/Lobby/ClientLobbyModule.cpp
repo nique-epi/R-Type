@@ -11,6 +11,7 @@
 #include "LobbyScreenIdConstants.hpp"
 #include "LobbyScreenParts.hpp"
 #include "LocalizedKeyName.hpp"
+#include "MapPreviews.hpp"
 #include "ModuleConstants.hpp"
 #include "PlayerPreferences.hpp"
 #include "PlayerSettings.hpp"
@@ -34,7 +35,8 @@ std::optional<network::GameRules> rulesOfLastAttempt(
 }
 
 /** @returns The waiting room, its READY key read from the bindings of the
- * player when it is built. */
+ * player when it is built, the previews of its maps read from the pack of the
+ * session. */
 std::unique_ptr<IScreen> buildLobbyScreen(const ScreenContext& context,
                                           LobbyPlace place) {
   const PlayerSettings& settings = context.services.settings.get();
@@ -55,7 +57,9 @@ std::unique_ptr<IScreen> buildLobbyScreen(const ScreenContext& context,
                        .chat = context.services.chat.get(),
                        .settings = settings,
                        .rules = rulesOfLastAttempt(context.serverChoice.get())},
-      interfaceCanvasOf(context));
+      interfaceCanvasOf(context),
+      std::make_unique<MapPreviews>(context.services.assets.get(),
+                                    context.services.sessionPack.get()));
 }
 
 /** @returns The waiting room alone after a game, playing the theme again. */

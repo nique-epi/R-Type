@@ -611,6 +611,7 @@ constexpr std::uint32_t NO_SHOWN_TICK = 0;
 constexpr std::string_view PLAYER_NUMBER_FIELD = "playerNumber";
 constexpr std::string_view MAP_NAME_FIELD = "mapName";
 constexpr std::string_view MAP_COUNT_FIELD = "mapCount";
+constexpr std::string_view MAP_PREVIEW_FIELD = "mapPreview";
 constexpr std::string_view MAP_VOTE_FIELD = "mapVote";
 constexpr std::string_view HEAD_FIELD = "head";
 constexpr std::string_view EYES_FIELD = "eyes";

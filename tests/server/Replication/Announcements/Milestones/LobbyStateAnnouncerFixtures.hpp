@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <vector>
+#include "LobbyMap.hpp"
 #include "LobbyState.hpp"
 
 namespace rtype::server::testing {
@@ -10,8 +11,12 @@ namespace rtype::server::testing {
  * nickname. */
 [[nodiscard]] network::LobbyPlayer lobbyPlayer(std::size_t index, bool ready);
 
-/** @returns The room the fixture announces with @p players: FIRST_ANNOUNCED_MAP
- * and SECOND_ANNOUNCED_MAP after them. */
+/** @returns The maps the fixture announces: FIRST_ANNOUNCED_MAP and
+ * SECOND_ANNOUNCED_MAP, with their previews. */
+[[nodiscard]] std::vector<network::LobbyMap> announcedMaps();
+
+/** @returns The room the fixture announces with @p players: the
+ * announcedMaps() after them. */
 [[nodiscard]] network::LobbyState announcedRoom(
     std::vector<network::LobbyPlayer> players);
 

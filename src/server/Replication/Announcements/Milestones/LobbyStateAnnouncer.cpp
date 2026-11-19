@@ -1,10 +1,10 @@
 #include "LobbyStateAnnouncer.hpp"
 #include <cstddef>
-#include <string>
 #include <utility>
 #include <vector>
 #include "ConnectedPlayer.hpp"
 #include "ConnectedPlayers.hpp"
+#include "LobbyMap.hpp"
 #include "LobbyState.hpp"
 #include "MessagePayload.hpp"
 #include "PlayerRoster.hpp"
@@ -34,7 +34,7 @@ std::vector<network::LobbyPlayer> roomOf(const ConnectedPlayers& players) {
 }  // namespace
 
 LobbyStateAnnouncer::LobbyStateAnnouncer(PlayerRoster& roster, Send send,
-                                         std::vector<std::string> maps)
+                                         std::vector<network::LobbyMap> maps)
     : roster_(&roster),
       send_(std::move(send)),
       lastSent_{.players = {}, .maps = std::move(maps)} {}

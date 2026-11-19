@@ -1,24 +1,29 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <vector>
+#include "InterfaceColorConstants.hpp"
 #include "LobbyMapVoteFixture.hpp"
 #include "LobbyScreenTestConstants.hpp"
 #include "LobbyState.hpp"
 #include "ProtocolConstants.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 
+using rtype::client::PLAYER_COLORS;
 using rtype::client::testing::FIRST_MAP_NUMBER;
-using rtype::client::testing::FIRST_VOTED_MAP;
+using rtype::client::testing::LEFT_OF_THE_PREVIEW;
 using rtype::client::testing::MAP_BAR_MIDDLE;
 using rtype::client::testing::NO_MAP_BAR;
+using rtype::client::testing::NO_MAP_CHOSEN;
 using rtype::client::testing::OTHER_NICKNAME;
 using rtype::client::testing::OTHER_NUMBER;
 using rtype::client::testing::OWN_NICKNAME;
 using rtype::client::testing::OWN_NUMBER;
 using rtype::client::testing::SECOND_MAP_BAR;
 using rtype::client::testing::SECOND_MAP_NUMBER;
+using rtype::client::testing::SECOND_MAP_PREVIEW;
 using rtype::client::testing::SECOND_MAP_VOTE_LINE;
-using rtype::client::testing::SECOND_VOTED_MAP;
+using rtype::client::testing::VOTE_PIP;
+using rtype::network::FIRST_PLAYER_NUMBER;
 using rtype::network::LobbyPlayer;
 using rtype::network::NO_MAP_VOTE;
 using ::testing::ElementsAre;
@@ -39,7 +44,7 @@ TEST_F(LobbyMapVoteFixture, TheBarShowsTheLeadingMapBeforeAnyVote) {
                     .ready = false,
                     .nickname = OTHER_NICKNAME,
                     .mapVote = SECOND_MAP_NUMBER}},
-       {FIRST_VOTED_MAP, SECOND_VOTED_MAP});
+       twoMaps());
 
   EXPECT_NE(writingOf(canvas(), SECOND_MAP_BAR), nullptr);
 }
@@ -54,7 +59,7 @@ TEST_F(LobbyMapVoteFixture, TheKeyVotesForTheMapShown) {
                     .ready = false,
                     .nickname = OWN_NICKNAME,
                     .mapVote = NO_MAP_VOTE}},
-       {FIRST_VOTED_MAP, SECOND_VOTED_MAP});
+       twoMaps());
 
   pressMapKey(false);
 
@@ -71,7 +76,7 @@ TEST_F(LobbyMapVoteFixture, AnotherPressVotesForTheNextMapWrapping) {
                     .ready = false,
                     .nickname = OWN_NICKNAME,
                     .mapVote = NO_MAP_VOTE}},
-       {FIRST_VOTED_MAP, SECOND_VOTED_MAP});
+       twoMaps());
   pressMapKey(false);
   pressMapKey(false);
 
@@ -92,7 +97,7 @@ TEST_F(LobbyMapVoteFixture, AHeldKeyVotesOnce) {
                     .ready = false,
                     .nickname = OWN_NICKNAME,
                     .mapVote = NO_MAP_VOTE}},
-       {FIRST_VOTED_MAP, SECOND_VOTED_MAP});
+       twoMaps());
 
   pressMapKey(true);
   pressMapKey(true);
@@ -110,7 +115,7 @@ TEST_F(LobbyMapVoteFixture, AClickOnTheBarVotes) {
                     .ready = false,
                     .nickname = OWN_NICKNAME,
                     .mapVote = NO_MAP_VOTE}},
-       {FIRST_VOTED_MAP, SECOND_VOTED_MAP});
+       twoMaps());
 
   click(MAP_BAR_MIDDLE);
 
@@ -145,7 +150,72 @@ TEST_F(LobbyMapVoteFixture, ABayWritesTheVoteOfItsPilot) {
                     .ready = false,
                     .nickname = OTHER_NICKNAME,
                     .mapVote = SECOND_MAP_NUMBER}},
-       {FIRST_VOTED_MAP, SECOND_VOTED_MAP});
+       twoMaps());
 
   EXPECT_NE(writingOf(canvas(), SECOND_MAP_VOTE_LINE), nullptr);
+}
+
+/**
+ * Given a room of two maps where another pilot voted for the second
+ * When it is painted
+ * Then the card draws the preview of the second map, the one shown
+ */
+TEST_F(LobbyMapVoteFixture, TheCardDrawsThePreviewOfTheMapShown) {
+  open({LobbyPlayer{.playerNumber = OTHER_NUMBER,
+                    .ready = false,
+                    .nickname = OTHER_NICKNAME,
+                    .mapVote = SECOND_MAP_NUMBER}},
+       twoMaps());
+
+  EXPECT_THAT(previewsDrawn(), ElementsAre(SECOND_MAP_PREVIEW));
+}
+
+/**
+ * Given a room of two maps where nobody voted
+ * When it is painted
+ * Then the card names no map but a random one, and draws no preview
+ */
+TEST_F(LobbyMapVoteFixture, TheCardSaysRandomWhileNobodyVoted) {
+  open({LobbyPlayer{.playerNumber = OWN_NUMBER,
+                    .ready = false,
+                    .nickname = OWN_NICKNAME,
+                    .mapVote = NO_MAP_VOTE}},
+       twoMaps());
+
+  EXPECT_NE(writingOf(canvas(), NO_MAP_CHOSEN), nullptr);
+  EXPECT_THAT(previewsDrawn(), IsEmpty());
+}
+
+/**
+ * Given a room of two maps where nobody voted
+ * When the card is clicked left of its preview
+ * Then the room votes for the map before the first, the last one
+ */
+TEST_F(LobbyMapVoteFixture, AClickLeftOfThePreviewVotesForThePreviousMap) {
+  open({LobbyPlayer{.playerNumber = OWN_NUMBER,
+                    .ready = false,
+                    .nickname = OWN_NICKNAME,
+                    .mapVote = NO_MAP_VOTE}},
+       twoMaps());
+
+  click(LEFT_OF_THE_PREVIEW);
+
+  EXPECT_THAT(votes(), ElementsAre(SECOND_MAP_NUMBER));
+}
+
+/**
+ * Given a room of two maps where the pilot of the third bay voted for the
+ * second
+ * When it is painted
+ * Then the card shows a pip of the ship color of that pilot
+ */
+TEST_F(LobbyMapVoteFixture, TheCardShowsAPipForEachVote) {
+  open({LobbyPlayer{.playerNumber = OTHER_NUMBER,
+                    .ready = false,
+                    .nickname = OTHER_NICKNAME,
+                    .mapVote = SECOND_MAP_NUMBER}},
+       twoMaps());
+
+  EXPECT_TRUE(hasFillOf(
+      VOTE_PIP, PLAYER_COLORS[OTHER_NUMBER - FIRST_PLAYER_NUMBER].ship));
 }

@@ -236,9 +236,17 @@ constexpr std::uint32_t SOME_SCORE_OF_DISTINCT_BYTES = 0x01020304;
 /**
  * @brief The size of the largest LobbyState datagram: the header, the prefix,
  * the player count, four players of 1 + 1 + 1 + 16 + 1 bytes, the map count,
- * and eight maps of 1 + 16 bytes.
+ * and eight maps of 1 + 16 bytes of name and 1 + 64 of preview.
  */
-constexpr std::size_t LARGEST_LOBBY_DATAGRAM_SIZE = 243;
+constexpr std::size_t LARGEST_LOBBY_DATAGRAM_SIZE = 763;
+
+/** @brief The longest preview a map may name: a path of the pack of
+ * MAXIMUM_CONTENT_PATH_LENGTH (64) bytes; a single byte; and a path that
+ * leaves the folder of the pack. */
+constexpr std::string_view LONGEST_MAP_PREVIEW =
+    "previews/abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxy.png";
+constexpr std::string_view ONE_BYTE_MAP_PREVIEW = "p";
+constexpr std::string_view PREVIEW_OUTSIDE_THE_PACK = "../secret.png";
 
 /** @brief The number of the second map of a room, from 1. */
 constexpr std::uint8_t SECOND_MAP = 2;

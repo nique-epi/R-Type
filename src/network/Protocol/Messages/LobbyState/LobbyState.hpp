@@ -7,6 +7,7 @@
 #include <type_traits>
 #include <vector>
 #include "ByteWriter.hpp"
+#include "LobbyMap.hpp"
 #include "MessageType.hpp"
 #include "ProtocolConstants.hpp"
 
@@ -28,23 +29,22 @@ struct LobbyPlayer {
 
 /**
  * @brief Who is in the waiting room, who is ready, and the maps the players
- * vote for: the names the room shows, at most MAXIMUM_LOBBY_MAPS, each
- * following the rules of a nickname (isValidNickname()); none when the server
- * plays one level or the waves. The server sends it on every change, and at
- * least every 500 ms while no game runs.
+ * vote for, at most MAXIMUM_LOBBY_MAPS, each with its name and its preview
+ * (LobbyMap); none when the server plays one level or the waves. The server
+ * sends it on every change, and at least every 500 ms while no game runs.
  */
 struct LobbyState {
   static constexpr MessageType TYPE = MessageType::LobbyState;
 
   std::vector<LobbyPlayer> players;
-  std::vector<std::string> maps;
+  std::vector<LobbyMap> maps;
 
   bool operator==(const LobbyState&) const = default;
 };
 
 /**
  * @brief Writes the number of players, then each one: number, ready, nickname,
- * map vote; then the number of maps, then the name of each.
+ * map vote; then the number of maps, then the name and the preview of each.
  * @throws TooManyPlayersException when there are more than MAXIMUM_PLAYERS.
  * @throws InvalidFieldValueException when a player number is not
  * FIRST_PLAYER_NUMBER to MAXIMUM_PLAYERS.
@@ -53,7 +53,8 @@ struct LobbyState {
  * UTF-8.
  * @throws InvalidFieldValueException naming mapCount when there are more than
  * MAXIMUM_LOBBY_MAPS maps, mapName for a name that breaks the rules of a
- * nickname, or mapVote for a vote past the last map. Nothing is written when
+ * nickname, mapPreview for a preview neither empty nor a path isContentPath()
+ * accepts, or mapVote for a vote past the last map. Nothing is written when
  * any of them is raised.
  */
 void encodePayload(ByteWriter& writer, const LobbyState& message);
@@ -61,7 +62,7 @@ void encodePayload(ByteWriter& writer, const LobbyState& message);
 /**
  * @brief Reads a LobbyState from the whole of @p payload. The number of
  * players is checked before any player is read, and the number of maps
- * before any name.
+ * before any map.
  * @throws TooManyPlayersException when it announces more than MAXIMUM_PLAYERS.
  * @throws BufferUnderflowException when @p payload is cut short.
  * @throws InvalidBoolException, InvalidFieldValueException,

@@ -2,7 +2,7 @@
 
 #include <optional>
 #include <span>
-#include <string>
+#include "LobbyMap.hpp"
 #include "LobbyState.hpp"
 
 namespace rtype::client {
@@ -29,12 +29,13 @@ class IWaitingRoom {
       const = 0;
 
   /**
-   * @returns The names of the maps the newest LobbyState of the session
-   * offers to the vote, in the order the votes number them from 1; empty
-   * before the first one, without a session, or when the server offers no
+   * @returns The maps, name and preview, the newest LobbyState of the
+   * session offers to the vote, in the order the votes number them from 1;
+   * empty before the first one, without a session, or when the server offers no
    * map. Valid as lobbyPlayers() is.
    */
-  [[nodiscard]] virtual std::span<const std::string> lobbyMaps() const = 0;
+  [[nodiscard]] virtual std::span<const network::LobbyMap> lobbyMaps()
+      const = 0;
 
   /**
    * @brief Asks the server to set the player ready, or not ready: a value,

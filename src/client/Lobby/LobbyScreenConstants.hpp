@@ -3,6 +3,7 @@
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <cstddef>
+#include <cstdint>
 #include "BarRowWidth.hpp"
 #include "EntitySpriteConstants.hpp"
 #include "HangarBayConstants.hpp"
@@ -48,6 +49,45 @@ constexpr const char* MAP_BAR_CLOSED = "MAP: FIXED";
 /** @brief The vote of a pilot, written in its bay before the name of the
  * map. */
 constexpr const char* BAY_VOTE_PREFIX = "VOTE: ";
+
+/**
+ * @brief The card of the map, painted over the MAP bar: MAP_CARD_RISE above
+ * it, as wide, MAP_CARD_HEIGHT tall, so it ends above the chips. Its preview,
+ * MAP_PREVIEW_SIZE, lies MAP_PREVIEW_OFFSET in, framed one pixel wide, a
+ * MAP_PREVIOUS_MARK MAP_ARROW_GAP to its left and a MAP_NEXT_MARK as far to
+ * its right; its words, MAP_CARD_TEXT_LEFT in: MAP_CARD_LABEL, then the name
+ * of the map one word per line, MAP_NAME_LINE_STEP apart, MAP_NAME_LINES at
+ * most, then a pip of the color of each pilot who votes for it, then the
+ * keycap of MAP_KEY in its bottom-right corner, MAP_CARD_INSET in. A preview
+ * the pack lacks shows NO_PREVIEW_MARK; a room where nobody voted shows no
+ * map, but NO_MAP_CHOSEN_NAME: the vote is drawn at random then.
+ */
+constexpr int MAP_CARD_RISE = 4;
+constexpr int MAP_CARD_HEIGHT = 55;
+constexpr sf::Vector2i MAP_PREVIEW_SIZE(80, 45);
+constexpr sf::Vector2i MAP_PREVIEW_OFFSET(11, 5);
+constexpr int MAP_ARROW_GAP = 6;
+constexpr const char* MAP_PREVIOUS_MARK = "<";
+constexpr const char* MAP_NEXT_MARK = ">";
+constexpr int MAP_CARD_TEXT_LEFT = 101;
+constexpr int MAP_CARD_INSET = 3;
+/** @brief How wide the words of the card may run: from MAP_CARD_TEXT_LEFT to
+ * MAP_CARD_INSET before its right edge. */
+constexpr int MAP_NAME_WIDTH =
+    BUTTON_SIZE.x - MAP_CARD_TEXT_LEFT - MAP_CARD_INSET;
+constexpr const char* MAP_CARD_LABEL = "MAP";
+constexpr int MAP_NAME_TOP = 15;
+constexpr int MAP_NAME_LINE_STEP = 10;
+constexpr int MAP_NAME_LINES = 3;
+constexpr int VOTE_PIP_SIZE = 4;
+constexpr int VOTE_PIP_STEP = 6;
+constexpr const char* NO_PREVIEW_MARK = "?";
+constexpr const char* NO_MAP_CHOSEN_NAME = "RANDOM";
+constexpr const char* MAP_NAME_WORD_SEPARATOR = " ";
+
+/** @brief The number of the first map the room lists: votes count them from
+ * 1, network::NO_MAP_VOTE being no vote. */
+constexpr std::uint8_t FIRST_MAP_NUMBER = 1;
 
 /** @brief One bay per player number, side by side under the rule, as wide as
  * it. */

@@ -110,7 +110,8 @@ PackContent packContentOf(std::span<const identifiers::ContentFile> files,
   return PackContent{.appearances = std::move(appearances),
                      .types = game::numberedEntityTypesOf(sheets),
                      .gun = game::shipGunOrNoneOf(sheets),
-                     .backgrounds = backgroundsOf(files, folders)};
+                     .backgrounds = backgroundsOf(files, folders),
+                     .folder = folders.pack};
 }
 
 }  // namespace rtype::client

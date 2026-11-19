@@ -13,7 +13,7 @@
 #include "IServerPingProbe.hpp"
 #include "IServerTicks.hpp"
 #include "ISessionArrivals.hpp"
-#include "ISessionBackgrounds.hpp"
+#include "ISessionPack.hpp"
 #include "InstallContext.hpp"
 #include "LocalContentReading.hpp"
 #include "NetworkConditions.hpp"
@@ -85,7 +85,7 @@ void PlayerConnection::provideParts(engine::InstallContext& context) {
   context.provide<IOwnRoundTrip>(roundTrips_);
   context.provide<ISessionArrivals>(arrivals_);
   context.provide<IEntityTypeTable>(entityTypes_);
-  context.provide<ISessionBackgrounds>(entityTypes_);
+  context.provide<ISessionPack>(entityTypes_);
   context.provide(network_.traffic());
 }
 

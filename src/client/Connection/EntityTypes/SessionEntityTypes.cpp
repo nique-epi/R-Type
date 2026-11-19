@@ -1,7 +1,10 @@
 #include "SessionEntityTypes.hpp"
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
 #include <memory>
+#include <optional>
+#include <string_view>
 #include <utility>
 #include <vector>
 #include "BackgroundCatalog.hpp"
@@ -58,6 +61,14 @@ game::ShipGun SessionEntityTypes::shipGun() const {
 std::shared_ptr<const BackgroundCatalog> SessionEntityTypes::backgrounds()
     const {
   return playsThePack_ && pack_.has_value() ? pack_->backgrounds : nullptr;
+}
+
+std::optional<std::filesystem::path> SessionEntityTypes::packFileOf(
+    std::string_view path) const {
+  if (!playsThePack_ || !pack_.has_value()) {
+    return std::nullopt;
+  }
+  return pack_->folder / path;
 }
 
 const std::vector<game::NumberedEntityType>& SessionEntityTypes::types() const {

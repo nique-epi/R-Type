@@ -9,6 +9,7 @@ target_link_libraries(rtype_network_lobby_state
     rtype_network_wire_types
     rtype_network_byte_writer
     rtype_network_byte_reader
+    rtype_network_content_pack
     rtype_network_exceptions
 )
 

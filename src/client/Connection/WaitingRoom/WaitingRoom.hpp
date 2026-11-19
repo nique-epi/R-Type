@@ -3,12 +3,12 @@
 #include <cstdint>
 #include <optional>
 #include <span>
-#include <string>
 #include <vector>
 #include "GameLoadedReminder.hpp"
 #include "ISessionObserver.hpp"
 #include "ISessionOutbox.hpp"
 #include "IWaitingRoom.hpp"
+#include "LobbyMap.hpp"
 #include "LobbyState.hpp"
 #include "Logger.hpp"
 #include "MessageDispatcher.hpp"
@@ -42,7 +42,7 @@ class WaitingRoom final : public IWaitingRoom, public ISessionObserver {
 
   [[nodiscard]] std::span<const network::LobbyPlayer> lobbyPlayers()
       const override;
-  [[nodiscard]] std::span<const std::string> lobbyMaps() const override;
+  [[nodiscard]] std::span<const network::LobbyMap> lobbyMaps() const override;
   void setReady(bool ready) override;
   [[nodiscard]] std::optional<bool> requestedReady() const override;
   [[nodiscard]] bool gameStarted() const override;
@@ -74,7 +74,7 @@ class WaitingRoom final : public IWaitingRoom, public ISessionObserver {
   GameLoadedReminder* reminder_;
   ISessionOutbox* outbox_{nullptr};
   std::vector<network::LobbyPlayer> players_;
-  std::vector<std::string> maps_;
+  std::vector<network::LobbyMap> maps_;
   std::uint8_t ownPlayerNumber_{0};
   std::optional<bool> requestedReady_;
   bool gameStarted_{false};

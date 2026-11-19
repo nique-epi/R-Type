@@ -49,6 +49,20 @@ constexpr std::string_view REGISTERS_A_WRONG_OPENING_BIOME = R"(
 level.register("caves", { function() end }, { biome = "Deep Caves" })
 )";
 
+/** @brief A script that registers the map THE CAVES with the preview
+ * the_caves; one that gives a preview that is no content name; and one that
+ * gives a preview to a level that is no map. */
+constexpr std::string_view REGISTERS_A_MAP_WITH_A_PREVIEW = R"(
+level.register("caves", { function() end }, { map = "THE CAVES", preview = "the_caves" })
+)";
+constexpr std::string_view CAVES_PREVIEW = "the_caves";
+constexpr std::string_view REGISTERS_A_PREVIEW_OUTSIDE_ITS_FOLDER = R"(
+level.register("caves", { function() end }, { map = "THE CAVES", preview = "../caves" })
+)";
+constexpr std::string_view REGISTERS_A_PREVIEW_WITHOUT_A_MAP = R"(
+level.register("caves", { function() end }, { preview = "the_caves" })
+)";
+
 /** @brief Scripts that register a level under a map name written in small
  * letters, seventeen characters long (one past the longest), and a number. */
 constexpr std::string_view REGISTERS_A_MAP_IN_SMALL_LETTERS = R"(
