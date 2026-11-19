@@ -177,6 +177,7 @@ Paths below are relative to `.claude/rules/`.
 - `fix/reasoning/fix-reasoning-two-queues-are-drained-against-the-order-of-their-pushes.md`
 - `fix/reasoning/fix-reasoning-validate-the-instrument-before-reporting-a-count.md`
 - `fix/reasoning/fix-reasoning-a-weak-point-is-reached-from-where-shots-come.md`
+- `fix/reasoning/fix-reasoning-an-anchor-is-measured-against-every-idle-it-leaves.md`
 - `fix/reasoning/fix-reasoning-verify-the-premise-before-fixing-downstream.md`
 
 **Execution (shell, git, build) — `fix/execution/`**
