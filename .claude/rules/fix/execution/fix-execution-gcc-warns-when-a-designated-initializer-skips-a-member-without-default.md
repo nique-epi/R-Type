@@ -38,6 +38,13 @@ Why: `-Wmissing-field-initializers` with warnings as errors failed the Linux job
 1. **An aggregate is also built as a named variable**: `static const Type name{.member = …}`, which a search for `Type{` misses. Search both shapes in one command: `git grep -n -E 'Type( [A-Za-z_]+)?\{' -- src tests`.
 2. Calibration: on the branch that added the deaths of the enemies, `git grep -n -E 'EntityAppearance( [A-Za-z_]+)?\{' -- src tests` lists five constructions, `EntitySpritesFixtures.cpp:14` (`static const EntityAppearance appearance{`) among them; `git grep -n 'EntityAppearance{'` lists that one neither.
 
+### A member named at a construction takes its place in declaration order
+
+1. **A designator added to a construction goes where its member is declared**, before the members declared after it: `.maps = {}` before `.startingStage` and `.scripts` in a `GameSettings`, never appended after the last designator. A designator out of order is `-Wreorder-init-list`, an error of the CI.
+2. **A script that adds a designator at many sites reads, for each site, the designators after the insertion point**, and inserts before the first one declared later.
+3. **The check of point 2 of the subsection on Homebrew clang reads every warning it prints**, not only `missing field`: a filter on one message hides the other mistakes of the same edit.
+
+
 ## Example
 
 - ❌ **Before (wrong)**: `ConnectedPlayer` gains `std::optional<std::uint16_t> newestReceivedSequence;` and `PlayerRoster::add` keeps `ConnectedPlayer{.playerNumber = …, .nextSequence = 0}` → `missing initializer for member ‘newestReceivedSequence’` on Linux.

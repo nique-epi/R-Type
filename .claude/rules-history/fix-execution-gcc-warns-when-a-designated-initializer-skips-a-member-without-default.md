@@ -39,3 +39,7 @@ The Homebrew GCC run was fed the `.cpp` files of the branch diff. `EntitySprites
 ## Update (2026-11-08) — a named variable escapes the search for `Type{`
 
 Two members were added to `EntityAppearance` (the frames of a death). The search `git grep -n 'EntityAppearance{' -- src tests` listed two constructions, both fixed; `tests/client/Rendering/Sprites/EntitySpritesFixtures.cpp` builds one as `static const EntityAppearance appearance{…}`, which the search missed. AppleClang built it without a warning; it was found by a later, wider search, before the commit. The rule now searches both shapes with `Type( [A-Za-z_]+)?\{`.
+
+## Update (2026-11-19) — A member named at a construction takes its place in declaration order
+
+`GameSettings` and `LobbyState` gained a `maps` member. A script added `.maps = {}` before the closing brace of the 18 constructions Homebrew clang reported. In `GameFlowLevelFixture.cpp` the construction ended with `.scripts`, declared after `maps`, so the new designator came out of order: `-Wreorder-init-list`, which the CI treats as an error. The check that found the 18 sites filtered its output on `missing field` and never showed the new warning; the build of the first commit alone, on an isolated copy, did. The rule now says where a designator goes, and that the check reads every warning.
