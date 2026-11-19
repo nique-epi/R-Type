@@ -3,7 +3,6 @@
 #include <optional>
 #include <span>
 #include <string_view>
-#include "BackgroundConstants.hpp"
 #include "Caption.hpp"
 #include "ComponentRegistry.hpp"
 #include "EffectTargets.hpp"
@@ -15,6 +14,7 @@
 #include "PilotNameTagConstants.hpp"
 #include "PilotShips.hpp"
 #include "PilotStatus.hpp"
+#include "PixelGridConstants.hpp"
 #include "PlayerPreferences.hpp"
 #include "PlayerSettings.hpp"
 #include "PlayfieldConstants.hpp"

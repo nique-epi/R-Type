@@ -6,7 +6,6 @@
 #include <cmath>
 #include <cstddef>
 #include "BackgroundColorConstants.hpp"
-#include "BackgroundConstants.hpp"
 #include "ColorRamp.hpp"
 #include "ComponentRegistry.hpp"
 #include "Easing.hpp"
@@ -15,6 +14,7 @@
 #include "IPixelSurface.hpp"
 #include "Particle.hpp"
 #include "PixelCircle.hpp"
+#include "PixelGridConstants.hpp"
 #include "PixelRounding.hpp"
 #include "Position.hpp"
 #include "ShipFlight.hpp"
