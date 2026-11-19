@@ -125,7 +125,7 @@ void playVotedMap(GameContext& game, std::uint32_t seed,
     return;
   }
   const MapChoice& chosen =
-      maps.at(votedMapOf(game.roster.get().connected(), maps.size(), seed));
+      maps.at(votedMapOf(game.roster.get().connected(), maps, seed));
   game.settings.level = chosen.level;
   logger.info("the vote chose the map ", chosen.name);
 }

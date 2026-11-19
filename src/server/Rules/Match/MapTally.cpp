@@ -3,9 +3,11 @@
 #include <cstddef>
 #include <cstdint>
 #include <random>
+#include <span>
 #include <vector>
 #include "ConnectedPlayer.hpp"
 #include "ConnectedPlayers.hpp"
+#include "MapChoice.hpp"
 
 namespace rtype::server {
 
@@ -26,9 +28,9 @@ std::vector<std::size_t> votesOf(const ConnectedPlayers& players,
 
 }  // namespace
 
-std::size_t votedMapOf(const ConnectedPlayers& players, std::size_t mapCount,
-                       std::uint32_t seed) {
-  const std::vector<std::size_t> votes = votesOf(players, mapCount);
+std::size_t votedMapOf(const ConnectedPlayers& players,
+                       std::span<const MapChoice> maps, std::uint32_t seed) {
+  const std::vector<std::size_t> votes = votesOf(players, maps.size());
   const std::size_t most = *std::ranges::max_element(votes);
   std::vector<std::size_t> leaders;
   for (std::size_t map = 0; map < votes.size(); ++map) {
