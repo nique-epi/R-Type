@@ -34,10 +34,10 @@ local END_OF_THE_DEPTHS = 10800
 -- edge, on the middle row of the area of play.
 local BOSS_ENTRY = { x = 2176, y = 492 }
 
--- Where the center of the Necromancer appears: below the bottom edge, past
--- half its 556-unit frame, on the column it then rises along, its right side
--- by the right edge.
-local NECROMANCER_ENTRY = { x = 1544, y = 1370 }
+-- Where the center of the Necromancer appears: where it rests, its body on
+-- the floor of the Pit and its right side by the right edge; its arrival
+-- draws it rising out of the floor.
+local NECROMANCER_ENTRY = { x = 1544, y = 598 }
 
 -- The top and the bottom rows the maps of the Pit leave free: its ceiling and
 -- its floor.

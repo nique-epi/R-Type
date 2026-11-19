@@ -28,7 +28,7 @@ offset_y = 95
 kind = "steady"
 top_speed = 900
 
-# It rises from below the playfield to y 598 over 2 s, rests 0.9 s between
+# It rises out of the floor at y 598 over 2 s, rests 0.9 s between
 # two attacks, 0.4 s once enraged, and hides 2 s in its hood when it enrages.
 [gameplay.behaviour]
 rest_y = 598
@@ -265,6 +265,19 @@ playback = "once"
 afterwards = "idle"
 anchor_x = -1
 anchor_y = 2
+
+# Arrival: it rises out of the floor of the Pit in place, the frame cut at
+# the floor and its idle playing as it comes up, slowing to a stop.
+[appearance.attack_5.signal]
+left = 0
+top = 2188
+width = 170
+height = 131
+frames = 20
+spacing = 2
+frame_ms = 100
+playback = "hold"
+afterwards = "stay"
 
 # The death: a flash, then the robe breaks apart and settles onto the smoke; the row under it is without flash.
 [appearance.death]

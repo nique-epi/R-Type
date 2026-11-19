@@ -3,10 +3,10 @@
 -- the rings its hands throw, the bone spikes of its fist, the skeleton arms
 -- it raises and the beam of its gaze. Its sheet is entities/necromancer.toml.
 --
--- It rises from below the playfield, then rests in place and plays its four
+-- It rises out of the floor where it stands, then plays in place its four
 -- attacks, each in three beats: a signal the players learn, a strike that
 -- always leaves a lane free, and a recover. A missile that touches its hood or
--- its cape hurts it; every missile is stopped while it rises or hides in its
+-- its cape hurts it; every missile is stopped while it comes up or hides in its
 -- hood. Below half its health it hides in its hood (attack 4), then pairs
 -- its attacks: rings with the fist, skeleton arms under the gaze.
 --
@@ -19,7 +19,6 @@
 -- of its sheet.
 
 local LEFT = { x = -1, y = 0 }
-local UP = { x = 0, y = -1 }
 local STILL = { x = 0, y = 0 }
 
 local RINGS, FIST, RAISE, GAZE, RAGE, ARRIVAL = 0, 1, 2, 3, 4, 5
@@ -118,10 +117,8 @@ behaviours.register("necromancer_rite", {
 		return false
 	end)
 
-	local distance = e.position.y - settings.rest_y
 	behaviours.wait(settings.rise_ms, {
-		direction = UP,
-		top_speed = math.max(1, distance * 1000 / settings.rise_ms),
+		direction = STILL,
 		starts_action = { attack = ARRIVAL, phase = "signal" },
 	})
 	e = behaviours.wait(1, {
