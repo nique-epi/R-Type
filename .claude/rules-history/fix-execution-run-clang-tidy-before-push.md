@@ -161,3 +161,7 @@ To meet `readability-qualified-auto`, reported by the local clang-tidy on libc++
 ## Update (12 November 2026) — a signed shift count in a Windows file
 
 `ThisMachineWindows.cpp`, which reads the processor times of the machine with `GetSystemTimes()`, joined the two halves of a `FILETIME` with `std::uint64_t{time.dwHighDateTime} << FILETIME_LOW_PART_BITS`. The left operand was widened and unsigned; the count, `FILETIME_LOW_PART_BITS`, was a `constexpr int` of the constants header. No local run compiles the file, and the `Clang-tidy (Windows-only files)` job failed on `hicpp-signed-bitwise`. Root cause: only the operand that holds the value was checked, not the count, whose type sat in another header. The rule gained point 5 of "A file the local machine cannot compile": every operand of a bitwise operator is unsigned, the count included.
+
+## Update (2026-11-19) — Adjacent numbers again, with a search the push can run
+
+`votedMapOf(players, std::size_t mapCount, std::uint32_t seed)` passed the local clang-tidy 20 and failed the `Clang-tidy (3/4)` job of the CI on `bugprone-easily-swappable-parameters`: the subsection already said the CI's clang-tidy reports adjacent integers, and it was not applied. The subsection now gives a search of the signatures of the branch, calibrated on that commit, and the fix the code took: the span of the maps instead of their count.
