@@ -144,6 +144,7 @@ Paths below are relative to `.claude/rules/`.
 **Reasoning — `fix/reasoning/`**
 - `fix/reasoning/fix-reasoning-a-detour-comes-back-to-where-it-started.md`
 - `fix/reasoning/fix-reasoning-a-generated-sheet-keeps-the-limits-of-its-reader.md`
+- `fix/reasoning/fix-reasoning-an-in-between-frame-of-pixel-art-is-drawn-never-dithered.md`
 - `fix/reasoning/fix-reasoning-a-guard-after-the-write-is-only-an-alarm.md`
 - `fix/reasoning/fix-reasoning-a-library-may-fail-without-throwing.md`
 - `fix/reasoning/fix-reasoning-a-second-connection-of-a-test-waits-like-the-first.md`
