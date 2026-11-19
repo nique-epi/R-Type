@@ -235,9 +235,13 @@ constexpr std::uint32_t SOME_SCORE_OF_DISTINCT_BYTES = 0x01020304;
 
 /**
  * @brief The size of the largest LobbyState datagram: the header, the prefix,
- * the player count, and four players of 1 + 1 + 1 + 16 bytes.
+ * the player count, four players of 1 + 1 + 1 + 16 + 1 bytes, the map count,
+ * and eight maps of 1 + 16 bytes.
  */
-constexpr std::size_t LARGEST_LOBBY_DATAGRAM_SIZE = 102;
+constexpr std::size_t LARGEST_LOBBY_DATAGRAM_SIZE = 243;
+
+/** @brief The number of the second map of a room, from 1. */
+constexpr std::uint8_t SECOND_MAP = 2;
 
 /**
  * @brief An input number and an event number whose bytes all differ.
@@ -310,12 +314,12 @@ constexpr std::uint16_t SOME_SENDER_PORT = 50000;
 /**
  * @brief Message type bytes no message has: the byte before the first type,
  * the byte after the last, and the largest byte. The byte after the last is
- * read from the name of the last message, MessageType::Expulsion:
+ * read from the name of the last message, MessageType::MapVote:
  * a message added after it needs this line to follow.
  */
 constexpr std::uint8_t TYPE_BELOW_THE_FIRST = 0;
 constexpr std::uint8_t TYPE_ABOVE_THE_LAST =
-    static_cast<std::uint8_t>(MessageType::LevelStatus) + 1;
+    static_cast<std::uint8_t>(MessageType::MapVote) + 1;
 constexpr std::uint8_t LARGEST_TYPE_BYTE = 255;
 
 /**

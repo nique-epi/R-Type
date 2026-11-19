@@ -39,6 +39,7 @@ LobbyScreenFixture::LobbyScreenFixture(LobbyPlace place)
                                .connection = connection_,
                                .waitingRoom = waitingRoom_,
                                .shipLooks = shipLooks_,
+                               .mapBallot = mapBallot_,
                                .playfieldPointAt = samePlayfieldPoint,
                                .keys = settings_.keys,
                                .keyName = nameInTheFile,

@@ -49,6 +49,19 @@ constexpr const char* START_BIOME_SINCE_KEY = "biome_since";
  * and a floor, and the keys of each band: the rows a ship flies between, in
  * logical units from the top edge of the playfield. */
 constexpr const char* LEVEL_BANDS_KEY = "bands";
+
+/** @brief The option that makes a level a map the players of a waiting room
+ * vote for, and the rules of its name, which the room shows: 1 to
+ * MAXIMUM_MAP_NAME_SIZE characters, each a capital letter, a digit or a space,
+ * so it is also a name the protocol carries. */
+constexpr const char* LEVEL_MAP_KEY = "map";
+
+/** @brief The option that names the biome a level opens in: its players start
+ * inside it, as if it began long before, and see no entrance. */
+constexpr const char* LEVEL_OPENING_BIOME_KEY = "biome";
+constexpr std::size_t MAXIMUM_MAP_NAME_SIZE = 16;
+constexpr std::string_view MAP_NAME_CHARACTERS =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ";
 constexpr const char* BAND_TOP_KEY = "top";
 constexpr const char* BAND_BOTTOM_KEY = "bottom";
 
@@ -100,11 +113,14 @@ constexpr const char* LEVEL_YIELD_MESSAGE =
     "a stage may only yield through level.wait, level.wait_scroll and "
     "level.transition";
 constexpr const char* WRONG_LEVEL_OPTIONS_MESSAGE =
-    "the options of a level are a table whose keys are ldtk, starts and "
-    "bands";
+    "the options of a level are a table whose keys are ldtk, starts, bands, "
+    "map and biome";
 constexpr const char* WRONG_LEVEL_STARTS_MESSAGE =
     "the starts of a level map a stage from 2 to its last to a table of a "
     "scroll, a biome and a biome_since, finite numbers from 0 and a biome name";
+constexpr const char* WRONG_LEVEL_MAP_MESSAGE =
+    "the map of a level is the name the waiting room shows: 1 to 16 capital "
+    "letters, digits and spaces";
 constexpr const char* WRONG_LEVEL_BANDS_MESSAGE =
     "the bands of a level map a biome name to a table of a top and a bottom, "
     "rows from 0 to the bottom of the play area, at least a ship apart";

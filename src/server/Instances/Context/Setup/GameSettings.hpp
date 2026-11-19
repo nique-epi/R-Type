@@ -5,8 +5,10 @@
 #include <functional>
 #include <optional>
 #include <string>
+#include <vector>
 #include "EntitySheets.hpp"
 #include "GameRules.hpp"
+#include "MapChoice.hpp"
 #include "ServerConstants.hpp"
 #include "StateEncoding.hpp"
 #include "WavePlan.hpp"
@@ -53,6 +55,11 @@ struct GameSettings {
    * `level.register`; nothing for a game that plays the waves of its
    * difficulty. A game that plays a level is never vanilla. */
   std::optional<std::string> level = std::nullopt;
+  /** @brief The maps the players of the waiting room vote for, in the order
+   * the room lists them; empty when the server names its level or offers no
+   * map. With maps, each game plays the level of the map the vote chose (see
+   * MapTally), written into level as the game starts. */
+  std::vector<MapChoice> maps;
   /** @brief The stage of that level the game starts at, from
    * FIRST_LEVEL_STAGE, where the script of the level declares it starts. */
   std::size_t startingStage{FIRST_LEVEL_STAGE};

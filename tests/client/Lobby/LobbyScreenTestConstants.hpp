@@ -63,4 +63,23 @@ constexpr sf::Keyboard::Scancode CHAT_KEY = sf::Keyboard::Scan::T;
 constexpr char32_t CHAT_LETTER = U'g';
 constexpr std::string_view CHAT_LINE = "gg";
 
+/**
+ * @brief The maps of the room in the tests of the vote, and their numbers
+ * from 1; what the MAP bar says of each, and of a room without maps; what a
+ * bay writes of a vote for the second; the key of MAP; the middle of the MAP
+ * bar, which starts at x 244 (READY at 76, 160 wide, then BUTTON_GAP) and
+ * y 174, 160 by 20, in pixels of the window.
+ */
+constexpr const char* FIRST_VOTED_MAP = "OPEN SPACE";
+constexpr const char* SECOND_VOTED_MAP = "THE PIT";
+constexpr std::uint8_t FIRST_MAP_NUMBER = 1;
+constexpr std::uint8_t SECOND_MAP_NUMBER = 2;
+constexpr const char* FIRST_MAP_BAR = "MAP: OPEN SPACE";
+constexpr const char* SECOND_MAP_BAR = "MAP: THE PIT";
+constexpr const char* NO_MAP_BAR = "MAP: FIXED";
+constexpr const char* SECOND_MAP_VOTE_LINE = "VOTE: THE PIT";
+constexpr sf::Keyboard::Scancode MAP_KEY = sf::Keyboard::Scan::M;
+constexpr sf::Vector2i MAP_BAR_MIDDLE =
+    sf::Vector2i(324, 184) * INTERFACE_PIXEL;
+
 }  // namespace rtype::client::testing

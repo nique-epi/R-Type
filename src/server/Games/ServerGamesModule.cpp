@@ -42,9 +42,11 @@
 #include "LuauLevelConstants.hpp"
 #include "LuauLevelEntry.hpp"
 #include "LuauLevels.hpp"
+#include "MapChoice.hpp"
 #include "ModuleConstants.hpp"
 #include "PathText.hpp"
 #include "PlayerDatagrams.hpp"
+#include "ProtocolConstants.hpp"
 #include "RtypeGameModules.hpp"
 #include "RunningGame.hpp"
 #include "ServerConstants.hpp"
@@ -60,6 +62,32 @@
 namespace rtype::server {
 
 namespace {
+
+/** @returns The whole number @p setting holds, @p fallback when it holds
+ * none. */
+std::size_t sizeSettingOr(const engine::SettingValue& setting,
+                          std::size_t fallback) {
+  return static_cast<std::size_t>(
+      setting.integer().value_or(static_cast<std::int64_t>(fallback)));
+}
+
+/** @returns The maps the scripts @p scripts registered (the levels given the
+ * option map), in the order of the names of their levels, at most
+ * MAXIMUM_LOBBY_MAPS; none without scripts. */
+std::vector<MapChoice> mapsOf(game::BehaviourScripts* scripts) {
+  std::vector<MapChoice> maps;
+  if (scripts == nullptr) {
+    return maps;
+  }
+  for (const std::string& name : scripts->levels().names()) {
+    const game::LuauLevelEntry* const entry = scripts->levels().entryOf(name);
+    if (entry != nullptr && entry->mapName.has_value() &&
+        maps.size() < network::MAXIMUM_LOBBY_MAPS) {
+      maps.push_back(MapChoice{.level = name, .name = *entry->mapName});
+    }
+  }
+  return maps;
+}
 
 /**
  * @returns The seed @p setting holds, nothing when it was cleared.
@@ -305,15 +333,12 @@ GameSettings ServerGamesModule::settingsOf(const WaveCatalog& catalog,
                                            const game::EntitySheets& types,
                                            std::optional<std::uint32_t> seed) {
   const network::GameRules rules = ruleSettings_.rules();
-  const auto statesPerSecond =
-      static_cast<std::size_t>(stateRateSetting_->integer().value_or(
-          static_cast<std::int64_t>(settings_.statesPerSecond)));
-  const StateEncoding encoding = stateEncodingOf(*stateEncodingSetting_);
-  const auto inputDelayTicks =
-      static_cast<std::size_t>(inputDelaySetting_->integer().value_or(
-          static_cast<std::int64_t>(settings_.inputDelayTicks)));
+  const std::size_t inputDelayTicks =
+      sizeSettingOr(*inputDelaySetting_, settings_.inputDelayTicks);
   const bool startsAtBoss = startAtBossSetting_->integer().value_or(0) != 0;
   const std::string& level = levelSetting_->text();
+  std::vector<MapChoice> maps =
+      level.empty() ? mapsOf(scripts_.get()) : std::vector<MapChoice>{};
   const std::vector<std::string_view> breaches = vanillaBreaches(
       HostedRules{.wavesFingerprint = catalog.fingerprint(),
                   .sheetsFingerprint = entitySheetsFingerprint(types),
@@ -321,19 +346,21 @@ GameSettings ServerGamesModule::settingsOf(const WaveCatalog& catalog,
                   .inputDelayTicks = inputDelayTicks,
                   .gameRules = rules,
                   .startsAtBoss = startsAtBoss,
-                  .playsALevel = !level.empty()});
+                  .playsALevel = !level.empty() || !maps.empty()});
   logHowGamesPlay(logger_, rules, breaches);
   return GameSettings{
       .seed = seed.has_value() ? *seed : std::random_device{}(),
       .waves = catalog.planOf(rules.difficulty),
       .types = types,
-      .statesPerSecond = statesPerSecond,
-      .stateEncoding = encoding,
+      .statesPerSecond =
+          sizeSettingOr(*stateRateSetting_, settings_.statesPerSecond),
+      .stateEncoding = stateEncodingOf(*stateEncodingSetting_),
       .inputDelayTicks = inputDelayTicks,
       .rules = rules,
       .vanilla = breaches.empty(),
       .startsAtBoss = startsAtBoss,
       .level = level.empty() ? std::nullopt : std::optional{level},
+      .maps = std::move(maps),
       .startingStage = startingStageOf(*startAtStageSetting_),
       .scripts = scripts_.get()};
 }

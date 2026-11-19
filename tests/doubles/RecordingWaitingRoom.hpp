@@ -2,6 +2,7 @@
 
 #include <optional>
 #include <span>
+#include <string>
 #include <vector>
 #include "IWaitingRoom.hpp"
 #include "LobbyState.hpp"
@@ -17,11 +18,13 @@ class RecordingWaitingRoom : public rtype::client::IWaitingRoom {
       const override;
   /** @brief Writes the value down, and keeps it as the one asked for, as a
    * real room does. */
+  [[nodiscard]] std::span<const std::string> lobbyMaps() const override;
   void setReady(bool ready) override;
   [[nodiscard]] std::optional<bool> requestedReady() const override;
   [[nodiscard]] bool gameStarted() const override;
 
   void setLobbyPlayers(std::vector<rtype::network::LobbyPlayer> players);
+  void setLobbyMaps(std::vector<std::string> maps);
   /** @brief Sets the ready state asked for, as a request made before the test
    * would have, without writing a request down. */
   void setRequestedReady(std::optional<bool> ready);
@@ -32,6 +35,7 @@ class RecordingWaitingRoom : public rtype::client::IWaitingRoom {
 
  private:
   std::vector<rtype::network::LobbyPlayer> lobbyPlayers_;
+  std::vector<std::string> lobbyMaps_;
   std::optional<bool> requestedReady_;
   bool gameStarted_ = false;
   std::vector<bool> readyRequests_;

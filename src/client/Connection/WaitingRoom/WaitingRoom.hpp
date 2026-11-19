@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <optional>
 #include <span>
+#include <string>
 #include <vector>
 #include "GameLoadedReminder.hpp"
 #include "ISessionObserver.hpp"
@@ -41,6 +42,7 @@ class WaitingRoom final : public IWaitingRoom, public ISessionObserver {
 
   [[nodiscard]] std::span<const network::LobbyPlayer> lobbyPlayers()
       const override;
+  [[nodiscard]] std::span<const std::string> lobbyMaps() const override;
   void setReady(bool ready) override;
   [[nodiscard]] std::optional<bool> requestedReady() const override;
   [[nodiscard]] bool gameStarted() const override;
@@ -50,8 +52,8 @@ class WaitingRoom final : public IWaitingRoom, public ISessionObserver {
   void sessionOpened(const network::LobbyPlayer& ownPlayer,
                      ISessionOutbox& outbox) override;
 
-  /** @brief Forgets the players, the ready state asked for and the start of
-   * the game. */
+  /** @brief Forgets the players, the maps, the ready state asked for and
+   * the start of the game. */
   void sessionClosed() override;
 
   /** @brief Sends the ReadyState again once READY_STATE_INTERVAL passed while
@@ -68,12 +70,11 @@ class WaitingRoom final : public IWaitingRoom, public ISessionObserver {
   void endGame();
 
  private:
-  void sendReadyState(bool ready);
-
   logging::Logger logger_;
   GameLoadedReminder* reminder_;
   ISessionOutbox* outbox_{nullptr};
   std::vector<network::LobbyPlayer> players_;
+  std::vector<std::string> maps_;
   std::uint8_t ownPlayerNumber_{0};
   std::optional<bool> requestedReady_;
   bool gameStarted_{false};

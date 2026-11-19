@@ -27,7 +27,8 @@ GameModuleFixture::GameModuleFixture()
                .settings =
                    GameSettings{.seed = SOME_SEED,
                                 .waves = testWavePlan(),
-                                .types = game::testing::shippedEntitySheets()},
+                                .types = game::testing::shippedEntitySheets(),
+                                .maps = {}},
                .send =
                    [this](network::OutgoingDatagram datagram) {
                      sent_.push_back(std::move(datagram));

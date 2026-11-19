@@ -5,6 +5,7 @@
 #include "LobbyState.hpp"
 #include "LobbyStateAnnouncerFixture.hpp"
 #include "LobbyStateAnnouncerFixtures.hpp"
+#include "LobbyStateAnnouncerTestConstants.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
 #include "SentDatagrams.hpp"
@@ -16,7 +17,7 @@ namespace rtype::server::testing {
  * Given two connected players, the second one ready
  * When the first tick of the waiting room passes
  * Then each player is sent one room listing both, in order of number, with
- * their ready state and their nickname
+ * their ready state and their nickname, then the maps of the game
  */
 TEST_F(LobbyStateAnnouncerFixture, SendsTheRoomAtTheFirstTick) {
   join(0);
@@ -24,14 +25,34 @@ TEST_F(LobbyStateAnnouncerFixture, SendsTheRoomAtTheFirstTick) {
 
   runWaitingTicks(1);
 
-  const network::LobbyState expected{
-      .players = {lobbyPlayer(0, false), lobbyPlayer(1, true)}};
+  const network::LobbyState expected =
+      announcedRoom({lobbyPlayer(0, false), lobbyPlayer(1, true)});
   const std::vector<network::OutgoingDatagram> toFirst = sentTo(0);
   const std::vector<network::OutgoingDatagram> toSecond = sentTo(1);
   ASSERT_EQ(toFirst.size(), 1U);
   ASSERT_EQ(toSecond.size(), 1U);
   EXPECT_EQ(onlyMessageIn<network::LobbyState>(toFirst.front()), expected);
   EXPECT_EQ(onlyMessageIn<network::LobbyState>(toSecond.front()), expected);
+}
+
+/**
+ * Given one player, sent the room
+ * When the player votes for the second map and the next tick passes
+ * Then the player is sent the room again, showing its vote
+ */
+TEST_F(LobbyStateAnnouncerFixture, SendsAVoteAtOnce) {
+  ConnectedPlayer& player = join(0);
+  runWaitingTicks(1);
+
+  player.mapVote = SECOND_ANNOUNCED_MAP_NUMBER;
+  runWaitingTicks(1);
+
+  network::LobbyPlayer voter = lobbyPlayer(0, false);
+  voter.mapVote = SECOND_ANNOUNCED_MAP_NUMBER;
+  const std::vector<network::OutgoingDatagram> toPlayer = sentTo(0);
+  ASSERT_EQ(toPlayer.size(), 2U);
+  EXPECT_EQ(onlyMessageIn<network::LobbyState>(toPlayer.back()),
+            announcedRoom({voter}));
 }
 
 /**
@@ -49,7 +70,7 @@ TEST_F(LobbyStateAnnouncerFixture, SendsAChangeOfReadinessAtOnce) {
   const std::vector<network::OutgoingDatagram> toPlayer = sentTo(0);
   ASSERT_EQ(toPlayer.size(), 2U);
   EXPECT_EQ(onlyMessageIn<network::LobbyState>(toPlayer.back()),
-            (network::LobbyState{.players = {lobbyPlayer(0, true)}}));
+            announcedRoom({lobbyPlayer(0, true)}));
 }
 
 /**
@@ -64,8 +85,8 @@ TEST_F(LobbyStateAnnouncerFixture, SendsANewPlayerAtOnce) {
   join(1);
   runWaitingTicks(1);
 
-  const network::LobbyState expected{
-      .players = {lobbyPlayer(0, false), lobbyPlayer(1, false)}};
+  const network::LobbyState expected =
+      announcedRoom({lobbyPlayer(0, false), lobbyPlayer(1, false)});
   const std::vector<network::OutgoingDatagram> toFirst = sentTo(0);
   const std::vector<network::OutgoingDatagram> toSecond = sentTo(1);
   ASSERT_EQ(toFirst.size(), 2U);

@@ -34,17 +34,17 @@ set input-delay 3
 set start-at-boss 0
 
 # [games] The stage every game that plays a level starts at, from 1, where the
-# script of the level declares it starts, to test it: set start-at-stage 4 with
-# the level fosse starts in the Pit. 1 plays the level from its start.
+# script of the level declares it starts, to test it: set start-at-stage 3 with
+# the level fosse starts on the Necromancer. 1 plays the level from its start.
 set start-at-stage 1
 
 # [games] The level every game plays: one a script of a resource registered with
-# level.register, such as fosse of the resource fosse, from open space to
-# the Bydo Tyrant, then through a transition into the Pit and its Necromancer,
-# or training_run of the
+# level.register, such as fosse of the resource fosse, inside the Pit to its
+# Necromancer, space, open space to the Bydo Tyrant, or training_run of the
 # resource training-run. The
-# game is then never vanilla. Empty plays the waves of its difficulty, the
-# survival mode.
+# game is then never vanilla. Empty lets the waiting room vote for the maps
+# the scripts register (levels given the option map), or, with none, plays the
+# waves of its difficulty, the survival mode.
 set level ""
 
 # [supervisor] The SQLite file the leaderboard of this server is kept in, on a local disk;

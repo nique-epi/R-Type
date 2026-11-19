@@ -17,6 +17,7 @@ using rtype::server::startOfStage;
 using rtype::server::UnknownLevelException;
 using rtype::server::UnknownLevelStartException;
 using rtype::server::testing::CAVES_BAND;
+using rtype::server::testing::CAVES_BEGAN_BEFORE_THE_START;
 using rtype::server::testing::CAVES_BIOME;
 using rtype::server::testing::DIRECTED_LEVEL;
 using rtype::server::testing::FIRST_STAGE;
@@ -28,6 +29,7 @@ using rtype::server::testing::LEVEL_OF_TWO_STAGES;
 using rtype::server::testing::LEVEL_OF_TWO_STAGES_THAT_SPAWNS_THE_PLACED;
 using rtype::server::testing::LEVEL_SHIP_SHEET;
 using rtype::server::testing::LEVEL_THAT_FAILS;
+using rtype::server::testing::LEVEL_THAT_OPENS_IN_THE_CAVES;
 using rtype::server::testing::LEVEL_THAT_PAUSES;
 using rtype::server::testing::LEVEL_THAT_PLAYS_A_TRANSITION;
 using rtype::server::testing::LEVEL_THAT_SPAWNS_THE_PLACED;
@@ -84,6 +86,22 @@ TEST_F(LevelDirectorFixture, TellsTheLevelAtItsFirstTick) {
   EXPECT_FLOAT_EQ(changes().front().scrollSpeed, SPEED_OF_A_SCROLLING_LEVEL);
   EXPECT_NEAR(changes().front().scrollPosition, SCROLL_OF_ONE_TICK,
               SCROLL_TOLERANCE);
+}
+
+/**
+ * Given a level that opens in the biome caves
+ * When the first tick passes
+ * Then the game is told that biome, begun long enough before the start that
+ * its entrance is behind the ships
+ */
+TEST_F(LevelDirectorFixture, ALevelOpensInsideItsOpeningBiome) {
+  direct(LEVEL_THAT_OPENS_IN_THE_CAVES);
+
+  tick(1);
+
+  ASSERT_THAT(changes(), SizeIs(1));
+  EXPECT_EQ(changes().front().biome, CAVES_BIOME);
+  EXPECT_FLOAT_EQ(changes().front().biomeSince, CAVES_BEGAN_BEFORE_THE_START);
 }
 
 /**

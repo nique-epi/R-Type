@@ -170,7 +170,8 @@ class GameFlow final : public IGameFlow {
    */
   void finishIfOver();
 
-  /** @brief Builds a new world, and every part of the game that works on one
+  /** @brief Builds a new world on the level of the map the vote chose, in a
+   * game that offers maps, and every part of the game that works on one
    * world: the rules that judge its collisions, the spawner of its Bydos, the
    * weapon system of its missiles and the keeper of the lives, after telling
    * the replication about the new world. DamageRules is built before

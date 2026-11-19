@@ -229,25 +229,39 @@ std::optional<sf::IntRect> ownBayAreaIn(const Menu& menu,
 
 /** @returns Where the room paints the parts its help explains, as
  * MenuBuilder lays a room: the bays, where the menu lays its illustration;
- * READY, its only bar, centered SPACE_ABOVE_ROOM_BARS under them; the status
+ * READY then MAP, its two bars, centered side by side SPACE_ABOVE_ROOM_BARS
+ * under them; the status
  * line BUTTON_GAP under READY, centered; then BACK. Menu gives no area of a
  * bar, so READY and the status line are placed by the same arithmetic as
  * MenuBuilder::placeRoom. */
 LobbyPartAreas partAreasOf(sf::IntRect bays, std::optional<int> ownSlot,
                            int statusWidth) {
   const sf::IntRect ready(
-      {(INTERFACE_AREA.size.x - BUTTON_SIZE.x) / SIDES_PER_AXIS,
+      {(INTERFACE_AREA.size.x - LOBBY_BARS_WIDTH) / SIDES_PER_AXIS,
        bays.position.y + bays.size.y + SPACE_ABOVE_ROOM_BARS},
       BUTTON_SIZE);
   const int statusShown = std::max(statusWidth, BUTTON_SIZE.x);
   return {.bays = bays,
           .ownBay = ownBayArea(bays, ownSlot).value_or(bays),
           .ready = ready,
+          .map = sf::IntRect(
+              ready.position + sf::Vector2i(BUTTON_SIZE.x + BUTTON_GAP, 0),
+              BUTTON_SIZE),
           .status = sf::IntRect(
               {(INTERFACE_AREA.size.x - statusShown) / SIDES_PER_AXIS,
                ready.position.y + ready.size.y + BUTTON_GAP},
               {statusShown, TEXT_LINE_HEIGHT}),
           .back = backChipArea()};
+}
+
+/** @returns The line of a bay that says the map numbered @p vote among
+ * @p maps; empty without a vote, or for a vote past the last map. */
+std::string mapVoteLineOf(std::span<const std::string> maps,
+                          std::uint8_t vote) {
+  if (vote == network::NO_MAP_VOTE || vote > maps.size()) {
+    return {};
+  }
+  return BAY_VOTE_PREFIX + maps[vote - 1];
 }
 
 /** @returns The look @p looks shows on the player numbered @p number; nothing
@@ -302,7 +316,9 @@ LobbyScreen::LobbyScreen(LobbyScreenParts parts,
                 navigator_->push(HANGAR_SCREEN);
               },
           .sounds = parts.sounds}),
-      chat_(parts.chat.get(), parts.settings.get()) {
+      chat_(parts.chat.get(), parts.settings.get()),
+      mapVoteBar_(parts.mapBallot.get(), parts.waitingRoom.get(),
+                  parts.sounds.get()) {
   repaint();
 }
 
@@ -313,6 +329,7 @@ void LobbyScreen::handleEvent(const sf::Event& event) {
   }
   if (chat_.handleEvent(event)) {
     readyKeyHeld_ = false;
+    mapVoteBar_.handleEvent(sf::Event::FocusLost{});
     dropHeldInput(playfieldPointAt_, leaderboardChip_, hangarChip_, menu_);
     return;
   }
@@ -326,7 +343,8 @@ void LobbyScreen::handleEvent(const sf::Event& event) {
   }
   readyKeyHeld_ = readyKeyHeld_ && !event.is<sf::Event::FocusLost>();
   if (leaderboardChip_.handleEvent(event, playfieldPointAt_) ||
-      hangarChip_.handleEvent(event, playfieldPointAt_)) {
+      hangarChip_.handleEvent(event, playfieldPointAt_) ||
+      mapVoteBar_.handleEvent(event)) {
     return;
   }
   if (clicksInside(event, ownBayAreaIn(menu_, *waitingRoom_, *connection_),
@@ -363,6 +381,8 @@ Menu LobbyScreen::buildMenu(std::string readyKeyName) {
       .illustration(LOBBY_BAYS_SIZE)
       .button({.label = READY_LABEL, .keyName = std::move(readyKeyName)},
               [this] { toggleReady(); })
+      .button({.label = MAP_BAR_CLOSED, .keyName = MAP_KEY_NAME},
+              [this] { mapVoteBar_.press(); })
       .cancelButton({.label = BACK_LABEL}, [this] { leave(); })
       .build();
 }
@@ -398,6 +418,8 @@ void LobbyScreen::repaint() {
                   ownSlotOf(players, ownNumber),
                   canvas_->textWidth(status, ROOM_STATUS_STYLE.font));
   menu_.setLabel(READY_BUTTON, wantsReady() ? CANCEL_READY_LABEL : READY_LABEL);
+  menu_.setLabel(MAP_BUTTON, mapVoteBar_.label());
+  menu_.setEnabled(MAP_BUTTON, mapVoteBar_.isOpen());
   menu_.setStatus(std::move(status));
   canvas_->clear();
   if (!help_.showsGame()) {
@@ -453,7 +475,8 @@ BayPilot LobbyScreen::pilotOf(const network::LobbyPlayer& player) const {
           .isLocalPlayer = isLocalPlayer,
           .look = isLocalPlayer
                       ? *look_
-                      : lookOf(shipLooks_->playerLooks(), player.playerNumber)};
+                      : lookOf(shipLooks_->playerLooks(), player.playerNumber),
+          .mapVote = mapVoteLineOf(waitingRoom_->lobbyMaps(), player.mapVote)};
 }
 
 }  // namespace rtype::client

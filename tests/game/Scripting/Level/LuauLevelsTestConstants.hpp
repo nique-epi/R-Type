@@ -21,12 +21,45 @@ constexpr std::string_view SHIPPED_LEVEL_RESOURCE = "training-run";
 constexpr std::string_view SHIPPED_LEVEL = "training_run";
 constexpr std::size_t STAGES_OF_THE_SHIPPED_LEVEL = 2;
 
-/** @brief The level of the Pit the repository ships: the resource fosse,
- * whose level fosse goes from open space into the Pit in six stages, the
- * third the transition between its two parts. */
+/** @brief The levels of the resource fosse the repository ships, one map
+ * each: space, two stages in open space, and fosse, three stages in the Pit;
+ * then the names of their maps. */
 constexpr std::string_view FOSSE_RESOURCE = "fosse";
 constexpr std::string_view FOSSE_LEVEL = "fosse";
-constexpr std::size_t STAGES_OF_THE_FOSSE_LEVEL = 6;
+constexpr std::size_t STAGES_OF_THE_FOSSE_LEVEL = 3;
+constexpr std::string_view FOSSE_MAP = "THE PIT";
+constexpr std::string_view SPACE_LEVEL = "space";
+constexpr std::size_t STAGES_OF_THE_SPACE_LEVEL = 2;
+constexpr std::string_view SPACE_MAP = "OPEN SPACE";
+
+/** @brief A script that registers a level as the map THE CAVES, and that
+ * name. */
+constexpr std::string_view REGISTERS_A_MAP = R"(
+level.register("caves", { function() end }, { map = "THE CAVES" })
+)";
+constexpr std::string_view CAVES_MAP = "THE CAVES";
+
+/** @brief A script that opens a level in the biome caves, and one that names
+ * a biome that is no biome name. */
+constexpr std::string_view REGISTERS_AN_OPENING_BIOME = R"(
+level.register("caves", { function() end }, { biome = "caves" })
+)";
+constexpr std::string_view CAVES_BIOME_NAME = "caves";
+constexpr std::string_view REGISTERS_A_WRONG_OPENING_BIOME = R"(
+level.register("caves", { function() end }, { biome = "Deep Caves" })
+)";
+
+/** @brief Scripts that register a level under a map name written in small
+ * letters, seventeen characters long (one past the longest), and a number. */
+constexpr std::string_view REGISTERS_A_MAP_IN_SMALL_LETTERS = R"(
+level.register("caves", { function() end }, { map = "the caves" })
+)";
+constexpr std::string_view REGISTERS_A_MAP_NAME_TOO_LONG = R"(
+level.register("caves", { function() end }, { map = "THE DEEPEST CAVES" })
+)";
+constexpr std::string_view REGISTERS_A_MAP_THAT_IS_NO_TEXT = R"(
+level.register("caves", { function() end }, { map = 42 })
+)";
 
 /** @brief The band the level fosse declares for its biome: the ceiling and
  * the floor its maps leave free, rows 192 and 848. */

@@ -120,7 +120,7 @@ bool staysInContent(const std::string& file) {
 }
 
 /** @throws engine::ScriptException when the table at LEVEL_OPTIONS_ARGUMENT
- * holds a key other than LEVEL_LDTK_KEY. */
+ * holds a key no option has. */
 void refuseUnknownOptions(lua_State* state) {
   lua_pushnil(state);
   while (lua_next(state, LEVEL_OPTIONS_ARGUMENT) != 0) {
@@ -128,7 +128,9 @@ void refuseUnknownOptions(lua_State* state) {
         lua_type(state, -2) == LUA_TSTRING &&
         (std::string_view{lua_tostring(state, -2)} == LEVEL_LDTK_KEY ||
          std::string_view{lua_tostring(state, -2)} == LEVEL_STARTS_KEY ||
-         std::string_view{lua_tostring(state, -2)} == LEVEL_BANDS_KEY);
+         std::string_view{lua_tostring(state, -2)} == LEVEL_BANDS_KEY ||
+         std::string_view{lua_tostring(state, -2)} == LEVEL_MAP_KEY ||
+         std::string_view{lua_tostring(state, -2)} == LEVEL_OPENING_BIOME_KEY);
     lua_pop(state, 1);
     if (!known) {
       lua_pop(state, 1);
@@ -311,6 +313,52 @@ std::map<std::string, PlayBand, std::less<>> bandsOf(lua_State* state) {
   return bands;
 }
 
+/** @returns Whether @p name is a name a map may show: see LEVEL_MAP_KEY. */
+bool isMapName(std::string_view name) {
+  return !name.empty() && name.size() <= MAXIMUM_MAP_NAME_SIZE &&
+         name.find_first_not_of(MAP_NAME_CHARACTERS) == std::string_view::npos;
+}
+
+/** @returns The name the options at LEVEL_OPTIONS_ARGUMENT give under
+ * LEVEL_MAP_KEY; nothing without options or without that key.
+ * @throws engine::ScriptException unless it is a text isMapName() accepts. */
+std::optional<std::string> mapNameOf(lua_State* state) {
+  if (lua_isnoneornil(state, LEVEL_OPTIONS_ARGUMENT)) {
+    return std::nullopt;
+  }
+  lua_rawgetfield(state, LEVEL_OPTIONS_ARGUMENT, LEVEL_MAP_KEY);
+  const int type = lua_type(state, -1);
+  std::string name = type == LUA_TSTRING ? lua_tostring(state, -1) : "";
+  lua_pop(state, 1);
+  if (type == LUA_TNIL) {
+    return std::nullopt;
+  }
+  if (!isMapName(name)) {
+    throw engine::ScriptException(WRONG_LEVEL_MAP_MESSAGE);
+  }
+  return name;
+}
+
+/** @returns The biome the options at LEVEL_OPTIONS_ARGUMENT open the level in,
+ * under LEVEL_OPENING_BIOME_KEY; nothing without options or without that key.
+ * @throws engine::ScriptException unless it is a biome name. */
+std::optional<std::string> openingBiomeOf(lua_State* state) {
+  if (lua_isnoneornil(state, LEVEL_OPTIONS_ARGUMENT)) {
+    return std::nullopt;
+  }
+  lua_rawgetfield(state, LEVEL_OPTIONS_ARGUMENT, LEVEL_OPENING_BIOME_KEY);
+  const int type = lua_type(state, -1);
+  std::string biome = type == LUA_TSTRING ? lua_tostring(state, -1) : "";
+  lua_pop(state, 1);
+  if (type == LUA_TNIL) {
+    return std::nullopt;
+  }
+  if (!identifiers::isBiomeName(biome)) {
+    throw engine::ScriptException(WRONG_BIOME_NAME_MESSAGE);
+  }
+  return biome;
+}
+
 /** @brief `level.register(name, stages, options)`: an exception that leaves
  * it is an error of the script, as Luau makes of any exception a C function
  * throws. */
@@ -329,7 +377,9 @@ int registerLevel(lua_State* state) {
                                 .ldtkFile = ldtkFileOf(state),
                                 .placements = {},
                                 .starts = startsOf(state, count),
-                                .bands = bandsOf(state)});
+                                .bands = bandsOf(state),
+                                .mapName = mapNameOf(state),
+                                .openingBiome = openingBiomeOf(state)});
   return 0;
 }
 

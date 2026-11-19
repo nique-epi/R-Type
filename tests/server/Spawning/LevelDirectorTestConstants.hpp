@@ -56,6 +56,16 @@ end })
 )";
 constexpr std::string_view CAVES_BIOME = "caves";
 
+/** @brief A level that opens in the biome caves, and the scroll that biome is
+ * told to have begun at: 4096 units before the start, so its entrance, 2048
+ * units long at the most, has left the screen. */
+constexpr std::string_view LEVEL_THAT_OPENS_IN_THE_CAVES = R"(
+level.register("directed", { function()
+  level.wait(50)
+end }, { biome = "caves" })
+)";
+constexpr float CAVES_BEGAN_BEFORE_THE_START = -4096.0F;
+
 /** @brief A level of the two biomes of LEVEL_OF_TWO_BIOMES, the second one,
  * caves, closed by a ceiling on row 200 and a floor on row 800. */
 constexpr std::string_view LEVEL_OF_TWO_BIOMES_THE_SECOND_CLOSED = R"(

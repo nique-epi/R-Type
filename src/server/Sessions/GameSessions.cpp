@@ -17,6 +17,7 @@
 #include "IClock.hpp"
 #include "IncomingDatagram.hpp"
 #include "LeaderboardRequest.hpp"
+#include "MapVote.hpp"
 #include "MessageDelivery.hpp"
 #include "MessageDispatcher.hpp"
 #include "MessageOrigin.hpp"
@@ -61,7 +62,7 @@ GameSessions::GameSessions(GameSessionsParts parts)
       clock_(&parts.clock.get()),
       previousTickStart_(clock_->now()),
       reader_(roster_),
-      readyKeeper_(roster_, std::move(parts.readyAccepted)),
+      readyKeeper_(roster_, std::move(parts.readyAccepted), parts.mapCount),
       inputKeeper_(roster_, std::move(parts.onNewerInput)),
       departures_(roster_, parts.events, std::move(parts.onClosing)),
       onLeaderboardRequest_(std::move(parts.onLeaderboardRequest)),
@@ -75,6 +76,11 @@ void GameSessions::registerSessionHandlers() {
   dispatcher_.registerHandler<network::ReadyState>(
       [this](const network::MessageOrigin& origin,
              const network::ReadyState& message) {
+        readyKeeper_.apply(origin, message);
+      });
+  dispatcher_.registerHandler<network::MapVote>(
+      [this](const network::MessageOrigin& origin,
+             const network::MapVote& message) {
         readyKeeper_.apply(origin, message);
       });
   dispatcher_.registerHandler<network::GameLoaded>(

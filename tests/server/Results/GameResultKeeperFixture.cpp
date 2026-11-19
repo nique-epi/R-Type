@@ -28,7 +28,8 @@ GameResultKeeperFixture::GameResultKeeperFixture()
                                    .difficulty = std::string{KEEPER_DIFFICULTY},
                                    .lives = identifiers::DEFAULT_LIVES,
                                    .friendlyFire = false},
-                           .vanilla = true}) {}
+                           .vanilla = true,
+                           .maps = {}}) {}
 
 ConnectedPlayer& GameResultKeeperFixture::seat(std::size_t index) {
   return *roster_.add(playerEndpoint(index), std::string{NICKNAMES.at(index)},

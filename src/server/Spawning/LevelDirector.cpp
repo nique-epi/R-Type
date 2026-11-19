@@ -34,6 +34,17 @@ namespace {
 
 /** @returns The milliseconds left of the transition @p progress plays, 0 when
  * it plays none; LONGEST_LEVEL_TRANSITION keeps them within 16 bits. */
+/** @brief Puts @p progress inside the biome @p entry opens in, begun
+ * OPENING_BIOME_LEAD before the start of the scroll, so its entrance has left
+ * the screen; nothing for a level that opens in no biome. */
+void openInBiome(game::LevelProgress& progress,
+                 const game::LuauLevelEntry& entry) {
+  if (entry.openingBiome.has_value()) {
+    progress.biome = *entry.openingBiome;
+    progress.biomeSince = progress.scroll.position() - OPENING_BIOME_LEAD;
+  }
+}
+
 std::uint16_t transitionLeftOf(const game::LevelProgress& progress) {
   if (!progress.transition.has_value()) {
     return 0;
@@ -82,6 +93,8 @@ LevelDirector::LevelDirector(LevelDirectorParts parts)
       startOfStage(entry_, parts_.level, parts_.startingStage);
   if (progress_.checkpoint.has_value()) {
     restartFromCheckpoint();
+  } else {
+    openInBiome(progress_, entry_);
   }
 }
 

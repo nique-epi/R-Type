@@ -28,7 +28,8 @@ void RunningGameFixture::hostGame() {
               rtype::server::GameSettings{
                   .seed = SOME_SEED,
                   .waves = rtype::server::testing::testWavePlan(),
-                  .types = rtype::game::testing::shippedEntitySheets()},
+                  .types = rtype::game::testing::shippedEntitySheets(),
+                  .maps = {}},
           .events = runningGame_.events(),
           .clock = clock_},
       rtype::server::rtypeGameModules(results_)));

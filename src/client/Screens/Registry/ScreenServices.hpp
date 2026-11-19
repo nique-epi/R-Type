@@ -11,6 +11,7 @@
 #include "IEntityTypeSource.hpp"
 #include "IEntityTypeTable.hpp"
 #include "IGameCatalog.hpp"
+#include "IMapBallot.hpp"
 #include "IServerCatalog.hpp"
 #include "IServerTicks.hpp"
 #include "ISessionBackgrounds.hpp"
@@ -56,6 +57,7 @@ struct ScreenServices {
   std::reference_wrapper<ServerSession> connection;
   std::reference_wrapper<WaitingRoom> waitingRoom;
   std::reference_wrapper<ShipLookExchange> shipLooks;
+  std::reference_wrapper<IMapBallot> mapBallot;
   std::reference_wrapper<EntityMessageQueue> entityMessages;
   std::reference_wrapper<ServerLeaderboard> leaderboard;
   /** @brief The leaderboard of the master, every server together. */

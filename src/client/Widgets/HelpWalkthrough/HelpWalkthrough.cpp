@@ -124,6 +124,8 @@ std::optional<sf::IntRect> partAreaOf(HelpPart part, const LobbyPartAreas& room,
       return room.ownBay;
     case HelpPart::Ready:
       return room.ready;
+    case HelpPart::Map:
+      return room.map;
     case HelpPart::Status:
       return room.status;
     case HelpPart::Back:

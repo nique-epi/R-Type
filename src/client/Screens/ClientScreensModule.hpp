@@ -18,6 +18,7 @@
 #include "IDeviceLinkFlow.hpp"
 #include "IEntityTypeTable.hpp"
 #include "IGameCatalog.hpp"
+#include "IMapBallot.hpp"
 #include "IModule.hpp"
 #include "IOptionalDependencies.hpp"
 #include "IServerCatalog.hpp"
@@ -132,6 +133,7 @@ class ClientScreensModule final : public engine::IModule,
   ServerSession* connection_{nullptr};
   WaitingRoom* waitingRoom_{nullptr};
   ShipLookExchange* shipLooks_{nullptr};
+  IMapBallot* mapBallot_{nullptr};
   EntityMessageQueue* entityMessages_{nullptr};
   ServerLeaderboard* leaderboard_{nullptr};
   MasterLeaderboard* globalLeaderboard_{nullptr};

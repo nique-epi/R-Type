@@ -13,7 +13,8 @@ namespace rtype::client::testing {
  * left of BACK. */
 constexpr LobbyPartAreas ROOM_AREAS{.bays = {{24, 50}, {432, 112}},
                                     .ownBay = {{24, 50}, {102, 112}},
-                                    .ready = {{160, 174}, {160, 20}},
+                                    .ready = {{76, 174}, {160, 20}},
+                                    .map = {{244, 174}, {160, 20}},
                                     .status = {{160, 202}, {160, 8}},
                                     .back = {{374, 230}, {82, 16}}};
 constexpr sf::IntRect HELP_CHIP({300, 230}, {66, 16});
@@ -26,16 +27,17 @@ constexpr sf::Vector2i BESIDE_HELP_CHIP =
     sf::Vector2i(290, 238) * INTERFACE_PIXEL;
 
 /** @brief Indices of steps, from 0: the third shows the bay of the local
- * player, the fourth READY, the sixth BACK, the seventh is the last of the
- * room, the eighth the first of the game, the ninth shows the moves, the
- * eleventh the Bydos, the fifteenth is the last. */
+ * player, the fourth READY, the fifth MAP, the seventh BACK, the eighth is the
+ * last of the room, the ninth the first of the game, the tenth shows the
+ * moves, the twelfth the Bydos, the sixteenth is the last. */
 constexpr std::size_t OWN_BAY_STEP = 2;
 constexpr std::size_t READY_STEP = 3;
-constexpr std::size_t BACK_STEP = 5;
-constexpr std::size_t LAST_ROOM_STEP = 6;
-constexpr std::size_t MOVES_STEP = 8;
-constexpr std::size_t BYDOS_STEP = 10;
-constexpr std::size_t LAST_STEP = 14;
+constexpr std::size_t MAP_STEP = 4;
+constexpr std::size_t BACK_STEP = 6;
+constexpr std::size_t LAST_ROOM_STEP = 7;
+constexpr std::size_t MOVES_STEP = 9;
+constexpr std::size_t BYDOS_STEP = 11;
+constexpr std::size_t LAST_STEP = 15;
 
 /** @brief First word of the first, second and last steps, and of the steps
  * that explain READY and the bay of the local player. */
@@ -44,6 +46,9 @@ constexpr const char* SECOND_STEP_WORD = "EACH";
 constexpr const char* LAST_STEP_WORD = "THAT";
 constexpr const char* READY_STEP_WORD = "PRESS";
 constexpr const char* OWN_BAY_STEP_WORD = "THIS";
+
+/** @brief The keycap of the step that explains MAP: a fixed key, M. */
+constexpr const char* MAP_STEP_KEY_NAME = "M";
 
 /** @brief The text of the chip, and the key bound to move up in a test. */
 constexpr const char* CHIP_LABEL = "HELP";

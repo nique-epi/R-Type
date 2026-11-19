@@ -42,6 +42,13 @@ constexpr std::uint8_t FOURTH_ACTIONS = 0x10;
  */
 constexpr std::size_t TWO_PLAYERS = 2;
 
+/** @brief How many maps the waiting room offers: none, as a server that
+ * names its level; two, to vote for; and the numbers of the maps, from 1. */
+constexpr std::size_t NO_MAPS = 0;
+constexpr std::size_t TWO_MAPS = 2;
+constexpr std::uint8_t SECOND_MAP = 2;
+constexpr std::uint8_t MAP_PAST_THE_LAST = 3;
+
 /**
  * @brief The 500 ms of the protocol page between two Heartbeats, rounded down
  * to the 30 whole ticks of 16 666 666 ns that fit in it: the server sends at

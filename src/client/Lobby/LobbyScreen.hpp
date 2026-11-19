@@ -19,6 +19,7 @@
 #include "LobbyPlace.hpp"
 #include "LobbyScreenParts.hpp"
 #include "LobbyState.hpp"
+#include "MapVoteBar.hpp"
 #include "Menu.hpp"
 #include "MotionPreference.hpp"
 #include "PlayerPalette.hpp"
@@ -45,6 +46,10 @@ struct HangarBay;
  * player asked while the server lists another value. The status line names
  * who is not ready: a game starts as soon as every listed pilot is, however
  * many they are.
+ *
+ * MAP, the bar beside READY, or MAP_KEY votes for the map the game will play
+ * (MapVoteBar); each bay writes the map its pilot voted for. On a server that
+ * plays one level, MAP says so and is disabled.
  *
  * Once the connection learns that the game started, the screen asks for the
  * game in place of every screen, once. BACK, or MENU_CANCEL_KEY, leaves the
@@ -144,6 +149,7 @@ class LobbyScreen : public IScreen {
   const identifiers::ShipLook* look_;
   KeyChip hangarChip_;
   ChatWindow chat_;
+  MapVoteBar mapVoteBar_;
 };
 
 }  // namespace rtype::client

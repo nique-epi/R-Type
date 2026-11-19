@@ -28,6 +28,11 @@ bool roomShowsReady(std::span<const network::LobbyPlayer> players,
   return own != players.end() && own->ready == ready;
 }
 
+/** @brief Sends @p ready through @p outbox. */
+void sendReadyState(ISessionOutbox& outbox, bool ready) {
+  sendMessage(outbox, network::ReadyState{.ready = ready});
+}
+
 }  // namespace
 
 WaitingRoom::WaitingRoom(network::MessageDispatcher& dispatcher,
@@ -37,6 +42,7 @@ WaitingRoom::WaitingRoom(network::MessageDispatcher& dispatcher,
       [this](const network::MessageOrigin&, const network::LobbyState& lobby) {
         if (outbox_ != nullptr) {
           players_ = lobby.players;
+          maps_ = lobby.maps;
         }
       });
   dispatcher.registerHandler<network::GameStarted>(
@@ -49,12 +55,15 @@ std::span<const network::LobbyPlayer> WaitingRoom::lobbyPlayers() const {
   return players_;
 }
 
+std::span<const std::string> WaitingRoom::lobbyMaps() const { return maps_; }
+
 void WaitingRoom::setReady(bool ready) {
   if (outbox_ == nullptr || gameStarted_) {
     return;
   }
   requestedReady_ = ready;
-  sendReadyState(ready);
+  sendReadyState(*outbox_, ready);
+  sinceReadyState_ = engine::Duration::zero();
 }
 
 std::optional<bool> WaitingRoom::requestedReady() const {
@@ -73,6 +82,7 @@ void WaitingRoom::sessionOpened(const network::LobbyPlayer& ownPlayer,
 void WaitingRoom::sessionClosed() {
   outbox_ = nullptr;
   players_.clear();
+  maps_.clear();
   requestedReady_.reset();
   sinceReadyState_ = engine::Duration::zero();
   gameStarted_ = false;
@@ -85,7 +95,8 @@ void WaitingRoom::sessionHeld(engine::Duration elapsed) {
   }
   sinceReadyState_ += elapsed;
   if (sinceReadyState_ >= READY_STATE_INTERVAL) {
-    sendReadyState(*requestedReady_);
+    sendReadyState(*outbox_, *requestedReady_);
+    sinceReadyState_ = engine::Duration::zero();
   }
 }
 
@@ -102,11 +113,6 @@ void WaitingRoom::endGame() {
   gameStarted_ = false;
   reminder_->end();
   logger_.info("the game ended");
-}
-
-void WaitingRoom::sendReadyState(bool ready) {
-  sendMessage(*outbox_, network::ReadyState{.ready = ready});
-  sinceReadyState_ = engine::Duration::zero();
 }
 
 }  // namespace rtype::client

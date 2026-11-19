@@ -10,6 +10,7 @@
 #include "IEntityTypeTable.hpp"
 #include "IServerPingProbe.hpp"
 #include "InstallContext.hpp"
+#include "MapBallot.hpp"
 #include "MessageDispatcher.hpp"
 #include "NetworkConditions.hpp"
 #include "NetworkThread.hpp"
@@ -111,6 +112,7 @@ class PlayerConnection {
   GameLoadedReminder gameLoaded_;
   WaitingRoom waitingRoom_;
   ShipLookExchange shipLooks_;
+  MapBallot mapBallot_;
   EntityMessageQueue entityMessages_;
   engine::SystemClock clock_;
   RoundTripWatch roundTrips_;

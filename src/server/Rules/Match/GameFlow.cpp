@@ -7,6 +7,7 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include <vector>
 #include "ConnectedPlayer.hpp"
 #include "ConnectedPlayers.hpp"
 #include "EntityIdConstants.hpp"
@@ -19,6 +20,8 @@
 #include "GameStateChanged.hpp"
 #include "IGameReplication.hpp"
 #include "Logger.hpp"
+#include "MapChoice.hpp"
+#include "MapTally.hpp"
 #include "MatchSystems.hpp"
 #include "MatchSystemsParts.hpp"
 #include "PlayerLives.hpp"
@@ -113,6 +116,30 @@ GameStateChanged finishing(GameState& state, std::size_t& finishedTicks,
 }
 
 /** @brief Writes that the game started, with how many players. */
+/** @brief Plays the map the vote of the players of @p game chose, its draws
+ * from @p seed (see votedMapOf()): its level becomes the level of the game,
+ * and @p logger says which. Nothing for a game that offers no map. */
+void playVotedMap(GameContext& game, std::uint32_t seed,
+                  const logging::Logger& logger) {
+  const std::vector<MapChoice>& maps = game.settings.maps;
+  if (maps.empty()) {
+    return;
+  }
+  const MapChoice& chosen =
+      maps.at(votedMapOf(game.roster.get().connected(), maps.size(), seed));
+  game.settings.level = chosen.level;
+  logger.info("the vote chose the map ", chosen.name);
+}
+
+/** @brief Gives every player of @p roster a ship in the world @p replication
+ * was told of last, the ships of the world before it being gone. */
+void shipEveryPlayer(PlayerRoster& roster, IGameReplication& replication) {
+  for (ConnectedPlayer* const player : roster.connected()) {
+    player->shipEntityId = identifiers::NO_ENTITY_ID;
+    replication.onPlayerJoined(*player);
+  }
+}
+
 void logStart(const logging::Logger& logger, PlayerRoster& roster) {
   logger.info("game started, players connected: ", roster.connected().size());
 }
@@ -150,6 +177,10 @@ void GameFlow::advanceState() {
       if (!game_.everyPlayerIsReady()) {
         replication_.onWaitingTick();
         break;
+      }
+      if (!game_.settings.maps.empty()) {
+        buildWorld();
+        shipEveryPlayer(game_.roster.get(), replication_);
       }
       changeState(state_, GameState::Starting, game_.events.get());
       startBarrier_.open();
@@ -203,6 +234,7 @@ void GameFlow::finishIfOver() {
 }
 
 void GameFlow::buildWorld() {
+  playVotedMap(game_, game_.settings.seed + worldsBuilt_, logger_);
   game::World& world = worldSlot_.renew();
   replication_.onWorldBuilt(world);
   systems_ = std::make_unique<MatchSystems>(

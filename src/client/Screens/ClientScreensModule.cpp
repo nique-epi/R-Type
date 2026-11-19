@@ -111,6 +111,7 @@ void ClientScreensModule::install(engine::InstallContext& context) {
   connection_ = &context.require<ServerSession>();
   waitingRoom_ = &context.require<WaitingRoom>();
   shipLooks_ = &context.require<ShipLookExchange>();
+  mapBallot_ = &context.require<IMapBallot>();
   entityMessages_ = &context.require<EntityMessageQueue>();
   leaderboard_ = &context.require<ServerLeaderboard>();
   globalLeaderboard_ = &context.require<MasterLeaderboard>();
@@ -175,6 +176,7 @@ ScreenServices ClientScreensModule::services(const network::Endpoint& server) {
       .connection = *connection_,
       .waitingRoom = *waitingRoom_,
       .shipLooks = *shipLooks_,
+      .mapBallot = *mapBallot_,
       .entityMessages = *entityMessages_,
       .leaderboard = *leaderboard_,
       .globalLeaderboard = *globalLeaderboard_,

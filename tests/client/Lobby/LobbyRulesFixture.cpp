@@ -33,6 +33,7 @@ void LobbyRulesFixture::open(std::optional<GameRules> rules) {
                        .connection = connection_,
                        .waitingRoom = waitingRoom_,
                        .shipLooks = shipLooks_,
+                       .mapBallot = mapBallot_,
                        .playfieldPointAt = samePlayfieldPoint,
                        .keys = settings_.keys,
                        .keyName = nameInTheFile,

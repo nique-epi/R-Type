@@ -3,10 +3,12 @@
 #include <gtest/gtest.h>
 #include <cstddef>
 #include <cstdint>
+#include <string>
 #include <utility>
 #include <vector>
 #include "ConnectedPlayer.hpp"
 #include "LobbyStateAnnouncer.hpp"
+#include "LobbyStateAnnouncerTestConstants.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PlayerRoster.hpp"
 #include "ServerLobbyTestConstants.hpp"
@@ -33,10 +35,12 @@ class LobbyStateAnnouncerFixture : public ::testing::Test {
  private:
   PlayerRoster roster_;
   std::vector<network::OutgoingDatagram> sent_;
-  LobbyStateAnnouncer announcer_{roster_,
-                                 [this](network::OutgoingDatagram datagram) {
-                                   sent_.push_back(std::move(datagram));
-                                 }};
+  LobbyStateAnnouncer announcer_{
+      roster_,
+      [this](network::OutgoingDatagram datagram) {
+        sent_.push_back(std::move(datagram));
+      },
+      {std::string{FIRST_ANNOUNCED_MAP}, std::string{SECOND_ANNOUNCED_MAP}}};
 };
 
 }  // namespace rtype::server::testing

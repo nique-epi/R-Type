@@ -1,5 +1,6 @@
 #include "LobbyStateAnnouncer.hpp"
 #include <cstddef>
+#include <string>
 #include <utility>
 #include <vector>
 #include "ConnectedPlayer.hpp"
@@ -16,28 +17,32 @@ namespace {
 
 /**
  * @returns The room @p players make: each of them, in the order given, with
- * its number, its ready state and its nickname.
+ * its number, its ready state, its nickname and its map vote, then the maps
+ * @p maps.
  */
-network::LobbyState roomOf(const ConnectedPlayers& players) {
-  network::LobbyState room;
+network::LobbyState roomOf(const ConnectedPlayers& players,
+                           const std::vector<std::string>& maps) {
+  network::LobbyState room{.players = {}, .maps = maps};
   room.players.reserve(players.size());
   for (const ConnectedPlayer* const player : players) {
     room.players.push_back(
         network::LobbyPlayer{.playerNumber = player->playerNumber,
                              .ready = player->ready,
-                             .nickname = player->nickname});
+                             .nickname = player->nickname,
+                             .mapVote = player->mapVote});
   }
   return room;
 }
 
 }  // namespace
 
-LobbyStateAnnouncer::LobbyStateAnnouncer(PlayerRoster& roster, Send send)
-    : roster_(&roster), send_(std::move(send)) {}
+LobbyStateAnnouncer::LobbyStateAnnouncer(PlayerRoster& roster, Send send,
+                                         std::vector<std::string> maps)
+    : roster_(&roster), send_(std::move(send)), maps_(std::move(maps)) {}
 
 void LobbyStateAnnouncer::onWaitingTick() {
   const ConnectedPlayers players = roster_->connected();
-  network::LobbyState room = roomOf(players);
+  network::LobbyState room = roomOf(players, maps_);
   ++ticksSinceLastSend_;
   if (room == lastSent_ && ticksSinceLastSend_ < TICKS_PER_LOBBY_STATE) {
     return;

@@ -25,8 +25,29 @@ constexpr const char* CANCEL_READY_LABEL = "CANCEL READY";
 constexpr sf::Keyboard::Key LEADERBOARD_KEY = sf::Keyboard::Key::L;
 constexpr const char* LEADERBOARD_KEY_NAME = "L";
 
-/** @brief Order of the main bar in the menu of the waiting room. */
+/** @brief Order of the main bar in the menu of the waiting room, then of the
+ * MAP bar beside it. */
 constexpr std::size_t READY_BUTTON = 0;
+constexpr std::size_t MAP_BUTTON = 1;
+constexpr int LOBBY_BAR_COUNT = 2;
+constexpr int LOBBY_BARS_WIDTH =
+    barRowWidth(LOBBY_BAR_COUNT, BUTTON_SIZE, BUTTON_GAP);
+
+/**
+ * @brief The MAP bar: the key that presses it and what its keycap says, the
+ * text before the name of the map it shows, and what it says while the
+ * server plays one level and lists no map. A name of the longest kind the
+ * protocol allows (MAXIMUM_MAP_NAME_SIZE, 16 capitals) does not fit the bar:
+ * the maps of a server keep their names short.
+ */
+constexpr sf::Keyboard::Scancode MAP_KEY = sf::Keyboard::Scan::M;
+constexpr const char* MAP_KEY_NAME = "M";
+constexpr const char* MAP_BAR_PREFIX = "MAP: ";
+constexpr const char* MAP_BAR_CLOSED = "MAP: FIXED";
+
+/** @brief The vote of a pilot, written in its bay before the name of the
+ * map. */
+constexpr const char* BAY_VOTE_PREFIX = "VOTE: ";
 
 /** @brief One bay per player number, side by side under the rule, as wide as
  * it. */

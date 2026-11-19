@@ -2,14 +2,15 @@
 
 #include <optional>
 #include <span>
+#include <string>
 #include "LobbyState.hpp"
 
 namespace rtype::client {
 
 /**
  * @brief The waiting room of the session, as the screens read and drive it:
- * who is in it, the ready state the player asked for, and whether the game
- * started.
+ * who is in it, the maps its players vote for, the ready state the player
+ * asked for, and whether the game started.
  *
  * The screens read it at each of their updates, so an implementation may change
  * any of it at any time between two updates.
@@ -26,6 +27,14 @@ class IWaitingRoom {
    */
   [[nodiscard]] virtual std::span<const network::LobbyPlayer> lobbyPlayers()
       const = 0;
+
+  /**
+   * @returns The names of the maps the newest LobbyState of the session
+   * offers to the vote, in the order the votes number them from 1; empty
+   * before the first one, without a session, or when the server offers no
+   * map. Valid as lobbyPlayers() is.
+   */
+  [[nodiscard]] virtual std::span<const std::string> lobbyMaps() const = 0;
 
   /**
    * @brief Asks the server to set the player ready, or not ready: a value,
