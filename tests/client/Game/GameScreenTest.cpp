@@ -1146,14 +1146,14 @@ TEST_F(GameScreenFixture, PaintsTheWarningWhenTheBossStageStarts) {
 /**
  * Given the game
  * When the first status of the fight of the boss arrives and a frame passes
- * Then its bar is painted, with its name
+ * Then its bar is painted, with the label of its gauge II
  */
 TEST_F(GameScreenFixture, PaintsTheBossBarOnceTheBossFights) {
   entityMessages().queue(BOSS_FIGHTING_UNHARMED);
 
   screens().update(ONE_FRAME);
 
-  EXPECT_NE(writingOf(statusCanvas(), BOSS_NAME_ON_THE_BAR), nullptr);
+  EXPECT_NE(writingOf(statusCanvas(), BOSS_GAUGE_LABEL_ON_THE_BAR), nullptr);
 }
 
 /**

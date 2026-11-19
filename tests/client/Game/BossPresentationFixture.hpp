@@ -4,6 +4,7 @@
 #include "BossPresentation.hpp"
 #include "ComponentRegistry.hpp"
 #include "EffectSpawner.hpp"
+#include "EntityAppearance.hpp"
 #include "EntityRegistry.hpp"
 #include "RecordingAudioService.hpp"
 #include "RecordingSoundPlayer.hpp"
@@ -17,6 +18,10 @@ class BossPresentationFixture : public ::testing::Test {
   BossPresentationFixture();
 
   rtype::client::BossPresentation& presentation();
+
+  /** @brief Places the boss PRESENTED_BOSS_ID, drawn from a sheet that names
+   * it PRESENTED_BOSS_NAME. */
+  void placeNamedBoss();
   [[nodiscard]] const RecordingSoundPlayer& sounds() const;
   [[nodiscard]] const RecordingAudioService& audio() const;
 
@@ -27,4 +32,5 @@ class BossPresentationFixture : public ::testing::Test {
   RecordingSoundPlayer sounds_;
   RecordingAudioService audio_{sounds_};
   rtype::client::BossPresentation presentation_;
+  rtype::client::EntityAppearance namedBossAppearance_;
 };

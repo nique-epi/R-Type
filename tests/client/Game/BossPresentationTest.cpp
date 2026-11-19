@@ -208,6 +208,34 @@ TEST_F(BossPresentationFixture, TheBarShowsOnceTheBossFights) {
 }
 
 /**
+ * Given a boss whose sheet names it, arriving
+ * When the first status of its fight arrives
+ * Then its bar writes the name of its sheet
+ */
+TEST_F(BossPresentationFixture, TheBarWritesTheNameTheSheetGives) {
+  placeNamedBoss();
+  presentation().apply(PRESENTED_BOSS_ARRIVING);
+
+  presentation().apply(PRESENTED_BOSS_FIGHTING);
+
+  EXPECT_EQ(presentation().look(FlashPreference::Full).bar.name,
+            PRESENTED_BOSS_NAME);
+}
+
+/**
+ * Given a boss the client has no entity for, arriving
+ * When the first status of its fight arrives
+ * Then its bar writes no name
+ */
+TEST_F(BossPresentationFixture, AnUnknownBossHasNoName) {
+  presentation().apply(PRESENTED_BOSS_ARRIVING);
+
+  presentation().apply(PRESENTED_BOSS_FIGHTING);
+
+  EXPECT_TRUE(presentation().look(FlashPreference::Full).bar.name.empty());
+}
+
+/**
  * Given a game that plays a level, its boss fighting, its music playing
  * When a restart from a checkpoint removes the boss
  * Then its bar goes

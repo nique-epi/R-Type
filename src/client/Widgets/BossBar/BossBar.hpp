@@ -23,8 +23,9 @@ namespace rtype::client {
                                     FlashPreference preference);
 
 /**
- * @brief Paints the bar of BossBarConstants.hpp when it shows: BYDO TYRANT
- * above it in the regular font, outlined; each gauge with its border, its
+ * @brief Paints the bar of BossBarConstants.hpp when it shows: the name of
+ * the boss above it in the regular font, outlined, nothing for a boss without
+ * a name; each gauge with its border, its
  * empty inside, its lag then its fill, or hatched once spent; the hot pixels
  * of the rage; the shards of gauge I; I and II under the gauges in small
  * print.

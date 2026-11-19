@@ -154,5 +154,6 @@ EntityAppearance appearanceWithADeath() {
       .deathFramesWithoutFlash = {MOB_DEATH_WITHOUT_FLASH_FRAME},
       .deathFrameDuration = MOB_DEATH_FRAME_TIME,
       .effects = {},
-      .looks = {}};
+      .looks = {},
+      .bossName = {}};
 }

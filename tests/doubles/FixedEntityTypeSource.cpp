@@ -34,7 +34,8 @@ EntityAppearance appearancePlaying(const Animation& animation) {
       .deathFrames = {},
       .deathFramesWithoutFlash = {},
       .effects = {},
-      .looks = {}};
+      .looks = {},
+      .bossName = {}};
 }
 
 /** @returns The side of the type the double numbers @p number, or nothing

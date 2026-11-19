@@ -203,14 +203,16 @@ TEST(BossBar, ALastPointStillLightsAColumn) {
 }
 
 /**
- * Given the bar of a boss in its fight
+ * Given the bar of a boss in its fight, named BYDO TYRANT
  * When it is painted
  * Then BYDO TYRANT is written centred on x 240, its top on y 6, above the bar
  */
 TEST(BossBar, TheNameIsCentredAboveTheBar) {
-  const InterfaceCanvasRecord record =
-      barPaintingOf(bossBarAt(fightWith(BossStage::Fighting, BAR_FULL_HEALTH),
-                              BAR_FILLED, FlashPreference::Full));
+  BossBarLook look = bossBarAt(fightWith(BossStage::Fighting, BAR_FULL_HEALTH),
+                               BAR_FILLED, FlashPreference::Full);
+  look.name = DESIGNED_BOSS_NAME;
+
+  const InterfaceCanvasRecord record = barPaintingOf(look);
 
   const RecordedWriting* const name = writingOf(record, DESIGNED_BOSS_NAME);
   ASSERT_NE(name, nullptr);

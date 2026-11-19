@@ -262,6 +262,14 @@ void readVisuals(const engine::DataFileTable& appearance,
   }
 }
 
+/** @returns The text of `boss_name` in @p appearance; empty without it. */
+std::string bossNameOf(const engine::DataFileTable& appearance) {
+  if (appearance.table.get().get(BOSS_NAME_KEY) == nullptr) {
+    return {};
+  }
+  return engine::textAt(appearance, BOSS_NAME_KEY);
+}
+
 /** @returns The appearance the `[appearance]` table @p appearance
  * describes, every key checked. */
 EntityAppearance appearanceFrom(const engine::DataFileTable& appearance) {
@@ -278,7 +286,8 @@ EntityAppearance appearanceFrom(const engine::DataFileTable& appearance) {
                         .deathFrames = {},
                         .deathFramesWithoutFlash = {},
                         .effects = {},
-                        .looks = {}};
+                        .looks = {},
+                        .bossName = bossNameOf(appearance)};
   readEnragedIdle(appearance, look);
   readDeath(appearance, look);
   return look;

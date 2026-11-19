@@ -51,6 +51,9 @@ struct EntityAppearance {
   /** @brief The looks of `[appearance.looks]`, in the order of their names:
    * the look numbered n (game::lookNumberOf()) is looks[n - 1]. */
   std::vector<NamedLook> looks;
+  /** @brief The name the bar of a boss writes, from `boss_name`; empty when
+   * the sheet gives none. */
+  std::string bossName;
 };
 
 }  // namespace rtype::client

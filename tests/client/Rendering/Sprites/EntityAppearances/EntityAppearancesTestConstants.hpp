@@ -231,3 +231,7 @@ constexpr std::array<std::string_view, 15> FOSSE_SHEET_NAMES{
     "gloomwyrm_segment", "gloomwyrm_tail",   "lanternfin",  "necromancer",
     "necromancer_beam",  "necromancer_ring", "ruin_warden", "ruin_warden_bolt",
     "sporecap",          "sporecap_spore",   "stalagmaw"};
+
+/** @brief The sheet of the boss of the Pit, and the name its bar writes. */
+constexpr std::string_view NECROMANCER_SHEET = "necromancer";
+constexpr std::string_view NECROMANCER_BOSS_NAME = "NECROMANCER";

@@ -78,6 +78,8 @@ phase = "strike"
 
 [appearance]
 sheet = "sprites/fosse/necromancer.png"
+# The name its bar writes above its gauges.
+boss_name = "NECROMANCER"
 
 # Idle: it bobs, the halo turns, the smoke rolls, the hands breathe out of phase.
 [appearance.idle]

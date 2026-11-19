@@ -97,7 +97,7 @@ constexpr rtype::network::BossStatus BOSS_FIGHTING_HIT{
     .health = 200,
     .fullHealth = 240,
     .stage = rtype::network::BossStage::Fighting};
-constexpr std::string_view BOSS_NAME_ON_THE_BAR = "BYDO TYRANT";
+constexpr std::string_view BOSS_GAUGE_LABEL_ON_THE_BAR = "II";
 constexpr std::string_view WARNING_WORD_ON_SCREEN = "WARNING";
 
 /** @brief The level the server tells: its biome, how far it scrolled and

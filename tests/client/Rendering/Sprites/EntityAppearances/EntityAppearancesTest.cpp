@@ -107,6 +107,32 @@ TEST(EntityAppearances, LeavesTheGameplayToTheServer) {
 }
 
 /**
+ * Given a sheet that does not name a boss
+ * When its appearance is read
+ * Then it has no boss name
+ */
+TEST(EntityAppearances, ASheetWithoutBossNameHasNone) {
+  const EntityAppearances appearances = appearancesReading(READ_SHEET_TEXT);
+  const EntityAppearance* const read = appearances.named(READ_TYPE_NAME);
+  ASSERT_NE(read, nullptr);
+
+  EXPECT_TRUE(read->bossName.empty());
+}
+
+/**
+ * Given the sheet of the Necromancer the resource fosse brings
+ * When a client reads its appearance
+ * Then its boss name is NECROMANCER, the name its bar writes
+ */
+TEST(EntityAppearances, ReadsTheNameOfTheNecromancer) {
+  const EntityAppearances appearances = fosseAppearances();
+  const EntityAppearance* const read = appearances.named(NECROMANCER_SHEET);
+  ASSERT_NE(read, nullptr);
+
+  EXPECT_EQ(read->bossName, NECROMANCER_BOSS_NAME);
+}
+
+/**
  * Given one sheet read
  * When the appearance of another name is looked up
  * Then there is none

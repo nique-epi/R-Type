@@ -2,10 +2,12 @@
 
 #include <cstdint>
 #include <optional>
+#include <string>
 #include "BossArrivalEffects.hpp"
 #include "BossLook.hpp"
 #include "BossStatus.hpp"
 #include "BossTracker.hpp"
+#include "ComponentRegistry.hpp"
 #include "EffectTools.hpp"
 #include "EnemyAction.hpp"
 #include "EntityDestroyed.hpp"
@@ -76,6 +78,9 @@ class BossPresentation {
 
   BossTracker tracker_;
   BossArrivalEffects effects_;
+  /** @brief Where the entity of the boss is found, to read the name its
+   * sheet gives. */
+  engine::ComponentRegistry* components_;
   ISoundPlayer* sounds_;
   IAudioService* audio_;
   engine::Duration now_{};
@@ -88,6 +93,9 @@ class BossPresentation {
   std::optional<std::uint32_t> shielded_;
   /** @brief The network id of the boss its fight statuses name. */
   std::optional<std::uint32_t> bossInPlay_;
+  /** @brief The name the sheet of the boss gives its bar, read from the
+   * first status that finds its entity; empty until then. */
+  std::string bossName_;
   bool bossMusicStarted_{false};
   bool gameEnded_{false};
   bool playsALevel_{false};

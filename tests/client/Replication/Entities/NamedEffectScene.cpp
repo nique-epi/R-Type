@@ -43,7 +43,8 @@ EntityAppearance appearanceWithASpark() {
           .framesWithoutFlash = {SPARK_FIRST_FRAME_WITHOUT_FLASH},
           .frameDuration = SPARK_FRAME_TIME,
           .anchor = SPARK_ANCHOR}},
-      .looks = {}};
+      .looks = {},
+      .bossName = {}};
 }
 
 }  // namespace
