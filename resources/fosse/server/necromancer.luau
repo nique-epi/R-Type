@@ -119,13 +119,10 @@ behaviours.register("necromancer_rite", {
 
 	behaviours.wait(settings.rise_ms, {
 		direction = STILL,
+		jumps_to = { x = e.position.x, y = settings.rest_y },
 		starts_action = { attack = ARRIVAL, phase = "signal" },
 	})
-	e = behaviours.wait(1, {
-		direction = STILL,
-		jumps_to = { x = e.position.x, y = settings.rest_y },
-		ends_action = true,
-	})
+	e = behaviours.wait(1, { direction = STILL, ends_action = true })
 	local center = { x = e.position.x, y = settings.rest_y }
 	uncovered = true
 

@@ -266,8 +266,9 @@ afterwards = "idle"
 anchor_x = -1
 anchor_y = 2
 
-# Arrival: it rises out of the floor of the Pit in place, the frame cut at
-# the floor and its idle playing as it comes up, slowing to a stop.
+# Arrival: it rises out of the floor of the Pit where it rests, the frame cut
+# at the floor and its idle playing as it comes up, slowing to a stop; the
+# first three frames are empty while it moves there from below the screen.
 [appearance.attack_5.signal]
 left = 0
 top = 2188
