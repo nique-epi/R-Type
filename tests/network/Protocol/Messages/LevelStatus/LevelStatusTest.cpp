@@ -185,14 +185,17 @@ TEST(LevelStatus, ALevelWithoutABandClosesNothing) {
 }
 
 /**
- * Given a status whose biome began at a negative position
- * When it is encoded
- * Then it is refused
+ * Given a status whose biome began before the scroll, as the biome a level
+ * opens in does
+ * When it is encoded then decoded
+ * Then the decoded status holds that negative position
  */
-TEST(LevelStatus, RefusesANegativePositionTheBiomeBeganAt) {
-  EXPECT_THROW(static_cast<void>(encodeMessage(
-                   LevelStatus{.biome = {}, .biomeSince = NEGATIVE_SCROLL})),
-               InvalidFieldValueException);
+TEST(LevelStatus, CarriesABiomeThatBeganBeforeTheScroll) {
+  const LevelStatus status{.biome = std::string{STATUS_BIOME},
+                           .biomeSince = NEGATIVE_SCROLL};
+
+  EXPECT_FLOAT_EQ(decodeMessage<LevelStatus>(encodeMessage(status)).biomeSince,
+                  NEGATIVE_SCROLL);
 }
 
 /**

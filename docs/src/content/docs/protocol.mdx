@@ -225,7 +225,7 @@ A message is accepted only when its payload has exactly the size its fields add 
 | `ShipLookChoice`, `PlayerLooks` | each look byte is 0 or the number of an item of its slot: `head` 0, 1 to 8 or 11 to 22, `eyes` 0, 9, 23 or 24, `face` 0, 10 or 25, `hull` 0 or 26 to 30; `PlayerLooks` has at most 4 players, each `playerNumber` 1 to 4 and listed once |
 | `LookItemWon` | `item` is 1 to 25: a hull (26 to 30) is refused |
 | `EffectPlayed` | `entityId` is not 0; `effect` is a name of the content, 1 to 24 bytes of `a` to `z`, digits and `_`; whether the sheet of the body names it is for the receiver to look up |
-| `LevelStatus` | `biome` is empty or a biome name: 1 to 24 bytes among `a` to `z`, `0` to `9` and `_`; `scrollPosition`, `scrollSpeed` and `biomeSince` are finite and not negative |
+| `LevelStatus` | `biome` is empty or a biome name: 1 to 24 bytes among `a` to `z`, `0` to `9` and `_`; `scrollPosition` and `scrollSpeed` are finite and not negative; `biomeSince` is finite, negative for the biome a level opens in, which began before its scroll |
 | `ServerInformation` | `gameVersion` and `name` are 1 to 32 bytes of valid UTF-8, no control character; `playerCount` is at most 4 times `gameCount`, and `playerCount` plus `freeSeatCount` too |
 | `ExpulsionOrder` | the nickname follows the rules of a nickname: 1 to 16 bytes of valid UTF-8, no control character |
 | `Expulsion` | `reason` is in the table of its message; the payload is 1 byte |

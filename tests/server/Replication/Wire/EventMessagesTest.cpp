@@ -293,4 +293,26 @@ TEST(EventMessagesTest, EncodesAChangeOfTheLevel) {
                             .bandBottom = WIRE_LEVEL_BAND_BOTTOM}));
 }
 
+/**
+ * Given the change of a level that opens in its biome, the biome told to
+ * have begun 4096 logical units before the scroll started
+ * When the change of the level is encoded and decoded
+ * Then the LevelStatus holds that negative position: the status of such a
+ * level is sent, and a client draws the biome without its entrance
+ */
+TEST(EventMessagesTest, EncodesTheBiomeALevelOpensIn) {
+  const EventMessage message =
+      eventMessageOf(game::LevelChange{.biome = std::string{LEVEL_BIOME},
+                                       .scrollPosition = LEVEL_SCROLL_POSITION,
+                                       .scrollSpeed = PAUSED_LEVEL_SCROLL_SPEED,
+                                       .biomeSince = OPENING_BIOME_BEGAN_AT,
+                                       .transitionLeft = 0,
+                                       .band = LEVEL_BAND});
+
+  EXPECT_FLOAT_EQ(
+      network::decodeMessage<network::LevelStatus>(message.message.payload)
+          .biomeSince,
+      OPENING_BIOME_BEGAN_AT);
+}
+
 }  // namespace rtype::server::testing

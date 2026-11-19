@@ -20,9 +20,19 @@ namespace rtype::network {
 namespace {
 
 /** @brief Refuses @p value, the field @p field of a scroll, when it is not a
+ * finite number; the exception holds its bits. */
+void requireFiniteValue(std::string_view field, float value) {
+  if (!std::isfinite(value)) {
+    throw InvalidFieldValueException(field,
+                                     std::bit_cast<std::uint32_t>(value));
+  }
+}
+
+/** @brief Refuses @p value, the field @p field of a scroll, when it is not a
  * finite number from 0; the exception holds its bits. */
 void requireScrollValue(std::string_view field, float value) {
-  if (!std::isfinite(value) || value < 0.0F) {
+  requireFiniteValue(field, value);
+  if (value < 0.0F) {
     throw InvalidFieldValueException(field,
                                      std::bit_cast<std::uint32_t>(value));
   }
@@ -34,7 +44,7 @@ void validate(const LevelStatus& message) {
   }
   requireScrollValue(SCROLL_POSITION_FIELD, message.scrollPosition);
   requireScrollValue(SCROLL_SPEED_FIELD, message.scrollSpeed);
-  requireScrollValue(BIOME_SINCE_FIELD, message.biomeSince);
+  requireFiniteValue(BIOME_SINCE_FIELD, message.biomeSince);
   if (message.bandTop >= message.bandBottom) {
     throw InvalidFieldValueException(BAND_FIELD, message.bandTop);
   }

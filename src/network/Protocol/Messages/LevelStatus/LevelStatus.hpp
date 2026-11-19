@@ -21,11 +21,12 @@ namespace rtype::network {
  * The biome is empty before the level names one, otherwise a biome name (see
  * identifiers::isBiomeName()). The scroll position, in logical units, the
  * scroll speed, in logical units per second, 0 while the scroll is paused,
- * and the position of the scroll when the biome began, where its decor starts
- * sliding in, are finite and never negative. The time left of the transition
- * the level plays between two of its parts, in milliseconds, is 0 when it
- * plays none: its players are held while it lasts, and a client plays the
- * cinematic of the transition from it. The band is the rows the ships fly
+ * are finite and never negative; the position of the scroll when the biome
+ * began, where its decor starts sliding in, is finite, and negative for a
+ * biome a level opens in, which began before its scroll. The time left of the
+ * transition the level plays between two of its parts, in milliseconds, is 0
+ * when it plays none: its players are held while it lasts, and a client plays
+ * the cinematic of the transition from it. The band is the rows the ships fly
  * between in that biome, in logical units from the top of the playfield: its
  * top lies above its bottom, and a bottom of OPEN_BAND_BOTTOM closes nothing,
  * the ships flying down to the bottom of the play area.

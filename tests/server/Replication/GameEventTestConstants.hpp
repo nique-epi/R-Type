@@ -59,4 +59,8 @@ constexpr game::PlayBand LEVEL_BAND{.top = 192.0F, .bottom = 848.0F};
 constexpr std::uint16_t WIRE_LEVEL_BAND_TOP = 192;
 constexpr std::uint16_t WIRE_LEVEL_BAND_BOTTOM = 848;
 
+/** @brief Where the scroll stood when the biome a level opens in began: 4096
+ * logical units before its start. */
+constexpr float OPENING_BIOME_BEGAN_AT = -4096.0F;
+
 }  // namespace rtype::server::testing
