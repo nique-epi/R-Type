@@ -1,6 +1,5 @@
 #include <gtest/gtest.h>
 #include <cstddef>
-#include <cstdint>
 #include <string>
 #include <vector>
 #include "ByteSequence.hpp"
@@ -29,7 +28,6 @@ using testing::lobbyPlayer;
 using testing::ONE_BYTE_NICKNAME;
 using testing::PLAYER_NUMBER_ABOVE_THE_LAST;
 using testing::SECOND_MAP;
-using testing::SIXTEEN_BYTE_NICKNAME;
 using testing::SOME_SCORE_OF_DISTINCT_BYTES;
 
 /**
@@ -530,11 +528,13 @@ TEST(GameEnded, RefusesAnOutcomeOutsideOneAndTwo) {
 }
 
 /**
- * Given the end of a game whose outcome is not one of the two
+ * Given the end of a game whose outcome is not one of the two, cast from 0
+ * on purpose, which the static analyzer reports
  * When it is encoded
  * Then an InvalidFieldValueException is raised and nothing is written
  */
 TEST(GameEnded, RefusesToWriteAnUnknownOutcome) {
+  // NOLINTNEXTLINE(clang-analyzer-optin.core.EnumCastOutOfRange)
   const GameEnded ended{.outcome = static_cast<WireGameOutcome>(0),
                         .players = {}};
 

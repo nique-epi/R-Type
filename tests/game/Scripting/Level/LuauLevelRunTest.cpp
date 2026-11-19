@@ -9,6 +9,7 @@
 #include "LdtkPlacementFixtures.hpp"
 #include "LdtkPlacementTestConstants.hpp"
 #include "LevelCheckpoint.hpp"
+#include "LevelTransition.hpp"
 #include "LuauLevelConstants.hpp"
 #include "LuauLevelRunFixture.hpp"
 #include "LuauLevelRunState.hpp"

@@ -10,7 +10,6 @@
 #include <string_view>
 #include <utility>
 #include <vector>
-#include "BackgroundConstants.hpp"
 #include "CollisionBox.hpp"
 #include "CollisionConstants.hpp"
 #include "EntityAppearance.hpp"
@@ -20,6 +19,7 @@
 #include "EntitySheetConstants.hpp"
 #include "EntityTypesTestConstants.hpp"
 #include "HurtBox.hpp"
+#include "PixelGridConstants.hpp"
 #include "PixelMask.hpp"
 #include "SheetPixels.hpp"
 #include "SheetTextFixtures.hpp"

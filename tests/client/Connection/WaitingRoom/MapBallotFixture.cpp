@@ -8,6 +8,7 @@
 #include "MapVote.hpp"
 #include "MessagePayload.hpp"
 #include "MessageType.hpp"
+#include "ProtocolConstants.hpp"
 #include "RecordingWaitingRoom.hpp"
 #include "SentToServer.hpp"
 

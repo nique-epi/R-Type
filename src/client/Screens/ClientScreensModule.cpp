@@ -25,6 +25,7 @@
 #include "IDeviceLinkFlow.hpp"
 #include "IEntityTypeTable.hpp"
 #include "IGameCatalog.hpp"
+#include "IMapBallot.hpp"
 #include "IServerCatalog.hpp"
 #include "IServerTicks.hpp"
 #include "ISessionBackgrounds.hpp"

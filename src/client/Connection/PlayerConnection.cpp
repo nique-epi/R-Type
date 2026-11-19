@@ -7,6 +7,7 @@
 #include "Endpoint.hpp"
 #include "EntityAppearances.hpp"
 #include "IEntityTypeTable.hpp"
+#include "IMapBallot.hpp"
 #include "IOwnRoundTrip.hpp"
 #include "IPlayerRoundTrips.hpp"
 #include "IServerPingProbe.hpp"

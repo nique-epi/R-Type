@@ -5,7 +5,6 @@
 #include "BossPresentationTestConstants.hpp"
 #include "EffectTestConstants.hpp"
 #include "Entity.hpp"
-#include "EntityAppearance.hpp"
 #include "NetworkIdentity.hpp"
 #include "RecordingAudioService.hpp"
 #include "RecordingSoundPlayer.hpp"

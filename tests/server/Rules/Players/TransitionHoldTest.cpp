@@ -35,7 +35,8 @@ using rtype::server::testing::WHERE_THE_SHIP_FLEW;
  * Then it wants nothing: it neither moves nor fires
  */
 TEST_F(PlayerControllerFixture, AHeldShipWantsNothing) {
-  ConnectedPlayer& player = addPlayerWithShip(FIRST_PLAYER, SESSION_TOKEN);
+  const ConnectedPlayer& player =
+      addPlayerWithShip(FIRST_PLAYER, SESSION_TOKEN);
   steerShipByInput(world(), player,
                    inputHolding(HOLDS_UP | HOLDS_SHOOT, ANY_INPUT_NUMBER));
 

@@ -14,13 +14,16 @@ namespace rtype::client {
 
 namespace {
 
-/** @returns Whether the line of the player numbered @p number in @p players
- * shows the vote @p map. */
-bool roomShowsVote(std::span<const network::LobbyPlayer> players,
-                   std::uint8_t number, std::uint8_t map) {
+/** @returns The vote the line of the player numbered @p number in @p players
+ * shows; nothing when the room does not list that player. */
+std::optional<std::uint8_t> shownVoteOf(
+    std::span<const network::LobbyPlayer> players, std::uint8_t number) {
   const auto own =
       std::ranges::find(players, number, &network::LobbyPlayer::playerNumber);
-  return own != players.end() && own->mapVote == map;
+  if (own == players.end()) {
+    return std::nullopt;
+  }
+  return own->mapVote;
 }
 
 }  // namespace
@@ -55,7 +58,7 @@ void MapBallot::sessionClosed() {
 void MapBallot::sessionHeld(engine::Duration elapsed) {
   if (outbox_ == nullptr || !requestedMap_.has_value() ||
       room_->gameStarted() ||
-      roomShowsVote(room_->lobbyPlayers(), ownPlayerNumber_, *requestedMap_)) {
+      shownVoteOf(room_->lobbyPlayers(), ownPlayerNumber_) == requestedMap_) {
     return;
   }
   sinceVote_ += elapsed;

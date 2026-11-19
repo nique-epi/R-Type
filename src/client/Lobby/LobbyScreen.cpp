@@ -44,6 +44,7 @@
 #include "PilotColor.hpp"
 #include "PlayerLooks.hpp"
 #include "PlayfieldMapping.hpp"
+#include "ProtocolConstants.hpp"
 #include "ScreenConstants.hpp"
 #include "ScreenId.hpp"
 #include "ShipLook.hpp"

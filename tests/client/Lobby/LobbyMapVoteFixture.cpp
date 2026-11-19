@@ -3,6 +3,7 @@
 #include <SFML/Window/Keyboard.hpp>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -19,6 +20,7 @@
 #include "PointerEvents.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "ScreenTestConstants.hpp"
+#include "WidgetConstants.hpp"
 
 using rtype::client::ConnectionPhase;
 using rtype::client::LobbyPlace;

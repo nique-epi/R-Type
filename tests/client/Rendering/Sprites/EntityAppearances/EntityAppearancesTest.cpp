@@ -7,7 +7,6 @@
 #include <utility>
 #include <vector>
 #include "ActionAnimation.hpp"
-#include "BackgroundConstants.hpp"
 #include "EngineException.hpp"
 #include "EntityAppearance.hpp"
 #include "EntityAppearances.hpp"
@@ -19,6 +18,7 @@
 #include "EntityTypesTestConstants.hpp"
 #include "HurtBox.hpp"
 #include "HurtZone.hpp"
+#include "PixelGridConstants.hpp"
 #include "SheetPixels.hpp"
 #include "ShippedEntitySheets.hpp"
 #include "SpriteFrame.hpp"

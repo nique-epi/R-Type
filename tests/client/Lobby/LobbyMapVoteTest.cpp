@@ -1,6 +1,5 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include <string>
 #include <vector>
 #include "LobbyMapVoteFixture.hpp"
 #include "LobbyScreenTestConstants.hpp"
@@ -8,7 +7,6 @@
 #include "ProtocolConstants.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 
-using rtype::client::testing::FIRST_MAP_BAR;
 using rtype::client::testing::FIRST_MAP_NUMBER;
 using rtype::client::testing::FIRST_VOTED_MAP;
 using rtype::client::testing::MAP_BAR_MIDDLE;
