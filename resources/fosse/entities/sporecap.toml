@@ -60,6 +60,8 @@ spacing = 2
 frame_ms = 100
 playback = "loop"
 afterwards = "stay"
+anchor_x = -1
+anchor_y = -1
 
 # Strike: it squashes and puffs spores out of its cap.
 [appearance.attack_0.strike]
@@ -72,7 +74,7 @@ spacing = 2
 frame_ms = 90
 playback = "once"
 afterwards = "idle"
-anchor_y = -4
+anchor_y = -5
 
 # Recover: it settles back.
 [appearance.attack_0.recover]

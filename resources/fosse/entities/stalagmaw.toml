@@ -66,7 +66,7 @@ spacing = 2
 frame_ms = 60
 playback = "loop"
 afterwards = "stay"
-anchor_y = -4
+anchor_y = -2
 
 # The death, centered on the body; the row under it is the same death without
 # flash.
