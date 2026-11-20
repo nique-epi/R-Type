@@ -1,6 +1,6 @@
 #pragma once
 
-#include "SpriteFrame.hpp"
+#include <SFML/Graphics/Rect.hpp>
 
 namespace rtype::client {
 
@@ -10,7 +10,7 @@ struct EntranceView {
   /** @brief The picture of the front, its doors closed or open. */
   const char* front{};
   /** @brief The frame of the butler on his sheet. */
-  game::SpriteFrame butler{};
+  sf::IntRect butler;
 };
 
 }  // namespace rtype::client

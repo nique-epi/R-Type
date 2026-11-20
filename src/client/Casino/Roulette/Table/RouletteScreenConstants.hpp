@@ -32,12 +32,7 @@ constexpr engine::Duration CROUPIER_INVITE_AFTER =
     std::chrono::milliseconds(2000);
 constexpr sf::Vector2i CROUPIER_TOP_LEFT(222, 6);
 constexpr int CROUPIER_HEIGHT = 76;
-constexpr sf::IntRect CROUPIER_INVITING_FRAME({2 * BUTLER_FRAME_SIZE.x,
-                                               BUTLER_FRAME_SIZE.y},
-                                              {BUTLER_FRAME_SIZE.x,
-                                               CROUPIER_HEIGHT});
-constexpr sf::IntRect CROUPIER_WAITING_FRAME({0, 0}, {BUTLER_FRAME_SIZE.x,
-                                                      CROUPIER_HEIGHT});
+constexpr int CROUPIER_HELD_GREETING_FRAME = 2;
 
 /**
  * @brief The plaque under the croupier while the bets are open: SPIN IN and

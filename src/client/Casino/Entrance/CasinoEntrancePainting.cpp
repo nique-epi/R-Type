@@ -4,7 +4,6 @@
 #include "CasinoPainting.hpp"
 #include "CasinoPaintingConstants.hpp"
 #include "CasinoSpriteConstants.hpp"
-#include "EntitySprites.hpp"
 #include "EntranceView.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "ImagePlacement.hpp"
@@ -36,10 +35,9 @@ void paintFront(IInterfaceCanvas& canvas, const EntranceView& view) {
 }
 
 void paintGreeter(IInterfaceCanvas& canvas, const EntranceView& view) {
-  canvas.drawImage(TextureArea{.assetId = BUTLER_SHEET_ID,
-                               .rectangle = rectangleOf(view.butler)},
-                   ImagePlacement{.topLeft = CASINO_BUTLER_TOP_LEFT},
-                   INTERFACE_AREA);
+  canvas.drawImage(
+      TextureArea{.assetId = BUTLER_SHEET_ID, .rectangle = view.butler},
+      ImagePlacement{.topLeft = CASINO_BUTLER_TOP_LEFT}, INTERFACE_AREA);
   paintButlerPanel(canvas);
 }
 

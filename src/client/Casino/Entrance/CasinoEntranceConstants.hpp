@@ -22,14 +22,13 @@ constexpr sf::Vector2i CASINO_BUTLER_TOP_LEFT(396, 176);
 /**
  * @brief How the butler moves: an idle frame every BUTLER_IDLE_FRAME_TIME,
  * round and round; while the doors open, the four frames of his greeting then
- * the four of his bow, each OPENING_FRAME_TIME. The doors stay closed during
- * the greeting and open with the bow, and the hall opens once the bow
+ * the four of his bow, each BUTLER_GESTURE_FRAME_TIME. The doors stay closed
+ * during the greeting and open with the bow, and the hall opens once the bow
  * ended.
  */
-constexpr engine::Duration OPENING_FRAME_TIME = BUTLER_GESTURE_FRAME_TIME;
 constexpr int OPENING_POSE_COUNT = 2;
 constexpr engine::Duration DOORS_OPEN_AFTER =
-    OPENING_FRAME_TIME * BUTLER_FRAMES_PER_POSE;
+    BUTLER_GESTURE_FRAME_TIME * BUTLER_FRAMES_PER_POSE;
 constexpr engine::Duration OPENING_DURATION =
     DOORS_OPEN_AFTER * OPENING_POSE_COUNT;
 

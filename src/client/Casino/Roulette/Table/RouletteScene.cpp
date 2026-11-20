@@ -6,6 +6,7 @@
 #include <optional>
 #include <string>
 #include <vector>
+#include "ButlerFrames.hpp"
 #include "ButlerPose.hpp"
 #include "CasinoPlayer.hpp"
 #include "CasinoSpriteConstants.hpp"
@@ -115,42 +116,38 @@ std::string roomNameOf(const RouletteReading& reading) {
   return name;
 }
 
-/** @returns The frame @p frame of @p row of the sheet of the butler, cut at
- * CROUPIER_HEIGHT. */
-sf::IntRect croupierFrame(int row, int frame) {
-  return {{frame * BUTLER_FRAME_SIZE.x, row * BUTLER_FRAME_SIZE.y},
-          {BUTLER_FRAME_SIZE.x, CROUPIER_HEIGHT}};
+/** @returns @p frame of the sheet of the butler, cut at CROUPIER_HEIGHT. */
+sf::IntRect croupierCut(sf::IntRect frame) {
+  return {frame.position, {frame.size.x, CROUPIER_HEIGHT}};
 }
 
 /** @returns The frame of the croupier at the time of the master of
  * @p reading: idle, round and round, and, while the bets are open, his
- * greeting at the end of each CROUPIER_INVITE_CYCLE; the frames of less
- * motion, or before the first state of the room, held still. */
+ * greeting at the end of each CROUPIER_INVITE_CYCLE; with less motion, or
+ * before the first state of the room, a frame of his greeting held while the
+ * bets are open, his first idle frame otherwise. */
 sf::IntRect croupierFrameOf(const RouletteReading& reading) {
   if (reading.motion == MotionPreference::Reduced ||
       !reading.room.has_value()) {
-    return betsOpen(reading) ? CROUPIER_INVITING_FRAME : CROUPIER_WAITING_FRAME;
+    return croupierCut(
+        betsOpen(reading)
+            ? butlerFrameOf(ButlerPose::Greeting, CROUPIER_HELD_GREETING_FRAME)
+            : butlerFrameOf(ButlerPose::Idle, 0));
   }
   const engine::Duration now = reading.room->serverTime.time_since_epoch();
   const engine::Duration intoInvite = now % CROUPIER_INVITE_CYCLE;
   if (betsOpen(reading) && intoInvite >= CROUPIER_INVITE_AFTER) {
-    const auto frame =
-        (intoInvite - CROUPIER_INVITE_AFTER) / BUTLER_GESTURE_FRAME_TIME;
-    return croupierFrame(static_cast<int>(ButlerPose::Greeting),
-                         static_cast<int>(std::min<engine::Duration::rep>(
-                             frame, BUTLER_FRAMES_PER_POSE - 1)));
+    return croupierCut(gestureButlerFrameAt(
+        ButlerPose::Greeting, intoInvite - CROUPIER_INVITE_AFTER));
   }
-  return croupierFrame(static_cast<int>(ButlerPose::Idle),
-                       static_cast<int>((now / BUTLER_IDLE_FRAME_TIME) %
-                                        BUTLER_FRAMES_PER_POSE));
+  return croupierCut(idleButlerFrameAt(now));
 }
 
 /** @returns The plaque under the croupier while the bets of @p reading are
  * open: the seconds begun before the spin, the bar drained over
  * SPIN_COUNTDOWN_SPAN; nothing once they closed. */
 std::optional<SpinCountdown> countdownOf(const RouletteReading& reading) {
-  if (!reading.room.has_value() ||
-      reading.room->phase != RoulettePhase::Betting) {
+  if (!betsOpen(reading)) {
     return std::nullopt;
   }
   const engine::Duration left = phaseTimeLeft(reading);
@@ -171,6 +168,7 @@ std::vector<OtherPlayerBets> othersBetsOf(const RouletteReading& reading) {
     return others;
   }
   const std::vector<CasinoPlayer>& players = reading.room->players;
+  others.reserve(players.size());
   for (std::size_t place = 0; place < players.size(); ++place) {
     const CasinoPlayer& player = players.at(place);
     if (player.nickname == reading.ownNickname || player.bets.empty()) {

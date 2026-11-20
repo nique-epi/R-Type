@@ -1,5 +1,6 @@
 add_library(rtype_client_casino_painting STATIC
   BulbChase.cpp
+  ButlerFrames.cpp
   CasinoBarChip.cpp
   CasinoLighting.cpp
   CasinoPainting.cpp

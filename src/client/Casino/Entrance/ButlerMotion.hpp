@@ -1,16 +1,11 @@
 #pragma once
 
-#include "ButlerPose.hpp"
+#include <SFML/Graphics/Rect.hpp>
 #include "EntranceStage.hpp"
 #include "MotionPreference.hpp"
-#include "SpriteFrame.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
-
-/** @returns Frame @p frame, 0 to BUTLER_FRAMES_PER_POSE - 1, of @p pose on the
- * sheet of the butler. */
-[[nodiscard]] game::SpriteFrame butlerFrameOf(ButlerPose pose, int frame);
 
 /**
  * @returns The frame of the butler @p since the casino reached @p stage:
@@ -19,9 +14,9 @@ namespace rtype::client {
  * OPENING_DURATION. With MotionPreference::Reduced, his first idle frame
  * whatever the time.
  */
-[[nodiscard]] game::SpriteFrame butlerFrameAt(EntranceStage stage,
-                                              engine::Duration since,
-                                              MotionPreference motion);
+[[nodiscard]] sf::IntRect butlerFrameAt(EntranceStage stage,
+                                        engine::Duration since,
+                                        MotionPreference motion);
 
 /** @returns The picture of the front of the casino @p since it reached
  * @p stage: the doors closed before them and during the greeting, open from
