@@ -28,12 +28,12 @@ offset_y = 24
 kind = "steady"
 top_speed = 900
 
-# She climbs to y 620 over 2 s, rests 1 s between two attacks, 0.45 s
+# She climbs out of the rubble at y 620 over 1.8 s, rests 1 s between two attacks, 0.45 s
 # once enraged, spreads her wings 1.5 s as she enrages, and her brood
 # holds 5 mites, 8 enraged.
 [gameplay.behaviour]
 rest_y = 620
-rise_ms = 2000
+rise_ms = 1800
 rest_ms = 1000
 enraged_rest_ms = 450
 rage_ms = 1500
@@ -198,15 +198,17 @@ frame_ms = 180
 playback = "once"
 afterwards = "idle"
 
+# Arrival: she climbs out of the rubble of the silo, slowing to a stop;
+# the mound shows first, every row under its top cut.
 [appearance.attack_3.signal]
 left = 0
-top = 1540
+top = 2288
 width = 146
 height = 138
-frames = 2
+frames = 18
 spacing = 2
-frame_ms = 120
-playback = "loop"
+frame_ms = 100
+playback = "hold"
 afterwards = "stay"
 
 [appearance.attack_3.strike]

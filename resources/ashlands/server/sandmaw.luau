@@ -3,8 +3,10 @@
 -- and what its maw moves: the clods it inhales (sand_debris) and the boulders
 -- it spits (sandmaw_boulder). Its sheet is entities/sandmaw.toml.
 --
--- It climbs out of the floor at the right edge (its arrival) and stays there,
--- planted on its dune, its maw at floor level facing the ships. Then it opens
+-- It waits below the screen through its warning, then appears where it
+-- rests by the right edge and comes up out of its dune (its arrival, whose
+-- frames are cut at the top of the dune), and stays there, its maw at floor
+-- level facing the ships. Then it opens
 -- its maw (the signal of attack 0) and either inhales, a stream of clods
 -- flying from the left edge into its maw, which the ships dodge or shoot, or
 -- spits boulders along an arc, and a Dunecrawler every second spit; then it
@@ -14,7 +16,6 @@
 -- inhales a thicker stream, spits more, and picks either at random.
 
 local STILL = { x = 0, y = 0 }
-local UP = { x = 0, y = -1 }
 
 local MAW_ATTACK, RAGE, ARRIVAL = 0, 1, 2
 
@@ -83,10 +84,9 @@ behaviours.register("sandmaw_maw", {
 		return false
 	end)
 
-	local climb = math.max(1, (e.position.y - settings.rest_y) * 1000 / settings.rise_ms)
 	behaviours.wait(settings.rise_ms, {
-		direction = UP,
-		top_speed = climb,
+		direction = STILL,
+		jumps_to = { x = e.position.x, y = settings.rest_y },
 		starts_action = { attack = ARRIVAL, phase = "signal" },
 	})
 	e = behaviours.wait(1, { direction = STILL, ends_action = true })

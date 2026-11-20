@@ -4,8 +4,9 @@
 -- Atomic breath and the brood mites of her egg sac. Her sheet is
 -- entities/ash_mother.toml.
 --
--- She climbs out of the rubble of the silo (her arrival, during which no hit
--- counts), then plays in place her three attacks, each in three beats: the
+-- She waits below the screen through her warning, then appears where she
+-- rests and climbs out of the rubble of the silo (her arrival, whose first
+-- frames are cut at the top of the mound, and during which no hit counts), then plays in place her three attacks, each in three beats: the
 -- Scythes slam across the lower front, the Atomic breath charges then burns
 -- her row, the Brood pours mites towards the ships. The armour of her head and
 -- thorax stops every missile: her maw takes damage only while it opens, from
@@ -19,7 +20,6 @@
 -- silo.
 
 local STILL = { x = 0, y = 0 }
-local UP = { x = 0, y = -1 }
 
 local SCYTHES, BREATH, BROOD, ARRIVAL, RAGE = 0, 1, 2, 3, 4
 
@@ -84,10 +84,9 @@ behaviours.register("ash_mother_brood", {
 		return false
 	end)
 
-	local climb = math.max(1, (e.position.y - settings.rest_y) * 1000 / settings.rise_ms)
 	behaviours.wait(settings.rise_ms, {
-		direction = UP,
-		top_speed = climb,
+		direction = STILL,
+		jumps_to = { x = e.position.x, y = settings.rest_y },
 		starts_action = { attack = ARRIVAL, phase = "signal" },
 	})
 	behaviours.wait(BEATS[ARRIVAL].strike, { direction = STILL, starts_action = { attack = ARRIVAL, phase = "strike" } })

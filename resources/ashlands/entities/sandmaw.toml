@@ -22,13 +22,13 @@ offset_y = -16
 kind = "steady"
 top_speed = 400
 
-# It climbs to y 820 over 1.5 s, rests 1.2 s between two attacks (0.6 s
+# It comes up out of its dune at y 820 over 1.4 s, rests 1.2 s between two attacks (0.6 s
 # enraged), opens its maw 0.9 s, inhales 2.4 s, letting a clod in every
 # 0.22 s (0.14 s enraged), spits 3 boulders (5 enraged) 0.15 s apart, and
 # closes its maw over 0.4 s.
 [gameplay.behaviour]
 rest_y = 820
-rise_ms = 1500
+rise_ms = 1400
 rest_ms = 1200
 enraged_rest_ms = 600
 open_ms = 900
@@ -109,3 +109,16 @@ height = 78
 frames = 6
 spacing = 2
 frame_ms = 70
+
+# Arrival: it comes up out of its dune, slowing to a stop; the dune shows
+# first, every row under its top cut.
+[appearance.attack_2.signal]
+left = 0
+top = 320
+width = 62
+height = 38
+frames = 14
+spacing = 2
+frame_ms = 100
+playback = "hold"
+afterwards = "stay"
