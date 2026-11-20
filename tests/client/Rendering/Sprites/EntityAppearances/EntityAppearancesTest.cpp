@@ -557,3 +557,18 @@ TEST(EntityAppearances, ReadsEverySheetOfTheFosseResource) {
     EXPECT_NE(appearances.named(name), nullptr);
   }
 }
+
+/**
+ * Given the sheets the resource ashlands brings: its mobs, its decor, its
+ * three bosses and the bodies of their attacks
+ * When a client reads their appearances, as it reads a content pack
+ * Then every one of them is read, so a client can play that pack
+ */
+TEST(EntityAppearances, ReadsEverySheetOfTheAshlandsResource) {
+  const EntityAppearances appearances = ashlandsAppearances();
+
+  for (const std::string_view name : ASHLANDS_SHEET_NAMES) {
+    SCOPED_TRACE(name);
+    EXPECT_NE(appearances.named(name), nullptr);
+  }
+}

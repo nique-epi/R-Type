@@ -1,0 +1,39 @@
+# The entity type billboard_wreck, brought by the resource ashlands:
+# the billboard fallen across the floor, crushing the mobs under it.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "player_missile"
+layer = "hazard_blast"
+hits = ["enemy"]
+pilot = "blast_life"
+
+[gameplay.hitbox]
+width = 240
+height = 120
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 1
+
+# It crushes for 0.4 s.
+[gameplay.behaviour]
+life_ms = 400
+
+[gameplay.damage]
+points = 6
+
+[appearance]
+sheet = "sprites/cendres/billboard_wreck.png"
+
+# Idle: the billboard fallen on its side across the floor.
+[appearance.idle]
+left = 0
+top = 0
+width = 30
+height = 34
+frames = 1
+spacing = 2
+frame_ms = 1000

@@ -1,0 +1,90 @@
+# The entity type live_cable, brought by the resource ashlands:
+# a torn cable hanging from the ceiling, arcing down on a cycle; its
+# sparks tell when.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy"
+layer = "hazard"
+hits = ["player"]
+pilot = "hazard_cycle"
+
+# Nothing collides with its body: only its hurt zone hurts.
+[gameplay.hitbox]
+width = 4
+height = 4
+offset_y = 1024
+
+[gameplay.motion]
+kind = "scroll"
+
+# It first arcs 0.4 s after it shows, then rests 1.5 s, sparks 0.6 s,
+# arcs 0.8 s and dies down 0.24 s.
+[gameplay.behaviour]
+first_ms = 400
+idle_ms = 1500
+signal_ms = 600
+strike_ms = 800
+recover_ms = 240
+
+[gameplay.survives_contact]
+
+# The arc hurts while it crackles.
+[[gameplay.hurt_zone.box]]
+offset_x = 0
+offset_y = 60
+width = 40
+height = 280
+attack = 0
+phase = "strike"
+
+[appearance]
+sheet = "sprites/cendres/live_cable.png"
+
+# Idle: the torn cable, dead for now.
+[appearance.idle]
+left = 0
+top = 0
+width = 14
+height = 100
+frames = 1
+spacing = 2
+frame_ms = 1000
+
+# Signal: sparks fly off its end.
+[appearance.attack_0.signal]
+left = 0
+top = 102
+width = 14
+height = 100
+frames = 2
+spacing = 2
+frame_ms = 90
+playback = "loop"
+afterwards = "stay"
+
+# Strike: an arc crackles down from its end.
+[appearance.attack_0.strike]
+left = 0
+top = 204
+width = 14
+height = 100
+frames = 3
+spacing = 2
+frame_ms = 60
+playback = "loop"
+afterwards = "stay"
+
+# Recover: the arc dies.
+[appearance.attack_0.recover]
+left = 0
+top = 306
+width = 14
+height = 100
+frames = 2
+spacing = 2
+frame_ms = 120
+playback = "once"
+afterwards = "idle"

@@ -1,0 +1,20 @@
+# The core, the third stage of the Ashlands: its coolant pipes, its
+# control room and the chamber of the Glowheart.
+# Three layers cut from the map of its LDtk project, written by
+# generator/procedural/; the background arrives through its nearest layer.
+
+[[layer]]
+name = "far plane"
+motion = { parallax = 0.25 }
+tiles = { project = "biomes/cendres_coeur/cendres_coeur.ldtk", layer = "Far", tileset = "biomes/cendres_coeur/cendres_coeur_far.png" }
+
+[[layer]]
+name = "middle plane"
+motion = { parallax = 0.5 }
+tiles = { project = "biomes/cendres_coeur/cendres_coeur.ldtk", layer = "Mid", tileset = "biomes/cendres_coeur/cendres_coeur_mid.png" }
+
+[[layer]]
+name = "near plane"
+motion = { parallax = 1 }
+entrance = true
+tiles = { project = "biomes/cendres_coeur/cendres_coeur.ldtk", layer = "Near", tileset = "biomes/cendres_coeur/cendres_coeur_near.png" }

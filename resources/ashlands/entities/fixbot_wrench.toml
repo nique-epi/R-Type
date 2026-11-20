@@ -1,0 +1,36 @@
+# The entity type fixbot_wrench, brought by the resource ashlands:
+# a wrench the Fixbot throws, spinning along an arc.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy_missile"
+layer = "enemy_missile"
+hits = ["player"]
+pilot = "thrown_wrench"
+
+[gameplay.hitbox]
+width = 44
+height = 44
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 460
+
+# It leaves rising at 90 % of its speed and has turned down after 0.9 s.
+[gameplay.behaviour]
+lift = 90
+fall_ms = 900
+
+[appearance]
+sheet = "sprites/cendres/fixbot_wrench.png"
+
+[appearance.idle]
+left = 0
+top = 0
+width = 11
+height = 11
+frames = 4
+spacing = 2
+frame_ms = 60

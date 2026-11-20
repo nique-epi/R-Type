@@ -32,6 +32,13 @@ constexpr std::string_view SPACE_LEVEL = "space";
 constexpr std::size_t STAGES_OF_THE_SPACE_LEVEL = 2;
 constexpr std::string_view SPACE_MAP = "OPEN SPACE";
 
+/** @brief The level of the resource ashlands the repository ships: four
+ * stages, Highway Zero, Shelter 9, the core and Silo Zero, as one map. */
+constexpr std::string_view ASHLANDS_RESOURCE = "ashlands";
+constexpr std::string_view ASHLANDS_LEVEL = "ashlands";
+constexpr std::size_t STAGES_OF_THE_ASHLANDS_LEVEL = 4;
+constexpr std::string_view ASHLANDS_MAP = "THE ASHLANDS";
+
 /** @brief A script that registers a level as the map THE CAVES, and that
  * name. */
 constexpr std::string_view REGISTERS_A_MAP = R"(

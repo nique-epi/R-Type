@@ -1,0 +1,241 @@
+# The entity type ash_mother, brought by the resource ashlands:
+# the queen of the cindermites, the final boss of the Ashlands, steered by
+# server/ash_mother.luau.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy"
+layer = "enemy"
+hits = ["player"]
+pilot = "ash_mother_brood"
+
+# Her head and her body; only the rows of her open maw let a hit through.
+[[gameplay.hitbox.box]]
+width = 160
+height = 150
+offset_x = -122
+offset_y = 29
+
+[[gameplay.hitbox.box]]
+width = 330
+height = 240
+offset_x = 123
+offset_y = 24
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 900
+
+# She climbs to y 620 over 2 s, rests 1 s between two attacks, 0.45 s
+# once enraged, spreads her wings 1.5 s as she enrages, and her brood
+# holds 5 mites, 8 enraged.
+[gameplay.behaviour]
+rest_y = 620
+rise_ms = 2000
+rest_ms = 1000
+enraged_rest_ms = 450
+rage_ms = 1500
+brood = 5
+enraged_brood = 8
+
+[gameplay.health]
+points = 100
+
+[gameplay.score]
+points = 20000
+
+[gameplay.boss]
+rage_below_percent = 40
+rage_attack = 4
+arrival_attack = 3
+
+[gameplay.stays_outside]
+
+[gameplay.survives_contact]
+
+# The Scythes (attack 0) slam across the lower front as they land.
+[[gameplay.hurt_zone.box]]
+offset_x = -420
+offset_y = 140
+width = 640
+height = 300
+attack = 0
+phase = "strike"
+from_ms = 0
+until_ms = 240
+
+# The Atomic breath (attack 1) burns her row from her maw to the left edge.
+[[gameplay.hurt_zone.beam]]
+offset_x = -190
+offset_y = 64
+length = 1500
+thickness = 64
+from_deg = 0
+to_deg = 0
+attack = 1
+phase = "strike"
+
+[appearance]
+sheet = "sprites/cendres/ash_mother.png"
+boss_name = "THE ASH MOTHER"
+
+[appearance.idle]
+left = 0
+top = 0
+width = 146
+height = 138
+frames = 4
+spacing = 2
+frame_ms = 140
+
+[appearance.enraged_idle]
+left = 0
+top = 140
+width = 146
+height = 138
+frames = 4
+spacing = 2
+frame_ms = 90
+
+[appearance.attack_0.signal]
+left = 0
+top = 280
+width = 146
+height = 138
+frames = 2
+spacing = 2
+frame_ms = 120
+playback = "loop"
+afterwards = "stay"
+
+[appearance.attack_0.strike]
+left = 0
+top = 420
+width = 146
+height = 138
+frames = 3
+spacing = 2
+frame_ms = 80
+playback = "once"
+afterwards = "idle"
+
+[appearance.attack_0.recover]
+left = 0
+top = 560
+width = 146
+height = 138
+frames = 2
+spacing = 2
+frame_ms = 180
+playback = "once"
+afterwards = "idle"
+
+[appearance.attack_1.signal]
+left = 0
+top = 700
+width = 146
+height = 138
+frames = 2
+spacing = 2
+frame_ms = 120
+playback = "loop"
+afterwards = "stay"
+
+[appearance.attack_1.strike]
+left = 0
+top = 840
+width = 146
+height = 138
+frames = 3
+spacing = 2
+frame_ms = 80
+playback = "once"
+afterwards = "idle"
+
+[appearance.attack_1.recover]
+left = 0
+top = 980
+width = 146
+height = 138
+frames = 2
+spacing = 2
+frame_ms = 180
+playback = "once"
+afterwards = "idle"
+
+[appearance.attack_2.signal]
+left = 0
+top = 1120
+width = 146
+height = 138
+frames = 2
+spacing = 2
+frame_ms = 120
+playback = "loop"
+afterwards = "stay"
+
+[appearance.attack_2.strike]
+left = 0
+top = 1260
+width = 146
+height = 138
+frames = 3
+spacing = 2
+frame_ms = 80
+playback = "once"
+afterwards = "idle"
+
+[appearance.attack_2.recover]
+left = 0
+top = 1400
+width = 146
+height = 138
+frames = 2
+spacing = 2
+frame_ms = 180
+playback = "once"
+afterwards = "idle"
+
+[appearance.attack_3.signal]
+left = 0
+top = 1540
+width = 146
+height = 138
+frames = 2
+spacing = 2
+frame_ms = 120
+playback = "loop"
+afterwards = "stay"
+
+[appearance.attack_3.strike]
+left = 0
+top = 1680
+width = 146
+height = 138
+frames = 3
+spacing = 2
+frame_ms = 80
+playback = "once"
+afterwards = "idle"
+
+[appearance.attack_3.recover]
+left = 0
+top = 1820
+width = 146
+height = 138
+frames = 2
+spacing = 2
+frame_ms = 180
+playback = "once"
+afterwards = "idle"
+
+[appearance.death]
+left = 0
+top = 1960
+width = 162
+height = 162
+frames = 6
+spacing = 2
+frame_ms = 70

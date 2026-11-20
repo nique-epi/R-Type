@@ -1,0 +1,39 @@
+# The entity type toxic_barrel, brought by the resource ashlands:
+# a toxic barrel on the floor; shot, it blows up, hurts the mobs around
+# it and leaves a glowing puddle.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy"
+layer = "enemy"
+hits = ["player"]
+pilot = "breakable_watch"
+on_hit = "barrel_burst"
+
+[gameplay.hitbox]
+width = 56
+height = 72
+
+[gameplay.motion]
+kind = "scroll"
+
+[gameplay.health]
+points = 1
+
+[gameplay.score]
+points = 100
+
+[appearance]
+sheet = "sprites/cendres/toxic_barrel.png"
+
+# Idle: the ooze on its lid glows and dims.
+[appearance.idle]
+left = 0
+top = 0
+width = 14
+height = 18
+frames = 2
+spacing = 2
+frame_ms = 300

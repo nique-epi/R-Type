@@ -150,6 +150,11 @@ EntityAppearances fosseAppearances() {
                                        FOSSE_SHEETS_FROM_THE_ASSETS);
 }
 
+EntityAppearances ashlandsAppearances() {
+  return EntityAppearances::fromFolder(shippedAssetFolder() /
+                                       ASHLANDS_SHEETS_FROM_THE_ASSETS);
+}
+
 bool hurtsAllTheTime(const rtype::game::EntitySheet& sheet) {
   if (!sheet.hurtZone.has_value()) {
     return false;

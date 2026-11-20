@@ -1,0 +1,35 @@
+# The entity type rail_turret_shot, brought by the resource ashlands:
+# a shot of the Rail turret, falling.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy_missile"
+layer = "enemy_missile"
+hits = ["player"]
+pilot = "falling_shot"
+
+[gameplay.hitbox]
+width = 20
+height = 36
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 620
+
+# It drifts left by 10 % of its speed as it falls.
+[gameplay.behaviour]
+drift = 10
+
+[appearance]
+sheet = "sprites/cendres/rail_turret_shot.png"
+
+[appearance.idle]
+left = 0
+top = 0
+width = 5
+height = 9
+frames = 2
+spacing = 2
+frame_ms = 60

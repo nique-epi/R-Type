@@ -1,0 +1,100 @@
+# The entity type geiger_mine, brought by the resource ashlands:
+# a floating mine that ticks faster as a ship comes near, then bursts
+# in a ring of eight shards; shot early, it just pops.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy"
+layer = "enemy"
+hits = ["player"]
+pilot = "geiger_drift"
+
+[gameplay.hitbox]
+width = 104
+height = 104
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 80
+
+# It bobs 30 units every 1.4 s; a ship within 280 units makes it tick
+# 0.9 s, then burst.
+[gameplay.behaviour]
+trigger = 280
+bob = 30
+bob_ms = 1400
+signal_ms = 900
+strike_ms = 240
+
+[gameplay.health]
+points = 1
+
+[gameplay.score]
+points = 150
+
+# The ring of eight shards, 45 degrees apart, as the mine bursts.
+[[gameplay.volley]]
+attack = 0
+phase = "strike"
+body = "geiger_mine_shard"
+count = 8
+offset_x = 0
+offset_y = 0
+spread_deg = 315
+distance = 40
+
+[appearance]
+sheet = "sprites/cendres/geiger_mine.png"
+
+[appearance.idle]
+left = 0
+top = 0
+width = 26
+height = 26
+frames = 4
+spacing = 2
+frame_ms = 140
+
+[appearance.attack_0.signal]
+left = 0
+top = 28
+width = 26
+height = 26
+frames = 2
+spacing = 2
+frame_ms = 120
+playback = "loop"
+afterwards = "stay"
+
+[appearance.attack_0.strike]
+left = 0
+top = 56
+width = 26
+height = 26
+frames = 3
+spacing = 2
+frame_ms = 80
+playback = "once"
+afterwards = "idle"
+
+[appearance.attack_0.recover]
+left = 0
+top = 84
+width = 26
+height = 26
+frames = 2
+spacing = 2
+frame_ms = 180
+playback = "once"
+afterwards = "idle"
+
+[appearance.death]
+left = 0
+top = 112
+width = 42
+height = 42
+frames = 6
+spacing = 2
+frame_ms = 70

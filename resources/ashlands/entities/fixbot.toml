@@ -1,0 +1,89 @@
+# The entity type fixbot, brought by the resource ashlands:
+# the maintenance robot of the shelter, rolling left on the floor and
+# throwing wrenches forward along an arc.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy"
+layer = "enemy"
+hits = ["player"]
+pilot = "fixbot_roll"
+
+[gameplay.hitbox]
+width = 120
+height = 136
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 90
+
+# It throws a wrench at a ship ahead of it within 900 units, rested 1.8 s;
+# the beats match its animations.
+[gameplay.behaviour]
+reach = 900
+rest_ms = 1800
+signal_ms = 480
+strike_ms = 240
+recover_ms = 360
+
+[gameplay.health]
+points = 3
+
+[gameplay.score]
+points = 200
+
+[appearance]
+sheet = "sprites/cendres/fixbot.png"
+
+[appearance.idle]
+left = 0
+top = 0
+width = 30
+height = 34
+frames = 4
+spacing = 2
+frame_ms = 140
+
+[appearance.attack_0.signal]
+left = 0
+top = 36
+width = 30
+height = 34
+frames = 2
+spacing = 2
+frame_ms = 120
+playback = "loop"
+afterwards = "stay"
+
+[appearance.attack_0.strike]
+left = 0
+top = 72
+width = 30
+height = 34
+frames = 3
+spacing = 2
+frame_ms = 80
+playback = "once"
+afterwards = "idle"
+
+[appearance.attack_0.recover]
+left = 0
+top = 108
+width = 30
+height = 34
+frames = 2
+spacing = 2
+frame_ms = 180
+playback = "once"
+afterwards = "idle"
+
+[appearance.death]
+left = 0
+top = 144
+width = 50
+height = 50
+frames = 6
+spacing = 2
+frame_ms = 70

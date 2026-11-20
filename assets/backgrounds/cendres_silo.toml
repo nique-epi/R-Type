@@ -1,0 +1,20 @@
+# Silo Zero, the last stage of the Ashlands: the way down, the nest of the
+# Ash Mother and its depths.
+# Three layers cut from the map of its LDtk project, written by
+# generator/procedural/; the background arrives through its nearest layer.
+
+[[layer]]
+name = "far plane"
+motion = { parallax = 0.25 }
+tiles = { project = "biomes/cendres_silo/cendres_silo.ldtk", layer = "Far", tileset = "biomes/cendres_silo/cendres_silo_far.png" }
+
+[[layer]]
+name = "middle plane"
+motion = { parallax = 0.5 }
+tiles = { project = "biomes/cendres_silo/cendres_silo.ldtk", layer = "Mid", tileset = "biomes/cendres_silo/cendres_silo_mid.png" }
+
+[[layer]]
+name = "near plane"
+motion = { parallax = 1 }
+entrance = true
+tiles = { project = "biomes/cendres_silo/cendres_silo.ldtk", layer = "Near", tileset = "biomes/cendres_silo/cendres_silo_near.png" }

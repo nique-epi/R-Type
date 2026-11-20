@@ -283,3 +283,23 @@ TEST_F(ServerGamesFixture, StartsWithTheSheetsAndTheScriptsOfTheFosseResource) {
       .contentFolders = {std::filesystem::path{RTYPE_SOURCE_ASSETS_FOLDER},
                          resource}}));
 }
+
+/**
+ * Given the shipped assets and the resource ashlands, whose sheets name the
+ * behaviours and the hit handlers its scripts register (its mobs, its decor,
+ * the Sandmaw, the Glowheart, the Ash Mother and the bodies of their attacks)
+ * When the application starts with both
+ * Then the games start: every sheet holds together with its behaviour
+ */
+TEST_F(ServerGamesFixture,
+       StartsWithTheSheetsAndTheScriptsOfTheAshlandsResource) {
+  const std::filesystem::path resource =
+      std::filesystem::path{RTYPE_SOURCE_ASSETS_FOLDER} /
+      ASHLANDS_RESOURCE_FROM_THE_ASSETS;
+
+  EXPECT_NO_THROW(startWith(rtype::server::GamesSettings{
+      .seed = SOME_SEED,
+      .wavesFiles = shippedWaves().wavesFiles,
+      .contentFolders = {std::filesystem::path{RTYPE_SOURCE_ASSETS_FOLDER},
+                         resource}}));
+}

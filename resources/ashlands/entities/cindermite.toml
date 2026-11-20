@@ -1,0 +1,51 @@
+# The entity type cindermite, brought by the resource ashlands:
+# an irradiated fly that flutters left along a wave, in swarms.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy"
+layer = "enemy"
+hits = ["player"]
+pilot = "weave"
+
+[gameplay.hitbox]
+width = 72
+height = 64
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 220
+
+# It flutters 48 units around its row every 1.1 s.
+[gameplay.behaviour]
+amplitude = 48
+period_ms = 1100
+
+[gameplay.health]
+points = 1
+
+[gameplay.score]
+points = 50
+
+[appearance]
+sheet = "sprites/cendres/cindermite.png"
+
+[appearance.idle]
+left = 0
+top = 0
+width = 18
+height = 16
+frames = 4
+spacing = 2
+frame_ms = 60
+
+[appearance.death]
+left = 0
+top = 18
+width = 34
+height = 34
+frames = 6
+spacing = 2
+frame_ms = 70

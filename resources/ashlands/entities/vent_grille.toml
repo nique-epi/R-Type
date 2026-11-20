@@ -1,0 +1,43 @@
+# The entity type vent_grille, brought by the resource ashlands:
+# a ventilation grille that Cindermites pour out of until a missile
+# shuts it.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy"
+layer = "enemy"
+hits = ["player"]
+pilot = "vent_spawner"
+
+[gameplay.hitbox]
+width = 128
+height = 80
+
+[gameplay.motion]
+kind = "scroll"
+
+# Left of x 1800, it lets a Cindermite out every 1.4 s.
+[gameplay.behaviour]
+interval_ms = 1400
+spawn_from_x = 1800
+
+[gameplay.health]
+points = 4
+
+[gameplay.score]
+points = 300
+
+[appearance]
+sheet = "sprites/cendres/vent_grille.png"
+
+# Idle: the grille, cindermite specks drifting out of it.
+[appearance.idle]
+left = 0
+top = 0
+width = 32
+height = 20
+frames = 2
+spacing = 2
+frame_ms = 200

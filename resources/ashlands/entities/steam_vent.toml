@@ -1,0 +1,90 @@
+# The entity type steam_vent, brought by the resource ashlands:
+# a floor grate that jets steam on a cycle; during the fight of the
+# Glowheart, every vent purges at once.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy"
+layer = "hazard"
+hits = ["player"]
+pilot = "steam_vent_cycle"
+
+# Nothing collides with its body: only its hurt zone hurts.
+[gameplay.hitbox]
+width = 4
+height = 4
+offset_y = 1024
+
+[gameplay.motion]
+kind = "scroll"
+
+# It first jets 1 s after it shows, then rests 2.2 s, puffs 0.6 s,
+# jets 0.9 s and settles 0.24 s.
+[gameplay.behaviour]
+first_ms = 1000
+idle_ms = 2200
+signal_ms = 600
+strike_ms = 900
+recover_ms = 240
+
+[gameplay.survives_contact]
+
+# The jet hurts while it shoots up.
+[[gameplay.hurt_zone.box]]
+offset_x = 0
+offset_y = -14
+width = 48
+height = 372
+attack = 0
+phase = "strike"
+
+[appearance]
+sheet = "sprites/cendres/steam_vent.png"
+
+# Idle: the mouth at rest on the floor.
+[appearance.idle]
+left = 0
+top = 0
+width = 18
+height = 100
+frames = 1
+spacing = 2
+frame_ms = 1000
+
+# Signal: it bubbles before it spurts.
+[appearance.attack_0.signal]
+left = 0
+top = 102
+width = 18
+height = 100
+frames = 2
+spacing = 2
+frame_ms = 140
+playback = "loop"
+afterwards = "stay"
+
+# Strike: a jet of steam shoots up through the band.
+[appearance.attack_0.strike]
+left = 0
+top = 204
+width = 18
+height = 100
+frames = 3
+spacing = 2
+frame_ms = 90
+playback = "loop"
+afterwards = "stay"
+
+# Recover: the column falls back.
+[appearance.attack_0.recover]
+left = 0
+top = 306
+width = 18
+height = 100
+frames = 2
+spacing = 2
+frame_ms = 120
+playback = "once"
+afterwards = "idle"

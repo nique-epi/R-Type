@@ -1,0 +1,35 @@
+# The entity type dunecrawler_barb, brought by the resource ashlands:
+# the green barb of the Dunecrawler, flying up.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy_missile"
+layer = "enemy_missile"
+hits = ["player"]
+pilot = "rising_barb"
+
+[gameplay.hitbox]
+width = 40
+height = 28
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 640
+
+# It drifts left by 15 % of its speed as it rises.
+[gameplay.behaviour]
+drift = 15
+
+[appearance]
+sheet = "sprites/cendres/dunecrawler_barb.png"
+
+[appearance.idle]
+left = 0
+top = 0
+width = 10
+height = 7
+frames = 2
+spacing = 2
+frame_ms = 60

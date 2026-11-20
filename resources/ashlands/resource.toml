@@ -1,0 +1,9 @@
+# The resource ashlands: the map THE ASHLANDS a waiting room votes for, a level
+# of four stages across the burnt desert, Shelter 9, its core and Silo Zero,
+# with the mobs, the decor that does something and the three bosses it brings
+# (entities/, sprites/cendres/, server/). Its maps are the backgrounds cendres,
+# cendres_abri, cendres_coeur and cendres_silo of the assets. A server starts
+# it with the line `ensure ashlands` of its server.cfg; `set level ashlands`
+# plays it alone. The keys are described on the page "Write a resource" of the
+# docs.
+description = "The Ashlands: four stages across a burnt wasteland, a shelter, its reactor and the silo of the Ash Mother"

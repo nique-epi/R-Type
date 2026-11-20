@@ -173,7 +173,7 @@ TEST_F(BackgroundCatalogFixture, NamesItsBackgroundsInAlphabeticalOrder) {
 /**
  * Given the assets the repository ships
  * When the images of their backgrounds are asked for
- * Then they are nine, each once, the planet and the near walls among them
+ * Then they are 21, each once, the planet and the near walls among them
  */
 TEST(BackgroundCatalog, ListsEveryImageItsBackgroundsNameOnce) {
   const BackgroundCatalog catalog = shippedBackgrounds();
@@ -214,5 +214,26 @@ TEST(BackgroundCatalog, ReadsThePitTheRepositoryShips) {
   for (const LayerDescription& layer : pit->layers) {
     EXPECT_TRUE(std::holds_alternative<MapContent>(layer.content));
     EXPECT_EQ(layer.entrance, &layer == &pit->layers.back());
+  }
+}
+
+/**
+ * Given the assets the repository ships
+ * When their backgrounds are read
+ * Then each of the four biomes of the Ashlands is among them: three layers of
+ * tiles, entered through the last alone
+ */
+TEST(BackgroundCatalog, ReadsTheAshlandsTheRepositoryShips) {
+  const BackgroundCatalog catalog = shippedBackgrounds();
+
+  for (const std::string_view name : SHIPPED_ASHLANDS_NAMES) {
+    SCOPED_TRACE(name);
+    const BackgroundDescription* const biome = catalog.named(name);
+    ASSERT_NE(biome, nullptr);
+    ASSERT_EQ(biome->layers.size(), LAYERS_OF_AN_ASHLANDS_BIOME);
+    for (const LayerDescription& layer : biome->layers) {
+      EXPECT_TRUE(std::holds_alternative<MapContent>(layer.content));
+      EXPECT_EQ(layer.entrance, &layer == &biome->layers.back());
+    }
   }
 }

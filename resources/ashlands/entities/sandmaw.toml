@@ -1,0 +1,102 @@
+# The entity type sandmaw, brought by the resource ashlands:
+# the worm under the highway, the mini-boss of Highway Zero: it dives
+# into the dunes and bursts out under the ship it marked.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy"
+layer = "enemy"
+hits = ["player"]
+pilot = "sandmaw_hunt"
+
+[gameplay.hitbox]
+width = 248
+height = 152
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 900
+
+# It waits 0.9 s under the floor (0.45 s enraged), bulges 0.7 s under
+# the ship it marked, bursts up 520 units in 0.6 s, arcs over 0.5 s and
+# dives back in 0.7 s.
+[gameplay.behaviour]
+burrow_ms = 900
+enraged_burrow_ms = 450
+signal_ms = 700
+rise_ms = 600
+rise_height = 520
+recover_ms = 500
+dive_ms = 700
+
+[gameplay.health]
+points = 40
+
+[gameplay.score]
+points = 3000
+
+[gameplay.boss]
+rage_below_percent = 50
+rage_attack = 1
+arrival_attack = 2
+
+[gameplay.stays_outside]
+
+[gameplay.survives_contact]
+
+[appearance]
+sheet = "sprites/cendres/sandmaw.png"
+boss_name = "SANDMAW"
+
+[appearance.idle]
+left = 0
+top = 0
+width = 62
+height = 38
+frames = 4
+spacing = 2
+frame_ms = 140
+
+[appearance.attack_0.signal]
+left = 0
+top = 40
+width = 62
+height = 38
+frames = 2
+spacing = 2
+frame_ms = 120
+playback = "loop"
+afterwards = "stay"
+
+[appearance.attack_0.strike]
+left = 0
+top = 80
+width = 62
+height = 38
+frames = 3
+spacing = 2
+frame_ms = 80
+playback = "once"
+afterwards = "idle"
+
+[appearance.attack_0.recover]
+left = 0
+top = 120
+width = 62
+height = 38
+frames = 2
+spacing = 2
+frame_ms = 180
+playback = "once"
+afterwards = "idle"
+
+[appearance.death]
+left = 0
+top = 160
+width = 78
+height = 78
+frames = 6
+spacing = 2
+frame_ms = 70
