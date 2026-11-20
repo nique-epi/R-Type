@@ -12,8 +12,8 @@ hits = ["player"]
 pilot = "ash_mother_brood"
 
 # Her head, her thorax and abdomen down to where her legs begin, and her
-# spikes and wings; every hit on them counts while she does not strike. Her
-# legs have no box.
+# wings, spread or not; every hit on them counts while she does not strike.
+# Her legs have no box.
 [[gameplay.hitbox.box]]
 width = 160
 height = 150
@@ -27,10 +27,10 @@ offset_x = 123
 offset_y = 14
 
 [[gameplay.hitbox.box]]
-width = 292
-height = 144
-offset_x = 134
-offset_y = -168
+width = 260
+height = 172
+offset_x = 154
+offset_y = -182
 
 [gameplay.motion]
 kind = "steady"

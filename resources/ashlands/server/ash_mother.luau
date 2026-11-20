@@ -12,7 +12,7 @@
 -- Brood pours mites towards the ships, and the Fling throws eggs with her
 -- front legs at where the nearest ship was AIM_BEFORE_MS before the throw,
 -- spread around that point, along a low arc that never follows the ship. Her
--- head, thorax, abdomen, spikes and wings take damage wherever a missile
+-- head, thorax, abdomen and wings take damage wherever a missile
 -- touches them, except while she strikes; her legs have no box, so a missile
 -- flies through them. Below 40 % of her health she spreads her wings (attack
 -- 4): she rests less, and each brood and each fling holds more.
