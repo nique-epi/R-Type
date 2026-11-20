@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <memory>
 #include <optional>
+#include "AmbienceScope.hpp"
 #include "BetsReading.hpp"
 #include "CasinoRoomState.hpp"
 #include "ClothConstants.hpp"
@@ -26,6 +27,7 @@
 #include "RouletteReading.hpp"
 #include "RouletteScreenConstants.hpp"
 #include "RouletteScreenParts.hpp"
+#include "RoundSounds.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -93,7 +95,10 @@ class RouletteScreen final : public IScreen {
   void repaint(const RouletteReading& reading);
 
   IScreenNavigator* navigator_;
+  /** @brief Holds the music of the room for as long as it shows. */
+  AmbienceScope ambience_;
   ISoundPlayer* sounds_;
+  RoundSounds roundSounds_;
   ICasinoChannel* casino_;
   RouletteMemory* memory_;
   const IWallet* wallet_;

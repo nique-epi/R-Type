@@ -1,28 +1,12 @@
-add_library(rtype_client_casino_cashier STATIC
-  CashierAmount.cpp
-  CashierPainting.cpp
-  CashierRules.cpp
-  CashierScreen.cpp
-)
+add_subdirectory(Exchange)
+add_subdirectory(Room)
+add_subdirectory(Screen)
 
-target_include_directories(rtype_client_casino_cashier PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+add_library(rtype_client_casino_cashier INTERFACE)
 
 target_link_libraries(rtype_client_casino_cashier
-  PUBLIC
-    SFML::Graphics
-    SFML::Window
-    rtype_client_application
-    rtype_client_audio_contract_sounds
-    rtype_client_casino_painting
-    rtype_client_economy
-    rtype_client_interface
-    rtype_client_key_chip
-    rtype_client_screens_module
-    rtype_client_account_wallet
-    rtype_client_window_display
-    rtype_engine_time
-  PRIVATE
-    rtype_client_interface_pixel
+  INTERFACE
+    rtype_client_casino_cashier_exchange
+    rtype_client_casino_cashier_room
+    rtype_client_casino_cashier_screen
 )
-
-rtype_enable_warnings(rtype_client_casino_cashier)

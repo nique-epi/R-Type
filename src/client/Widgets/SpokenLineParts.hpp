@@ -28,6 +28,10 @@ struct SpokenLineParts {
   /** @brief Whether the line is written letter by letter, or the player
    * asked for less motion and it shows whole at once. */
   MotionPreference motion{};
+  /** @brief Whether a line stays once whole, until another is said, as in
+   * the panel of a character who keeps talking to the player; otherwise it
+   * goes SPOKEN_LINGER_TIME after. */
+  bool stays{};
 };
 
 }  // namespace rtype::client

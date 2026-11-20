@@ -91,7 +91,8 @@ SpokenLine::SpokenLine(const SpokenLineParts& parts)
       voice_(parts.voice),
       width_(parts.width),
       tail_(parts.tail),
-      motion_(parts.motion) {}
+      motion_(parts.motion),
+      stays_(parts.stays) {}
 
 void SpokenLine::say(std::string_view text) {
   next_.reset();
@@ -115,7 +116,8 @@ void SpokenLine::advance(engine::Duration elapsed) {
   SaidLine& said = *said_;
   said.saidFor += elapsed;
   voiceWordsShown(said);
-  if (said.saidFor < shownTimeOf(said, motion_)) {
+  if (said.saidFor < shownTimeOf(said, motion_) ||
+      (stays_ && !next_.has_value())) {
     return;
   }
   said_.reset();
@@ -142,6 +144,15 @@ void SpokenLine::paint(IInterfaceCanvas& canvas,
               {.topLeft = bubble.position + sf::Vector2i(SPOKEN_BUBBLE_PADDING,
                                                          SPOKEN_BUBBLE_PADDING),
                .letters = lettersShownOf(*said_, motion_)});
+}
+
+void SpokenLine::paintLetters(IInterfaceCanvas& canvas,
+                              sf::Vector2i topLeft) const {
+  if (said_.has_value()) {
+    paintSpeech(
+        canvas, said_->lines,
+        {.topLeft = topLeft, .letters = lettersShownOf(*said_, motion_)});
+  }
 }
 
 void SpokenLine::voiceWordsShown(SaidLine& said) {

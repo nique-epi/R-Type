@@ -1,12 +1,23 @@
 #include "RouletteScene.hpp"
+#include <SFML/Graphics/Color.hpp>
+#include <SFML/Graphics/Rect.hpp>
 #include <algorithm>
 #include <cctype>
+#include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <string>
 #include <vector>
+#include "BigWin.hpp"
+#include "ButlerFrames.hpp"
+#include "ButlerPose.hpp"
+#include "CasinoPlayer.hpp"
+#include "ChipStackLook.hpp"
 #include "ChipsAtHand.hpp"
 #include "ClothPlace.hpp"
+#include "DurationConversion.hpp"
+#include "MotionPreference.hpp"
+#include "OtherPlayerBets.hpp"
 #include "RouletteBand.hpp"
 #include "RouletteBarStates.hpp"
 #include "RoulettePhase.hpp"
@@ -15,6 +26,8 @@
 #include "RouletteScreenConstants.hpp"
 #include "RouletteTexts.hpp"
 #include "RouletteView.hpp"
+#include "SpinCountdown.hpp"
+#include "TimeConstants.hpp"
 #include "WheelMoment.hpp"
 #include "WheelMotion.hpp"
 #include "WheelPicture.hpp"
@@ -23,6 +36,7 @@ namespace rtype::client {
 
 namespace {
 
+using network::CasinoPlayer;
 using network::RoulettePhase;
 
 /** @returns Whether the room of @p reading takes bets. */
@@ -98,13 +112,110 @@ std::vector<std::uint8_t> lastNumbersOf(const RouletteReading& reading) {
  * panel writes it; empty without a room. */
 std::string roomNameOf(const RouletteReading& reading) {
   std::string name = reading.room.has_value() ? reading.room->name : "";
-  std::ranges::transform(name, name.begin(), [](char letter) {
+  std::ranges::transform(name, name.begin(), [](char letter) noexcept {
     return static_cast<char>(std::toupper(static_cast<unsigned char>(letter)));
   });
   return name;
 }
 
+/** @returns @p frame of the sheet of the butler, cut at CROUPIER_HEIGHT. */
+sf::IntRect croupierCut(sf::IntRect frame) {
+  return {frame.position, {frame.size.x, CROUPIER_HEIGHT}};
+}
+
+/** @returns The frame of the croupier at the time of the master of
+ * @p reading: idle, round and round, and, while the bets are open, his
+ * greeting at the end of each CROUPIER_INVITE_CYCLE; with less motion, or
+ * before the first state of the room, a frame of his greeting held while the
+ * bets are open, his first idle frame otherwise. */
+sf::IntRect croupierFrameOf(const RouletteReading& reading) {
+  if (reading.motion == MotionPreference::Reduced ||
+      !reading.room.has_value()) {
+    return croupierCut(
+        betsOpen(reading)
+            ? butlerFrameOf(ButlerPose::Greeting, CROUPIER_HELD_GREETING_FRAME)
+            : butlerFrameOf(ButlerPose::Idle, 0));
+  }
+  const engine::Duration now = reading.room->serverTime.time_since_epoch();
+  const engine::Duration intoInvite = now % CROUPIER_INVITE_CYCLE;
+  if (betsOpen(reading) && intoInvite >= CROUPIER_INVITE_AFTER) {
+    return croupierCut(gestureButlerFrameAt(
+        ButlerPose::Greeting, intoInvite - CROUPIER_INVITE_AFTER));
+  }
+  return croupierCut(idleButlerFrameAt(now));
+}
+
+/** @returns The plaque under the croupier while the bets of @p reading are
+ * open: the seconds begun before the spin, the bar drained over
+ * SPIN_COUNTDOWN_SPAN; nothing once they closed. */
+std::optional<SpinCountdown> countdownOf(const RouletteReading& reading) {
+  if (!betsOpen(reading)) {
+    return std::nullopt;
+  }
+  const engine::Duration left = phaseTimeLeft(reading);
+  const std::int64_t seconds = secondsBegunIn(left);
+  return SpinCountdown{
+      .seconds = seconds,
+      .share = std::min(1.0F, engine::inSeconds(left) /
+                                  engine::inSeconds(SPIN_COUNTDOWN_SPAN)),
+      .hurry = seconds <= SPIN_HURRY_SECONDS};
+}
+
+/** @returns The bets of every player seated in the room of @p reading but the
+ * player, each tinted in the color of its place, as the roster colors it,
+ * and moved aside by the next of OTHER_STACK_OFFSETS. */
+std::vector<OtherPlayerBets> othersBetsOf(const RouletteReading& reading) {
+  std::vector<OtherPlayerBets> others;
+  if (!reading.room.has_value()) {
+    return others;
+  }
+  const std::vector<CasinoPlayer>& players = reading.room->players;
+  others.reserve(players.size());
+  for (std::size_t place = 0; place < players.size(); ++place) {
+    const CasinoPlayer& player = players.at(place);
+    if (player.nickname == reading.ownNickname || player.bets.empty()) {
+      continue;
+    }
+    sf::Color tint = reading.palette.at(place % reading.palette.size()).ship;
+    tint.a = OTHER_STACK_ALPHA;
+    others.push_back(OtherPlayerBets{
+        .bets = player.bets,
+        .look = ChipStackLook{.offset = OTHER_STACK_OFFSETS.at(
+                                  others.size() % OTHER_STACK_OFFSETS.size()),
+                              .tint = tint}});
+  }
+  return others;
+}
+
+/** @returns The banner of the biggest win of the round of @p reading, for
+ * its first BIG_WIN_TIME of result; nothing after. */
+std::optional<BigWin> bigWinBannerOf(const RouletteReading& reading) {
+  if (!reading.room.has_value() ||
+      reading.room->serverTime - reading.room->resultAt >= BIG_WIN_TIME) {
+    return std::nullopt;
+  }
+  return bigWinOf(reading);
+}
+
 }  // namespace
+
+std::optional<BigWin> bigWinOf(const RouletteReading& reading) {
+  if (!reading.room.has_value() ||
+      reading.room->phase != RoulettePhase::Result) {
+    return std::nullopt;
+  }
+  std::optional<BigWin> biggest;
+  for (const CasinoPlayer& player : reading.room->players) {
+    const std::uint32_t payout = player.payout.value_or(0);
+    const std::uint32_t gain =
+        payout > player.stake ? payout - player.stake : 0;
+    if (gain >= BIG_WIN_GAIN &&
+        (!biggest.has_value() || gain > biggest->gain)) {
+      biggest = BigWin{.nickname = player.nickname, .gain = gain};
+    }
+  }
+  return biggest;
+}
 
 RouletteBarStates barStatesOf(const RouletteReading& reading) {
   const bool open = betsOpen(reading);
@@ -117,7 +228,9 @@ RouletteBarStates barStatesOf(const RouletteReading& reading) {
 
 RouletteView rouletteViewOf(const RouletteReading& reading) {
   return RouletteView{
-      .croupierInvites = betsOpen(reading),
+      .croupier = croupierFrameOf(reading),
+      .countdown = countdownOf(reading),
+      .others = othersBetsOf(reading),
       .wheel = wheelOf(reading),
       .bets = reading.bets,
       .cursor = betsOpen(reading) ? std::optional<ClothPlace>(reading.cursor)
@@ -126,6 +239,7 @@ RouletteView rouletteViewOf(const RouletteReading& reading) {
       .roomName = roomNameOf(reading),
       .roster = rosterRowsOf(reading),
       .lastNumbers = lastNumbersOf(reading),
+      .bigWin = bigWinBannerOf(reading),
       .band = RouletteBand{.chips = chipsShownOf(reading),
                            .stake = betsOpen(reading)
                                         ? static_cast<std::uint32_t>(

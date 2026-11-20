@@ -43,6 +43,7 @@ using rtype::client::testing::PAYOUT_OF_A_STRAIGHT;
 using rtype::client::testing::RESULT_IN_FIVE;
 using rtype::client::testing::resultRoom;
 using rtype::client::testing::ROTOR_TURNS_SHEET;
+using rtype::client::testing::SPIN_IN_TWELVE;
 using rtype::client::testing::SPIN_WORD;
 using rtype::client::testing::spinningRoom;
 using rtype::client::testing::THE_NEXT_ROUND;
@@ -413,4 +414,13 @@ TEST_F(RouletteScreenFixture, BackClosesTheTable) {
   EXPECT_THAT(navigator().calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::Pop,
                                         .screen = std::nullopt}));
+}
+
+/**
+ * Given a table just opened, its bets open twelve seconds before the spin
+ * When it is painted
+ * Then the plaque under the croupier counts the seconds before the spin
+ */
+TEST_F(RouletteScreenFixture, ThePlaqueCountsDownToTheSpin) {
+  EXPECT_NE(writingOf(canvas(), SPIN_IN_TWELVE), nullptr);
 }

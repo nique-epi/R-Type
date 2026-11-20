@@ -2,6 +2,7 @@
 
 #include <functional>
 #include "IAccountSession.hpp"
+#include "IAudioService.hpp"
 #include "ICasinoChannel.hpp"
 #include "IScreenNavigator.hpp"
 #include "ISoundPlayer.hpp"
@@ -27,6 +28,9 @@ struct RouletteScreenParts {
   std::reference_wrapper<IScreenNavigator> navigator;
   /** @brief Plays the clicks, which must outlive the screen. */
   std::reference_wrapper<ISoundPlayer> sounds;
+  /** @brief Plays the music of the tables while the screen shows; it must
+   * outlive the screen. */
+  std::reference_wrapper<IAudioService> audio;
   /** @brief The room the bets go to; it must outlive the screen. */
   std::reference_wrapper<ICasinoChannel> casino;
   /** @brief The bets of the round, which outlive the screen, so the player

@@ -110,20 +110,33 @@ ChipMovement stakeChangeOf(const BetOrder& order, std::uint64_t previous) {
                       .madeAt = secondOf(order.sentAt)};
 }
 
-/** @returns What the table shows of @p seated: its stake in @p stakes, its
- * payout in @p payouts once the round was drawn. */
-network::CasinoPlayer playerOf(
-    const SeatedPlayer& seated,
-    const std::map<std::int64_t, std::uint32_t>& stakes,
-    const std::optional<std::map<std::int64_t, std::uint32_t>>& payouts) {
-  network::CasinoPlayer player{
-      .nickname = seated.nickname, .stake = 0, .payout = std::nullopt};
-  if (const auto stake = stakes.find(seated.userId); stake != stakes.end()) {
+/** @brief What the table shows of the players of a round: the stake and the
+ * bets of each account, and its payout once the round was drawn. */
+struct RoundTable {
+  std::map<std::int64_t, std::uint32_t> stakes;
+  std::map<std::int64_t, std::vector<network::RouletteBet>> bets;
+  std::optional<std::map<std::int64_t, std::uint32_t>> payouts;
+};
+
+/** @returns What the table shows of @p seated: its stake and its bets in
+ * @p table, and its payout once the round was drawn. */
+network::CasinoPlayer playerOf(const SeatedPlayer& seated,
+                               const RoundTable& table) {
+  network::CasinoPlayer player{.nickname = seated.nickname,
+                               .stake = 0,
+                               .payout = std::nullopt,
+                               .bets = {}};
+  if (const auto stake = table.stakes.find(seated.userId);
+      stake != table.stakes.end()) {
     player.stake = stake->second;
   }
-  if (payouts.has_value()) {
-    const auto payout = payouts->find(seated.userId);
-    player.payout = payout == payouts->end() ? 0 : payout->second;
+  if (const auto bets = table.bets.find(seated.userId);
+      bets != table.bets.end()) {
+    player.bets = bets->second;
+  }
+  if (table.payouts.has_value()) {
+    const auto payout = table.payouts->find(seated.userId);
+    player.payout = payout == table.payouts->end() ? 0 : payout->second;
   }
   return player;
 }
@@ -141,15 +154,16 @@ void fillRoomState(SQLite::Database& connection,
   state.history = rounds.numbersBefore(place, network::CASINO_HISTORY_LENGTH);
   const std::vector<PlayerBet> bets =
       CasinoBetRepository{connection}.roundBetsOf(place);
-  std::optional<std::map<std::int64_t, std::uint32_t>> payouts;
+  RoundTable table{.stakes = stakesOf(bets),
+                   .bets = betsByPlayerOf(bets),
+                   .payouts = std::nullopt};
   if (state.winningNumber.has_value()) {
-    payouts = payoutsOf(bets, *state.winningNumber);
+    table.payouts = payoutsOf(bets, *state.winningNumber);
   }
-  const std::map<std::int64_t, std::uint32_t> stakes = stakesOf(bets);
   for (const SeatedPlayer& seated :
        CasinoSeatRepository{connection}.seatedSince(state.id,
                                                     seatsSeenSince(now))) {
-    state.players.push_back(playerOf(seated, stakes, payouts));
+    state.players.push_back(playerOf(seated, table));
   }
 }
 

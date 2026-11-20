@@ -17,6 +17,7 @@ using rtype::client::testing::RADIO_LINE;
 using rtype::client::testing::SECOND_WORD_STARTS;
 using rtype::client::testing::SHORT_FRAME;
 using rtype::client::testing::SpokenLineFixture;
+using rtype::client::testing::TEST_BUBBLE_BOTTOM_LEFT;
 using rtype::client::testing::TEST_TAIL_FIRST_ROW_LEFT;
 using rtype::client::testing::TEST_TAIL_FIRST_ROW_WIDTH;
 using rtype::client::testing::TEST_VOICE;
@@ -158,4 +159,51 @@ TEST_F(SpokenLineFixture, TheTailHangsUnderTheBubble) {
       .color = PANEL_BORDER_COLOR};
   EXPECT_NE(std::ranges::find(painting().fills, firstRow),
             painting().fills.end());
+}
+
+/**
+ * Given a line that stays, saying a greeting
+ * When it was written and lingered as long as a line that goes
+ * Then it still speaks, for the panel of a character who keeps talking
+ */
+TEST_F(SpokenLineFixture, ALineThatStaysOutlivesItsLinger) {
+  rebuildToStay();
+  line().say(GREETING_LINE);
+
+  walk(GREETING_LINE_SHOWN);
+
+  EXPECT_TRUE(line().isSpeaking());
+}
+
+/**
+ * Given a line that stays, saying a greeting, and a line said next
+ * When the greeting was written and lingered
+ * Then the line next takes its place
+ */
+TEST_F(SpokenLineFixture, ALineThatStaysGivesWayToTheLineNext) {
+  rebuildToStay();
+  line().say(GREETING_LINE);
+  line().sayNext(RADIO_LINE);
+
+  walk(GREETING_LINE_SHOWN);
+
+  EXPECT_EQ(written(), std::vector<std::string>{"R"});
+}
+
+/**
+ * Given a greeting written whole
+ * When only its letters are painted
+ * Then its words are written, and no bubble is painted around them
+ */
+TEST_F(SpokenLineFixture, TheLettersAlonePaintNoBubble) {
+  line().say(GREETING_LINE);
+  walk(GREETING_LINE_SHOWN - SHORT_FRAME);
+  InterfaceCanvasRecord letters;
+  RecordingInterfaceCanvas canvas(letters);
+
+  line().paintLetters(canvas, TEST_BUBBLE_BOTTOM_LEFT);
+
+  ASSERT_EQ(letters.writings.size(), GREETING_LINE_WORDS.size());
+  EXPECT_EQ(letters.writings.front().text, GREETING_LINE_WORDS.at(0));
+  EXPECT_TRUE(letters.fills.empty());
 }

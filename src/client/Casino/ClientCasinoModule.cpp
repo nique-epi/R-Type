@@ -4,9 +4,11 @@
 #include <vector>
 #include "CashierScreen.hpp"
 #include "CashierScreenParts.hpp"
-#include "CashierWay.hpp"
 #include "CasinoEntranceScreen.hpp"
 #include "CasinoEntranceScreenParts.hpp"
+#include "CasinoHallScreen.hpp"
+#include "CasinoHallScreenParts.hpp"
+#include "CasinoPictures.hpp"
 #include "CasinoScreenIdConstants.hpp"
 #include "ClientConstants.hpp"
 #include "IAccountSession.hpp"
@@ -30,30 +32,49 @@ namespace rtype::client {
 
 namespace {
 
-/** @returns The casino, its doors then its hall, for a player signed in
- * only. */
+/** @returns The front of the casino, its lights read in its picture, for a
+ * player signed in only. */
 std::unique_ptr<IScreen> buildCasinoScreen(const ScreenContext& context,
-                                           ICasinoChannel& casino) {
+                                           CasinoPictures& pictures) {
   return std::make_unique<CasinoEntranceScreen>(
-      CasinoEntranceScreenParts{.navigator = context.navigator.get(),
-                                .sounds = soundsOf(context),
-                                .casino = casino,
-                                .wallet = context.services.wallet.get(),
-                                .playfieldPointAt = playfieldMappingOf(context),
-                                .motion = motionPreference()},
+      CasinoEntranceScreenParts{
+          .navigator = context.navigator.get(),
+          .sounds = soundsOf(context),
+          .audio = context.services.audio.get(),
+          .playfieldPointAt = playfieldMappingOf(context),
+          .lights = pictures.front(context.services.assets.get()),
+          .motion = motionPreference()},
       interfaceCanvasOf(context));
 }
 
-/** @returns The cashier, changing kopecks and chips @p way, for a player
- * signed in only. */
+/** @returns The main hall of the casino, its lights read in its picture. */
+std::unique_ptr<IScreen> buildHallScreen(const ScreenContext& context,
+                                         ICasinoChannel& casino,
+                                         CasinoPictures& pictures) {
+  return std::make_unique<CasinoHallScreen>(
+      CasinoHallScreenParts{
+          .navigator = context.navigator.get(),
+          .sounds = soundsOf(context),
+          .audio = context.services.audio.get(),
+          .casino = casino,
+          .playfieldPointAt = playfieldMappingOf(context),
+          .picture = pictures.hall(context.services.assets.get()),
+          .motion = motionPreference()},
+      interfaceCanvasOf(context));
+}
+
+/** @returns The cashier, its cage read in its picture, for a player signed
+ * in only. */
 std::unique_ptr<IScreen> buildCashierScreen(const ScreenContext& context,
-                                            CashierWay way) {
+                                            CasinoPictures& pictures) {
   return std::make_unique<CashierScreen>(
       CashierScreenParts{.navigator = context.navigator.get(),
                          .sounds = soundsOf(context),
+                         .audio = context.services.audio.get(),
                          .wallet = context.services.wallet.get(),
                          .playfieldPointAt = playfieldMappingOf(context),
-                         .way = way},
+                         .room = pictures.cage(context.services.assets.get()),
+                         .motion = motionPreference()},
       interfaceCanvasOf(context));
 }
 
@@ -65,6 +86,7 @@ std::unique_ptr<IScreen> buildRouletteScreen(const ScreenContext& context,
   return std::make_unique<RouletteScreen>(
       RouletteScreenParts{.navigator = context.navigator.get(),
                           .sounds = soundsOf(context),
+                          .audio = context.services.audio.get(),
                           .casino = casino,
                           .memory = memory,
                           .wallet = context.services.wallet.get(),
@@ -93,23 +115,23 @@ void ClientCasinoModule::install(engine::InstallContext& context) {
   context.require<ScreenRegistry>().add(
       CASINO_SCREEN, signedInOnly(
                          [this](const ScreenContext& screens) {
-                           return buildCasinoScreen(screens, *casino_);
+                           return buildCasinoScreen(screens, pictures_);
                          },
                          CASINO_SCREEN));
   context.require<ScreenRegistry>().add(
-      CASINO_BUY_CHIPS_SCREEN, signedInOnly(
-                                   [](const ScreenContext& screens) {
-                                     return buildCashierScreen(
-                                         screens, CashierWay::BuyChips);
-                                   },
-                                   CASINO_BUY_CHIPS_SCREEN));
-  context.require<ScreenRegistry>().add(CASINO_CASH_OUT_SCREEN,
-                                        signedInOnly(
-                                            [](const ScreenContext& screens) {
-                                              return buildCashierScreen(
-                                                  screens, CashierWay::CashOut);
-                                            },
-                                            CASINO_CASH_OUT_SCREEN));
+      CASINO_HALL_SCREEN, signedInOnly(
+                              [this](const ScreenContext& screens) {
+                                return buildHallScreen(screens, *casino_,
+                                                       pictures_);
+                              },
+                              CASINO_HALL_SCREEN));
+  context.require<ScreenRegistry>().add(
+      CASINO_CASHIER_SCREEN, signedInOnly(
+                                 [this](const ScreenContext& screens) {
+                                   return buildCashierScreen(screens,
+                                                             pictures_);
+                                 },
+                                 CASINO_CASHIER_SCREEN));
   context.require<ScreenRegistry>().add(
       ROULETTE_SCREEN, [this](const ScreenContext& screens) {
         return buildRouletteScreen(screens, *casino_, roulette_);

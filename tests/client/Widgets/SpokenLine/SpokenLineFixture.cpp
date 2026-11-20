@@ -18,6 +18,12 @@ void SpokenLineFixture::rebuildWithLessMotion() {
   build(MotionPreference::Reduced, true);
 }
 
+void SpokenLineFixture::rebuildToStay() {
+  SpokenLineParts parts = partsWith(MotionPreference::Full, true);
+  parts.stays = true;
+  line_ = std::make_unique<SpokenLine>(parts);
+}
+
 void SpokenLineFixture::rebuildWithoutVoice() {
   build(MotionPreference::Full, false);
 }
@@ -51,13 +57,19 @@ const std::vector<std::string>& SpokenLineFixture::played() const {
 }
 
 void SpokenLineFixture::build(MotionPreference motion, bool voiced) {
-  line_ = std::make_unique<SpokenLine>(
-      SpokenLineParts{.sounds = sounds_,
-                      .voice = voiced ? std::span<const char* const>(TEST_VOICE)
+  line_ = std::make_unique<SpokenLine>(partsWith(motion, voiced));
+}
+
+SpokenLineParts SpokenLineFixture::partsWith(MotionPreference motion,
+                                             bool voiced) {
+  return SpokenLineParts{.sounds = sounds_,
+                         .voice = voiced
+                                      ? std::span<const char* const>(TEST_VOICE)
                                       : std::span<const char* const>(),
-                      .width = TEST_BUBBLE_WIDTH,
-                      .tail = TEST_TAIL,
-                      .motion = motion});
+                         .width = TEST_BUBBLE_WIDTH,
+                         .tail = TEST_TAIL,
+                         .motion = motion,
+                         .stays = false};
 }
 
 }  // namespace rtype::client::testing

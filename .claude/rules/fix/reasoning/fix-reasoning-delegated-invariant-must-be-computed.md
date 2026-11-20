@@ -28,6 +28,11 @@ trigger: always_on
 1. **Before asserting a count a program keeps for itself** (the lines a configuration ran, the datagrams a ledger counted), list what else adds to it in that run: a launch option the fixture passes (`-p` runs a `set port` line), a pass that reads the file again. Then run the test once and read the value before writing the assertion.
 2. **Prefer the effect the requirement names over the count**: a line of `server.cfg` that ran is proven by what it wrote or changed, not by a counter that other lines also move.
 
+### A text asserted absent is absent from every other part of the picture
+
+1. **Before asserting that a screen no longer writes a text** (a title that changed, a label of the way switched off), list every place of the same picture that writes that text, a board or a legend that always shows both choices included. The test then reads a text only the switched part writes, such as the label of a bar.
+2. **Before asserting that a shape lights a pixel**, compute where the shape lies around that pixel with the values of the test: a beam 0.2 radians wide lights nothing half a pixel from its origin.
+
 ## Example
 
 - ❌ **Before (wrong)**: brief → "two simulations with the same seed produce the same state at tick 100; write the test asserting it" — without checking (enemies shoot using `std::random_device`).

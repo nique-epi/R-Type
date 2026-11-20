@@ -30,6 +30,12 @@ Why: the master's `rtype::network::LeaderboardRow`, in a header of its own, took
 
 Calibration: on `cdc75d8c`, the type search with `cdc75d8c` in place of `--untracked` prints `LeaderboardAnswer.hpp:17` for `LeaderboardRow`; on a file holding `struct [[nodiscard]] Result {`, `struct [[gnu::packed]] Result {`, `class Result;` and `struct Results {`, it prints the first three lines only (`git grep --no-index`).
 
+### A small helper of a new free-function header is searched too
+
+1. **Every free function a new header declares is searched before it is written**, the one-line conversions included (`secondsOf`, `clamped`, `lerp`): those are the names other libraries already chose. Run the function search of point 3 of the subsection above for each name of the header, in one command: `git grep -n --untracked -w -e '<first>' -e '<second>' -- src`.
+2. **When the name is taken and the function does the same thing, call the existing one** and link its library, when the link rule allows it (`fix-architecture-a-link-never-points-back-at-a-folder-that-links-it.md`); otherwise choose another name.
+3. **`duplicate symbol` at the link of a program is the symptom**: both libraries define the function in one namespace, and the program reaches both.
+
 ## Example
 
 - ❌ **Before (wrong)**: `src/network/Protocol/EncodedMessage.hpp` created in the first commit, the server's `EncodedMessage.hpp` removed only in the third → the server and its tests stop building from the first commit on.

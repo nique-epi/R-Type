@@ -29,12 +29,6 @@ namespace {
 using network::CasinoPlayer;
 using network::RoulettePhase;
 
-/** @returns The whole seconds of @p timeLeft, a second begun counted. */
-std::int64_t secondsBegunIn(engine::Duration timeLeft) {
-  return static_cast<std::int64_t>(
-      std::chrono::ceil<std::chrono::seconds>(timeLeft).count());
-}
-
 /** @returns What the status line says of @p refusal. */
 std::string refusalLineOf(CasinoRefusal refusal) {
   switch (refusal) {
@@ -180,6 +174,11 @@ std::vector<TableRosterRow> rosterRowsOf(const RouletteReading& reading) {
     own.resize(ROSTER_MAXIMUM_ROWS);
   }
   return own;
+}
+
+std::int64_t secondsBegunIn(engine::Duration timeLeft) {
+  return static_cast<std::int64_t>(
+      std::chrono::ceil<std::chrono::seconds>(timeLeft).count());
 }
 
 }  // namespace rtype::client

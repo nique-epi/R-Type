@@ -17,6 +17,15 @@ std::map<std::int64_t, std::uint32_t> stakesOf(
   return stakes;
 }
 
+std::map<std::int64_t, std::vector<network::RouletteBet>> betsByPlayerOf(
+    const std::vector<PlayerBet>& bets) {
+  std::map<std::int64_t, std::vector<network::RouletteBet>> byPlayer;
+  for (const PlayerBet& placed : bets) {
+    byPlayer[placed.userId].push_back(placed.bet);
+  }
+  return byPlayer;
+}
+
 std::map<std::int64_t, std::uint32_t> payoutsOf(
     const std::vector<PlayerBet>& bets, std::uint8_t drawn) {
   std::map<std::int64_t, std::uint32_t> payouts;
