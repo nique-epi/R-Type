@@ -10,6 +10,7 @@ namespace rtype::client {
 class NullSoundPlayer final : public ISoundPlayer {
  public:
   void play(std::string_view soundId) override;
+  void load(std::string_view soundId) override;
 };
 
 }  // namespace rtype::client

@@ -1,0 +1,32 @@
+# The entity type spire_rock, brought by the resource deseret:
+# a rock of a felled spire, falling straight down.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy_missile"
+layer = "enemy_missile"
+hits = ["player"]
+pilot = "falling_straight"
+
+[gameplay.hitbox]
+width = 96
+height = 64
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 900
+
+[appearance]
+sheet = "sprites/deseret/spire_rocks.png"
+
+# Idle: the rocks tumble.
+[appearance.idle]
+left = 0
+top = 50
+width = 24
+height = 16
+frames = 2
+spacing = 2
+frame_ms = 90

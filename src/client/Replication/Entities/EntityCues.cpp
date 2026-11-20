@@ -1,12 +1,15 @@
 #include "EntityCues.hpp"
 #include <optional>
+#include <string>
 #include <string_view>
 #include "AppearanceReference.hpp"
 #include "AwaitedArrival.hpp"
 #include "ComponentRegistry.hpp"
 #include "EffectSpawner.hpp"
 #include "Entity.hpp"
+#include "EntityAppearance.hpp"
 #include "EntityFeedback.hpp"
+#include "EntitySounds.hpp"
 #include "EntityType.hpp"
 #include "ISoundPlayer.hpp"
 #include "Position.hpp"
@@ -60,6 +63,17 @@ const EntityAppearance* appearanceOf(engine::ComponentRegistry& components,
   return reference == nullptr ? nullptr : reference->appearance;
 }
 
+/** @returns The sound the sheet of @p appearance names in @p sound, or
+ * @p otherwise when it names none or the entity has no sheet. */
+std::optional<std::string_view> sheetSoundOr(
+    const EntityAppearance* appearance, std::string EntitySounds::* sound,
+    std::optional<std::string_view> otherwise) {
+  if (appearance == nullptr || (appearance->sounds.*sound).empty()) {
+    return otherwise;
+  }
+  return appearance->sounds.*sound;
+}
+
 /** @brief Plays the sound, when there is one. */
 void playSound(ISoundPlayer& sounds, std::optional<std::string_view> soundId) {
   if (soundId.has_value()) {
@@ -76,7 +90,9 @@ void announce(const EntityFeedback& feedback,
   if (type == nullptr || position == nullptr) {
     return;
   }
-  playSound(feedback.sounds, appearanceSoundOf(*type));
+  playSound(feedback.sounds,
+            sheetSoundOr(appearanceOf(components, entity),
+                         &EntitySounds::appear, appearanceSoundOf(*type)));
   if (*type == game::EntityType::Player) {
     feedback.effects.get().playArrival(entity);
     return;
@@ -92,7 +108,9 @@ void explode(const EntityFeedback& feedback,
       components.has<AwaitedArrival>(entity)) {
     return;
   }
-  playSound(feedback.sounds, explosionSoundOf(*type));
+  playSound(feedback.sounds,
+            sheetSoundOr(appearanceOf(components, entity), &EntitySounds::death,
+                         explosionSoundOf(*type)));
   if (*type == game::EntityType::Player) {
     feedback.effects.get().playShipDown(entity);
     return;

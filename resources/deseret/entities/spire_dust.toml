@@ -1,0 +1,39 @@
+# The entity type spire_dust, brought by the resource deseret:
+# the dust a felled spire lets fall first, warning of the rocks that follow
+# along its column.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy"
+layer = "boss_effect"
+pilot = "spire_fall"
+
+[gameplay.hitbox]
+width = 4
+height = 4
+offset_y = 1024
+
+[gameplay.motion]
+kind = "scroll"
+
+# The dust falls 800 ms, then rocks fall 1 s along its column, one every
+# 200 ms.
+[gameplay.behaviour]
+warn_ms = 800
+fall_ms = 1000
+rock_gap_ms = 200
+
+[appearance]
+sheet = "sprites/deseret/spire_rocks.png"
+
+# Idle: the dust of a spire, sped up to fall in 800 ms.
+[appearance.idle]
+left = 0
+top = 0
+width = 48
+height = 48
+frames = 16
+spacing = 2
+frame_ms = 50

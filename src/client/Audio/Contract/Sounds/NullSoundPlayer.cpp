@@ -5,4 +5,6 @@ namespace rtype::client {
 
 void NullSoundPlayer::play([[maybe_unused]] std::string_view soundId) {}
 
+void NullSoundPlayer::load([[maybe_unused]] std::string_view soundId) {}
+
 }  // namespace rtype::client

@@ -8,6 +8,10 @@ namespace rtype::client::testing {
  * DESCRIBED_ATTACK in two frames, held, with an anchor, then back to idle. */
 [[nodiscard]] EntityAppearance appearanceWithAStrike();
 
+/** @returns appearanceWithAStrike() whose sheet names STRIKE_SOUND for that
+ * strike. */
+[[nodiscard]] EntityAppearance appearanceWithAStrikeSound();
+
 /** @returns appearanceWithAStrike() with an enraged idle frame, and a rage:
  * the attack RAGE_ATTACK in the phase Enraged, two frames held, then back to
  * idle. */

@@ -14,7 +14,7 @@ namespace rtype::client {
 AudioService::AudioService(AssetLibrary& library, SettingsService& settings)
     : library_(&library),
       settings_(&settings),
-      sounds_(bank_, settings),
+      sounds_(bank_, library, settings),
       theme_(settings, THEME_TRACK),
       gameMusic_(settings, GAME_TRACK),
       bossMusic_(settings, BOSS_TRACK),

@@ -1,0 +1,220 @@
+# The entity type iron_pilgrim, brought by the resource deseret:
+# a locomotive of the line the Bydo grew into, rolling on its track; it spits
+# cinders, charges along the floor and hatches Carrions from its boiler. A
+# missile that touches its boiler or its cab hurts it, at any time.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy"
+layer = "enemy"
+pilot = "iron_pilgrim_run"
+
+# Its boiler, low and long, then its cab at the back; the stack has no box,
+# so a shot above the boiler and the cab flies past it.
+[[gameplay.hitbox.box]]
+width = 248
+height = 120
+offset_x = -44
+offset_y = 36
+
+[[gameplay.hitbox.box]]
+width = 92
+height = 132
+offset_x = 126
+offset_y = 6
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 1100
+
+# It rolls in from past the right edge to rest_x on the floor under it (y 860
+# where the biome gives none) over 1.5 s; rested 1.2 s (0.6 s enraged), it
+# takes its attacks in turn. The volley: 500 ms of smoke, 5 cinders (7
+# enraged). The charge: 800 ms of whistle, then it rushes left out of the
+# screen and comes back from the right 1.5 s later. The brood: 3 Carrions.
+[gameplay.behaviour]
+rest_x = 1500
+rest_y = 860
+arrive_ms = 1500
+rest_ms = 1200
+enraged_rest_ms = 600
+volley_signal_ms = 500
+volley_strike_ms = 420
+volley_recover_ms = 480
+cinders = 5
+enraged_cinders = 7
+charge_signal_ms = 800
+charge_away_ms = 1500
+charge_recover_ms = 480
+brood_signal_ms = 600
+brood_strike_ms = 480
+brood_recover_ms = 600
+brood = 3
+
+[gameplay.health]
+points = 180
+
+[gameplay.score]
+points = 8000
+
+[gameplay.boss]
+rage_below_percent = 50
+rage_attack = 3
+arrival_attack = 4
+
+[gameplay.stays_outside]
+
+[gameplay.survives_contact]
+
+# Its cowcatcher hurts while it charges, and nothing else of it.
+[[gameplay.hurt_zone.box]]
+offset_x = -180
+offset_y = 76
+width = 80
+height = 100
+attack = 1
+phase = "strike"
+
+[appearance]
+sheet = "sprites/deseret/iron_pilgrim.png"
+boss_name = "THE IRON PILGRIM"
+
+# Idle: it rolls, the crank a whole turn in 12 frames, smoke from the stack.
+[appearance.idle]
+left = 0
+top = 0
+width = 100
+height = 64
+frames = 12
+spacing = 2
+frame_ms = 60
+
+# Enraged: red flesh, open firebox, sparks under the wheels, faster.
+[appearance.enraged_idle]
+left = 0
+top = 66
+width = 100
+height = 64
+frames = 12
+spacing = 2
+frame_ms = 45
+
+# Cinder volley, signal: black smoke fills the stack, its rim glows.
+[appearance.attack_0.signal]
+left = 0
+top = 132
+width = 100
+height = 64
+frames = 6
+spacing = 2
+frame_ms = 90
+playback = "loop"
+afterwards = "stay"
+
+# Cinder volley, strike: five cinders burst from the stack.
+[appearance.attack_0.strike]
+left = 0
+top = 198
+width = 100
+height = 64
+frames = 6
+spacing = 2
+frame_ms = 70
+playback = "hold"
+afterwards = "stay"
+
+# Cinder volley, recover: the smoke clears.
+[appearance.attack_0.recover]
+left = 0
+top = 264
+width = 100
+height = 64
+frames = 4
+spacing = 2
+frame_ms = 120
+playback = "once"
+afterwards = "idle"
+
+# Charge, signal: headlamp flare, whistle, steam from the cylinder.
+[appearance.attack_1.signal]
+left = 0
+top = 330
+width = 100
+height = 64
+frames = 6
+spacing = 2
+frame_ms = 110
+playback = "loop"
+afterwards = "stay"
+
+# Charge, strike: it rushes left, dust thrown back, sparks off the cowcatcher.
+[appearance.attack_1.strike]
+left = 0
+top = 396
+width = 100
+height = 64
+frames = 6
+spacing = 2
+frame_ms = 50
+playback = "loop"
+afterwards = "stay"
+
+# Charge, recover: steam settles round the wheels.
+[appearance.attack_1.recover]
+left = 0
+top = 462
+width = 100
+height = 64
+frames = 4
+spacing = 2
+frame_ms = 120
+playback = "once"
+afterwards = "idle"
+
+# Brood, signal: the growths swell and their eyes open.
+[appearance.attack_2.signal]
+left = 0
+top = 528
+width = 100
+height = 64
+frames = 6
+spacing = 2
+frame_ms = 100
+playback = "loop"
+afterwards = "stay"
+
+# Brood, strike: they burst and Carrions tear out.
+[appearance.attack_2.strike]
+left = 0
+top = 594
+width = 100
+height = 64
+frames = 6
+spacing = 2
+frame_ms = 80
+playback = "hold"
+afterwards = "stay"
+
+# Brood, recover: the flesh grows back.
+[appearance.attack_2.recover]
+left = 0
+top = 660
+width = 100
+height = 64
+frames = 4
+spacing = 2
+frame_ms = 150
+playback = "once"
+afterwards = "idle"
+
+# The death; the row under it is the same death without flash.
+[appearance.death]
+left = 0
+top = 726
+width = 116
+height = 80
+frames = 6
+spacing = 2
+frame_ms = 90

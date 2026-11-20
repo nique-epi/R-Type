@@ -10,10 +10,15 @@
 class RecordingSoundPlayer : public rtype::client::ISoundPlayer {
  public:
   void play(std::string_view soundId) override;
+  void load(std::string_view soundId) override;
 
   /** @returns The ids of the sounds played, the first played first. */
   [[nodiscard]] const std::vector<std::string>& played() const;
 
+  /** @returns The ids of the sounds loaded, the first loaded first. */
+  [[nodiscard]] const std::vector<std::string>& loaded() const;
+
  private:
   std::vector<std::string> played_;
+  std::vector<std::string> loaded_;
 };

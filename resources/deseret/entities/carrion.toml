@@ -1,0 +1,101 @@
+# The entity type carrion, brought by the resource deseret:
+# a vulture with a bare skull under a cowboy hat with a bullet hole, that
+# dives at where a ship was 0.4 s before.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy"
+layer = "enemy"
+hits = ["player"]
+pilot = "carrion_dive"
+
+[gameplay.hitbox]
+width = 96
+height = 64
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 220
+
+# It bobs 30 % of its speed around its row every 1.2 s; with a ship ahead
+# within 640 units and 120 units above or below its row, rested 1.4 s, it
+# raises its wings 450 ms, dives at 520 units per second for 0.9 s at most at
+# where that ship was 0.4 s before, and climbs back.
+[gameplay.behaviour]
+bob = 30
+bob_ms = 1200
+reach = 640
+drop = 120
+rest_ms = 1400
+signal_ms = 450
+strike_ms = 900
+recover_ms = 360
+aim_lag_ms = 400
+dive_speed = 520
+
+[gameplay.health]
+points = 2
+
+[gameplay.score]
+points = 200
+
+[appearance]
+sheet = "sprites/deseret/carrion.png"
+
+# Idle: a whole wingbeat, the bony head still.
+[appearance.idle]
+left = 0
+top = 0
+width = 26
+height = 18
+frames = 4
+spacing = 2
+frame_ms = 120
+
+# Signal: wings raised, beak open, the Bydo eye goes white.
+[appearance.attack_0.signal]
+left = 112
+top = 0
+width = 26
+height = 18
+frames = 2
+spacing = 2
+frame_ms = 225
+playback = "loop"
+afterwards = "stay"
+
+# Strike: the dive, its trail, the climb.
+[appearance.attack_0.strike]
+left = 168
+top = 0
+width = 26
+height = 18
+frames = 3
+spacing = 2
+frame_ms = 90
+playback = "hold"
+afterwards = "stay"
+
+# Recover: it beats back up to its flight.
+[appearance.attack_0.recover]
+left = 0
+top = 0
+width = 26
+height = 18
+frames = 4
+spacing = 2
+frame_ms = 90
+playback = "once"
+afterwards = "idle"
+
+# The death, centered on the body; the row under it is the same death without flash.
+[appearance.death]
+left = 0
+top = 20
+width = 48
+height = 48
+frames = 6
+spacing = 2
+frame_ms = 70

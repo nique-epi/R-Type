@@ -34,11 +34,13 @@ using rtype::game::testing::CRIMSON_BACKGROUND_FILE;
 using rtype::game::testing::CRIMSON_PIXELS;
 using rtype::game::testing::CRIMSON_SHEET_FILE;
 using rtype::game::testing::CRIMSON_SPRITE_SHEET;
+using rtype::game::testing::DEATH_SOUND_FILE;
 using rtype::game::testing::DRIFTER_SHEET_FILE;
 using rtype::game::testing::EXAMPLE_RESOURCE;
 using rtype::game::testing::EXAMPLE_RESOURCE_SHEET;
 using rtype::game::testing::EXAMPLE_RESOURCE_SPRITES;
 using rtype::game::testing::FILES_OF_A_SHEET_ITS_IMAGE_AND_A_PREVIEW;
+using rtype::game::testing::FILES_OF_A_SHEET_ITS_IMAGE_AND_TWO_SOUNDS;
 using rtype::game::testing::FILES_OF_A_SHEET_ITS_MASK_AND_ITS_IMAGE;
 using rtype::game::testing::FILES_OF_ONE_SHEET_AND_ITS_IMAGE;
 using rtype::game::testing::FILES_OF_THE_STACK;
@@ -57,11 +59,14 @@ using rtype::game::testing::SHEET_NAMING_A_MISSING_IMAGE;
 using rtype::game::testing::SHEET_NAMING_THE_ART;
 using rtype::game::testing::SHEET_NAMING_THE_BYDOS;
 using rtype::game::testing::SHEET_NAMING_THE_CRIMSON_BYDOS;
+using rtype::game::testing::SHEET_NAMING_TWO_SOUNDS;
 using rtype::game::testing::SHEET_WITHOUT_SPRITE_SHEET;
 using rtype::game::testing::SHIPPED_BYDOMANCER_SPRITES;
 using rtype::game::testing::SHIPPED_ENTITY_SPRITES;
 using rtype::game::testing::shippedAssetFolder;
 using rtype::game::testing::shippedEntitySheets;
+using rtype::game::testing::SOUND_BYTES;
+using rtype::game::testing::STRIKE_SOUND_FILE;
 using rtype::game::testing::UNNAMED_SPRITE_SHEET;
 using rtype::game::testing::WEAVER_MASK;
 using rtype::game::testing::WEAVER_MASK_FILE;
@@ -87,6 +92,27 @@ TEST(ContentFiles, ListsTheSheetsAndTheSpriteSheetsTheyName) {
   EXPECT_EQ(files[0].path, DRIFTER_SHEET_FILE);
   EXPECT_EQ(files[1].path, WEAVER_SHEET_FILE);
   EXPECT_EQ(files[2].path, SHARED_SPRITE_SHEET);
+}
+
+/**
+ * Given a sheet that names its death and the strike of its attack 0 as
+ * sounds of its folder
+ * When the content of the folder is listed
+ * Then both sounds are listed with the sheet and its image, by their paths
+ */
+TEST(ContentFiles, ListsTheSoundsASheetNames) {
+  const TemporaryFolder assets;
+  assets.write(WEAVER_SHEET_FILE, SHEET_NAMING_TWO_SOUNDS);
+  assets.write(SHARED_SPRITE_SHEET, BYDO_PIXELS);
+  assets.write(DEATH_SOUND_FILE, SOUND_BYTES);
+  assets.write(STRIKE_SOUND_FILE, SOUND_BYTES);
+
+  const std::vector<ContentFile> files =
+      contentFilesIn(std::array{assets.path()});
+
+  ASSERT_EQ(files.size(), FILES_OF_A_SHEET_ITS_IMAGE_AND_TWO_SOUNDS);
+  EXPECT_EQ(files[1].path, DEATH_SOUND_FILE);
+  EXPECT_EQ(files[2].path, STRIKE_SOUND_FILE);
 }
 
 /**

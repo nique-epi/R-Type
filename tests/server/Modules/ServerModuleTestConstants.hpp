@@ -67,6 +67,11 @@ constexpr const char* FOSSE_RESOURCE_FROM_THE_ASSETS = "../resources/fosse";
 constexpr const char* ASHLANDS_RESOURCE_FROM_THE_ASSETS =
     "../resources/ashlands";
 
+/** @brief The resource deseret the repository ships beside its assets, from
+ * the assets folder: its level, the sheets of its mobs, decor and bosses, and
+ * the scripts that register their behaviours. */
+constexpr const char* DESERET_RESOURCE_FROM_THE_ASSETS = "../resources/deseret";
+
 /** @brief Lines that set the rules of the game: the difficulty "hard", five
  * lives, friendly fire on; and a difficulty the shipped waves file has no
  * table for. */

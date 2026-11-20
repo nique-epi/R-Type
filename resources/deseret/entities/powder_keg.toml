@@ -1,0 +1,70 @@
+# The entity type powder_keg, brought by the resource deseret:
+# a keg of black powder on the floor. Hit, it does not burst at once: its fuse
+# burns 600 ms, then it blows up, hurting mobs and ships within 120 units, and
+# lights every keg within 160 units.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy"
+layer = "enemy"
+hits = ["player"]
+pilot = "fuse_watch"
+
+# Its box rises above it toward the rows the shots of a low ship fly at.
+[gameplay.hitbox]
+width = 60
+height = 136
+offset_y = -34
+
+[gameplay.motion]
+kind = "scroll"
+
+# Its fuse burns 600 ms; its blast reaches 120 units and lights the kegs
+# within 160 units.
+[gameplay.behaviour]
+fuse_ms = 600
+blast = 0
+light_reach = 160
+
+[gameplay.health]
+points = 1
+
+[gameplay.score]
+points = 100
+
+[appearance]
+sheet = "sprites/deseret/powder_keg.png"
+
+# Idle: a grain of powder leaks from it.
+[appearance.idle]
+left = 0
+top = 0
+width = 15
+height = 17
+frames = 2
+spacing = 2
+frame_ms = 400
+
+# Signal: the spark runs down its fuse.
+[appearance.attack_0.signal]
+left = 34
+top = 0
+width = 15
+height = 17
+frames = 3
+spacing = 2
+frame_ms = 200
+playback = "loop"
+afterwards = "stay"
+
+# The death: it bursts; the row under it is the same blast without flash.
+[appearance.death]
+left = 0
+top = 19
+width = 32
+height = 32
+frames = 8
+spacing = 2
+frame_ms = 83

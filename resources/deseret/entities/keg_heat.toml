@@ -1,0 +1,37 @@
+# The entity type keg_heat, brought by the resource deseret:
+# the blast of a powder keg, which hurts the ships within 120 units; drawn by
+# the death of the keg.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy_missile"
+layer = "hazard_blast"
+hits = ["player"]
+pilot = "heat_fade"
+
+[gameplay.hitbox]
+width = 240
+height = 240
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 1
+
+# It lasts 330 ms, the burst of the death of what blew up.
+[gameplay.behaviour]
+life_ms = 330
+
+[appearance]
+sheet = "sprites/deseret/blank.png"
+
+# Idle: nothing; the death of what burst draws the blast.
+[appearance.idle]
+left = 0
+top = 0
+width = 1
+height = 1
+frames = 1
+spacing = 2
+frame_ms = 1000

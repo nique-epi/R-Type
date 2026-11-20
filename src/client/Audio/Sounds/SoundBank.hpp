@@ -27,6 +27,15 @@ class SoundBank {
    */
   void load(const AssetLibrary& library, std::span<const char* const> soundIds);
 
+  /**
+   * @brief Reads the sound @p soundId from the assets folder of @p library,
+   * or from its whole path for a sound of a content pack, unless the bank
+   * holds it already.
+   * @returns Whether the bank holds it now; it throws nothing.
+   */
+  [[nodiscard]] bool loadOne(const AssetLibrary& library,
+                             std::string_view soundId);
+
   /** @throws AssetNotLoadedException for a sound the bank does not hold. */
   [[nodiscard]] const sf::SoundBuffer& sound(std::string_view soundId) const;
 

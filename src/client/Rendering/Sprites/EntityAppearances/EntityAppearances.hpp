@@ -68,6 +68,10 @@ class EntityAppearances {
    * once, in alphabetical order. */
   [[nodiscard]] std::vector<std::string> sheets() const;
 
+  /** @returns The asset id of every sound an appearance names, each once, in
+   * alphabetical order. */
+  [[nodiscard]] std::vector<std::string> sounds() const;
+
  private:
   explicit EntityAppearances(
       std::map<std::string, EntityAppearance, std::less<>> appearances);

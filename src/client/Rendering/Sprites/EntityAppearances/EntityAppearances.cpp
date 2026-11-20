@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <functional>
+#include <initializer_list>
 #include <map>
 #include <optional>
 #include <ranges>
@@ -17,15 +18,19 @@
 #include <vector>
 #include "ActionAnimation.hpp"
 #include "ActionKey.hpp"
+#include "ActionSound.hpp"
 #include "DataFileReading.hpp"
 #include "DataFileTable.hpp"
 #include "EntityAppearance.hpp"
 #include "EntityAppearanceConstants.hpp"
 #include "EntitySheetConstants.hpp"
+#include "EntitySounds.hpp"
 #include "FrameAnchor.hpp"
+#include "GameException.hpp"
 #include "NamedEffect.hpp"
 #include "NamedLook.hpp"
 #include "PathText.hpp"
+#include "Playback.hpp"
 #include "SheetRow.hpp"
 #include "SheetText.hpp"
 #include "SheetTextReading.hpp"
@@ -83,11 +88,29 @@ FrameAnchor anchorOf(const engine::DataFileTable& table) {
                      .y = optionalPixelsAt(table, ANCHOR_Y_KEY, ANCHOR_RANGE)};
 }
 
+/** @brief Refuses the attack phase @p table when it plays `once` and stays
+ * on its last frame (see ONCE_THAT_STAYS_RULE).
+ * @throws game::InconsistentEntitySheetException naming its `playback`. */
+void refuseOnceThatStays(const engine::DataFileTable& table) {
+  const bool once =
+      PLAYBACKS[engine::choiceAt(table, PLAYBACK_KEY, PLAYBACK_NAMES)] ==
+      Playback::Once;
+  const bool stays =
+      table.table.get().contains(AFTERWARDS_KEY) &&
+      AFTERWARDS_NAMES[engine::choiceAt(
+          table, AFTERWARDS_KEY, AFTERWARDS_NAMES)] == STAYS_ON_LAST_FRAME;
+  if (once && stays) {
+    throw game::InconsistentEntitySheetException(
+        engine::placeOfKey(table, PLAYBACK_KEY), ONCE_THAT_STAYS_RULE);
+  }
+}
+
 /** @returns The animation of the attack phase @p table describes, every key
  * checked, which plays for @p key. */
 ActionAnimation actionAnimationOf(const engine::DataFileTable& table,
                                   game::ActionKey key) {
   engine::refuseUnknownKeys(table, ACTION_KEYS);
+  refuseOnceThatStays(table);
   const bool leavesAfterwards = !table.table.get().contains(AFTERWARDS_KEY);
   return ActionAnimation{
       .key = key,
@@ -262,12 +285,65 @@ void readVisuals(const engine::DataFileTable& appearance,
   }
 }
 
-/** @returns The text of `boss_name` in @p appearance; empty without it. */
-std::string bossNameOf(const engine::DataFileTable& appearance) {
-  if (appearance.table.get().get(BOSS_NAME_KEY) == nullptr) {
+/** @returns The text of @p key in @p table; empty without it. */
+std::string optionalTextAt(const engine::DataFileTable& table,
+                           std::string_view key) {
+  if (table.table.get().get(key) == nullptr) {
     return {};
   }
-  return engine::textAt(appearance, BOSS_NAME_KEY);
+  return engine::textAt(table, key);
+}
+
+/** @brief Adds to @p sounds the sound of every phase the table @p attack,
+ * the attack numbered @p number, names. */
+void addAttackSounds(const engine::DataFileTable& attack, std::uint8_t number,
+                     std::vector<ActionSound>& sounds) {
+  engine::refuseUnknownKeys(attack, game::PHASE_NAMES);
+  for (std::size_t phase = 0; phase < game::PHASES.size(); ++phase) {
+    std::string sound = optionalTextAt(attack, game::PHASE_NAMES[phase]);
+    if (!sound.empty()) {
+      sounds.push_back(ActionSound{
+          .key =
+              game::ActionKey{.attack = number, .phase = game::PHASES[phase]},
+          .sound = std::move(sound)});
+    }
+  }
+}
+
+/** @returns The sounds `[appearance.sounds]` of @p appearance names, every
+ * key checked; none when the table is left out. */
+EntitySounds soundsOf(const engine::DataFileTable& appearance) {
+  const std::optional<engine::DataFileTable> table =
+      engine::optionalTableAt(appearance, game::SOUNDS_TABLE_KEY);
+  if (!table.has_value()) {
+    return {};
+  }
+  const std::vector<AttackKey> attacks = attackKeysOf(*table);
+  std::vector<std::string_view> known{SOUND_KEYS.begin(), SOUND_KEYS.end()};
+  for (const AttackKey& attack : attacks) {
+    known.push_back(attack.key);
+  }
+  engine::refuseUnknownKeys(*table, known);
+  EntitySounds sounds{.appear = optionalTextAt(*table, APPEAR_SOUND_KEY),
+                      .death = optionalTextAt(*table, DEATH_SOUND_KEY),
+                      .actions = {}};
+  for (const AttackKey& attack : attacks) {
+    addAttackSounds(engine::tableAt(*table, attack.key), attack.number,
+                    sounds.actions);
+  }
+  return sounds;
+}
+
+/** @brief Names each sound of @p sounds by its whole path below @p folder. */
+void placeBelow(const std::filesystem::path& folder, EntitySounds& sounds) {
+  for (std::string* sound : {&sounds.appear, &sounds.death}) {
+    if (!sound->empty()) {
+      *sound = logging::genericText(folder / *sound);
+    }
+  }
+  for (ActionSound& action : sounds.actions) {
+    action.sound = logging::genericText(folder / action.sound);
+  }
 }
 
 /** @returns The appearance the `[appearance]` table @p appearance
@@ -287,7 +363,8 @@ EntityAppearance appearanceFrom(const engine::DataFileTable& appearance) {
                         .deathFramesWithoutFlash = {},
                         .effects = {},
                         .looks = {},
-                        .bossName = bossNameOf(appearance)};
+                        .bossName = optionalTextAt(appearance, BOSS_NAME_KEY),
+                        .sounds = soundsOf(appearance)};
   readEnragedIdle(appearance, look);
   readDeath(appearance, look);
   return look;
@@ -319,6 +396,7 @@ EntityAppearances EntityAppearances::fromTexts(
     EntityAppearance appearance = appearanceIn(sheet);
     if (!spriteFolder.empty()) {
       appearance.sheet = logging::genericText(spriteFolder / appearance.sheet);
+      placeBelow(spriteFolder, appearance.sounds);
     }
     appearances.emplace(sheet.name, std::move(appearance));
   }
@@ -334,6 +412,22 @@ std::vector<std::string> EntityAppearances::sheets() const {
   std::set<std::string> distinct;
   for (const EntityAppearance& appearance : std::views::values(appearances_)) {
     distinct.insert(appearance.sheet);
+  }
+  return {distinct.begin(), distinct.end()};
+}
+
+std::vector<std::string> EntityAppearances::sounds() const {
+  std::set<std::string> distinct;
+  for (const EntityAppearance& appearance : std::views::values(appearances_)) {
+    const EntitySounds& sounds = appearance.sounds;
+    for (const std::string& sound : {sounds.appear, sounds.death}) {
+      if (!sound.empty()) {
+        distinct.insert(sound);
+      }
+    }
+    for (const ActionSound& action : sounds.actions) {
+      distinct.insert(action.sound);
+    }
   }
   return {distinct.begin(), distinct.end()};
 }

@@ -3,6 +3,7 @@
 #include <array>
 #include <filesystem>
 #include <fstream>
+#include <initializer_list>
 #include <ios>
 #include <memory>
 #include <set>
@@ -69,12 +70,16 @@ std::set<std::string> spriteSheetsOf(
 }
 
 /** @throws ForeignSpriteSheetException when an appearance of @p appearances
- * names a sprite sheet that is not among @p spriteSheets. */
+ * names a sprite sheet or a sound that is not among @p spriteSheets, the
+ * files the pack writes. */
 void requireOwnSpriteSheets(const EntityAppearances& appearances,
                             const std::set<std::string>& spriteSheets) {
-  for (const std::string& sheet : appearances.sheets()) {
-    if (!spriteSheets.contains(sheet)) {
-      throw ForeignSpriteSheetException(sheet);
+  for (const std::vector<std::string>& named :
+       {appearances.sheets(), appearances.sounds()}) {
+    for (const std::string& file : named) {
+      if (!spriteSheets.contains(file)) {
+        throw ForeignSpriteSheetException(file);
+      }
     }
   }
 }

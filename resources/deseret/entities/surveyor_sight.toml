@@ -1,0 +1,37 @@
+# The entity type surveyor_sight, brought by the resource deseret:
+# the sight of the Surveyor, a dotted pink line on the row it locked; it warns
+# and never hurts.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy"
+layer = "boss_effect"
+pilot = "sight_hold"
+
+[gameplay.hitbox]
+width = 4
+height = 4
+offset_y = 1024
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 1
+
+# It lasts as long as the aim of the Surveyor.
+[gameplay.behaviour]
+life_ms = 700
+
+[appearance]
+sheet = "sprites/deseret/surveyor_sight.png"
+
+# Idle: 1920 units of dots crawling to the left.
+[appearance.idle]
+left = 0
+top = 0
+width = 480
+height = 1
+frames = 3
+spacing = 2
+frame_ms = 80

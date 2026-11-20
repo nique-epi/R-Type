@@ -1,0 +1,39 @@
+# The entity type widow_blade, brought by the resource deseret:
+# a blade of the Old Widow, thrown along an arc to the left edge and back.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy_missile"
+layer = "enemy_missile"
+hits = ["player"]
+pilot = "blade_boomerang"
+
+[gameplay.hitbox]
+width = 96
+height = 96
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 1500
+
+# It flies a loop of about 3300 units: to the left edge 260 units above (or
+# below) the row it was thrown from, back 260 units below (or above), in
+# 2.6 s.
+[gameplay.behaviour]
+flight_ms = 2600
+bulge = 260
+
+[appearance]
+sheet = "sprites/deseret/widow_blade.png"
+
+# A torn blade spinning end over end.
+[appearance.idle]
+left = 0
+top = 0
+width = 28
+height = 28
+frames = 8
+spacing = 2
+frame_ms = 50

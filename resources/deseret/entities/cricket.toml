@@ -1,0 +1,83 @@
+# The entity type cricket, brought by the resource deseret:
+# a Mormon cricket swollen by the Bydo; a swarm weaves on shifted waves, and
+# turns at once towards a ship when one of its crickets lights up.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy"
+layer = "enemy"
+hits = ["player"]
+pilot = "cricket_swarm"
+
+[gameplay.hitbox]
+width = 64
+height = 48
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 300
+
+# It weaves 40 units around its row every 0.9 s, the wave shifted by its row;
+# left of a column drawn from 1200 to 1700 by its row, it lights up 300 ms and
+# turns at the nearest ship, with every cricket within 480 units of it.
+[gameplay.behaviour]
+amplitude = 40
+period_ms = 900
+light_from_x = 1450
+signal_ms = 300
+reach = 480
+
+[gameplay.health]
+points = 1
+
+[gameplay.score]
+points = 40
+
+[appearance]
+sheet = "sprites/deseret/cricket.png"
+
+# Idle: up, spread, folded, spread: a quick buzz.
+[appearance.idle]
+left = 0
+top = 0
+width = 16
+height = 12
+frames = 4
+spacing = 2
+frame_ms = 60
+
+# Signal: it lights up, and the swarm turns.
+[appearance.attack_0.signal]
+left = 72
+top = 0
+width = 16
+height = 12
+frames = 1
+spacing = 2
+frame_ms = 300
+playback = "loop"
+afterwards = "stay"
+
+# Strike: it buzzes on at the ship.
+[appearance.attack_0.strike]
+left = 0
+top = 0
+width = 16
+height = 12
+frames = 4
+spacing = 2
+frame_ms = 60
+playback = "loop"
+afterwards = "stay"
+
+# The death, centered on the body; the row under it is the same death without flash.
+[appearance.death]
+left = 0
+top = 14
+width = 48
+height = 48
+frames = 6
+spacing = 2
+frame_ms = 70

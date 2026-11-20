@@ -1,0 +1,37 @@
+# The entity type lantern_drop, brought by the resource deseret:
+# a bead of burning oil a Lantern drops; it lights the floor where it lands.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy_missile"
+layer = "enemy_missile"
+hits = ["player"]
+pilot = "oil_fall"
+
+[gameplay.hitbox]
+width = 16
+height = 16
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 380
+
+# It falls, and lights a fire 64 units wide on the ground under it (row 900
+# where the biome gives none).
+[gameplay.behaviour]
+floor_y = 900
+
+[appearance]
+sheet = "sprites/deseret/lantern_drop.png"
+
+# Idle: the bead flickers.
+[appearance.idle]
+left = 0
+top = 0
+width = 3
+height = 4
+frames = 2
+spacing = 2
+frame_ms = 80

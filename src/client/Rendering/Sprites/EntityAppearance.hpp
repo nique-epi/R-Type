@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include "ActionAnimation.hpp"
+#include "EntitySounds.hpp"
 #include "NamedEffect.hpp"
 #include "NamedLook.hpp"
 #include "SpriteFrame.hpp"
@@ -54,6 +55,9 @@ struct EntityAppearance {
   /** @brief The name the bar of a boss writes, from `boss_name`; empty when
    * the sheet gives none. */
   std::string bossName;
+  /** @brief The sounds the sheet names, `[appearance.sounds]`; each empty
+   * when left out. */
+  EntitySounds sounds;
 };
 
 }  // namespace rtype::client

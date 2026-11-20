@@ -1,0 +1,82 @@
+# The entity type shroud, brought by the resource deseret:
+# the tarpaulin of a pioneer wagon held by Bydo ribs, rippling like a ray,
+# that sweeps the whole width of the screen at the row of a ship.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy"
+layer = "enemy"
+hits = ["player"]
+pilot = "shroud_sweep"
+
+[gameplay.hitbox]
+width = 144
+height = 96
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 110
+
+# A ship within 360 units of its row, while it shows and rested 1 s, makes it
+# move to that row and stretch flat 500 ms, then sweep left at 900 units per
+# second across the screen.
+[gameplay.behaviour]
+align = 360
+rest_ms = 1000
+signal_ms = 500
+sweep_speed = 900
+
+[gameplay.health]
+points = 3
+
+[gameplay.score]
+points = 250
+
+[appearance]
+sheet = "sprites/deseret/shroud.png"
+
+# Idle: a wave runs from the frame of bones to the rags.
+[appearance.idle]
+left = 0
+top = 0
+width = 36
+height = 26
+frames = 8
+spacing = 2
+frame_ms = 110
+
+# Signal: the cloth stretches flat.
+[appearance.attack_0.signal]
+left = 304
+top = 0
+width = 36
+height = 26
+frames = 1
+spacing = 2
+frame_ms = 500
+playback = "loop"
+afterwards = "stay"
+
+# Strike: it sweeps, dragging its rags.
+[appearance.attack_0.strike]
+left = 342
+top = 0
+width = 36
+height = 26
+frames = 1
+spacing = 2
+frame_ms = 500
+playback = "loop"
+afterwards = "stay"
+
+# The death, centered on the body; the row under it is the same death without flash.
+[appearance.death]
+left = 0
+top = 28
+width = 48
+height = 48
+frames = 6
+spacing = 2
+frame_ms = 70

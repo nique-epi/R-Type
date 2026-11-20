@@ -1,0 +1,50 @@
+# The entity type tumblecage, brought by the resource deseret:
+# a tumbleweed turned into a ball of barbed wire and ribs around a Bydo ember,
+# rolling along the floor; broken, it throws four barbs up.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy"
+layer = "enemy"
+hits = ["player"]
+pilot = "tumblecage_roll"
+on_hit = "tumblecage_break"
+
+[gameplay.hitbox]
+width = 80
+height = 80
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 260
+
+[gameplay.health]
+points = 3
+
+[gameplay.score]
+points = 150
+
+[appearance]
+sheet = "sprites/deseret/tumblecage.png"
+
+# Idle: a whole turn in 12 frames, the ember only flickers.
+[appearance.idle]
+left = 0
+top = 0
+width = 20
+height = 20
+frames = 12
+spacing = 2
+frame_ms = 70
+
+# The death, centered on the body; the row under it is the same death without flash.
+[appearance.death]
+left = 0
+top = 22
+width = 48
+height = 48
+frames = 6
+spacing = 2
+frame_ms = 70

@@ -3,6 +3,9 @@
 #include <SFML/Audio/Sound.hpp>
 #include <array>
 #include <cstdint>
+#include <functional>
+#include <set>
+#include <string>
 #include <string_view>
 #include <vector>
 #include "AudioConstants.hpp"
@@ -17,6 +20,7 @@ class SoundBuffer;
 
 namespace rtype::client {
 
+class AssetLibrary;
 class SettingsService;
 class SoundBank;
 
@@ -36,16 +40,25 @@ class SoundBank;
 class SoundPlayer : public ISoundPlayer, public ISettingsListener {
  public:
   /**
-   * @param bank Holds the sounds, loaded when the sound module starts; it
-   * must outlive the player.
+   * @param bank Holds the sounds, loaded when the sound module starts, and
+   * those load() reads later; it must outlive the player.
+   * @param library Where load() reads a sound from; it must outlive the
+   * player.
    * @param settings Holds the volumes of the player; it must outlive the
    * player, and tell it through subscribe().
    */
-  SoundPlayer(const SoundBank& bank, const SettingsService& settings);
+  SoundPlayer(SoundBank& bank, const AssetLibrary& library,
+              const SettingsService& settings);
 
-  /** @throws AssetNotLoadedException for a sound the bank does not hold:
-   * every id of ALL_SOUND_IDS is loaded when the sound module starts. */
+  /** @brief Plays nothing for a sound load() could not read.
+   * @throws AssetNotLoadedException for a sound the bank does not hold and
+   * load() was never asked for: every id of ALL_SOUND_IDS is loaded when the
+   * sound module starts. */
   void play(std::string_view soundId) override;
+
+  /** @brief Reads the sound into the bank; one it cannot read is noted, so
+   * play() stays silent for it. */
+  void load(std::string_view soundId) override;
 
   /** @brief Takes the volume of the effects or of the voices the settings
    * now hold when @p changed moves it; ignores the other settings. */
@@ -60,7 +73,9 @@ class SoundPlayer : public ISoundPlayer, public ISettingsListener {
    * @p buffer, created when it is new. */
   sf::Sound& voiceFor(const sf::SoundBuffer& buffer);
 
-  const SoundBank* bank_;
+  SoundBank* bank_;
+  const AssetLibrary* library_;
+  std::set<std::string, std::less<>> unreadable_;
   const SettingsService* settings_;
   float volume_;
   float voicesVolume_;

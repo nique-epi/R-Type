@@ -1,0 +1,10 @@
+# The resource deseret: the map DESERET a waiting room votes for, a level of
+# six stages across Utah in 1869, the salt flats, the hoodoos, the
+# abandoned line, the Sheol mine and the mesa of the Old Widow, with the
+# mobs, the decor that does something and the two bosses it brings
+# (entities/, sprites/deseret/, server/). Its maps are the backgrounds
+# deseret, deseret_hoodoos, deseret_line, deseret_mine and deseret_mesa of
+# the assets. A server starts it with the line `ensure deseret` of its
+# server.cfg; `set level deseret` plays it alone. The keys are described on
+# the page "Write a resource" of the docs.
+description = "Deseret: six stages across the Utah desert of 1869, its salt flats, its hoodoos, its railroad, its mine and the mesa of the Old Widow"

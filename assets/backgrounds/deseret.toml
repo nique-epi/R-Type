@@ -1,0 +1,20 @@
+# The Salt Flats, the first stage of Deseret: the white salt pan, then
+# the first homestead, under an open sky of dust.
+# Three layers cut from the map of its LDtk project, written by
+# generator/procedural/; the background arrives through its nearest layer.
+
+[[layer]]
+name = "far plane"
+motion = { parallax = 0.25 }
+tiles = { project = "biomes/deseret/deseret.ldtk", layer = "Far", tileset = "biomes/deseret/deseret_far.png" }
+
+[[layer]]
+name = "middle plane"
+motion = { parallax = 0.5 }
+tiles = { project = "biomes/deseret/deseret.ldtk", layer = "Mid", tileset = "biomes/deseret/deseret_mid.png" }
+
+[[layer]]
+name = "near plane"
+motion = { parallax = 1 }
+entrance = true
+tiles = { project = "biomes/deseret/deseret.ldtk", layer = "Near", tileset = "biomes/deseret/deseret_near.png" }

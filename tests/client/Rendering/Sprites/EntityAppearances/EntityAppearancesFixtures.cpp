@@ -4,6 +4,7 @@
 #include <array>
 #include <cmath>
 #include <cstddef>
+#include <filesystem>
 #include <optional>
 #include <span>
 #include <string>
@@ -134,6 +135,12 @@ EntityAppearances appearancesReading(std::string_view text) {
   return EntityAppearances::fromTexts(sheets);
 }
 
+EntityAppearances appearancesReadingInAPack(std::string_view text) {
+  const std::array sheets{sheetText(READ_TYPE_NAME, text)};
+  return EntityAppearances::fromTexts(sheets,
+                                      std::filesystem::path{SOUND_PACK_FOLDER});
+}
+
 EntityAppearances threeAppearancesOnTwoSheets() {
   const std::array sheets{sheetText(READ_TYPE_NAME, READ_SHEET_TEXT),
                           sheetText(UNREAD_TYPE_NAME, OTHER_SHEET_TEXT),
@@ -153,6 +160,11 @@ EntityAppearances fosseAppearances() {
 EntityAppearances ashlandsAppearances() {
   return EntityAppearances::fromFolder(shippedAssetFolder() /
                                        ASHLANDS_SHEETS_FROM_THE_ASSETS);
+}
+
+EntityAppearances deseretAppearances() {
+  return EntityAppearances::fromFolder(shippedAssetFolder() /
+                                       DESERET_SHEETS_FROM_THE_ASSETS);
 }
 
 bool hurtsAllTheTime(const rtype::game::EntitySheet& sheet) {

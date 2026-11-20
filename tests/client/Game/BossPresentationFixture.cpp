@@ -21,7 +21,8 @@ BossPresentationFixture::BossPresentationFixture()
                            .deathFramesWithoutFlash = {},
                            .effects = {},
                            .looks = {},
-                           .bossName = std::string{PRESENTED_BOSS_NAME}} {}
+                           .bossName = std::string{PRESENTED_BOSS_NAME},
+                           .sounds = {}} {}
 
 void BossPresentationFixture::placeNamedBoss() {
   const rtype::engine::Entity boss = entities_.create();

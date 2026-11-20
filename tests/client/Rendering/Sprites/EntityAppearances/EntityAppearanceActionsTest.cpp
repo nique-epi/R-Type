@@ -13,6 +13,7 @@
 #include "EntityAppearancesFixtures.hpp"
 #include "EntityAppearancesTestConstants.hpp"
 #include "FrameAnchor.hpp"
+#include "GameException.hpp"
 #include "Playback.hpp"
 
 using rtype::client::ActionAnimation;
@@ -26,6 +27,7 @@ using rtype::engine::UnknownDataFileChoiceException;
 using rtype::engine::UnknownDataFileKeyException;
 using rtype::game::ActionKey;
 using rtype::game::EnemyPhase;
+using rtype::game::InconsistentEntitySheetException;
 using ::testing::ElementsAreArray;
 
 namespace {
@@ -238,4 +240,15 @@ TEST(EntityAppearanceActions, RefusesAnUnknownKeyOfAPhase) {
   EXPECT_THROW(static_cast<void>(
                    appearancesReading(SHEET_WITH_AN_UNKNOWN_ACTION_KEY_TEXT)),
                UnknownDataFileKeyException);
+}
+
+/**
+ * Given a strike that plays once and stays on its last frame
+ * When its appearance is read
+ * Then it throws, since the end of that strike would take the body away
+ */
+TEST(EntityAppearanceActions, RefusesAStrikePlayedOnceThatStays) {
+  EXPECT_THROW(static_cast<void>(appearancesReading(
+                   SHEET_WITH_A_STRIKE_ONCE_THAT_STAYS_TEXT)),
+               InconsistentEntitySheetException);
 }

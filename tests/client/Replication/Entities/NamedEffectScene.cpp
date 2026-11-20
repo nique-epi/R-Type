@@ -44,7 +44,8 @@ EntityAppearance appearanceWithASpark() {
           .frameDuration = SPARK_FRAME_TIME,
           .anchor = SPARK_ANCHOR}},
       .looks = {},
-      .bossName = {}};
+      .bossName = {},
+      .sounds = {}};
 }
 
 }  // namespace

@@ -9,7 +9,7 @@
 
 /** @brief A sheet with two attacks: the strike of the first holds its last
  * frame, goes back to the idle animation and hangs 12 pixels to the left of the
- * body; the signal of the second plays once, stays on its last frame and has
+ * body; the signal of the second loops, stays on its last frame and has
  * no anchor. */
 constexpr std::string_view SHEET_WITH_ATTACKS_TEXT = R"(
 [gameplay]
@@ -38,7 +38,7 @@ height = 16
 frames = 2
 spacing = 0
 frame_ms = 200
-playback = "once"
+playback = "loop"
 afterwards = "stay"
 
 [appearance.idle]
@@ -287,6 +287,35 @@ spacing = 2
 frame_ms = 80
 playback = "once"
 speed = 3
+
+[appearance.idle]
+left = 0
+top = 0
+width = 8
+height = 8
+frames = 1
+spacing = 0
+frame_ms = 100
+)";
+
+/** @brief A strike played once that stays on its last frame: the body would
+ * be destroyed once it ended, so the sheet is refused. */
+constexpr std::string_view SHEET_WITH_A_STRIKE_ONCE_THAT_STAYS_TEXT = R"(
+[gameplay]
+
+[appearance]
+sheet = "sprites/voltjelly.png"
+
+[appearance.attack_1.strike]
+left = 0
+top = 96
+width = 48
+height = 24
+frames = 4
+spacing = 2
+frame_ms = 80
+playback = "once"
+afterwards = "stay"
 
 [appearance.idle]
 left = 0

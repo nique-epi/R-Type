@@ -30,8 +30,10 @@ bool isVoiceSound(std::string_view soundId) {
 
 }  // namespace
 
-SoundPlayer::SoundPlayer(const SoundBank& bank, const SettingsService& settings)
+SoundPlayer::SoundPlayer(SoundBank& bank, const AssetLibrary& library,
+                         const SettingsService& settings)
     : bank_(&bank),
+      library_(&library),
       settings_(&settings),
       volume_(effectsVolumeOf(settings.settings())),
       voicesVolume_(voicesVolumeOf(settings.settings())) {
@@ -41,12 +43,18 @@ SoundPlayer::SoundPlayer(const SoundBank& bank, const SettingsService& settings)
 
 void SoundPlayer::play(std::string_view soundId) {
   const float volume = isVoiceSound(soundId) ? voicesVolume_ : volume_;
-  if (volume <= 0.0F) {
+  if (volume <= 0.0F || unreadable_.contains(soundId)) {
     return;
   }
   sf::Sound& voice = voiceFor(bank_->sound(soundId));
   voice.setVolume(volume);
   voice.play();
+}
+
+void SoundPlayer::load(std::string_view soundId) {
+  if (!bank_->loadOne(*library_, soundId)) {
+    unreadable_.emplace(soundId);
+  }
 }
 
 void SoundPlayer::settingChanged(SettingId changed) {

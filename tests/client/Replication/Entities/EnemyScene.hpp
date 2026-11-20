@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
+#include <vector>
 #include "AnimationSystem.hpp"
 #include "ComponentRegistry.hpp"
 #include "EnemyAction.hpp"
@@ -8,6 +10,7 @@
 #include "Entity.hpp"
 #include "EntityAppearance.hpp"
 #include "EntityRegistry.hpp"
+#include "RecordingSoundPlayer.hpp"
 #include "SpriteAnimation.hpp"
 #include "SpriteFrame.hpp"
 #include "TimeConstants.hpp"
@@ -33,13 +36,16 @@ class EnemyScene {
   void play(engine::Duration elapsed);
   [[nodiscard]] const SpriteAnimation& playing();
   [[nodiscard]] game::SpriteFrame shownFrame();
+  /** @returns The ids of the sounds the player played, in order. */
+  [[nodiscard]] const std::vector<std::string>& playedSounds() const;
 
  private:
   EntityAppearance appearance_;
   engine::EntityRegistry entities_;
   engine::ComponentRegistry components_{entities_};
   engine::Entity enemy_{};
-  EnemyActionPlayer player_{components_};
+  RecordingSoundPlayer sounds_;
+  EnemyActionPlayer player_{components_, sounds_};
   AnimationSystem system_;
 };
 

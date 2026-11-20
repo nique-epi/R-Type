@@ -1,0 +1,95 @@
+# The entity type lantern_wisp, brought by the resource deseret:
+# a miner's lantern carried through the galleries by Bydo tendrils, that drops
+# a bead of burning oil on the floor.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy"
+layer = "enemy"
+hits = ["player"]
+pilot = "lantern_float"
+
+[gameplay.hitbox]
+width = 64
+height = 104
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 100
+
+# It floats left 140 units under the ceiling; a ship below it within 220
+# units of its column, rested 1.8 s, whitens its glass 600 ms, then it drops
+# a bead of burning oil.
+[gameplay.behaviour]
+reach = 220
+rest_ms = 1800
+signal_ms = 600
+strike_ms = 240
+recover_ms = 240
+
+[gameplay.health]
+points = 2
+
+[gameplay.score]
+points = 120
+
+[appearance]
+sheet = "sprites/deseret/lantern_wisp.png"
+
+# Idle: the flame, three frames.
+[appearance.idle]
+left = 0
+top = 0
+width = 16
+height = 26
+frames = 3
+spacing = 2
+frame_ms = 120
+
+# Signal: the glass whitens.
+[appearance.attack_0.signal]
+left = 54
+top = 0
+width = 16
+height = 26
+frames = 1
+spacing = 2
+frame_ms = 600
+playback = "loop"
+afterwards = "stay"
+
+# Strike: the bead drops.
+[appearance.attack_0.strike]
+left = 72
+top = 0
+width = 16
+height = 26
+frames = 1
+spacing = 2
+frame_ms = 240
+playback = "hold"
+afterwards = "stay"
+
+# Recover: the flame settles.
+[appearance.attack_0.recover]
+left = 0
+top = 0
+width = 16
+height = 26
+frames = 1
+spacing = 2
+frame_ms = 240
+playback = "once"
+afterwards = "idle"
+
+# The death, centered on the body; the row under it is the same death without flash.
+[appearance.death]
+left = 0
+top = 28
+width = 48
+height = 48
+frames = 6
+spacing = 2
+frame_ms = 70

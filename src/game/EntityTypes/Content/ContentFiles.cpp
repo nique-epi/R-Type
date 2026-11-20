@@ -66,6 +66,32 @@ std::string spriteSheetOf(const SheetText& sheet) {
   return engine::textAt(appearance, SPRITE_SHEET_KEY);
 }
 
+/** @brief Adds to @p sounds every text of @p table and of the tables it
+ * holds: the paths of the sound files `[appearance.sounds]` names, whose keys
+ * the client checks. */
+void addSoundPaths(const toml::table& table, std::set<std::string>& sounds) {
+  for (const auto& [key, node] : table) {
+    if (const std::optional<std::string> path = node.value<std::string>()) {
+      sounds.insert(*path);
+    } else if (const toml::table* inner = node.as_table()) {
+      addSoundPaths(*inner, sounds);
+    }
+  }
+}
+
+/** @brief Adds to @p sounds the sound files the `[appearance]` of @p sheet
+ * names in its table `sounds`, if it has one. */
+void addSoundsOf(const SheetText& sheet, std::set<std::string>& sounds) {
+  const toml::table root = engine::parseDataFile(sheet.text, sheet.source);
+  const engine::DataFileTable appearance =
+      engine::tableAt(engine::rootOf(root, sheet.source), APPEARANCE_KEY);
+  const std::optional<engine::DataFileTable> table =
+      engine::optionalTableAt(appearance, SOUNDS_TABLE_KEY);
+  if (table.has_value()) {
+    addSoundPaths(table->table.get(), sounds);
+  }
+}
+
 /** @returns The folders of @p contentFolders that hold @p path. */
 std::vector<std::filesystem::path> foldersHolding(
     std::span<const std::filesystem::path> contentFolders,
@@ -113,6 +139,7 @@ std::vector<identifiers::ContentFile> sheetFilesIn(
   std::set<std::string> spriteSheets;
   for (SheetText& sheet : sheets) {
     spriteSheets.insert(spriteSheetOf(sheet));
+    addSoundsOf(sheet, spriteSheets);
     files.push_back(identifiers::ContentFile{.path = sheetPathOf(sheet.name),
                                              .bytes = std::move(sheet.text)});
     if (sheet.mask.has_value()) {

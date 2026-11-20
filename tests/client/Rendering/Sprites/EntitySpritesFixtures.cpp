@@ -21,7 +21,8 @@ const EntityAppearance& testAppearance() {
       .deathFramesWithoutFlash = {},
       .effects = {},
       .looks = {},
-      .bossName = {}};
+      .bossName = {},
+      .sounds = {}};
   return appearance;
 }
 

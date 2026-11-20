@@ -1,0 +1,289 @@
+# The entity type old_widow, brought by the resource deseret:
+# the windpump of an abandoned farm at the top of the mesa, its wheel of
+# blades a Bydo eye. It blows sand, throws its blades, pumps oil out of the
+# ground and, enraged, tears its veil. A missile that touches its wheel, its
+# tower or its vane hurts it, at any time.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy"
+layer = "enemy"
+hits = ["player"]
+pilot = "old_widow_turn"
+
+# Its wheel, its tower and the vane of its tail.
+[[gameplay.hitbox.box]]
+width = 224
+height = 232
+offset_x = -32
+offset_y = -180
+
+[[gameplay.hitbox.box]]
+width = 176
+height = 376
+offset_x = -24
+offset_y = 124
+
+[[gameplay.hitbox.box]]
+width = 144
+height = 64
+offset_x = 152
+offset_y = -176
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 1
+
+# It rises out of the mesa (its arrival, 1.32 s) where it rests, its feet on
+# the ground under it (y 620 where the biome gives none); rested 1.2 s (0.6 s
+# enraged), it takes its attacks in turn: the gale blows sand along 3 lanes of
+# 5 for 1.2 s, the blades fly to the left edge and back, the pump cracks the
+# ground under the nearest ship and at two other places 1.4 s before their
+# geysers; enraged, its veil tears
+# into 6 tatters that stop the shots while it blows.
+[gameplay.behaviour]
+rest_y = 620
+rise_ms = 1320
+rest_ms = 1200
+enraged_rest_ms = 600
+signal_ms = 600
+gale_ms = 1200
+gust_gap_ms = 300
+blades_ms = 2600
+crack_ms = 1400
+pump_ms = 420
+tatters = 6
+veil_ms = 720
+recover_ms = 480
+calm_ms = 1200
+
+[gameplay.health]
+points = 400
+
+[gameplay.score]
+points = 20000
+
+[gameplay.boss]
+rage_below_percent = 50
+rage_attack = 5
+arrival_attack = 4
+
+[gameplay.stays_outside]
+
+[gameplay.survives_contact]
+
+[appearance]
+sheet = "sprites/deseret/old_widow.png"
+boss_name = "THE OLD WIDOW"
+
+# Idle: the wheel turns a blade period in 8 frames, the veil sways.
+[appearance.idle]
+left = 0
+top = 0
+width = 112
+height = 156
+frames = 8
+spacing = 2
+frame_ms = 60
+
+# Enraged: twice as fast, red eye, lit roots, the veil half torn.
+[appearance.enraged_idle]
+left = 0
+top = 158
+width = 112
+height = 156
+frames = 8
+spacing = 2
+frame_ms = 45
+
+# Gale, signal: the eye burns, dust gathers at the rim.
+[appearance.attack_0.signal]
+left = 0
+top = 316
+width = 112
+height = 156
+frames = 6
+spacing = 2
+frame_ms = 100
+playback = "loop"
+afterwards = "stay"
+
+# Gale, strike: the wheel races and blows sand to the left.
+[appearance.attack_0.strike]
+left = 0
+top = 474
+width = 112
+height = 156
+frames = 8
+spacing = 2
+frame_ms = 45
+playback = "loop"
+afterwards = "stay"
+
+# Gale, recover.
+[appearance.attack_0.recover]
+left = 0
+top = 632
+width = 112
+height = 156
+frames = 4
+spacing = 2
+frame_ms = 120
+playback = "once"
+afterwards = "idle"
+
+# Blades, signal: two opposite blades glow as they loosen.
+[appearance.attack_1.signal]
+left = 0
+top = 790
+width = 112
+height = 156
+frames = 6
+spacing = 2
+frame_ms = 100
+playback = "loop"
+afterwards = "stay"
+
+# Blades, strike: they tear off; the wheel turns with two gaps.
+[appearance.attack_1.strike]
+left = 0
+top = 948
+width = 112
+height = 156
+frames = 6
+spacing = 2
+frame_ms = 70
+playback = "hold"
+afterwards = "stay"
+
+# Blades, recover: they come back and click into place.
+[appearance.attack_1.recover]
+left = 0
+top = 1106
+width = 112
+height = 156
+frames = 4
+spacing = 2
+frame_ms = 120
+playback = "once"
+afterwards = "idle"
+
+# Pump, signal: the crosshead climbs its rod.
+[appearance.attack_2.signal]
+left = 0
+top = 1264
+width = 112
+height = 156
+frames = 6
+spacing = 2
+frame_ms = 110
+playback = "hold"
+afterwards = "stay"
+
+# Pump, strike: it slams down, oil spurts at the foot.
+[appearance.attack_2.strike]
+left = 0
+top = 1422
+width = 112
+height = 156
+frames = 6
+spacing = 2
+frame_ms = 70
+playback = "hold"
+afterwards = "stay"
+
+# Pump, recover.
+[appearance.attack_2.recover]
+left = 0
+top = 1580
+width = 112
+height = 156
+frames = 4
+spacing = 2
+frame_ms = 120
+playback = "once"
+afterwards = "idle"
+
+# Veil (its rage attack), signal: the veil billows.
+[appearance.attack_3.signal]
+left = 0
+top = 1738
+width = 112
+height = 156
+frames = 6
+spacing = 2
+frame_ms = 100
+playback = "loop"
+afterwards = "stay"
+
+# Veil, strike: it tears away in drifting strips.
+[appearance.attack_3.strike]
+left = 0
+top = 1896
+width = 112
+height = 156
+frames = 8
+spacing = 2
+frame_ms = 90
+playback = "hold"
+afterwards = "stay"
+
+# Veil, recover.
+[appearance.attack_3.recover]
+left = 0
+top = 2054
+width = 112
+height = 156
+frames = 4
+spacing = 2
+frame_ms = 120
+playback = "once"
+afterwards = "idle"
+
+# Arrival, signal: it rises out of the mesa, cut at its mound.
+[appearance.attack_4.signal]
+left = 0
+top = 2212
+width = 112
+height = 156
+frames = 12
+spacing = 2
+frame_ms = 110
+playback = "hold"
+afterwards = "stay"
+
+# Arrival, strike: its wheel kicks into motion and throws off the dust.
+[appearance.attack_4.strike]
+left = 0
+top = 2370
+width = 112
+height = 156
+frames = 6
+spacing = 2
+frame_ms = 70
+playback = "hold"
+afterwards = "stay"
+
+# Arrival, recover.
+[appearance.attack_4.recover]
+left = 0
+top = 2528
+width = 112
+height = 156
+frames = 4
+spacing = 2
+frame_ms = 120
+playback = "once"
+afterwards = "idle"
+
+# The death; the row under it is the same death without flash.
+[appearance.death]
+left = 0
+top = 2686
+width = 128
+height = 172
+frames = 6
+spacing = 2
+frame_ms = 90

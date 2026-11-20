@@ -14,12 +14,13 @@ namespace rtype::game {
  * server plays: every sheet of their ENTITY_SHEET_FOLDER_IN_ASSETS (see
  * sheetTextsInFolders()) with its mask file when it has one, and the sprite
  * sheet each one names under
- * SPRITE_SHEET_KEY, read once however many sheets name it, from the one
- * folder that holds it. The folders are laid over each other, so a sheet of a
- * resource may name a sprite sheet of the assets. Then the backgrounds the
- * resources bring, with the files they name (see backgroundFilesIn()); a
- * file listed already is not listed again. The server and the client list
- * it the same way, so the same folders give the same files.
+ * SPRITE_SHEET_KEY and the sound files its table SOUNDS_TABLE_KEY names, each
+ * read once however many sheets name it, from the one folder that holds it. The
+ * folders are laid over each other, so a sheet of a resource may name a sprite
+ * sheet of the assets. Then the backgrounds the resources bring, with the files
+ * they name (see backgroundFilesIn()); a file listed already is not listed
+ * again. The server and the client list it the same way, so the same folders
+ * give the same files.
  * @param contentFolders The assets folder, then the folder of each resource
  * started (see engine::contentFoldersOf()); a client lists its assets alone.
  * @returns The files, in the order of their paths.

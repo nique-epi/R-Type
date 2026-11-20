@@ -1,0 +1,32 @@
+# The entity type mine_prop, brought by the resource deseret:
+# a prop of the gallery a blast knocks off the ceiling, falling straight down.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy_missile"
+layer = "enemy_missile"
+hits = ["player"]
+pilot = "falling_straight"
+
+[gameplay.hitbox]
+width = 32
+height = 136
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 700
+
+[appearance]
+sheet = "sprites/deseret/mine_prop.png"
+
+# Idle: the timber.
+[appearance.idle]
+left = 0
+top = 0
+width = 8
+height = 34
+frames = 1
+spacing = 2
+frame_ms = 1000

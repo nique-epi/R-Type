@@ -1,0 +1,70 @@
+# The entity type dynamite_crate, brought by the resource deseret:
+# a crate of dynamite on the floor. Hit, its longer fuse burns 900 ms, then it
+# blows up within 200 units, fells the nearest spire across a corridor of
+# falling rocks, or knocks a prop off the ceiling of the mine.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy"
+layer = "enemy"
+hits = ["player"]
+pilot = "fuse_watch"
+
+# Its box rises above it toward the rows the shots of a low ship fly at.
+[gameplay.hitbox]
+width = 88
+height = 136
+offset_y = -32
+
+[gameplay.motion]
+kind = "scroll"
+
+# Its fuse burns 900 ms; its blast reaches 200 units and lights the kegs
+# within 240 units.
+[gameplay.behaviour]
+fuse_ms = 900
+blast = 1
+light_reach = 240
+
+[gameplay.health]
+points = 1
+
+[gameplay.score]
+points = 150
+
+[appearance]
+sheet = "sprites/deseret/dynamite_crate.png"
+
+# Idle: a grain of powder leaks from it.
+[appearance.idle]
+left = 0
+top = 0
+width = 22
+height = 18
+frames = 1
+spacing = 2
+frame_ms = 400
+
+# Signal: the spark runs down its fuse.
+[appearance.attack_0.signal]
+left = 24
+top = 0
+width = 22
+height = 18
+frames = 2
+spacing = 2
+frame_ms = 300
+playback = "loop"
+afterwards = "stay"
+
+# The death: it bursts; the row under it is the same blast without flash.
+[appearance.death]
+left = 0
+top = 20
+width = 48
+height = 48
+frames = 12
+spacing = 2
+frame_ms = 83

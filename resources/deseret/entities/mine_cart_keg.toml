@@ -1,0 +1,56 @@
+# The entity type mine_cart_keg, brought by the resource deseret:
+# a mine cart that carries a powder keg: shot from behind, it rolls off, a
+# bomb on wheels, and bursts.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy"
+layer = "enemy"
+hits = ["player"]
+pilot = "cart_roll"
+
+[gameplay.hitbox]
+width = 96
+height = 120
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 640
+
+# It rests on its rails, carried by the scroll; hit from behind, it rolls
+# right at its top speed, crushing the mobs ahead of it, and its keg bursts after 1.4 s.
+[gameplay.behaviour]
+roll_ms = 1400
+laden = 1
+
+# It has health so missiles meet it; its pre_hit refuses every hit but the
+# one that sets it rolling, and its keg kills it.
+[gameplay.health]
+points = 1
+
+[gameplay.survives_contact]
+
+[appearance]
+sheet = "sprites/deseret/mine_cart_keg.png"
+
+# Idle: its wheels, a spoke turned 45 degrees.
+[appearance.idle]
+left = 0
+top = 0
+width = 24
+height = 30
+frames = 2
+spacing = 2
+frame_ms = 120
+
+# The death: the keg it carries bursts; the row under it without flash.
+[appearance.death]
+left = 0
+top = 32
+width = 32
+height = 32
+frames = 8
+spacing = 2
+frame_ms = 83
