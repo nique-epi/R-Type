@@ -19,6 +19,29 @@ local MUZZLE_GAP = 60
 -- The right edge of the playfield: a mob fires only once it shows.
 local RIGHT_EDGE = 1920
 
+-- How long a tick lasts, in seconds: a body that keeps to the ground moves
+-- up or down at most its top speed over a tick.
+local TICK_SECONDS = 1 / 60
+
+-- How far the center of a walker stands above the floor (negative) or below
+-- the ceiling (positive), the gaps ashlands.luau spawns them with.
+local DUNECRAWLER_GAP = -48
+local FIXBOT_GAP = -56
+local RAIL_TURRET_GAP = 0
+
+-- The direction that keeps a body `gap` units from the floor of the biome the
+-- level shows (or from its ceiling) while it moves left at its top speed,
+-- read with level.ground (level.ceiling) under its column. It moves straight
+-- left where the biome has no ground, or in a game that plays no level.
+local function along(e, read: (number) -> number?, gap: number)
+	local found, row = pcall(read, e.position.x)
+	if not found or row == nil then
+		return LEFT
+	end
+	local step = (row + gap - e.position.y) / (e.top_speed * TICK_SECONDS)
+	return { x = -1, y = math.clamp(step, -1, 1) }
+end
+
 local function percent(value: number): number
 	return value / 100
 end
@@ -69,7 +92,7 @@ local function fire(sheet: string, from): () -> number
 	end
 end
 
--- The Dunecrawler walks left along the floor; when a ship flies above it,
+-- The Dunecrawler walks left along the floor, keeping to it; when a ship flies above it,
 -- within reach on the x axis, its tail quivers and it fires a barb straight up.
 behaviours.register("dunecrawler_walk", with_attack({
 	{ name = "reach", lowest = 0, highest = 1920 },
@@ -84,7 +107,7 @@ behaviours.register("dunecrawler_walk", with_attack({
 	then
 		attack(settings, fire("dunecrawler_barb", { x = e.position.x, y = e.position.y - MUZZLE_GAP }))
 	end
-	return { direction = LEFT }
+	return { direction = along(e, level.ground, DUNECRAWLER_GAP) }
 end)
 
 -- A missile that rises, drifting left by `drift` percent of its speed.
@@ -132,7 +155,7 @@ behaviours.register("aimed_bolt", {}, function(e)
 	return { direction = data.heading }
 end)
 
--- The Rail turret slides left along the ceiling at crawl_speed; when a ship
+-- The Rail turret slides left along the ceiling, keeping to it; when a ship
 -- flies below it, within reach on the x axis, its lens locks and it fires
 -- `shots` shots down, shot_gap_ms apart.
 behaviours.register("rail_turret_slide", with_attack({
@@ -160,7 +183,7 @@ behaviours.register("rail_turret_slide", with_attack({
 			return (settings.shots - 1) * settings.shot_gap_ms
 		end)
 	end
-	return { direction = LEFT }
+	return { direction = along(e, level.ceiling, RAIL_TURRET_GAP) }
 end)
 
 -- The Geiger mine drifts left, bobbing `bob` units around its row every
@@ -188,7 +211,7 @@ behaviours.register("geiger_drift", {
 	return { direction = bobbing_left(e) }
 end)
 
--- The Fixbot rolls left on the floor; when a ship is ahead of it, within
+-- The Fixbot rolls left on the floor, keeping to it; when a ship is ahead of it, within
 -- reach, it brakes, winds its arm back and throws a wrench forward.
 behaviours.register("fixbot_roll", with_attack({
 	{ name = "reach", lowest = 0, highest = 1920 },
@@ -204,7 +227,7 @@ behaviours.register("fixbot_roll", with_attack({
 	then
 		attack(settings, fire("fixbot_wrench", { x = e.position.x - MUZZLE_GAP, y = e.position.y - MUZZLE_GAP }))
 	end
-	return { direction = LEFT }
+	return { direction = along(e, level.ground, FIXBOT_GAP) }
 end)
 
 -- A wrench thrown along an arc: it leaves rising at `lift` percent of its

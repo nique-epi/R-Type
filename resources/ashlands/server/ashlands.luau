@@ -39,29 +39,39 @@ local END_OF_THE_DESCENT = 15600
 
 -- The rows the maps leave free: the ceiling and the floor of every corridor
 -- of the Ashlands (the highway has no ceiling), which the Rail turrets and the
--- Dunecrawlers keep; and the row the taller Fixbots roll along.
+-- Dunecrawlers keep; and the row the taller Fixbots roll along. The surfaces
+-- are where a corridor has its floor and its ceiling on average, used where
+-- the biome gives no ground (level.ground and level.ceiling read nil).
 local CEILING_ROW, FLOOR_ROW = 192, 848
 local OPEN_SKY_ROW = 0
 local ROLL_ROW = 840
+local FLOOR_SURFACE, CEILING_SURFACE = 896, 192
 
--- Where the center of each piece of decor stands so that it rests on the
--- floor (row 896) or hangs from the ceiling (row 192): the top of what hangs,
--- the base of the beacon and the frame of the lamp included, touches it.
-local STANDING_ON_THE_FLOOR = {
-	toxic_barrel = 860,
-	billboard = 836,
-	rad_geyser = 700,
-	searchlight = 700,
-	steam_vent = 700,
-	control_rods = 772,
+-- How far the center of each piece of decor stands above the floor, or hangs
+-- below the ceiling, so that it rests on it: the top of what hangs, the base
+-- of the beacon and the frame of the lamp included, touches it. It is laid on
+-- the ground of the biome under its column (level.ground, level.ceiling).
+local ABOVE_THE_FLOOR = {
+	toxic_barrel = 36,
+	billboard = 60,
+	rad_geyser = 196,
+	searchlight = 196,
+	steam_vent = 196,
+	control_rods = 124,
 }
-local HANGING_FROM_THE_CEILING = {
-	live_cable = 376,
-	coolant_leak = 252,
-	vent_grille = 236,
-	alarm_beacon = 216,
-	meltdown_lamp = 232,
+local BELOW_THE_CEILING = {
+	live_cable = 184,
+	coolant_leak = 60,
+	vent_grille = 44,
+	alarm_beacon = 24,
+	meltdown_lamp = 40,
 }
+
+-- The same for the mobs that walk on the floor or slide under the ceiling,
+-- where they enter; their behaviours keep them there with the same gaps
+-- (server/ashlands_mobs.luau).
+local WALKING_ON_THE_FLOOR = { dunecrawler = 48, fixbot = 56 }
+local SLIDING_UNDER_THE_CEILING = { rail_turret = 0 }
 
 -- A blast door leaves a gap DOOR_GAP units tall around its row, five ships;
 -- each half is 480 units tall.
@@ -81,14 +91,28 @@ local SKY_CHECK_MS = 250
 type Wave = { at: number, sheet: string, rows: { number } }
 type Decor = { at: number, sheet: string, row: number? }
 
+-- The row of the center of `sheet` resting on the ground at `column`, if it
+-- rests on the floor (`above`) or hangs from the ceiling (`below`); nil for a
+-- body that does neither.
+local function grounded_row(sheet: string, column: number, above, below): number?
+	if above[sheet] ~= nil then
+		return (level.ground(column) or FLOOR_SURFACE) - above[sheet]
+	end
+	if below[sheet] ~= nil then
+		return (level.ceiling(column) or CEILING_SURFACE) + below[sheet]
+	end
+	return nil
+end
+
 local function send(sheet: string, rows: { number })
+	local grounded = grounded_row(sheet, ENTRY_COLUMN, WALKING_ON_THE_FLOOR, SLIDING_UNDER_THE_CEILING)
 	for _, row in rows do
-		behaviours.spawn(sheet, { x = ENTRY_COLUMN, y = row })
+		behaviours.spawn(sheet, { x = ENTRY_COLUMN, y = grounded or row })
 	end
 end
 
-local function row_of(sheet: string): number
-	return STANDING_ON_THE_FLOOR[sheet] or HANGING_FROM_THE_CEILING[sheet] or FLOOR_ROW
+local function row_of(sheet: string, column: number): number
+	return grounded_row(sheet, column, ABOVE_THE_FLOOR, BELOW_THE_CEILING) or FLOOR_ROW
 end
 
 -- Lays a piece of decor where the scroll has brought it: at DECOR_COLUMN on
@@ -104,7 +128,7 @@ local function place(decor: Decor)
 		behaviours.spawn("blast_door_lower", { x = column, y = gap + away })
 		return
 	end
-	behaviours.spawn(decor.sheet, { x = column, y = decor.row or row_of(decor.sheet) })
+	behaviours.spawn(decor.sheet, { x = column, y = decor.row or row_of(decor.sheet, column) })
 end
 
 -- Plays the waves and lays the decor in the order of their scroll.
