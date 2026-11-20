@@ -76,7 +76,7 @@ WheelPicture spinningPicture(const WheelMoment& moment) {
                      WHEEL_ROTOR_TURN_FRAMES) %
                     WHEEL_ROTOR_TURN_FRAMES;
   return {.rotorFrame = frame,
-          .ball = framesLeft <= BALL_DROP_FRAMES
+          .ball = ballDropped(moment.timeLeft)
                       ? ballInPocket(moment.winningNumber, frame)
                       : ballOnTrack(moment.timeLeft)};
 }
@@ -100,6 +100,10 @@ int rotorFramesLeft(engine::Duration timeLeft) {
     frames += step.frames;
   }
   return frames + framesBegunIn(left, ROTOR_FASTEST_FRAME_TIME);
+}
+
+bool ballDropped(engine::Duration timeLeft) {
+  return rotorFramesLeft(timeLeft) <= BALL_DROP_FRAMES;
 }
 
 WheelPicture wheelPictureAt(const WheelMoment& moment,

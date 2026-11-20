@@ -28,6 +28,7 @@
 #include "RouletteScreenConstants.hpp"
 #include "RouletteScreenParts.hpp"
 #include "TimeConstants.hpp"
+#include "WheelSounds.hpp"
 
 namespace rtype::client {
 
@@ -97,6 +98,7 @@ class RouletteScreen final : public IScreen {
   /** @brief Holds the music of the room for as long as it shows. */
   AmbienceScope ambience_;
   ISoundPlayer* sounds_;
+  WheelSounds wheelSounds_;
   ICasinoChannel* casino_;
   RouletteMemory* memory_;
   const IWallet* wallet_;
