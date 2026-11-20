@@ -5,8 +5,8 @@
 #include <SFML/System/Vector2.hpp>
 #include <string>
 #include <string_view>
-#include "BackgroundConstants.hpp"
 #include "InterfaceConstants.hpp"
+#include "PixelGridConstants.hpp"
 #include "SmoothImage.hpp"
 #include "SmoothImageSpot.hpp"
 

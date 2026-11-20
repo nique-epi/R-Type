@@ -4,9 +4,9 @@
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Graphics/RenderTexture.hpp>
 #include <SFML/Graphics/Sprite.hpp>
-#include "BackgroundConstants.hpp"
 #include "ClientException.hpp"
 #include "EnlargedPicture.hpp"
+#include "PixelGridConstants.hpp"
 
 namespace rtype::client {
 
