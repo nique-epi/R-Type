@@ -38,6 +38,8 @@ twinkle_steps = 8
 
 A table in braces fits on one line; one that needs several lines is written as a table of its own, `[layer.particles]`, after the keys of its layer.
 
+A background may also name, above its layers, the music a game plays while it shows, by its asset id: `music = "music/crawl_out_through_the_fallout.mp3"`, a file of `assets/music/`. It plays in place of the music of a game from the first status of the level that shows the biome until the game ends, bosses included, which then play neither their alarm nor their music (see [Client](/R-Type/client/#sounds-and-music-iaudioservice-soundplayer-musicplayer)). A background without `music` leaves the music of a game. A resource of a server does not send the file of a music: the client looks for it in its own assets.
+
 ## A layer
 
 | Key | Needed | What it is |
