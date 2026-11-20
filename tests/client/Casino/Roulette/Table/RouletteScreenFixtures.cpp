@@ -25,14 +25,16 @@ using network::MillisecondDate;
  * seated in the room. */
 std::vector<network::CasinoPlayer> playersOfTheRoom(
     std::uint32_t stake, std::optional<std::uint32_t> payout) {
-  return {
-      network::CasinoPlayer{
-          .nickname = std::string{ACE_NAME}, .stake = stake, .payout = payout},
-      network::CasinoPlayer{.nickname = std::string{LUNA_NAME},
-                            .stake = 0,
-                            .payout = payout.has_value()
-                                          ? std::optional<std::uint32_t>(0)
-                                          : std::nullopt}};
+  return {network::CasinoPlayer{.nickname = std::string{ACE_NAME},
+                                .stake = stake,
+                                .payout = payout,
+                                .bets = {}},
+          network::CasinoPlayer{.nickname = std::string{LUNA_NAME},
+                                .stake = 0,
+                                .payout = payout.has_value()
+                                              ? std::optional<std::uint32_t>(0)
+                                              : std::nullopt,
+                                .bets = {}}};
 }
 
 }  // namespace

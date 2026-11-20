@@ -4,3 +4,7 @@
 assets/waves/waves.toml text eol=lf
 assets/entities/*.toml text eol=lf
 assets/entities/masks/*.txt text eol=lf
+
+# vcpkg takes these patches only when their SHA512 matches the portfile, so
+# a checkout keeps their bytes as they are.
+.github/vcpkg-downloads/* -text

@@ -6,10 +6,10 @@
 #include <chrono>
 #include <cstdint>
 #include "BackgroundColorConstants.hpp"
-#include "BackgroundConstants.hpp"
 #include "EffectColorConstants.hpp"
 #include "FireColorConstants.hpp"
 #include "InterfaceColorConstants.hpp"
+#include "PixelGridConstants.hpp"
 #include "RenderingConstants.hpp"
 #include "Ring.hpp"
 #include "TimeConstants.hpp"

@@ -9,6 +9,7 @@
 #include <memory>
 #include <optional>
 #include <utility>
+#include "Ambience.hpp"
 #include "BetsReading.hpp"
 #include "CasinoRefusal.hpp"
 #include "CasinoRoomState.hpp"
@@ -88,7 +89,9 @@ std::optional<CasinoRefusal> refusalOf(
 RouletteScreen::RouletteScreen(RouletteScreenParts parts,
                                std::unique_ptr<IInterfaceCanvas> canvas)
     : navigator_(&parts.navigator.get()),
+      ambience_(parts.audio.get(), Ambience::CasinoTables),
       sounds_(&parts.sounds.get()),
+      roundSounds_(parts.sounds.get()),
       casino_(&parts.casino.get()),
       memory_(&parts.memory.get()),
       wallet_(&parts.wallet.get()),
@@ -116,7 +119,9 @@ RouletteScreen::RouletteScreen(RouletteScreenParts parts,
   const std::optional<network::CasinoRoomState> room = casino_->room();
   const std::optional<BetsReading>& bets = casino_->lastBets();
   memory_->follow(room, bets);
-  repaint(readTable(room, bets));
+  const RouletteReading reading = readTable(room, bets);
+  roundSounds_.follow(reading);
+  repaint(reading);
 }
 
 void RouletteScreen::handleEvent(const sf::Event& event) {
@@ -137,7 +142,9 @@ void RouletteScreen::update([[maybe_unused]] engine::Duration elapsed) {
   const std::optional<network::CasinoRoomState> room = casino_->room();
   const std::optional<BetsReading>& bets = casino_->lastBets();
   memory_->follow(room, bets);
-  repaint(readTable(room, bets));
+  const RouletteReading reading = readTable(room, bets);
+  roundSounds_.follow(reading);
+  repaint(reading);
 }
 
 void RouletteScreen::draw(sf::RenderTarget& target) const {

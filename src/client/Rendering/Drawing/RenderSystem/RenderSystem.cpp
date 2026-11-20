@@ -7,7 +7,6 @@
 #include <cstddef>
 #include <optional>
 #include <vector>
-#include "BackgroundConstants.hpp"
 #include "BarrelRoll.hpp"
 #include "Caption.hpp"
 #include "ComponentRegistry.hpp"
@@ -18,6 +17,7 @@
 #include "Invulnerability.hpp"
 #include "Layer.hpp"
 #include "Nudge.hpp"
+#include "PixelGridConstants.hpp"
 #include "Position.hpp"
 #include "RenderingConstants.hpp"
 #include "Reveal.hpp"

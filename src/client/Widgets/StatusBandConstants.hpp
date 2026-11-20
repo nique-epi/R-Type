@@ -5,10 +5,10 @@
 #include <SFML/System/Vector2.hpp>
 #include <cstdint>
 #include "BackgroundColorConstants.hpp"
-#include "BackgroundConstants.hpp"
 #include "EntitySpriteConstants.hpp"
 #include "InterfaceColorConstants.hpp"
 #include "InterfaceConstants.hpp"
+#include "PixelGridConstants.hpp"
 #include "PlayfieldConstants.hpp"
 #include "WidgetConstants.hpp"
 

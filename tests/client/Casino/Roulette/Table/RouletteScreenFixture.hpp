@@ -6,6 +6,7 @@
 #include <memory>
 #include "FakeAccountSession.hpp"
 #include "FakeWallet.hpp"
+#include "RecordingAudioService.hpp"
 #include "RecordingCasinoChannel.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
@@ -45,6 +46,7 @@ class RouletteScreenFixture : public ::testing::Test {
   FakeAccountSession account_;
   InterfaceCanvasRecord canvas_;
   RecordingSoundPlayer sounds_;
+  RecordingAudioService audio_{sounds_};
   FakeWallet wallet_;
   rtype::client::RouletteMemory memory_;
   std::unique_ptr<rtype::client::RouletteScreen> screen_;

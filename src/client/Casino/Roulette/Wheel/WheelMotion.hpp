@@ -18,6 +18,11 @@ namespace rtype::client {
  * ROTOR_SLOWDOWN, a frame begun counted whole; none once the spin ended. */
 [[nodiscard]] int rotorFramesLeft(engine::Duration timeLeft);
 
+/** @returns Whether the ball already lies in its pocket when @p timeLeft is
+ * left of the spin: once the rotor has BALL_DROP_FRAMES frames or fewer left
+ * to turn. */
+[[nodiscard]] bool ballDropped(engine::Duration timeLeft);
+
 /**
  * @returns What the wheel shows at @p moment: during the bets, the rotor at
  * rest and no ball; while it spins, the rotor turning and slowing so that it

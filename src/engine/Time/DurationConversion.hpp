@@ -16,6 +16,14 @@ constexpr double inMilliseconds(Duration duration) {
 }
 
 /**
+ * @returns @p duration in seconds, with its fraction: 0.25 for 250
+ * milliseconds; the unit the beats of a picture count in.
+ */
+constexpr float inSeconds(Duration duration) {
+  return std::chrono::duration<float>(duration).count();
+}
+
+/**
  * @returns @p total shared equally between @p count parts, zero when there is
  * none.
  */

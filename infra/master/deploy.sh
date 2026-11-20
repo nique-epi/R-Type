@@ -5,14 +5,17 @@
 # certificate of Let's Encrypt it renews by itself. A timer restarts a master
 # that stopped answering, and the test game server of the machine, when it
 # runs, moves to the release too. The workflow runs it through SSM Run
-# Command, after the lines VERSION=<x.y.z> and DOMAIN=<name of the master>
-# and the functions of infra/release.sh.
+# Command, after the lines VERSION=<x.y.z>, DOMAIN=<name of the master> and
+# PASSWORD_KEY=<key of the passwords, or nothing>, and the functions of
+# infra/release.sh.
 set -eu
 
 port=8080
 releases=/opt/rtype/releases
 current=/opt/rtype/current
 test_server=/var/lib/rtype/test-server
+key_folder=/etc/rtype
+key_file=$key_folder/master.env
 
 # The domain comes from a variable of the repository: it is never written in
 # the configuration of Caddy before it is checked.
@@ -43,9 +46,61 @@ CADDY
   systemctl reload-or-restart caddy
 }
 
+# The key of the passwords comes from the secret MASTER_PASSWORD_KEY of the
+# environment production: 64 lowercase hexadecimal digits, as
+# "openssl rand -hex 32" prints them, or nothing. Its value is never printed.
+require_password_key() {
+  PASSWORD_KEY=${PASSWORD_KEY:-}
+  if [ -n "$PASSWORD_KEY" ] && ! printf '%s' "$PASSWORD_KEY" | grep -Eq '^[0-9a-f]{64}$'; then
+    echo 'MASTER_PASSWORD_KEY is not 64 lowercase hexadecimal digits' >&2
+    exit 1
+  fi
+}
+
+# The master stops at its start without a key, and another key makes every
+# password it keeps unreadable. So a deployment stops before anything changed
+# when the master has no key and none is given, and never replaces the key
+# the master has. The key is changed by hand, by removing the file first (see
+# the page deploy-master of the documentation).
+require_usable_password_key() {
+  if [ -z "$PASSWORD_KEY" ] && [ ! -f "$key_file" ]; then
+    echo "no MASTER_PASSWORD_KEY, and the master has no key in $key_file: it would not start" >&2
+    exit 1
+  fi
+  if [ -n "$PASSWORD_KEY" ] && [ -f "$key_file" ] &&
+    [ "$(cat "$key_file")" != "RT_PASSWORD_KEY=$PASSWORD_KEY" ]; then
+    echo "MASTER_PASSWORD_KEY differs from the key the master has in $key_file, which is kept" >&2
+    exit 1
+  fi
+}
+
+# Writes the key, once, in a file only root reads, which systemd reads when it
+# starts the master; never in the unit, which every user of the machine
+# reads.
+install_password_key() {
+  if [ -f "$key_file" ]; then
+    chmod 700 "$key_folder"
+    chmod 600 "$key_file"
+    echo 'the master keeps its key of the passwords'
+  else
+    install -d -m 700 "$key_folder"
+    (
+      umask 077
+      printf 'RT_PASSWORD_KEY=%s\n' "$PASSWORD_KEY" > "$key_file"
+    )
+    echo 'the master was given its key of the passwords'
+  fi
+}
+
+# The unit of the master, which reads the file of its key when there is one.
 install_service() {
   write_server_unit rtype-master 'R-Type master' /var/lib/rtype \
     "$current/bin/r-type_server --mode master -p $port --database /var/lib/rtype/r-type_master.db --no-log-file"
+  install -d /etc/systemd/system/rtype-master.service.d
+  cat > /etc/systemd/system/rtype-master.service.d/password-key.conf <<UNIT
+[Service]
+EnvironmentFile=-$key_file
+UNIT
   systemctl daemon-reload
   systemctl enable rtype-master
 }
@@ -122,11 +177,14 @@ prune_releases() {
 main() {
   require_version
   require_domain
+  require_password_key
+  require_usable_password_key
   name=R-Type-server-$VERSION-Linux
   previous=$(readlink "$current" 2>/dev/null || true)
 
   unpack_release "$releases" "$name"
   install_service
+  install_password_key
   run_release "$releases/$name"
 
   if ! wait_until_healthy; then

@@ -110,6 +110,8 @@ jobs:
     uses: ./.github/workflows/deploy-master.yaml
     with:
       tag: ${{ github.ref_name }}
+    secrets:
+      MASTER_PASSWORD_KEY: ${{ secrets.MASTER_PASSWORD_KEY }}
     permissions:
       contents: read
       id-token: write
