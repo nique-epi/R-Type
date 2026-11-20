@@ -236,7 +236,7 @@ constexpr std::array<std::string_view, 15> FOSSE_SHEET_NAMES{
  * assets folder of the sources, and the name of every sheet in it. */
 constexpr std::string_view ASHLANDS_SHEETS_FROM_THE_ASSETS =
     "../resources/ashlands/entities";
-constexpr std::array<std::string_view, 35> ASHLANDS_SHEET_NAMES{
+constexpr std::array<std::string_view, 37> ASHLANDS_SHEET_NAMES{
     "alarm_beacon",      "ash_mother",
     "atomic_breath",     "billboard",
     "billboard_wreck",   "blast_door",
@@ -250,7 +250,8 @@ constexpr std::array<std::string_view, 35> ASHLANDS_SHEET_NAMES{
     "live_cable",        "meltdown_beam",
     "meltdown_lamp",     "rad_geyser",
     "rail_turret",       "rail_turret_shot",
-    "sandmaw",           "scrapdrone",
+    "sand_debris",       "sandmaw",
+    "sandmaw_boulder",   "scrapdrone",
     "scrapdrone_bolt",   "searchlight",
     "steam_vent",        "toxic_barrel",
     "toxic_blast",       "toxic_puddle",

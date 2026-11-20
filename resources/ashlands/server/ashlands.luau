@@ -4,7 +4,8 @@
 --
 -- 1, Highway Zero (biome cendres): the burnt desert, the broken highway and
 -- the checkpoint, under an open sky; Cindermites, Dunecrawlers and
--- Scrapdrones, then the Sandmaw (server/sandmaw.luau) at the checkpoint.
+-- Scrapdrones, then the Sandmaw (server/sandmaw.luau), planted in the floor of
+-- the checkpoint.
 -- 2, Shelter 9 (cendres_abri): its gate, dormitory and machine room, a
 -- corridor whose blast doors decide where the ships fly; Rail turrets, Geiger
 -- mines and Fixbots.
@@ -61,10 +62,10 @@ local ON_THE_WALL = {
 local DOOR_GAP = 260
 local DOOR_HALF = 480
 
--- Where each boss appears: the Sandmaw under the middle of the highway, the
--- Glowheart past the right edge on the middle row, the Ash Mother under the
--- floor of the silo where she stands.
-local SANDMAW_ENTRY = { x = 960, y = 1260 }
+-- Where each boss appears: the Sandmaw under the floor by the right edge,
+-- where it climbs to and stays, the Glowheart past the right edge on the
+-- middle row, the Ash Mother under the floor of the silo where she stands.
+local SANDMAW_ENTRY = { x = 1660, y = 1160 }
 local GLOWHEART_ENTRY = { x = 2200, y = 520 }
 local ASH_MOTHER_ENTRY = { x = 1608, y = 1320 }
 

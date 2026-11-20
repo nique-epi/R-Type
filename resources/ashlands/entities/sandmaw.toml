@@ -1,6 +1,7 @@
 # The entity type sandmaw, brought by the resource ashlands:
-# the worm under the highway, the mini-boss of Highway Zero: it dives
-# into the dunes and bursts out under the ship it marked.
+# the worm under the highway, the mini-boss of Highway Zero: planted in
+# the floor at the right edge, its maw inhales debris across the screen and
+# spits boulders and Dunecrawlers.
 # Only the server reads [gameplay]; a client draws [appearance] from the
 # content pack the supervisor serves. The keys are described on the page
 # "Writing an entity sheet" of the docs.
@@ -9,27 +10,35 @@
 side = "enemy"
 layer = "enemy"
 hits = ["player"]
-pilot = "sandmaw_hunt"
+pilot = "sandmaw_maw"
 
+# Its body above the dune; only the rows of its open maw let a hit through.
 [gameplay.hitbox]
-width = 248
-height = 152
+width = 232
+height = 120
+offset_y = -16
 
 [gameplay.motion]
 kind = "steady"
-top_speed = 900
+top_speed = 400
 
-# It waits 0.9 s under the floor (0.45 s enraged), bulges 0.7 s under
-# the ship it marked, bursts up 520 units in 0.6 s, arcs over 0.5 s and
-# dives back in 0.7 s.
+# It climbs to y 820 over 1.5 s, rests 1.2 s between two attacks (0.6 s
+# enraged), opens its maw 0.9 s, inhales 2.4 s, letting a clod in every
+# 0.22 s (0.14 s enraged), spits 3 boulders (5 enraged) 0.15 s apart, and
+# closes its maw over 0.4 s.
 [gameplay.behaviour]
-burrow_ms = 900
-enraged_burrow_ms = 450
-signal_ms = 700
-rise_ms = 600
-rise_height = 520
-recover_ms = 500
-dive_ms = 700
+rest_y = 820
+rise_ms = 1500
+rest_ms = 1200
+enraged_rest_ms = 600
+open_ms = 900
+inhale_ms = 2400
+debris_ms = 220
+enraged_debris_ms = 140
+boulders = 3
+enraged_boulders = 5
+boulder_gap_ms = 150
+close_ms = 400
 
 [gameplay.health]
 points = 40
