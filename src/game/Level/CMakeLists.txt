@@ -1,4 +1,5 @@
 add_subdirectory(Ldtk)
+add_subdirectory(Ground)
 
 add_library(rtype_game_level STATIC LevelScroll.cpp ScrollingBodies.cpp)
 
