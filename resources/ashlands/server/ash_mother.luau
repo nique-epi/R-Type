@@ -13,7 +13,7 @@
 -- front legs at where the nearest ship was AIM_BEFORE_MS before the throw,
 -- spread around that point, along a low arc that never follows the ship. Her
 -- head, thorax, abdomen and wings take damage wherever a missile
--- touches them, except while she strikes; her legs have no box, so a missile
+-- touches them, while she attacks too; her legs have no box, so a missile
 -- flies through them. Below 40 % of her health she spreads her wings (attack
 -- 4): she rests less, and each brood and each fling holds more.
 --
@@ -104,9 +104,9 @@ behaviours.register("ash_mother_brood", {
 	{ name = "egg_gap_ms", lowest = 1, highest = 60000 },
 }, function(e)
 	local settings = e.settings
-	local striking = true
+	local arriving = true
 	behaviours.pre_hit(function(hit)
-		if not striking then
+		if not arriving then
 			return true
 		end
 		behaviours.destroy(hit.missile)
@@ -122,7 +122,7 @@ behaviours.register("ash_mother_brood", {
 	behaviours.wait(BEATS[ARRIVAL].recover, { direction = STILL, starts_action = { attack = ARRIVAL, phase = "recover" } })
 	e = behaviours.wait(1, { direction = STILL, ends_action = true })
 	local center = { x = e.position.x, y = e.position.y }
-	striking = false
+	arriving = false
 
 	local raged = false
 	local played = 0
@@ -150,7 +150,6 @@ behaviours.register("ash_mother_brood", {
 			behaviours.wait(beats.signal, { direction = STILL })
 		end
 
-		striking = true
 		behaviours.wait(1, { direction = STILL, starts_action = { attack = chosen, phase = "strike" } })
 		local waited = 0
 		if chosen == BROOD then
@@ -159,7 +158,6 @@ behaviours.register("ash_mother_brood", {
 			waited = fling_eggs(center, target, if raged then settings.enraged_eggs else settings.eggs, settings.egg_gap_ms)
 		end
 		behaviours.wait(math.max(1, beats.strike - waited), { direction = STILL })
-		striking = false
 
 		behaviours.wait(beats.recover, { direction = STILL, starts_action = { attack = chosen, phase = "recover" } })
 		e = behaviours.wait(if raged then settings.enraged_rest_ms else settings.rest_ms, {

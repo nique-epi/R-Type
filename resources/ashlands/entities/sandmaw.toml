@@ -12,7 +12,7 @@ layer = "enemy"
 hits = ["player"]
 pilot = "sandmaw_maw"
 
-# Its body above the dune; only the rows of its open maw let a hit through.
+# Its body above the dune; every hit on it counts once it has come up.
 [gameplay.hitbox]
 width = 232
 height = 120

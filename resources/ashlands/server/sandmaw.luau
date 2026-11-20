@@ -11,8 +11,8 @@
 -- flying from the left edge into its maw, which the ships dodge or shoot, or
 -- spits boulders along an arc, and a Dunecrawler every second spit; then it
 -- closes its maw (the recover). Both use attack 0, the only one its sheet
--- draws. A missile hurts it only while its maw is open, and only on the rows
--- of its maw, the side the missiles come from. Once enraged it rests less,
+-- draws. A missile hurts it anywhere on its body once it has come up, while
+-- it attacks too; every missile is stopped while it comes up. Once enraged it rests less,
 -- inhales a thicker stream, spits more, and picks either at random.
 
 local STILL = { x = 0, y = 0 }
@@ -20,9 +20,8 @@ local STILL = { x = 0, y = 0 }
 local MAW_ATTACK, RAGE, ARRIVAL = 0, 1, 2
 
 -- Its maw, from the center of its body, in logical units (a pixel of the
--- sheet is 4 units), and the rows a hit may land on around it.
+-- sheet is 4 units).
 local MAW = { x = -110, y = -12 }
-local MAW_HALF_HEIGHT = 44
 
 -- Where a clod it inhales comes from: the left edge, on a row of the band.
 local DEBRIS_COLUMN = 40
@@ -90,9 +89,9 @@ behaviours.register("sandmaw_maw", {
 	{ name = "close_ms", lowest = 1, highest = 60000 },
 }, function(e)
 	local settings = e.settings
-	local maw_open = false
+	local arriving = true
 	behaviours.pre_hit(function(hit)
-		if maw_open and math.abs(hit.offset.y - MAW.y) <= MAW_HALF_HEIGHT then
+		if not arriving then
 			return true
 		end
 		behaviours.destroy(hit.missile)
@@ -106,6 +105,7 @@ behaviours.register("sandmaw_maw", {
 	})
 	e = behaviours.wait(1, { direction = STILL, ends_action = true })
 	maw_point = { x = e.position.x + MAW.x, y = e.position.y + MAW.y }
+	arriving = false
 
 	local raged = false
 	local spits = 0
@@ -116,7 +116,6 @@ behaviours.register("sandmaw_maw", {
 			behaviours.wait(settings.close_ms, { direction = STILL, starts_action = { attack = RAGE, phase = "enraged" } })
 			e = behaviours.wait(1, { direction = STILL, ends_action = true })
 		end
-		maw_open = true
 		behaviours.wait(settings.open_ms, { direction = STILL, starts_action = { attack = MAW_ATTACK, phase = "signal" } })
 		behaviours.wait(1, { direction = STILL, starts_action = { attack = MAW_ATTACK, phase = "strike" } })
 		if inhaling then
@@ -126,7 +125,6 @@ behaviours.register("sandmaw_maw", {
 			spit(settings, raged, spits % 2 == 0)
 		end
 		behaviours.wait(settings.close_ms, { direction = STILL, starts_action = { attack = MAW_ATTACK, phase = "recover" } })
-		maw_open = false
 		e = behaviours.wait(if raged then settings.enraged_rest_ms else settings.rest_ms, {
 			direction = STILL,
 			ends_action = true,

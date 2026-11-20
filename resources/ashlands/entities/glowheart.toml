@@ -11,13 +11,13 @@ layer = "enemy"
 hits = ["player"]
 pilot = "glowheart_core"
 
-# Its armoured vessel; only the rows of its core window let a hit through,
-# while it does not attack.
+# Its whole vessel, from its left side to the frame its right arms hang from
+# and from its chimneys to its base; every hit on it counts, at any time.
 [gameplay.hitbox]
-width = 280
-height = 320
-offset_x = 48
-offset_y = -14
+width = 260
+height = 416
+offset_x = 38
+offset_y = -4
 
 [gameplay.motion]
 kind = "steady"

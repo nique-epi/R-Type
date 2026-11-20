@@ -10,11 +10,8 @@
 -- through their signal, then sweep them, the third safe; the Meltdown burns its
 -- row; the Overload lights its chimneys, then spits `mites` Cindermites out of
 -- them (`enraged_mites` once enraged), each turning towards the nearest ship.
--- Its vessel closes only from the signal of its Tendrils to the end of their
--- sweep, and through the burn of its Meltdown: the rest of the time, its rest,
--- the charge of the Meltdown, its Overload and the purge of its vents included,
--- a missile hurts it on the rows of its core window, judged where a missile
--- coming from the left first touches the vessel. The decor of the core follows it on the bus: the coolant
+-- A missile hurts it anywhere on its vessel, at any time, while it attacks
+-- too. The decor of the core follows it on the bus: the coolant
 -- leaks and the lamps light up with the charge of the Meltdown
 -- (glowheart_meltdown), and the steam vents purge with it (glowheart_purge).
 --
@@ -37,8 +34,8 @@ local BEATS = {
 -- The order it plays its attacks in, from the first.
 local ROTATION = { TENDRILS, MELTDOWN, OVERLOAD }
 
--- The core window: the rows a hit may land on, from the center of the body.
-local CORE_ROW, CORE_HALF_HEIGHT = -12, 96
+-- The row of its core, from the center of the body.
+local CORE_ROW = -12
 
 -- The three lanes the tendrils sweep, the sheet of the tendril of each, the
 -- row of its center and how far left of the center of the vessel it stands.
@@ -97,15 +94,6 @@ behaviours.register("glowheart_core", {
 	{ name = "mite_gap_ms", lowest = 1, highest = 60000 },
 }, function(e)
 	local settings = e.settings
-	local closed = false
-	behaviours.pre_hit(function(hit)
-		if not closed and math.abs(hit.offset.y - CORE_ROW) <= CORE_HALF_HEIGHT then
-			return true
-		end
-		behaviours.destroy(hit.missile)
-		return false
-	end)
-
 	local slide = math.max(1, (e.position.x - settings.rest_x) * 1000 / settings.slide_ms)
 	behaviours.wait(settings.slide_ms, {
 		direction = LEFT,
@@ -129,7 +117,6 @@ behaviours.register("glowheart_core", {
 
 		behaviours.wait(1, { direction = STILL, starts_action = { attack = chosen, phase = "signal" } })
 		if chosen == TENDRILS then
-			closed = true
 			sweep_tendrils(center)
 		elseif chosen == MELTDOWN then
 			bus.emit("glowheart_meltdown", { ms = beats.signal })
@@ -137,14 +124,12 @@ behaviours.register("glowheart_core", {
 		end
 		behaviours.wait(beats.signal, { direction = STILL })
 
-		closed = chosen ~= OVERLOAD
 		behaviours.wait(1, { direction = STILL, starts_action = { attack = chosen, phase = "strike" } })
 		local waited = 0
 		if chosen == OVERLOAD then
 			waited = overload(center, if raged then settings.enraged_mites else settings.mites, settings.mite_gap_ms)
 		end
 		behaviours.wait(math.max(1, beats.strike - waited), { direction = STILL })
-		closed = false
 
 		local recover = beats.recover or settings.purge_ms
 		if chosen == MELTDOWN then
