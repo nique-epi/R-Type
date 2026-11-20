@@ -15,7 +15,8 @@
 -- head, thorax, abdomen and wings take damage wherever a missile
 -- touches them, while she attacks too; her legs have no box, so a missile
 -- flies through them. Below 40 % of her health she spreads her wings (attack
--- 4): she rests less, and each brood and each fling holds more.
+-- 4): she then plays her attacks in pairs, back to back, rests less, and
+-- each brood and each fling holds more.
 --
 -- Every place below is measured from the center of her body, in logical units
 -- (a pixel of the sheet is 4 units), her frame standing on the floor of the
@@ -83,12 +84,45 @@ local function fling_eggs(center, target, count: number, gap_ms: number): number
 end
 
 -- The order of her attacks: Scythes, Fling, Breath, Brood first, then each
--- drawn at random.
+-- drawn at random. Once enraged she plays them in pairs, back to back, the
+-- pairs in turn, so her Breath never comes twice in a row.
 local FIRST_ORDER = { SCYTHES, FLING, BREATH, BROOD }
 local ATTACKS = { SCYTHES, BREATH, BROOD, FLING }
+local ENRAGED_PAIRS = { { FLING, BROOD }, { SCYTHES, FLING }, { BREATH, BROOD } }
 
 local function next_attack(played: number): number
 	return FIRST_ORDER[played] or ATTACKS[math.random(1, #ATTACKS)]
+end
+
+-- Plays the three beats of the attack `chosen` from `center`, its counts
+-- those of an enraged mother when `raged`; returns the handle once its
+-- recover is over, the action not yet ended.
+local function play_attack(e, chosen: number, fight)
+	local settings, center, raged = fight.settings, fight.center, fight.raged
+	local beats = BEATS[chosen]
+	behaviours.wait(1, { direction = STILL, starts_action = { attack = chosen, phase = "signal" } })
+	if chosen == BREATH then
+		behaviours.spawn("atomic_breath", from(center, BEAM))
+	end
+	local target = nil
+	if chosen == FLING then
+		e = behaviours.wait(beats.signal - AIM_BEFORE_MS, { direction = STILL })
+		local ship = e.nearest_ship
+		target = if ship ~= nil then { x = ship.x, y = ship.y } else from(center, BEAM)
+		behaviours.wait(AIM_BEFORE_MS, { direction = STILL })
+	else
+		behaviours.wait(beats.signal, { direction = STILL })
+	end
+
+	behaviours.wait(1, { direction = STILL, starts_action = { attack = chosen, phase = "strike" } })
+	local waited = 0
+	if chosen == BROOD then
+		pour_brood(center, if raged then settings.enraged_brood else settings.brood)
+	elseif chosen == FLING then
+		waited = fling_eggs(center, target, if raged then settings.enraged_eggs else settings.eggs, settings.egg_gap_ms)
+	end
+	behaviours.wait(math.max(1, beats.strike - waited), { direction = STILL })
+	return behaviours.wait(beats.recover, { direction = STILL, starts_action = { attack = chosen, phase = "recover" } })
 end
 
 behaviours.register("ash_mother_brood", {
@@ -133,33 +167,14 @@ behaviours.register("ash_mother_brood", {
 			e = behaviours.wait(1, { direction = STILL, ends_action = true })
 		end
 		played += 1
-		local chosen = next_attack(played)
-		local beats = BEATS[chosen]
-
-		behaviours.wait(1, { direction = STILL, starts_action = { attack = chosen, phase = "signal" } })
-		if chosen == BREATH then
-			behaviours.spawn("atomic_breath", from(center, BEAM))
-		end
-		local target = nil
-		if chosen == FLING then
-			e = behaviours.wait(beats.signal - AIM_BEFORE_MS, { direction = STILL })
-			local ship = e.nearest_ship
-			target = if ship ~= nil then { x = ship.x, y = ship.y } else from(center, BEAM)
-			behaviours.wait(AIM_BEFORE_MS, { direction = STILL })
+		local fight = { settings = settings, center = center, raged = raged }
+		if raged then
+			local pair = ENRAGED_PAIRS[(played - 1) % #ENRAGED_PAIRS + 1]
+			play_attack(e, pair[1], fight)
+			e = play_attack(e, pair[2], fight)
 		else
-			behaviours.wait(beats.signal, { direction = STILL })
+			e = play_attack(e, next_attack(played), fight)
 		end
-
-		behaviours.wait(1, { direction = STILL, starts_action = { attack = chosen, phase = "strike" } })
-		local waited = 0
-		if chosen == BROOD then
-			pour_brood(center, if raged then settings.enraged_brood else settings.brood)
-		elseif chosen == FLING then
-			waited = fling_eggs(center, target, if raged then settings.enraged_eggs else settings.eggs, settings.egg_gap_ms)
-		end
-		behaviours.wait(math.max(1, beats.strike - waited), { direction = STILL })
-
-		behaviours.wait(beats.recover, { direction = STILL, starts_action = { attack = chosen, phase = "recover" } })
 		e = behaviours.wait(if raged then settings.enraged_rest_ms else settings.rest_ms, {
 			direction = STILL,
 			ends_action = true,
