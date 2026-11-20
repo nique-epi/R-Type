@@ -1,10 +1,12 @@
 #pragma once
 
 #include <SFML/Graphics/Color.hpp>
+#include <SFML/Graphics/PrimitiveType.hpp>
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Graphics/Shader.hpp>
 #include <SFML/Graphics/Texture.hpp>
+#include <SFML/Graphics/VertexArray.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <functional>
 #include <optional>
@@ -87,6 +89,10 @@ class InterfaceCanvas : public IInterfaceCanvas {
   std::optional<sf::Shader> shadeSwap_;
   std::set<std::string, std::less<>> reportedMissingIds_;
   SmoothImageLayer smoothImages_;
+  /** @brief The triangles of the last pixels plotted, kept between two plots
+   * so a room of the casino that plots its lights each frame grows its list
+   * once instead of building it each time. */
+  sf::VertexArray plotted_{sf::PrimitiveType::Triangles};
 };
 
 }  // namespace rtype::client

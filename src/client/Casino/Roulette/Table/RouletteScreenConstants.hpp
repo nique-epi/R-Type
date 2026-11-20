@@ -3,9 +3,12 @@
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Keyboard.hpp>
+#include <array>
+#include <chrono>
 #include <cstddef>
+#include <cstdint>
 #include "CasinoBar.hpp"
-#include "CasinoSpriteConstants.hpp"
+#include "TimeConstants.hpp"
 #include "WidgetConstants.hpp"
 
 namespace rtype::client {
@@ -18,17 +21,52 @@ constexpr sf::Vector2i WHEEL_TOP_LEFT(18, 89);
 
 /**
  * @brief The butler, croupier behind the table: the top CROUPIER_HEIGHT rows
- * of a frame of his sheet, the table hiding the rest; his greeting while the
- * bets are open, his first idle frame otherwise.
+ * of a frame of his sheet, the table hiding the rest. He stands idle, round
+ * and round; while the bets are open, he greets the players once every
+ * CROUPIER_INVITE_CYCLE, his greeting starting CROUPIER_INVITE_AFTER into
+ * it. With less motion, he holds a frame of his greeting while the bets are
+ * open, his first idle frame otherwise.
  */
+constexpr engine::Duration CROUPIER_INVITE_CYCLE =
+    std::chrono::milliseconds(2600);
+constexpr engine::Duration CROUPIER_INVITE_AFTER =
+    std::chrono::milliseconds(2000);
 constexpr sf::Vector2i CROUPIER_TOP_LEFT(222, 6);
 constexpr int CROUPIER_HEIGHT = 76;
-constexpr sf::IntRect CROUPIER_INVITING_FRAME({2 * BUTLER_FRAME_SIZE.x,
-                                               BUTLER_FRAME_SIZE.y},
-                                              {BUTLER_FRAME_SIZE.x,
-                                               CROUPIER_HEIGHT});
-constexpr sf::IntRect CROUPIER_WAITING_FRAME({0, 0}, {BUTLER_FRAME_SIZE.x,
-                                                      CROUPIER_HEIGHT});
+constexpr int CROUPIER_HELD_GREETING_FRAME = 2;
+
+/**
+ * @brief The plaque under the croupier while the bets are open: SPIN IN and
+ * the seconds begun before the wheel spins, over a bar that drains, full
+ * SPIN_COUNTDOWN_SPAN before the spin, the default betting time of the
+ * master, and full still while more is left; the text and the bar turn red
+ * once SPIN_HURRY_SECONDS or fewer are left.
+ */
+constexpr sf::IntRect SPIN_PLAQUE_AREA({210, 62}, {104, 16});
+constexpr sf::Vector2i SPIN_PLAQUE_TEXT_TOP_LEFT(216, 64);
+constexpr sf::IntRect SPIN_PLAQUE_BAR({214, 73}, {96, 2});
+constexpr const char* SPIN_IN_START = "SPIN IN ";
+constexpr engine::Duration SPIN_COUNTDOWN_SPAN = std::chrono::seconds(20);
+constexpr std::int64_t SPIN_HURRY_SECONDS = 3;
+
+/**
+ * @brief The banner of a big win, across the middle of the table for the
+ * first BIG_WIN_TIME of the result: JACKPOT twice the size of a text in
+ * gold, then who won how many chips, in a gold frame lined in red. A win is
+ * big once the payout of a player passes its stake by BIG_WIN_GAIN chips,
+ * more than four times the dearest look of the shop: 100 chips on a number
+ * gain 3500 and show it, 50 gain 1750 and do not.
+ */
+constexpr std::uint32_t BIG_WIN_GAIN = 2500;
+constexpr engine::Duration BIG_WIN_TIME = std::chrono::seconds(4);
+constexpr sf::IntRect BIG_WIN_AREA({60, 104}, {360, 62});
+constexpr int BIG_WIN_LINING_INSET = 3;
+constexpr sf::Vector2i BIG_WIN_TITLE_TOP_MIDDLE(240, 114);
+constexpr int BIG_WIN_TITLE_SCALE = 2;
+constexpr sf::Vector2i BIG_WIN_LINE_TOP_MIDDLE(240, 142);
+constexpr const char* BIG_WIN_TITLE = "JACKPOT";
+constexpr const char* BIG_WIN_WON = " WON ";
+constexpr const char* BIG_WIN_CHIPS = " CHIPS";
 
 /** @brief The keys that move the cursor over the cloth, and the one that lays
  * a chip of the value chosen where it stands. */
@@ -48,6 +86,17 @@ constexpr std::size_t FIRST_CHOSEN_CHIP = 2;
  * number drawn, CLOTH_CORNERS_MARGIN out of their box.
  */
 constexpr int CLOTH_CHIP_LIFT = 2;
+
+/**
+ * @brief The stacks of the other players seated in the room: their chips
+ * multiplied by the color of each player, at OTHER_STACK_ALPHA of 255, and
+ * moved aside, each other player in turn by the next of OTHER_STACK_OFFSETS,
+ * so the stacks of the player, drawn over them, stay readable.
+ */
+constexpr std::uint8_t OTHER_STACK_ALPHA = 140;
+constexpr std::array OTHER_STACK_OFFSETS{
+    sf::Vector2i(-5, 2), sf::Vector2i(5, 2), sf::Vector2i(-5, -2),
+    sf::Vector2i(5, -2)};
 constexpr std::size_t CLOTH_STACK_CHIPS = 5;
 constexpr int CLOTH_CORNERS_MARGIN = 1;
 

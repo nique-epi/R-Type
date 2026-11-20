@@ -1,9 +1,9 @@
 #pragma once
 
 #include <string>
-#include "BackgroundConstants.hpp"
 #include "InterfaceConstants.hpp"
 #include "Layer.hpp"
+#include "PixelGridConstants.hpp"
 #include "Position.hpp"
 #include "RenderingConstants.hpp"
 #include "SpriteFrame.hpp"

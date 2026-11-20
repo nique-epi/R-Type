@@ -1,0 +1,3 @@
+target_link_libraries(client_screen_tests PRIVATE rtype_client_casino_hall)
+add_subdirectory(Picture)
+add_subdirectory(Screen)

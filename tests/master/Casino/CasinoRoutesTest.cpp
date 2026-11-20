@@ -312,3 +312,27 @@ TEST(CasinoRoutes, AMasterWithItsCasinoOffStarts) {
   EXPECT_EQ(rooms->status, EXPECTED_NOT_FOUND);
   EXPECT_EQ(created->status, EXPECTED_CREATED);
 }
+
+/**
+ * Given ACE seated, who laid 10 on 19 and 25 on red on the round
+ * When the state of the room is read again
+ * Then it lists both bets of ACE, so the others seated see its chips
+ */
+TEST_F(CasinoRoutesFixture, TheRoomListsTheBetsOfEachPlayer) {
+  ASSERT_EQ(takeSeat(ace())->status, EXPECTED_CREATED);
+  const std::optional<std::uint64_t> round = openRound();
+  ASSERT_TRUE(round.has_value());
+  ASSERT_EQ(
+      send(betsCall(ownBetsPathOf(round.value_or(0)), ace(), TWO_BETS_BODY))
+          ->status,
+      EXPECTED_OK);
+
+  const httplib::Result state = takeSeat(ace());
+
+  ASSERT_TRUE(state);
+  const nlohmann::json players =
+      bodyOf(state).at(std::string{PLAYERS_MEMBER_NAME});
+  ASSERT_EQ(players.size(), 1U);
+  EXPECT_EQ(players.front().at(std::string{BETS_MEMBER_NAME}).size(),
+            TWO_BETS_COUNT);
+}

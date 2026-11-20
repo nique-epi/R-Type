@@ -129,6 +129,14 @@ jobs:
         run: |
           cmake -E make_directory "$RUNNER_TEMP/vcpkg-cache"
           echo "VCPKG_BINARY_SOURCES=clear;files,$RUNNER_TEMP/vcpkg-cache,readwrite" >> "$GITHUB_ENV"
+          # vcpkg reuses a cached package only when its compiler and ports match,
+          # so the key names the runner image and the vcpkg commit: a new image
+          # or a moved submodule gives a new key, which the save step then fills.
+          echo "VCPKG_CACHE_STAMP=${ImageOS}-${ImageVersion}-$(git rev-parse HEAD:vcpkg)" >> "$GITHUB_ENV"
+          # github.com answers the runners 503 for the patches a port fetches from
+          # a commit page; vcpkg takes a file already in its downloads folder once
+          # its SHA512 matches the portfile, and downloads it otherwise.
+          cmake -E copy_directory .github/vcpkg-downloads vcpkg/downloads
 
       - name: Restore vcpkg binary cache
         id: vcpkg-cache
@@ -137,8 +145,8 @@ jobs:
           path: ${{ runner.temp }}/vcpkg-cache
           # A key of its own, per image: this job builds no test dependency,
           # and its Linux image is older than the one of the test jobs.
-          key: vcpkg-release-${{ matrix.os }}-${{ hashFiles('vcpkg.json') }}
-          restore-keys: vcpkg-release-${{ matrix.os }}-
+          key: vcpkg-release-${{ matrix.os }}-${{ env.VCPKG_CACHE_STAMP }}-${{ hashFiles('vcpkg.json') }}
+          restore-keys: vcpkg-release-${{ matrix.os }}-${{ env.VCPKG_CACHE_STAMP }}-
 
       # Warnings are not errors here: the build-and-test jobs hold the code to
       # zero warnings with GCC 13 and MSVC, and GCC 12 adds false positives of

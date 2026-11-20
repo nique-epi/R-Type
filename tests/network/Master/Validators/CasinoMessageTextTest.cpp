@@ -3,6 +3,7 @@
 #include <string>
 #include "CasinoMessageTextFixtures.hpp"
 #include "CasinoMessageTextTestConstants.hpp"
+#include "CasinoPlayer.hpp"
 #include "CasinoRoomState.hpp"
 #include "MasterMessageText.hpp"
 #include "NetworkException.hpp"
@@ -37,6 +38,7 @@ using rtype::network::testing::ONE_STRAIGHT_BODY;
 using rtype::network::testing::oneRoomListing;
 using rtype::network::testing::paidRoundBets;
 using rtype::network::testing::RESULT_PHASE_TEXT;
+using rtype::network::testing::roomStateTextWithoutBets;
 using rtype::network::testing::STRAIGHT_AMOUNT;
 using rtype::network::testing::STRAIGHT_NUMBER;
 using rtype::network::testing::straightBetsBody;
@@ -149,4 +151,20 @@ TEST(CasinoMessageText, EveryKindAndPhaseReadsBack) {
   }
   EXPECT_EQ(roulettePhaseOf(RESULT_PHASE_TEXT), RoulettePhase::Result);
   EXPECT_EQ(roulettePhaseOf(NO_PHASE_TEXT), std::nullopt);
+}
+
+/**
+ * Given the state of a room from a master that does not list the bets of
+ * its players
+ * When it is read
+ * Then each player reads with no bet, and the rest of the state reads as
+ * written
+ */
+TEST(CasinoMessageText, APlayerWithoutItsBetsReadsWithNone) {
+  CasinoRoomState expected = drawnRoomState();
+  for (rtype::network::CasinoPlayer& player : expected.players) {
+    player.bets.clear();
+  }
+
+  EXPECT_EQ(casinoRoomStateFromText(roomStateTextWithoutBets()), expected);
 }

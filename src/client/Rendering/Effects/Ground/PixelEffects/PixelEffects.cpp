@@ -6,13 +6,13 @@
 #include <cstddef>
 #include <cstdint>
 #include "ArrivalLines.hpp"
-#include "BackgroundConstants.hpp"
 #include "Burst.hpp"
 #include "ComponentRegistry.hpp"
 #include "Entity.hpp"
 #include "EntityRegistry.hpp"
 #include "GroundEffectConstants.hpp"
 #include "Particle.hpp"
+#include "PixelGridConstants.hpp"
 #include "PlacedBurst.hpp"
 #include "PlacedRing.hpp"
 #include "Position.hpp"

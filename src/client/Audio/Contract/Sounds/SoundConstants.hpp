@@ -44,6 +44,18 @@ constexpr const char* BYDO_VOICE_SECOND_SOUND_ID =
 constexpr const char* BOTTLES_CLINK_SOUND_ID =
     "sounds/epidemic/bottles_clink.mp3";
 
+/** @brief The wheel of the roulette: the ball thrown and rolling as it starts
+ * to spin, then bouncing into its pocket as it drops there (see
+ * assets/README.md). */
+constexpr const char* ROULETTE_SPIN_SOUND_ID =
+    "sounds/epidemic/roulette_spin.mp3";
+constexpr const char* ROULETTE_DROP_SOUND_ID =
+    "sounds/epidemic/roulette_drop.mp3";
+/** @brief The jingle of a slot machine and its coins, as the result of the
+ * roulette shows a big win (see assets/README.md). */
+constexpr const char* ROULETTE_JACKPOT_SOUND_ID =
+    "sounds/epidemic/roulette_jackpot.mp3";
+
 constexpr std::array BYDO_VOICE_SOUND_IDS{BYDO_VOICE_FIRST_SOUND_ID,
                                           BYDO_VOICE_SECOND_SOUND_ID};
 
@@ -74,6 +86,9 @@ constexpr std::array ALL_SOUND_IDS{BYDO_GROWL_SOUND_ID,
                                    ROBOT_ARM_SOUND_ID,
                                    BYDO_VOICE_FIRST_SOUND_ID,
                                    BYDO_VOICE_SECOND_SOUND_ID,
-                                   BOTTLES_CLINK_SOUND_ID};
+                                   BOTTLES_CLINK_SOUND_ID,
+                                   ROULETTE_SPIN_SOUND_ID,
+                                   ROULETTE_DROP_SOUND_ID,
+                                   ROULETTE_JACKPOT_SOUND_ID};
 
 }  // namespace rtype::client

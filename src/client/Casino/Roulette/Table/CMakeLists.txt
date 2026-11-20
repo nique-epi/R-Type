@@ -9,6 +9,7 @@ add_library(rtype_client_casino_roulette_table STATIC
   RouletteScreen.cpp
   RouletteTexts.cpp
   TableRosterPainting.cpp
+  RoundSounds.cpp
 )
 
 target_include_directories(rtype_client_casino_roulette_table PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
@@ -19,6 +20,7 @@ target_link_libraries(rtype_client_casino_roulette_table
     SFML::Window
     rtype_client_account_session
     rtype_client_application
+    rtype_client_audio_contract_service
     rtype_client_audio_contract_sounds
     rtype_client_casino_painting
     rtype_client_casino_roulette_bets
@@ -32,6 +34,7 @@ target_link_libraries(rtype_client_casino_roulette_table
     rtype_client_window_display
     rtype_engine_time
   PRIVATE
+    rtype_client_easing
     rtype_client_box_corners
     rtype_client_economy
     rtype_client_game_module

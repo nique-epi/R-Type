@@ -12,6 +12,11 @@ namespace rtype::master {
 [[nodiscard]] std::map<std::int64_t, std::uint32_t> stakesOf(
     const std::vector<PlayerBet>& bets);
 
+/** @returns The bets of each account in @p bets, in the order they were
+ * laid. */
+[[nodiscard]] std::map<std::int64_t, std::vector<network::RouletteBet>>
+betsByPlayerOf(const std::vector<PlayerBet>& bets);
+
 /** @returns What @p bets return when @p drawn comes out, by account
  * (network::payoutOf()); an account all of whose bets lost has 0. */
 [[nodiscard]] std::map<std::int64_t, std::uint32_t> payoutsOf(

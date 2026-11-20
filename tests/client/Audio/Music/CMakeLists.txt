@@ -1,1 +1,1 @@
-target_sources(client_audio_tests PRIVATE SoundtrackTest.cpp)
+target_sources(client_audio_tests PRIVATE AmbienceMusicTest.cpp SoundtrackTest.cpp)

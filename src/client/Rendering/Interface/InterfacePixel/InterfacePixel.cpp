@@ -1,7 +1,7 @@
 #include "InterfacePixel.hpp"
 #include <SFML/System/Vector2.hpp>
 #include <cmath>
-#include "BackgroundConstants.hpp"
+#include "PixelGridConstants.hpp"
 
 namespace rtype::client {
 

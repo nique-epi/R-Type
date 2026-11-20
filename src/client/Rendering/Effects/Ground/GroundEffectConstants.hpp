@@ -4,9 +4,9 @@
 #include <chrono>
 #include <cstddef>
 #include <numbers>
-#include "BackgroundConstants.hpp"
 #include "CollisionConstants.hpp"
 #include "FireColorConstants.hpp"
+#include "PixelGridConstants.hpp"
 #include "ShipControlConstants.hpp"
 #include "TimeConstants.hpp"
 

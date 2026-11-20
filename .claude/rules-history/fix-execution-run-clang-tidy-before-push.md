@@ -165,3 +165,7 @@ To meet `readability-qualified-auto`, reported by the local clang-tidy on libc++
 ## Update (2026-11-19) — Adjacent numbers again, with a search the push can run
 
 `votedMapOf(players, std::size_t mapCount, std::uint32_t seed)` passed the local clang-tidy 20 and failed the `Clang-tidy (3/4)` job of the CI on `bugprone-easily-swappable-parameters`: the subsection already said the CI's clang-tidy reports adjacent integers, and it was not applied. The subsection now gives a search of the signatures of the branch, calibrated on that commit, and the fix the code took: the span of the maps instead of their count.
+
+## Update (20 November 2026) — a static_assert removed, its include left
+
+The neon of the casino front summed its waits in `ENTRANCE_NEON_ROUND`, guarded by `static_assert(ENTRANCE_NEON_CUTS.size() == 5, …)` in `EntranceLightConstants.hpp`. A clang-tidy fix moved the sum into a loop of `EntranceLightPainter.cpp` and deleted the `static_assert`, the only use of `std::size_t` in the header; `<cstddef>` stayed. The local run (libc++) passed the header, and the `Clang-tidy (2/4)` job (libstdc++) failed on `included header cstddef is not used directly`. `AmbienceMusic.hpp` held the same leftover. This is a recurrence of point 5 of "`misc-include-cleaner` judges includes against the standard library it reads": the match of includes against names was run before the last fix, not after it. No new prescription: the match runs again after every change that removes code, the clang-tidy fixes included.

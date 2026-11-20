@@ -12,12 +12,12 @@
 #include <string>
 #include <string_view>
 #include "AssetLibrary.hpp"
-#include "BackgroundConstants.hpp"
 #include "CrispTextShaderConstants.hpp"
 #include "FragmentShader.hpp"
 #include "InterfaceColorConstants.hpp"
 #include "InterfaceConstants.hpp"
 #include "LoadedFont.hpp"
+#include "PixelGridConstants.hpp"
 #include "RenderingConstants.hpp"
 #include "TextLine.hpp"
 #include "TextStyle.hpp"

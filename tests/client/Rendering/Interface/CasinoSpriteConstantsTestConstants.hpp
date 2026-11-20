@@ -6,6 +6,10 @@ namespace rtype::client::testing {
  * greeting, bowing. */
 constexpr int BUTLER_POSE_COUNT = 3;
 
+/** @brief The poses of the teller of the cashier, one row of his sheet
+ * each: counting, serving. */
+constexpr int TELLER_POSE_COUNT = 2;
+
 /** @brief The chips of the selector: 1, 5, 25, 100 and 500. */
 constexpr int SELECTOR_CHIP_COUNT = 5;
 

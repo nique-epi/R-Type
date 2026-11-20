@@ -110,4 +110,8 @@ constexpr std::string_view BALL_PICTURE = "sprites/casino/wheel_ball.png";
 constexpr std::string_view LAST_WORD = "LAST";
 constexpr std::string_view SPIN_WORD = "SPIN";
 
+/** @brief What the plaque under the croupier writes as the table opens,
+ * twelve seconds before the spin. */
+constexpr std::string_view SPIN_IN_TWELVE = "SPIN IN 12";
+
 }  // namespace rtype::client::testing

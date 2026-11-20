@@ -11,6 +11,7 @@
 #include "CasinoPainting.hpp"
 #include "CasinoSpriteConstants.hpp"
 #include "ChipSelectorConstants.hpp"
+#include "ChipStackLook.hpp"
 #include "ClothBets.hpp"
 #include "ClothGeometry.hpp"
 #include "ClothPlace.hpp"
@@ -18,6 +19,7 @@
 #include "ImagePlacement.hpp"
 #include "InterfaceColorConstants.hpp"
 #include "InterfaceConstants.hpp"
+#include "OtherPlayerBets.hpp"
 #include "PocketColors.hpp"
 #include "PocketShades.hpp"
 #include "RouletteBet.hpp"
@@ -44,10 +46,12 @@ std::vector<std::size_t> chipsOfStack(std::uint32_t amount) {
   return chips;
 }
 
-/** @brief Paints the stack of @p bet on its spot. */
-void paintStack(IInterfaceCanvas& canvas, const network::RouletteBet& bet) {
-  const sf::Vector2i bottom =
-      spotOf(placeOf(bet)) - (CLOTH_CHIP_FRAME_SIZE / SIDES_PER_AXIS);
+/** @brief Paints the stack of @p bet on its spot, as @p look says. */
+void paintStack(IInterfaceCanvas& canvas, const network::RouletteBet& bet,
+                ChipStackLook look) {
+  const sf::Vector2i bottom = spotOf(placeOf(bet)) -
+                              (CLOTH_CHIP_FRAME_SIZE / SIDES_PER_AXIS) +
+                              look.offset;
   int lift = 0;
   for (const std::size_t chip : chipsOfStack(bet.amount)) {
     canvas.drawImage(
@@ -55,7 +59,9 @@ void paintStack(IInterfaceCanvas& canvas, const network::RouletteBet& bet) {
             .assetId = CASINO_CHIPS_SHEET_ID,
             .rectangle = {{static_cast<int>(chip) * CLOTH_CHIP_STRIDE, 0},
                           CLOTH_CHIP_FRAME_SIZE}},
-        ImagePlacement{.topLeft = {bottom.x, bottom.y - lift}}, INTERFACE_AREA);
+        ImagePlacement{.topLeft = {bottom.x, bottom.y - lift},
+                       .tint = look.tint},
+        INTERFACE_AREA);
     lift += CLOTH_CHIP_LIFT;
   }
 }
@@ -70,7 +76,16 @@ sf::IntRect outsetOf(sf::IntRect box) {
 void paintClothBets(IInterfaceCanvas& canvas,
                     const std::vector<network::RouletteBet>& bets) {
   for (const network::RouletteBet& bet : bets) {
-    paintStack(canvas, bet);
+    paintStack(canvas, bet, ChipStackLook{});
+  }
+}
+
+void paintOtherPlayersBets(IInterfaceCanvas& canvas,
+                           const std::vector<OtherPlayerBets>& others) {
+  for (const OtherPlayerBets& other : others) {
+    for (const network::RouletteBet& bet : other.bets) {
+      paintStack(canvas, bet, other.look);
+    }
   }
 }
 
