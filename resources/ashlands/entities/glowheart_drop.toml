@@ -1,5 +1,5 @@
 # The entity type glowheart_drop, brought by the resource ashlands:
-# a drop of the Fallout rain, falling from the ceiling.
+# a drop of green coolant, falling from a leak of the ceiling.
 # Only the server reads [gameplay]; a client draws [appearance] from the
 # content pack the supervisor serves. The keys are described on the page
 # "Writing an entity sheet" of the docs.

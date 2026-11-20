@@ -12,7 +12,7 @@ hits = ["player"]
 pilot = "glowheart_core"
 
 # Its armoured vessel; only the rows of its core window let a hit through,
-# while its vents purge.
+# while it does not attack.
 [gameplay.hitbox]
 width = 280
 height = 320

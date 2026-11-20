@@ -285,14 +285,14 @@ local function lit_by(event_name: string, look: string, e, on_step: ((number) ->
 end
 
 -- A coolant leak lets a drop fall every drip_ms, and lights up with the
--- signal of the Fallout rain.
+-- charge of the Meltdown of the Glowheart.
 behaviours.register("coolant_drip", {
 	{ name = "drip_ms", lowest = 1, highest = 60000 },
 }, function(e)
 	local settings = e.settings
 	local row = e.position.y + DRIP_DROP
 	local since = 0
-	lit_by("glowheart_rain", "lit", e, function(x: number)
+	lit_by("glowheart_meltdown", "lit", e, function(x: number)
 		since += STEP_MS
 		if since >= settings.drip_ms and x < RIGHT_EDGE then
 			since = 0

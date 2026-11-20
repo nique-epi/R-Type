@@ -1,6 +1,6 @@
 # The entity type coolant_leak, brought by the resource ashlands:
 # a cracked ceiling pipe that drips green coolant on the ships below;
-# it lights up before the Fallout rain.
+# it lights up with the charge of the Meltdown of the Glowheart.
 # Only the server reads [gameplay]; a client draws [appearance] from the
 # content pack the supervisor serves. The keys are described on the page
 # "Writing an entity sheet" of the docs.
@@ -17,9 +17,9 @@ height = 120
 [gameplay.motion]
 kind = "scroll"
 
-# It lets a drop fall every 1.6 s.
+# It lets a drop fall every 2.8 s.
 [gameplay.behaviour]
-drip_ms = 1600
+drip_ms = 2800
 
 [gameplay.obstacle]
 contact = "blocking"
@@ -37,7 +37,7 @@ frames = 2
 spacing = 2
 frame_ms = 220
 
-# Lit: the leak glows before the Fallout rain of the Glowheart.
+# Lit: the leak glows with the charge of the Meltdown of the Glowheart.
 [appearance.looks.lit]
 left = 0
 top = 32
