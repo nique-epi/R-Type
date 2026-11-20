@@ -20,6 +20,20 @@ constexpr sf::Color CASINO_LIGHT_GOLD(234, 181, 60);
 constexpr sf::Color CASINO_TAG_GOLD = STAR_GOLD;
 
 /**
+ * @brief The lights of the Bydo Palace: a bulb out, brick red; the warm cream
+ * of a glow; the plum of the neon sign when it cuts out; the deep navy of the
+ * night sky; the red of a refusal and of the camera light; the cream of a lit
+ * rate of the exchange board; and white, the flash of a camera.
+ */
+constexpr sf::Color CASINO_BRICK_RED(134, 56, 52);
+constexpr sf::Color CASINO_WARM_CREAM(251, 228, 184);
+constexpr sf::Color CASINO_PLUM(58, 12, 48);
+constexpr sf::Color CASINO_DEEP_NAVY(13, 10, 35);
+constexpr sf::Color CASINO_NEON_RED(198, 36, 33);
+constexpr sf::Color CASINO_PALE_CREAM(232, 220, 181);
+constexpr sf::Color CASINO_FLASH_WHITE(255, 255, 255);
+
+/**
  * @brief A panel of the casino: the panel of the client, edged twice in gold,
  * the inner edge CASINO_PANEL_INNER_EDGE inside, with the cut corners of a
  * gaming plaque: an outer corner of one pixel, an inner corner of

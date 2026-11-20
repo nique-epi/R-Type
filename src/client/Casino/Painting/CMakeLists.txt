@@ -1,5 +1,7 @@
 add_library(rtype_client_casino_painting STATIC
+  BulbChase.cpp
   CasinoBarChip.cpp
+  CasinoLighting.cpp
   CasinoPainting.cpp
   ChipSelector.cpp
 )
@@ -12,7 +14,9 @@ target_link_libraries(rtype_client_casino_painting
     SFML::Window
     rtype_client_interface
     rtype_client_key_chip
+    rtype_client_pixels
     rtype_client_widgets
+    rtype_engine_time
   PRIVATE
     rtype_client_box_corners
     rtype_client_cut_corner_box
