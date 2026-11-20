@@ -190,6 +190,9 @@ Paths below are relative to `.claude/rules/`.
 - `fix/reasoning/fix-reasoning-a-value-sent-keeps-the-rules-of-its-message.md`
 - `fix/reasoning/fix-reasoning-a-letter-on-a-keycap-is-read-by-its-code.md`
 - `fix/reasoning/fix-reasoning-verify-the-premise-before-fixing-downstream.md`
+- `fix/reasoning/fix-reasoning-a-biome-by-day-is-drawn-under-the-halo.md`
+- `fix/reasoning/fix-reasoning-a-dive-never-runs-along-the-row-the-shots-fly.md`
+- `fix/reasoning/fix-reasoning-a-phase-that-stays-never-plays-once.md`
 
 **Execution (shell, git, build) — `fix/execution/`**
 - `fix/execution/fix-execution-a-cmake-loop-tests-the-length-of-its-list.md`
