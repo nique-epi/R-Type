@@ -37,6 +37,7 @@
 #include "InstallContext.hpp"
 #include "IntegerSettingDefinition.hpp"
 #include "LevelDirector.hpp"
+#include "LevelGroundFiles.hpp"
 #include "LevelPlacementFiles.hpp"
 #include "Logger.hpp"
 #include "LuauLevelConstants.hpp"
@@ -326,6 +327,7 @@ void ServerGamesModule::start() {
   logEntitySheets(logger_, settings_.contentFolders, types);
   game::readLevelPlacements(scripts_->levels(), settings_.contentFolders,
                             types);
+  game::readLevelGrounds(scripts_->levels(), settings_.contentFolders);
   logLevelPlacements(logger_, scripts_->levels());
   runningGame_.keepEntityTypes(types);
   const WaveCatalog catalog =

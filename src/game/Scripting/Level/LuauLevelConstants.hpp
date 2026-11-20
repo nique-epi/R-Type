@@ -23,12 +23,15 @@ constexpr std::string_view LEVEL_ENEMIES_FUNCTION_NAME = "enemies";
 constexpr std::string_view LEVEL_PLACEMENTS_FUNCTION_NAME = "placements";
 constexpr std::string_view LEVEL_SPAWN_PLACED_FUNCTION_NAME = "spawn_placed";
 constexpr std::string_view LEVEL_TRANSITION_FUNCTION_NAME = "transition";
+constexpr std::string_view LEVEL_GROUND_FUNCTION_NAME = "ground";
+constexpr std::string_view LEVEL_CEILING_FUNCTION_NAME = "ceiling";
 
 /** @brief Where the functions of `level` take their arguments. */
 constexpr int LEVEL_NAME_ARGUMENT = 1;
 constexpr int LEVEL_STAGES_ARGUMENT = 2;
 constexpr int LEVEL_WAIT_ARGUMENT = 1;
 constexpr int LEVEL_BIOME_ARGUMENT = 1;
+constexpr int LEVEL_GROUND_ARGUMENT = 1;
 
 /** @brief The third argument of `level.register`, a table of options, and its
  * only key: the LDtk file of the level, relative to a content folder. */
