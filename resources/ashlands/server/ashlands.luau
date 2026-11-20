@@ -131,21 +131,33 @@ local function place(decor: Decor)
 	behaviours.spawn(decor.sheet, { x = column, y = decor.row or row_of(decor.sheet, column) })
 end
 
--- Plays the waves and lays the decor in the order of their scroll.
-local function play(waves: { Wave }, decors: { Decor })
+-- Plays the waves and lays the decor in the order of their scroll, each
+-- `shift` units later than written.
+local function play(waves: { Wave }, decors: { Decor }, shift: number)
 	local next_wave, next_decor = 1, 1
 	while next_wave <= #waves or next_decor <= #decors do
 		local wave, decor = waves[next_wave], decors[next_decor]
 		if decor == nil or (wave ~= nil and wave.at <= decor.at) then
-			level.wait_scroll(wave.at)
+			level.wait_scroll(wave.at + shift)
 			send(wave.sheet, wave.rows)
 			next_wave += 1
 		else
-			level.wait_scroll(decor.at)
-			place(decor)
+			level.wait_scroll(decor.at + shift)
+			place({ at = decor.at + shift, sheet = decor.sheet, row = decor.row })
 			next_decor += 1
 		end
 	end
+end
+
+-- How much later than `planned` the stage that starts now begins. The waves
+-- and the decor of a stage are written for a stage that starts at the scroll
+-- its biome begins, `planned`; a stage before it that waited for a clear sky
+-- names the biome later, and the stage then plays everything that much later,
+-- so no piece of its decor is laid left of where its biome comes in, over the
+-- biome that leaves. A stage restarted from its checkpoint starts where it
+-- started the first time.
+local function lateness(planned: number): number
+	return math.max(0, level.scroll() - planned)
 end
 
 local function wait_for_a_clear_sky()
@@ -243,7 +255,7 @@ local DESCENT: { Wave } = {
 
 level.register("ashlands", {
 	function()
-		play(HIGHWAY, HIGHWAY_DECOR)
+		play(HIGHWAY, HIGHWAY_DECOR, 0)
 		level.wait_scroll(END_OF_THE_HIGHWAY)
 		wait_for_a_clear_sky()
 	end,
@@ -252,20 +264,23 @@ level.register("ashlands", {
 		level.biome("cendres_abri")
 	end,
 	function()
-		play(SHELTER, SHELTER_DECOR)
-		level.wait_scroll(END_OF_THE_SHELTER)
+		local shift = lateness(END_OF_THE_HIGHWAY)
+		play(SHELTER, SHELTER_DECOR, shift)
+		level.wait_scroll(END_OF_THE_SHELTER + shift)
 		level.biome("cendres_coeur")
 		wait_for_a_clear_sky()
 	end,
 	function()
-		play(INTO_THE_CORE, CORE_DECOR)
-		level.wait_scroll(END_OF_THE_CORE)
+		local shift = lateness(END_OF_THE_SHELTER)
+		play(INTO_THE_CORE, CORE_DECOR, shift)
+		level.wait_scroll(END_OF_THE_CORE + shift)
 		fight("glowheart", GLOWHEART_ENTRY)
 		level.biome("cendres_silo")
 	end,
 	function()
-		play(DESCENT, {})
-		level.wait_scroll(END_OF_THE_DESCENT)
+		local shift = lateness(END_OF_THE_CORE)
+		play(DESCENT, {}, shift)
+		level.wait_scroll(END_OF_THE_DESCENT + shift)
 		wait_for_a_clear_sky()
 	end,
 	function()
