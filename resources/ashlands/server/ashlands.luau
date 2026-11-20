@@ -1,6 +1,6 @@
 --!strict
 -- The level the resource ashlands brings: THE ASHLANDS, a map the players of
--- a waiting room vote for, in five stages across four biomes.
+-- a waiting room vote for, in six stages across four biomes.
 --
 -- 1, Highway Zero (biome cendres): the burnt desert, the broken highway and
 -- the checkpoint, under an open sky; Cindermites, Dunecrawlers and
@@ -13,8 +13,13 @@
 -- 4, the core (cendres_coeur): a short way in, then the Glowheart
 -- (server/glowheart.luau) among the steam vents that purge with it.
 -- 5, Silo Zero (cendres_silo): the way down into the nest, arriving through
--- its entrance as the scroll goes on, then the Ash Mother
--- (server/ash_mother.luau).
+-- its entrance as the scroll goes on.
+-- 6, the nest: the Ash Mother (server/ash_mother.luau).
+--
+-- Each biome is named at the end of the stage before the one it frames, after
+-- its fight: a checkpoint is the start of a stage, so a team sent back to it
+-- finds the biome already there, and the stage names it again for a game
+-- started there with `--stage`, which changes nothing otherwise.
 --
 -- The mobs are in server/ashlands_mobs.luau, the decor that does something in
 -- server/ashlands_props.luau. `--stage <n>` starts a game at a stage. The
@@ -220,6 +225,7 @@ level.register("ashlands", {
 	end,
 	function()
 		fight("sandmaw", SANDMAW_ENTRY)
+		level.biome("cendres_abri")
 	end,
 	function()
 		level.biome("cendres_abri")
@@ -233,12 +239,15 @@ level.register("ashlands", {
 		play(INTO_THE_CORE, CORE_DECOR)
 		level.wait_scroll(END_OF_THE_CORE)
 		fight("glowheart", GLOWHEART_ENTRY)
+		level.biome("cendres_silo")
 	end,
 	function()
 		level.biome("cendres_silo")
 		play(DESCENT, {})
 		level.wait_scroll(END_OF_THE_DESCENT)
 		wait_for_a_clear_sky()
+	end,
+	function()
 		fight("ash_mother", ASH_MOTHER_ENTRY)
 	end,
 }, {
@@ -250,6 +259,7 @@ level.register("ashlands", {
 		[3] = { scroll = END_OF_THE_HIGHWAY, biome = "cendres_abri", biome_since = 0 },
 		[4] = { scroll = END_OF_THE_SHELTER, biome = "cendres_coeur", biome_since = 0 },
 		[5] = { scroll = END_OF_THE_CORE, biome = "cendres_silo", biome_since = 0 },
+		[6] = { scroll = END_OF_THE_DESCENT, biome = "cendres_silo", biome_since = 0 },
 	},
 	bands = {
 		cendres = { top = OPEN_SKY_ROW, bottom = FLOOR_ROW },

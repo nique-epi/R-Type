@@ -94,7 +94,7 @@ TEST(LuauLevels, ReadsTheMapOfTheFosseLevel) {
 /**
  * Given the scripts of the resource ashlands the repository ships
  * When they run
- * Then the level ashlands is registered, with its five stages
+ * Then the level ashlands is registered, with its six stages
  */
 TEST(LuauLevels, ReadsTheAshlandsLevelTheRepositoryShips) {
   FailureLog log;
