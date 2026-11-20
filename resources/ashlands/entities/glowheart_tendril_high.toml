@@ -1,0 +1,86 @@
+# The entity type glowheart_tendril_high, brought by the resource ashlands:
+# a tendril of the Glowheart sweeping the upper lane (row 300), grown from its upper arm.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy"
+layer = "boss_effect"
+hits = ["player"]
+pilot = "growing_effect"
+
+# Nothing collides with its body: only its hurt zone hurts.
+[gameplay.hitbox]
+width = 4
+height = 4
+offset_y = 1024
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 1
+
+# It grows out of its arm for 1.2 s, the signal of the Tendrils, then
+# sweeps 0.9 s.
+[gameplay.behaviour]
+strike_after_ms = 1200
+life_ms = 2100
+
+[gameplay.survives_contact]
+
+# The tendril hurts its whole lane while it sweeps, -34 units from its
+# center: its left half, then its right half up to where its root bends to
+# its arm, a box being 1024 units at most.
+[[gameplay.hurt_zone.box]]
+offset_x = -400
+offset_y = -34
+width = 800
+height = 96
+attack = 0
+phase = "strike"
+
+# Its right half.
+[[gameplay.hurt_zone.box]]
+offset_x = 280
+offset_y = -34
+width = 560
+height = 96
+attack = 0
+phase = "strike"
+
+[appearance]
+sheet = "sprites/cendres/glowheart_tendril.png"
+
+# Idle: the root of the tendril, out of its arm.
+[appearance.idle]
+left = 0
+top = 0
+width = 400
+height = 45
+frames = 1
+spacing = 2
+frame_ms = 1000
+
+# Signal: it grows from its arm along its lane, over the dashed line where
+# it will sweep, and stays grown.
+[appearance.attack_0.signal]
+left = 0
+top = 0
+width = 400
+height = 45
+frames = 8
+spacing = 2
+frame_ms = 150
+playback = "hold"
+afterwards = "stay"
+
+# Strike: it writhes along its lane.
+[appearance.attack_0.strike]
+left = 0
+top = 47
+width = 400
+height = 45
+frames = 2
+spacing = 2
+frame_ms = 90
+playback = "loop"

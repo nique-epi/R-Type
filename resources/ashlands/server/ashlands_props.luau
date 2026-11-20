@@ -308,6 +308,23 @@ behaviours.register("meltdown_lamp_watch", {}, function(e)
 	return { direction = STILL }
 end)
 
+-- A body an attack of a boss grows in place, a tendril out of an arm: it
+-- grows through the signal of attack 0 for strike_after_ms, then strikes
+-- (attack 0, which its hurt zone names) until life_ms, then is removed.
+behaviours.register("growing_effect", {
+	{ name = "strike_after_ms", lowest = 1, highest = 60000 },
+	{ name = "life_ms", lowest = 2, highest = 60000 },
+}, function(e)
+	local settings = e.settings
+	behaviours.wait(settings.strike_after_ms, { direction = STILL, starts_action = { attack = 0, phase = "signal" } })
+	behaviours.wait(math.max(1, settings.life_ms - settings.strike_after_ms), {
+		direction = STILL,
+		starts_action = { attack = 0, phase = "strike" },
+	})
+	behaviours.destroy(e.id)
+	return { direction = STILL }
+end)
+
 -- A body an attack of a boss leaves in place: a tendril or the beam of a
 -- breath. It shows its aim (its look `aim`) for strike_after_ms, then strikes
 -- (attack 0, which its hurt zone names) until life_ms, then is removed.

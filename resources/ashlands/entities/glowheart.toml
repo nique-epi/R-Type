@@ -24,7 +24,8 @@ kind = "steady"
 top_speed = 400
 
 # It slides to x 1644 over 2.4 s, rests 1.1 s between two attacks, 0.5 s
-# once enraged, holds 1.5 s as it enrages, and purges 2 s after a Meltdown.
+# once enraged, holds 1.5 s as it enrages, purges 2 s after a Meltdown, and
+# spits 3 mites in its Overload (5 enraged), 0.2 s apart.
 [gameplay.behaviour]
 rest_x = 1644
 slide_ms = 2400
@@ -32,6 +33,9 @@ rest_ms = 1100
 enraged_rest_ms = 500
 rage_ms = 1500
 purge_ms = 2000
+mites = 3
+enraged_mites = 5
+mite_gap_ms = 200
 
 [gameplay.health]
 points = 80
@@ -48,7 +52,9 @@ arrival_attack = 3
 
 [gameplay.survives_contact]
 
-# Its arms lash in front of the vessel as the Tendrils (attack 0) sweep.
+# The roots of its tendrils hurt in front of the vessel as the Tendrils
+# (attack 0) sweep; its arms stay as they rest, the tendrils growing out of
+# their tips.
 [[gameplay.hurt_zone.box]]
 offset_x = -200
 offset_y = 0
@@ -123,6 +129,8 @@ frame_ms = 180
 playback = "once"
 afterwards = "idle"
 
+# Overload (attack 1): its chimneys light up and its eye narrows, then it
+# spits mites out of its chimneys, then settles.
 [appearance.attack_1.signal]
 left = 0
 top = 620
