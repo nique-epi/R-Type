@@ -3,16 +3,15 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
-#include <string>
 #include "CashierExchange.hpp"
+#include "CashierNotice.hpp"
 #include "CashierWay.hpp"
-#include "CasinoBalances.hpp"
 
 namespace rtype::client {
 
-/** @brief What the cashier shows under its bars: its way, the wallet of the
- * player as the exchange tried reads it, the amount and the step chosen, and
- * the exchange that amount would make. */
+/** @brief What the panel of the cashier shows under its bars: its way, the
+ * amount and the step chosen, the exchange that amount would make with the
+ * wallet of the player, and what the cashier says in place of its result. */
 struct CashierView {
   CashierWay way{};
   std::uint32_t amount{};
@@ -20,12 +19,9 @@ struct CashierView {
   std::size_t step{};
   /** @brief What changing the amount would give, or why it is refused. */
   CashierExchange tried;
-  /** @brief The balances shown top right, nothing for one the master has
-   * not answered. */
-  CasinoBalances balances;
-  /** @brief What the cashier says in place of the result: the master asked
-   * or refusing; nothing otherwise. */
-  std::optional<std::string> notice;
+  /** @brief What the cashier says in place of the result: the master asked,
+   * serving or refusing; nothing otherwise. */
+  std::optional<CashierNotice> notice;
 };
 
 }  // namespace rtype::client

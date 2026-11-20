@@ -2,12 +2,13 @@
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <memory>
+#include "CashierRoom.hpp"
 #include "CashierScreen.hpp"
 #include "CashierScreenParts.hpp"
 #include "CashierScreenTestConstants.hpp"
-#include "CashierWay.hpp"
 #include "FakeWallet.hpp"
 #include "KeyPress.hpp"
+#include "MotionPreference.hpp"
 #include "PointerEvents.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
@@ -15,9 +16,10 @@
 #include "ShipLocker.hpp"
 #include "Wallet.hpp"
 
+using rtype::client::CashierRoom;
 using rtype::client::CashierScreen;
 using rtype::client::CashierScreenParts;
-using rtype::client::CashierWay;
+using rtype::client::MotionPreference;
 using rtype::client::ShipLocker;
 using rtype::client::testing::CHIPS_HELD;
 using rtype::client::testing::KOPECKS_HELD;
@@ -26,16 +28,17 @@ CashierScreenFixture::CashierScreenFixture() {
   wallet_.balances =
       rtype::network::Wallet{.kopecks = KOPECKS_HELD, .chips = CHIPS_HELD};
   wallet_.looks = ShipLocker{};
-  reopenWith(CashierWay::BuyChips);
+  reopenWith(MotionPreference::Full);
 }
 
-void CashierScreenFixture::reopenWith(CashierWay way) {
+void CashierScreenFixture::reopenWith(MotionPreference motion) {
   screen_ = std::make_unique<CashierScreen>(
       CashierScreenParts{.navigator = navigator_,
                          .sounds = sounds_,
                          .wallet = wallet_,
                          .playfieldPointAt = samePlayfieldPoint,
-                         .way = way},
+                         .room = CashierRoom{},
+                         .motion = motion},
       std::make_unique<RecordingInterfaceCanvas>(canvas_));
 }
 
@@ -63,6 +66,10 @@ void CashierScreenFixture::clickAt(sf::Vector2i interfacePixel) {
 }
 
 void CashierScreenFixture::wait() { screen_->update(ONE_FRAME); }
+
+void CashierScreenFixture::waitFor(rtype::engine::Duration elapsed) {
+  screen_->update(elapsed);
+}
 
 FakeWallet& CashierScreenFixture::wallet() { return wallet_; }
 

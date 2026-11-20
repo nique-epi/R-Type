@@ -1,6 +1,8 @@
 add_library(rtype_client_casino_cashier STATIC
   CashierAmount.cpp
   CashierPainting.cpp
+  CashierRoomPainting.cpp
+  CashierRoomScan.cpp
   CashierRules.cpp
   CashierScreen.cpp
 )

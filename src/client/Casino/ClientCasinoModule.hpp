@@ -11,10 +11,10 @@
 namespace rtype::client {
 
 /**
- * @brief The module of the casino: install() adds CASINO_SCREEN, the
- * entrance and the hall, the two ways of the cashier,
- * CASINO_BUY_CHIPS_SCREEN and CASINO_CASH_OUT_SCREEN, and the roulette
- * table, ROULETTE_SCREEN, to the ScreenRegistry. It owns the CasinoChannel
+ * @brief The module of the casino: install() adds CASINO_SCREEN, the front
+ * of the casino, CASINO_HALL_SCREEN, its hall, CASINO_CASHIER_SCREEN, its
+ * cashier, and the roulette table, ROULETTE_SCREEN, to the ScreenRegistry,
+ * the rooms reading their pictures as they open. It owns the CasinoChannel
  * the screens play through, built on the ICasinoLink of the connection module
  * and the IAccountSession and IWallet of the account module; addWork()
  * updates it, then follows the room followed in the memory the roulette

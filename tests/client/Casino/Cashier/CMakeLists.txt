@@ -1,5 +1,6 @@
 target_sources(client_screen_tests PRIVATE
   CashierAmountTest.cpp
+  CashierRoomScanTest.cpp
   CashierRulesTest.cpp
   CashierScreenFixture.cpp
   CashierScreenTest.cpp

@@ -10,7 +10,7 @@
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 
-using rtype::client::CASINO_BUY_CHIPS_SCREEN;
+using rtype::client::CASINO_CASHIER_SCREEN;
 using rtype::client::MotionPreference;
 using rtype::client::ROULETTE_SCREEN;
 using rtype::client::testing::HALL_FREE_ROOM;
@@ -112,7 +112,7 @@ TEST_F(CasinoHallScreenFixture, LeftOpensTheCashierOnceTheHallFaded) {
 
   EXPECT_THAT(navigator().calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
-                                        .screen = CASINO_BUY_CHIPS_SCREEN}));
+                                        .screen = CASINO_CASHIER_SCREEN}));
 }
 
 /**
@@ -157,7 +157,7 @@ TEST_F(CasinoHallScreenFixture, TheLeftArchOpensTheCashier) {
 
   EXPECT_THAT(navigator().calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
-                                        .screen = CASINO_BUY_CHIPS_SCREEN}));
+                                        .screen = CASINO_CASHIER_SCREEN}));
 }
 
 /**

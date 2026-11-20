@@ -1,6 +1,7 @@
 #pragma once
 
 #include <SFML/System/Vector2.hpp>
+#include <chrono>
 #include <cstdint>
 #include <string_view>
 
@@ -40,9 +41,18 @@ constexpr std::string_view KOPECKS_LEFT_AFTER_BUYING = "3 750 KOPECKS";
 constexpr std::string_view CHIPS_AFTER_BUYING = "1 750 CHIPS";
 
 /** @brief Pixels of the interface: inside the chip of 1, the first of the
- * selector, from (168, 120); inside the mark that raises the amount, from
- * (276, 93), 12 x 16. */
-constexpr sf::Vector2i INSIDE_THE_CHIP_OF_ONE{175, 128};
-constexpr sf::Vector2i INSIDE_THE_RAISE_MARK{281, 100};
+ * row, from (297, 184), 23 x 24; inside the mark that raises the amount,
+ * from (390, 162), 12 x 16. */
+constexpr sf::Vector2i INSIDE_THE_CHIP_OF_ONE{305, 195};
+constexpr sf::Vector2i INSIDE_THE_RAISE_MARK{395, 170};
+
+/** @brief The label of the bar that buys: the bar takes the name of the
+ * way, while the rate board on the wall always writes both ways. */
+constexpr std::string_view BUY_BAR_LABEL = "BUY";
+
+/** @brief What the cashier says while the teller serves an exchange made,
+ * and how long he serves: eight frames of 120 ms, 960 ms. */
+constexpr std::string_view SERVING_LINE = "CHANGING...";
+constexpr std::chrono::milliseconds THE_WHOLE_SERVING{960};
 
 }  // namespace rtype::client::testing

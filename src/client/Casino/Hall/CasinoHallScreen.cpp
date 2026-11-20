@@ -149,7 +149,7 @@ void CasinoHallScreen::openChosenRoom() {
         chip->handleEvent(sf::Event::FocusLost{}, playfieldPointAt_));
   }
   if (exit == HallExit::Cashier) {
-    navigator_->push(CASINO_BUY_CHIPS_SCREEN);
+    navigator_->push(CASINO_CASHIER_SCREEN);
     return;
   }
   if (const std::optional<std::uint8_t> room = freeRoomOf(casino_->rooms())) {

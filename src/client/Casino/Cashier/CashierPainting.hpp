@@ -6,13 +6,12 @@
 namespace rtype::client {
 
 /**
- * @brief Paints @p view, everything the cashier shows but its bars: the
- * hall dimmed under it, the balances top right, then its gold panel: the
- * balance it takes from and the one it gives to, the amount between its
- * marks and the step, the chips of the selector with their keys, the chosen
- * one raised and in corners, then what both balances hold after the
- * exchange, or why it is refused.
+ * @brief Paints the exchange panel of @p view, everything but its bars: its
+ * tag, the balance it takes from and the one it gives to, the amount between
+ * its marks and the step, the five chips, the chosen one framed, then what
+ * both balances hold after the exchange, or, in red, why it is refused, or,
+ * in gold, what the cashier does.
  */
-void paintCashier(IInterfaceCanvas& canvas, const CashierView& view);
+void paintCashierPanel(IInterfaceCanvas& canvas, const CashierView& view);
 
 }  // namespace rtype::client

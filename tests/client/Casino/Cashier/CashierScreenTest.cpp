@@ -5,7 +5,6 @@
 #include "CashierConstants.hpp"
 #include "CashierScreenFixture.hpp"
 #include "CashierScreenTestConstants.hpp"
-#include "CashierWay.hpp"
 #include "Currency.hpp"
 #include "ExchangeRequest.hpp"
 #include "RecordingInterfaceCanvas.hpp"
@@ -14,11 +13,11 @@
 #include "WalletChangeReading.hpp"
 #include "WalletRefusal.hpp"
 
-using rtype::client::CashierWay;
 using rtype::client::MASTER_SILENT_LINE;
 using rtype::client::WalletChangeReading;
 using rtype::client::WalletRefusal;
 using rtype::client::testing::AMOUNT_OFFERED;
+using rtype::client::testing::BUY_BAR_LABEL;
 using rtype::client::testing::CHIPS_AFTER_BUYING;
 using rtype::client::testing::CHIPS_AFTER_BUYING_500;
 using rtype::client::testing::FIRST_AMOUNT;
@@ -29,11 +28,13 @@ using rtype::client::testing::KOPECKS_LEFT_AFTER_BUYING;
 using rtype::client::testing::ONE_LARGEST_STEP_HIGHER;
 using rtype::client::testing::ONE_STEP_HIGHER;
 using rtype::client::testing::ONE_STEP_LOWER;
+using rtype::client::testing::SERVING_LINE;
 using rtype::client::testing::SEVEN_HUNDRED_FIFTY_KOPECKS_MISSING;
 using rtype::client::testing::STEP_OF_1;
 using rtype::client::testing::STEP_OF_100;
 using rtype::client::testing::STEP_OF_500;
 using rtype::client::testing::STEPS_TO_FIVE_THOUSAND;
+using rtype::client::testing::THE_WHOLE_SERVING;
 using rtype::network::Currency;
 using rtype::network::ExchangeRequest;
 using rtype::network::Wallet;
@@ -91,6 +92,17 @@ TEST_F(CashierScreenFixture, TheKeyOfAChipChoosesTheStep) {
 }
 
 /**
+ * Given a cashier just opened, by steps of 100
+ * When Up is pressed and released
+ * Then the next chip is the step: 500
+ */
+TEST_F(CashierScreenFixture, UpChoosesTheNextChip) {
+  press(Key::Up);
+
+  EXPECT_NE(writingOf(canvas(), STEP_OF_500), nullptr);
+}
+
+/**
  * Given a cashier just opened
  * When the chip of 1 is clicked
  * Then the step is 1
@@ -130,9 +142,9 @@ TEST_F(CashierScreenFixture, EnterAsksTheMasterForTheChips) {
 /**
  * Given a cashier that asked the master for 500 chips
  * When the master answers that it made the exchange
- * Then the cashier closes
+ * Then the cashier stays open while the teller serves it
  */
-TEST_F(CashierScreenFixture, ClosesOnceTheMasterMadeTheExchange) {
+TEST_F(CashierScreenFixture, TheTellerServesTheExchangeTheMasterMade) {
   press(Key::Enter);
 
   wallet().exchangeAnswer =
@@ -142,9 +154,27 @@ TEST_F(CashierScreenFixture, ClosesOnceTheMasterMadeTheExchange) {
                           .refusal = std::nullopt};
   wait();
 
-  EXPECT_THAT(navigator().calls(),
-              ElementsAre(NavigatorCall{.request = NavigatorRequest::Pop,
-                                        .screen = std::nullopt}));
+  EXPECT_THAT(navigator().calls(), IsEmpty());
+  EXPECT_NE(writingOf(canvas(), SERVING_LINE), nullptr);
+}
+
+/**
+ * Given a cashier whose teller serves an exchange the master made
+ * When the whole serving passed
+ * Then the cashier stops saying it changes, ready for the next exchange
+ */
+TEST_F(CashierScreenFixture, TheCashierIsReadyAgainOnceServed) {
+  press(Key::Enter);
+  wallet().exchangeAnswer =
+      WalletChangeReading{.ask = wallet().exchangesAsked.size(),
+                          .wallet = Wallet{.kopecks = KOPECKS_AFTER_BUYING_500,
+                                           .chips = CHIPS_AFTER_BUYING_500},
+                          .refusal = std::nullopt};
+  wait();
+
+  waitFor(THE_WHOLE_SERVING);
+
+  EXPECT_EQ(writingOf(canvas(), SERVING_LINE), nullptr);
 }
 
 /**
@@ -166,12 +196,36 @@ TEST_F(CashierScreenFixture, AnExchangeTheMasterDidNotMakeSaysWhy) {
 }
 
 /**
- * Given a cashier that cashes out, 500 offered
+ * Given a cashier just opened, its bar BUY
+ * When Tab is pressed and released
+ * Then it cashes out: its bar is no longer BUY
+ */
+TEST_F(CashierScreenFixture, TabSwitchesToCashingOut) {
+  press(Key::Tab);
+
+  EXPECT_EQ(writingOf(canvas(), BUY_BAR_LABEL), nullptr);
+}
+
+/**
+ * Given a cashier just opened, its bar BUY
+ * When Tab is held down, its press repeated by the system, then released
+ * Then it switches once, to cashing out: its bar is no longer BUY
+ */
+TEST_F(CashierScreenFixture, AHeldTabSwitchesOnce) {
+  hold(Key::Tab);
+  hold(Key::Tab);
+  release(Key::Tab);
+
+  EXPECT_EQ(writingOf(canvas(), BUY_BAR_LABEL), nullptr);
+}
+
+/**
+ * Given a cashier switched to cashing out, 500 offered
  * When Enter is pressed and released
  * Then the master is asked to change 500 chips back into kopecks
  */
 TEST_F(CashierScreenFixture, EnterCashesTheChipsOut) {
-  reopenWith(CashierWay::CashOut);
+  press(Key::Tab);
 
   press(Key::Enter);
 

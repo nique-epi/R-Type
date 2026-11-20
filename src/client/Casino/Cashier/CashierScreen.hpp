@@ -6,10 +6,10 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
-#include <string>
 #include "AccountLinkConstants.hpp"
 #include "CashierAmount.hpp"
-#include "CashierExchange.hpp"
+#include "CashierNotice.hpp"
+#include "CashierRoom.hpp"
 #include "CashierScreenParts.hpp"
 #include "CashierWay.hpp"
 #include "IInterfaceCanvas.hpp"
@@ -18,27 +18,31 @@
 #include "ISoundPlayer.hpp"
 #include "IWallet.hpp"
 #include "KeyChip.hpp"
+#include "MotionPreference.hpp"
 #include "PlayfieldMapping.hpp"
 #include "TimeConstants.hpp"
-#include "Wallet.hpp"
 
 namespace rtype::client {
 
 /**
- * @brief The cashier of the casino, pushed over the hall, which shows
- * dimmed under it: it changes kopecks into chips, or chips back into
- * kopecks, one for one (CashierWay).
+ * @brief The cashier of the casino, pushed over the hall, which it hides:
+ * the old Bydo teller behind his grille, and the exchange panel, which
+ * changes kopecks into chips, or chips back into kopecks, one for one
+ * (CashierWay). It opens buying chips; CASHIER_WAY_KEY switches the way, and
+ * the rate board on the wall lights the way chosen.
  *
  * The amount stands between two marks: CASHIER_LOWER_KEY and
  * CASHIER_RAISE_KEY, or a click on a mark, move it by the step, one of the
- * chips of the selector, which its key 1 to 5, or a click on it, chooses.
- * Under it, what both balances would hold after the exchange, or why the
- * cashier refuses it (cashierLineOf()); BUY, or CASH OUT, is disabled then.
+ * chips, which its key 1 to 5, CASHIER_NEXT_STEP_KEY, or a click on it,
+ * chooses. Under it, what both balances would hold after the exchange, or
+ * why the cashier refuses it (cashierLineOf()); BUY, or CASH OUT, is
+ * disabled then.
  *
- * BUY, MENU_CONFIRM_KEY, asks the master for the exchange (IWallet::exchange())
- * and closes the cashier, back to the hall, once the master answered; BACK,
- * MENU_CANCEL_KEY, closes it without exchanging. Both act once per hold of
- * their key, on its release.
+ * BUY, MENU_CONFIRM_KEY, asks the master for the exchange
+ * (IWallet::exchange()); once the master made it, the teller serves it, then
+ * counts again, and the cashier stays open for the next one. BACK,
+ * MENU_CANCEL_KEY, closes it, back to the hall. The bars and the switch of
+ * the way act once per hold of their key, on its release.
  */
 class CashierScreen final : public IScreen {
  public:
@@ -65,17 +69,14 @@ class CashierScreen final : public IScreen {
   /** @brief Moves the amount, or chooses the step, as the mark or the chip
    * under @p pixel of the interface says. */
   void pointerPressed(sf::Vector2i pixel);
-  /** @brief Makes the exchange, saves the settings, then closes the cashier;
-   * a refused exchange does nothing. */
+  /** @brief Switches the way of the cashier, forgetting what it said. */
+  void switchWay();
+  /** @brief Asks the master for the exchange; a refused exchange, or one
+   * asked while the last is not served yet, does nothing. */
   void confirm();
-  /** @brief Closes the cashier once the master made the exchange asked, or
-   * says why it did not. */
+  /** @brief Has the teller serve the exchange the master made, or says why
+   * it did not, once it answered. */
   void settle();
-  /** @returns The exchange the amount would make with @p balances, the
-   * balances of the wallet; with empty balances while the master has not
-   * answered them. */
-  [[nodiscard]] CashierExchange triedWith(
-      const std::optional<network::Wallet>& balances) const;
   void repaint();
 
   IScreenNavigator* navigator_;
@@ -83,15 +84,24 @@ class CashierScreen final : public IScreen {
   IWallet* wallet_;
   std::unique_ptr<IInterfaceCanvas> canvas_;
   PlayfieldMapping playfieldPointAt_;
-  CashierWay way_;
+  MotionPreference motion_;
+  CashierRoom room_;
+  CashierWay way_{CashierWay::BuyChips};
   CashierAmount amount_;
-  KeyChip confirmChip_;
+  /** @brief How long the cashier has been open: where its cage moves. */
+  engine::Duration since_{};
+  /** @brief How long ago the teller started serving the last exchange made,
+   * until he is done. */
+  std::optional<engine::Duration> sinceServed_;
+  KeyChip buyChip_;
+  KeyChip cashOutChip_;
   KeyChip backChip_;
+  KeyChip wayChip_;
   /** @brief The exchange the master has not answered yet, NO_ACCOUNT_ASK
    * when none. */
   std::uint64_t exchangeAsk_{NO_ACCOUNT_ASK};
   /** @brief What the cashier says in place of the result, if anything. */
-  std::optional<std::string> notice_;
+  std::optional<CashierNotice> notice_;
 };
 
 }  // namespace rtype::client

@@ -5,22 +5,25 @@
 #include <SFML/Window/Keyboard.hpp>
 #include <memory>
 #include "CashierScreen.hpp"
-#include "CashierWay.hpp"
 #include "FakeWallet.hpp"
+#include "MotionPreference.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingSoundPlayer.hpp"
+#include "TimeConstants.hpp"
 
-/** @brief A cashier that buys chips, over a wallet the test answers for the
- * master, with a recording navigator, canvas and sound player; the player
- * holds KOPECKS_HELD kopecks and CHIPS_HELD chips. */
+/** @brief A cashier just opened, buying chips, its cage read as empty, over
+ * a wallet the test answers for the master, with a recording navigator,
+ * canvas and sound player; the player holds KOPECKS_HELD kopecks and
+ * CHIPS_HELD chips, and the cage moves unless a test opens it again with less
+ * motion. */
 class CashierScreenFixture : public ::testing::Test {
  protected:
   CashierScreenFixture();
 
-  /** @brief Builds a new cashier in place of the one shown, changing @p way.
-   */
-  void reopenWith(rtype::client::CashierWay way);
+  /** @brief Builds a new cashier in place of the one shown, moving as
+   * @p motion says. */
+  void reopenWith(rtype::client::MotionPreference motion);
   /** @brief Presses and releases a key, then lets a frame pass. */
   void press(sf::Keyboard::Key key);
   /** @brief Presses a key without releasing it, then lets a frame pass. */
@@ -32,6 +35,8 @@ class CashierScreenFixture : public ::testing::Test {
   void clickAt(sf::Vector2i interfacePixel);
   /** @brief Lets a frame pass. */
   void wait();
+  /** @brief Lets @p elapsed pass in one frame. */
+  void waitFor(rtype::engine::Duration elapsed);
 
   [[nodiscard]] FakeWallet& wallet();
   [[nodiscard]] const RecordingNavigator& navigator() const;

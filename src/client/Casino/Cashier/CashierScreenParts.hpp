@@ -1,10 +1,11 @@
 #pragma once
 
 #include <functional>
-#include "CashierWay.hpp"
+#include "CashierRoom.hpp"
 #include "IScreenNavigator.hpp"
 #include "ISoundPlayer.hpp"
 #include "IWallet.hpp"
+#include "MotionPreference.hpp"
 #include "PlayfieldMapping.hpp"
 
 namespace rtype::client {
@@ -28,8 +29,11 @@ struct CashierScreenParts {
   std::reference_wrapper<IWallet> wallet;
   /** @brief Gives the point of the playfield under a pixel of the window. */
   PlayfieldMapping playfieldPointAt;
-  /** @brief Whether it changes kopecks into chips, or chips back. */
-  CashierWay way{};
+  /** @brief What the cashier read in the picture of its cage; empty, the
+   * cage stays still. */
+  CashierRoom room;
+  /** @brief Whether the cage and the teller move. */
+  MotionPreference motion{};
 };
 
 }  // namespace rtype::client
