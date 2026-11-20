@@ -95,6 +95,12 @@ local GAP_HALF = 170
 local GAP_MARGIN = 8
 local DOOR_LOOKAHEAD = 720
 
+-- Half the width of a door, and how close behind a body walking on the floor
+-- or the ceiling a door may come before the body stops attacking and runs
+-- ahead of it: every walker is faster than the scroll that carries the door.
+local DOOR_HALF_WIDTH = 44
+local DOOR_GUARD = 480
+
 -- The door nearest to a body within DOOR_LOOKAHEAD, ahead of it or behind it:
 -- a door scrolls left, so it catches up with a body slower than the scroll, or
 -- one that stands still to attack; nil when there is none.
@@ -131,6 +137,26 @@ local function through_doors(e, direction)
 	end
 	local step = -offset / (e.top_speed * TICK_SECONDS)
 	return { x = direction.x, y = math.clamp(step, -1, 1) }
+end
+
+-- The direction of a body that walks on the floor or the ceiling, which a
+-- door covers whatever its gap: it keeps `direction`, but never walks into a
+-- door ahead of it; it waits behind it until the scroll takes the door away.
+local function behind_doors(e, direction)
+	local door = door_ahead(e)
+	if door == nil or door.x > e.position.x then
+		return direction
+	end
+	local room = e.position.x - door.x - DOOR_HALF_WIDTH - e.collision_box.width / 2
+	local most = math.max(-1, -math.max(0, room) / (e.top_speed * TICK_SECONDS))
+	return { x = math.max(direction.x, most), y = direction.y }
+end
+
+-- Whether a door comes behind a walker, close enough to run it over while it
+-- stands still to attack.
+local function door_behind(e): boolean
+	local door = door_ahead(e)
+	return door ~= nil and door.x > e.position.x and door.x - e.position.x < DOOR_GUARD
 end
 
 -- The upper half of a blast door stands on the scroll and writes where it is
@@ -182,12 +208,13 @@ behaviours.register("dunecrawler_walk", with_attack({
 	if
 		ship ~= nil
 		and rested(e, settings.rest_ms)
+		and not door_behind(e)
 		and ship.y < e.position.y
 		and math.abs(ship.x - e.position.x) <= settings.reach
 	then
 		attack(settings, fire("dunecrawler_barb", { x = e.position.x, y = e.position.y - MUZZLE_GAP }))
 	end
-	return { direction = through_doors(e, along(e, level.ground, DUNECRAWLER_GAP)) }
+	return { direction = behind_doors(e, along(e, level.ground, DUNECRAWLER_GAP)) }
 end)
 
 -- A missile that rises, drifting left by `drift` percent of its speed.
@@ -249,6 +276,7 @@ behaviours.register("rail_turret_slide", with_attack({
 		ship ~= nil
 		and e.position.x < RIGHT_EDGE
 		and rested(e, settings.rest_ms)
+		and not door_behind(e)
 		and ship.y > e.position.y
 		and math.abs(ship.x - e.position.x) <= settings.reach
 	then
@@ -263,7 +291,7 @@ behaviours.register("rail_turret_slide", with_attack({
 			return (settings.shots - 1) * settings.shot_gap_ms
 		end)
 	end
-	return { direction = through_doors(e, along(e, level.ceiling, RAIL_TURRET_GAP)) }
+	return { direction = behind_doors(e, along(e, level.ceiling, RAIL_TURRET_GAP)) }
 end)
 
 -- The Geiger mine drifts left, bobbing `bob` units around its row every
@@ -302,12 +330,13 @@ behaviours.register("fixbot_roll", with_attack({
 		ship ~= nil
 		and e.position.x < RIGHT_EDGE
 		and rested(e, settings.rest_ms)
+		and not door_behind(e)
 		and ship.x < e.position.x
 		and e.position.x - ship.x <= settings.reach
 	then
 		attack(settings, fire("fixbot_wrench", { x = e.position.x - MUZZLE_GAP, y = e.position.y - MUZZLE_GAP }))
 	end
-	return { direction = through_doors(e, along(e, level.ground, FIXBOT_GAP)) }
+	return { direction = behind_doors(e, along(e, level.ground, FIXBOT_GAP)) }
 end)
 
 -- A wrench thrown along an arc: it leaves rising at `lift` percent of its
