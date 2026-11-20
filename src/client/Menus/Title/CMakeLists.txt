@@ -4,6 +4,7 @@ add_library(rtype_client_title STATIC
   DialogMenus.cpp
   IntroScreen.cpp
   JoinTicketWait.cpp
+  TitleAccountChips.cpp
   TitleScreen.cpp
 )
 
@@ -21,6 +22,7 @@ target_link_libraries(rtype_client_title
     rtype_client_handshake
     rtype_client_interface
     rtype_client_intro_interfaces
+    rtype_client_key_chip
     rtype_client_menu
     rtype_client_screens_module
     rtype_client_squadron
