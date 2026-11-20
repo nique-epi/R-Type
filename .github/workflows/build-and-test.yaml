@@ -62,14 +62,18 @@ jobs:
         run: |
           cmake -E make_directory "$RUNNER_TEMP/vcpkg-cache"
           echo "VCPKG_BINARY_SOURCES=clear;files,$RUNNER_TEMP/vcpkg-cache,readwrite" >> "$GITHUB_ENV"
+          # vcpkg reuses a cached package only when its compiler and ports match,
+          # so the key names the runner image and the vcpkg commit: a new image
+          # or a moved submodule gives a new key, which the save step then fills.
+          echo "VCPKG_CACHE_STAMP=${ImageOS}-${ImageVersion}-$(git rev-parse HEAD:vcpkg)" >> "$GITHUB_ENV"
 
       - name: Restore vcpkg binary cache
         id: vcpkg-cache
         uses: actions/cache/restore@v4
         with:
           path: ${{ runner.temp }}/vcpkg-cache
-          key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
-          restore-keys: vcpkg-${{ runner.os }}-
+          key: vcpkg-${{ runner.os }}-${{ env.VCPKG_CACHE_STAMP }}-${{ hashFiles('vcpkg.json') }}
+          restore-keys: vcpkg-${{ runner.os }}-${{ env.VCPKG_CACHE_STAMP }}-
 
       - name: Configure
         run: cmake --preset test
@@ -175,14 +179,18 @@ jobs:
         run: |
           cmake -E make_directory "$RUNNER_TEMP/vcpkg-cache"
           echo "VCPKG_BINARY_SOURCES=clear;files,$RUNNER_TEMP/vcpkg-cache,readwrite" >> "$GITHUB_ENV"
+          # vcpkg reuses a cached package only when its compiler and ports match,
+          # so the key names the runner image and the vcpkg commit: a new image
+          # or a moved submodule gives a new key, which the save step then fills.
+          echo "VCPKG_CACHE_STAMP=${ImageOS}-${ImageVersion}-$(git rev-parse HEAD:vcpkg)" >> "$GITHUB_ENV"
 
       - name: Restore vcpkg binary cache
         if: steps.select.outputs.found == 'true'
         uses: actions/cache/restore@v4
         with:
           path: ${{ runner.temp }}/vcpkg-cache
-          key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
-          restore-keys: vcpkg-${{ runner.os }}-
+          key: vcpkg-${{ runner.os }}-${{ env.VCPKG_CACHE_STAMP }}-${{ hashFiles('vcpkg.json') }}
+          restore-keys: vcpkg-${{ runner.os }}-${{ env.VCPKG_CACHE_STAMP }}-
 
       - name: Configure with Ninja to get the compile commands
         if: steps.select.outputs.found == 'true'
@@ -277,14 +285,18 @@ jobs:
         run: |
           cmake -E make_directory "$RUNNER_TEMP/vcpkg-cache"
           echo "VCPKG_BINARY_SOURCES=clear;files,$RUNNER_TEMP/vcpkg-cache,readwrite" >> "$GITHUB_ENV"
+          # vcpkg reuses a cached package only when its compiler and ports match,
+          # so the key names the runner image and the vcpkg commit: a new image
+          # or a moved submodule gives a new key, which the save step then fills.
+          echo "VCPKG_CACHE_STAMP=${ImageOS}-${ImageVersion}-$(git rev-parse HEAD:vcpkg)" >> "$GITHUB_ENV"
 
       - name: Restore vcpkg binary cache
         id: vcpkg-cache
         uses: actions/cache/restore@v4
         with:
           path: ${{ runner.temp }}/vcpkg-cache
-          key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
-          restore-keys: vcpkg-${{ runner.os }}-
+          key: vcpkg-${{ runner.os }}-${{ env.VCPKG_CACHE_STAMP }}-${{ hashFiles('vcpkg.json') }}
+          restore-keys: vcpkg-${{ runner.os }}-${{ env.VCPKG_CACHE_STAMP }}-
 
       # Ninja compiles every file in parallel, on every platform.
       - name: Configure
