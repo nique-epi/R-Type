@@ -5,7 +5,6 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
-#include <limits>
 #include <span>
 #include <utility>
 #include <vector>
@@ -17,14 +16,15 @@
 #include "CasinoPaintingConstants.hpp"
 #include "CasinoSpriteConstants.hpp"
 #include "ColoredPixel.hpp"
+#include "DurationConversion.hpp"
 #include "HallMoment.hpp"
 #include "HallPicture.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "ImagePlacement.hpp"
 #include "InterfaceConstants.hpp"
-#include "IntroTimeline.hpp"
 #include "LightBeam.hpp"
 #include "MotionPreference.hpp"
+#include "RenderingConstants.hpp"
 #include "Spectator.hpp"
 #include "TextStyle.hpp"
 #include "TextureArea.hpp"
@@ -41,7 +41,7 @@ namespace {
 void paintSpotlight(IInterfaceCanvas& canvas, engine::Duration since) {
   const float alpha =
       HALL_SPOT_ALPHA +
-      (std::sin(secondsOf(since) * HALL_SPOT_PACE) * HALL_SPOT_BREATH);
+      (std::sin(engine::inSeconds(since) * HALL_SPOT_PACE) * HALL_SPOT_BREATH);
   const sf::Color light(CASINO_WARM_CREAM.r, CASINO_WARM_CREAM.g,
                         CASINO_WARM_CREAM.b, static_cast<std::uint8_t>(alpha));
   const int rows = HALL_SPOT_FLOOR - HALL_SPOT_TOP_MIDDLE.y;
@@ -104,9 +104,9 @@ void paintBoxers(IInterfaceCanvas& canvas, HallMoment moment) {
 /** @returns How many pixels a spectator stands up at @p since: 0, 1 or 2. */
 std::size_t hopOf(const Spectator& spectator, engine::Duration since) {
   const float beat =
-      std::sin((secondsOf(since) * spectator.speed) + spectator.phase);
+      std::sin((engine::inSeconds(since) * spectator.speed) + spectator.phase);
   if (beat > HALL_HOP_TWO_PIXELS) {
-    return 2;
+    return HALL_HIGHEST_HOP;
   }
   return beat > HALL_HOP_ONE_PIXEL ? 1 : 0;
 }
@@ -138,15 +138,12 @@ void paintFlash(IInterfaceCanvas& canvas, engine::Duration since) {
       HALL_FLASH_AREA.position.y +
           static_cast<int>(draw %
                            static_cast<std::uint32_t>(HALL_FLASH_AREA.size.y)));
-  const float left =
-      1.0F - (secondsOf(since % HALL_FLASH_TIME) / secondsOf(HALL_FLASH_TIME));
-  sf::Color light = CASINO_FLASH_WHITE;
-  light.a = static_cast<std::uint8_t>(
-      left * static_cast<float>(std::numeric_limits<std::uint8_t>::max()));
-  canvas.fill({flash, {1, 1}}, light);
-  light.a /= SIDES_PER_AXIS;
-  canvas.fill({{flash.x - 1, flash.y}, {HALL_FLASH_SPAN, 1}}, light);
-  canvas.fill({{flash.x, flash.y - 1}, {1, HALL_FLASH_SPAN}}, light);
+  const float left = 1.0F - (engine::inSeconds(since % HALL_FLASH_TIME) /
+                             engine::inSeconds(HALL_FLASH_TIME));
+  canvas.fill({flash, {1, 1}}, withShareOfLight(CASINO_FLASH_WHITE, left));
+  const sf::Color arms = withShareOfLight(CASINO_FLASH_WHITE, left * HALF);
+  canvas.fill({{flash.x - 1, flash.y}, {HALL_FLASH_SPAN, 1}}, arms);
+  canvas.fill({{flash.x, flash.y - 1}, {1, HALL_FLASH_SPAN}}, arms);
 }
 
 /** @brief Paints the two chevrons that push toward the roulette, nudged a
@@ -196,7 +193,8 @@ void HallPainter::paint(IInterfaceCanvas& canvas, HallMoment moment) {
   const bool moving = moment.motion == MotionPreference::Full;
   if (moving) {
     paintSpotlight(canvas, moment.since);
-    paintBeams(canvas, moment.since);
+    swingBeams(beamPixels_, HALL_CEILING_BEAMS, moment.since);
+    canvas.plot(beamPixels_);
     paintLights(canvas, picture_, moment.since);
   }
   paintBoxers(canvas, moment);
@@ -205,28 +203,6 @@ void HallPainter::paint(IInterfaceCanvas& canvas, HallMoment moment) {
     paintLife(canvas, picture_, moment.since);
   }
   paintTitle(canvas);
-}
-
-void HallPainter::paintBeams(IInterfaceCanvas& canvas, engine::Duration since) {
-  const float swing =
-      std::sin(secondsOf(since) * FULL_TURN_RADIANS / HALL_BEAM_PERIOD) *
-      HALL_BEAM_SWING;
-  sf::Color warm = CASINO_WARM_CREAM;
-  warm.a = HALL_BEAM_ALPHA;
-  sf::Color blue = PALE_BLUE;
-  blue.a = HALL_BEAM_ALPHA;
-  beamPixels_.clear();
-  addBeamPixels(beamPixels_, LightBeam{.origin = HALL_LEFT_BEAM_ORIGIN,
-                                       .angle = HALL_BEAM_REST + swing,
-                                       .length = HALL_BEAM_LENGTH,
-                                       .halfSpread = HALL_BEAM_HALF_SPREAD,
-                                       .color = warm});
-  addBeamPixels(beamPixels_, LightBeam{.origin = HALL_RIGHT_BEAM_ORIGIN,
-                                       .angle = -HALL_BEAM_REST - swing,
-                                       .length = HALL_BEAM_LENGTH,
-                                       .halfSpread = HALL_BEAM_HALF_SPREAD,
-                                       .color = blue});
-  canvas.plot(beamPixels_);
 }
 
 }  // namespace rtype::client

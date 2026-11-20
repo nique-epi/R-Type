@@ -1,14 +1,17 @@
 #pragma once
 
+#include <optional>
 #include "CashierRoom.hpp"
 #include "CashierRoomMoment.hpp"
 #include "IInterfaceCanvas.hpp"
+#include "TimeConstants.hpp"
 
 namespace rtype::client {
 
-/** @returns Whether the teller still serves @p moment: an exchange was made,
- * and the eight frames of his serving have not all shown yet. */
-[[nodiscard]] bool tellerServesAt(const CashierRoomMoment& moment);
+/** @returns Whether the teller still serves @p sinceServed after he started
+ * serving an exchange: the eight frames of his serving have not all shown
+ * yet; never when he serves none. */
+[[nodiscard]] bool tellerServesAt(std::optional<engine::Duration> sinceServed);
 
 /**
  * @brief Paints the cage of the cashier, everything but its panel: the

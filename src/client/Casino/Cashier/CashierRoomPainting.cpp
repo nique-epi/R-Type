@@ -5,7 +5,6 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
-#include <limits>
 #include <span>
 #include "BackgroundColorConstants.hpp"
 #include "CashierConstants.hpp"
@@ -16,10 +15,10 @@
 #include "CasinoLighting.hpp"
 #include "CasinoPaintingConstants.hpp"
 #include "CasinoSpriteConstants.hpp"
+#include "DurationConversion.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "ImagePlacement.hpp"
 #include "InterfaceConstants.hpp"
-#include "IntroTimeline.hpp"
 #include "MotionPreference.hpp"
 #include "TextStyle.hpp"
 #include "TextureArea.hpp"
@@ -28,12 +27,6 @@
 namespace rtype::client {
 
 namespace {
-
-/** @returns @p light, from 0 to 1, as an alpha. */
-std::uint8_t alphaOf(float light) {
-  return static_cast<std::uint8_t>(
-      light * static_cast<float>(std::numeric_limits<std::uint8_t>::max()));
-}
 
 /** @returns Whether @p since falls on the first of each two steps of
  * @p step. */
@@ -78,7 +71,8 @@ void paintGlint(IInterfaceCanvas& canvas, engine::Duration since) {
     return;
   }
   const sf::IntRect glass = CASHIER_RACK_GLASS;
-  const float share = secondsOf(into) / secondsOf(CASHIER_GLINT_TIME);
+  const float share =
+      engine::inSeconds(into) / engine::inSeconds(CASHIER_GLINT_TIME);
   const int course = glass.size.x + (CASHIER_GLINT_LEAD * CASHIER_GLINT_LEADS);
   const int start = glass.position.x - CASHIER_GLINT_LEAD +
                     static_cast<int>(share * static_cast<float>(course));
@@ -108,15 +102,13 @@ void paintSparkles(IInterfaceCanvas& canvas, std::span<const sf::Vector2i> gold,
         gold[scrambledOf((window * CASHIER_SPARKLES) +
                          static_cast<std::uint32_t>(sparkle)) %
              gold.size()];
-    const float life = secondsOf(shifted % CASHIER_SPARKLE_TIME) /
-                       secondsOf(CASHIER_SPARKLE_TIME);
+    const float life = engine::inSeconds(shifted % CASHIER_SPARKLE_TIME) /
+                       engine::inSeconds(CASHIER_SPARKLE_TIME);
     const float light =
         1.0F - (std::abs(life - CASHIER_SPARKLE_PEAK) / CASHIER_SPARKLE_PEAK);
-    sf::Color white = CASINO_FLASH_WHITE;
-    white.a = alphaOf(light);
-    canvas.fill({coin, {1, 1}}, white);
-    sf::Color arm = CASINO_WARM_CREAM;
-    arm.a = alphaOf(light * CASHIER_SPARKLE_ARM_SHARE);
+    canvas.fill({coin, {1, 1}}, withShareOfLight(CASINO_FLASH_WHITE, light));
+    const sf::Color arm =
+        withShareOfLight(CASINO_WARM_CREAM, light * CASHIER_SPARKLE_ARM_SHARE);
     for (const sf::Vector2i offset : CASHIER_SPARKLE_ARMS) {
       canvas.fill({coin + offset, {1, 1}}, arm);
     }
@@ -148,7 +140,7 @@ sf::IntRect tellerFrameAt(const CashierRoomMoment& moment) {
   int row = 0;
   int frame = 0;
   if (moment.motion == MotionPreference::Full) {
-    if (tellerServesAt(moment)) {
+    if (tellerServesAt(moment.sinceServed)) {
       row = 1;
       frame = static_cast<int>(moment.sinceServed.value_or(engine::Duration{}) /
                                TELLER_SERVING_FRAME_TIME);
@@ -180,10 +172,9 @@ void paintTeller(IInterfaceCanvas& canvas, const CashierRoom& room,
 
 }  // namespace
 
-bool tellerServesAt(const CashierRoomMoment& moment) {
-  return moment.sinceServed.has_value() &&
-         *moment.sinceServed <
-             TELLER_SERVING_FRAME_TIME * TELLER_FRAMES_PER_POSE;
+bool tellerServesAt(std::optional<engine::Duration> sinceServed) {
+  return sinceServed.has_value() &&
+         *sinceServed < TELLER_SERVING_FRAME_TIME * TELLER_FRAMES_PER_POSE;
 }
 
 void paintCashierRoom(IInterfaceCanvas& canvas, const CashierRoom& room,

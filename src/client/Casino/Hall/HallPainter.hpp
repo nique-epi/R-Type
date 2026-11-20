@@ -26,9 +26,6 @@ class HallPainter {
   void paint(IInterfaceCanvas& canvas, HallMoment moment);
 
  private:
-  /** @brief Paints the two beams that sweep the ceiling. */
-  void paintBeams(IInterfaceCanvas& canvas, engine::Duration since);
-
   HallPicture picture_;
   std::vector<ColoredPixel> beamPixels_;
 };

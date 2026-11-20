@@ -27,9 +27,6 @@ class EntranceLightPainter {
   void paint(IInterfaceCanvas& canvas, engine::Duration since);
 
  private:
-  /** @brief Paints the two searchlights that sweep the sky. */
-  void paintSearchlights(IInterfaceCanvas& canvas, engine::Duration since);
-
   EntranceLights lights_;
   std::vector<ColoredPixel> beamPixels_;
 };

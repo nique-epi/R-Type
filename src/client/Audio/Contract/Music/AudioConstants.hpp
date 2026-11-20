@@ -120,10 +120,6 @@ constexpr MusicTrack CASINO_CROWD_TRACK{.assetId = "music/boxing_crowd.mp3",
                                         .gain = CASINO_CROWD_GAIN};
 constexpr MusicTrack CASINO_TABLES_TRACK{.assetId = "music/american_swing.mp3"};
 
-/** @brief How many players the ambiences need: space, the garage and the
- * crowd of the hangar, the three of the shop, and the four of the casino. */
-constexpr std::size_t AMBIENCE_PLAYER_COUNT = 10;
-
 /**
  * @brief How the time of the intro follows the position of the music, which
  * moves by one audio block at a time (about 10 ms in SFML 3.0.2): each frame

@@ -28,8 +28,4 @@ void paintNameTag(IInterfaceCanvas& canvas, sf::Vector2i topLeft,
  * kopecks in gold, the chips in white, each over its name. */
 void paintCasinoBalances(IInterfaceCanvas& canvas, CasinoBalances balances);
 
-/** @brief Paints the panel of the butler, CASINO_SPEECH_AREA, and his name on
- * its tag; what he says is written in it by his SpokenLine. */
-void paintButlerPanel(IInterfaceCanvas& canvas);
-
 }  // namespace rtype::client

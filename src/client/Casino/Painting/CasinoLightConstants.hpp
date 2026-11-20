@@ -3,7 +3,6 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
-#include <numbers>
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -39,12 +38,12 @@ constexpr unsigned SCRAMBLE_SECOND_SHIFT = 15;
 constexpr std::uint32_t SCRAMBLE_FIRST_FACTOR = 0x7feb352dU;
 constexpr std::uint32_t SCRAMBLE_SECOND_FACTOR = 0x846ca68bU;
 
-/** @brief A whole turn, in radians: the beats of the lights swing over
- * one. */
-constexpr float FULL_TURN_RADIANS = 2.0F * std::numbers::pi_v<float>;
-
-/** @brief How far the middle of a pixel lies from its top-left corner, on
- * each axis. */
-constexpr float PIXEL_MIDDLE = 0.5F;
+/**
+ * @brief The points of light that twinkle, stars or crystals, are spread
+ * over CASINO_TWINKLE_GROUPS beats, each CASINO_BEAT_SPREAD radians after the
+ * one before, the golden angle, so no two beats keep in step.
+ */
+constexpr std::size_t CASINO_TWINKLE_GROUPS = 8;
+constexpr float CASINO_BEAT_SPREAD = 2.39996F;
 
 }  // namespace rtype::client

@@ -5,9 +5,9 @@
 #include <SFML/Window/Event.hpp>
 #include <SFML/Window/Mouse.hpp>
 #include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <optional>
-#include <string>
 #include <utility>
 #include "AccountLinkConstants.hpp"
 #include "Ambience.hpp"
@@ -53,6 +53,16 @@ std::optional<std::size_t> cashierChipAt(sf::Vector2i pixel) {
     }
   }
   return std::nullopt;
+}
+
+/** @returns Whether the cashier may ask for an exchange: the master
+ * answered the balances, and the last exchange is neither asked nor served
+ * still. */
+bool canExchange(const std::optional<network::Wallet>& balances,
+                 std::uint64_t exchangeAsk,
+                 const std::optional<engine::Duration>& sinceServed) {
+  return balances.has_value() && exchangeAsk == NO_ACCOUNT_ASK &&
+         !sinceServed.has_value();
 }
 
 /** @returns The way that is not @p way. */
@@ -121,10 +131,7 @@ void CashierScreen::update(engine::Duration elapsed) {
   tellerLine_.advance(elapsed);
   if (sinceServed_.has_value()) {
     *sinceServed_ += elapsed;
-    if (!tellerServesAt(CashierRoomMoment{.since = since_,
-                                          .sinceServed = sinceServed_,
-                                          .way = way_,
-                                          .motion = motion_})) {
+    if (!tellerServesAt(sinceServed_)) {
       sinceServed_.reset();
       notice_.reset();
     }
@@ -176,8 +183,7 @@ void CashierScreen::switchWay() {
 
 void CashierScreen::confirm() {
   const std::optional<network::Wallet> balances = wallet_->wallet();
-  if (exchangeAsk_ != NO_ACCOUNT_ASK || sinceServed_.has_value() ||
-      !balances.has_value() ||
+  if (!canExchange(balances, exchangeAsk_, sinceServed_) ||
       triedWith(balances, way_, amount_.amount()).refusal.has_value()) {
     return;
   }
@@ -213,9 +219,8 @@ void CashierScreen::repaint() {
   const std::optional<network::Wallet> balances = wallet_->wallet();
   const CashierExchange exchange = triedWith(balances, way_, amount_.amount());
   KeyChip& confirmChip = way_ == CashierWay::BuyChips ? buyChip_ : cashOutChip_;
-  confirmChip.setEnabled(
-      balances.has_value() && exchangeAsk_ == NO_ACCOUNT_ASK &&
-      !sinceServed_.has_value() && !exchange.refusal.has_value());
+  confirmChip.setEnabled(canExchange(balances, exchangeAsk_, sinceServed_) &&
+                         !exchange.refusal.has_value());
   canvas_->clear();
   paintCashierRoom(*canvas_, room_,
                    CashierRoomMoment{.since = since_,

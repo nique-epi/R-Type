@@ -1,18 +1,26 @@
 #include "CasinoLighting.hpp"
 #include <SFML/Graphics/Color.hpp>
+#include <SFML/Graphics/Image.hpp>
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
+#include <limits>
+#include <span>
 #include <vector>
+#include "BackgroundConstants.hpp"
+#include "BeamPair.hpp"
 #include "CasinoLightConstants.hpp"
 #include "ColoredPixel.hpp"
+#include "DurationConversion.hpp"
 #include "InterfaceConstants.hpp"
-#include "IntroTimeline.hpp"
 #include "LightBeam.hpp"
+#include "RenderingConstants.hpp"
 #include "TimeConstants.hpp"
+#include "TwinkleBeats.hpp"
 #include "TwinkleGroup.hpp"
 
 namespace rtype::client {
@@ -77,8 +85,42 @@ int chaseStepAt(engine::Duration since) {
 }
 
 bool isDimmedAt(const TwinkleGroup& group, engine::Duration since) {
-  return std::sin((secondsOf(since) * group.speed) + group.phase) >
+  return std::sin((engine::inSeconds(since) * group.speed) + group.phase) >
          group.dimAbove;
+}
+
+std::vector<TwinkleGroup> twinkleBeats(const TwinkleBeats& beats) {
+  std::vector<TwinkleGroup> groups(CASINO_TWINKLE_GROUPS);
+  for (std::size_t beat = 0; beat < groups.size(); ++beat) {
+    const float share =
+        static_cast<float>(beat) / static_cast<float>(CASINO_TWINKLE_GROUPS);
+    groups.at(beat).phase = static_cast<float>(beat) * CASINO_BEAT_SPREAD;
+    groups.at(beat).speed = beats.slowest + (share * beats.speedRange);
+    groups.at(beat).dimAbove = beats.dimAbove;
+  }
+  return groups;
+}
+
+sf::Color withShareOfLight(sf::Color color, float share) {
+  sf::Color shaded = color;
+  shaded.a = static_cast<std::uint8_t>(
+      std::clamp(share, 0.0F, 1.0F) *
+      static_cast<float>(std::numeric_limits<std::uint8_t>::max()));
+  return shaded;
+}
+
+sf::Color pixelColorAt(const sf::Image& picture, sf::Vector2i pixel) {
+  return picture.getPixel(sf::Vector2u(pixel));
+}
+
+bool liesInAny(sf::Vector2i pixel, std::span<const sf::IntRect> areas) {
+  return std::ranges::any_of(
+      areas, [pixel](const sf::IntRect& area) { return area.contains(pixel); });
+}
+
+std::uint32_t scrambledAt(sf::Vector2i pixel) {
+  return scrambledOf(scrambledOf(static_cast<std::uint32_t>(pixel.x)) ^
+                     static_cast<std::uint32_t>(pixel.y));
 }
 
 std::uint32_t scrambledOf(std::uint32_t value) {
@@ -97,7 +139,7 @@ void addBeamPixels(std::vector<ColoredPixel>& pixels, const LightBeam& beam) {
       pointAt(beam.origin, beam.angle - beam.halfSpread, beam.length),
       pointAt(beam.origin, beam.angle + beam.halfSpread, beam.length)};
   const sf::IntRect box = boxAround(corners);
-  const sf::Vector2f middle{PIXEL_MIDDLE, PIXEL_MIDDLE};
+  const sf::Vector2f middle{HALF, HALF};
   for (int y = box.position.y; y < box.position.y + box.size.y; ++y) {
     for (int x = box.position.x; x < box.position.x + box.size.x; ++x) {
       if (liesInside(sf::Vector2f(sf::Vector2i(x, y)) + middle, corners)) {
@@ -105,6 +147,19 @@ void addBeamPixels(std::vector<ColoredPixel>& pixels, const LightBeam& beam) {
       }
     }
   }
+}
+
+void swingBeams(std::vector<ColoredPixel>& pixels, const BeamPair& pair,
+                engine::Duration since) {
+  const float swing =
+      std::sin(engine::inSeconds(since) * FULL_TURN / pair.period) * pair.swing;
+  LightBeam left = pair.left;
+  left.angle += swing;
+  LightBeam right = pair.right;
+  right.angle -= swing;
+  pixels.clear();
+  addBeamPixels(pixels, left);
+  addBeamPixels(pixels, right);
 }
 
 }  // namespace rtype::client

@@ -22,6 +22,7 @@ target_link_libraries(rtype_client_casino_hall
     rtype_client_window_display
     rtype_engine_time
   PRIVATE
+    rtype_client_easing
     rtype_client_interface_pixel
 )
 

@@ -78,16 +78,4 @@ constexpr TextStyle CASINO_CAPTION_STYLE{.font = TextFont::Small,
                                          .color = PALE_BLUE,
                                          .alignment = TextAlignment::Right};
 
-/**
- * @brief The panel of the butler, at the bottom of the picture, over the
- * threshold of the doors: his name on its tag, CASINO_SPEECH_TAG_LEFT in
- * from its left side, and what he says from CASINO_SPEECH_FIRST_LINE, in
- * lines CASINO_SPEECH_TEXT_WIDTH wide at most.
- */
-constexpr sf::IntRect CASINO_SPEECH_AREA({128, 226}, {252, 34});
-constexpr int CASINO_SPEECH_TAG_LEFT = 10;
-constexpr sf::Vector2i CASINO_SPEECH_FIRST_LINE(12, 6);
-constexpr int CASINO_SPEECH_TEXT_WIDTH = 228;
-constexpr const char* BUTLER_NAME = "BALTHAZAR";
-
 }  // namespace rtype::client

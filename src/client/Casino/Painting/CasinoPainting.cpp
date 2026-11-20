@@ -108,13 +108,4 @@ void paintCasinoBalances(IInterfaceCanvas& canvas, CasinoBalances balances) {
                CASINO_CAPTION_STYLE);
 }
 
-void paintButlerPanel(IInterfaceCanvas& canvas) {
-  const sf::IntRect area = CASINO_SPEECH_AREA;
-  paintGoldPanel(canvas, area);
-  paintNameTag(canvas,
-               {area.position.x + CASINO_SPEECH_TAG_LEFT,
-                area.position.y - (CASINO_TAG_HEIGHT / SIDES_PER_AXIS)},
-               BUTLER_NAME);
-}
-
 }  // namespace rtype::client

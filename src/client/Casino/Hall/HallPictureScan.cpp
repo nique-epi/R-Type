@@ -9,6 +9,7 @@
 #include <span>
 #include <vector>
 #include "CasinoHallConstants.hpp"
+#include "CasinoLightConstants.hpp"
 #include "CasinoLighting.hpp"
 #include "ColoredPixel.hpp"
 #include "HallPicture.hpp"
@@ -25,17 +26,6 @@ namespace {
  * crowd, row by row from its top. */
 using CrowdRows = std::vector<std::vector<bool>>;
 
-/** @returns The color of the pixel of @p picture at @p pixel. */
-sf::Color colorAt(const sf::Image& picture, sf::Vector2i pixel) {
-  return picture.getPixel(sf::Vector2u(pixel));
-}
-
-/** @returns Whether @p pixel lies in one of @p areas. */
-bool liesInAny(sf::Vector2i pixel, std::span<const sf::IntRect> areas) {
-  return std::ranges::any_of(
-      areas, [pixel](const sf::IntRect& area) { return area.contains(pixel); });
-}
-
 /** @returns Whether @p color is a lit bulb or crystal of the hall, brighter
  * than the bulbs of the front of the casino. */
 bool isHallBulb(sf::Color color) {
@@ -43,29 +33,11 @@ bool isHallBulb(sf::Color color) {
          color.b > HALL_BULB_BLUE_FLOOR;
 }
 
-/** @returns The HALL_TWINKLE_GROUPS beats the crystals are spread over, each
- * with a phase and a speed of its own, and no crystal yet. */
-std::vector<TwinkleGroup> crystalBeats() {
-  std::vector<TwinkleGroup> beats(HALL_TWINKLE_GROUPS);
-  for (std::size_t beat = 0; beat < beats.size(); ++beat) {
-    const float share =
-        static_cast<float>(beat) / static_cast<float>(HALL_TWINKLE_GROUPS);
-    beats.at(beat).phase = static_cast<float>(beat) * HALL_BEAT_SPREAD;
-    beats.at(beat).speed =
-        HALL_SLOWEST_CRYSTAL + (share * HALL_CRYSTAL_SPEED_RANGE);
-    beats.at(beat).dimAbove = HALL_CRYSTAL_DIM_ABOVE;
-  }
-  return beats;
-}
-
 /** @brief Files the lit pixel @p pixel of the hall: a crystal of a
  * chandelier on a beat it scrambles to, or a bulb of the chase. */
 void fileLight(HallPicture& hall, sf::Vector2i pixel) {
   if (liesInAny(pixel, HALL_CHANDELIERS)) {
-    const std::uint32_t beat =
-        scrambledOf(scrambledOf(static_cast<std::uint32_t>(pixel.x)) ^
-                    static_cast<std::uint32_t>(pixel.y)) %
-        HALL_TWINKLE_GROUPS;
+    const std::size_t beat = scrambledAt(pixel) % hall.crystals.size();
     hall.crystals.at(beat).pixels.push_back(
         ColoredPixel{.position = pixel, .color = HALL_DIM_CRYSTAL});
   } else if (liesInAny(pixel, HALL_BULB_AREAS)) {
@@ -85,7 +57,7 @@ std::vector<ColoredPixel> frontRopesOf(const sf::Image& picture) {
   std::vector<ColoredPixel> ropes;
   for (const int row : HALL_FRONT_ROPE_ROWS) {
     for (int x = HALL_FRONT_ROPES_LEFT; x < HALL_FRONT_ROPES_RIGHT; ++x) {
-      const sf::Color color = colorAt(picture, {x, row});
+      const sf::Color color = pixelColorAt(picture, {x, row});
       if (isRope(color)) {
         ropes.push_back(ColoredPixel{.position = {x, row}, .color = color});
       }
@@ -116,7 +88,7 @@ CrowdRows crowdMassOf(const sf::Image& picture) {
   for (std::size_t row = 0; row < mass.size(); ++row) {
     for (int x = 0; x < width; ++x) {
       mass[row][static_cast<std::size_t>(x)] = isCrowdMass(
-          colorAt(picture, {x, HALL_CROWD_TOP + static_cast<int>(row)}));
+          pixelColorAt(picture, {x, HALL_CROWD_TOP + static_cast<int>(row)}));
     }
   }
   return mass;
@@ -141,9 +113,9 @@ CrowdRows crowdOf(const sf::Image& picture) {
   for (std::size_t row = 0; row < mass.size(); ++row) {
     for (std::size_t column = 1; column + 1 < mass[row].size(); ++column) {
       if (!mass[row][column] && touchesTheMass(mass, row, column) &&
-          !isCarpet(
-              colorAt(picture, {static_cast<int>(column),
-                                HALL_CROWD_TOP + static_cast<int>(row)}))) {
+          !isCarpet(pixelColorAt(picture,
+                                 {static_cast<int>(column),
+                                  HALL_CROWD_TOP + static_cast<int>(row)}))) {
         crowd[row][column] = true;
       }
     }
@@ -206,7 +178,7 @@ Spectator spectatorOf(const sf::Image& picture, const CrowdRows& crowd,
                       SpectatorColumns columns) {
   Spectator spectator{
       .raised = {},
-      .phase = static_cast<float>(columns.place) * HALL_BEAT_SPREAD,
+      .phase = static_cast<float>(columns.place) * CASINO_BEAT_SPREAD,
       .speed =
           HALL_SLOWEST_HOP +
           (static_cast<float>(scrambledOf(columns.place) % HALL_HOP_SHARES) /
@@ -218,7 +190,7 @@ Spectator spectatorOf(const sf::Image& picture, const CrowdRows& crowd,
       }
       const sf::Vector2i pixel(static_cast<int>(column),
                                HALL_CROWD_TOP + static_cast<int>(row));
-      const sf::Color color = colorAt(picture, pixel);
+      const sf::Color color = pixelColorAt(picture, pixel);
       for (std::size_t lift = 0; lift < spectator.raised.size(); ++lift) {
         spectator.raised.at(lift).push_back(ColoredPixel{
             .position = {pixel.x, pixel.y - static_cast<int>(lift) - 1},
@@ -250,7 +222,7 @@ HallPicture hallPictureOf(const sf::Image& picture) {
     return HallPicture{};
   }
   HallPicture hall;
-  hall.crystals = crystalBeats();
+  hall.crystals = twinkleBeats(HALL_CRYSTAL_BEATS);
   const sf::Vector2u size = picture.getSize();
   for (unsigned y = 0; y < size.y; ++y) {
     for (unsigned x = 0; x < size.x; ++x) {

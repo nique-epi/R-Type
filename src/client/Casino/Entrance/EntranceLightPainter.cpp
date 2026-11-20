@@ -1,5 +1,4 @@
 #include "EntranceLightPainter.hpp"
-#include <cmath>
 #include <cstddef>
 #include <utility>
 #include <vector>
@@ -9,8 +8,7 @@
 #include "EntranceLightConstants.hpp"
 #include "EntranceLights.hpp"
 #include "IInterfaceCanvas.hpp"
-#include "IntroTimeline.hpp"
-#include "LightBeam.hpp"
+#include "NeonCut.hpp"
 #include "TimeConstants.hpp"
 #include "TwinkleGroup.hpp"
 
@@ -18,28 +16,18 @@ namespace rtype::client {
 
 namespace {
 
-/** @returns How long a whole round of the waits of the neon script lasts. */
-engine::Duration neonRound() {
-  engine::Duration round{};
-  for (const engine::Duration wait : ENTRANCE_NEON_WAITS) {
-    round += wait;
-  }
-  return round;
-}
-
 /** @returns Whether the neon script is cut out @p since the front opened:
- * during the cuts that open each of its waits. */
+ * during the cuts that open each of its waits, one off step in two. */
 bool neonCutAt(engine::Duration since) {
-  engine::Duration left = since % neonRound();
-  for (std::size_t wait = 0; wait < ENTRANCE_NEON_WAITS.size(); ++wait) {
-    if (left < ENTRANCE_NEON_WAITS.at(wait)) {
-      const auto cuts = static_cast<engine::Duration::rep>(
-          ENTRANCE_FEWEST_NEON_CUTS +
-          static_cast<int>(wait % ENTRANCE_NEON_CUT_CHOICES));
-      return left < ENTRANCE_NEON_CUT * cuts * ENTRANCE_NEON_CUT_PHASES &&
-             (left / ENTRANCE_NEON_CUT) % ENTRANCE_NEON_CUT_PHASES == 0;
+  engine::Duration left = since % ENTRANCE_NEON_ROUND;
+  for (const NeonCut& neon : ENTRANCE_NEON_CUTS) {
+    if (left < neon.wait) {
+      const auto steps = left / ENTRANCE_NEON_CUT;
+      return steps < static_cast<engine::Duration::rep>(neon.cuts) *
+                         ENTRANCE_NEON_CUT_PHASES &&
+             steps % ENTRANCE_NEON_CUT_PHASES == 0;
     }
-    left -= ENTRANCE_NEON_WAITS.at(wait);
+    left -= neon.wait;
   }
   return false;
 }
@@ -87,29 +75,10 @@ void EntranceLightPainter::paint(IInterfaceCanvas& canvas,
       canvas.plot(stars.pixels);
     }
   }
-  paintSearchlights(canvas, since);
+  swingBeams(beamPixels_, ENTRANCE_SEARCHLIGHTS, since);
+  canvas.plot(beamPixels_);
   paintPylon(canvas, lights_, since);
   canvas.plot(lights_.marquee.unlitAt(-chaseStepAt(since)));
-}
-
-void EntranceLightPainter::paintSearchlights(IInterfaceCanvas& canvas,
-                                             engine::Duration since) {
-  const float swing =
-      std::sin(secondsOf(since) * FULL_TURN_RADIANS / ENTRANCE_BEAM_PERIOD) *
-      ENTRANCE_BEAM_SWING;
-  beamPixels_.clear();
-  addBeamPixels(beamPixels_, LightBeam{.origin = ENTRANCE_LEFT_BEAM_ORIGIN,
-                                       .angle = ENTRANCE_LEFT_BEAM_REST + swing,
-                                       .length = ENTRANCE_BEAM_LENGTH,
-                                       .halfSpread = ENTRANCE_BEAM_HALF_SPREAD,
-                                       .color = ENTRANCE_BEAM});
-  addBeamPixels(beamPixels_,
-                LightBeam{.origin = ENTRANCE_RIGHT_BEAM_ORIGIN,
-                          .angle = ENTRANCE_RIGHT_BEAM_REST - swing,
-                          .length = ENTRANCE_BEAM_LENGTH,
-                          .halfSpread = ENTRANCE_BEAM_HALF_SPREAD,
-                          .color = ENTRANCE_BEAM});
-  canvas.plot(beamPixels_);
 }
 
 }  // namespace rtype::client

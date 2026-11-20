@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include "CasinoChannel.hpp"
+#include "CasinoPictures.hpp"
 #include "IModule.hpp"
 #include "InstallContext.hpp"
 #include "RouletteMemory.hpp"
@@ -43,6 +44,8 @@ class ClientCasinoModule final : public engine::IModule {
   /** @brief The bets of the round, kept while the table screen is
    * closed. */
   RouletteMemory roulette_;
+  /** @brief What the rooms read in their pictures, read once. */
+  CasinoPictures pictures_;
 };
 
 }  // namespace rtype::client

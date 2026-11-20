@@ -47,7 +47,7 @@ CasinoEntranceScreen::CasinoEntranceScreen(
       butlerLine_(SpokenLineParts{.sounds = parts.sounds,
                                   .voice = BYDO_VOICE_SOUND_IDS,
                                   .width = BUTLER_SPOKEN_LINE_WIDTH,
-                                  .tail = 0,
+                                  .tail = BUTLER_SPOKEN_LINE_TAIL,
                                   .motion = parts.motion,
                                   .stays = true}),
       enterChip_(chipOf(

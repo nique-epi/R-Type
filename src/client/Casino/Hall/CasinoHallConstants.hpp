@@ -8,10 +8,14 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include "BackgroundColorConstants.hpp"
 #include "BarState.hpp"
+#include "BeamPair.hpp"
 #include "CasinoBar.hpp"
 #include "CasinoPaintingConstants.hpp"
+#include "LightBeam.hpp"
 #include "TimeConstants.hpp"
+#include "TwinkleBeats.hpp"
 #include "WidgetConstants.hpp"
 
 namespace rtype::client {
@@ -113,6 +117,7 @@ constexpr int HALL_SPECTATOR_WIDTH = 10;
  */
 constexpr float HALL_HOP_ONE_PIXEL = 0.2F;
 constexpr float HALL_HOP_TWO_PIXELS = 0.75F;
+constexpr std::size_t HALL_HIGHEST_HOP = 2;
 constexpr float HALL_SLOWEST_HOP = 4.0F;
 constexpr float HALL_HOP_SPEED_RANGE = 4.0F;
 constexpr std::uint32_t HALL_HOP_SHARES = 100;
@@ -152,17 +157,25 @@ constexpr float HALL_SPOT_PACE = 2.4F;
 
 /**
  * @brief Two beams that sweep the ceiling from the edges of the ring, one
- * warm and one pale blue, HALL_BEAM_SWING radians either side of their rest,
- * over HALL_BEAM_PERIOD seconds there and back.
+ * warm and one pale blue, 0.35 radians either side of their rest, over 6
+ * seconds there and back.
  */
-constexpr sf::Vector2f HALL_LEFT_BEAM_ORIGIN(150.0F, 150.0F);
-constexpr sf::Vector2f HALL_RIGHT_BEAM_ORIGIN(330.0F, 150.0F);
-constexpr float HALL_BEAM_REST = 0.45F;
-constexpr float HALL_BEAM_SWING = 0.35F;
-constexpr float HALL_BEAM_PERIOD = 6.0F;
-constexpr float HALL_BEAM_LENGTH = 170.0F;
-constexpr float HALL_BEAM_HALF_SPREAD = 0.07F;
-constexpr std::uint8_t HALL_BEAM_ALPHA = 18;
+constexpr BeamPair HALL_CEILING_BEAMS{
+    .left =
+        LightBeam{.origin = {150.0F, 150.0F},
+                  .angle = 0.45F,
+                  .length = 170.0F,
+                  .halfSpread = 0.07F,
+                  .color = sf::Color(CASINO_WARM_CREAM.r, CASINO_WARM_CREAM.g,
+                                     CASINO_WARM_CREAM.b, 18)},
+    .right = LightBeam{.origin = {330.0F, 150.0F},
+                       .angle = -0.45F,
+                       .length = 170.0F,
+                       .halfSpread = 0.07F,
+                       .color = sf::Color(PALE_BLUE.r, PALE_BLUE.g, PALE_BLUE.b,
+                                          18)},
+    .swing = 0.35F,
+    .period = 6.0F};
 
 /** @brief The slot machines: one reel window at a time lights, every
  * HALL_SLOT_STEP, then they rest as long. */
@@ -183,12 +196,8 @@ constexpr int HALL_CHEVRON_NUDGE_STEPS = 2;
 constexpr int HALL_CHEVRON_ROWS = 3;
 constexpr engine::Duration HALL_CHEVRON_STEP = std::chrono::milliseconds(300);
 
-/** @brief How many beats the twinkling crystals and the hopping crowd are
- * spread over, and how far apart two neighbouring beats start, in radians. */
-constexpr std::size_t HALL_TWINKLE_GROUPS = 8;
-constexpr float HALL_BEAT_SPREAD = 2.39996F;
-constexpr float HALL_CRYSTAL_DIM_ABOVE = 0.5F;
-constexpr float HALL_SLOWEST_CRYSTAL = 2.0F;
-constexpr float HALL_CRYSTAL_SPEED_RANGE = 3.0F;
+/** @brief How the crystals of the chandeliers twinkle. */
+constexpr TwinkleBeats HALL_CRYSTAL_BEATS{
+    .slowest = 2.0F, .speedRange = 3.0F, .dimAbove = 0.5F};
 
 }  // namespace rtype::client

@@ -16,8 +16,6 @@ constexpr std::uint32_t KOPECKS_AFTER_BUYING_500 = 3'750;
 /** @brief The amount a cashier offers when it opens. */
 constexpr std::uint32_t AMOUNT_OFFERED = 500;
 constexpr std::uint32_t CHIPS_AFTER_BUYING_500 = 1'750;
-constexpr std::uint32_t KOPECKS_AFTER_CASHING_OUT_500 = 4'750;
-constexpr std::uint32_t CHIPS_AFTER_CASHING_OUT_500 = 750;
 
 /** @brief The amount as the cashier opens, then one step of 100 higher and
  * lower, then a step of 500 higher; and the steps written beside it. */

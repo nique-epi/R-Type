@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <vector>
 #include "Ambience.hpp"
-#include "AudioConstants.hpp"
+#include "AmbienceMusicConstants.hpp"
 #include "MusicPlayer.hpp"
 
 namespace rtype::client {

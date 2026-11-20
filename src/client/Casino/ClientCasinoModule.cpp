@@ -1,20 +1,17 @@
 #include "ClientCasinoModule.hpp"
-#include <SFML/Graphics/Image.hpp>
 #include <memory>
 #include <string>
 #include <vector>
-#include "CashierRoomScan.hpp"
 #include "CashierScreen.hpp"
 #include "CashierScreenParts.hpp"
 #include "CasinoEntranceScreen.hpp"
 #include "CasinoEntranceScreenParts.hpp"
 #include "CasinoHallScreen.hpp"
 #include "CasinoHallScreenParts.hpp"
+#include "CasinoPictures.hpp"
 #include "CasinoScreenIdConstants.hpp"
 #include "CasinoSpriteConstants.hpp"
 #include "ClientConstants.hpp"
-#include "EntranceLightScan.hpp"
-#include "HallPictureScan.hpp"
 #include "IAccountSession.hpp"
 #include "ICasinoChannel.hpp"
 #include "ICasinoLink.hpp"
@@ -36,34 +33,25 @@ namespace rtype::client {
 
 namespace {
 
-/** @returns The picture of @p assetId, read from its file in the assets of
- * @p context; an empty one when it cannot be read, and the room that reads
- * it stays still. */
-sf::Image pictureOf(const ScreenContext& context, const char* assetId) {
-  sf::Image picture;
-  if (!picture.loadFromFile(context.services.assets.get().fileOf(assetId))) {
-    return sf::Image{};
-  }
-  return picture;
-}
-
 /** @returns The front of the casino, its lights read in its picture, for a
  * player signed in only. */
-std::unique_ptr<IScreen> buildCasinoScreen(const ScreenContext& context) {
+std::unique_ptr<IScreen> buildCasinoScreen(const ScreenContext& context,
+                                           CasinoPictures& pictures) {
   return std::make_unique<CasinoEntranceScreen>(
-      CasinoEntranceScreenParts{.navigator = context.navigator.get(),
-                                .sounds = soundsOf(context),
-                                .audio = context.services.audio.get(),
-                                .playfieldPointAt = playfieldMappingOf(context),
-                                .lights = entranceLightsOf(
-                                    pictureOf(context, CASINO_DOORS_CLOSED_ID)),
-                                .motion = motionPreference()},
+      CasinoEntranceScreenParts{
+          .navigator = context.navigator.get(),
+          .sounds = soundsOf(context),
+          .audio = context.services.audio.get(),
+          .playfieldPointAt = playfieldMappingOf(context),
+          .lights = pictures.front(context.services.assets.get()),
+          .motion = motionPreference()},
       interfaceCanvasOf(context));
 }
 
 /** @returns The main hall of the casino, its lights read in its picture. */
 std::unique_ptr<IScreen> buildHallScreen(const ScreenContext& context,
-                                         ICasinoChannel& casino) {
+                                         ICasinoChannel& casino,
+                                         CasinoPictures& pictures) {
   return std::make_unique<CasinoHallScreen>(
       CasinoHallScreenParts{
           .navigator = context.navigator.get(),
@@ -71,23 +59,23 @@ std::unique_ptr<IScreen> buildHallScreen(const ScreenContext& context,
           .audio = context.services.audio.get(),
           .casino = casino,
           .playfieldPointAt = playfieldMappingOf(context),
-          .picture = hallPictureOf(pictureOf(context, HALL_PICTURE_ID)),
+          .picture = pictures.hall(context.services.assets.get()),
           .motion = motionPreference()},
       interfaceCanvasOf(context));
 }
 
 /** @returns The cashier, its cage read in its picture, for a player signed
  * in only. */
-std::unique_ptr<IScreen> buildCashierScreen(const ScreenContext& context) {
+std::unique_ptr<IScreen> buildCashierScreen(const ScreenContext& context,
+                                            CasinoPictures& pictures) {
   return std::make_unique<CashierScreen>(
-      CashierScreenParts{
-          .navigator = context.navigator.get(),
-          .sounds = soundsOf(context),
-          .audio = context.services.audio.get(),
-          .wallet = context.services.wallet.get(),
-          .playfieldPointAt = playfieldMappingOf(context),
-          .room = cashierRoomOf(pictureOf(context, CASHIER_ROOM_ID)),
-          .motion = motionPreference()},
+      CashierScreenParts{.navigator = context.navigator.get(),
+                         .sounds = soundsOf(context),
+                         .audio = context.services.audio.get(),
+                         .wallet = context.services.wallet.get(),
+                         .playfieldPointAt = playfieldMappingOf(context),
+                         .room = pictures.cage(context.services.assets.get()),
+                         .motion = motionPreference()},
       interfaceCanvasOf(context));
 }
 
@@ -125,22 +113,24 @@ void ClientCasinoModule::install(engine::InstallContext& context) {
   casino_.emplace(context.require<ICasinoLink>(),
                   context.require<IAccountSession>(),
                   context.require<IWallet>());
-  context.require<ScreenRegistry>().add(CASINO_SCREEN,
-                                        signedInOnly(
-                                            [](const ScreenContext& screens) {
-                                              return buildCasinoScreen(screens);
-                                            },
-                                            CASINO_SCREEN));
+  context.require<ScreenRegistry>().add(
+      CASINO_SCREEN, signedInOnly(
+                         [this](const ScreenContext& screens) {
+                           return buildCasinoScreen(screens, pictures_);
+                         },
+                         CASINO_SCREEN));
   context.require<ScreenRegistry>().add(
       CASINO_HALL_SCREEN, signedInOnly(
                               [this](const ScreenContext& screens) {
-                                return buildHallScreen(screens, *casino_);
+                                return buildHallScreen(screens, *casino_,
+                                                       pictures_);
                               },
                               CASINO_HALL_SCREEN));
   context.require<ScreenRegistry>().add(
       CASINO_CASHIER_SCREEN, signedInOnly(
-                                 [](const ScreenContext& screens) {
-                                   return buildCashierScreen(screens);
+                                 [this](const ScreenContext& screens) {
+                                   return buildCashierScreen(screens,
+                                                             pictures_);
                                  },
                                  CASINO_CASHIER_SCREEN));
   context.require<ScreenRegistry>().add(

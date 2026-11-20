@@ -7,8 +7,12 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include "BeamPair.hpp"
 #include "CasinoPaintingConstants.hpp"
+#include "LightBeam.hpp"
+#include "NeonCut.hpp"
 #include "TimeConstants.hpp"
+#include "TwinkleBeats.hpp"
 
 namespace rtype::client {
 
@@ -86,17 +90,23 @@ constexpr sf::Color ENTRANCE_DISC_SHADE(CASINO_DEEP_NAVY.r, CASINO_DEEP_NAVY.g,
 
 /**
  * @brief The neon script cuts out now and then: as each wait of
- * ENTRANCE_NEON_WAITS begins in turn, ENTRANCE_FEWEST_NEON_CUTS cuts, one more
- * every other wait, each ENTRANCE_NEON_CUT out then as long lit, the script
- * then under ENTRANCE_DARK_NEON.
+ * ENTRANCE_NEON_CUTS begins in turn, its cuts, each ENTRANCE_NEON_CUT out
+ * then as long lit, the script then under ENTRANCE_DARK_NEON; the waits come
+ * round every ENTRANCE_NEON_ROUND.
  */
-constexpr std::array<engine::Duration, 5> ENTRANCE_NEON_WAITS{
-    std::chrono::milliseconds(5200), std::chrono::milliseconds(7900),
-    std::chrono::milliseconds(4400), std::chrono::milliseconds(8600),
-    std::chrono::milliseconds(6100)};
+constexpr std::array ENTRANCE_NEON_CUTS{
+    NeonCut{.wait = std::chrono::milliseconds(5200), .cuts = 2},
+    NeonCut{.wait = std::chrono::milliseconds(7900), .cuts = 3},
+    NeonCut{.wait = std::chrono::milliseconds(4400), .cuts = 2},
+    NeonCut{.wait = std::chrono::milliseconds(8600), .cuts = 3},
+    NeonCut{.wait = std::chrono::milliseconds(6100), .cuts = 2}};
+constexpr engine::Duration ENTRANCE_NEON_ROUND =
+    ENTRANCE_NEON_CUTS[0].wait + ENTRANCE_NEON_CUTS[1].wait +
+    ENTRANCE_NEON_CUTS[2].wait + ENTRANCE_NEON_CUTS[3].wait +
+    ENTRANCE_NEON_CUTS[4].wait;
+static_assert(ENTRANCE_NEON_CUTS.size() == 5,
+              "ENTRANCE_NEON_ROUND adds every wait of the neon");
 constexpr engine::Duration ENTRANCE_NEON_CUT = std::chrono::milliseconds(60);
-constexpr int ENTRANCE_FEWEST_NEON_CUTS = 2;
-constexpr std::size_t ENTRANCE_NEON_CUT_CHOICES = 2;
 constexpr engine::Duration::rep ENTRANCE_NEON_CUT_PHASES = 2;
 constexpr sf::Color ENTRANCE_DARK_NEON(CASINO_PLUM.r, CASINO_PLUM.g,
                                        CASINO_PLUM.b, 153);
@@ -106,7 +116,7 @@ constexpr sf::Color ENTRANCE_DARK_NEON(CASINO_PLUM.r, CASINO_PLUM.g,
  * the sky above ENTRANCE_SKY_BOTTOM, outside the pylon and the silhouettes
  * of the roof, brighter than ENTRANCE_STAR_LUMINANCE and brighter than their
  * four neighbours by ENTRANCE_STAR_CONTRAST; one in two twinkles, dimming
- * under ENTRANCE_DIM_STAR on its own beat.
+ * under ENTRANCE_DIM_STAR on its own beat, as ENTRANCE_STAR_BEATS says.
  */
 constexpr int ENTRANCE_SKY_BOTTOM = 126;
 constexpr std::array ENTRANCE_ROOF_SILHOUETTES{
@@ -117,26 +127,30 @@ constexpr int ENTRANCE_STAR_NEIGHBOURS = 4;
 constexpr std::uint32_t ENTRANCE_TWINKLING_SHARE = 2;
 constexpr sf::Color ENTRANCE_DIM_STAR(CASINO_DEEP_NAVY.r, CASINO_DEEP_NAVY.g,
                                       CASINO_DEEP_NAVY.b, 140);
-constexpr std::size_t ENTRANCE_TWINKLE_GROUPS = 8;
-constexpr float ENTRANCE_BEAT_SPREAD = 2.39996F;
-constexpr float ENTRANCE_STAR_DIM_ABOVE = 0.35F;
-constexpr float ENTRANCE_SLOWEST_STAR = 1.4F;
-constexpr float ENTRANCE_STAR_SPEED_RANGE = 2.2F;
+constexpr TwinkleBeats ENTRANCE_STAR_BEATS{
+    .slowest = 1.4F, .speedRange = 2.2F, .dimAbove = 0.35F};
 
 /**
  * @brief Two searchlights sweep the sky from behind the palace, warm and
- * faint, ENTRANCE_BEAM_SWING radians either side of their rest, over
- * ENTRANCE_BEAM_PERIOD seconds there and back.
+ * faint, 0.21 radians (12 degrees) either side of their rest, over 7 seconds
+ * there and back.
  */
-constexpr sf::Vector2f ENTRANCE_LEFT_BEAM_ORIGIN(110.0F, 130.0F);
-constexpr sf::Vector2f ENTRANCE_RIGHT_BEAM_ORIGIN(380.0F, 130.0F);
-constexpr float ENTRANCE_LEFT_BEAM_REST = -0.45F;
-constexpr float ENTRANCE_RIGHT_BEAM_REST = 0.5F;
-constexpr float ENTRANCE_BEAM_SWING = 0.2094F;
-constexpr float ENTRANCE_BEAM_PERIOD = 7.0F;
-constexpr float ENTRANCE_BEAM_LENGTH = 240.0F;
-constexpr float ENTRANCE_BEAM_HALF_SPREAD = 0.06F;
-constexpr sf::Color ENTRANCE_BEAM(CASINO_WARM_CREAM.r, CASINO_WARM_CREAM.g,
-                                  CASINO_WARM_CREAM.b, 15);
+constexpr BeamPair ENTRANCE_SEARCHLIGHTS{
+    .left =
+        LightBeam{.origin = {110.0F, 130.0F},
+                  .angle = -0.45F,
+                  .length = 240.0F,
+                  .halfSpread = 0.06F,
+                  .color = sf::Color(CASINO_WARM_CREAM.r, CASINO_WARM_CREAM.g,
+                                     CASINO_WARM_CREAM.b, 15)},
+    .right =
+        LightBeam{.origin = {380.0F, 130.0F},
+                  .angle = 0.5F,
+                  .length = 240.0F,
+                  .halfSpread = 0.06F,
+                  .color = sf::Color(CASINO_WARM_CREAM.r, CASINO_WARM_CREAM.g,
+                                     CASINO_WARM_CREAM.b, 15)},
+    .swing = 0.2094F,
+    .period = 7.0F};
 
 }  // namespace rtype::client

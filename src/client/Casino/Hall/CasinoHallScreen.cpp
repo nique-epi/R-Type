@@ -18,12 +18,12 @@
 #include "CasinoRoom.hpp"
 #include "CasinoRoomListing.hpp"
 #include "CasinoScreenIdConstants.hpp"
+#include "Easing.hpp"
 #include "HallExit.hpp"
 #include "HallMoment.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "InterfaceConstants.hpp"
 #include "InterfacePixel.hpp"
-#include "IntroTimeline.hpp"
 #include "KeyChip.hpp"
 #include "MotionPreference.hpp"
 #include "PlayfieldMapping.hpp"
@@ -72,12 +72,8 @@ std::optional<HallExit> archAt(sf::Vector2i pixel) {
 /** @returns The night the hall fades to, @p since the player started to walk
  * out of it: clear at first, whole after HALL_FADE_TIME. */
 sf::Color fadeAt(engine::Duration since) {
-  const float share =
-      std::min(1.0F, secondsOf(since) / secondsOf(HALL_FADE_TIME));
-  sf::Color night = CASINO_DEEP_NAVY;
-  night.a =
-      static_cast<std::uint8_t>(share * static_cast<float>(CASINO_DEEP_NAVY.a));
-  return night;
+  return withShareOfLight(CASINO_DEEP_NAVY,
+                          progressBetween(since, {}, HALL_FADE_TIME));
 }
 
 }  // namespace
