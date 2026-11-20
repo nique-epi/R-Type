@@ -1,5 +1,6 @@
 #include "ClientGameModule.hpp"
 #include <memory>
+#include <optional>
 #include <random>
 #include <string>
 #include <vector>
@@ -41,7 +42,7 @@ AssetList gameAssetsOf(const ScreenContext& context) {
  * the other entities. */
 std::unique_ptr<IScreen> buildGameScreen(const ScreenContext& context,
                                          InterpolationTally& tally) {
-  context.services.audio.get().playGameMusic();
+  context.services.audio.get().playGameMusic(std::nullopt);
   std::unique_ptr<IScreen> loading =
       loadingScreenUnlessLoaded(context, gameAssetsOf(context), GAME_SCREEN);
   if (loading != nullptr) {

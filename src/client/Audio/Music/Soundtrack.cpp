@@ -33,7 +33,8 @@ Soundtrack::Soundtrack(SoundtrackParts parts)
 void Soundtrack::playTheme() {
   silenceLeft_.reset();
   stopBoss();
-  gameMusic_->stop();
+  gameMusic().stop();
+  levelMusic_ = nullptr;
   if (!themePaused_) {
     theme_->start();
   }
@@ -41,7 +42,7 @@ void Soundtrack::playTheme() {
 
 void Soundtrack::playGameMusic() {
   stopBoss();
-  if (silenceLeft_.has_value() || gameMusic_->playingOffset().has_value()) {
+  if (silenceLeft_.has_value() || gameMusic().playingOffset().has_value()) {
     return;
   }
   theme_->stop();
@@ -60,9 +61,13 @@ void Soundtrack::playBossMusic() {
   alarmLeft_ = BOSS_ALARM_DURATION;
 }
 
-void Soundtrack::silenceMusic() {
+bool Soundtrack::silenceMusic() {
+  if (levelMusic_ != nullptr) {
+    return false;
+  }
   silenceLeft_.reset();
   gameMusic_->stop();
+  return true;
 }
 
 void Soundtrack::pauseTheme() {
@@ -88,11 +93,27 @@ void Soundtrack::stopBoss() {
 
 void Soundtrack::advance(engine::Duration elapsed) {
   if (waitOver(silenceLeft_, elapsed)) {
-    gameMusic_->start();
+    gameMusic().start();
   }
   if (waitOver(alarmLeft_, elapsed)) {
     bossMusic_->start();
   }
+}
+
+void Soundtrack::useLevelMusic(IMusicPlayer& music) {
+  if (levelMusic_ == &music) {
+    return;
+  }
+  const bool playing = gameMusic().playingOffset().has_value();
+  gameMusic().stop();
+  levelMusic_ = &music;
+  if (playing) {
+    music.start();
+  }
+}
+
+IMusicPlayer& Soundtrack::gameMusic() const {
+  return levelMusic_ != nullptr ? *levelMusic_ : *gameMusic_;
 }
 
 }  // namespace rtype::client

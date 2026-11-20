@@ -39,6 +39,10 @@ const RecordingSoundPlayer& BossPresentationFixture::sounds() const {
   return sounds_;
 }
 
+void BossPresentationFixture::playLevelMusic() {
+  audio_.playGameMusic(std::string{LEVEL_MUSIC});
+}
+
 const RecordingAudioService& BossPresentationFixture::audio() const {
   return audio_;
 }

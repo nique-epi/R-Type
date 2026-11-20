@@ -21,7 +21,8 @@ namespace rtype::client {
 
 /**
  * @brief What the client shows of each boss from its Arriving status: the
- * music of the game silenced, the alarm and then the music of the boss until
+ * music of the game silenced, the alarm and then the music of the boss (none
+ * of the three while the level plays a music of its own) until
  * the game ends, or until it is defeated in a game that plays a level, the
  * WARNING screen and the red edges (see warningBannerAt(), edgePulseAt()), the
  * rumble and the steps of the camera with a sound at each step, at its roar

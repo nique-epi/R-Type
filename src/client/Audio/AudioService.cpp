@@ -1,4 +1,6 @@
 #include "AudioService.hpp"
+#include <optional>
+#include <string>
 #include "Ambience.hpp"
 #include "AssetLibrary.hpp"
 #include "AudioConstants.hpp"
@@ -36,6 +38,7 @@ AudioService::AudioService(AssetLibrary& library, SettingsService& settings)
       shopMusic_(settings, SHOP_MUSIC_TRACK),
       shopRadio_(settings, SHOP_RADIO_TRACK),
       shopDance_(settings, SHOP_DANCE_TRACK),
+      levelMusic_(settings),
       soundtrack_(SoundtrackParts{
           .theme = theme_, .gameMusic = gameMusic_, .bossMusic = bossMusic_}) {
   settings_->subscribe(sounds_);
@@ -69,9 +72,14 @@ IMusicPlayer& AudioService::theme() { return theme_; }
 
 void AudioService::playTheme() { soundtrack_.playTheme(); }
 
-void AudioService::playGameMusic() { soundtrack_.playGameMusic(); }
+void AudioService::playGameMusic(const std::optional<std::string>& levelMusic) {
+  if (levelMusic.has_value()) {
+    soundtrack_.useLevelMusic(levelMusic_.playerOf(*levelMusic, *library_));
+  }
+  soundtrack_.playGameMusic();
+}
 
-void AudioService::silenceMusic() { soundtrack_.silenceMusic(); }
+bool AudioService::silenceMusic() { return soundtrack_.silenceMusic(); }
 
 void AudioService::playBossMusic() { soundtrack_.playBossMusic(); }
 

@@ -1,4 +1,5 @@
 add_library(rtype_client_audio_music STATIC
+  LevelMusic.cpp
   MusicPlayer.cpp
   Soundtrack.cpp
 )

@@ -116,7 +116,7 @@ void BossPresentation::apply(const network::EntityDestroyed& destroyed) {
   chargeSignalledAt_.reset();
   if (bossMusicStarted_) {
     bossMusicStarted_ = false;
-    audio_->playGameMusic();
+    audio_->playGameMusic(std::nullopt);
   }
 }
 
@@ -175,9 +175,10 @@ void BossPresentation::followMusic() {
   const bool arriving = !gameEnded_ && isArriving(tracker_, now_);
   if (arriving && !bossMusicStarted_) {
     bossMusicStarted_ = true;
-    audio_->silenceMusic();
-    sounds_->play(BOSS_ALARM_SOUND_ID);
-    audio_->playBossMusic();
+    if (audio_->silenceMusic()) {
+      sounds_->play(BOSS_ALARM_SOUND_ID);
+      audio_->playBossMusic();
+    }
     return;
   }
   const bool bossGone =
@@ -185,7 +186,7 @@ void BossPresentation::followMusic() {
       (playsALevel_ && tracker_.fight().stage == network::BossStage::Defeated);
   if (bossGone && bossMusicStarted_) {
     bossMusicStarted_ = false;
-    audio_->playGameMusic();
+    audio_->playGameMusic(std::nullopt);
   }
 }
 

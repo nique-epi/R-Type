@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <optional>
 #include "AudioTestConstants.hpp"
 #include "ScreenTestConstants.hpp"
 #include "SilentAudioService.hpp"
@@ -41,7 +42,7 @@ TEST(SilentAudioService, EveryCallOfTheScreensAndTheModuleIsAccepted) {
 
   EXPECT_NO_THROW({
     audio.playTheme();
-    audio.playGameMusic();
+    audio.playGameMusic(std::nullopt);
     audio.open();
     audio.update(ONE_FRAME);
   });
