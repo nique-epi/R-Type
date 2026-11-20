@@ -52,6 +52,7 @@
 #include "InterpolationClock.hpp"
 #include "InterpolationTally.hpp"
 #include "KopecksReward.hpp"
+#include "LevelMusic.hpp"
 #include "LevelStatus.hpp"
 #include "LevelTransition.hpp"
 #include "LevelTransitionScene.hpp"
@@ -153,6 +154,7 @@ struct EntityMessageRoutes {
   std::reference_wrapper<ISky> sky;
   std::reference_wrapper<OwnPrediction> prediction;
   std::reference_wrapper<LevelTransitionScene> transition;
+  std::reference_wrapper<LevelMusic> music;
 };
 
 /** @returns What the sky shows of the level @p status tells. */
@@ -176,7 +178,8 @@ game::PlayBand bandOf(const network::LevelStatus& status) {
  * board and the feed, an EnemyAction to the enemy it animates and to the boss,
  * an EffectPlayed to the player of the named effects, a BossStatus to the
  * boss, an EntityDestroyed to the boss and to the replicator, a LevelStatus to
- * the sky, to the transition, to the boss and to the prediction, which moves
+ * the sky, to the music, to the transition, to the boss and to the
+ * prediction, which moves
  * the walls ahead by its scroll and keeps the ship in its band, anything else
  * but GameEnded to the replicator. */
 void routeEntityMessage(const EntityMessageRoutes& routes,
@@ -200,6 +203,7 @@ void routeEntityMessage(const EntityMessageRoutes& routes,
           routes.replicator.get().apply(announced);
         } else if constexpr (std::is_same_v<Announced, network::LevelStatus>) {
           routes.sky.get().showLevel(skyLevelOf(announced));
+          routes.music.get().follow(announced);
           routes.prediction.get().followScroll(announced.scrollSpeed);
           routes.transition.get().show(announced.transitionLeft);
           routes.boss.get().followLevel();
@@ -268,6 +272,7 @@ GameScreen::GameScreen(GameScreenParts parts,
       playerNumber_(parts.connection.get().status().playerNumber),
       interpolationTally_(&parts.interpolationTally.get()),
       sky_(&parts.sky.get()),
+      levelMusic_(parts.sky.get(), parts.audio.get()),
       chat_(parts.chat.get(), parts.settings.get()) {
   interpolationTally_->startGame();
   systems_.add(std::make_unique<AnimationSystem>());
@@ -356,7 +361,8 @@ void GameScreen::applyEntityMessages() {
                                    .departures = departures_,
                                    .sky = *sky_,
                                    .prediction = prediction_,
-                                   .transition = transition_};
+                                   .transition = transition_,
+                                   .music = levelMusic_};
   for (const EntityMessage& message : receivedEntityMessages_) {
     routeEntityMessage(routes, message);
     if (const auto* ended = std::get_if<network::GameEnded>(&message)) {

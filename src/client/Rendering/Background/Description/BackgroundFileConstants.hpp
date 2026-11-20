@@ -16,10 +16,13 @@ constexpr std::string_view BACKGROUND_FOLDER_IN_ASSETS =
     game::BACKGROUND_FOLDER_IN_ASSETS;
 
 /** @brief The keys of the root of a background file: its layers, from the
- * farthest to the nearest, and its emission groups, which it may leave out. */
+ * farthest to the nearest, its emission groups, and the music a game plays
+ * while it shows, which it may leave out. */
 constexpr std::string_view LAYER_TABLES_KEY = game::BACKGROUND_LAYER_TABLES_KEY;
 constexpr std::string_view GROUP_TABLES_KEY = "group";
-constexpr std::array BACKGROUND_ROOT_KEYS{LAYER_TABLES_KEY, GROUP_TABLES_KEY};
+constexpr std::string_view BACKGROUND_MUSIC_KEY = "music";
+constexpr std::array BACKGROUND_ROOT_KEYS{LAYER_TABLES_KEY, GROUP_TABLES_KEY,
+                                          BACKGROUND_MUSIC_KEY};
 
 /** @brief The most layers and groups a background holds, sprites a layer of
  * particles draws from, and colors a trail goes through. */

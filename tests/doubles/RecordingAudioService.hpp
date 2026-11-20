@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <string_view>
 #include <vector>
 #include "Ambience.hpp"
 #include "FakeMusicPlayer.hpp"
@@ -23,7 +24,7 @@ class RecordingAudioService final : public rtype::client::IAudioService {
   [[nodiscard]] rtype::client::ISoundPlayer& sounds() override;
   [[nodiscard]] rtype::client::IMusicPlayer& theme() override;
   void playTheme() override;
-  void playGameMusic() override;
+  void playGameMusic(std::string_view music) override;
   void silenceMusic() override;
   void playBossMusic() override;
   void setAmbience(rtype::client::Ambience ambience) override;

@@ -61,6 +61,10 @@ constexpr engine::Duration GAME_MUSIC_LOOP_END = std::chrono::seconds(152);
 constexpr MusicTrack GAME_TRACK{.assetId = GAME_MUSIC_ID,
                                 .loopLength = GAME_MUSIC_LOOP_END};
 
+/** @brief What IAudioService::playGameMusic() takes to keep the music of a
+ * game chosen last, such as the music a background names for its level. */
+constexpr std::string_view CHOSEN_GAME_MUSIC{};
+
 /** @brief When a game starts, the theme stops at once and the music of the
  * game starts GAME_MUSIC_SILENCE later. */
 constexpr engine::Duration GAME_MUSIC_SILENCE = std::chrono::seconds(1);

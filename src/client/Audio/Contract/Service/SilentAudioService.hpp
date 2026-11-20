@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string_view>
 #include "Ambience.hpp"
 #include "IAudioService.hpp"
 #include "IMusicPlayer.hpp"
@@ -17,7 +18,7 @@ class SilentAudioService final : public IAudioService {
   [[nodiscard]] ISoundPlayer& sounds() override;
   [[nodiscard]] IMusicPlayer& theme() override;
   void playTheme() override;
-  void playGameMusic() override;
+  void playGameMusic(std::string_view music) override;
   void silenceMusic() override;
   void playBossMusic() override;
   void setAmbience(Ambience ambience) override;

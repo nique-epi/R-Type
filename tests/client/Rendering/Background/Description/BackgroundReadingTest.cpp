@@ -715,3 +715,40 @@ TEST(BackgroundReading, RefusesOneLayerTooMany) {
       ThrowsMessage<TooManyBackgroundTablesException>(
           HasSubstr(std::string{TOO_MANY_LAYERS_REFUSAL})));
 }
+
+/**
+ * Given a background that names the music of its level
+ * When it is read
+ * Then it holds that music
+ */
+TEST(BackgroundReading, ReadsTheMusicItNames) {
+  const BackgroundDescription background =
+      backgroundReading(A_BACKGROUND_WITH_ITS_MUSIC);
+
+  EXPECT_EQ(background.music, THE_MUSIC_IT_NAMES);
+}
+
+/**
+ * Given a background that names no music
+ * When it is read
+ * Then it holds none, so a game plays its own music
+ */
+TEST(BackgroundReading, ABackgroundWithoutMusicHoldsNone) {
+  const BackgroundDescription background =
+      backgroundReading(A_PLANET_THEN_WALLS);
+
+  EXPECT_TRUE(background.music.empty());
+}
+
+/**
+ * Given a background whose music lies outside the assets
+ * When it is read
+ * Then an InconsistentBackgroundException says a file is named by its asset
+ * id
+ */
+TEST(BackgroundReading, RefusesAMusicThatIsNotAnAssetId) {
+  EXPECT_THAT(
+      [] { static_cast<void>(backgroundReading(A_MUSIC_OUTSIDE_THE_ASSETS)); },
+      ThrowsMessage<InconsistentBackgroundException>(
+          HasSubstr(std::string{MUSIC_REFUSAL})));
+}

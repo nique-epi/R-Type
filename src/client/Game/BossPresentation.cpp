@@ -3,6 +3,7 @@
 #include <optional>
 #include <string>
 #include "AppearanceReference.hpp"
+#include "AudioConstants.hpp"
 #include "BossArrivalConstants.hpp"
 #include "BossArrivalEffects.hpp"
 #include "BossBar.hpp"
@@ -116,7 +117,7 @@ void BossPresentation::apply(const network::EntityDestroyed& destroyed) {
   chargeSignalledAt_.reset();
   if (bossMusicStarted_) {
     bossMusicStarted_ = false;
-    audio_->playGameMusic();
+    audio_->playGameMusic(CHOSEN_GAME_MUSIC);
   }
 }
 
@@ -185,7 +186,7 @@ void BossPresentation::followMusic() {
       (playsALevel_ && tracker_.fight().stage == network::BossStage::Defeated);
   if (bossGone && bossMusicStarted_) {
     bossMusicStarted_ = false;
-    audio_->playGameMusic();
+    audio_->playGameMusic(CHOSEN_GAME_MUSIC);
   }
 }
 

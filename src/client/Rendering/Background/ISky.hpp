@@ -1,6 +1,8 @@
 #pragma once
 
 #include <SFML/System/Vector2.hpp>
+#include <string>
+#include <string_view>
 #include "SkyLevel.hpp"
 
 namespace rtype::client {
@@ -37,6 +39,11 @@ class ISky {
    * DEFAULT_BACKGROUND_NAME.
    */
   virtual void showLevel(const SkyLevel& level) = 0;
+
+  /** @returns The music a game plays while the background of the biome
+   * @p biome shows, as its file names it (`music`); empty when it names none
+   * or the client has no background for that biome. */
+  [[nodiscard]] virtual std::string musicOf(std::string_view biome) const = 0;
 };
 
 }  // namespace rtype::client

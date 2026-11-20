@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string_view>
 #include "Ambience.hpp"
 #include "IMusicPlayer.hpp"
 #include "ISoundPlayer.hpp"
@@ -30,9 +31,12 @@ class IAudioService {
    * already. */
   virtual void playTheme() = 0;
 
-  /** @brief Stops the theme and starts the music of a game a silence later,
-   * unless it plays already or is about to. */
-  virtual void playGameMusic() = 0;
+  /** @brief Makes @p music the music of a game, played in place of the one
+   * that plays when it differs, then stops the theme and starts the music of
+   * a game a silence later, unless it plays already or is about to.
+   * CHOSEN_GAME_MUSIC keeps the music chosen last; GAME_MUSIC_ID is the music
+   * of a game that names no other. */
+  virtual void playGameMusic(std::string_view music) = 0;
 
   /** @brief Stops the music of a game at once, without fade, and cancels the
    * silence before it: playGameMusic() starts it again GAME_MUSIC_SILENCE

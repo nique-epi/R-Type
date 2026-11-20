@@ -4,6 +4,8 @@
 #include <SFML/System/Vector2.hpp>
 #include <cstddef>
 #include <memory>
+#include <string>
+#include <string_view>
 #include "BackgroundCatalog.hpp"
 #include "GaussianBlur.hpp"
 #include "ISky.hpp"
@@ -48,6 +50,9 @@ class Sky final : public ISky {
   void setSpeedFactor(float factor) override;
   void setOffset(sf::Vector2i pixels) override;
   void showLevel(const SkyLevel& level) override;
+  /** @returns The music the background of @p biome names, looked for in the
+   * backgrounds of the pack first, then in those of the sky. */
+  [[nodiscard]] std::string musicOf(std::string_view biome) const override;
 
   /** @brief Lays the backgrounds of the pack of a server over those of the
    * sky, or takes them off for nullptr, see ShownBackgrounds::layOver(). */
@@ -71,6 +76,8 @@ class Sky final : public ISky {
    * available. */
   void drawHalo(sf::RenderTarget& target);
 
+  const BackgroundCatalog* catalog_;
+  std::shared_ptr<const BackgroundCatalog> pack_;
   ShownBackgrounds backgrounds_;
   LayerCanvas canvas_;
   SkyPicture picture_;

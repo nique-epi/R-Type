@@ -1,4 +1,5 @@
 #include "AudioService.hpp"
+#include <string_view>
 #include "Ambience.hpp"
 #include "AmbienceMusic.hpp"
 #include "AssetLibrary.hpp"
@@ -41,7 +42,12 @@ IMusicPlayer& AudioService::theme() { return theme_; }
 
 void AudioService::playTheme() { soundtrack_.playTheme(); }
 
-void AudioService::playGameMusic() { soundtrack_.playGameMusic(); }
+void AudioService::playGameMusic(std::string_view music) {
+  if (!music.empty()) {
+    gameMusic_.switchTo(*library_, music);
+  }
+  soundtrack_.playGameMusic();
+}
 
 void AudioService::silenceMusic() { soundtrack_.silenceMusic(); }
 

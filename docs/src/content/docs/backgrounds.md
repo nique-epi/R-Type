@@ -38,6 +38,8 @@ twinkle_steps = 8
 
 A table in braces fits on one line; one that needs several lines is written as a table of its own, `[layer.particles]`, after the keys of its layer.
 
+Before its layers, a file may name the music a game plays while it shows, by its asset id: `music = "music/big_iron.mp3"` in the five backgrounds of Deseret. The client plays it in a loop over the whole file in place of the music of a game, from the first `LevelStatus` that names the biome, and goes back to the music of a game for a biome that names none (`LevelMusic`, see [Sounds and music](/R-Type/client/#sounds-and-music-iaudioservice-soundplayer-musicplayer)). A text that is no asset id is refused, as a file of a layer is.
+
 ## A layer
 
 | Key | Needed | What it is |

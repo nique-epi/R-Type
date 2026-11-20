@@ -467,6 +467,16 @@ std::vector<EmissionGroupDescription> groupsOf(
   return groups;
 }
 
+/** @returns The music `music` of @p root names, or nothing when the file
+ * leaves it out. @throws InconsistentBackgroundException when the text is not
+ * an asset id. */
+std::string musicOf(const engine::DataFileTable& root) {
+  if (!holds(root, BACKGROUND_MUSIC_KEY)) {
+    return {};
+  }
+  return assetIdAt(root, BACKGROUND_MUSIC_KEY);
+}
+
 }  // namespace
 
 BackgroundDescription readBackground(const BackgroundText& text) {
@@ -477,7 +487,8 @@ BackgroundDescription readBackground(const BackgroundText& text) {
   std::vector<LayerDescription> layers = layersOf(root, groups);
   return BackgroundDescription{.name = text.name,
                                .layers = std::move(layers),
-                               .groups = std::move(groups)};
+                               .groups = std::move(groups),
+                               .music = musicOf(root)};
 }
 
 }  // namespace rtype::client

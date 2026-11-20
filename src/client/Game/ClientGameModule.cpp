@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include "AssetList.hpp"
+#include "AudioConstants.hpp"
 #include "EndScreen.hpp"
 #include "EndScreenParts.hpp"
 #include "EntityLayer.hpp"
@@ -53,7 +54,7 @@ void loadEntitySounds(const ScreenContext& context) {
  * the other entities. */
 std::unique_ptr<IScreen> buildGameScreen(const ScreenContext& context,
                                          InterpolationTally& tally) {
-  context.services.audio.get().playGameMusic();
+  context.services.audio.get().playGameMusic(GAME_MUSIC_ID);
   loadEntitySounds(context);
   std::unique_ptr<IScreen> loading =
       loadingScreenUnlessLoaded(context, gameAssetsOf(context), GAME_SCREEN);

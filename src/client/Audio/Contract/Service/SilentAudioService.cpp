@@ -1,4 +1,5 @@
 #include "SilentAudioService.hpp"
+#include <string_view>
 #include "Ambience.hpp"
 #include "IMusicPlayer.hpp"
 #include "ISoundPlayer.hpp"
@@ -12,7 +13,7 @@ IMusicPlayer& SilentAudioService::theme() { return theme_; }
 
 void SilentAudioService::playTheme() {}
 
-void SilentAudioService::playGameMusic() {}
+void SilentAudioService::playGameMusic(std::string_view /*music*/) {}
 
 void SilentAudioService::silenceMusic() {}
 

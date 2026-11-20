@@ -2,6 +2,8 @@
 
 #include <SFML/Audio/Music.hpp>
 #include <optional>
+#include <string>
+#include <string_view>
 #include "IMusicPlayer.hpp"
 #include "ISettingsListener.hpp"
 #include "Logger.hpp"
@@ -24,7 +26,8 @@ class SettingsService;
  * Without the file, or with a file SFML cannot read, open() writes one
  * warning and the music stays silent: the client runs without that music.
  * start() never restarts a music that plays, so the title screen and the
- * options leave it where it is.
+ * options leave it where it is. switchTo() plays another file in its place,
+ * looped whole, such as the music a background names for a level.
  */
 class MusicPlayer : public IMusicPlayer, public ISettingsListener {
  public:
@@ -38,6 +41,12 @@ class MusicPlayer : public IMusicPlayer, public ISettingsListener {
   /** @brief Opens the music file that @p library locates, for start() to
    * play; writes why not when the file is missing or cannot be read. */
   void open(AssetLibrary& library);
+
+  /** @brief Plays the file @p assetId in place of the one it plays, looped
+   * whole, from its start if the music played; the file of its track again,
+   * with its loop, for the asset id of the track. Nothing when it plays that
+   * file already. */
+  void switchTo(AssetLibrary& library, std::string_view assetId);
 
   /** @brief Starts the music from the start of its file, or from where
    * pause() left it, looping over the part of its track that loops, at the
@@ -59,6 +68,7 @@ class MusicPlayer : public IMusicPlayer, public ISettingsListener {
 
   const SettingsService* settings_;
   MusicTrack track_;
+  std::string assetId_;
   logging::Logger logger_;
   sf::Music music_;
   bool opened_{false};

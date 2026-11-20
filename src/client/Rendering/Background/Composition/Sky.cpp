@@ -7,9 +7,12 @@
 #include <cstddef>
 #include <memory>
 #include <optional>
+#include <string>
+#include <string_view>
 #include <utility>
 #include "BackgroundCatalog.hpp"
 #include "BackgroundColorConstants.hpp"
+#include "BackgroundDescription.hpp"
 #include "LayerSources.hpp"
 #include "LayeredBackground.hpp"
 #include "PixelGridConstants.hpp"
@@ -22,7 +25,8 @@
 namespace rtype::client {
 
 Sky::Sky(const BackgroundCatalog& catalog, SkySources sources)
-    : backgrounds_(catalog, LayerSources{.fileOf = std::move(sources.fileOf),
+    : catalog_(&catalog),
+      backgrounds_(catalog, LayerSources{.fileOf = std::move(sources.fileOf),
                                          .seed = sources.seed}),
       canvas_(std::move(sources.textureOf)),
       picture_(0) {}
@@ -35,7 +39,17 @@ void Sky::setOffset(sf::Vector2i pixels) { offset_ = pixels; }
 
 void Sky::showLevel(const SkyLevel& level) { backgrounds_.show(level); }
 
+std::string Sky::musicOf(std::string_view biome) const {
+  const BackgroundDescription* found =
+      pack_ == nullptr ? nullptr : pack_->named(biome);
+  if (found == nullptr) {
+    found = catalog_->named(biome);
+  }
+  return found == nullptr ? std::string{} : found->music;
+}
+
 void Sky::layOver(std::shared_ptr<const BackgroundCatalog> backgrounds) {
+  pack_ = backgrounds;
   backgrounds_.layOver(std::move(backgrounds));
 }
 

@@ -1,8 +1,10 @@
 #include <gtest/gtest.h>
+#include "AudioConstants.hpp"
 #include "AudioTestConstants.hpp"
 #include "ScreenTestConstants.hpp"
 #include "SilentAudioService.hpp"
 
+using rtype::client::GAME_MUSIC_ID;
 using rtype::client::SilentAudioService;
 using rtype::client::testing::UNKNOWN_SOUND_ID;
 
@@ -41,7 +43,7 @@ TEST(SilentAudioService, EveryCallOfTheScreensAndTheModuleIsAccepted) {
 
   EXPECT_NO_THROW({
     audio.playTheme();
-    audio.playGameMusic();
+    audio.playGameMusic(GAME_MUSIC_ID);
     audio.open();
     audio.update(ONE_FRAME);
   });

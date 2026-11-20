@@ -1,4 +1,5 @@
 #include "RecordingAudioService.hpp"
+#include <string_view>
 #include <vector>
 #include "Ambience.hpp"
 #include "IMusicPlayer.hpp"
@@ -20,7 +21,7 @@ void RecordingAudioService::playTheme() {
   musicCalls_.push_back(MusicCall::Theme);
 }
 
-void RecordingAudioService::playGameMusic() {
+void RecordingAudioService::playGameMusic(std::string_view /*music*/) {
   musicCalls_.push_back(MusicCall::GameMusic);
 }
 
