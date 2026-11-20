@@ -17,7 +17,7 @@ Why: the Necromancer let a hit through only within 60 units of the column of its
 
 1. **A boss takes a hit on every part the player reads as its body** (head, thorax, abdomen, wings, spikes); only a part the design names as armour or as a limb (legs, scythes, a shield) stops a missile. A weak point narrower than the body is a design choice for the user, never a default.
 2. **Draw the boxes over a frame of the sheet before the fight is played**: every opaque part that is body lies in a box, and a limb lies in none, so a missile flies through it.
-3. **A `pre_hit` then judges time** (the arrival, a strike), not rows, when the whole body counts.
+3. **A boss is hit while it attacks too**: a `pre_hit` refuses a hit only while the boss arrives (rises, slides in) or hides as the design names it, never through the beats of an attack.
 
 ## Example
 
