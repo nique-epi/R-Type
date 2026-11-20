@@ -44,6 +44,10 @@ class SpokenLine {
   /** @brief Paints the bubble, its bottom-left corner at @p bottomLeft, its
    * tail under it, and the letters written; nothing while silent. */
   void paint(IInterfaceCanvas& canvas, sf::Vector2i bottomLeft) const;
+  /** @brief Writes the letters written, their first line at @p topLeft,
+   * without a bubble: for a panel the screen paints itself; nothing while
+   * silent. */
+  void paintLetters(IInterfaceCanvas& canvas, sf::Vector2i topLeft) const;
 
  private:
   /** @brief Plays a sound for each word of @p said whose first letter now
@@ -55,6 +59,7 @@ class SpokenLine {
   int width_;
   int tail_;
   MotionPreference motion_;
+  bool stays_;
   /** @brief The line said now; empty while silent. */
   std::optional<SaidLine> said_;
   std::optional<std::string> next_;

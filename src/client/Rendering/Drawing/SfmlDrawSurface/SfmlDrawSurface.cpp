@@ -10,13 +10,13 @@
 #include <SFML/System/Vector2.hpp>
 #include <string>
 #include <string_view>
-#include "BackgroundConstants.hpp"
 #include "EntitySprites.hpp"
 #include "FlashShaderConstants.hpp"
 #include "FragmentShader.hpp"
 #include "GhostShaderConstants.hpp"
 #include "ITextureSource.hpp"
 #include "InterfaceConstants.hpp"
+#include "PixelGridConstants.hpp"
 #include "PixelRounding.hpp"
 #include "Position.hpp"
 #include "RenderingConstants.hpp"

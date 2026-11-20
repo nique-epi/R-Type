@@ -36,3 +36,13 @@ Calibration: on `origin/main` at `edf3388`, `git ls-files -- '*/EncodedMessage.h
 **Rule added.** Search the type name itself in `src/` and `tests/`, and the name of a free function at namespace scope, before declaring them; choose a name that says what sets the new type apart.
 
 **Revised the same day, after a review.** The first commands used `-P` (PCRE, missing from some builds of git), missed a type written with an attribute (`struct [[nodiscard]] Result`), left out untracked files, and searched free functions in headers only. The search is now portable, includes untracked files, reads attributes, says which lines are a clash (a forward declaration of the same type is not), and covers sources for free functions.
+
+## Update (20 November 2026) — a small helper of a new free-function header
+
+**Context.** The casino redesign added `CasinoLighting.hpp`, free functions of `rtype::client` for the lights of its rooms.
+
+**Mistake.** `secondsOf(engine::Duration)` was written in it without a search; `IntroTimeline.hpp` already declares it in the same namespace. Every library compiled, and `r-type_client` stopped at the link on `duplicate symbol 'rtype::client::secondsOf'`.
+
+**Root cause.** The search of the rule was run for types and for the names that looked new, not for a one-line conversion, which is the kind of helper another library already wrote.
+
+**Rule added.** Search every free function of a new header, one-line helpers included, call the existing one when it does the same thing, and read `duplicate symbol` as the symptom.

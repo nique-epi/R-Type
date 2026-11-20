@@ -3,6 +3,7 @@
 #include <optional>
 #include <string>
 #include "Ambience.hpp"
+#include "AmbienceMusic.hpp"
 #include "AssetLibrary.hpp"
 #include "IAudioService.hpp"
 #include "IMusicPlayer.hpp"
@@ -65,12 +66,7 @@ class AudioService final : public IAudioService {
   MusicPlayer theme_;
   MusicPlayer gameMusic_;
   MusicPlayer bossMusic_;
-  MusicPlayer spaceAmbience_;
-  MusicPlayer hangarAmbience_;
-  MusicPlayer crowdAmbience_;
-  MusicPlayer shopMusic_;
-  MusicPlayer shopRadio_;
-  MusicPlayer shopDance_;
+  AmbienceMusic ambiences_;
   LevelMusic levelMusic_;
   Ambience ambience_{Ambience::None};
   Soundtrack soundtrack_;

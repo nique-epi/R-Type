@@ -8,6 +8,7 @@
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingSoundPlayer.hpp"
 #include "SpokenLine.hpp"
+#include "SpokenLineParts.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client::testing {
@@ -20,9 +21,10 @@ class SpokenLineFixture : public ::testing::Test {
   SpokenLineFixture();
 
   /** @brief Builds the line again, for a player who asked for less motion,
-   * or with no voice. */
+   * with no voice, or as a line that stays once whole. */
   void rebuildWithLessMotion();
   void rebuildWithoutVoice();
+  void rebuildToStay();
 
   [[nodiscard]] SpokenLine& line();
 
@@ -40,6 +42,9 @@ class SpokenLineFixture : public ::testing::Test {
 
  private:
   void build(MotionPreference motion, bool voiced);
+  /** @returns The parts of a line written as @p motion says, with
+   * TEST_VOICE or no voice as @p voiced says. */
+  [[nodiscard]] SpokenLineParts partsWith(MotionPreference motion, bool voiced);
 
   RecordingSoundPlayer sounds_;
   InterfaceCanvasRecord painting_;

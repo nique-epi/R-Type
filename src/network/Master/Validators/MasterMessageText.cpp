@@ -1410,14 +1410,27 @@ nlohmann::json casinoPlayerDocument(const CasinoPlayer& player) {
   document[NICKNAME_MEMBER] = player.nickname;
   document[STAKE_MEMBER] = player.stake;
   document[PAYOUT_MEMBER] = nullableOf(player.payout);
+  document[BETS_MEMBER] = arrayDocument(player.bets, betDocument);
   return document;
+}
+
+/** @returns The bets the member bets of @p player lists,
+ * MAXIMUM_READ_ROULETTE_BETS at most; none when a master that does not list
+ * them leaves the member out. */
+std::vector<RouletteBet> playerBetsOf(const JsonField& player) {
+  const std::optional<JsonField> bets = optionalMemberOf(player, BETS_MEMBER);
+  if (!bets.has_value()) {
+    return {};
+  }
+  return arrayOf(*bets, MAXIMUM_READ_ROULETTE_BETS, betOf);
 }
 
 CasinoPlayer casinoPlayerOf(const JsonField& player) {
   requireObject(player);
   return CasinoPlayer{.nickname = nicknameOf(memberOf(player, NICKNAME_MEMBER)),
                       .stake = chipsIn(player, STAKE_MEMBER),
-                      .payout = payoutOf(player)};
+                      .payout = payoutOf(player),
+                      .bets = playerBetsOf(player)};
 }
 
 std::uint8_t wheelNumberOf(const JsonField& field) {

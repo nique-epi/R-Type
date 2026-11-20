@@ -12,7 +12,6 @@
 #include <deque>
 #include <optional>
 #include <string>
-#include "BackgroundConstants.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "Lagometer.hpp"
 #include "LagometerConstants.hpp"
@@ -20,6 +19,7 @@
 #include "LagometerPoint.hpp"
 #include "LagometerText.hpp"
 #include "Outline.hpp"
+#include "PixelGridConstants.hpp"
 #include "TextStyle.hpp"
 
 namespace rtype::client {

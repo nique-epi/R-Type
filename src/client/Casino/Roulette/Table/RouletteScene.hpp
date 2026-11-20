@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+#include "BigWin.hpp"
 #include "RouletteBarStates.hpp"
 #include "RouletteReading.hpp"
 #include "RouletteView.hpp"
@@ -18,6 +20,12 @@ namespace rtype::client {
  * while the bets are open, then the one the master took.
  */
 [[nodiscard]] RouletteView rouletteViewOf(const RouletteReading& reading);
+
+/** @returns The biggest win of the round of @p reading at its result: the
+ * player seated whose payout passes its stake by BIG_WIN_GAIN chips or more,
+ * the one who gained the most when several did; nothing before the result,
+ * or when nobody won that much. */
+[[nodiscard]] std::optional<BigWin> bigWinOf(const RouletteReading& reading);
 
 /** @returns The bars @p reading opens, only while the bets are open: CLEAR
  * when the player laid some, REBET when the bets of the round before fit in

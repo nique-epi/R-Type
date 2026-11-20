@@ -105,6 +105,22 @@ constexpr MusicTrack SHOP_RADIO_TRACK{.assetId =
 constexpr MusicTrack SHOP_DANCE_TRACK{.assetId = "music/kavorka.mp3"};
 
 /**
+ * @brief The musics of the casino, each in a loop over the whole file while
+ * the theme is paused: Move to the Music, by Wanda Shakes, before its doors;
+ * To Hell and Back, by Elliot Holmes, in its hall, over a stadium crowd at
+ * CASINO_CROWD_GAIN of the MUSIC volume, the crowd of its boxing ring; and
+ * American Swing, from the radio of Fallout: New Vegas, at the roulette and
+ * at the cashier.
+ */
+constexpr float CASINO_CROWD_GAIN = 0.45F;
+constexpr MusicTrack CASINO_FRONT_TRACK{.assetId =
+                                            "music/move_to_the_music.mp3"};
+constexpr MusicTrack CASINO_HALL_TRACK{.assetId = "music/to_hell_and_back.mp3"};
+constexpr MusicTrack CASINO_CROWD_TRACK{.assetId = "music/boxing_crowd.mp3",
+                                        .gain = CASINO_CROWD_GAIN};
+constexpr MusicTrack CASINO_TABLES_TRACK{.assetId = "music/american_swing.mp3"};
+
+/**
  * @brief How the time of the intro follows the position of the music, which
  * moves by one audio block at a time (about 10 ms in SFML 3.0.2): each frame
  * closes elapsed / MUSIC_CATCH_UP_TIME of the gap, a tenth of it for a frame

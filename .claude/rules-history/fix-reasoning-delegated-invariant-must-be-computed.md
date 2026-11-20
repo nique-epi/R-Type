@@ -48,3 +48,13 @@ Before asserting a side between two things, compute both positions with the cons
 ## Update (7 November 2026) — a count a report keeps is read from the run
 
 `ServerAdminConsoleModuleFixture.RunsItsCommandsFromTheConfiguration` asserted `report().executedLines == 1` for a `server.cfg` holding one `games` line. The fixture launches the supervisor with `-p <port>`, which the launch options turn into a forced `set port` line, so the run counted 2 and the test failed on correct code. The assertion now checks what the line did: the console wrote `no game runs`, and no line was refused.
+
+## Update (20 November 2026) — a text asserted absent, and a pixel asserted lit
+
+**Context.** The casino redesign merged the two cashiers into one screen whose way Tab switches, and added the beams of its rooms.
+
+**Mistake.** `TabSwitchesToCashingOut` asserted that `BUY CHIPS` was no longer written once Tab cashed out; the rate board on the wall writes both ways at all times, so the test failed on correct code, and `AHeldTabSwitchesOnce`, which read `CASH OUT`, could not fail. `ABeamIsCutAtTheEdgeOfTheInterface` asserted that a beam lit pixels from an origin at (2, 2): 0.2 radians wide, it is a tenth of a pixel wide half a pixel from its origin and lit nothing.
+
+**Root cause.** Each assertion was written from what the screen or the shape was meant to show, not from every part of the picture or from the computed width.
+
+**Rule added.** List every writer of a text asserted absent and read a text only the switched part writes; compute where a shape lies before asserting a pixel.

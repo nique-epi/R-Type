@@ -20,6 +20,10 @@ namespace rtype::network::testing {
  * with two numbers before it and ACE seated, paid. */
 [[nodiscard]] CasinoRoomState drawnRoomState();
 
+/** @returns The text of drawnRoomState() as a master that does not list the
+ * bets of the players writes it: its player has no member bets. */
+[[nodiscard]] std::string roomStateTextWithoutBets();
+
 /** @returns The receipt of twoBets() on the round of the tests. */
 [[nodiscard]] BetsReceipt twoBetsReceipt();
 
