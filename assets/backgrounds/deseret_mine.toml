@@ -3,6 +3,10 @@
 # Three layers cut from the map of its LDtk project, written by
 # generator/procedural/; the background arrives through its nearest layer.
 
+# The music a game plays while this background shows: Big Iron, by Marty
+# Robbins (see assets/README.md).
+music = "music/big_iron.mp3"
+
 [[layer]]
 name = "far plane"
 motion = { parallax = 0.25 }

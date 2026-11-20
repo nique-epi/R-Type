@@ -72,3 +72,6 @@ constexpr std::size_t LAYERS_OF_AN_ASHLANDS_BIOME = 3;
 constexpr std::array<std::string_view, 5> SHIPPED_DESERET_NAMES{
     "deseret", "deseret_hoodoos", "deseret_line", "deseret_mine",
     "deseret_mesa"};
+
+/** @brief The music every background of Deseret names. */
+constexpr std::string_view DESERET_MUSIC = "music/big_iron.mp3";

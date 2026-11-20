@@ -258,3 +258,19 @@ TEST(BackgroundCatalog, ReadsDeseretTheRepositoryShips) {
     }
   }
 }
+
+/**
+ * Given the backgrounds of Deseret the repository ships
+ * When the catalog reads them
+ * Then each names Big Iron, so the music follows the level across its biomes
+ */
+TEST(BackgroundCatalog, EveryBiomeOfDeseretPlaysBigIron) {
+  const BackgroundCatalog catalog = shippedBackgrounds();
+
+  for (const std::string_view name : SHIPPED_DESERET_NAMES) {
+    SCOPED_TRACE(name);
+    const BackgroundDescription* const biome = catalog.named(name);
+    ASSERT_NE(biome, nullptr);
+    EXPECT_EQ(biome->music, DESERET_MUSIC);
+  }
+}
