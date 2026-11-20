@@ -1,6 +1,6 @@
 # The entity type ash_egg, brought by the resource ashlands:
-# an egg the Ash Mother flings into the air, which falls where the nearest
-# ship was.
+# an egg the Ash Mother flings at where the nearest ship was half a second
+# before the throw.
 # Only the server reads [gameplay]; a client draws [appearance] from the
 # content pack the supervisor serves. The keys are described on the page
 # "Writing an entity sheet" of the docs.
@@ -19,10 +19,10 @@ height = 48
 kind = "steady"
 top_speed = 600
 
-# It flies 1.4 s, rising 520 units at the top of its arc.
+# It reaches its place in 1.1 s, along a line bent 140 units up at its middle.
 [gameplay.behaviour]
-flight_ms = 1400
-height = 520
+flight_ms = 1100
+bump = 140
 
 [appearance]
 sheet = "sprites/cendres/ash_egg.png"
