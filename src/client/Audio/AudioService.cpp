@@ -4,12 +4,24 @@
 #include "AudioConstants.hpp"
 #include "IMusicPlayer.hpp"
 #include "ISoundPlayer.hpp"
+#include "MusicPlayer.hpp"
 #include "SettingsService.hpp"
 #include "SoundConstants.hpp"
 #include "SoundtrackParts.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
+
+namespace {
+
+/** @returns Whether @p ambience plays a music of its own, which pauses the
+ * theme: the shop and its radio and dance. */
+bool pausesTheTheme(Ambience ambience) {
+  return ambience == Ambience::Shop || ambience == Ambience::ShopRadio ||
+         ambience == Ambience::ShopDance;
+}
+
+}  // namespace
 
 AudioService::AudioService(AssetLibrary& library, SettingsService& settings)
     : library_(&library),
@@ -67,19 +79,14 @@ void AudioService::setAmbience(Ambience ambience) {
   if (ambience == ambience_) {
     return;
   }
-  spaceAmbience_.stop();
-  hangarAmbience_.stop();
-  crowdAmbience_.stop();
-  shopMusic_.stop();
-  shopRadio_.stop();
-  shopDance_.stop();
-  ambience_ = ambience;
-  if (ambience == Ambience::Shop || ambience == Ambience::ShopRadio ||
-      ambience == Ambience::ShopDance) {
-    soundtrack_.pauseTheme();
-  } else {
-    soundtrack_.resumeTheme();
+  for (MusicPlayer* const player :
+       {&spaceAmbience_, &hangarAmbience_, &crowdAmbience_, &shopMusic_,
+        &shopRadio_, &shopDance_}) {
+    player->stop();
   }
+  ambience_ = ambience;
+  pausesTheTheme(ambience) ? soundtrack_.pauseTheme()
+                           : soundtrack_.resumeTheme();
   switch (ambience) {
     case Ambience::Space:
       spaceAmbience_.start();
