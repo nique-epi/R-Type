@@ -1,5 +1,6 @@
 #include "CasinoMessageTextFixtures.hpp"
 #include <cstddef>
+#include <nlohmann/json.hpp>
 #include <string>
 #include "BetsReceipt.hpp"
 #include "CasinoMessageTextTestConstants.hpp"
@@ -7,6 +8,7 @@
 #include "CasinoRoom.hpp"
 #include "CasinoRoomListing.hpp"
 #include "CasinoRoomState.hpp"
+#include "MasterMessageConstants.hpp"
 #include "MasterMessageText.hpp"
 #include "MillisecondDate.hpp"
 #include "RouletteBet.hpp"
@@ -51,7 +53,17 @@ CasinoRoomState drawnRoomState() {
       .history = {TEST_EARLIER_NUMBER, TEST_EARLIEST_NUMBER},
       .players = {CasinoPlayer{.nickname = std::string{TEST_CASINO_NICKNAME},
                                .stake = TEST_STAKE,
-                               .payout = TEST_PAYOUT}}};
+                               .payout = TEST_PAYOUT,
+                               .bets = twoBets().bets}}};
+}
+
+std::string roomStateTextWithoutBets() {
+  nlohmann::json document =
+      nlohmann::json::parse(casinoRoomStateText(drawnRoomState()));
+  for (nlohmann::json& player : document.at(PLAYERS_MEMBER)) {
+    player.erase(BETS_MEMBER);
+  }
+  return document.dump();
 }
 
 BetsReceipt twoBetsReceipt() {

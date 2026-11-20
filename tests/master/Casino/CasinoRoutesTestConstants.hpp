@@ -58,6 +58,9 @@ constexpr std::string_view TWO_BETS_BODY =
     R"({"bets":[{"kind":"straight","firstNumber":19,"amount":10},)"
     R"({"kind":"red","firstNumber":0,"amount":25}]})";
 constexpr std::int64_t TWO_BETS_STAKE = 35;
+/** @brief The bets TWO_BETS_BODY lays, as the state of the room lists them
+ * for the others seated. */
+constexpr std::size_t TWO_BETS_COUNT = 2;
 constexpr std::string_view HUNDRED_ON_RED_BODY =
     R"({"bets":[{"kind":"red","firstNumber":0,"amount":100}]})";
 constexpr std::int64_t HUNDRED_STAKE = 100;
