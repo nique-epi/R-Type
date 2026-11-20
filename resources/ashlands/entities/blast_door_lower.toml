@@ -7,7 +7,8 @@
 [gameplay]
 side = "obstacle"
 layer = "wall"
-hits = ["player"]
+# It stops the ships, and the missiles of the players and of the Bydos.
+hits = ["player", "player_missile", "enemy_missile"]
 pilot = "straight"
 
 [gameplay.hitbox]

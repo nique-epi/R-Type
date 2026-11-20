@@ -7,8 +7,9 @@
 [gameplay]
 side = "obstacle"
 layer = "wall"
-hits = ["player"]
-pilot = "straight"
+# It stops the ships, and the missiles of the players and of the Bydos.
+hits = ["player", "player_missile", "enemy_missile"]
+pilot = "blast_door_hold"
 
 [gameplay.hitbox]
 width = 88
@@ -17,9 +18,6 @@ height = 480
 [gameplay.motion]
 kind = "scroll"
 
-# It stands still on the scroll.
-[gameplay.behaviour]
-heading = 0
 
 [gameplay.obstacle]
 contact = "blocking"

@@ -78,6 +78,86 @@ local function bobbing_left(e)
 	return { x = -1, y = percent(settings.bob) * math.sin(FULL_TURN * e.age_ms / settings.bob_ms) }
 end
 
+-- The blast doors on screen, by the network id of their upper half: the
+-- center of that half, the row of the gap below it, and the scroll when the
+-- door last wrote them. A door writes itself every tick (blast_door_hold), so
+-- an entry a scroll older than DOOR_STALE_SCROLL, or newer than the scroll (a
+-- restart from a checkpoint brought the scroll back), is a door that is gone.
+local DOORS: { [number]: { x: number, gap: number, scroll: number } } = {}
+local DOOR_STALE_SCROLL = 16
+
+-- How far below the center of the upper half the middle of the gap lies: half
+-- the gap (340 units) and half the 480 units of a half, as ashlands.luau lays
+-- them; the room a body has around that middle; how far from a door a body
+-- heads for its gap.
+local DOOR_REACH = 410
+local GAP_HALF = 170
+local GAP_MARGIN = 8
+local DOOR_LOOKAHEAD = 720
+
+-- The door nearest to a body within DOOR_LOOKAHEAD, ahead of it or behind it:
+-- a door scrolls left, so it catches up with a body slower than the scroll, or
+-- one that stands still to attack; nil when there is none.
+local function door_ahead(e)
+	local now = level.scroll()
+	local found = nil
+	for id, door in DOORS do
+		local age = now - door.scroll
+		if age < 0 or age > DOOR_STALE_SCROLL then
+			DOORS[id] = nil
+		else
+			local x = door.x - age
+			local away = math.abs(e.position.x - x)
+			if away < DOOR_LOOKAHEAD and (found == nil or away < found.away) then
+				found = { x = x, gap = door.gap, away = away }
+			end
+		end
+	end
+	return found
+end
+
+-- The direction of a body that keeps `direction` but, while a blast door is
+-- near it, heads for the middle of its gap, so the door passes it at its gap
+-- and never through it.
+local function through_doors(e, direction)
+	local door = door_ahead(e)
+	if door == nil then
+		return direction
+	end
+	local room = math.max(0, GAP_HALF - e.collision_box.height / 2 - GAP_MARGIN)
+	local offset = e.position.y - door.gap
+	if math.abs(offset) <= room and math.abs(direction.y) * e.top_speed * TICK_SECONDS <= room - math.abs(offset) then
+		return direction
+	end
+	local step = -offset / (e.top_speed * TICK_SECONDS)
+	return { x = direction.x, y = math.clamp(step, -1, 1) }
+end
+
+-- The upper half of a blast door stands on the scroll and writes where it is
+-- and where its gap lies, for the mobs to fly through it.
+behaviours.register("blast_door_hold", {}, function(e)
+	DOORS[e.id] = { x = e.position.x, gap = e.position.y + DOOR_REACH, scroll = level.scroll() }
+	return { direction = STILL }
+end)
+
+-- The Cindermite flies left at its top speed, weaving `amplitude` units around
+-- its row every period_ms; a blast door ahead moves that row to its gap.
+behaviours.register("cindermite_weave", {
+	{ name = "amplitude", lowest = 0, highest = 48 },
+	{ name = "period_ms", lowest = 1, highest = 60000 },
+}, function(e)
+	local settings = e.settings
+	e.data.row = e.data.row or e.position.y
+	local door = door_ahead(e)
+	if door ~= nil then
+		local reach = e.top_speed * TICK_SECONDS
+		e.data.row += math.clamp(door.gap - e.data.row, -reach, reach)
+	end
+	local target = e.data.row + settings.amplitude * math.sin(FULL_TURN * e.age_ms / settings.period_ms)
+	local step = (target - e.position.y) / (e.top_speed * TICK_SECONDS)
+	return { direction = { x = -1, y = math.clamp(step, -1, 1) } }
+end)
+
 local function with_attack(settings)
 	for _, setting in ATTACK_SETTINGS do
 		table.insert(settings, setting)
@@ -107,7 +187,7 @@ behaviours.register("dunecrawler_walk", with_attack({
 	then
 		attack(settings, fire("dunecrawler_barb", { x = e.position.x, y = e.position.y - MUZZLE_GAP }))
 	end
-	return { direction = along(e, level.ground, DUNECRAWLER_GAP) }
+	return { direction = through_doors(e, along(e, level.ground, DUNECRAWLER_GAP)) }
 end)
 
 -- A missile that rises, drifting left by `drift` percent of its speed.
@@ -136,7 +216,7 @@ behaviours.register("scrapdrone_patrol", with_attack({
 	if e.position.x <= settings.fire_from_x and rested(e, settings.rest_ms) then
 		attack(settings, fire("scrapdrone_bolt", { x = e.position.x - MUZZLE_GAP, y = e.position.y }))
 	end
-	return { direction = bobbing_left(e) }
+	return { direction = through_doors(e, bobbing_left(e)) }
 end)
 
 -- A bolt aimed at the ship nearest to it the first time it sees one ahead,
@@ -183,7 +263,7 @@ behaviours.register("rail_turret_slide", with_attack({
 			return (settings.shots - 1) * settings.shot_gap_ms
 		end)
 	end
-	return { direction = along(e, level.ceiling, RAIL_TURRET_GAP) }
+	return { direction = through_doors(e, along(e, level.ceiling, RAIL_TURRET_GAP)) }
 end)
 
 -- The Geiger mine drifts left, bobbing `bob` units around its row every
@@ -208,7 +288,7 @@ behaviours.register("geiger_drift", {
 			return { direction = STILL }
 		end
 	end
-	return { direction = bobbing_left(e) }
+	return { direction = through_doors(e, bobbing_left(e)) }
 end)
 
 -- The Fixbot rolls left on the floor, keeping to it; when a ship is ahead of it, within
@@ -227,7 +307,7 @@ behaviours.register("fixbot_roll", with_attack({
 	then
 		attack(settings, fire("fixbot_wrench", { x = e.position.x - MUZZLE_GAP, y = e.position.y - MUZZLE_GAP }))
 	end
-	return { direction = along(e, level.ground, FIXBOT_GAP) }
+	return { direction = through_doors(e, along(e, level.ground, FIXBOT_GAP)) }
 end)
 
 -- A wrench thrown along an arc: it leaves rising at `lift` percent of its
@@ -244,16 +324,16 @@ behaviours.register("thrown_wrench", {
 end)
 
 -- A brood mite flies left, turning `turn` percent of the way towards the
--- nearest ship.
+-- nearest ship, and through the gap of a blast door ahead.
 behaviours.register("brood_swarm", {
 	{ name = "turn", lowest = 0, highest = 100 },
 }, function(e)
 	local ship = e.nearest_ship
 	if ship == nil then
-		return { direction = LEFT }
+		return { direction = through_doors(e, LEFT) }
 	end
 	local x, y = ship.x - e.position.x, ship.y - e.position.y
 	local length = math.max(1, math.sqrt(x * x + y * y))
 	local turn = percent(e.settings.turn)
-	return { direction = { x = -(1 - turn) + turn * x / length, y = turn * y / length } }
+	return { direction = through_doors(e, { x = -(1 - turn) + turn * x / length, y = turn * y / length }) }
 end)
