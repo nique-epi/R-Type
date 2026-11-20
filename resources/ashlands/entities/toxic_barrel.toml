@@ -12,9 +12,13 @@ hits = ["player"]
 pilot = "breakable_watch"
 on_hit = "barrel_burst"
 
+# Its box rises 64 units above the barrel, so a ship flying as low as the
+# floor of the corridor lets it (its center at row 816, its shots from 804 to
+# 828) hits it wherever the floor lies, between rows 880 and 928.
 [gameplay.hitbox]
 width = 56
-height = 72
+height = 136
+offset_y = -32
 
 [gameplay.motion]
 kind = "scroll"
