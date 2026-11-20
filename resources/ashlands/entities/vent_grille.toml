@@ -41,3 +41,14 @@ height = 20
 frames = 2
 spacing = 2
 frame_ms = 200
+
+# The death, centered on the body; the row under it is the same death without
+# flash.
+[appearance.death]
+left = 0
+top = 22
+width = 108
+height = 108
+frames = 6
+spacing = 2
+frame_ms = 70
