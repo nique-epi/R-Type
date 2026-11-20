@@ -25,13 +25,14 @@ namespace rtype::client {
  *
  * It shows the map the player asked to vote for; before any vote of the
  * player, the map with the most votes in the room, the first of them on a
- * tie; while nobody voted, no map, but NO_MAP_CHOSEN_NAME, since the vote is
- * then drawn at random. A press votes for the map shown while the player has
- * not voted, the first map while nobody did, then for the next one, wrapping
- * around; pressing back votes for the one before. MAP_KEY presses it once per
- * hold, with the click of a bar, as the READY key does; a click on the card
- * presses it, or presses back left of the preview. With no map listed (a
- * server that plays one level) it is closed: the MAP bar under it says so,
+ * tie; while nobody voted, or once the player voted for a random map
+ * (NO_MAP_VOTE), no map, but NO_MAP_CHOSEN_NAME. A press votes for the map
+ * shown while the player has not voted, the first map while nobody did, then
+ * for the next choice: the maps in their order, then a random one, then the
+ * first map again; pressing back votes for the choice before. MAP_KEY presses
+ * it once per hold, with the click of a bar, as the READY key does; a click on
+ * the card presses it, or presses back left of the preview. With no map listed
+ * (a server that plays one level) it is closed: the MAP bar under it says so,
  * and a press votes for nothing.
  */
 class MapVoteCard {
@@ -44,11 +45,13 @@ class MapVoteCard {
   bool handleEvent(const sf::Event& event);
 
   /** @brief Votes for the map shown when the player has not voted, the next
-   * one otherwise; nothing while the card is closed. */
+   * choice otherwise, a random map after the last; nothing while the card is
+   * closed. */
   void press();
 
-  /** @brief Votes for the map before the one shown, wrapping around; nothing
-   * while the card is closed. */
+  /** @brief Votes for the choice before the one shown, a random map before the
+   * first, the last map before a random one; nothing while the card is
+   * closed. */
   void pressBack();
 
   /** @returns Whether the room lists maps to vote for. */
@@ -67,15 +70,17 @@ class MapVoteCard {
   [[nodiscard]] std::string shownName() const;
 
   /** @returns The map shown, numbered from 1: the one voted for, or else the
-   * one leading the vote; nothing while nobody voted. */
+   * one leading the vote; nothing while nobody voted, or once the player
+   * voted for a random map. */
   [[nodiscard]] std::optional<std::uint8_t> shownMap() const;
 
   /** @returns The map the player asked to vote for, from 1; nothing before a
    * vote, for a vote taken back, or for a map the room does not list. */
   [[nodiscard]] std::optional<std::uint8_t> votedMap() const;
 
-  /** @brief Votes for the map @p step after the one shown, wrapping around:
-   * 1 for press(), the count of the maps less one for pressBack(). */
+  /** @brief Votes for the choice @p step after the one shown, among the maps
+   * and a random map (NO_MAP_VOTE, before the first), wrapping around: 1 for
+   * press(), the count of the maps for pressBack(). */
   void voteAfter(std::size_t step);
 
   IMapBallot* ballot_;

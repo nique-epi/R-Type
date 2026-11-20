@@ -67,11 +67,12 @@ TEST_F(LobbyMapVoteFixture, TheKeyVotesForTheMapShown) {
 }
 
 /**
- * Given a room of two maps where the local player voted for the second
+ * Given a room of two maps where the local player voted for the second, the
+ * last
  * When MAP_KEY is pressed then released
- * Then the room asks to vote for the first, wrapping past the last map
+ * Then the room asks to vote for a random map, the choice after the last map
  */
-TEST_F(LobbyMapVoteFixture, AnotherPressVotesForTheNextMapWrapping) {
+TEST_F(LobbyMapVoteFixture, APressAfterTheLastMapVotesForARandomMap) {
   open({LobbyPlayer{.playerNumber = OWN_NUMBER,
                     .ready = false,
                     .nickname = OWN_NICKNAME,
@@ -82,8 +83,70 @@ TEST_F(LobbyMapVoteFixture, AnotherPressVotesForTheNextMapWrapping) {
 
   pressMapKey(false);
 
+  EXPECT_THAT(votes(),
+              ElementsAre(FIRST_MAP_NUMBER, SECOND_MAP_NUMBER, NO_MAP_VOTE));
+}
+
+/**
+ * Given a room of two maps where the local player voted for a random map
+ * When MAP_KEY is pressed then released
+ * Then the room asks to vote for the first map, wrapping around
+ */
+TEST_F(LobbyMapVoteFixture, APressAfterARandomVoteVotesForTheFirstMap) {
+  open({LobbyPlayer{.playerNumber = OWN_NUMBER,
+                    .ready = false,
+                    .nickname = OWN_NICKNAME,
+                    .mapVote = NO_MAP_VOTE}},
+       twoMaps());
+  pressMapKey(false);
+  pressMapKey(false);
+  pressMapKey(false);
+
+  pressMapKey(false);
+
   EXPECT_THAT(votes(), ElementsAre(FIRST_MAP_NUMBER, SECOND_MAP_NUMBER,
-                                   FIRST_MAP_NUMBER));
+                                   NO_MAP_VOTE, FIRST_MAP_NUMBER));
+}
+
+/**
+ * Given a room of two maps where another pilot voted for the second
+ * When the local player votes for the second, then for a random map
+ * Then the card names no map but a random one, not the map leading the vote
+ */
+TEST_F(LobbyMapVoteFixture, TheCardSaysRandomOnceThePlayerVotesForIt) {
+  open({LobbyPlayer{.playerNumber = OWN_NUMBER,
+                    .ready = false,
+                    .nickname = OWN_NICKNAME,
+                    .mapVote = NO_MAP_VOTE},
+        LobbyPlayer{.playerNumber = OTHER_NUMBER,
+                    .ready = false,
+                    .nickname = OTHER_NICKNAME,
+                    .mapVote = SECOND_MAP_NUMBER}},
+       twoMaps());
+  pressMapKey(false);
+
+  pressMapKey(false);
+
+  EXPECT_THAT(votes(), ElementsAre(SECOND_MAP_NUMBER, NO_MAP_VOTE));
+  EXPECT_NE(writingOf(canvas(), NO_MAP_CHOSEN), nullptr);
+}
+
+/**
+ * Given a room of two maps where the local player voted for the first
+ * When the card is clicked left of its preview
+ * Then the room asks to vote for a random map, the choice before the first
+ */
+TEST_F(LobbyMapVoteFixture, BackFromTheFirstMapVotesForARandomMap) {
+  open({LobbyPlayer{.playerNumber = OWN_NUMBER,
+                    .ready = false,
+                    .nickname = OWN_NICKNAME,
+                    .mapVote = NO_MAP_VOTE}},
+       twoMaps());
+  pressMapKey(false);
+
+  click(LEFT_OF_THE_PREVIEW);
+
+  EXPECT_THAT(votes(), ElementsAre(FIRST_MAP_NUMBER, NO_MAP_VOTE));
 }
 
 /**
