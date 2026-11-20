@@ -33,6 +33,7 @@ target_link_libraries(rtype_client_casino_roulette_table
     rtype_client_window_display
     rtype_engine_time
   PRIVATE
+    rtype_client_easing
     rtype_client_box_corners
     rtype_client_economy
     rtype_client_game_module

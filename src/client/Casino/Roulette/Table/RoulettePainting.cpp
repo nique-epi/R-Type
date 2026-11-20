@@ -1,16 +1,24 @@
 #include "RoulettePainting.hpp"
+#include <SFML/Graphics/Color.hpp>
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
+#include <string>
+#include "BackgroundColorConstants.hpp"
+#include "CasinoPainting.hpp"
+#include "CasinoPaintingConstants.hpp"
 #include "CasinoSpriteConstants.hpp"
 #include "ClothPainting.hpp"
 #include "DrawnNumbersPainting.hpp"
+#include "Easing.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "ImagePlacement.hpp"
 #include "InterfaceConstants.hpp"
 #include "RouletteBandPainting.hpp"
 #include "RouletteScreenConstants.hpp"
 #include "RouletteView.hpp"
+#include "SpinCountdown.hpp"
 #include "TableRosterPainting.hpp"
+#include "TextStyle.hpp"
 #include "TextureArea.hpp"
 #include "WheelPicture.hpp"
 
@@ -67,10 +75,32 @@ void paintRoom(IInterfaceCanvas& canvas, sf::IntRect croupier) {
                ROULETTE_TABLE_TOP_LEFT);
 }
 
+/** @brief Paints the plaque under the croupier: SPIN IN and the seconds
+ * of @p countdown over its bar, red for the last seconds. */
+void paintSpinCountdown(IInterfaceCanvas& canvas,
+                        const SpinCountdown& countdown) {
+  const sf::Color urgency = countdown.hurry ? CASINO_NEON_RED : STAR_GOLD;
+  canvas.fill(SPIN_PLAQUE_AREA, CASINO_PANEL_INSIDE_COLOR);
+  paintEdges(canvas, SPIN_PLAQUE_AREA, CASINO_GOLD);
+  canvas.write(
+      SPIN_IN_START + std::to_string(countdown.seconds),
+      SPIN_PLAQUE_TEXT_TOP_LEFT,
+      TextStyle{.font = TextFont::Regular,
+                .color = countdown.hurry ? CASINO_NEON_RED : STAR_WHITE});
+  canvas.fill(SPIN_PLAQUE_BAR, CASINO_DARK_GOLD);
+  canvas.fill({SPIN_PLAQUE_BAR.position,
+               {pixelsOf(SPIN_PLAQUE_BAR.size.x, countdown.share),
+                SPIN_PLAQUE_BAR.size.y}},
+              urgency);
+}
+
 }  // namespace
 
 void paintRoulette(IInterfaceCanvas& canvas, const RouletteView& view) {
   paintRoom(canvas, view.croupier);
+  if (view.countdown.has_value()) {
+    paintSpinCountdown(canvas, *view.countdown);
+  }
   paintWheel(canvas, view.wheel);
   if (view.drawn.has_value()) {
     paintDrawnNumber(canvas, *view.drawn);

@@ -10,6 +10,7 @@
 #include "CasinoSpriteConstants.hpp"
 #include "ChipsAtHand.hpp"
 #include "ClothPlace.hpp"
+#include "DurationConversion.hpp"
 #include "MotionPreference.hpp"
 #include "RouletteBand.hpp"
 #include "RouletteBarStates.hpp"
@@ -19,6 +20,7 @@
 #include "RouletteScreenConstants.hpp"
 #include "RouletteTexts.hpp"
 #include "RouletteView.hpp"
+#include "SpinCountdown.hpp"
 #include "TimeConstants.hpp"
 #include "WheelMoment.hpp"
 #include "WheelMotion.hpp"
@@ -139,6 +141,23 @@ sf::IntRect croupierFrameOf(const RouletteReading& reading) {
                                         BUTLER_FRAMES_PER_POSE));
 }
 
+/** @returns The plaque under the croupier while the bets of @p reading are
+ * open: the seconds begun before the spin, the bar drained over
+ * SPIN_COUNTDOWN_SPAN; nothing once they closed. */
+std::optional<SpinCountdown> countdownOf(const RouletteReading& reading) {
+  if (!reading.room.has_value() ||
+      reading.room->phase != RoulettePhase::Betting) {
+    return std::nullopt;
+  }
+  const engine::Duration left = phaseTimeLeft(reading);
+  const std::int64_t seconds = secondsBegunIn(left);
+  return SpinCountdown{
+      .seconds = seconds,
+      .share = std::min(1.0F, engine::inSeconds(left) /
+                                  engine::inSeconds(SPIN_COUNTDOWN_SPAN)),
+      .hurry = seconds <= SPIN_HURRY_SECONDS};
+}
+
 }  // namespace
 
 RouletteBarStates barStatesOf(const RouletteReading& reading) {
@@ -153,6 +172,7 @@ RouletteBarStates barStatesOf(const RouletteReading& reading) {
 RouletteView rouletteViewOf(const RouletteReading& reading) {
   return RouletteView{
       .croupier = croupierFrameOf(reading),
+      .countdown = countdownOf(reading),
       .wheel = wheelOf(reading),
       .bets = reading.bets,
       .cursor = betsOpen(reading) ? std::optional<ClothPlace>(reading.cursor)

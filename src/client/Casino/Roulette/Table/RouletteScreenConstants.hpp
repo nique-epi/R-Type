@@ -37,6 +37,20 @@ constexpr sf::IntRect CROUPIER_INVITING_FRAME({2 * BUTLER_FRAME_SIZE.x,
 constexpr sf::IntRect CROUPIER_WAITING_FRAME({0, 0}, {BUTLER_FRAME_SIZE.x,
                                                       CROUPIER_HEIGHT});
 
+/**
+ * @brief The plaque under the croupier while the bets are open: SPIN IN and
+ * the seconds begun before the wheel spins, over a bar that drains, full
+ * SPIN_COUNTDOWN_SPAN before the spin, the default betting time of the
+ * master, and full still while more is left; the text and the bar turn red
+ * once SPIN_HURRY_SECONDS or fewer are left.
+ */
+constexpr sf::IntRect SPIN_PLAQUE_AREA({210, 62}, {104, 16});
+constexpr sf::Vector2i SPIN_PLAQUE_TEXT_TOP_LEFT(216, 64);
+constexpr sf::IntRect SPIN_PLAQUE_BAR({214, 73}, {96, 2});
+constexpr const char* SPIN_IN_START = "SPIN IN ";
+constexpr engine::Duration SPIN_COUNTDOWN_SPAN = std::chrono::seconds(20);
+constexpr std::int64_t SPIN_HURRY_SECONDS = 3;
+
 /** @brief The keys that move the cursor over the cloth, and the one that lays
  * a chip of the value chosen where it stands. */
 constexpr sf::Keyboard::Key CURSOR_LEFT_KEY = sf::Keyboard::Key::Left;

@@ -8,6 +8,7 @@
 #include "ClothPlace.hpp"
 #include "RouletteBand.hpp"
 #include "RouletteBet.hpp"
+#include "SpinCountdown.hpp"
 #include "TableRosterRow.hpp"
 #include "WheelPicture.hpp"
 
@@ -21,6 +22,8 @@ struct RouletteView {
   /** @brief The frame of the croupier on the sheet of the butler, cut at
    * CROUPIER_HEIGHT. */
   sf::IntRect croupier;
+  /** @brief The plaque under the croupier, while the bets are open. */
+  std::optional<SpinCountdown> countdown;
   WheelPicture wheel;
   std::vector<network::RouletteBet> bets;
   std::optional<ClothPlace> cursor = std::nullopt;

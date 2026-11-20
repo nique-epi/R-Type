@@ -13,6 +13,9 @@ namespace rtype::client {
  * round ends; none once it passed, or without a room. */
 [[nodiscard]] engine::Duration phaseTimeLeft(const RouletteReading& reading);
 
+/** @returns The seconds begun in @p timeLeft: 2 for 1.2 s, 0 for none. */
+[[nodiscard]] std::int64_t secondsBegunIn(engine::Duration timeLeft);
+
 /**
  * @returns What the status line says of @p reading: THE TABLE IS CLOSED
  * without a room; while the bets are open, why the master refused the newest
