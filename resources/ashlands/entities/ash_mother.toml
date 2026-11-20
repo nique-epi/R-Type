@@ -66,12 +66,13 @@ arrival_attack = 3
 
 [gameplay.survives_contact]
 
-# The Scythes (attack 0) slam across the lower front as they land.
+# The Scythes (attack 0) slam down in front of her head: the blades and a
+# little ahead of their tips, from x -460 to -200 and y -60 to 120.
 [[gameplay.hurt_zone.box]]
-offset_x = -420
-offset_y = 140
-width = 640
-height = 300
+offset_x = -330
+offset_y = 30
+width = 260
+height = 180
 attack = 0
 phase = "strike"
 from_ms = 0
