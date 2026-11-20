@@ -5,7 +5,6 @@
 #include <SFML/System/Vector2.hpp>
 #include <array>
 #include <chrono>
-#include <cstddef>
 #include <cstdint>
 #include "BeamPair.hpp"
 #include "CasinoPaintingConstants.hpp"
