@@ -33,6 +33,21 @@ local TOP_ROW, BOTTOM_ROW = 220, 820
 local SPIT_GAP = 60
 local CRAWL_ROW = 848
 
+-- How far below its center the bottom of its dune lies (half its 152 units),
+-- less the 8 units it sinks into the floor, so the dune sits on the ground the
+-- client draws under its column.
+local DUNE_ABOVE_THE_FLOOR = 68
+
+-- The row it rests on: its dune on the floor under its column, or rest_y where
+-- the biome gives no ground.
+local function rest_row(e, settings): number
+	local found, floor = pcall(level.ground, e.position.x)
+	if not found or floor == nil then
+		return settings.rest_y
+	end
+	return floor - DUNE_ABOVE_THE_FLOOR
+end
+
 -- Where its maw is once it rests, which the clods fly to; a clod is swallowed
 -- SWALLOW_GAP units short of it.
 local maw_point: { x: number, y: number }? = nil
@@ -86,7 +101,7 @@ behaviours.register("sandmaw_maw", {
 
 	behaviours.wait(settings.rise_ms, {
 		direction = STILL,
-		jumps_to = { x = e.position.x, y = settings.rest_y },
+		jumps_to = { x = e.position.x, y = rest_row(e, settings) },
 		starts_action = { attack = ARRIVAL, phase = "signal" },
 	})
 	e = behaviours.wait(1, { direction = STILL, ends_action = true })

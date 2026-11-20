@@ -22,7 +22,8 @@ offset_y = -16
 kind = "steady"
 top_speed = 400
 
-# It comes up out of its dune at y 820 over 1.4 s, rests 1.2 s between two attacks (0.6 s
+# It comes up out of its dune onto the floor under it (y 820 where the biome
+# gives no ground) over 1.4 s, rests 1.2 s between two attacks (0.6 s
 # enraged), opens its maw 0.9 s, inhales 2.4 s, letting a clod in every
 # 0.5 s (0.33 s enraged), spits 3 boulders (5 enraged) 0.15 s apart, and
 # closes its maw over 0.4 s.
