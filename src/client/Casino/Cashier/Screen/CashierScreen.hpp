@@ -43,7 +43,7 @@ namespace rtype::client {
  * BUY, MENU_CONFIRM_KEY, asks the master for the exchange
  * (IWallet::exchange()); once the master made it, the teller serves it, then
  * counts again, and the cashier stays open for the next one. The teller
- * greets the player, thanks him and apologizes for a refusal in the voice of
+ * greets the player, thanks them and apologizes for a refusal in the voice of
  * the Bydo of the shop. BACK,
  * MENU_CANCEL_KEY, closes it, back to the hall. The bars and the switch of
  * the way act once per hold of their key, on its release.

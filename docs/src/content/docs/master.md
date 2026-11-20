@@ -476,7 +476,7 @@ The module is laid out as `ServersModule`: `WalletController` and `GameTicketCon
 
 ## The casino: `CasinoModule`
 
-The casino module (`src/master/Casino/`) runs the roulette rooms every player of every server shares: fixed rooms, `casino-rooms` (3) of them, each seating `casino-seats` (8) players, named `Bydo Palace`, `Nebula Lounge`, `Wave Cannon Club` and on (`CASINO_ROOM_NAMES`), then `Room <n>`. The master times the rounds, draws the numbers and settles the chips; the client only reads and asks, again every `CASINO_ROOM_POLL_INTERVAL` (500 ms) after the previous answer (see [Client](/R-Type/client/#casino-casinoentrancescreen-cashierscreen-roulettescreen)). The module is optional (`RTYPE_MODULE_CASINO`) and needs the accounts and the wallet.
+The casino module (`src/master/Casino/`) runs the roulette rooms every player of every server shares: fixed rooms, `casino-rooms` (3) of them, each seating `casino-seats` (8) players, named `Bydo Palace`, `Nebula Lounge`, `Wave Cannon Club` and on (`CASINO_ROOM_NAMES`), then `Room <n>`. The master times the rounds, draws the numbers and settles the chips; the client only reads and asks, again every `CASINO_ROOM_POLL_INTERVAL` (500 ms) after the previous answer (see [Client](/R-Type/client/#casino-casinoentrancescreen-casinohallscreen-cashierscreen-roulettescreen)). The module is optional (`RTYPE_MODULE_CASINO`) and needs the accounts and the wallet.
 
 | Route | Does | Answers |
 |---|---|---|
