@@ -4,42 +4,32 @@
 #include <SFML/Window/Event.hpp>
 #include <memory>
 #include "CasinoEntranceScreenParts.hpp"
+#include "EntranceLightPainter.hpp"
 #include "EntranceStage.hpp"
-#include "ICasinoChannel.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "IScreen.hpp"
 #include "IScreenNavigator.hpp"
-#include "IWallet.hpp"
 #include "KeyChip.hpp"
 #include "MotionPreference.hpp"
 #include "PlayfieldMapping.hpp"
-#include "ScreenId.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
 
 /**
- * @brief The casino, the Bydo Palace, pushed over the server map, which it
- * hides.
+ * @brief The front of the casino, the Bydo Palace, pushed over the server
+ * map, which it hides: its 777 pylon and its marquee alight, two
+ * searchlights in the sky, and Balthazar, the Bydo butler, in front.
  *
- * Before its closed doors, Balthazar, the Bydo butler, welcomes the player:
- * ENTER, its key MENU_CONFIRM_KEY, opens the doors while he greets and bows;
- * any key or a click skips it. BACK, MENU_CANCEL_KEY, closes the screen, back
- * to the map.
+ * ENTER, its key MENU_CONFIRM_KEY, opens the doors while he greets and bows,
+ * then pushes CASINO_HALL_SCREEN over the doors, which close behind the
+ * player: the hall walks back to them. Any key or a click during the opening
+ * skips it. BACK, MENU_CANCEL_KEY, closes the screen, back to the map. Each
+ * bar acts once per hold of its key, on its release; before the hall is
+ * pushed, the bars drop what they held, since the events stop reaching them.
  *
- * Inside, the hall shows its menu in a gold panel and the balances of kopecks
- * and chips top right: ROULETTE, MENU_CONFIRM_KEY, seats the player in the
- * first room of the master with a seat free (ICasinoChannel::enter()) and
- * pushes ROULETTE_SCREEN, the bar waiting until the master listed such a
- * room; the rooms are asked as the casino opens, then every
- * HALL_ROOMS_REFRESH. BUY CHIPS, BUY_CHIPS_KEY, and CASH OUT, CASH_OUT_KEY,
- * push the cashier; LEAVE, MENU_CANCEL_KEY, gets the player up from its room
- * (ICasinoChannel::leave()) and closes the screen. Each bar acts once per hold
- * of its key, on its release; before a screen is pushed over the hall, its bars
- * drop what they held, since the events stop reaching them.
- *
- * With MotionPreference::Reduced, ENTER opens the hall at once and the butler
- * stands still.
+ * With MotionPreference::Reduced, the lights and the butler stand still and
+ * ENTER opens the hall at once.
  */
 class CasinoEntranceScreen final : public IScreen {
  public:
@@ -64,35 +54,26 @@ class CasinoEntranceScreen final : public IScreen {
   /** @brief Opens the doors, or the hall at once with
    * MotionPreference::Reduced. */
   void enter();
-  /** @brief Gets the player up from its room, then closes the screen. */
-  void leave();
-  /** @brief Seats the player in the first room with a seat free, then pushes
-   * the table; nothing before such a room is known. */
-  void playRoulette();
-  /** @brief Drops what the bars of the hall held, then pushes @p screen. */
-  void openOver(ScreenId screen);
+  /** @brief Pushes the hall, the bars dropping what they held first, and
+   * closes the doors behind the player. */
+  void openTheHall();
   /** @brief Shows @p stage from its start. */
   void reach(EntranceStage stage);
   void repaint();
 
   IScreenNavigator* navigator_;
-  ICasinoChannel* casino_;
-  const IWallet* wallet_;
   std::unique_ptr<IInterfaceCanvas> canvas_;
   PlayfieldMapping playfieldPointAt_;
   MotionPreference motion_;
+  EntranceLightPainter lights_;
   EntranceStage stage_{EntranceStage::Doors};
   /** @brief How long the casino has shown its stage: where the doors and the
    * butler are. */
   engine::Duration sinceStage_{};
-  /** @brief How long ago the rooms were asked last. */
-  engine::Duration sinceRoomsAsked_{};
+  /** @brief How long the front has been open: where its lights are. */
+  engine::Duration since_{};
   KeyChip enterChip_;
   KeyChip doorsBackChip_;
-  KeyChip rouletteChip_;
-  KeyChip buyChipsChip_;
-  KeyChip cashOutChip_;
-  KeyChip leaveChip_;
 };
 
 }  // namespace rtype::client

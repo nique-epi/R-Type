@@ -5,9 +5,12 @@
 
 namespace rtype::client {
 
-/** @brief Paints @p view, everything the casino shows but its bars: the
- * front, the butler standing on the top step, the panel of the hall with its
- * tag and the balances when the hall shows, then what the butler says. */
-void paintEntrance(IInterfaceCanvas& canvas, const EntranceView& view);
+/** @brief Paints the picture of the front of @p view over the whole
+ * interface. */
+void paintFront(IInterfaceCanvas& canvas, const EntranceView& view);
+
+/** @brief Paints the butler of @p view in front, his frame cut by the bottom
+ * of the picture, then his panel and what he says. */
+void paintGreeter(IInterfaceCanvas& canvas, const EntranceView& view);
 
 }  // namespace rtype::client

@@ -49,21 +49,9 @@ game::SpriteFrame butlerFrameAt(EntranceStage stage, engine::Duration since,
 }
 
 const char* doorsPictureAt(EntranceStage stage, engine::Duration since) {
-  switch (stage) {
-    case EntranceStage::Doors:
-      return CASINO_DOORS_CLOSED_ID;
-    case EntranceStage::Opening:
-      return since < DOORS_OPEN_AFTER ? CASINO_DOORS_CLOSED_ID
-                                      : CASINO_DOORS_OPEN_ID;
-    case EntranceStage::Hall:
-      break;
-  }
-  return CASINO_DOORS_OPEN_ID;
-}
-
-int butlerLeftAt(EntranceStage stage) {
-  return stage == EntranceStage::Hall ? BUTLER_IN_THE_HALL_LEFT
-                                      : BUTLER_AT_THE_DOORS_LEFT;
+  return stage == EntranceStage::Opening && since >= DOORS_OPEN_AFTER
+             ? CASINO_DOORS_OPEN_ID
+             : CASINO_DOORS_CLOSED_ID;
 }
 
 }  // namespace rtype::client

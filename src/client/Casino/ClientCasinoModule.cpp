@@ -13,6 +13,7 @@
 #include "CasinoScreenIdConstants.hpp"
 #include "CasinoSpriteConstants.hpp"
 #include "ClientConstants.hpp"
+#include "EntranceLightScan.hpp"
 #include "HallPictureScan.hpp"
 #include "IAccountSession.hpp"
 #include "ICasinoChannel.hpp"
@@ -35,20 +36,6 @@ namespace rtype::client {
 
 namespace {
 
-/** @returns The casino, its doors then its hall, for a player signed in
- * only. */
-std::unique_ptr<IScreen> buildCasinoScreen(const ScreenContext& context,
-                                           ICasinoChannel& casino) {
-  return std::make_unique<CasinoEntranceScreen>(
-      CasinoEntranceScreenParts{.navigator = context.navigator.get(),
-                                .sounds = soundsOf(context),
-                                .casino = casino,
-                                .wallet = context.services.wallet.get(),
-                                .playfieldPointAt = playfieldMappingOf(context),
-                                .motion = motionPreference()},
-      interfaceCanvasOf(context));
-}
-
 /** @returns The picture of @p assetId, read from its file in the assets of
  * @p context; an empty one when it cannot be read, and the room that reads
  * it stays still. */
@@ -58,6 +45,19 @@ sf::Image pictureOf(const ScreenContext& context, const char* assetId) {
     return sf::Image{};
   }
   return picture;
+}
+
+/** @returns The front of the casino, its lights read in its picture, for a
+ * player signed in only. */
+std::unique_ptr<IScreen> buildCasinoScreen(const ScreenContext& context) {
+  return std::make_unique<CasinoEntranceScreen>(
+      CasinoEntranceScreenParts{.navigator = context.navigator.get(),
+                                .sounds = soundsOf(context),
+                                .playfieldPointAt = playfieldMappingOf(context),
+                                .lights = entranceLightsOf(
+                                    pictureOf(context, CASINO_DOORS_CLOSED_ID)),
+                                .motion = motionPreference()},
+      interfaceCanvasOf(context));
 }
 
 /** @returns The main hall of the casino, its lights read in its picture. */
@@ -120,12 +120,12 @@ void ClientCasinoModule::install(engine::InstallContext& context) {
   casino_.emplace(context.require<ICasinoLink>(),
                   context.require<IAccountSession>(),
                   context.require<IWallet>());
-  context.require<ScreenRegistry>().add(
-      CASINO_SCREEN, signedInOnly(
-                         [this](const ScreenContext& screens) {
-                           return buildCasinoScreen(screens, *casino_);
-                         },
-                         CASINO_SCREEN));
+  context.require<ScreenRegistry>().add(CASINO_SCREEN,
+                                        signedInOnly(
+                                            [](const ScreenContext& screens) {
+                                              return buildCasinoScreen(screens);
+                                            },
+                                            CASINO_SCREEN));
   context.require<ScreenRegistry>().add(
       CASINO_HALL_SCREEN, signedInOnly(
                               [this](const ScreenContext& screens) {

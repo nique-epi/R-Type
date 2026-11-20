@@ -1,0 +1,186 @@
+#include "EntranceLightScan.hpp"
+#include <SFML/Graphics/Color.hpp>
+#include <SFML/Graphics/Image.hpp>
+#include <SFML/Graphics/Rect.hpp>
+#include <SFML/System/Vector2.hpp>
+#include <algorithm>
+#include <cmath>
+#include <cstddef>
+#include <cstdint>
+#include <numbers>
+#include <optional>
+#include <span>
+#include <vector>
+#include "CasinoLightConstants.hpp"
+#include "CasinoLighting.hpp"
+#include "ColoredPixel.hpp"
+#include "EntranceLightConstants.hpp"
+#include "EntranceLights.hpp"
+#include "InterfaceConstants.hpp"
+#include "TwinkleGroup.hpp"
+
+namespace rtype::client {
+
+namespace {
+
+/** @returns The color of the pixel of @p picture at @p pixel. */
+sf::Color colorAt(const sf::Image& picture, sf::Vector2i pixel) {
+  return picture.getPixel(sf::Vector2u(pixel));
+}
+
+/** @returns Whether @p pixel lies in one of @p areas. */
+bool liesInAny(sf::Vector2i pixel, std::span<const sf::IntRect> areas) {
+  return std::ranges::any_of(
+      areas, [pixel](const sf::IntRect& area) { return area.contains(pixel); });
+}
+
+/** @returns The rank of @p pixel along the oval of bulbs, by its angle around
+ * the middle of the oval; nothing when it lies off the band of the oval. */
+std::optional<int> ovalRankOf(sf::Vector2i pixel) {
+  const float across = (static_cast<float>(pixel.x) - ENTRANCE_OVAL_MIDDLE.x) /
+                       ENTRANCE_OVAL_RADII.x;
+  const float down = (static_cast<float>(pixel.y) - ENTRANCE_OVAL_MIDDLE.y) /
+                     ENTRANCE_OVAL_RADII.y;
+  const float distance = std::hypot(across, down);
+  if (distance < ENTRANCE_OVAL_INNER || distance > ENTRANCE_OVAL_OUTER ||
+      pixel.y < ENTRANCE_OVAL_TOP || pixel.y >= ENTRANCE_OVAL_BOTTOM) {
+    return std::nullopt;
+  }
+  const float turn = (std::atan2(down, across) + std::numbers::pi_v<float>) /
+                     FULL_TURN_RADIANS;
+  return static_cast<int>(turn * static_cast<float>(ENTRANCE_OVAL_RANKS));
+}
+
+/** @brief Files @p pixel of the golden discs, which is not a bulb, on its
+ * row, both lit and shaded. */
+void fileDisc(EntranceLights& lights, sf::Vector2i pixel) {
+  const auto row = static_cast<std::size_t>(
+      (pixel.y - ENTRANCE_DISCS_AREA.position.y) / ENTRANCE_DISC_ROW_HEIGHT);
+  if (lights.litDiscRows.size() <= row) {
+    lights.litDiscRows.resize(row + 1);
+    lights.shadedDiscRows.resize(row + 1);
+  }
+  lights.litDiscRows.at(row).push_back(
+      ColoredPixel{.position = pixel, .color = ENTRANCE_DISC_GLOW});
+  lights.shadedDiscRows.at(row).push_back(
+      ColoredPixel{.position = pixel, .color = ENTRANCE_DISC_SHADE});
+}
+
+/** @brief Files the lit bulb @p pixel of the pylon, off its discs: a
+ * diamond, a column, the script, or the oval. */
+void filePylonBulb(EntranceLights& lights, sf::Vector2i pixel) {
+  const ColoredPixel diamond{.position = pixel,
+                             .color = ENTRANCE_UNLIT_DIAMOND};
+  if (liesInAny(pixel, ENTRANCE_LEFT_DIAMONDS)) {
+    lights.diamonds[0].push_back(diamond);
+  } else if (liesInAny(pixel, ENTRANCE_RIGHT_DIAMONDS)) {
+    lights.diamonds[1].push_back(diamond);
+  } else if (liesInAny(pixel, ENTRANCE_COLUMNS)) {
+    const int bottom =
+        ENTRANCE_PYLON_AREA.position.y + ENTRANCE_PYLON_AREA.size.y;
+    lights.columns.add(pixel, (bottom - pixel.y) / ENTRANCE_COLUMN_RANK);
+  } else if (ENTRANCE_NUMERALS_AREA.contains(pixel)) {
+    return;
+  } else if (ENTRANCE_SCRIPT_AREA.contains(pixel)) {
+    lights.darkScript.push_back(
+        ColoredPixel{.position = pixel, .color = ENTRANCE_DARK_NEON});
+  } else if (const std::optional<int> rank = ovalRankOf(pixel)) {
+    lights.oval.add(pixel, *rank);
+  }
+}
+
+/** @brief Reads the pylon of @p picture into @p lights. */
+void readPylon(EntranceLights& lights, const sf::Image& picture) {
+  const sf::IntRect pylon = ENTRANCE_PYLON_AREA;
+  for (int y = pylon.position.y; y < pylon.position.y + pylon.size.y; ++y) {
+    for (int x = pylon.position.x; x < pylon.position.x + pylon.size.x; ++x) {
+      const bool lit = isLitBulb(colorAt(picture, {x, y}));
+      if (ENTRANCE_DISCS_AREA.contains({x, y})) {
+        if (!lit) {
+          fileDisc(lights, {x, y});
+        }
+      } else if (lit) {
+        filePylonBulb(lights, {x, y});
+      }
+    }
+  }
+}
+
+/** @returns Whether @p pixel of @p picture is a star or a lit window: bright,
+ * and brighter than its four neighbours by ENTRANCE_STAR_CONTRAST. */
+bool isStar(const sf::Image& picture, sf::Vector2i pixel) {
+  const float brightness = luminanceOf(colorAt(picture, pixel));
+  const float around = (luminanceOf(colorAt(picture, {pixel.x - 1, pixel.y})) +
+                        luminanceOf(colorAt(picture, {pixel.x + 1, pixel.y})) +
+                        luminanceOf(colorAt(picture, {pixel.x, pixel.y - 1})) +
+                        luminanceOf(colorAt(picture, {pixel.x, pixel.y + 1}))) /
+                       static_cast<float>(ENTRANCE_STAR_NEIGHBOURS);
+  return brightness > ENTRANCE_STAR_LUMINANCE &&
+         brightness - around > ENTRANCE_STAR_CONTRAST;
+}
+
+/** @returns The ENTRANCE_TWINKLE_GROUPS beats the stars are spread over. */
+std::vector<TwinkleGroup> starBeats() {
+  std::vector<TwinkleGroup> beats(ENTRANCE_TWINKLE_GROUPS);
+  for (std::size_t beat = 0; beat < beats.size(); ++beat) {
+    const float share =
+        static_cast<float>(beat) / static_cast<float>(ENTRANCE_TWINKLE_GROUPS);
+    beats.at(beat).phase = static_cast<float>(beat) * ENTRANCE_BEAT_SPREAD;
+    beats.at(beat).speed =
+        ENTRANCE_SLOWEST_STAR + (share * ENTRANCE_STAR_SPEED_RANGE);
+    beats.at(beat).dimAbove = ENTRANCE_STAR_DIM_ABOVE;
+  }
+  return beats;
+}
+
+/** @brief Files @p pixel of the sky as a star when it is one and twinkles:
+ * one star in ENTRANCE_TWINKLING_SHARE, on the beat it scrambles to. */
+void fileStar(EntranceLights& lights, const sf::Image& picture,
+              sf::Vector2i pixel) {
+  if (pixel.y >= ENTRANCE_SKY_BOTTOM || ENTRANCE_PYLON_AREA.contains(pixel) ||
+      liesInAny(pixel, ENTRANCE_ROOF_SILHOUETTES) || !isStar(picture, pixel)) {
+    return;
+  }
+  const std::uint32_t draw =
+      scrambledOf(scrambledOf(static_cast<std::uint32_t>(pixel.x)) ^
+                  static_cast<std::uint32_t>(pixel.y));
+  if (draw % ENTRANCE_TWINKLING_SHARE != 0) {
+    return;
+  }
+  lights.stars.at((draw / ENTRANCE_TWINKLING_SHARE) % lights.stars.size())
+      .pixels.push_back(
+          ColoredPixel{.position = pixel, .color = ENTRANCE_DIM_STAR});
+}
+
+/** @brief Reads the marquee and the sky of @p picture into @p lights, every
+ * pixel but those of its edges, whose neighbours a star compares with. */
+void readMarqueeAndSky(EntranceLights& lights, const sf::Image& picture) {
+  const sf::Vector2i size(picture.getSize());
+  for (int y = 1; y + 1 < size.y; ++y) {
+    for (int x = 1; x + 1 < size.x; ++x) {
+      if (ENTRANCE_MARQUEE_AREA.contains({x, y}) &&
+          !ENTRANCE_MARQUEE_LETTERS.contains({x, y})) {
+        if (isLitBulb(colorAt(picture, {x, y}))) {
+          lights.marquee.add({x, y}, x / ENTRANCE_MARQUEE_RANK_WIDTH);
+        }
+      } else {
+        fileStar(lights, picture, {x, y});
+      }
+    }
+  }
+}
+
+}  // namespace
+
+EntranceLights entranceLightsOf(const sf::Image& picture) {
+  if (sf::Vector2i(picture.getSize()) != INTERFACE_AREA.size) {
+    return EntranceLights{};
+  }
+  EntranceLights lights;
+  lights.stars = starBeats();
+  readPylon(lights, picture);
+  readMarqueeAndSky(lights, picture);
+  return lights;
+}
+
+}  // namespace rtype::client

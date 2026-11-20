@@ -1,17 +1,9 @@
 #pragma once
 
 #include <chrono>
-#include <cstdint>
 #include <string_view>
 
 namespace rtype::client::testing {
-
-/** @brief What the player holds in these tests, and how the balances of the
- * hall write it: thousands apart. */
-constexpr std::uint32_t KOPECKS_HELD = 4250;
-constexpr std::uint32_t CHIPS_HELD = 1250;
-constexpr std::string_view KOPECKS_HELD_TEXT = "4 250";
-constexpr std::string_view CHIPS_HELD_TEXT = "1 250";
 
 /** @brief The pictures of the front of the casino. */
 constexpr std::string_view DOORS_CLOSED_PICTURE =
@@ -19,28 +11,17 @@ constexpr std::string_view DOORS_CLOSED_PICTURE =
 constexpr std::string_view DOORS_OPEN_PICTURE =
     "sprites/casino/entrance_doors_open.png";
 
-/** @brief What the butler says first before the doors, and in the hall. */
-constexpr std::string_view WELCOME_FIRST_LINE =
-    "WELCOME TO THE BYDO PALACE, PILOT.";
-constexpr std::string_view HALL_FIRST_LINE = "WHAT SHALL IT BE TONIGHT, PILOT?";
-
-/** @brief The rooms the master lists: the first full, the second with a
- * seat free, both of ROOM_SEATS seats. */
-constexpr std::uint8_t FULL_ROOM = 1;
-constexpr std::uint8_t FREE_ROOM = 2;
-constexpr std::uint8_t ROOM_SEATS = 8;
-
-/** @brief How often the hall asks the rooms again: every 5 s. */
-constexpr std::chrono::seconds ROOMS_ASKED_AGAIN_AFTER{5};
-
-/** @brief The label of the first bar of the hall. */
-constexpr std::string_view ROULETTE_WORD = "ROULETTE";
+/** @brief What the butler says first before the doors. */
+constexpr std::string_view WELCOME_FIRST_LINE = "WELCOME TO THE BYDO PALACE,";
 
 /** @brief How long the doors take to open: the greeting and the bow of the
- * butler, four frames of 150 ms each, 1.2 s; a time short of it, and a time
- * inside the greeting, while the doors stay closed. */
+ * butler, four frames of 150 ms each, 1.2 s; a time short of it, a time
+ * inside the greeting, while the doors stay closed, and a time inside the
+ * bow, once they opened. Each counts from the frame of 16 ms that followed
+ * the release of ENTER: 16 ms then 1100 ms make 1116 ms, short of 1.2 s. */
 constexpr std::chrono::milliseconds DOORS_OPENING_TIME{1200};
 constexpr std::chrono::milliseconds JUST_BEFORE_THE_HALL{1100};
 constexpr std::chrono::milliseconds DURING_THE_GREETING{300};
+constexpr std::chrono::milliseconds DURING_THE_BOW{900};
 
 }  // namespace rtype::client::testing
