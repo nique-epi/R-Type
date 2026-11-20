@@ -1,6 +1,5 @@
 #include <gtest/gtest.h>
 #include <SFML/Graphics/Color.hpp>
-#include <chrono>
 #include <string>
 #include <vector>
 #include "CasinoRoomState.hpp"

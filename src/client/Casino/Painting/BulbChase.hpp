@@ -3,6 +3,7 @@
 #include <SFML/Graphics/Color.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <array>
+#include <cstddef>
 #include <span>
 #include <vector>
 #include "CasinoLightConstants.hpp"

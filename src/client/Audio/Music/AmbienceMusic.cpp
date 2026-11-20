@@ -2,6 +2,7 @@
 #include <array>
 #include <vector>
 #include "Ambience.hpp"
+#include "AmbienceMusicConstants.hpp"
 #include "AssetLibrary.hpp"
 #include "AudioConstants.hpp"
 #include "MusicPlayer.hpp"

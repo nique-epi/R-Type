@@ -10,7 +10,6 @@
 #include "CasinoHallScreenParts.hpp"
 #include "CasinoPictures.hpp"
 #include "CasinoScreenIdConstants.hpp"
-#include "CasinoSpriteConstants.hpp"
 #include "ClientConstants.hpp"
 #include "IAccountSession.hpp"
 #include "ICasinoChannel.hpp"

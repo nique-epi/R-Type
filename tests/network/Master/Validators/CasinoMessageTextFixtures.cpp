@@ -1,6 +1,7 @@
 #include "CasinoMessageTextFixtures.hpp"
 #include <cstddef>
 #include <nlohmann/json.hpp>
+#include <nlohmann/json_fwd.hpp>
 #include <string>
 #include "BetsReceipt.hpp"
 #include "CasinoMessageTextTestConstants.hpp"
@@ -63,7 +64,7 @@ std::string roomStateTextWithoutBets() {
   for (nlohmann::json& player : document.at(PLAYERS_MEMBER)) {
     player.erase(BETS_MEMBER);
   }
-  return document.dump();
+  return nlohmann::to_string(document);
 }
 
 BetsReceipt twoBetsReceipt() {

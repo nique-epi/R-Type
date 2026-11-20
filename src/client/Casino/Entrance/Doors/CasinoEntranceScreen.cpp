@@ -10,7 +10,6 @@
 #include "CasinoEntranceConstants.hpp"
 #include "CasinoEntrancePainting.hpp"
 #include "CasinoEntranceScreenParts.hpp"
-#include "CasinoPaintingConstants.hpp"
 #include "CasinoScreenIdConstants.hpp"
 #include "EntranceStage.hpp"
 #include "EntranceView.hpp"

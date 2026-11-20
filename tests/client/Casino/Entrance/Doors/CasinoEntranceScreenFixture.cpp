@@ -9,6 +9,7 @@
 #include "KeyPress.hpp"
 #include "MotionPreference.hpp"
 #include "PointerEvents.hpp"
+#include "RecordingAudioService.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "ScreenTestConstants.hpp"

@@ -47,9 +47,9 @@ CashierRoom cashierRoomOf(const sf::Image& picture) {
   if (sf::Vector2i(picture.getSize()) != INTERFACE_AREA.size) {
     return room;
   }
-  for (int y = 0; y < INTERFACE_AREA.size.y; ++y) {
-    for (int x = 0; x < INTERFACE_AREA.size.x; ++x) {
-      file(room, picture, {x, y});
+  for (int row = 0; row < INTERFACE_AREA.size.y; ++row) {
+    for (int column = 0; column < INTERFACE_AREA.size.x; ++column) {
+      file(room, picture, {column, row});
     }
   }
   return room;

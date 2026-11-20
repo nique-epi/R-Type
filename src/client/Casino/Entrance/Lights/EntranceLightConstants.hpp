@@ -92,7 +92,7 @@ constexpr sf::Color ENTRANCE_DISC_SHADE(CASINO_DEEP_NAVY.r, CASINO_DEEP_NAVY.g,
  * @brief The neon script cuts out now and then: as each wait of
  * ENTRANCE_NEON_CUTS begins in turn, its cuts, each ENTRANCE_NEON_CUT out
  * then as long lit, the script then under ENTRANCE_DARK_NEON; the waits come
- * round every ENTRANCE_NEON_ROUND.
+ * round once they all passed.
  */
 constexpr std::array ENTRANCE_NEON_CUTS{
     NeonCut{.wait = std::chrono::milliseconds(5200), .cuts = 2},
@@ -100,12 +100,6 @@ constexpr std::array ENTRANCE_NEON_CUTS{
     NeonCut{.wait = std::chrono::milliseconds(4400), .cuts = 2},
     NeonCut{.wait = std::chrono::milliseconds(8600), .cuts = 3},
     NeonCut{.wait = std::chrono::milliseconds(6100), .cuts = 2}};
-constexpr engine::Duration ENTRANCE_NEON_ROUND =
-    ENTRANCE_NEON_CUTS[0].wait + ENTRANCE_NEON_CUTS[1].wait +
-    ENTRANCE_NEON_CUTS[2].wait + ENTRANCE_NEON_CUTS[3].wait +
-    ENTRANCE_NEON_CUTS[4].wait;
-static_assert(ENTRANCE_NEON_CUTS.size() == 5,
-              "ENTRANCE_NEON_ROUND adds every wait of the neon");
 constexpr engine::Duration ENTRANCE_NEON_CUT = std::chrono::milliseconds(60);
 constexpr engine::Duration::rep ENTRANCE_NEON_CUT_PHASES = 2;
 constexpr sf::Color ENTRANCE_DARK_NEON(CASINO_PLUM.r, CASINO_PLUM.g,

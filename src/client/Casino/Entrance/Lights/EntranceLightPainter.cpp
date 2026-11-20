@@ -2,9 +2,7 @@
 #include <cstddef>
 #include <utility>
 #include <vector>
-#include "CasinoLightConstants.hpp"
 #include "CasinoLighting.hpp"
-#include "ColoredPixel.hpp"
 #include "EntranceLightConstants.hpp"
 #include "EntranceLights.hpp"
 #include "IInterfaceCanvas.hpp"
@@ -16,10 +14,19 @@ namespace rtype::client {
 
 namespace {
 
+/** @returns The time the waits of ENTRANCE_NEON_CUTS take to come round. */
+engine::Duration neonRound() {
+  engine::Duration round{};
+  for (const NeonCut& neon : ENTRANCE_NEON_CUTS) {
+    round += neon.wait;
+  }
+  return round;
+}
+
 /** @returns Whether the neon script is cut out @p since the front opened:
  * during the cuts that open each of its waits, one off step in two. */
 bool neonCutAt(engine::Duration since) {
-  engine::Duration left = since % ENTRANCE_NEON_ROUND;
+  engine::Duration left = since % neonRound();
   for (const NeonCut& neon : ENTRANCE_NEON_CUTS) {
     if (left < neon.wait) {
       const auto steps = left / ENTRANCE_NEON_CUT;

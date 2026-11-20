@@ -34,11 +34,11 @@ sf::Vector2f pointAt(sf::Vector2f origin, float angle, float length) {
           origin.y - (std::cos(angle) * length)};
 }
 
-/** @returns On which side of the line from @p from to @p to @p point lies:
- * its sign alone is read. */
-float sideOf(sf::Vector2f point, sf::Vector2f from, sf::Vector2f to) {
-  return ((to.x - from.x) * (point.y - from.y)) -
-         ((to.y - from.y) * (point.x - from.x));
+/** @returns On which side of the line from @p from to @p towards @p point
+ * lies: its sign alone is read. */
+float sideOf(sf::Vector2f point, sf::Vector2f from, sf::Vector2f towards) {
+  return ((towards.x - from.x) * (point.y - from.y)) -
+         ((towards.y - from.y) * (point.x - from.x));
 }
 
 /** @returns Whether @p point lies inside the triangle of @p corners, on
@@ -114,8 +114,9 @@ sf::Color pixelColorAt(const sf::Image& picture, sf::Vector2i pixel) {
 }
 
 bool liesInAny(sf::Vector2i pixel, std::span<const sf::IntRect> areas) {
-  return std::ranges::any_of(
-      areas, [pixel](const sf::IntRect& area) { return area.contains(pixel); });
+  return std::ranges::any_of(areas, [pixel](const sf::IntRect& area) noexcept {
+    return area.contains(pixel);
+  });
 }
 
 std::uint32_t scrambledAt(sf::Vector2i pixel) {
@@ -140,10 +141,13 @@ void addBeamPixels(std::vector<ColoredPixel>& pixels, const LightBeam& beam) {
       pointAt(beam.origin, beam.angle + beam.halfSpread, beam.length)};
   const sf::IntRect box = boxAround(corners);
   const sf::Vector2f middle{HALF, HALF};
-  for (int y = box.position.y; y < box.position.y + box.size.y; ++y) {
-    for (int x = box.position.x; x < box.position.x + box.size.x; ++x) {
-      if (liesInside(sf::Vector2f(sf::Vector2i(x, y)) + middle, corners)) {
-        pixels.push_back(ColoredPixel{.position = {x, y}, .color = beam.color});
+  for (int row = box.position.y; row < box.position.y + box.size.y; ++row) {
+    for (int column = box.position.x; column < box.position.x + box.size.x;
+         ++column) {
+      if (liesInside(sf::Vector2f(sf::Vector2i(column, row)) + middle,
+                     corners)) {
+        pixels.push_back(
+            ColoredPixel{.position = {column, row}, .color = beam.color});
       }
     }
   }

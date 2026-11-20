@@ -9,17 +9,14 @@
 #include "HallPictureScan.hpp"
 #include "HallPictureScanTestConstants.hpp"
 #include "SheetPixels.hpp"
-#include "Spectator.hpp"
 
 using rtype::client::ColoredPixel;
 using rtype::client::HALL_FRONT_ROPE_ROWS;
 using rtype::client::HALL_PICTURE_ID;
 using rtype::client::HallPicture;
 using rtype::client::hallPictureOf;
-using rtype::client::Spectator;
 using rtype::client::testing::FEWEST_SPECTATORS;
 using rtype::client::testing::TOO_SMALL_A_PICTURE;
-using ::testing::Each;
 using ::testing::Ge;
 using ::testing::IsEmpty;
 using ::testing::Not;

@@ -1,7 +1,9 @@
 #include "RouletteScene.hpp"
+#include <SFML/Graphics/Color.hpp>
 #include <SFML/Graphics/Rect.hpp>
 #include <algorithm>
 #include <cctype>
+#include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -9,7 +11,6 @@
 #include "ButlerFrames.hpp"
 #include "ButlerPose.hpp"
 #include "CasinoPlayer.hpp"
-#include "CasinoSpriteConstants.hpp"
 #include "ChipStackLook.hpp"
 #include "ChipsAtHand.hpp"
 #include "ClothPlace.hpp"
@@ -110,7 +111,7 @@ std::vector<std::uint8_t> lastNumbersOf(const RouletteReading& reading) {
  * panel writes it; empty without a room. */
 std::string roomNameOf(const RouletteReading& reading) {
   std::string name = reading.room.has_value() ? reading.room->name : "";
-  std::ranges::transform(name, name.begin(), [](char letter) {
+  std::ranges::transform(name, name.begin(), [](char letter) noexcept {
     return static_cast<char>(std::toupper(static_cast<unsigned char>(letter)));
   });
   return name;

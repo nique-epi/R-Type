@@ -1,9 +1,7 @@
 #include "EntranceLightScan.hpp"
-#include <SFML/Graphics/Color.hpp>
 #include <SFML/Graphics/Image.hpp>
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
-#include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -12,13 +10,11 @@
 #include <span>
 #include <vector>
 #include "BackgroundConstants.hpp"
-#include "CasinoLightConstants.hpp"
 #include "CasinoLighting.hpp"
 #include "ColoredPixel.hpp"
 #include "EntranceLightConstants.hpp"
 #include "EntranceLights.hpp"
 #include "InterfaceConstants.hpp"
-#include "TwinkleGroup.hpp"
 
 namespace rtype::client {
 
@@ -82,15 +78,18 @@ void filePylonBulb(EntranceLights& lights, sf::Vector2i pixel) {
 /** @brief Reads the pylon of @p picture into @p lights. */
 void readPylon(EntranceLights& lights, const sf::Image& picture) {
   const sf::IntRect pylon = ENTRANCE_PYLON_AREA;
-  for (int y = pylon.position.y; y < pylon.position.y + pylon.size.y; ++y) {
-    for (int x = pylon.position.x; x < pylon.position.x + pylon.size.x; ++x) {
-      const bool lit = isLitBulb(pixelColorAt(picture, {x, y}));
-      if (ENTRANCE_DISCS_AREA.contains({x, y})) {
+  for (int pixelRow = pylon.position.y;
+       pixelRow < pylon.position.y + pylon.size.y; ++pixelRow) {
+    for (int pixelColumn = pylon.position.x;
+         pixelColumn < pylon.position.x + pylon.size.x; ++pixelColumn) {
+      const bool lit =
+          isLitBulb(pixelColorAt(picture, {pixelColumn, pixelRow}));
+      if (ENTRANCE_DISCS_AREA.contains({pixelColumn, pixelRow})) {
         if (!lit) {
-          fileDisc(lights, {x, y});
+          fileDisc(lights, {pixelColumn, pixelRow});
         }
       } else if (lit) {
-        filePylonBulb(lights, {x, y});
+        filePylonBulb(lights, {pixelColumn, pixelRow});
       }
     }
   }
@@ -131,15 +130,16 @@ void fileStar(EntranceLights& lights, const sf::Image& picture,
  * pixel but those of its edges, whose neighbours a star compares with. */
 void readMarqueeAndSky(EntranceLights& lights, const sf::Image& picture) {
   const sf::Vector2i size(picture.getSize());
-  for (int y = 1; y + 1 < size.y; ++y) {
-    for (int x = 1; x + 1 < size.x; ++x) {
-      if (ENTRANCE_MARQUEE_AREA.contains({x, y}) &&
-          !ENTRANCE_MARQUEE_LETTERS.contains({x, y})) {
-        if (isLitBulb(pixelColorAt(picture, {x, y}))) {
-          lights.marquee.add({x, y}, x / ENTRANCE_MARQUEE_RANK_WIDTH);
+  for (int pixelRow = 1; pixelRow + 1 < size.y; ++pixelRow) {
+    for (int pixelColumn = 1; pixelColumn + 1 < size.x; ++pixelColumn) {
+      if (ENTRANCE_MARQUEE_AREA.contains({pixelColumn, pixelRow}) &&
+          !ENTRANCE_MARQUEE_LETTERS.contains({pixelColumn, pixelRow})) {
+        if (isLitBulb(pixelColorAt(picture, {pixelColumn, pixelRow}))) {
+          lights.marquee.add({pixelColumn, pixelRow},
+                             pixelColumn / ENTRANCE_MARQUEE_RANK_WIDTH);
         }
       } else {
-        fileStar(lights, picture, {x, y});
+        fileStar(lights, picture, {pixelColumn, pixelRow});
       }
     }
   }

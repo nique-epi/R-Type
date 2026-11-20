@@ -1,6 +1,7 @@
 #include "CasinoHallScreenFixture.hpp"
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Keyboard.hpp>
+#include <cstdint>
 #include <memory>
 #include <string>
 #include "CasinoHallScreen.hpp"
@@ -30,9 +31,9 @@ using rtype::client::testing::HALL_ROOM_SEATS;
 namespace {
 
 /** @returns A room of the master, @p seated of its seats taken. */
-rtype::network::CasinoRoom roomOf(std::uint8_t id, std::uint8_t seated) {
+rtype::network::CasinoRoom roomOf(std::uint8_t number, std::uint8_t seated) {
   return rtype::network::CasinoRoom{
-      .id = id,
+      .id = number,
       .name = std::string{},
       .seats = HALL_ROOM_SEATS,
       .seated = seated,

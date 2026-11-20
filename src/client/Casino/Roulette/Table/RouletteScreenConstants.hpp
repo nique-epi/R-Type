@@ -4,10 +4,11 @@
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <array>
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include "CasinoBar.hpp"
-#include "CasinoSpriteConstants.hpp"
+#include "TimeConstants.hpp"
 #include "WidgetConstants.hpp"
 
 namespace rtype::client {

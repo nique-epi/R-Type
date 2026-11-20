@@ -1,7 +1,6 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <SFML/Graphics/Image.hpp>
-#include <span>
 #include "CasinoSpriteConstants.hpp"
 #include "ColoredPixel.hpp"
 #include "EntranceLightConstants.hpp"

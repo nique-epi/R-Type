@@ -5,6 +5,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <span>
 #include "BackgroundColorConstants.hpp"
 #include "CashierConstants.hpp"

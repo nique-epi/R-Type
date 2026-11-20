@@ -173,10 +173,12 @@ bool CasinoHallScreen::clickOnArch(const sf::Event& event) {
       !pressedArch_.has_value()) {
     return false;
   }
-  const HallExit pressed = *std::exchange(pressedArch_, std::nullopt);
-  if (archAt(interfacePixelAt(playfieldPointAt_(released->position))) ==
-      pressed) {
-    walkTo(pressed);
+  const std::optional<HallExit> pressed =
+      std::exchange(pressedArch_, std::nullopt);
+  if (pressed.has_value() &&
+      archAt(interfacePixelAt(playfieldPointAt_(released->position))) ==
+          pressed) {
+    walkTo(*pressed);
   }
   return true;
 }

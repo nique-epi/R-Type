@@ -16,7 +16,6 @@
 #include "InterfaceConstants.hpp"
 #include "Spectator.hpp"
 #include "SpectatorColumns.hpp"
-#include "TwinkleGroup.hpp"
 
 namespace rtype::client {
 
@@ -56,10 +55,12 @@ bool isRope(sf::Color color) {
 std::vector<ColoredPixel> frontRopesOf(const sf::Image& picture) {
   std::vector<ColoredPixel> ropes;
   for (const int row : HALL_FRONT_ROPE_ROWS) {
-    for (int x = HALL_FRONT_ROPES_LEFT; x < HALL_FRONT_ROPES_RIGHT; ++x) {
-      const sf::Color color = pixelColorAt(picture, {x, row});
+    for (int across = HALL_FRONT_ROPES_LEFT; across < HALL_FRONT_ROPES_RIGHT;
+         ++across) {
+      const sf::Color color = pixelColorAt(picture, {across, row});
       if (isRope(color)) {
-        ropes.push_back(ColoredPixel{.position = {x, row}, .color = color});
+        ropes.push_back(
+            ColoredPixel{.position = {across, row}, .color = color});
       }
     }
   }
@@ -76,7 +77,7 @@ bool isCarpet(sf::Color color) {
 /** @returns Whether @p color is the dark mass of the crowd. */
 bool isCrowdMass(sf::Color color) {
   return luminanceOf(color) < HALL_CROWD_LUMINANCE_CEILING &&
-         !(color.r > HALL_CARPET_RED_FLOOR && isCarpet(color));
+         (color.r <= HALL_CARPET_RED_FLOOR || !isCarpet(color));
 }
 
 /** @returns The dark mass of the crowd of @p picture, row by row from
@@ -86,9 +87,9 @@ CrowdRows crowdMassOf(const sf::Image& picture) {
   CrowdRows mass(HALL_CROWD_BOTTOM - HALL_CROWD_TOP,
                  std::vector<bool>(static_cast<std::size_t>(width)));
   for (std::size_t row = 0; row < mass.size(); ++row) {
-    for (int x = 0; x < width; ++x) {
-      mass[row][static_cast<std::size_t>(x)] = isCrowdMass(
-          pixelColorAt(picture, {x, HALL_CROWD_TOP + static_cast<int>(row)}));
+    for (int across = 0; across < width; ++across) {
+      mass[row][static_cast<std::size_t>(across)] = isCrowdMass(pixelColorAt(
+          picture, {across, HALL_CROWD_TOP + static_cast<int>(row)}));
     }
   }
   return mass;
@@ -147,7 +148,7 @@ bool isDip(const std::vector<int>& skyline, std::size_t column) {
   if (depth < skyline[column - 1] || depth < skyline[column + 1]) {
     return false;
   }
-  const std::size_t reach = static_cast<std::size_t>(HALL_DIP_REACH);
+  const auto reach = static_cast<std::size_t>(HALL_DIP_REACH);
   const std::size_t first = column > reach ? column - reach : 0;
   const std::size_t last = std::min(skyline.size(), column + reach + 1);
   const int highest = *std::ranges::min_element(
@@ -224,10 +225,10 @@ HallPicture hallPictureOf(const sf::Image& picture) {
   HallPicture hall;
   hall.crystals = twinkleBeats(HALL_CRYSTAL_BEATS);
   const sf::Vector2u size = picture.getSize();
-  for (unsigned y = 0; y < size.y; ++y) {
-    for (unsigned x = 0; x < size.x; ++x) {
-      if (isHallBulb(picture.getPixel({x, y}))) {
-        fileLight(hall, sf::Vector2i(sf::Vector2u(x, y)));
+  for (unsigned down = 0; down < size.y; ++down) {
+    for (unsigned across = 0; across < size.x; ++across) {
+      if (isHallBulb(picture.getPixel({across, down}))) {
+        fileLight(hall, sf::Vector2i(sf::Vector2u(across, down)));
       }
     }
   }

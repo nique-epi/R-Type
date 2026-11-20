@@ -1,6 +1,7 @@
 #pragma once
 
 #include <SFML/System/Vector2.hpp>
+#include <cstddef>
 
 namespace rtype::client::testing {
 

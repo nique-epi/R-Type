@@ -29,6 +29,7 @@
 #include "ChipSelectorConstants.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "InterfacePixel.hpp"
+#include "KeyChip.hpp"
 #include "SoundConstants.hpp"
 #include "SpokenLineParts.hpp"
 #include "TimeConstants.hpp"

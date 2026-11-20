@@ -1,5 +1,6 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <SFML/System/Vector2.hpp>
 #include <vector>
 #include "CasinoLighting.hpp"
 #include "CasinoLightingTestConstants.hpp"

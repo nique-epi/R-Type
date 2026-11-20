@@ -2,7 +2,6 @@
 
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
-#include <chrono>
 #include "BarState.hpp"
 #include "CasinoBar.hpp"
 #include "CasinoSpriteConstants.hpp"
