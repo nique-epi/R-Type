@@ -1,30 +1,10 @@
-add_library(rtype_client_casino_entrance STATIC
-  ButlerMotion.cpp
-  CasinoEntrancePainting.cpp
-  CasinoEntranceScreen.cpp
-  EntranceLightPainter.cpp
-  EntranceLightScan.cpp
-)
+add_subdirectory(Lights)
+add_subdirectory(Doors)
 
-target_include_directories(rtype_client_casino_entrance PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+add_library(rtype_client_casino_entrance INTERFACE)
 
 target_link_libraries(rtype_client_casino_entrance
-  PUBLIC
-    SFML::Graphics
-    SFML::Window
-    rtype_client_application
-    rtype_client_audio_contract_service
-    rtype_client_audio_contract_sounds
-    rtype_client_casino_painting
-    rtype_client_interface
-    rtype_client_key_chip
-    rtype_client_screens_module
-    rtype_client_settings_values
-    rtype_client_spoken_line
-    rtype_client_window_display
-    rtype_engine_time
-  PRIVATE
-    rtype_client_entity_sprites
+  INTERFACE
+    rtype_client_casino_entrance_lights
+    rtype_client_casino_entrance_doors
 )
-
-rtype_enable_warnings(rtype_client_casino_entrance)
