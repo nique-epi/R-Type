@@ -178,6 +178,7 @@ Paths below are relative to `.claude/rules/`.
 - `fix/reasoning/fix-reasoning-two-queues-are-drained-against-the-order-of-their-pushes.md`
 - `fix/reasoning/fix-reasoning-validate-the-instrument-before-reporting-a-count.md`
 - `fix/reasoning/fix-reasoning-a-weak-point-is-reached-from-where-shots-come.md`
+- `fix/reasoning/fix-reasoning-a-body-on-the-terrain-reads-the-ground-under-it.md`
 - `fix/reasoning/fix-reasoning-an-anchor-is-measured-against-every-idle-it-leaves.md`
 - `fix/reasoning/fix-reasoning-a-value-sent-keeps-the-rules-of-its-message.md`
 - `fix/reasoning/fix-reasoning-a-letter-on-a-keycap-is-read-by-its-code.md`
