@@ -11,7 +11,7 @@ The client reads the folder `backgrounds` (`BACKGROUND_FOLDER_IN_ASSETS`) of its
 
 | Part | State | Where |
 |---|---|---|
-| Backgrounds of the client: `space`, the sky, and `fosse`, the Pit | Available | `assets/backgrounds/` |
+| Backgrounds of the client: `space`, the sky, `fosse`, the Pit, and the four biomes of the Ashlands, `cendres`, `cendres_abri`, `cendres_coeur` and `cendres_silo` | Available | `assets/backgrounds/` |
 | A background a resource of a server brings, sent to the players | Available | `resources/<name>/backgrounds/`, see [A background of a resource](#a-background-of-a-resource) |
 
 ## A file
@@ -168,7 +168,7 @@ A file holds at most 32 layers and 8 groups, a layer of particles 16 sprites and
 
 | You want to… | Look at |
 |---|---|
-| Change the sky or the Pit | `assets/backgrounds/space.toml`, `assets/backgrounds/fosse.toml` |
+| Change the sky, the Pit or a biome of the Ashlands | `assets/backgrounds/space.toml`, `assets/backgrounds/fosse.toml`, `assets/backgrounds/cendres*.toml` |
 | Add a background for a biome | a file `assets/backgrounds/<biome>.toml`, and `level.biome("<biome>")` in the script of the level |
 | Bring a background with a resource | `resources/<name>/backgrounds/`, see [A background of a resource](#a-background-of-a-resource) |
 | Change which files of a background a pack carries | `backgroundFilesIn()` in `src/game/Backgrounds/BackgroundFiles.cpp` |

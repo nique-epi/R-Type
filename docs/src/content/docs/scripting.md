@@ -297,6 +297,36 @@ The Necromancer (`necromancer`, pilot `necromancer_rite`) is the boss of the las
 
 The fist hurts through a box of the Necromancer's `hurt_zone`, the first 333 ms of its strike. A body of `necromancer_effect` or `necromancer_gaze` keeps its hitbox 1024 units below its center, out of the playfield, so only its hurt zone touches a ship. The values of these sheets are **provisional** until gameplay tunes them.
 
+### The Ashlands
+
+The resource ashlands brings the map THE ASHLANDS, the level `ashlands` of four stages, each in a biome of its own named with `level.biome`: Highway Zero (`cendres`, no ceiling), Shelter 9 (`cendres_abri`), the core (`cendres_coeur`) and Silo Zero (`cendres_silo`, entered through a `level.transition` of 4 s). Its sheets are in `entities/`, its sprites in `sprites/cendres/`, its scripts in `server/`: `ashlands.luau` directs the level, `ashlands_mobs.luau` steers the mobs, `ashlands_props.luau` the decor, and `sandmaw.luau`, `glowheart.luau` and `ash_mother.luau` the three bosses. `--stage 2`, `3` and `4` start in the shelter, at the Glowheart and in the silo. Every mob crosses from the right to the left and attacks in the three actions of attack 0, as in the Pit:
+
+| Sheet | Pilot | What it does |
+|---|---|---|
+| `cindermite` | `weave` | flutters left in swarms; it does not attack |
+| `dunecrawler` | `dunecrawler_walk` | walks left along the floor; a ship above it within `reach` of its column makes it fire a `dunecrawler_barb` straight up (`rising_barb`) |
+| `scrapdrone` | `scrapdrone_patrol` | drifts left, bobbing; left of `fire_from_x` and rested, it fires a `scrapdrone_bolt`, aimed at the nearest ship (`aimed_bolt`) |
+| `rail_turret` | `rail_turret_slide` | slides left along the ceiling; a ship below it within `reach` makes it fire `shots` `rail_turret_shot` down, `shot_gap_ms` apart (`falling_shot`) |
+| `geiger_mine` | `geiger_drift` | drifts left; a ship within `trigger` units makes it tick `signal_ms`, then burst into a volley of eight `geiger_mine_shard` (`scatter`), and it is gone; shot before, it only pops |
+| `fixbot` | `fixbot_roll` | rolls left on the floor; a ship ahead within `reach` makes it throw a `fixbot_wrench` along an arc (`thrown_wrench`) |
+| `brood_mite` | `brood_swarm` | flies left, turning `turn` percent of the way towards the nearest ship |
+
+A missile a script steers (`rising_barb`, `falling_shot`, `aimed_bolt`, `thrown_wrench`, `blast_life`) is steered once when its sheet is read, with no ship in view, and must then head towards the edge that removes it (see [Writing an entity sheet](/R-Type/entity-sheets/#rules-between-keys-and-between-sheets)): each one reads only its settings and its age on that call.
+
+The three bosses each have a `[gameplay.boss]` table and a `boss_name`. The Sandmaw (`sandmaw_hunt`) closes the highway: it waits under the floor, shows its jaws under the nearest ship, bursts up `rise_height` units, arcs over and dives again; its arrival (attack 2) is its first burst. The Glowheart (`glowheart_core`) slides to `rest_x`, then plays its Tendrils (attack 0: two `glowheart_tendril` sweep two of three lanes, the third safe), its Fallout rain (1: two waves of `glowheart_drop` with two free columns) and its Meltdown (2: a `meltdown_beam` aims, then the `hurt_zone.beam` of its sheet burns its row); its `pre_hit` lets a hit through only during the `purge_ms` that follows a Meltdown, on the rows of its core window. The Ash Mother (`ash_mother_brood`) climbs out of the silo (attack 3), then plays her Scythes (0, a box of her `hurt_zone`), her Atomic breath (1, an `atomic_breath` and her beam) and her Brood (2, `brood` `brood_mite`, `enraged_brood` once enraged); her `pre_hit` lets a hit through only while her maw is open, from the signal of the breath to its recover, on its rows. Both put a Meltdown or a breath every third attack.
+
+The decor that does something is a body the level creates past the right edge, moved by the scroll (`motion.kind = "scroll"`), never a part of the maps:
+
+| Kind | Sheets | What it does |
+|---|---|---|
+| Hazard (`hazard_cycle`, `steam_vent_cycle`) | `rad_geyser`, `live_cable`, `control_rods`, `steam_vent` | an enemy of the layer `hazard`, its hitbox 1024 units below it, that hurts through its `hurt_zone` during the strike of a cycle; a steam vent also jets for as long as the Glowheart purges |
+| Breakable (`breakable_watch`) | `toxic_barrel`, `billboard`, `vent_grille` (`vent_spawner`) | an enemy with health; the hit handler `barrel_burst` lays four `toxic_blast` and a `toxic_puddle`, `billboard_fall` a `billboard_wreck`, missiles of the layer `hazard_blast` that hit the layer `enemy` only, so they hurt the mobs; a grille lets a Cindermite out every `interval_ms` |
+| Trigger (`searchlight_sweep`, `alarm_wake`) | `searchlight`, `alarm_beacon` | an obstacle of the layer `decor`, which nothing hits; the first ship caught in the beam calls `drones` Scrapdrones, and the beacon, past `wake_x`, sends `fixbots` Fixbots |
+| Wall | `blast_door`, `blast_door_lower` | two blocking obstacles that leave a gap of 260 units around the row the level gives |
+| Decor (`coolant_drip`, `meltdown_lamp_watch`) | `coolant_leak`, `meltdown_lamp` | a leak drips `glowheart_drop`; both light up with the signal of the Glowheart they hear on the bus |
+
+The Glowheart publishes `glowheart_rain`, `glowheart_meltdown` and `glowheart_purge`, each with `ms`, the length of what it announces. A hazard learns the id of the boss on screen from `boss_health_changed` and removes itself once that boss is killed, so a fight whose scroll is paused ends with the boss. The values of these sheets are **provisional** until gameplay tunes them.
+
 ## Placing the enemies in LDtk
 
 A level places its enemies in [LDtk](https://ldtk.io), on a layer of entities named `Mobs`, instead of writing each position in its script. The script names the file with the option `ldtk` of `level.register`, a path relative to its content folder, `levels/<level>.ldtk` by convention; a resource may also lay its file over one of the assets or of a resource started before it, the last folder that holds it winning. Each game process reads the file when it starts, after the entity sheets, and refuses to start on a file that is missing, that is not JSON, whose levels are saved in separate files, that has no `Mobs` layer of entities, or that places an entity the game cannot read: the error names the file, the entity and where it is placed (`the entity Ghost placed at 2224, 300 names no sheet ghost`), and the supervisor goes on. The reader is `ldtkPlacementsOf()` (`src/game/Level/Ldtk/`, `rtype_game_level_ldtk`), which reads the JSON with `nlohmann-json`.
@@ -386,6 +416,7 @@ The three sides found the same 9,457,143 collisions, about 2,600 a tick: 300 bod
 | Change what a level script may call, or what it refuses | the functions of `LuauLevels` in `src/game/Scripting/Level/LuauLevels.cpp`, their names and messages in `LuauLevelConstants.hpp` |
 | Change when a stage is resumed, or what a checkpoint keeps | `LuauLevelRun` in `src/game/Scripting/Level/`, `LevelCheckpoint` in `src/game/Level/` |
 | Change a mob of the Pit, the Necromancer or one of its attacks | its sheet in `resources/fosse/entities/`, its behaviour in `resources/fosse/server/fosse_mobs.luau` or `necromancer.luau`, when they come in `fosse.luau` |
+| Change a mob, a piece of decor or a boss of the Ashlands | its sheet in `resources/ashlands/entities/`, its behaviour in `resources/ashlands/server/ashlands_mobs.luau`, `ashlands_props.luau`, `sandmaw.luau`, `glowheart.luau` or `ash_mother.luau`, when it comes in `ashlands.luau` |
 | Change how an LDtk file is read, or what it refuses | `ldtkPlacementsOf()` in `src/game/Level/Ldtk/LdtkPlacementReading.cpp`, the members and reasons in `LdtkConstants.hpp`; the check of the sheets in `readLevelPlacements()`, `src/game/Scripting/Level/LevelPlacementFiles.cpp` |
 | Change when a placed enemy comes in, or where it appears | `PlacedEnemySpawner` in `src/game/Spawning/`, ticked by `LevelDirector` in `src/server/Spawning/` |
 | Expose another function to the scripts | `ScriptMachine::expose()`, before the first script runs, as `BehaviourScripts` exposes `behaviours.register` |
