@@ -1,6 +1,8 @@
 #include "CasinoEntranceScreenFixture.hpp"
 #include <SFML/Window/Keyboard.hpp>
 #include <memory>
+#include <string>
+#include <vector>
 #include "CasinoEntranceScreen.hpp"
 #include "CasinoEntranceScreenParts.hpp"
 #include "EntranceLights.hpp"
@@ -25,6 +27,7 @@ void CasinoEntranceScreenFixture::reopenWith(MotionPreference motion) {
   screen_ = std::make_unique<CasinoEntranceScreen>(
       CasinoEntranceScreenParts{.navigator = navigator_,
                                 .sounds = sounds_,
+                                .audio = audio_,
                                 .playfieldPointAt = samePlayfieldPoint,
                                 .lights = EntranceLights{},
                                 .motion = motion},
@@ -57,4 +60,12 @@ const RecordingNavigator& CasinoEntranceScreenFixture::navigator() const {
 
 const InterfaceCanvasRecord& CasinoEntranceScreenFixture::canvas() const {
   return canvas_;
+}
+
+const std::vector<std::string>& CasinoEntranceScreenFixture::played() const {
+  return sounds_.played();
+}
+
+const RecordingAudioService& CasinoEntranceScreenFixture::audio() const {
+  return audio_;
 }

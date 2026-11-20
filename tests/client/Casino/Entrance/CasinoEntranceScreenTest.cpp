@@ -3,6 +3,7 @@
 #include <SFML/Window/Keyboard.hpp>
 #include <algorithm>
 #include <optional>
+#include "Ambience.hpp"
 #include "CasinoEntranceScreenFixture.hpp"
 #include "CasinoEntranceScreenTestConstants.hpp"
 #include "CasinoScreenIdConstants.hpp"
@@ -10,15 +11,19 @@
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 
+using rtype::client::Ambience;
 using rtype::client::CASINO_HALL_SCREEN;
 using rtype::client::MotionPreference;
+using rtype::client::testing::BUTLER_NAME_ON_HIS_PANEL;
 using rtype::client::testing::DOORS_CLOSED_PICTURE;
 using rtype::client::testing::DOORS_OPEN_PICTURE;
 using rtype::client::testing::DOORS_OPENING_TIME;
 using rtype::client::testing::DURING_THE_BOW;
 using rtype::client::testing::DURING_THE_GREETING;
+using rtype::client::testing::FIRST_GRUNT;
 using rtype::client::testing::JUST_BEFORE_THE_HALL;
-using rtype::client::testing::WELCOME_FIRST_LINE;
+using rtype::client::testing::THE_WHOLE_WELCOME;
+using rtype::client::testing::WELCOME_FIRST_WORD;
 using ::testing::ElementsAre;
 using ::testing::IsEmpty;
 using Key = sf::Keyboard::Key;
@@ -26,12 +31,42 @@ using Key = sf::Keyboard::Key;
 /**
  * Given a casino just opened
  * When it is painted
- * Then its doors are closed, and the butler welcomes the player
+ * Then its doors are closed, and the panel of the butler shows his name
  */
 TEST_F(CasinoEntranceScreenFixture, OpensBeforeTheClosedDoors) {
   ASSERT_FALSE(canvas().images.empty());
   EXPECT_EQ(canvas().images.front().assetId, DOORS_CLOSED_PICTURE);
-  EXPECT_NE(writingOf(canvas(), WELCOME_FIRST_LINE), nullptr);
+  EXPECT_NE(writingOf(canvas(), BUTLER_NAME_ON_HIS_PANEL), nullptr);
+}
+
+/**
+ * Given a casino just opened
+ * When the time of the whole welcome passes
+ * Then the butler wrote it in his panel, where it stays
+ */
+TEST_F(CasinoEntranceScreenFixture, TheButlerWritesHisWelcome) {
+  wait(THE_WHOLE_WELCOME);
+
+  EXPECT_NE(writingOf(canvas(), WELCOME_FIRST_WORD), nullptr);
+}
+
+/**
+ * Given a casino just opened
+ * When the butler starts his welcome
+ * Then he speaks in the voice of the Bydo of the shop
+ */
+TEST_F(CasinoEntranceScreenFixture, TheButlerSpeaksInTheVoiceOfTheBydo) {
+  ASSERT_FALSE(played().empty());
+  EXPECT_EQ(played().front(), FIRST_GRUNT);
+}
+
+/**
+ * Given a casino just opened
+ * When the music is read
+ * Then the music before the doors plays
+ */
+TEST_F(CasinoEntranceScreenFixture, TheFrontPlaysItsMusic) {
+  EXPECT_EQ(audio().ambience(), Ambience::CasinoFront);
 }
 
 /**

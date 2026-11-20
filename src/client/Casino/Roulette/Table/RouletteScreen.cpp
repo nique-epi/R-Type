@@ -9,6 +9,7 @@
 #include <memory>
 #include <optional>
 #include <utility>
+#include "Ambience.hpp"
 #include "BetsReading.hpp"
 #include "CasinoRefusal.hpp"
 #include "CasinoRoomState.hpp"
@@ -88,6 +89,7 @@ std::optional<CasinoRefusal> refusalOf(
 RouletteScreen::RouletteScreen(RouletteScreenParts parts,
                                std::unique_ptr<IInterfaceCanvas> canvas)
     : navigator_(&parts.navigator.get()),
+      ambience_(parts.audio.get(), Ambience::CasinoTables),
       sounds_(&parts.sounds.get()),
       casino_(&parts.casino.get()),
       memory_(&parts.memory.get()),

@@ -2,6 +2,7 @@
 
 #include <functional>
 #include "CashierRoom.hpp"
+#include "IAudioService.hpp"
 #include "IScreenNavigator.hpp"
 #include "ISoundPlayer.hpp"
 #include "IWallet.hpp"
@@ -24,6 +25,9 @@ struct CashierScreenParts {
   std::reference_wrapper<IScreenNavigator> navigator;
   /** @brief Plays the clicks, which must outlive the screen. */
   std::reference_wrapper<ISoundPlayer> sounds;
+  /** @brief Plays the music of the tables while the screen shows; it must
+   * outlive the screen. */
+  std::reference_wrapper<IAudioService> audio;
   /** @brief The kopecks and the chips of the account signed in, which the
    * cashier of the master changes; it must outlive the screen. */
   std::reference_wrapper<IWallet> wallet;

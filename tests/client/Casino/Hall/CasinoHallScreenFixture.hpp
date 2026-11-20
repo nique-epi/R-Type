@@ -6,6 +6,7 @@
 #include <memory>
 #include "CasinoHallScreen.hpp"
 #include "MotionPreference.hpp"
+#include "RecordingAudioService.hpp"
 #include "RecordingCasinoChannel.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
@@ -47,5 +48,6 @@ class CasinoHallScreenFixture : public ::testing::Test {
   RecordingCasinoChannel casino_;
   InterfaceCanvasRecord canvas_;
   RecordingSoundPlayer sounds_;
+  RecordingAudioService audio_{sounds_};
   std::unique_ptr<rtype::client::CasinoHallScreen> screen_;
 };

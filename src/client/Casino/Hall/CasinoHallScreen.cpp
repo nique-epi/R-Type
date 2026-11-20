@@ -9,6 +9,7 @@
 #include <memory>
 #include <optional>
 #include <utility>
+#include "Ambience.hpp"
 #include "CasinoBarChip.hpp"
 #include "CasinoHallConstants.hpp"
 #include "CasinoHallScreenParts.hpp"
@@ -84,6 +85,7 @@ sf::Color fadeAt(engine::Duration since) {
 CasinoHallScreen::CasinoHallScreen(CasinoHallScreenParts parts,
                                    std::unique_ptr<IInterfaceCanvas> canvas)
     : navigator_(&parts.navigator.get()),
+      ambience_(parts.audio.get(), Ambience::CasinoHall),
       casino_(&parts.casino.get()),
       canvas_(std::move(canvas)),
       playfieldPointAt_(std::move(parts.playfieldPointAt)),

@@ -3,6 +3,7 @@
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Window/Event.hpp>
 #include <memory>
+#include "AmbienceScope.hpp"
 #include "CasinoEntranceScreenParts.hpp"
 #include "EntranceLightPainter.hpp"
 #include "EntranceStage.hpp"
@@ -12,6 +13,7 @@
 #include "KeyChip.hpp"
 #include "MotionPreference.hpp"
 #include "PlayfieldMapping.hpp"
+#include "SpokenLine.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -19,7 +21,8 @@ namespace rtype::client {
 /**
  * @brief The front of the casino, the Bydo Palace, pushed over the server
  * map, which it hides: its 777 pylon and its marquee alight, two
- * searchlights in the sky, and Balthazar, the Bydo butler, in front.
+ * searchlights in the sky, and Balthazar, the Bydo butler, in front, who
+ * welcomes the player in the voice of the Bydo of the shop.
  *
  * ENTER, its key MENU_CONFIRM_KEY, opens the doors while he greets and bows,
  * then pushes CASINO_HALL_SCREEN over the doors, which close behind the
@@ -62,10 +65,15 @@ class CasinoEntranceScreen final : public IScreen {
   void repaint();
 
   IScreenNavigator* navigator_;
+  /** @brief Holds the music of the room for as long as it shows. */
+  AmbienceScope ambience_;
   std::unique_ptr<IInterfaceCanvas> canvas_;
   PlayfieldMapping playfieldPointAt_;
   MotionPreference motion_;
   EntranceLightPainter lights_;
+  /** @brief What the butler says, letter by letter in his voice, staying in
+   * his panel. */
+  SpokenLine butlerLine_;
   EntranceStage stage_{EntranceStage::Doors};
   /** @brief How long the casino has shown its stage: where the doors and the
    * butler are. */

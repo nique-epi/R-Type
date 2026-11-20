@@ -36,6 +36,7 @@ RouletteScreenFixture::RouletteScreenFixture() {
   screen_ = std::make_unique<RouletteScreen>(
       RouletteScreenParts{.navigator = navigator_,
                           .sounds = sounds_,
+                          .audio = audio_,
                           .casino = casino_,
                           .memory = memory_,
                           .wallet = wallet_,

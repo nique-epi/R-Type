@@ -53,6 +53,7 @@ std::unique_ptr<IScreen> buildCasinoScreen(const ScreenContext& context) {
   return std::make_unique<CasinoEntranceScreen>(
       CasinoEntranceScreenParts{.navigator = context.navigator.get(),
                                 .sounds = soundsOf(context),
+                                .audio = context.services.audio.get(),
                                 .playfieldPointAt = playfieldMappingOf(context),
                                 .lights = entranceLightsOf(
                                     pictureOf(context, CASINO_DOORS_CLOSED_ID)),
@@ -67,6 +68,7 @@ std::unique_ptr<IScreen> buildHallScreen(const ScreenContext& context,
       CasinoHallScreenParts{
           .navigator = context.navigator.get(),
           .sounds = soundsOf(context),
+          .audio = context.services.audio.get(),
           .casino = casino,
           .playfieldPointAt = playfieldMappingOf(context),
           .picture = hallPictureOf(pictureOf(context, HALL_PICTURE_ID)),
@@ -81,6 +83,7 @@ std::unique_ptr<IScreen> buildCashierScreen(const ScreenContext& context) {
       CashierScreenParts{
           .navigator = context.navigator.get(),
           .sounds = soundsOf(context),
+          .audio = context.services.audio.get(),
           .wallet = context.services.wallet.get(),
           .playfieldPointAt = playfieldMappingOf(context),
           .room = cashierRoomOf(pictureOf(context, CASHIER_ROOM_ID)),
@@ -96,6 +99,7 @@ std::unique_ptr<IScreen> buildRouletteScreen(const ScreenContext& context,
   return std::make_unique<RouletteScreen>(
       RouletteScreenParts{.navigator = context.navigator.get(),
                           .sounds = soundsOf(context),
+                          .audio = context.services.audio.get(),
                           .casino = casino,
                           .memory = memory,
                           .wallet = context.services.wallet.get(),

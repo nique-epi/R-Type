@@ -27,6 +27,20 @@ constexpr engine::Duration TELLER_SERVING_FRAME_TIME =
 constexpr int CASHIER_COUNTER_TOP = 182;
 
 /**
+ * @brief What the teller says, in a bubble over his head: TELLER_BUBBLE_WIDTH
+ * wide, its bottom-left corner at TELLER_BUBBLE_BOTTOM_LEFT, its tail
+ * TELLER_BUBBLE_TAIL from its left, pointing at his visor. He greets the
+ * player as the cashier opens, thanks him once an exchange is served, and
+ * apologizes when the master refuses one.
+ */
+constexpr int TELLER_BUBBLE_WIDTH = 132;
+constexpr int TELLER_BUBBLE_TAIL = 30;
+constexpr sf::Vector2i TELLER_BUBBLE_BOTTOM_LEFT(110, 108);
+constexpr const char* TELLER_GREETING = "BUY OR CASH OUT, PILOT?";
+constexpr const char* TELLER_SERVED_LINE = "THERE YOU GO, PILOT.";
+constexpr const char* TELLER_REFUSED_LINE = "SORRY, PILOT. NO DEAL.";
+
+/**
  * @brief The brass grille in front of the teller, read once from the
  * picture: the pixels of CASHIER_GRILLE_AREA redder than
  * CASHIER_BRASS_RED_FLOOR, greener than CASHIER_BRASS_GREEN_FLOOR, bluer than

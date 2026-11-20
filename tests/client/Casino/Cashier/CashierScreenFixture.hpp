@@ -7,6 +7,7 @@
 #include "CashierScreen.hpp"
 #include "FakeWallet.hpp"
 #include "MotionPreference.hpp"
+#include "RecordingAudioService.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingSoundPlayer.hpp"
@@ -46,6 +47,7 @@ class CashierScreenFixture : public ::testing::Test {
   FakeWallet wallet_;
   RecordingNavigator navigator_;
   RecordingSoundPlayer sounds_;
+  RecordingAudioService audio_{sounds_};
   InterfaceCanvasRecord canvas_;
   std::unique_ptr<rtype::client::CashierScreen> screen_;
 };

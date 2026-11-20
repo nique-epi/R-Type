@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <memory>
 #include <optional>
+#include "AmbienceScope.hpp"
 #include "BetsReading.hpp"
 #include "CasinoRoomState.hpp"
 #include "ClothConstants.hpp"
@@ -93,6 +94,8 @@ class RouletteScreen final : public IScreen {
   void repaint(const RouletteReading& reading);
 
   IScreenNavigator* navigator_;
+  /** @brief Holds the music of the room for as long as it shows. */
+  AmbienceScope ambience_;
   ISoundPlayer* sounds_;
   ICasinoChannel* casino_;
   RouletteMemory* memory_;

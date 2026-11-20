@@ -10,11 +10,13 @@
 #include <string>
 #include <utility>
 #include "AccountLinkConstants.hpp"
+#include "Ambience.hpp"
 #include "CashierAmount.hpp"
 #include "CashierConstants.hpp"
 #include "CashierExchange.hpp"
 #include "CashierNotice.hpp"
 #include "CashierPainting.hpp"
+#include "CashierRoomConstants.hpp"
 #include "CashierRoomMoment.hpp"
 #include "CashierRoomPainting.hpp"
 #include "CashierRules.hpp"
@@ -28,6 +30,7 @@
 #include "IInterfaceCanvas.hpp"
 #include "InterfacePixel.hpp"
 #include "SoundConstants.hpp"
+#include "SpokenLineParts.hpp"
 #include "TimeConstants.hpp"
 #include "Wallet.hpp"
 #include "WalletChangeReading.hpp"
@@ -73,12 +76,19 @@ CashierExchange triedWith(const std::optional<network::Wallet>& balances,
 CashierScreen::CashierScreen(CashierScreenParts parts,
                              std::unique_ptr<IInterfaceCanvas> canvas)
     : navigator_(&parts.navigator.get()),
+      ambience_(parts.audio.get(), Ambience::CasinoTables),
       sounds_(&parts.sounds.get()),
       wallet_(&parts.wallet.get()),
       canvas_(std::move(canvas)),
       playfieldPointAt_(std::move(parts.playfieldPointAt)),
       motion_(parts.motion),
       room_(std::move(parts.room)),
+      tellerLine_(SpokenLineParts{.sounds = parts.sounds,
+                                  .voice = BYDO_VOICE_SOUND_IDS,
+                                  .width = TELLER_BUBBLE_WIDTH,
+                                  .tail = TELLER_BUBBLE_TAIL,
+                                  .motion = parts.motion,
+                                  .stays = false}),
       buyChip_(chipOf(
           BUY_CHIPS_CONFIRM_BAR, [this] { confirm(); }, parts.sounds)),
       cashOutChip_(chipOf(
@@ -87,6 +97,7 @@ CashierScreen::CashierScreen(CashierScreenParts parts,
           CASHIER_BACK_BAR, [this] { navigator_->pop(); }, parts.sounds)),
       wayChip_(chipOf(CASHIER_WAY_BAR, [this] { switchWay(); }, parts.sounds)) {
   wallet_->askWallet();
+  tellerLine_.say(TELLER_GREETING);
   repaint();
 }
 
@@ -107,6 +118,7 @@ void CashierScreen::handleEvent(const sf::Event& event) {
 
 void CashierScreen::update(engine::Duration elapsed) {
   since_ += elapsed;
+  tellerLine_.advance(elapsed);
   if (sinceServed_.has_value()) {
     *sinceServed_ += elapsed;
     if (!tellerServesAt(CashierRoomMoment{.since = since_,
@@ -190,9 +202,11 @@ void CashierScreen::settle() {
   if (answer->refusal.has_value()) {
     notice_ = CashierNotice{.text = cashierRefusalLineOf(*answer->refusal),
                             .refusal = true};
+    tellerLine_.say(TELLER_REFUSED_LINE);
     return;
   }
   sinceServed_ = engine::Duration::zero();
+  tellerLine_.say(TELLER_SERVED_LINE);
 }
 
 void CashierScreen::repaint() {
@@ -208,6 +222,7 @@ void CashierScreen::repaint() {
                                      .sinceServed = sinceServed_,
                                      .way = way_,
                                      .motion = motion_});
+  tellerLine_.paint(*canvas_, TELLER_BUBBLE_BOTTOM_LEFT);
   paintCashierPanel(*canvas_,
                     CashierView{.way = way_,
                                 .amount = amount_.amount(),

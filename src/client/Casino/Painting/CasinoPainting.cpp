@@ -6,7 +6,6 @@
 #include <optional>
 #include <string>
 #include <string_view>
-#include "ButlerLine.hpp"
 #include "CasinoBalances.hpp"
 #include "CasinoPaintingConstants.hpp"
 #include "CutCornerBox.hpp"
@@ -109,17 +108,13 @@ void paintCasinoBalances(IInterfaceCanvas& canvas, CasinoBalances balances) {
                CASINO_CAPTION_STYLE);
 }
 
-void paintButlerSpeech(IInterfaceCanvas& canvas, ButlerLine line) {
+void paintButlerPanel(IInterfaceCanvas& canvas) {
   const sf::IntRect area = CASINO_SPEECH_AREA;
   paintGoldPanel(canvas, area);
   paintNameTag(canvas,
                {area.position.x + CASINO_SPEECH_TAG_LEFT,
                 area.position.y - (CASINO_TAG_HEIGHT / SIDES_PER_AXIS)},
                BUTLER_NAME);
-  const sf::Vector2i first = area.position + CASINO_SPEECH_FIRST_LINE;
-  canvas.write(line.first, first, CASINO_SPEECH_STYLE);
-  canvas.write(line.second, {first.x, first.y + CASINO_SPEECH_LINE_GAP},
-               CASINO_SPEECH_STYLE);
 }
 
 }  // namespace rtype::client

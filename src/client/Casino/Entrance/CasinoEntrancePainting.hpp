@@ -10,7 +10,7 @@ namespace rtype::client {
 void paintFront(IInterfaceCanvas& canvas, const EntranceView& view);
 
 /** @brief Paints the butler of @p view in front, his frame cut by the bottom
- * of the picture, then his panel and what he says. */
+ * of the picture, then his panel, empty. */
 void paintGreeter(IInterfaceCanvas& canvas, const EntranceView& view);
 
 }  // namespace rtype::client

@@ -2,6 +2,7 @@
 
 #include <functional>
 #include "HallPicture.hpp"
+#include "IAudioService.hpp"
 #include "ICasinoChannel.hpp"
 #include "IScreenNavigator.hpp"
 #include "ISoundPlayer.hpp"
@@ -23,6 +24,9 @@ struct CasinoHallScreenParts {
   std::reference_wrapper<IScreenNavigator> navigator;
   /** @brief Plays the clicks of its bars, which must outlive the screen. */
   std::reference_wrapper<ISoundPlayer> sounds;
+  /** @brief Plays the music of the hall and its crowd while the screen shows;
+   * it must outlive the screen. */
+  std::reference_wrapper<IAudioService> audio;
   /** @brief The casino whose rooms the hall lists, which ROULETTE enters
    * and BACK leaves; it must outlive the screen. */
   std::reference_wrapper<ICasinoChannel> casino;

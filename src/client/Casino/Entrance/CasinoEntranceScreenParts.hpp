@@ -2,6 +2,7 @@
 
 #include <functional>
 #include "EntranceLights.hpp"
+#include "IAudioService.hpp"
 #include "IScreenNavigator.hpp"
 #include "ISoundPlayer.hpp"
 #include "MotionPreference.hpp"
@@ -24,6 +25,9 @@ struct CasinoEntranceScreenParts {
   std::reference_wrapper<IScreenNavigator> navigator;
   /** @brief Plays the clicks of its bars, which must outlive the screen. */
   std::reference_wrapper<ISoundPlayer> sounds;
+  /** @brief Plays the music before the doors while the screen shows; it must
+   * outlive the screen. */
+  std::reference_wrapper<IAudioService> audio;
   /** @brief Gives the point of the playfield under a pixel of the window. */
   PlayfieldMapping playfieldPointAt;
   /** @brief What the front read in its picture; empty, it stays still. */

@@ -4,7 +4,6 @@
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <string_view>
-#include "ButlerLine.hpp"
 #include "CasinoBalances.hpp"
 #include "IInterfaceCanvas.hpp"
 
@@ -29,8 +28,8 @@ void paintNameTag(IInterfaceCanvas& canvas, sf::Vector2i topLeft,
  * kopecks in gold, the chips in white, each over its name. */
 void paintCasinoBalances(IInterfaceCanvas& canvas, CasinoBalances balances);
 
-/** @brief Paints the panel of the butler across the bottom of the screen: his
- * name on its tag, then the two lines of @p line. */
-void paintButlerSpeech(IInterfaceCanvas& canvas, ButlerLine line);
+/** @brief Paints the panel of the butler, CASINO_SPEECH_AREA, and his name on
+ * its tag; what he says is written in it by his SpokenLine. */
+void paintButlerPanel(IInterfaceCanvas& canvas);
 
 }  // namespace rtype::client

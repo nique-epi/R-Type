@@ -53,6 +53,7 @@ void CasinoHallScreenFixture::reopenWith(MotionPreference motion) {
   screen_ = std::make_unique<CasinoHallScreen>(
       CasinoHallScreenParts{.navigator = navigator_,
                             .sounds = sounds_,
+                            .audio = audio_,
                             .casino = casino_,
                             .playfieldPointAt = samePlayfieldPoint,
                             .picture = HallPicture{},

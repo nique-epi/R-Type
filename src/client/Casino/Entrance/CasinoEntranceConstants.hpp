@@ -4,9 +4,10 @@
 #include <SFML/System/Vector2.hpp>
 #include <chrono>
 #include "BarState.hpp"
-#include "ButlerLine.hpp"
 #include "CasinoBar.hpp"
+#include "CasinoPaintingConstants.hpp"
 #include "CasinoSpriteConstants.hpp"
+#include "SpokenLineConstants.hpp"
 #include "TimeConstants.hpp"
 #include "WidgetConstants.hpp"
 
@@ -35,10 +36,15 @@ constexpr engine::Duration DOORS_OPEN_AFTER =
 constexpr engine::Duration OPENING_DURATION =
     DOORS_OPEN_AFTER * OPENING_POSE_COUNT;
 
-/** @brief What the butler says before the doors, two lines short enough
- * for his panel. */
-constexpr ButlerLine WELCOME_LINE{.first = "WELCOME TO THE BYDO PALACE,",
-                                  .second = "PILOT. THE TABLES ARE OPEN."};
+/** @brief What the butler says before the doors, cut in two lines by the
+ * width of his panel. */
+constexpr const char* WELCOME_SPEECH =
+    "WELCOME TO THE BYDO PALACE, PILOT. THE TABLES ARE OPEN.";
+
+/** @brief How wide the SpokenLine of the butler is: the width of his text
+ * and the padding a SpokenLine takes off it on each side. */
+constexpr int BUTLER_SPOKEN_LINE_WIDTH =
+    CASINO_SPEECH_TEXT_WIDTH + (SPOKEN_BUBBLE_PADDING * SIDES_PER_AXIS);
 
 /** @brief The two bars before the doors, on the bottom edge of the panel of
  * the butler: ENTER, which opens them, and BACK, to the map. */

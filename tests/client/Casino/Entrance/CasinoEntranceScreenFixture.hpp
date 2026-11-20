@@ -3,8 +3,11 @@
 #include <gtest/gtest.h>
 #include <SFML/Window/Keyboard.hpp>
 #include <memory>
+#include <string>
+#include <vector>
 #include "CasinoEntranceScreen.hpp"
 #include "MotionPreference.hpp"
+#include "RecordingAudioService.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingSoundPlayer.hpp"
@@ -31,10 +34,14 @@ class CasinoEntranceScreenFixture : public ::testing::Test {
 
   [[nodiscard]] const RecordingNavigator& navigator() const;
   [[nodiscard]] const InterfaceCanvasRecord& canvas() const;
+  /** @returns The ids of the sounds played, the first played first. */
+  [[nodiscard]] const std::vector<std::string>& played() const;
+  [[nodiscard]] const RecordingAudioService& audio() const;
 
  private:
   RecordingNavigator navigator_;
   InterfaceCanvasRecord canvas_;
   RecordingSoundPlayer sounds_;
+  RecordingAudioService audio_{sounds_};
   std::unique_ptr<rtype::client::CasinoEntranceScreen> screen_;
 };

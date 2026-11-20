@@ -22,7 +22,7 @@ void paintGreeter(IInterfaceCanvas& canvas, const EntranceView& view) {
                                .rectangle = rectangleOf(view.butler)},
                    ImagePlacement{.topLeft = CASINO_BUTLER_TOP_LEFT},
                    INTERFACE_AREA);
-  paintButlerSpeech(canvas, view.line);
+  paintButlerPanel(canvas);
 }
 
 }  // namespace rtype::client

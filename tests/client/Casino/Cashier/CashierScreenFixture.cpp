@@ -35,6 +35,7 @@ void CashierScreenFixture::reopenWith(MotionPreference motion) {
   screen_ = std::make_unique<CashierScreen>(
       CashierScreenParts{.navigator = navigator_,
                          .sounds = sounds_,
+                         .audio = audio_,
                          .wallet = wallet_,
                          .playfieldPointAt = samePlayfieldPoint,
                          .room = CashierRoom{},

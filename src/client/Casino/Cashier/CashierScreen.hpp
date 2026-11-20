@@ -7,6 +7,7 @@
 #include <memory>
 #include <optional>
 #include "AccountLinkConstants.hpp"
+#include "AmbienceScope.hpp"
 #include "CashierAmount.hpp"
 #include "CashierNotice.hpp"
 #include "CashierRoom.hpp"
@@ -20,6 +21,7 @@
 #include "KeyChip.hpp"
 #include "MotionPreference.hpp"
 #include "PlayfieldMapping.hpp"
+#include "SpokenLine.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -40,7 +42,9 @@ namespace rtype::client {
  *
  * BUY, MENU_CONFIRM_KEY, asks the master for the exchange
  * (IWallet::exchange()); once the master made it, the teller serves it, then
- * counts again, and the cashier stays open for the next one. BACK,
+ * counts again, and the cashier stays open for the next one. The teller
+ * greets the player, thanks him and apologizes for a refusal in the voice of
+ * the Bydo of the shop. BACK,
  * MENU_CANCEL_KEY, closes it, back to the hall. The bars and the switch of
  * the way act once per hold of their key, on its release.
  */
@@ -80,6 +84,8 @@ class CashierScreen final : public IScreen {
   void repaint();
 
   IScreenNavigator* navigator_;
+  /** @brief Holds the music of the room for as long as it shows. */
+  AmbienceScope ambience_;
   ISoundPlayer* sounds_;
   IWallet* wallet_;
   std::unique_ptr<IInterfaceCanvas> canvas_;
@@ -93,6 +99,9 @@ class CashierScreen final : public IScreen {
   /** @brief How long ago the teller started serving the last exchange made,
    * until he is done. */
   std::optional<engine::Duration> sinceServed_;
+  /** @brief What the teller says, in a bubble over his head, in the voice of
+   * the Bydo of the shop. */
+  SpokenLine tellerLine_;
   KeyChip buyChip_;
   KeyChip cashOutChip_;
   KeyChip backChip_;

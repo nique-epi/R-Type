@@ -11,8 +11,15 @@ constexpr std::string_view DOORS_CLOSED_PICTURE =
 constexpr std::string_view DOORS_OPEN_PICTURE =
     "sprites/casino/entrance_doors_open.png";
 
-/** @brief What the butler says first before the doors. */
-constexpr std::string_view WELCOME_FIRST_LINE = "WELCOME TO THE BYDO PALACE,";
+/** @brief The first word the butler says before the doors, his name on his
+ * panel, and how long his whole welcome takes to write, its 55 letters at
+ * 30 ms each, rounded up. */
+constexpr std::string_view WELCOME_FIRST_WORD = "WELCOME";
+constexpr std::string_view BUTLER_NAME_ON_HIS_PANEL = "BALTHAZAR";
+constexpr std::chrono::milliseconds THE_WHOLE_WELCOME{1700};
+
+/** @brief The sounds of the voice of the Bydo of the shop. */
+constexpr std::string_view FIRST_GRUNT = "sounds/epidemic/bydo_voice_1.mp3";
 
 /** @brief How long the doors take to open: the greeting and the bow of the
  * butler, four frames of 150 ms each, 1.2 s; a time short of it, a time

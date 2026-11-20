@@ -4,6 +4,7 @@
 #include <SFML/Window/Event.hpp>
 #include <memory>
 #include <optional>
+#include "AmbienceScope.hpp"
 #include "CasinoHallScreenParts.hpp"
 #include "HallExit.hpp"
 #include "HallPainter.hpp"
@@ -72,6 +73,8 @@ class CasinoHallScreen final : public IScreen {
   void repaint();
 
   IScreenNavigator* navigator_;
+  /** @brief Holds the music of the room for as long as it shows. */
+  AmbienceScope ambience_;
   ICasinoChannel* casino_;
   std::unique_ptr<IInterfaceCanvas> canvas_;
   PlayfieldMapping playfieldPointAt_;
