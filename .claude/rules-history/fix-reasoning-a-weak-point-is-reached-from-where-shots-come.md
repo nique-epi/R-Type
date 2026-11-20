@@ -22,3 +22,7 @@ The script was changed and reasoned about without being run against a measuremen
 
 - ❌ **Before (wrong)**: `math.abs(hit.offset.x - MASK.x) <= MASK.half_width` with the hood box 105 units wide on each side of the mask → every hit at x about -100 is stopped; bots end both fights with the boss at 100 %.
 - ✅ **After (right)**: `math.abs(hit.offset.y - MASK.y) <= MASK.half_height` → the boss has 430 of its 450 points after six attacks against bots.
+
+## Update (2026-11-20) — A body is hurt wherever it is drawn
+
+The Ash Mother let a hit through only on the rows of her maw (64 ± 72 units), and her spikes and wings had no box; the user said her hitbox was too small and asked for the whole boss to be hittable except her legs. The maw window had been chosen as the weak point without the user ever asking for one. Her boxes now cover her head, body, spikes and wings, none her legs, and her `pre_hit` refuses only during her arrival and her strikes.
