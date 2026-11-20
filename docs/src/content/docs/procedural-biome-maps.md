@@ -12,6 +12,7 @@ This page tells you how to run it, how a map is built, and how to write a biome 
 | Map generator | Available | `generator/procedural/generate_maps.py` |
 | Level design checks | Available | `generator/procedural/rules.py` |
 | LDtk export and its checker | Available | `generator/procedural/export_ldtk.py`, `tools/verify_ldtk.py` |
+| The ground of each map, for the game: its fields `Floor` and `Ceiling` | Available; `tools/add_ground.py` adds them to a project exported before | `generator/procedural/ground_fields.py` |
 | Two level layouts: `corridor` and `field` | Available | `generator/procedural/layouts.py`, `field.py` |
 | Loader of a biome | Available | `generator/procedural/biome_loader.py`, `biome_file.py` |
 | Starting biome | Available | `generator/procedural/tools/new_biome.py` |
@@ -203,6 +204,8 @@ Give each biome its own output folders: `props_16.png` has the same name for all
 ## LDtk export
 
 The project follows the JSON format of LDtk 1.5.3: one level per map, named `<Biome>_<seed>`, on a 16 pixel grid. Its layers, from top to bottom, are `Mobs` (entities, empty), `Walls` (an IntGrid whose value 1 marks a cell at least half solid on the play plane, hidden when the project opens) and `Near`, `Mid`, `Far` (tiles, one atlas per plane). The light is baked in the tiles, so the atlases give the picture back but are not meant to paint with; `props_16.png` holds the unlit sprites for that.
+
+Each level also holds two fields, `Floor` and `Ceiling` (`ground_fields.py`), arrays of whole numbers with one value per pixel column: the row of the first solid pixel of the play plane below the play corridor, and the row just under the last one above it, -1 where the column has none. The export reads them from the solid mask of the play plane, so they are the terrain, decor left out. The game server reads them for `level.ground(x)` and `level.ceiling(x)` (see [Scripting in Luau](/R-Type/scripting/#directing-a-level)). A project exported before these fields gets them with `tools/add_ground.py <project.ldtk>`, which rebuilds the picture of its `Near` layer from its tiles and takes every drawn pixel as solid: a prop standing on the ground at the edge of the corridor then reads as ground, a few pixels above the terrain. The Pit got its fields this way, its biome being lost.
 
 ```bash
 python3 tools/verify_ldtk.py --biomes ../../../my_biomes --biome hive --maps out --project ldtk --schema JSON_SCHEMA.json

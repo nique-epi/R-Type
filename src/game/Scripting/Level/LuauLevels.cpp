@@ -16,12 +16,15 @@
 #include <utility>
 #include <variant>
 #include <vector>
+#include "BiomeGround.hpp"
 #include "BiomeName.hpp"
 #include "ComponentRegistry.hpp"
 #include "ContentName.hpp"
 #include "EnemyCount.hpp"
 #include "EngineException.hpp"
 #include "GameScriptingConstants.hpp"
+#include "GroundLookup.hpp"
+#include "GroundPlace.hpp"
 #include "LdtkField.hpp"
 #include "LdtkFieldValue.hpp"
 #include "LdtkPlacement.hpp"
@@ -392,7 +395,8 @@ int registerLevel(lua_State* state) {
                        .bands = bandsOf(state),
                        .mapName = mapNameOf(state),
                        .openingBiome = openingBiomeOf(state),
-                       .mapPreview = std::nullopt};
+                       .mapPreview = std::nullopt,
+                       .grounds = {}};
   entry.mapPreview = mapPreviewOf(state, entry.mapName);
   levels.declare(std::move(name), std::move(entry));
   return 0;
@@ -544,6 +548,53 @@ int placementsOfLevel(lua_State* state) {
   return 1;
 }
 
+/** @brief Pushes the row @p row of the ground, or nil when there is none. */
+void pushRow(lua_State* state, std::optional<float> row) {
+  if (row.has_value()) {
+    lua_pushnumber(state, double{*row});
+  } else {
+    lua_pushnil(state);
+  }
+}
+
+/** @returns The ground of the biome the level shows; nullptr when its LDtk
+ * project gives none. */
+const BiomeGround* shownGround(lua_State* state) {
+  const LevelProgress& progress = progressOf(state);
+  const LuauLevelEntry& entry = *levelsOf(state).step().entry;
+  const auto found = entry.grounds.find(progress.biome);
+  return found == entry.grounds.end() ? nullptr : &found->second;
+}
+
+/** @returns Where the column the first argument names lies on the ground of
+ * the biome the level shows. */
+GroundPlace groundPlaceOf(lua_State* state) {
+  const LevelProgress& progress = progressOf(state);
+  const double column = luaL_checknumber(state, LEVEL_GROUND_ARGUMENT);
+  return GroundPlace{
+      .x = static_cast<float>(column),
+      .scrolled = progress.scroll.position() - progress.biomeSince};
+}
+
+/** @brief `level.ground(x)`: the row of the top of the floor under the
+ * column x, in logical units; nil where there is none. */
+int groundRow(lua_State* state) {
+  const BiomeGround* const ground = shownGround(state);
+  pushRow(state, ground == nullptr ? std::nullopt
+                                   : floorRowAt(*ground, groundPlaceOf(state)));
+  return 1;
+}
+
+/** @brief `level.ceiling(x)`: the row just under the ceiling over the column
+ * x, in logical units; nil where there is none. */
+int ceilingRow(lua_State* state) {
+  const BiomeGround* const ground = shownGround(state);
+  pushRow(state, ground == nullptr
+                     ? std::nullopt
+                     : ceilingRowAt(*ground, groundPlaceOf(state)));
+  return 1;
+}
+
 /** @brief `level.spawn_placed()`: from now on, each placed enemy appears as
  * the scroll brings it to the right edge, restarts included. */
 int spawnPlaced(lua_State* state) {
@@ -576,7 +627,11 @@ LuauLevels::LuauLevels(engine::ScriptMachine& machine) {
       engine::ScriptFunction{.name = LEVEL_SPAWN_PLACED_FUNCTION_NAME,
                              .function = spawnPlaced},
       engine::ScriptFunction{.name = LEVEL_TRANSITION_FUNCTION_NAME,
-                             .function = playTransition}};
+                             .function = playTransition},
+      engine::ScriptFunction{.name = LEVEL_GROUND_FUNCTION_NAME,
+                             .function = groundRow},
+      engine::ScriptFunction{.name = LEVEL_CEILING_FUNCTION_NAME,
+                             .function = ceilingRow}};
   machine.expose(LEVEL_TABLE, functions, this);
 }
 

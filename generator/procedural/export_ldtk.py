@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Exports the generated maps as one LDtk project: a level per map, three tile layers cut from the lit planes, a wall grid, an empty entity layer."""
+"""Exports the generated maps as one LDtk project: a level per map, three tile layers cut from the lit planes, a wall grid, an empty entity layer, and the ground of each level (ground_fields.py)."""
 import argparse
 import glob
 import json
@@ -17,6 +17,7 @@ sys.path.insert(0, HERE)
 import generate_maps  # noqa: E402
 from biome_loader import Biome, add_options  # noqa: E402
 from frame import H, ZONE  # noqa: E402
+from ground_fields import NEXT_UID, ground_definitions, ground_fields, profile_from_solid  # noqa: E402
 
 LDTK_VERSION = "1.5.3"
 APP_BUILD_ID = 473703
@@ -191,7 +192,7 @@ def build_project(biome, caves, atlases, uses):
             "worldX": world_x, "worldY": 0, "worldDepth": 0, "pxWid": cave.width, "pxHei": cave.image.shape[0],
             "__bgColor": background, "bgColor": None, "useAutoIdentifier": False, "bgRelPath": None, "bgPos": None,
             "bgPivotX": 0.5, "bgPivotY": 0.5, "__smartColor": background, "__bgPos": None, "externalRelPath": None,
-            "fieldInstances": [], "layerInstances": [], "__neighbours": [],
+            "fieldInstances": ground_fields(*profile_from_solid(cave.solid["near"])), "layerInstances": [], "__neighbours": [],
         }
         mobs = layer_instance(biome, "Mobs", "Entities", level)
         walls = layer_instance(biome, "Walls", "IntGrid", level)
@@ -211,7 +212,7 @@ def build_project(biome, caves, atlases, uses):
     return {
         "__header__": {"fileType": "LDtk Project JSON", "app": "LDtk", "doc": "https://ldtk.io/json", "schema": "https://ldtk.io/files/JSON_SCHEMA.json",
                        "appAuthor": "Sebastien 'deepnight' Benard", "appVersion": LDTK_VERSION, "url": "https://ldtk.io"},
-        "iid": iid(biome, "project"), "jsonVersion": LDTK_VERSION, "appBuildId": APP_BUILD_ID, "nextUid": FIRST_LEVEL_UID + len(levels),
+        "iid": iid(biome, "project"), "jsonVersion": LDTK_VERSION, "appBuildId": APP_BUILD_ID, "nextUid": max(FIRST_LEVEL_UID + len(levels), NEXT_UID),
         "identifierStyle": "Capitalize", "toc": [], "worldLayout": "Free", "worldGridWidth": GRID, "worldGridHeight": GRID,
         "defaultLevelWidth": ZONE, "defaultLevelHeight": H, "defaultPivotX": 0, "defaultPivotY": 0,
         "defaultGridSize": GRID, "defaultEntityWidth": GRID, "defaultEntityHeight": GRID,
@@ -219,7 +220,7 @@ def build_project(biome, caves, atlases, uses):
         "exportTiled": False, "simplifiedExport": False, "imageExportMode": "None", "exportLevelBg": True, "pngFilePattern": None,
         "backupOnSave": False, "backupLimit": 10, "backupRelPath": None, "levelNamePattern": f"{biome.title}_%idx", "tutorialDesc": None,
         "customCommands": [], "flags": [],
-        "defs": {"layers": layers, "entities": [], "tilesets": tilesets, "enums": [], "externalEnums": [], "levelFields": []},
+        "defs": {"layers": layers, "entities": [], "tilesets": tilesets, "enums": [], "externalEnums": [], "levelFields": ground_definitions()},
         "levels": levels, "worlds": [], "dummyWorldIid": iid(biome, "world"),
     }
 

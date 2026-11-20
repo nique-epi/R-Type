@@ -12,6 +12,27 @@ local FULL_TURN = 2 * math.pi
 -- How far below the playfield a body that fell is removed, in logical units.
 local BELOW_THE_PLAYFIELD = 1240
 
+-- How long a tick lasts, in seconds: a body that keeps to the ground moves
+-- up or down at most its top speed over a tick.
+local TICK_SECONDS = 1 / 60
+
+-- The direction that keeps a body against the floor of the biome the level
+-- shows (or under its ceiling) while it moves left at `speed`: its center half
+-- its box above the floor (below the ceiling), read with level.ground
+-- (level.ceiling) under its column. It moves straight left where the biome
+-- has no ground, or in a game that plays no level.
+local function along(e, read: (number) -> number?, side: number, speed: number)
+	local found, row = pcall(read, e.position.x)
+	if not found or row == nil then
+		return LEFT
+	end
+	local target = row + side * e.collision_box.height / 2
+	local step = (target - e.position.y) / (speed * TICK_SECONDS)
+	return { x = -1, y = math.clamp(step, -1, 1) }
+end
+
+local ABOVE, BELOW = -1, 1
+
 -- Whether a body is rested: idle, and idle for at least rest_ms.
 local function rested(e, rest_ms: number): boolean
 	return e.action == nil and e.action_age_ms >= rest_ms
@@ -51,7 +72,7 @@ local function with_attack(settings)
 	return settings
 end
 
--- The Sporecap walks left along the floor; when a ship flies above it, within
+-- The Sporecap walks left along the floor, keeping to it; when a ship flies above it, within
 -- reach on the x axis, its cap swells and it puffs spores up, spore_gap units
 -- apart, which drift left in a wave.
 behaviours.register("sporecap_walk", with_attack({
@@ -76,7 +97,7 @@ behaviours.register("sporecap_walk", with_attack({
 			end
 		end)
 	end
-	return { direction = LEFT }
+	return { direction = along(e, level.ground, ABOVE, e.top_speed) }
 end)
 
 -- The Lanternfin swims left along a wave of `curve` units every curve_ms,
@@ -107,7 +128,7 @@ behaviours.register("lanternfin_hunt", with_attack({
 	return { direction = { x = -1, y = sway + towards }, top_speed = settings.cruise_speed }
 end)
 
--- The Stalagmaw crawls left along the ceiling at crawl_speed; when a ship
+-- The Stalagmaw crawls left along the ceiling at crawl_speed, keeping to it; when a ship
 -- passes under it, within reach on the x axis, it shakes, then falls at
 -- fall_speed and is removed once below the playfield. Both speeds are asked
 -- for in the intent: a top speed asked for stays until another one is.
@@ -120,7 +141,7 @@ behaviours.register("stalagmaw_drop", {
 	local settings = e.settings
 	local ship = e.nearest_ship
 	if ship == nil or ship.y <= e.position.y or math.abs(ship.x - e.position.x) > settings.reach then
-		return { direction = LEFT, top_speed = settings.crawl_speed }
+		return { direction = along(e, level.ceiling, BELOW, settings.crawl_speed), top_speed = settings.crawl_speed }
 	end
 	behaviours.wait(settings.signal_ms, { direction = STILL, starts_action = { attack = 0, phase = "signal" } })
 	behaviours.wait(crossing_ms(BELOW_THE_PLAYFIELD - e.position.y, settings.fall_speed), {

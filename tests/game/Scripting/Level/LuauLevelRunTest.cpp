@@ -3,6 +3,7 @@
 #include <optional>
 #include <string>
 #include <vector>
+#include "BiomeGround.hpp"
 #include "LdtkField.hpp"
 #include "LdtkFieldValue.hpp"
 #include "LdtkPlacement.hpp"
@@ -15,6 +16,7 @@
 #include "LuauLevelRunState.hpp"
 #include "LuauLevelRunTestConstants.hpp"
 
+using rtype::game::BiomeGround;
 using rtype::game::LdtkField;
 using rtype::game::LdtkFieldValue;
 using rtype::game::LdtkPlacement;
@@ -514,4 +516,34 @@ TEST_F(LuauLevelRunFixture, RefusesATransitionShorterThanItsThreeParts) {
 
   EXPECT_EQ(run().state(), LuauLevelRunState::Failed);
   EXPECT_THAT(run().failure(), HasSubstr(WORD_OF_A_REFUSED_TRANSITION));
+}
+
+/**
+ * Given the ground of the caves, one map one pixel wide
+ * When a stage enters the caves and reads the ground at both edges
+ * Then it reads the floor and the ceiling of the map at the right edge, where
+ * the caves begin, and nothing at the left edge
+ */
+TEST_F(LuauLevelRunFixture, AScriptReadsTheGroundOfItsBiome) {
+  giveGround(std::string{GROUND_BIOME},
+             BiomeGround{.floorRows = {CAVES_FLOOR_ROW},
+                         .ceilingRows = {CAVES_CEILING_ROW}});
+  play(READS_THE_GROUND);
+
+  tick(1);
+
+  EXPECT_EQ(progress().biome, GROUND_FOUND_BIOME);
+}
+
+/**
+ * Given a level with no ground for the biome it shows
+ * When a stage reads the ground
+ * Then it reads nothing, floor and ceiling alike
+ */
+TEST_F(LuauLevelRunFixture, ABiomeWithoutGroundGivesNone) {
+  play(READS_NO_GROUND);
+
+  tick(1);
+
+  EXPECT_EQ(progress().biome, NO_GROUND_BIOME);
 }

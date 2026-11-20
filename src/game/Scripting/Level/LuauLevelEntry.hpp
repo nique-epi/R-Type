@@ -6,6 +6,7 @@
 #include <optional>
 #include <string>
 #include <vector>
+#include "BiomeGround.hpp"
 #include "LdtkPlacement.hpp"
 #include "LevelCheckpoint.hpp"
 #include "PlayBand.hpp"
@@ -36,7 +37,11 @@ struct LuauLevelEntry {
   std::optional<std::string> openingBiome = std::nullopt;
   /** @brief The content name of the preview the map shows in the waiting
    * room (see LEVEL_MAP_PREVIEW_KEY); nothing for a map without one. */
-  std::optional<std::string> mapPreview = std::nullopt;
+  std::optional<std::string> mapPreview =
+      std::nullopt; /** @brief The ground of each biome the level gives a band
+                     * whose LDtk project holds one, once readLevelGrounds()
+                     * read it, by biome name. */
+  std::map<std::string, BiomeGround, std::less<>> grounds;
 };
 
 }  // namespace rtype::game

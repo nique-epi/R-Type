@@ -263,3 +263,36 @@ constexpr std::size_t TICKS_UNTIL_THE_TRANSITION_IS_OVER = 181;
 constexpr std::string_view BIOME_BEFORE_THE_TRANSITION = "before";
 constexpr std::string_view BIOME_AFTER_THE_TRANSITION = "after";
 constexpr std::string_view WORD_OF_A_REFUSED_TRANSITION = "transition";
+
+/** @brief The ground of the biome caves, one map one pixel wide: its floor
+ * at row 200, its ceiling at row 40. */
+constexpr std::string_view GROUND_BIOME = "caves";
+constexpr int CAVES_FLOOR_ROW = 200;
+constexpr int CAVES_CEILING_ROW = 40;
+
+/** @brief A level whose stage enters the caves, then reads the ground: at
+ * the right edge, where the caves begin, the floor at 800 units and the
+ * ceiling at 160, 4 units a pixel; at the left edge, before them, none. It
+ * names the biome found when every answer is right, lost otherwise. */
+constexpr std::string_view READS_THE_GROUND = R"(
+level.register("test_level", { function()
+  level.biome("caves")
+  if level.ground(1920) == 800 and level.ceiling(1920) == 160 and level.ground(0) == nil then
+    level.biome("found")
+  else
+    level.biome("lost")
+  end
+end })
+)";
+constexpr std::string_view GROUND_FOUND_BIOME = "found";
+
+/** @brief A level whose stage stays in the open and reads the ground: it
+ * names the biome none when there is none. */
+constexpr std::string_view READS_NO_GROUND = R"(
+level.register("test_level", { function()
+  if level.ground(1920) == nil and level.ceiling(1920) == nil then
+    level.biome("none")
+  end
+end })
+)";
+constexpr std::string_view NO_GROUND_BIOME = "none";

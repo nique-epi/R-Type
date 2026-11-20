@@ -1,4 +1,5 @@
 add_library(rtype_game_scripting_level STATIC
+  LevelGroundFiles.cpp
   LevelPlacementFiles.cpp
   LuauLevelRun.cpp
   LuauLevels.cpp
@@ -13,6 +14,7 @@ target_link_libraries(rtype_game_scripting_level
     rtype_game_components
     rtype_game_entity_sheets
     rtype_game_level
+    rtype_game_level_ground
     rtype_game_level_ldtk
   PRIVATE
     rtype_engine_data_files
