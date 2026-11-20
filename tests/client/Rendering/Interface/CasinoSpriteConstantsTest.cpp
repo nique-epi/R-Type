@@ -11,9 +11,9 @@
 using rtype::client::BUTLER_FRAME_SIZE;
 using rtype::client::BUTLER_FRAMES_PER_POSE;
 using rtype::client::BUTLER_SHEET_ID;
+using rtype::client::CASHIER_ROOM_ID;
 using rtype::client::CASINO_DOORS_CLOSED_ID;
 using rtype::client::CASINO_DOORS_OPEN_ID;
-using rtype::client::CASHIER_ROOM_ID;
 using rtype::client::CHIP_SELECTOR_FRAME_SIZE;
 using rtype::client::CHIP_SELECTOR_SHEET_ID;
 using rtype::client::CHIP_SELECTOR_STRIDE;
