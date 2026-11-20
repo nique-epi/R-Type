@@ -66,6 +66,10 @@ jobs:
           # so the key names the runner image and the vcpkg commit: a new image
           # or a moved submodule gives a new key, which the save step then fills.
           echo "VCPKG_CACHE_STAMP=${ImageOS}-${ImageVersion}-$(git rev-parse HEAD:vcpkg)" >> "$GITHUB_ENV"
+          # github.com answers the runners 503 for the patches a port fetches from
+          # a commit page; vcpkg takes a file already in its downloads folder once
+          # its SHA512 matches the portfile, and downloads it otherwise.
+          cmake -E copy_directory .github/vcpkg-downloads vcpkg/downloads
 
       - name: Restore vcpkg binary cache
         id: vcpkg-cache
@@ -183,6 +187,10 @@ jobs:
           # so the key names the runner image and the vcpkg commit: a new image
           # or a moved submodule gives a new key, which the save step then fills.
           echo "VCPKG_CACHE_STAMP=${ImageOS}-${ImageVersion}-$(git rev-parse HEAD:vcpkg)" >> "$GITHUB_ENV"
+          # github.com answers the runners 503 for the patches a port fetches from
+          # a commit page; vcpkg takes a file already in its downloads folder once
+          # its SHA512 matches the portfile, and downloads it otherwise.
+          cmake -E copy_directory .github/vcpkg-downloads vcpkg/downloads
 
       - name: Restore vcpkg binary cache
         if: steps.select.outputs.found == 'true'
@@ -289,6 +297,10 @@ jobs:
           # so the key names the runner image and the vcpkg commit: a new image
           # or a moved submodule gives a new key, which the save step then fills.
           echo "VCPKG_CACHE_STAMP=${ImageOS}-${ImageVersion}-$(git rev-parse HEAD:vcpkg)" >> "$GITHUB_ENV"
+          # github.com answers the runners 503 for the patches a port fetches from
+          # a commit page; vcpkg takes a file already in its downloads folder once
+          # its SHA512 matches the portfile, and downloads it otherwise.
+          cmake -E copy_directory .github/vcpkg-downloads vcpkg/downloads
 
       - name: Restore vcpkg binary cache
         id: vcpkg-cache
