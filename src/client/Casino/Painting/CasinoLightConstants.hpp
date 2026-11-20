@@ -3,6 +3,7 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <numbers>
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -29,6 +30,18 @@ constexpr std::uint8_t LIT_BULB_BLUE_FLOOR = 110;
 constexpr float LUMINANCE_RED_WEIGHT = 0.299F;
 constexpr float LUMINANCE_GREEN_WEIGHT = 0.587F;
 constexpr float LUMINANCE_BLUE_WEIGHT = 0.114F;
+
+/** @brief The shifts and factors of the scrambling of a number, those of the
+ * "lowbias32" hash of Chris Wellons, whose output bits each depend on every
+ * input bit. */
+constexpr unsigned SCRAMBLE_FIRST_SHIFT = 16;
+constexpr unsigned SCRAMBLE_SECOND_SHIFT = 15;
+constexpr std::uint32_t SCRAMBLE_FIRST_FACTOR = 0x7feb352dU;
+constexpr std::uint32_t SCRAMBLE_SECOND_FACTOR = 0x846ca68bU;
+
+/** @brief A whole turn, in radians: the beats of the lights swing over
+ * one. */
+constexpr float FULL_TURN_RADIANS = 2.0F * std::numbers::pi_v<float>;
 
 /** @brief How far the middle of a pixel lies from its top-left corner, on
  * each axis. */

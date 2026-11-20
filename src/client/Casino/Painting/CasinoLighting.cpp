@@ -5,12 +5,15 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstdint>
 #include <vector>
 #include "CasinoLightConstants.hpp"
 #include "ColoredPixel.hpp"
 #include "InterfaceConstants.hpp"
+#include "IntroTimeline.hpp"
 #include "LightBeam.hpp"
 #include "TimeConstants.hpp"
+#include "TwinkleGroup.hpp"
 
 namespace rtype::client {
 
@@ -71,6 +74,21 @@ float luminanceOf(sf::Color color) {
 
 int chaseStepAt(engine::Duration since) {
   return static_cast<int>(since / CASINO_CHASE_STEP);
+}
+
+bool isDimmedAt(const TwinkleGroup& group, engine::Duration since) {
+  return std::sin((secondsOf(since) * group.speed) + group.phase) >
+         group.dimAbove;
+}
+
+std::uint32_t scrambledOf(std::uint32_t value) {
+  std::uint32_t scrambled = value;
+  scrambled ^= scrambled >> SCRAMBLE_FIRST_SHIFT;
+  scrambled *= SCRAMBLE_FIRST_FACTOR;
+  scrambled ^= scrambled >> SCRAMBLE_SECOND_SHIFT;
+  scrambled *= SCRAMBLE_SECOND_FACTOR;
+  scrambled ^= scrambled >> SCRAMBLE_FIRST_SHIFT;
+  return scrambled;
 }
 
 void addBeamPixels(std::vector<ColoredPixel>& pixels, const LightBeam& beam) {
