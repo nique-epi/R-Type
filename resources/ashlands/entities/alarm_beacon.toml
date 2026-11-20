@@ -1,6 +1,6 @@
 # The entity type alarm_beacon, brought by the resource ashlands:
-# the red alarm beacon of the shelter; it spins as the shelter wakes up
-# and a wave of Fixbots rolls out of the dormitory.
+# the red alarm beacon of the shelter, hanging from its ceiling; it spins
+# as the shelter wakes up and a wave of Fixbots rolls out of the dormitory.
 # Only the server reads [gameplay]; a client draws [appearance] from the
 # content pack the supervisor serves. The keys are described on the page
 # "Writing an entity sheet" of the docs.
@@ -28,7 +28,7 @@ contact = "blocking"
 [appearance]
 sheet = "sprites/cendres/alarm_beacon.png"
 
-# Idle: the beacon, off.
+# Idle: the beacon, off, hanging from the ceiling.
 [appearance.idle]
 left = 0
 top = 0
@@ -38,7 +38,7 @@ frames = 1
 spacing = 2
 frame_ms = 1000
 
-# Spinning: its red rays turn round while the shelter wakes up.
+# Spinning: its red ray turns round, left then right, while the shelter wakes up.
 [appearance.looks.spinning]
 left = 0
 top = 18

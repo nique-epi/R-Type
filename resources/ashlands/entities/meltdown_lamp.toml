@@ -1,6 +1,7 @@
 # The entity type meltdown_lamp, brought by the resource ashlands:
-# a wall lamp in a hazard frame that flashes with the Meltdown signal of
-# the Glowheart, so every player sees it coming.
+# a lamp in a hazard frame under the ceiling of the core, which flashes
+# with the charge of the Meltdown of the Glowheart, so every player sees it
+# coming.
 # Only the server reads [gameplay]; a client draws [appearance] from the
 # content pack the supervisor serves. The keys are described on the page
 # "Writing an entity sheet" of the docs.

@@ -12,8 +12,9 @@
 -- the fight of the next stage.
 -- 4, the core (cendres_coeur): a short way in, then the Glowheart
 -- (server/glowheart.luau) among the steam vents that purge with it.
--- 5, Silo Zero (cendres_silo): the floor of the core gives way into the nest
--- (a transition), then the Ash Mother (server/ash_mother.luau).
+-- 5, Silo Zero (cendres_silo): the way down into the nest, arriving through
+-- its entrance as the scroll goes on, then the Ash Mother
+-- (server/ash_mother.luau).
 --
 -- The mobs are in server/ashlands_mobs.luau, the decor that does something in
 -- server/ashlands_props.luau. `--stage <n>` starts a game at a stage. The
@@ -39,7 +40,8 @@ local OPEN_SKY_ROW = 0
 local ROLL_ROW = 840
 
 -- Where the center of each piece of decor stands so that it rests on the
--- floor (row 896), hangs from the ceiling (row 192) or sits on the wall.
+-- floor (row 896) or hangs from the ceiling (row 192): the top of what hangs,
+-- the base of the beacon and the frame of the lamp included, touches it.
 local STANDING_ON_THE_FLOOR = {
 	toxic_barrel = 860,
 	billboard = 836,
@@ -52,10 +54,8 @@ local HANGING_FROM_THE_CEILING = {
 	live_cable = 376,
 	coolant_leak = 252,
 	vent_grille = 236,
-}
-local ON_THE_WALL = {
-	alarm_beacon = 260,
-	meltdown_lamp = 300,
+	alarm_beacon = 216,
+	meltdown_lamp = 232,
 }
 
 -- A blast door leaves a gap DOOR_GAP units tall around its row, five ships;
@@ -70,9 +70,6 @@ local SANDMAW_ENTRY = { x = 1660, y = 1160 }
 local GLOWHEART_ENTRY = { x = 2200, y = 520 }
 local ASH_MOTHER_ENTRY = { x = 1608, y = 1320 }
 
--- How long the floor of the core takes to give way into the silo.
-local INTO_THE_SILO_MS = 4000
-
 -- How often a stage looks at the sky, in milliseconds.
 local SKY_CHECK_MS = 250
 
@@ -86,19 +83,23 @@ local function send(sheet: string, rows: { number })
 end
 
 local function row_of(sheet: string): number
-	return STANDING_ON_THE_FLOOR[sheet] or HANGING_FROM_THE_CEILING[sheet] or ON_THE_WALL[sheet] or FLOOR_ROW
+	return STANDING_ON_THE_FLOOR[sheet] or HANGING_FROM_THE_CEILING[sheet] or FLOOR_ROW
 end
 
--- A blast door is two halves around the row of its gap.
+-- Lays a piece of decor where the scroll has brought it: at DECOR_COLUMN on
+-- its scroll, further left when the stage reaches it late (a stage that
+-- waited for a clear sky), so two pieces never appear on top of each other. A
+-- blast door is two halves around the row of its gap.
 local function place(decor: Decor)
+	local column = DECOR_COLUMN - math.max(0, level.scroll() - decor.at)
 	if decor.sheet == "blast_door" then
 		local gap = decor.row or FLOOR_ROW
 		local away = DOOR_GAP / 2 + DOOR_HALF / 2
-		behaviours.spawn("blast_door", { x = DECOR_COLUMN, y = gap - away })
-		behaviours.spawn("blast_door_lower", { x = DECOR_COLUMN, y = gap + away })
+		behaviours.spawn("blast_door", { x = column, y = gap - away })
+		behaviours.spawn("blast_door_lower", { x = column, y = gap + away })
 		return
 	end
-	behaviours.spawn(decor.sheet, { x = DECOR_COLUMN, y = decor.row or row_of(decor.sheet) })
+	behaviours.spawn(decor.sheet, { x = column, y = decor.row or row_of(decor.sheet) })
 end
 
 -- Plays the waves and lays the decor in the order of their scroll.
@@ -235,7 +236,6 @@ level.register("ashlands", {
 	end,
 	function()
 		level.biome("cendres_silo")
-		level.transition(INTO_THE_SILO_MS)
 		play(DESCENT, {})
 		level.wait_scroll(END_OF_THE_DESCENT)
 		wait_for_a_clear_sky()
