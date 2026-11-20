@@ -1,0 +1,63 @@
+# The entity type bone_spike, brought by the resource fosse:
+# a bone spike the fist of the Necromancer makes erupt.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy"
+layer = "boss_effect"
+hits = ["player"]
+pilot = "necromancer_effect"
+
+# Only its hurt zone touches a ship: its hitbox lies far below the
+# playfield, where no ship flies.
+[gameplay.hitbox]
+width = 4
+height = 4
+offset_y = 1024
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 1
+
+[gameplay.behaviour]
+strike_after_ms = 0
+life_ms = 830
+
+[gameplay.survives_contact]
+
+[[gameplay.hurt_zone.box]]
+offset_x = 0
+offset_y = 8
+width = 64
+height = 112
+attack = 0
+phase = "strike"
+from_ms = 83
+until_ms = 660
+
+[appearance]
+sheet = "sprites/fosse/bone_spike.png"
+
+# Idle: the spike stands.
+[appearance.idle]
+left = 0
+top = 0
+width = 20
+height = 33
+frames = 1
+spacing = 2
+frame_ms = 100
+
+# Strike: it erupts beside the fist, then sinks back.
+[appearance.attack_0.strike]
+left = 0
+top = 35
+width = 20
+height = 33
+frames = 19
+spacing = 2
+frame_ms = 42
+playback = "once"
+afterwards = "idle"

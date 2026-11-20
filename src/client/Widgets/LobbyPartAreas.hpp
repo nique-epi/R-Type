@@ -13,6 +13,8 @@ struct LobbyPartAreas {
    * lists no player with its number. */
   sf::IntRect ownBay;
   sf::IntRect ready;
+  /** @brief The MAP bar, beside READY. */
+  sf::IntRect map;
   /** @brief The status line, at least as wide as READY so that an empty line
    * still has a place to light. */
   sf::IntRect status;

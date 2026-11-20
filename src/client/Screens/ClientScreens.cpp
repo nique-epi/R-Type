@@ -11,7 +11,7 @@
 #include "AssetKind.hpp"
 #include "AssetLibrary.hpp"
 #include "BackgroundCatalog.hpp"
-#include "ISessionBackgrounds.hpp"
+#include "ISessionPack.hpp"
 #include "MenuScreenIdConstants.hpp"
 #include "OpeningScreen.hpp"
 #include "ScreenAssets.hpp"
@@ -52,7 +52,7 @@ bool holdsTheImagesOf(const AssetLibrary& library,
 ClientScreens::ClientScreens(const ScreenServices& parts,
                              const ScreenRegistry& registry)
     : connection_(&parts.connection.get()),
-      sessionBackgrounds_(&parts.sessionBackgrounds.get()),
+      sessionPack_(&parts.sessionPack.get()),
       assets_(&parts.assets.get()),
       backgrounds_(loadedBackgroundsOf(parts.assets.get())),
       background_(
@@ -105,7 +105,7 @@ bool ClientScreens::isEmpty() const { return screens_.isEmpty(); }
 
 void ClientScreens::followSessionBackgrounds() {
   std::shared_ptr<const BackgroundCatalog> session =
-      sessionBackgrounds_->backgrounds();
+      sessionPack_->backgrounds();
   if (!holdsTheImagesOf(*assets_, session.get())) {
     session.reset();
   }

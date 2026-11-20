@@ -102,6 +102,12 @@ A platform file such as `FineTimerResolutionWindows.cpp` is linted only by the C
 ### Adjacent parameters of different integer types are swappable for the CI
 
 1. **`bugprone-easily-swappable-parameters` of the CI's clang-tidy 22 reports adjacent `int` and `std::size_t` parameters** that the local clang-tidy 21 lets through. A new function taking two or three numbers in a row (`points`, `players`, `percent`) takes them as one struct with designated members instead (`BossHealthScaling`).
+2. **No local clang-tidy reproduces it, so search the signatures of the branch before the push**: the next command must print nothing.
+   ```bash
+   git diff origin/main...HEAD -- 'src/*.hpp' 'src/*.cpp' 'tests/*.hpp' 'tests/*.cpp' | grep -E '^\+' | grep -v '^+++' | grep -P '(std::u?int\d+_t|std::size_t|int|float|double|bool|char|std::ptrdiff_t)\s+[a-z][A-Za-z]*\s*,\s*(const\s+)?(std::u?int\d+_t|std::size_t|int|float|double|bool|char|std::ptrdiff_t)\s+[a-z]'
+   ```
+   Calibration: with `b03713ef 773a9f13` in place of `origin/main...HEAD`, it prints `std::size_t mapCount, std::uint32_t seed`, the pair of `votedMapOf` the CI refused.
+3. **Take the object the numbers come from when there is one**: `votedMapOf(players, maps, seed)` takes the span of the maps, not their count.
 
 ## Example
 

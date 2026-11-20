@@ -41,6 +41,7 @@ using rtype::network::TRAFFIC_CSV_OPTION;
 using rtype::server::INPUT_DELAY_OPTION;
 using rtype::server::LaunchOptions;
 using rtype::server::SEED_OPTION;
+using rtype::server::START_AT_STAGE_OPTION;
 using rtype::server::STATE_RATE_OPTION;
 using rtype::server::SUPERVISOR_OPTION;
 
@@ -703,4 +704,27 @@ TEST(ServerLaunchOptions, HandsTheGamesNoJournalAndNoStandardError) {
 
   EXPECT_TRUE(std::ranges::equal(options.gameArguments(),
                                  Arguments{NO_FILE_OPTION, NO_STDERR_OPTION}));
+}
+
+/**
+ * Given the stage option and the stage 4
+ * When the launch options are read
+ * Then the line that starts every game of a level at stage 4 is forced
+ */
+TEST(ServerLaunchOptions, StageOptionForcesTheSetting) {
+  const LaunchOptions options =
+      LaunchOptions::read(Arguments{START_AT_STAGE_OPTION, STAGE_ARGUMENT});
+
+  EXPECT_EQ(options.forcedLines(), Lines{std::string(STAGE_LINE)});
+}
+
+/**
+ * Given the stage option and the stage 0, before the first
+ * When the launch options are read
+ * Then the value is refused
+ */
+TEST(ServerLaunchOptions, StageOptionRefusesAStageBeforeTheFirst) {
+  EXPECT_THROW(static_cast<void>(LaunchOptions::read(Arguments{
+                   START_AT_STAGE_OPTION, STAGE_BEFORE_THE_FIRST_ARGUMENT})),
+               InvalidLaunchOptionValueException);
 }

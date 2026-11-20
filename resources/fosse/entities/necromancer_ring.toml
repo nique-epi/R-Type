@@ -1,0 +1,40 @@
+# The entity type necromancer_ring, brought by the resource fosse:
+# a ring a hand of the Necromancer throws; it stops missiles.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy"
+layer = "enemy"
+hits = ["player"]
+pilot = "necromancer_ring"
+
+[gameplay.hitbox]
+width = 70
+height = 74
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 900
+
+# Out along its lane to x 96, back along the middle lane, row 530, to x 1400.
+[gameplay.behaviour]
+turn_x = 96
+middle_y = 530
+return_x = 1400
+
+[gameplay.survives_contact]
+
+[appearance]
+sheet = "sprites/fosse/necromancer_ring.png"
+
+# Idle: a ring thrown by a hand, spinning as it flies.
+[appearance.idle]
+left = 0
+top = 0
+width = 18
+height = 19
+frames = 17
+spacing = 2
+frame_ms = 83

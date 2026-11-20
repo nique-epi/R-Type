@@ -207,7 +207,8 @@ GameInstanceTest::GameInstanceTest(std::size_t inputDelayTicks)
                   GameSettings{.seed = SOME_SEED,
                                .waves = testWavePlan(),
                                .types = game::testing::shippedEntitySheets(),
-                               .inputDelayTicks = inputDelayTicks},
+                               .inputDelayTicks = inputDelayTicks,
+                               .maps = {}},
               .events = events_,
               .clock = clock_},
           modulesWithRulesAt(rules_, results_)) {}
@@ -549,7 +550,8 @@ network::LobbyState roomOfTheFirstPlayerNotReady() {
   return network::LobbyState{.players = {network::LobbyPlayer{
                                  .playerNumber = network::FIRST_PLAYER_NUMBER,
                                  .ready = false,
-                                 .nickname = std::string{PLAYER_NICKNAME}}}};
+                                 .nickname = std::string{PLAYER_NICKNAME}}},
+                             .maps = {}};
 }
 
 std::vector<std::byte> inputPayload(const network::PlayerInput& input) {

@@ -41,11 +41,14 @@ GameFlowFixture::GameFlowFixture(WavePlan waves)
 
 GameFlowFixture::GameFlowFixture(WavePlan waves,
                                  const game::EntitySheets& types)
-    : GameFlowFixture(GameSettings{
-          .seed = SOME_SEED, .waves = std::move(waves), .types = types}) {}
+    : GameFlowFixture(GameSettings{.seed = SOME_SEED,
+                                   .waves = std::move(waves),
+                                   .types = types,
+                                   .maps = {}}) {}
 
 GameFlowFixture::GameFlowFixture(GameSettings settings)
-    : readyKeeper_(roster_, [] { return true; }),
+    : readyKeeper_(
+          roster_, [] { return true; }, settings.maps.size()),
       context_{.events = events_,
                .systems = systems_,
                .roster = roster_,
@@ -142,10 +145,12 @@ GameFlowFriendlyFireFixture::GameFlowFriendlyFireFixture()
           .seed = SOME_SEED,
           .waves = testWavePlan(),
           .types = game::testing::shippedEntitySheets(),
-          .rules = network::GameRules{
-              .difficulty = std::string{identifiers::DEFAULT_DIFFICULTY},
-              .lives = identifiers::DEFAULT_LIVES,
-              .friendlyFire = true}}) {}
+          .rules =
+              network::GameRules{
+                  .difficulty = std::string{identifiers::DEFAULT_DIFFICULTY},
+                  .lives = identifiers::DEFAULT_LIVES,
+                  .friendlyFire = true},
+          .maps = {}}) {}
 
 void GameFlowFriendlyFireFixture::fireAt(const ConnectedPlayer& target,
                                          std::uint8_t shooter) {

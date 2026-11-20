@@ -2,26 +2,77 @@
 #include <cstddef>
 #include <cstdint>
 #include <span>
+#include <string>
 #include <type_traits>
+#include <utility>
+#include <vector>
 #include "ByteReader.hpp"
 #include "ByteWriter.hpp"
+#include "ContentPack.hpp"
+#include "LobbyMap.hpp"
+#include "NetworkException.hpp"
+#include "ProtocolConstants.hpp"
 #include "WireTypes.hpp"
 
 namespace rtype::network {
 
 namespace {
 
+/** @throws InvalidFieldValueException naming mapCount when @p count is past
+ * MAXIMUM_LOBBY_MAPS. */
+void requireMapCount(std::size_t count) {
+  if (count > MAXIMUM_LOBBY_MAPS) {
+    throw InvalidFieldValueException(MAP_COUNT_FIELD, count);
+  }
+}
+
+/** @brief Checks the maps of @p message, and the vote of each player against
+ * them; see encodePayload(). */
+void validateMaps(const LobbyState& message) {
+  requireMapCount(message.maps.size());
+  for (const LobbyMap& map : message.maps) {
+    if (!isValidNickname(map.name)) {
+      throw InvalidFieldValueException(MAP_NAME_FIELD, map.name.size());
+    }
+    if (!map.preview.empty() && !isContentPath(map.preview)) {
+      throw InvalidFieldValueException(MAP_PREVIEW_FIELD, map.preview.size());
+    }
+  }
+  for (const LobbyPlayer& player : message.players) {
+    if (player.mapVote > message.maps.size()) {
+      throw InvalidFieldValueException(MAP_VOTE_FIELD, player.mapVote);
+    }
+  }
+}
+
 void validate(const LobbyState& message) {
   requireValidPlayers(std::span<const LobbyPlayer>{message.players});
   for (const LobbyPlayer& player : message.players) {
     requireValidNickname(player.nickname);
   }
+  validateMaps(message);
 }
 
 LobbyPlayer readPlayer(ByteReader& reader) {
   return LobbyPlayer{.playerNumber = reader.readUint8(),
                      .ready = readBool(reader),
-                     .nickname = reader.readString()};
+                     .nickname = reader.readString(),
+                     .mapVote = reader.readUint8()};
+}
+
+/** @returns The maps @p reader holds, their number checked before any is
+ * read. */
+std::vector<LobbyMap> readMaps(ByteReader& reader) {
+  const std::uint8_t count = reader.readUint8();
+  requireMapCount(count);
+  std::vector<LobbyMap> maps;
+  maps.reserve(count);
+  for (std::uint8_t index = 0; index < count; ++index) {
+    std::string name = reader.readString();
+    maps.push_back(
+        LobbyMap{.name = std::move(name), .preview = reader.readString()});
+  }
+  return maps;
 }
 
 }  // namespace
@@ -33,6 +84,12 @@ void encodePayload(ByteWriter& writer, const LobbyState& message) {
     writer.writeUint8(player.playerNumber);
     writeBool(writer, player.ready);
     writer.writeString(player.nickname);
+    writer.writeUint8(player.mapVote);
+  }
+  writer.writeUint8(static_cast<std::uint8_t>(message.maps.size()));
+  for (const LobbyMap& map : message.maps) {
+    writer.writeString(map.name);
+    writer.writeString(map.preview);
   }
 }
 
@@ -45,6 +102,7 @@ LobbyState decodePayload(std::span<const std::byte> payload,
   for (std::uint8_t index = 0; index < playerCount; ++index) {
     message.players.push_back(readPlayer(reader));
   }
+  message.maps = readMaps(reader);
   requireFullyRead(reader);
   validate(message);
   return message;

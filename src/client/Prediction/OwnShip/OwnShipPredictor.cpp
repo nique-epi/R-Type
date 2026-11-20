@@ -77,6 +77,7 @@ void OwnShipPredictor::apply(const network::WorldState& state) {
       *listed != *shipEntityId_) {
     shipEntityId_.reset();
     prediction_ = ShipPrediction{};
+    prediction_.useBand(band_);
   }
   const std::optional<OwnShip> own = ownShipOf(state, playerNumber_);
   if (!own.has_value()) {
@@ -92,6 +93,11 @@ void OwnShipPredictor::apply(const network::WorldState& state) {
 
 void OwnShipPredictor::seeObstacles(std::span<const engine::Bounds> obstacles) {
   prediction_.seeObstacles(obstacles);
+}
+
+void OwnShipPredictor::useBand(game::PlayBand band) {
+  band_ = band;
+  prediction_.useBand(band);
 }
 
 std::optional<std::uint32_t> OwnShipPredictor::shipEntityId() const {

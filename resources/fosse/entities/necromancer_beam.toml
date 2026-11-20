@@ -1,0 +1,53 @@
+# The entity type necromancer_beam, brought by the resource fosse:
+# the beam of the gaze of the Necromancer, drawn only: the boss hurts.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy"
+layer = "boss_effect"
+pilot = "necromancer_gaze"
+
+# Only its hurt zone touches a ship: its hitbox lies far below the
+# playfield, where no ship flies.
+[gameplay.hitbox]
+width = 4
+height = 4
+offset_y = 1024
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 1
+
+# It aims through the signal of the gaze, 1494 ms, then burns through its
+# strike, 830 ms.
+[gameplay.behaviour]
+aim_ms = 1494
+burn_ms = 830
+
+[appearance]
+sheet = "sprites/fosse/necromancer_beam.png"
+
+# Idle: the beam of the gaze, 1600 units long, its right end at the mask; it
+# starts thin, then burns at full width, its core pulsing and its edge
+# streaming left.
+[appearance.idle]
+left = 0
+top = 0
+width = 400
+height = 14
+frames = 10
+spacing = 2
+frame_ms = 42
+
+# Its aim, shown while the boss signals its gaze: a thin pink line that blinks
+# and streams left where the beam will burn.
+[appearance.looks.aim]
+left = 0
+top = 16
+width = 400
+height = 14
+frames = 10
+spacing = 2
+frame_ms = 60

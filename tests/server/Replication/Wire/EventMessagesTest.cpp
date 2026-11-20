@@ -270,15 +270,17 @@ TEST(EventMessagesTest, EncodesADeadBossAsDefeated) {
 }
 
 /**
- * Given the biome wreck, scrolled 240 units, its scroll paused
+ * Given the biome wreck, scrolled 240 units, its scroll paused, closed from
+ * row 192 to row 848
  * When the change of the level is encoded
- * Then it is a guaranteed LevelStatus of that biome and that scroll
+ * Then it is a guaranteed LevelStatus of that biome, that scroll and that band
  */
 TEST(EventMessagesTest, EncodesAChangeOfTheLevel) {
-  const EventMessage message = eventMessageOf(
-      game::LevelChange{.biome = std::string{LEVEL_BIOME},
-                        .scrollPosition = LEVEL_SCROLL_POSITION,
-                        .scrollSpeed = PAUSED_LEVEL_SCROLL_SPEED});
+  const EventMessage message =
+      eventMessageOf(game::LevelChange{.biome = std::string{LEVEL_BIOME},
+                                       .scrollPosition = LEVEL_SCROLL_POSITION,
+                                       .scrollSpeed = PAUSED_LEVEL_SCROLL_SPEED,
+                                       .band = LEVEL_BAND});
 
   EXPECT_EQ(message.message.type, network::MessageType::LevelStatus);
   EXPECT_TRUE(message.guaranteed);
@@ -286,7 +288,31 @@ TEST(EventMessagesTest, EncodesAChangeOfTheLevel) {
       network::decodeMessage<network::LevelStatus>(message.message.payload),
       (network::LevelStatus{.biome = std::string{LEVEL_BIOME},
                             .scrollPosition = LEVEL_SCROLL_POSITION,
-                            .scrollSpeed = PAUSED_LEVEL_SCROLL_SPEED}));
+                            .scrollSpeed = PAUSED_LEVEL_SCROLL_SPEED,
+                            .bandTop = WIRE_LEVEL_BAND_TOP,
+                            .bandBottom = WIRE_LEVEL_BAND_BOTTOM}));
+}
+
+/**
+ * Given the change of a level that opens in its biome, the biome told to
+ * have begun 4096 logical units before the scroll started
+ * When the change of the level is encoded and decoded
+ * Then the LevelStatus holds that negative position: the status of such a
+ * level is sent, and a client draws the biome without its entrance
+ */
+TEST(EventMessagesTest, EncodesTheBiomeALevelOpensIn) {
+  const EventMessage message =
+      eventMessageOf(game::LevelChange{.biome = std::string{LEVEL_BIOME},
+                                       .scrollPosition = LEVEL_SCROLL_POSITION,
+                                       .scrollSpeed = PAUSED_LEVEL_SCROLL_SPEED,
+                                       .biomeSince = OPENING_BIOME_BEGAN_AT,
+                                       .transitionLeft = 0,
+                                       .band = LEVEL_BAND});
+
+  EXPECT_FLOAT_EQ(
+      network::decodeMessage<network::LevelStatus>(message.message.payload)
+          .biomeSince,
+      OPENING_BIOME_BEGAN_AT);
 }
 
 }  // namespace rtype::server::testing

@@ -2,6 +2,7 @@
 #include "ComponentRegistry.hpp"
 #include "Entity.hpp"
 #include "PilotShip.hpp"
+#include "Position.hpp"
 #include "Sprite.hpp"
 
 namespace rtype::client {
@@ -16,6 +17,13 @@ PilotShips pilotShipsOf(engine::ComponentRegistry& components) {
         }
       });
   return found;
+}
+
+void shiftPilotShips(engine::ComponentRegistry& components, float shift) {
+  components.forEach<PilotShip, game::Position>(
+      [shift](engine::Entity, const PilotShip&, game::Position& position) {
+        position.x += shift;
+      });
 }
 
 }  // namespace rtype::client

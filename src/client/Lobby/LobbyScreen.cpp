@@ -3,7 +3,6 @@
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Event.hpp>
-#include <SFML/Window/Keyboard.hpp>
 #include <SFML/Window/Mouse.hpp>
 #include <algorithm>
 #include <cstddef>
@@ -25,6 +24,7 @@
 #include "HelpWalkthroughConstants.hpp"
 #include "HelpWalkthroughParts.hpp"
 #include "IInterfaceCanvas.hpp"
+#include "IMapPreviews.hpp"
 #include "IScreenNavigator.hpp"
 #include "IServerConnection.hpp"
 #include "IShipLookExchange.hpp"
@@ -33,17 +33,21 @@
 #include "InterfaceConstants.hpp"
 #include "InterfacePixel.hpp"
 #include "KeyChipParts.hpp"
+#include "KeyDown.hpp"
+#include "LobbyMap.hpp"
 #include "LobbyPartAreas.hpp"
 #include "LobbyPlace.hpp"
 #include "LobbyScreenConstants.hpp"
 #include "LobbyScreenParts.hpp"
 #include "LobbyState.hpp"
+#include "MapVoteCardParts.hpp"
 #include "Menu.hpp"
 #include "MenuBuilder.hpp"
 #include "MenuScreenIdConstants.hpp"
 #include "PilotColor.hpp"
 #include "PlayerLooks.hpp"
 #include "PlayfieldMapping.hpp"
+#include "ProtocolConstants.hpp"
 #include "ScreenConstants.hpp"
 #include "ScreenId.hpp"
 #include "ShipLook.hpp"
@@ -99,21 +103,6 @@ std::string statusLine(std::span<const network::LobbyPlayer> players,
     return YOU_NOT_READY_STATUS;
   }
   return waiting->nickname + PILOT_NOT_READY_STATUS;
-}
-
-/** @returns Whether @p event presses (true) or releases (false) @p key;
- * nothing for any other event. */
-std::optional<bool> readyKeyDownOf(const sf::Event& event,
-                                   sf::Keyboard::Scancode key) {
-  if (const auto* pressed = event.getIf<sf::Event::KeyPressed>();
-      pressed != nullptr && pressed->scancode == key) {
-    return true;
-  }
-  if (const auto* released = event.getIf<sf::Event::KeyReleased>();
-      released != nullptr && released->scancode == key) {
-    return false;
-  }
-  return std::nullopt;
 }
 
 /** @brief Tells each of @p widgets that the events stop reaching it, so none
@@ -229,25 +218,53 @@ std::optional<sf::IntRect> ownBayAreaIn(const Menu& menu,
 
 /** @returns Where the room paints the parts its help explains, as
  * MenuBuilder lays a room: the bays, where the menu lays its illustration;
- * READY, its only bar, centered SPACE_ABOVE_ROOM_BARS under them; the status
- * line BUTTON_GAP under READY, centered; then BACK. Menu gives no area of a
- * bar, so READY and the status line are placed by the same arithmetic as
- * MenuBuilder::placeRoom. */
-LobbyPartAreas partAreasOf(sf::IntRect bays, std::optional<int> ownSlot,
-                           int statusWidth) {
+ * READY then MAP, its two bars, centered side by side SPACE_ABOVE_ROOM_BARS
+ * under them, the card of the map over MAP, MAP_CARD_RISE higher and
+ * MAP_CARD_HEIGHT tall; the status line BUTTON_GAP under READY, as wide; then
+ * BACK. Menu gives no area of a bar, so READY is placed by the same arithmetic
+ * as MenuBuilder::placeRoom. */
+LobbyPartAreas partAreasOf(sf::IntRect bays, std::optional<int> ownSlot) {
   const sf::IntRect ready(
-      {(INTERFACE_AREA.size.x - BUTTON_SIZE.x) / SIDES_PER_AXIS,
+      {(INTERFACE_AREA.size.x - LOBBY_BARS_WIDTH) / SIDES_PER_AXIS,
        bays.position.y + bays.size.y + SPACE_ABOVE_ROOM_BARS},
       BUTTON_SIZE);
-  const int statusShown = std::max(statusWidth, BUTTON_SIZE.x);
   return {.bays = bays,
           .ownBay = ownBayArea(bays, ownSlot).value_or(bays),
           .ready = ready,
+          .map = sf::IntRect(
+              ready.position +
+                  sf::Vector2i(BUTTON_SIZE.x + BUTTON_GAP, -MAP_CARD_RISE),
+              {BUTTON_SIZE.x, MAP_CARD_HEIGHT}),
           .status = sf::IntRect(
-              {(INTERFACE_AREA.size.x - statusShown) / SIDES_PER_AXIS,
-               ready.position.y + ready.size.y + BUTTON_GAP},
-              {statusShown, TEXT_LINE_HEIGHT}),
+              {ready.position.x, ready.position.y + ready.size.y + BUTTON_GAP},
+              {ready.size.x, TEXT_LINE_HEIGHT}),
           .back = backChipArea()};
+}
+
+/** @brief Writes @p status centered in @p area, in the font of
+ * ROOM_STATUS_STYLE when it fits, in the small font otherwise, so it never
+ * reaches the card of the map beside it. */
+void paintStatus(IInterfaceCanvas& canvas, sf::IntRect area,
+                 const std::string& status) {
+  TextStyle style = ROOM_STATUS_STYLE;
+  if (canvas.textWidth(status, style.font) > area.size.x) {
+    style.font = TextFont::Small;
+  }
+  canvas.write(
+      status,
+      {area.position.x + (area.size.x / SIDES_PER_AXIS), area.position.y},
+      style);
+}
+
+/** @returns The line of a bay that says the map numbered @p vote among
+ * @p maps; empty without a vote, or for a vote past the last map. */
+std::string mapVoteLineOf(std::span<const network::LobbyMap> maps,
+                          std::uint8_t vote) {
+  if (vote == network::NO_MAP_VOTE || vote > maps.size()) {
+    return {};
+  }
+  return BAY_VOTE_PREFIX +
+         maps[static_cast<std::size_t>(vote - FIRST_MAP_NUMBER)].name;
 }
 
 /** @returns The look @p looks shows on the player numbered @p number; nothing
@@ -261,7 +278,8 @@ ShipLook lookOf(std::span<const network::PlayerLook> looks,
 }  // namespace
 
 LobbyScreen::LobbyScreen(LobbyScreenParts parts,
-                         std::unique_ptr<IInterfaceCanvas> canvas)
+                         std::unique_ptr<IInterfaceCanvas> canvas,
+                         std::unique_ptr<IMapPreviews> previews)
     : navigator_(&parts.navigator.get()),
       connection_(&parts.connection.get()),
       waitingRoom_(&parts.waitingRoom.get()),
@@ -302,7 +320,18 @@ LobbyScreen::LobbyScreen(LobbyScreenParts parts,
                 navigator_->push(HANGAR_SCREEN);
               },
           .sounds = parts.sounds}),
-      chat_(parts.chat.get(), parts.settings.get()) {
+      chat_(parts.chat.get(), parts.settings.get()),
+      previews_(std::move(previews)),
+      mapVoteCard_(MapVoteCardParts{
+          .ballot = parts.mapBallot,
+          .room = parts.waitingRoom.get(),
+          .sounds = parts.sounds,
+          .previews = *previews_,
+          .palette = parts.palette,
+          .area = partAreasOf(menu_.illustrationArea().value_or(sf::IntRect()),
+                              std::nullopt)
+                      .map,
+          .playfieldPointAt = playfieldPointAt_}) {
   repaint();
 }
 
@@ -313,10 +342,11 @@ void LobbyScreen::handleEvent(const sf::Event& event) {
   }
   if (chat_.handleEvent(event)) {
     readyKeyHeld_ = false;
+    mapVoteCard_.handleEvent(sf::Event::FocusLost{});
     dropHeldInput(playfieldPointAt_, leaderboardChip_, hangarChip_, menu_);
     return;
   }
-  if (const std::optional<bool> down = readyKeyDownOf(event, readyKey_)) {
+  if (const std::optional<bool> down = keyDownOf(event, readyKey_)) {
     if (*down && !readyKeyHeld_) {
       sounds_->play(CLICK_SOUND_ID);
       toggleReady();
@@ -326,7 +356,8 @@ void LobbyScreen::handleEvent(const sf::Event& event) {
   }
   readyKeyHeld_ = readyKeyHeld_ && !event.is<sf::Event::FocusLost>();
   if (leaderboardChip_.handleEvent(event, playfieldPointAt_) ||
-      hangarChip_.handleEvent(event, playfieldPointAt_)) {
+      hangarChip_.handleEvent(event, playfieldPointAt_) ||
+      mapVoteCard_.handleEvent(event)) {
     return;
   }
   if (clicksInside(event, ownBayAreaIn(menu_, *waitingRoom_, *connection_),
@@ -363,6 +394,8 @@ Menu LobbyScreen::buildMenu(std::string readyKeyName) {
       .illustration(LOBBY_BAYS_SIZE)
       .button({.label = READY_LABEL, .keyName = std::move(readyKeyName)},
               [this] { toggleReady(); })
+      .button({.label = MAP_BAR_CLOSED, .keyName = MAP_KEY_NAME},
+              [this] { mapVoteCard_.press(); })
       .cancelButton({.label = BACK_LABEL}, [this] { leave(); })
       .build();
 }
@@ -392,16 +425,18 @@ void LobbyScreen::repaint() {
   const std::span<const network::LobbyPlayer> players =
       waitingRoom_->lobbyPlayers();
   const std::uint8_t ownNumber = connection_->status().playerNumber;
-  std::string status = statusLine(players, ownNumber);
+  const std::string status = statusLine(players, ownNumber);
   const LobbyPartAreas parts =
       partAreasOf(menu_.illustrationArea().value_or(sf::IntRect()),
-                  ownSlotOf(players, ownNumber),
-                  canvas_->textWidth(status, ROOM_STATUS_STYLE.font));
+                  ownSlotOf(players, ownNumber));
   menu_.setLabel(READY_BUTTON, wantsReady() ? CANCEL_READY_LABEL : READY_LABEL);
-  menu_.setStatus(std::move(status));
+  menu_.setLabel(MAP_BUTTON, mapVoteCard_.label());
+  menu_.setEnabled(MAP_BUTTON, mapVoteCard_.isOpen());
   canvas_->clear();
   if (!help_.showsGame()) {
     menu_.paint(*canvas_);
+    mapVoteCard_.paint(*canvas_, menu_.selectedButton() == MAP_BUTTON);
+    paintStatus(*canvas_, parts.status, status);
     paintBays();
     const std::string pilots = pilotCount(players.size());
     canvas_->write(pilots, PILOT_COUNT_ANCHOR, PILOT_COUNT_STYLE);
@@ -453,7 +488,8 @@ BayPilot LobbyScreen::pilotOf(const network::LobbyPlayer& player) const {
           .isLocalPlayer = isLocalPlayer,
           .look = isLocalPlayer
                       ? *look_
-                      : lookOf(shipLooks_->playerLooks(), player.playerNumber)};
+                      : lookOf(shipLooks_->playerLooks(), player.playerNumber),
+          .mapVote = mapVoteLineOf(waitingRoom_->lobbyMaps(), player.mapVote)};
 }
 
 }  // namespace rtype::client

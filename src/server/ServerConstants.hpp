@@ -33,6 +33,13 @@ constexpr std::string_view INPUT_DELAY_SETTING_NAME = "input-delay";
 /** @brief The setting that starts every game at its boss, without the
  * waves: 1 to skip them, 0 (the default) to play them. */
 constexpr std::string_view START_AT_BOSS_SETTING_NAME = "start-at-boss";
+/** @brief The setting that starts every game that plays a level at a stage of
+ * it, counted from FIRST_LEVEL_STAGE (the default), from where the script of
+ * the level declares that stage starts. */
+constexpr std::string_view START_AT_STAGE_SETTING_NAME = "start-at-stage";
+/** @brief The first stage of a level, where every game starts unless
+ * START_AT_STAGE_SETTING_NAME names another. */
+constexpr std::size_t FIRST_LEVEL_STAGE = 1;
 /** @brief The setting that names the level every game plays, one a script
  * registered with `level.register`; empty (the default) plays the waves of
  * the difficulty of the game, the survival mode. */
@@ -56,9 +63,10 @@ constexpr std::array SERVER_SETTING_NAMES{
     PORT_SETTING_NAME,           SEED_SETTING_NAME,
     STATE_RATE_SETTING_NAME,     STATE_ENCODING_SETTING_NAME,
     INPUT_DELAY_SETTING_NAME,    START_AT_BOSS_SETTING_NAME,
-    LEVEL_SETTING_NAME,          DATABASE_SETTING_NAME,
-    MASTER_URL_SETTING_NAME,     MASTER_KEY_SETTING_NAME,
-    PUBLIC_ADDRESS_SETTING_NAME, SERVER_NAME_SETTING_NAME};
+    START_AT_STAGE_SETTING_NAME, LEVEL_SETTING_NAME,
+    DATABASE_SETTING_NAME,       MASTER_URL_SETTING_NAME,
+    MASTER_KEY_SETTING_NAME,     PUBLIC_ADDRESS_SETTING_NAME,
+    SERVER_NAME_SETTING_NAME};
 
 /**
  * @brief The highest seed: the seed of a game is 32 bits.
@@ -109,6 +117,12 @@ constexpr std::string_view SEED_OPTION = "--seed";
  * waves: it forces START_AT_BOSS_SETTING_NAME to 1.
  */
 constexpr std::string_view START_AT_BOSS_OPTION = "--boss";
+
+/**
+ * @brief Launch option that starts every game that plays a level at a stage
+ * of it: it forces START_AT_STAGE_SETTING_NAME to its value.
+ */
+constexpr std::string_view START_AT_STAGE_OPTION = "--stage";
 
 /**
  * @brief The name of game n, from 1, is this prefix and n: the name the master
@@ -183,7 +197,7 @@ constexpr std::uint64_t OFFICIAL_WAVES_FINGERPRINT = 0x9719fc671f2bf7f3;
  * are not vanilla. A test fails when a shipped sheet changes and this does
  * not.
  */
-constexpr std::uint64_t OFFICIAL_ENTITY_SHEETS_FINGERPRINT = 0x371ed15a17a8ffcd;
+constexpr std::uint64_t OFFICIAL_ENTITY_SHEETS_FINGERPRINT = 0x3ee951de46fbe215;
 
 /**
  * @brief Why the games of a server are not vanilla, as the lines of its journal

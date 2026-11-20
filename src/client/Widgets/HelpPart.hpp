@@ -16,6 +16,7 @@ enum class HelpPart : std::uint8_t {
   Bays,
   OwnBay,
   Ready,
+  Map,
   Status,
   Back,
   Help,

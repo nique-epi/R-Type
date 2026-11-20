@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <string_view>
 #include "Position.hpp"
 #include "TimeConstants.hpp"
@@ -239,3 +240,59 @@ level.register("test_level", {
 })
 )";
 constexpr std::size_t TICKS_TO_THE_SECOND_STAGE = 2;
+
+/** @brief A level whose stage names a biome, plays a transition of 3 s, the
+ * shortest, then names another; and one whose transition is a millisecond
+ * shorter than that. A transition of 3000 ms lasts 180 ticks: a stage that
+ * starts it at tick 1 goes on at tick 181. */
+constexpr std::string_view PLAYS_A_TRANSITION = R"(
+level.register("test_level", { function()
+  level.biome("before")
+  level.transition(3000)
+  level.biome("after")
+end })
+)";
+constexpr std::string_view PLAYS_A_SHORT_TRANSITION = R"(
+level.register("test_level", { function()
+  level.transition(2999)
+end })
+)";
+constexpr std::uint32_t TICKS_OF_THE_TRANSITION = 180;
+constexpr std::size_t TICKS_UNTIL_THE_LAST_OF_THE_TRANSITION = 180;
+constexpr std::size_t TICKS_UNTIL_THE_TRANSITION_IS_OVER = 181;
+constexpr std::string_view BIOME_BEFORE_THE_TRANSITION = "before";
+constexpr std::string_view BIOME_AFTER_THE_TRANSITION = "after";
+constexpr std::string_view WORD_OF_A_REFUSED_TRANSITION = "transition";
+
+/** @brief The ground of the biome caves, one map one pixel wide: its floor
+ * at row 200, its ceiling at row 40. */
+constexpr std::string_view GROUND_BIOME = "caves";
+constexpr int CAVES_FLOOR_ROW = 200;
+constexpr int CAVES_CEILING_ROW = 40;
+
+/** @brief A level whose stage enters the caves, then reads the ground: at
+ * the right edge, where the caves begin, the floor at 800 units and the
+ * ceiling at 160, 4 units a pixel; at the left edge, before them, none. It
+ * names the biome found when every answer is right, lost otherwise. */
+constexpr std::string_view READS_THE_GROUND = R"(
+level.register("test_level", { function()
+  level.biome("caves")
+  if level.ground(1920) == 800 and level.ceiling(1920) == 160 and level.ground(0) == nil then
+    level.biome("found")
+  else
+    level.biome("lost")
+  end
+end })
+)";
+constexpr std::string_view GROUND_FOUND_BIOME = "found";
+
+/** @brief A level whose stage stays in the open and reads the ground: it
+ * names the biome none when there is none. */
+constexpr std::string_view READS_NO_GROUND = R"(
+level.register("test_level", { function()
+  if level.ground(1920) == nil and level.ceiling(1920) == nil then
+    level.biome("none")
+  end
+end })
+)";
+constexpr std::string_view NO_GROUND_BIOME = "none";

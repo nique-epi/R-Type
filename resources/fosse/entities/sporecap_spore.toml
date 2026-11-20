@@ -1,0 +1,36 @@
+# The entity type sporecap_spore, brought by the resource fosse:
+# a spore of the Sporecap, drifting left in a wave.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy_missile"
+layer = "enemy_missile"
+hits = ["player"]
+pilot = "weave"
+
+[gameplay.hitbox]
+width = 32
+height = 32
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 240
+
+[gameplay.behaviour]
+amplitude = 48
+period_ms = 900
+
+[appearance]
+sheet = "sprites/fosse/sporecap_spore.png"
+
+# Idle: a spore that pulses as it drifts.
+[appearance.idle]
+left = 0
+top = 0
+width = 8
+height = 8
+frames = 2
+spacing = 2
+frame_ms = 120

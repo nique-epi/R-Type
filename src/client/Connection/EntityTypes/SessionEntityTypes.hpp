@@ -1,14 +1,16 @@
 #pragma once
 
 #include <cstdint>
+#include <filesystem>
 #include <memory>
 #include <optional>
+#include <string_view>
 #include <vector>
 #include "BackgroundCatalog.hpp"
 #include "ContentFingerprint.hpp"
 #include "EntityAppearances.hpp"
 #include "IEntityTypeTable.hpp"
-#include "ISessionBackgrounds.hpp"
+#include "ISessionPack.hpp"
 #include "LocalContent.hpp"
 #include "NumberedEntityType.hpp"
 #include "PackContent.hpp"
@@ -29,8 +31,7 @@ namespace rtype::client {
  * forget() comes back to the client's own. Not thread-safe: use it from the
  * frame loop only.
  */
-class SessionEntityTypes final : public IEntityTypeTable,
-                                 public ISessionBackgrounds {
+class SessionEntityTypes final : public IEntityTypeTable, public ISessionPack {
  public:
   explicit SessionEntityTypes(LocalContent local);
 
@@ -60,6 +61,9 @@ class SessionEntityTypes final : public IEntityTypeTable,
 
   [[nodiscard]] std::shared_ptr<const BackgroundCatalog> backgrounds()
       const override;
+
+  [[nodiscard]] std::optional<std::filesystem::path> packFileOf(
+      std::string_view path) const override;
 
  private:
   [[nodiscard]] const std::vector<game::NumberedEntityType>& types() const;

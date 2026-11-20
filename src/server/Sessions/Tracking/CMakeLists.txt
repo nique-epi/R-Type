@@ -17,6 +17,7 @@ target_link_libraries(rtype_server_sessions_tracking
     rtype_logging
     rtype_network_game_loaded
     rtype_network_heartbeat
+    rtype_network_map_vote
     rtype_network_player_input
     rtype_network_protocol
     rtype_network_ready_state

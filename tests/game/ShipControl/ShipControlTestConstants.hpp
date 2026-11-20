@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include "CollisionConstants.hpp"
+#include "PlayBand.hpp"
 #include "PlayfieldConstants.hpp"
 #include "Position.hpp"
 #include "ShipControl.hpp"
@@ -125,5 +126,18 @@ constexpr float PARTIAL_STEERING = 0.25F;
 
 /** @brief The input number of an input recorded by motionAfterInput(). */
 constexpr std::uint32_t SOME_INPUT_NUMBER = 3;
+
+/**
+ * @brief The band of the Pit, its ceiling on row 192 and its floor on row 848,
+ * and where the center of a ship stops against each: half a ship (32 units)
+ * inside, on rows 224 and 816.
+ */
+constexpr PlayBand PIT_BAND{.top = 192.0F, .bottom = 848.0F};
+constexpr float PIT_CEILING_STOP_Y = 224.0F;
+constexpr float PIT_FLOOR_STOP_Y = 816.0F;
+
+/** @brief A band 40 units tall, less than a ship, and its middle row. */
+constexpr PlayBand NARROW_BAND{.top = 500.0F, .bottom = 540.0F};
+constexpr float NARROW_BAND_MIDDLE_Y = 520.0F;
 
 }  // namespace rtype::game::testing

@@ -4,6 +4,7 @@
 #include <optional>
 #include "GameRules.hpp"
 #include "IChatChannel.hpp"
+#include "IMapBallot.hpp"
 #include "IScreenNavigator.hpp"
 #include "IServerConnection.hpp"
 #include "IShipLookExchange.hpp"
@@ -43,6 +44,9 @@ struct LobbyScreenParts {
   /** @brief Where the screen sends the look of the player and reads the look
    * of every pilot, which must outlive it. */
   std::reference_wrapper<IShipLookExchange> shipLooks;
+  /** @brief Carries the map vote of the player, which must outlive the
+   * screen. */
+  std::reference_wrapper<IMapBallot> mapBallot;
   /** @brief Gives the point of the playfield under a pixel of the window. */
   PlayfieldMapping playfieldPointAt;
   /** @brief The keys the player chose, read when the screen is built: READY

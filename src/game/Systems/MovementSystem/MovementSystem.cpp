@@ -5,6 +5,7 @@
 #include "Entity.hpp"
 #include "Intent.hpp"
 #include "ObstacleBlocking.hpp"
+#include "PlayBand.hpp"
 #include "Position.hpp"
 #include "ShipControl.hpp"
 #include "ShipMotion.hpp"
@@ -18,8 +19,9 @@ namespace {
 
 /**
  * @brief Moves every entity with a Position, a ShipMotion and an Intent over
- * @p elapsed by the directions its Intent holds (see shipAfter()), stopped
- * against @p blocking (see blockedByObstacles()).
+ * @p elapsed by the directions its Intent holds (see shipAfter()), within its
+ * PlayBand, the whole play area without one, stopped against @p blocking (see
+ * blockedByObstacles()).
  */
 void moveByIntent(engine::ComponentRegistry& components,
                   engine::Duration elapsed,
@@ -31,7 +33,10 @@ void moveByIntent(engine::ComponentRegistry& components,
         if (position == nullptr) {
           return;
         }
-        const MovingShip from{.position = *position, .motion = motion};
+        const auto* const band = components.get<PlayBand>(body);
+        const MovingShip from{.position = *position,
+                              .motion = motion,
+                              .band = band == nullptr ? PlayBand{} : *band};
         const MovingShip moved = blockedByObstacles(
             from, shipAfter(from, heldDirectionsOf(intent.direction), elapsed),
             blocking);

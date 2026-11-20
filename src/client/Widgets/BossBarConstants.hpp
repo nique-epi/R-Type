@@ -37,9 +37,8 @@ constexpr int BOSS_GAUGE_BORDER = 1;
 constexpr int BOSS_GAUGE_INNER_WIDTH =
     BOSS_GAUGE_WIDTH - (SIDES_PER_AXIS * BOSS_GAUGE_BORDER);
 
-/** @brief The name of the boss, centred BOSS_NAME_GAP above the bar, and the
- * label of each gauge, centred BOSS_LABEL_GAP under it. */
-constexpr std::string_view BOSS_NAME_TEXT = "BYDO TYRANT";
+/** @brief Where the name of the boss is centred, BOSS_NAME_GAP above the bar,
+ * and the label of each gauge, centred BOSS_LABEL_GAP under it. */
 constexpr int BOSS_NAME_GAP = 2;
 constexpr int BOSS_NAME_TOP = BOSS_BAR_TOP - BOSS_NAME_GAP - TEXT_LINE_HEIGHT;
 constexpr std::string_view PHASE_ONE_LABEL = "I";

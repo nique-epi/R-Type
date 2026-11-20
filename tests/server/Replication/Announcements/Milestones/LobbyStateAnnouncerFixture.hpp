@@ -7,6 +7,7 @@
 #include <vector>
 #include "ConnectedPlayer.hpp"
 #include "LobbyStateAnnouncer.hpp"
+#include "LobbyStateAnnouncerFixtures.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PlayerRoster.hpp"
 #include "ServerLobbyTestConstants.hpp"
@@ -36,7 +37,8 @@ class LobbyStateAnnouncerFixture : public ::testing::Test {
   LobbyStateAnnouncer announcer_{roster_,
                                  [this](network::OutgoingDatagram datagram) {
                                    sent_.push_back(std::move(datagram));
-                                 }};
+                                 },
+                                 announcedMaps()};
 };
 
 }  // namespace rtype::server::testing

@@ -20,7 +20,8 @@ const EntityAppearance& testAppearance() {
       .deathFrames = {},
       .deathFramesWithoutFlash = {},
       .effects = {},
-      .looks = {}};
+      .looks = {},
+      .bossName = {}};
   return appearance;
 }
 

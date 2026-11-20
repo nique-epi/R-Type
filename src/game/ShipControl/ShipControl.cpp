@@ -8,6 +8,7 @@
 #include "CollisionConstants.hpp"
 #include "Direction.hpp"
 #include "ManeuverKind.hpp"
+#include "PlayBand.hpp"
 #include "PlayfieldConstants.hpp"
 #include "Position.hpp"
 #include "ShipControlConstants.hpp"
@@ -40,14 +41,19 @@ float speedPerAxis(bool diagonal) {
   return diagonal ? SHIP_SPEED / std::numbers::sqrt2_v<float> : SHIP_SPEED;
 }
 
-/** @returns @p ship moved the least needed for the whole ship to be inside the
- * play area: the playfield above the status band. */
-Position keptInsidePlayArea(Position ship) {
+/** @returns @p ship moved the least needed for the whole ship to be between
+ * the side edges of the playfield and inside @p band; a band too narrow for a
+ * ship keeps its center on its middle row. */
+Position keptInsideBand(Position ship, PlayBand band) {
   const float halfWidth = SHIP_WIDTH * engine::HALF;
   const float halfHeight = SHIP_HEIGHT * engine::HALF;
+  const float row =
+      band.bottom - band.top < SHIP_HEIGHT
+          ? (band.top + band.bottom) * engine::HALF
+          : std::clamp(ship.y, band.top + halfHeight, band.bottom - halfHeight);
   return Position{
       .x = std::clamp(ship.x, halfWidth, PLAYFIELD_WIDTH - halfWidth),
-      .y = std::clamp(ship.y, halfHeight, PLAY_AREA_HEIGHT - halfHeight)};
+      .y = row};
 }
 
 /** @brief The maneuver a second press asks for: what it is, and how far it
@@ -196,7 +202,7 @@ ShipMotion started(ShipMotion motion, ManeuverOrder order) {
 }  // namespace
 
 MovingShip stoppedAtTheEdges(MovingShip ship) {
-  const Position kept = keptInsidePlayArea(ship.position);
+  const Position kept = keptInsideBand(ship.position, ship.band);
   if (kept.x != ship.position.x) {
     ship.motion.velocityX = 0.0F;
   }
@@ -229,7 +235,8 @@ MovingShip shipAfter(MovingShip from, ShipDirections held,
   const Position wanted{
       .x = from.position.x + (motion.velocityX * seconds) + carried.x,
       .y = from.position.y + (motion.velocityY * seconds) + carried.y};
-  return stoppedAtTheEdges(MovingShip{.position = wanted, .motion = motion});
+  return stoppedAtTheEdges(
+      MovingShip{.position = wanted, .motion = motion, .band = from.band});
 }
 
 Direction directionOf(ShipDirections held) {

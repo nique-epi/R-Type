@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <functional>
 #include <optional>
+#include <string>
 #include <string_view>
 #include "IInterfaceCanvas.hpp"
 #include "MotionPreference.hpp"
@@ -22,12 +23,14 @@ enum class BayReadiness : std::uint8_t {
   NotReadyAsked,
 };
 
-/** @brief The pilot who took a bay, and the items its ship wears. */
+/** @brief The pilot who took a bay, the items its ship wears, and the line
+ * under its nickname that says the map it voted for; empty without a vote. */
 struct BayPilot {
   std::string_view nickname;
   BayReadiness readiness = BayReadiness::NotReady;
   bool isLocalPlayer = false;
   identifiers::ShipLook look{};
+  std::string mapVote;
 };
 
 /**
@@ -63,7 +66,8 @@ struct BayMotion {
  * @brief Paints a bay, HANGAR_BAY_SIZE large.
  *
  * With a pilot: its number, YOU for the local player, a band of the ship
- * color, the ship enlarged BAY_SHIP_SCALE times, the nickname, and a cell that
+ * color, the ship enlarged BAY_SHIP_SCALE times, the nickname, the map it
+ * voted for on the row under it, and a cell that
  * says whether the pilot is ready, gold and ending in three dots while the
  * server does not show what the local player asked, so the wait is never told
  * by its color alone. A ready pilot's ship plays PLAYER_SHIP_ANIMATION,

@@ -2,11 +2,15 @@
 
 #include <gtest/gtest.h>
 #include <cstddef>
+#include <functional>
+#include <map>
 #include <memory>
+#include <string>
 #include <string_view>
 #include <vector>
 #include "BehaviourScripts.hpp"
 #include "BehaviourScriptsFixtures.hpp"
+#include "BiomeGround.hpp"
 #include "ComponentRegistry.hpp"
 #include "EntityRegistry.hpp"
 #include "LdtkPlacement.hpp"
@@ -22,6 +26,9 @@ class LuauLevelRunFixture : public ::testing::Test {
   /** @brief Gives the level played next the enemies @p placements; call it
    * before play(). */
   void placeEnemies(std::vector<rtype::game::LdtkPlacement> placements);
+  /** @brief Gives the level played next @p ground in the biome @p biome;
+   * call it before play(). */
+  void giveGround(std::string biome, rtype::game::BiomeGround ground);
   /** @brief Runs @p script and starts the run of the level TEST_LEVEL it
    * registers, with the enemies placeEnemies() gave it. */
   void play(std::string_view script);
@@ -41,5 +48,6 @@ class LuauLevelRunFixture : public ::testing::Test {
   rtype::engine::ComponentRegistry components_;
   rtype::game::LevelProgress progress_;
   std::vector<rtype::game::LdtkPlacement> placements_;
+  std::map<std::string, rtype::game::BiomeGround, std::less<>> grounds_;
   std::unique_ptr<rtype::game::LuauLevelRun> run_;
 };

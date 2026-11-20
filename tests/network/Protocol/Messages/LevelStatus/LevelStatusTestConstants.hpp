@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <limits>
 #include <string_view>
 
@@ -11,6 +12,17 @@ constexpr std::string_view STATUS_BIOME = "wreck";
 constexpr float STATUS_SCROLL_POSITION = 240.0F;
 constexpr float STATUS_SCROLL_SPEED = 120.0F;
 constexpr float STATUS_BIOME_SINCE = 96.0F;
+
+/** @brief The time left of a transition, 2500 ms, the bytes 09 C4, and the
+ * longest one a status carries. */
+constexpr std::uint16_t STATUS_TRANSITION_LEFT = 2500;
+constexpr std::uint16_t LONGEST_TRANSITION_LEFT =
+    std::numeric_limits<std::uint16_t>::max();
+
+/** @brief The band of the status tests, the rows of the Pit: its top on row
+ * 192, the bytes 00 C0, and its bottom on row 848, the bytes 03 50. */
+constexpr std::uint16_t STATUS_BAND_TOP = 192;
+constexpr std::uint16_t STATUS_BAND_BOTTOM = 848;
 
 /** @brief A scroll that is paused, and values no scroll can have. */
 constexpr float PAUSED_SCROLL_SPEED = 0.0F;

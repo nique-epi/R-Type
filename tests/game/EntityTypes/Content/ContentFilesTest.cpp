@@ -38,13 +38,17 @@ using rtype::game::testing::DRIFTER_SHEET_FILE;
 using rtype::game::testing::EXAMPLE_RESOURCE;
 using rtype::game::testing::EXAMPLE_RESOURCE_SHEET;
 using rtype::game::testing::EXAMPLE_RESOURCE_SPRITES;
+using rtype::game::testing::FILES_OF_A_SHEET_ITS_IMAGE_AND_A_PREVIEW;
 using rtype::game::testing::FILES_OF_A_SHEET_ITS_MASK_AND_ITS_IMAGE;
 using rtype::game::testing::FILES_OF_ONE_SHEET_AND_ITS_IMAGE;
 using rtype::game::testing::FILES_OF_THE_STACK;
 using rtype::game::testing::FILES_OF_THE_STACK_AND_A_BACKGROUND;
 using rtype::game::testing::FILES_OF_TWO_SHEETS_AND_ONE_IMAGE;
+using rtype::game::testing::FOREIGN_PREVIEW_FILE;
 using rtype::game::testing::HUD_PIXELS;
 using rtype::game::testing::LISTED_ONCE;
+using rtype::game::testing::MAP_PREVIEW_FILE;
+using rtype::game::testing::MAP_PREVIEW_PIXELS;
 using rtype::game::testing::RESOURCE_OF_THE_STACK;
 using rtype::game::testing::SHARED_SPRITE_SHEET;
 using rtype::game::testing::SHEET_FILE_EXTENSION;
@@ -322,4 +326,27 @@ TEST(ContentFiles, HoldsTheSheetAndTheSpritesOfTheExampleResource) {
   };
   EXPECT_TRUE(holds(EXAMPLE_RESOURCE_SHEET));
   EXPECT_TRUE(holds(EXAMPLE_RESOURCE_SPRITES));
+}
+
+/**
+ * Given a resource holding a sheet and its sprite sheet, a preview of a map,
+ * and a file of its previews folder whose name is no content name
+ * When its content is listed
+ * Then it holds the preview with every byte it holds, and not the other file
+ */
+TEST(ContentFiles, ListsThePreviewsOfTheMapsOfAResource) {
+  const TemporaryFolder resource;
+  resource.write(WEAVER_SHEET_FILE, SHEET_NAMING_THE_BYDOS);
+  resource.write(SHARED_SPRITE_SHEET, BYDO_PIXELS);
+  resource.write(MAP_PREVIEW_FILE, MAP_PREVIEW_PIXELS);
+  resource.write(FOREIGN_PREVIEW_FILE, MAP_PREVIEW_PIXELS);
+
+  const std::vector<ContentFile> files =
+      contentFilesIn(std::array{resource.path()});
+
+  ASSERT_EQ(files.size(), FILES_OF_A_SHEET_ITS_IMAGE_AND_A_PREVIEW);
+  const auto preview =
+      std::ranges::find(files, MAP_PREVIEW_FILE, &ContentFile::path);
+  ASSERT_NE(preview, files.end());
+  EXPECT_EQ(preview->bytes, MAP_PREVIEW_PIXELS);
 }

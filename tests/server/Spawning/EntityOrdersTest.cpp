@@ -261,6 +261,25 @@ TEST_F(EntityOrdersFixture, TakesTheBusFromTheScriptsWhenTheWorldGoes) {
 }
 
 /**
+ * Given the scripts of a game attached to the bus the next game of the server
+ * shares with it
+ * When the next game is built, then the old one goes, as a new game does,
+ * then a script publishes an event
+ * Then the event is accepted: the scripts still reach the bus
+ */
+TEST_F(EntityOrdersFixture, KeepsTheBusOfTheNewGameWhenTheOldOneGoes) {
+  BehaviourScripts scripts{[](const std::string&) {}};
+  std::optional<EntityOrders> oldGame;
+  oldGame.emplace(partsFor(&scripts));
+  const EntityOrders newGame{partsFor(&scripts)};
+
+  oldGame.reset();
+
+  EXPECT_NO_THROW(scripts.eventBindings().publish(
+      ScriptEvent{.name = std::string{SCRIPT_EVENT_NAME}, .fields = {}}));
+}
+
+/**
  * Given a script that asked for every removal a tick allows
  * When it asks for one more in the same tick
  * Then that one is refused

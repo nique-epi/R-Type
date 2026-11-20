@@ -84,7 +84,8 @@ TEST(GameResultKeeper, SaysTheResultOfAGameThatIsNotVanillaIsNot) {
       roster, archive,
       GameSettings{.waves = {},
                    .types = game::testing::shippedEntitySheets(),
-                   .vanilla = false}};
+                   .vanilla = false,
+                   .maps = {}}};
   ASSERT_NE(roster.add(playerEndpoint(FIRST_PLAYER),
                        std::string{NICKNAMES.at(FIRST_PLAYER)}, SESSION_TOKEN),
             nullptr);
@@ -112,12 +113,14 @@ TEST(GameResultKeeper, CountsDeathsFromTheLivesOfTheRules) {
   RecordingResultsArchive archive;
   GameResultKeeper keeper{
       roster, archive,
-      GameSettings{.waves = {},
-                   .types = game::testing::shippedEntitySheets(),
-                   .rules = network::GameRules{
-                       .difficulty = std::string{KEEPER_DIFFICULTY},
-                       .lives = FIVE_LIVES_OF_THE_RULES,
-                       .friendlyFire = false}}};
+      GameSettings{
+          .waves = {},
+          .types = game::testing::shippedEntitySheets(),
+          .rules =
+              network::GameRules{.difficulty = std::string{KEEPER_DIFFICULTY},
+                                 .lives = FIVE_LIVES_OF_THE_RULES,
+                                 .friendlyFire = false},
+          .maps = {}}};
   ConnectedPlayer* const player =
       roster.add(playerEndpoint(FIRST_PLAYER),
                  std::string{NICKNAMES.at(FIRST_PLAYER)}, SESSION_TOKEN);

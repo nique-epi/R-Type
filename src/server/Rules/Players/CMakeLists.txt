@@ -8,6 +8,8 @@ add_library(rtype_server_rules_players STATIC
   FavorTheShooter.cpp
   FavorThePlayers.cpp
   ShooterViews.cpp
+  ShipBand.cpp
+  TransitionHold.cpp
 )
 
 target_include_directories(rtype_server_rules_players PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
@@ -24,6 +26,7 @@ target_link_libraries(rtype_server_rules_players
     rtype_server_instances_context
     rtype_server_sessions_roster
   PRIVATE
+    rtype_game_spawning
     rtype_identifiers
     rtype_network_look_item_won
     rtype_network_protocol

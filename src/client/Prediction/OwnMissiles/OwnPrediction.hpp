@@ -11,6 +11,7 @@
 #include "OwnMissiles.hpp"
 #include "OwnMissilesParts.hpp"
 #include "OwnShipPredictor.hpp"
+#include "PlayBand.hpp"
 #include "PlayerCommand.hpp"
 #include "TimeConstants.hpp"
 #include "WorldState.hpp"
@@ -57,6 +58,10 @@ class OwnPrediction {
    * of every missile that touches an enemy drawn. Not during a forEach of that
    * registry. */
   void place(const EntityReplicator& replicator);
+
+  /** @brief Keeps the predicted ship between the rows of @p band (see
+   * OwnShipPredictor::useBand()). */
+  void useBand(game::PlayBand band);
 
   /** @returns Who draws the missiles of the player, for the replicator. */
   [[nodiscard]] IOwnMissileListener& missiles();

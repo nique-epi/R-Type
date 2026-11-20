@@ -1164,7 +1164,8 @@ TEST_F(ServerSessionFixture, IgnoresAServerThatComesBackAfterTheLoss) {
   deliverInSession(
       network::LobbyState{.players = {{.playerNumber = ACCEPTED_PLAYER_NUMBER,
                                        .ready = false,
-                                       .nickname = std::string{NICKNAME}}}},
+                                       .nickname = std::string{NICKNAME}}},
+                          .maps = {}},
       SECOND_SEQUENCE);
   update(PROTOCOL_HEARTBEAT_INTERVAL);
 

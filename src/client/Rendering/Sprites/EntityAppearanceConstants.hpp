@@ -27,9 +27,13 @@ constexpr std::array APPEARANCE_KEYS{SHEET_KEY, IDLE_TABLE_KEY};
  * per name (EFFECT_KEYS, IDLE_KEYS). */
 constexpr std::string_view ENRAGED_IDLE_TABLE_KEY = "enraged_idle";
 constexpr std::string_view DEATH_TABLE_KEY = "death";
+
+/** @brief The optional text of `[appearance]` that names a boss on its bar;
+ * a boss without it shows no name. */
+constexpr std::string_view BOSS_NAME_KEY = "boss_name";
 constexpr std::array OPTIONAL_APPEARANCE_KEYS{
     ENRAGED_IDLE_TABLE_KEY, DEATH_TABLE_KEY, game::EFFECTS_TABLE_KEY,
-    game::LOOKS_TABLE_KEY};
+    game::LOOKS_TABLE_KEY, BOSS_NAME_KEY};
 
 /**
  * @brief The keys of `[appearance.idle]`: the first frame, in pixels of the
@@ -96,8 +100,9 @@ constexpr std::array AFTERWARDS_NAMES{RETURNS_TO_IDLE, STAYS_ON_LAST_FRAME};
  */
 constexpr std::int64_t LARGEST_SHEET_PIXELS = 4096;
 
-/** @brief The most frames an animation of a sheet holds. */
-constexpr std::int64_t MOST_FRAMES = 16;
+/** @brief The most frames an animation of a sheet holds: 24, so a two-second
+ * action of a boss plays at 12 frames a second. */
+constexpr std::int64_t MOST_FRAMES = 24;
 
 /** @brief The farthest a frame hangs from the body, in pixels of the canvas,
  * either way. */

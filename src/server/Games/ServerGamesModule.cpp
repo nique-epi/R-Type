@@ -37,13 +37,18 @@
 #include "InstallContext.hpp"
 #include "IntegerSettingDefinition.hpp"
 #include "LevelDirector.hpp"
+#include "LevelGroundFiles.hpp"
 #include "LevelPlacementFiles.hpp"
 #include "Logger.hpp"
+#include "LuauLevelConstants.hpp"
 #include "LuauLevelEntry.hpp"
 #include "LuauLevels.hpp"
+#include "MapChoice.hpp"
+#include "MapPreviewPath.hpp"
 #include "ModuleConstants.hpp"
 #include "PathText.hpp"
 #include "PlayerDatagrams.hpp"
+#include "ProtocolConstants.hpp"
 #include "RtypeGameModules.hpp"
 #include "RunningGame.hpp"
 #include "ServerConstants.hpp"
@@ -59,6 +64,37 @@
 namespace rtype::server {
 
 namespace {
+
+/** @returns The whole number @p setting holds, @p fallback when it holds
+ * none. */
+std::size_t sizeSettingOr(const engine::SettingValue& setting,
+                          std::size_t fallback) {
+  return static_cast<std::size_t>(
+      setting.integer().value_or(static_cast<std::int64_t>(fallback)));
+}
+
+/** @returns The maps the scripts @p scripts registered (the levels given the
+ * option map), in the order of the names of their levels, at most
+ * MAXIMUM_LOBBY_MAPS; none without scripts. */
+std::vector<MapChoice> mapsOf(game::BehaviourScripts* scripts) {
+  std::vector<MapChoice> maps;
+  if (scripts == nullptr) {
+    return maps;
+  }
+  for (const std::string& name : scripts->levels().names()) {
+    const game::LuauLevelEntry* const entry = scripts->levels().entryOf(name);
+    if (entry != nullptr && entry->mapName.has_value() &&
+        maps.size() < network::MAXIMUM_LOBBY_MAPS) {
+      maps.push_back(
+          MapChoice{.level = name,
+                    .name = *entry->mapName,
+                    .preview = entry->mapPreview.has_value()
+                                   ? game::mapPreviewPathOf(*entry->mapPreview)
+                                   : std::string{}});
+    }
+  }
+  return maps;
+}
 
 /**
  * @returns The seed @p setting holds, nothing when it was cleared.
@@ -178,6 +214,25 @@ const engine::SettingValue& declareStartAtBoss(
       .help = "1 starts every game at its boss, without the waves"});
 }
 
+/** @returns The setting START_AT_STAGE_SETTING_NAME, declared in
+ * @p configuration: the stage every game that plays a level starts at, from
+ * FIRST_LEVEL_STAGE (the default) to the most a level holds. */
+const engine::SettingValue& declareStartAtStage(
+    engine::ConfigurationRegistry& configuration) {
+  return configuration.declareInteger(engine::IntegerSettingDefinition{
+      .name = std::string{START_AT_STAGE_SETTING_NAME},
+      .defaultValue = FIRST_LEVEL_STAGE,
+      .lowest = FIRST_LEVEL_STAGE,
+      .highest = game::MAXIMUM_LEVEL_STAGES,
+      .help = "The stage every game that plays a level starts at"});
+}
+
+/** @returns The stage @p setting, START_AT_STAGE_SETTING_NAME, names. */
+std::size_t startingStageOf(const engine::SettingValue& setting) {
+  return static_cast<std::size_t>(
+      setting.integer().value_or(static_cast<std::int64_t>(FIRST_LEVEL_STAGE)));
+}
+
 /** @returns The setting LEVEL_SETTING_NAME, declared in @p configuration:
  * the level every game plays, or nothing (the default) to play the waves. */
 const engine::SettingValue& declareLevel(
@@ -252,6 +307,7 @@ void ServerGamesModule::declareSettings(
           .help = "Ticks every player's input is held before it is applied"});
   ruleSettings_.declare(configuration);
   startAtBossSetting_ = &declareStartAtBoss(configuration);
+  startAtStageSetting_ = &declareStartAtStage(configuration);
   levelSetting_ = &declareLevel(configuration);
 }
 
@@ -260,7 +316,9 @@ void ServerGamesModule::start() {
       [this](const std::string& message) { logger_.warn(message); });
   scripts_->run(game::scriptSourcesIn(settings_.contentFolders));
   if (!levelSetting_->text().empty()) {
-    static_cast<void>(entryOfLevel(scripts_->levels(), levelSetting_->text()));
+    static_cast<void>(startOfStage(
+        entryOfLevel(scripts_->levels(), levelSetting_->text()),
+        levelSetting_->text(), startingStageOf(*startAtStageSetting_)));
   }
   const game::EntitySheets& types =
       types_.emplace(game::EntitySheets::fromTexts(
@@ -269,6 +327,7 @@ void ServerGamesModule::start() {
   logEntitySheets(logger_, settings_.contentFolders, types);
   game::readLevelPlacements(scripts_->levels(), settings_.contentFolders,
                             types);
+  game::readLevelGrounds(scripts_->levels(), settings_.contentFolders);
   logLevelPlacements(logger_, scripts_->levels());
   runningGame_.keepEntityTypes(types);
   const WaveCatalog catalog =
@@ -282,15 +341,12 @@ GameSettings ServerGamesModule::settingsOf(const WaveCatalog& catalog,
                                            const game::EntitySheets& types,
                                            std::optional<std::uint32_t> seed) {
   const network::GameRules rules = ruleSettings_.rules();
-  const auto statesPerSecond =
-      static_cast<std::size_t>(stateRateSetting_->integer().value_or(
-          static_cast<std::int64_t>(settings_.statesPerSecond)));
-  const StateEncoding encoding = stateEncodingOf(*stateEncodingSetting_);
-  const auto inputDelayTicks =
-      static_cast<std::size_t>(inputDelaySetting_->integer().value_or(
-          static_cast<std::int64_t>(settings_.inputDelayTicks)));
+  const std::size_t inputDelayTicks =
+      sizeSettingOr(*inputDelaySetting_, settings_.inputDelayTicks);
   const bool startsAtBoss = startAtBossSetting_->integer().value_or(0) != 0;
   const std::string& level = levelSetting_->text();
+  std::vector<MapChoice> maps =
+      level.empty() ? mapsOf(scripts_.get()) : std::vector<MapChoice>{};
   const std::vector<std::string_view> breaches = vanillaBreaches(
       HostedRules{.wavesFingerprint = catalog.fingerprint(),
                   .sheetsFingerprint = entitySheetsFingerprint(types),
@@ -298,19 +354,22 @@ GameSettings ServerGamesModule::settingsOf(const WaveCatalog& catalog,
                   .inputDelayTicks = inputDelayTicks,
                   .gameRules = rules,
                   .startsAtBoss = startsAtBoss,
-                  .playsALevel = !level.empty()});
+                  .playsALevel = !level.empty() || !maps.empty()});
   logHowGamesPlay(logger_, rules, breaches);
   return GameSettings{
       .seed = seed.has_value() ? *seed : std::random_device{}(),
       .waves = catalog.planOf(rules.difficulty),
       .types = types,
-      .statesPerSecond = statesPerSecond,
-      .stateEncoding = encoding,
+      .statesPerSecond =
+          sizeSettingOr(*stateRateSetting_, settings_.statesPerSecond),
+      .stateEncoding = stateEncodingOf(*stateEncodingSetting_),
       .inputDelayTicks = inputDelayTicks,
       .rules = rules,
       .vanilla = breaches.empty(),
       .startsAtBoss = startsAtBoss,
       .level = level.empty() ? std::nullopt : std::optional{level},
+      .maps = std::move(maps),
+      .startingStage = startingStageOf(*startAtStageSetting_),
       .scripts = scripts_.get()};
 }
 

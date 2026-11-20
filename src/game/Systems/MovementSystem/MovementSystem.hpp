@@ -21,8 +21,9 @@ namespace rtype::game {
  * shipAfter() computes it, whichever controller wrote the Intent; it is then
  * stopped against the boxes of every Obstacle whose contact is blocking
  * (collectBlockingBoxes(), blockedByObstacles()), and kept inside the
- * playfield: a ship a wall pushes past an edge stays over the wall, which
- * CollisionRules then turns into a contact.
+ * playfield, between the rows of its PlayBand when it has one: a ship a wall
+ * pushes past an edge stays over the wall, which CollisionRules then turns
+ * into a contact.
  *
  * An entity with a SteadyMotion moves by its top speed times the share its
  * Intent asks for on each axis, a share beyond FULL_STEERING counting as

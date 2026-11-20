@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <functional>
 #include "ChatLine.hpp"
 #include "ConnectedPlayer.hpp"
@@ -23,6 +24,8 @@ struct GameSessionsParts {
   std::reference_wrapper<const engine::IClock> clock;
   /** @brief Tells whether a ReadyState counts right now. Must not be empty. */
   std::function<bool()> readyAccepted;
+  /** @brief How many maps the waiting room offers to the vote. */
+  std::size_t mapCount{};
   /** @brief Called with the player whose session closes, after its seat is
    * freed and before its departure is announced, for whoever owns something of
    * the player (its ship). Must not be empty. */

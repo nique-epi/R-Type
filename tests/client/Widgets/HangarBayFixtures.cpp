@@ -31,7 +31,8 @@ HangarBay bayOf(std::optional<BayReadiness> readiness, bool isLocalPlayer) {
   if (readiness.has_value()) {
     bay.pilot = BayPilot{.nickname = NICKNAME,
                          .readiness = *readiness,
-                         .isLocalPlayer = isLocalPlayer};
+                         .isLocalPlayer = isLocalPlayer,
+                         .mapVote = {}};
   }
   return bay;
 }

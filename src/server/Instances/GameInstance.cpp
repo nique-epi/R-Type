@@ -60,6 +60,7 @@ GameSessionsParts sessionPartsOf(const GameInstanceParts& parts,
       .send = parts.send,
       .clock = parts.clock,
       .readyAccepted = std::move(readyAccepted),
+      .mapCount = parts.settings.maps.size(),
       .onClosing =
           [own](const ConnectedPlayer& departed) {
             own.delayedInputs.get().clear(departed.playerNumber);

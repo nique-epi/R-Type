@@ -27,7 +27,8 @@ EntityAppearance appearanceWithAStrike() {
       .deathFrames = {},
       .deathFramesWithoutFlash = {},
       .effects = {},
-      .looks = {}};
+      .looks = {},
+      .bossName = {}};
 }
 
 EntityAppearance appearanceWithARage() {

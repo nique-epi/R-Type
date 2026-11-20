@@ -3,7 +3,7 @@
 #include <array>
 #include <cctype>
 #include <filesystem>
-#include <nlohmann/json.hpp>
+#include <nlohmann/json.hpp>  // IWYU pragma: keep
 #include <nlohmann/json_fwd.hpp>
 #include <optional>
 #include <string>
@@ -12,12 +12,11 @@
 #include <vector>
 #include "ContentName.hpp"
 #include "DataFileReading.hpp"
-#include "GameException.hpp"
 #include "LdtkConstants.hpp"
 #include "LdtkField.hpp"
 #include "LdtkFieldValue.hpp"
+#include "LdtkJson.hpp"
 #include "LdtkPlacement.hpp"
-#include "LdtkRefusal.hpp"
 #include "Position.hpp"
 
 namespace rtype::game {
@@ -44,71 +43,16 @@ struct LdtkLevelWalk {
   std::string_view source;
 };
 
-/** @throws InvalidLdtkFileException about @p source, for @p reason followed
- * by @p found. */
-[[noreturn]] void refuse(std::string_view source, std::string_view reason,
-                         std::string_view found) {
-  throw InvalidLdtkFileException(
-      LdtkRefusal{.file = std::string{source},
-                  .reason = std::string{reason} + std::string{found}});
-}
-
-/** @returns The member @p name of @p object.
- * @throws InvalidLdtkFileException when @p object is no object or has no
- * such member. */
-const nlohmann::json& memberOf(const nlohmann::json& object,
-                               std::string_view name, std::string_view source) {
-  if (object.is_object()) {
-    const auto found = object.find(name);
-    if (found != object.end()) {
-      return *found;
-    }
-  }
-  refuse(source, MISSING_MEMBER_REASON, name);
-}
-
-/** @returns The number @p value holds, read as the member @p name.
- * @throws InvalidLdtkFileException when it holds anything else. */
-float numberOf(const nlohmann::json& value, std::string_view name,
-               std::string_view source) {
-  if (!value.is_number()) {
-    refuse(source, NOT_A_NUMBER_REASON, name);
-  }
-  return value.get<float>();
-}
-
-/** @returns The text @p value holds, read as the member @p name.
- * @throws InvalidLdtkFileException when it holds anything else. */
-std::string textOf(const nlohmann::json& value, std::string_view name,
-                   std::string_view source) {
-  if (!value.is_string()) {
-    refuse(source, NOT_A_TEXT_REASON, name);
-  }
-  return value.get<std::string>();
-}
-
-/** @returns The number the member @p name of @p object holds. */
-float numberMemberOf(const nlohmann::json& object, std::string_view name,
-                     std::string_view source) {
-  return numberOf(memberOf(object, name, source), name, source);
-}
-
-/** @returns The text the member @p name of @p object holds. */
-std::string textMemberOf(const nlohmann::json& object, std::string_view name,
-                         std::string_view source) {
-  return textOf(memberOf(object, name, source), name, source);
-}
-
 /** @returns The two numbers of the pair @p name of @p entity, x then y. */
 std::array<float, PAIR_SIZE> pairOf(const nlohmann::json& entity,
                                     std::string_view name,
                                     std::string_view source) {
-  const nlohmann::json& pair = memberOf(entity, name, source);
+  const nlohmann::json& pair = ldtkMemberOf(entity, name, source);
   if (!pair.is_array() || pair.size() != PAIR_SIZE) {
-    refuse(source, NOT_A_NUMBER_REASON, name);
+    refuseLdtkFile(source, NOT_A_NUMBER_REASON, name);
   }
-  return std::array{numberOf(pair.at(HORIZONTAL_AXIS), name, source),
-                    numberOf(pair.at(VERTICAL_AXIS), name, source)};
+  return std::array{ldtkNumberOf(pair.at(HORIZONTAL_AXIS), name, source),
+                    ldtkNumberOf(pair.at(VERTICAL_AXIS), name, source)};
 }
 
 /** @returns The box of @p entity, as the file writes it. */
@@ -118,8 +62,8 @@ LdtkEntityBox boxOf(const nlohmann::json& entity, std::string_view source) {
   return LdtkEntityBox{
       .pivotX = pixel[HORIZONTAL_AXIS],
       .pivotY = pixel[VERTICAL_AXIS],
-      .width = numberMemberOf(entity, ENTITY_WIDTH_MEMBER, source),
-      .height = numberMemberOf(entity, ENTITY_HEIGHT_MEMBER, source),
+      .width = ldtkNumberMemberOf(entity, ENTITY_WIDTH_MEMBER, source),
+      .height = ldtkNumberMemberOf(entity, ENTITY_HEIGHT_MEMBER, source),
       .pivotShareX = pivot[HORIZONTAL_AXIS],
       .pivotShareY = pivot[VERTICAL_AXIS]};
 }
@@ -163,22 +107,23 @@ bool isTextFieldType(std::string_view type) {
  * @throws InvalidLdtkFileException for a kind the game does not read. */
 std::optional<LdtkFieldValue> fieldValueOf(const nlohmann::json& field,
                                            std::string_view source) {
-  const std::string type = textMemberOf(field, FIELD_TYPE_MEMBER, source);
-  const nlohmann::json& value = memberOf(field, FIELD_VALUE_MEMBER, source);
+  const std::string type = ldtkTextMemberOf(field, FIELD_TYPE_MEMBER, source);
+  const nlohmann::json& value = ldtkMemberOf(field, FIELD_VALUE_MEMBER, source);
   if (value.is_null()) {
     return std::nullopt;
   }
   if (type == INT_FIELD_TYPE || type == FLOAT_FIELD_TYPE) {
-    return LdtkFieldValue{double{numberOf(value, FIELD_VALUE_MEMBER, source)}};
+    return LdtkFieldValue{
+        double{ldtkNumberOf(value, FIELD_VALUE_MEMBER, source)}};
   }
   if (type == BOOL_FIELD_TYPE && value.is_boolean()) {
     return LdtkFieldValue{value.get<bool>()};
   }
   if (isTextFieldType(type)) {
-    return LdtkFieldValue{textOf(value, FIELD_VALUE_MEMBER, source)};
+    return LdtkFieldValue{ldtkTextOf(value, FIELD_VALUE_MEMBER, source)};
   }
-  refuse(source, UNSUPPORTED_FIELD_REASON,
-         textMemberOf(field, FIELD_IDENTIFIER_MEMBER, source));
+  refuseLdtkFile(source, UNSUPPORTED_FIELD_REASON,
+                 ldtkTextMemberOf(field, FIELD_IDENTIFIER_MEMBER, source));
 }
 
 /** @returns The fields of @p entity the game reads, in the order of the
@@ -187,11 +132,11 @@ std::vector<LdtkField> fieldsOf(const nlohmann::json& entity,
                                 std::string_view source) {
   std::vector<LdtkField> fields;
   for (const nlohmann::json& field :
-       memberOf(entity, FIELD_INSTANCES_MEMBER, source)) {
+       ldtkMemberOf(entity, FIELD_INSTANCES_MEMBER, source)) {
     std::optional<LdtkFieldValue> value = fieldValueOf(field, source);
     if (value.has_value()) {
       fields.push_back(LdtkField{
-          .name = textMemberOf(field, FIELD_IDENTIFIER_MEMBER, source),
+          .name = ldtkTextMemberOf(field, FIELD_IDENTIFIER_MEMBER, source),
           .value = std::move(*value)});
     }
   }
@@ -203,10 +148,10 @@ std::vector<LdtkField> fieldsOf(const nlohmann::json& entity,
 LdtkPlacement placementOf(const nlohmann::json& entity, float levelStart,
                           std::string_view source) {
   std::string identifier =
-      textMemberOf(entity, ENTITY_IDENTIFIER_MEMBER, source);
+      ldtkTextMemberOf(entity, ENTITY_IDENTIFIER_MEMBER, source);
   std::string sheet = sheetNameOf(identifier);
   if (!identifiers::isContentName(sheet)) {
-    refuse(source, NOT_A_SHEET_NAME_REASON, identifier);
+    refuseLdtkFile(source, NOT_A_SHEET_NAME_REASON, identifier);
   }
   const LdtkEntityBox box = boxOf(entity, source);
   return LdtkPlacement{.entity = std::move(identifier),
@@ -222,19 +167,21 @@ LdtkPlacement placementOf(const nlohmann::json& entity, float levelStart,
 const nlohmann::json& mobsLayerOf(const nlohmann::json& level,
                                   std::string_view source) {
   const nlohmann::json& layers =
-      memberOf(level, LAYER_INSTANCES_MEMBER, source);
+      ldtkMemberOf(level, LAYER_INSTANCES_MEMBER, source);
   const std::string identifier =
-      textMemberOf(level, LEVEL_IDENTIFIER_MEMBER, source);
+      ldtkTextMemberOf(level, LEVEL_IDENTIFIER_MEMBER, source);
   if (!layers.is_array()) {
-    refuse(source, LEVELS_SAVED_SEPARATELY_REASON, identifier);
+    refuseLdtkFile(source, LEVELS_SAVED_SEPARATELY_REASON, identifier);
   }
   for (const nlohmann::json& layer : layers) {
-    if (textMemberOf(layer, LAYER_TYPE_MEMBER, source) == ENTITIES_LAYER_TYPE &&
-        textMemberOf(layer, LAYER_IDENTIFIER_MEMBER, source) == MOBS_LAYER) {
+    if (ldtkTextMemberOf(layer, LAYER_TYPE_MEMBER, source) ==
+            ENTITIES_LAYER_TYPE &&
+        ldtkTextMemberOf(layer, LAYER_IDENTIFIER_MEMBER, source) ==
+            MOBS_LAYER) {
       return layer;
     }
   }
-  refuse(source, NO_MOBS_LAYER_REASON, identifier);
+  refuseLdtkFile(source, NO_MOBS_LAYER_REASON, identifier);
 }
 
 /** @brief Adds the enemies of @p level to the walk, then moves its start past
@@ -242,25 +189,22 @@ const nlohmann::json& mobsLayerOf(const nlohmann::json& level,
 void addLevel(const nlohmann::json& level, LdtkLevelWalk& walk) {
   const nlohmann::json& layer = mobsLayerOf(level, walk.source);
   for (const nlohmann::json& entity :
-       memberOf(layer, ENTITY_INSTANCES_MEMBER, walk.source)) {
+       ldtkMemberOf(layer, ENTITY_INSTANCES_MEMBER, walk.source)) {
     walk.placements.push_back(
         placementOf(entity, walk.levelStart, walk.source));
   }
   walk.levelStart +=
-      numberMemberOf(level, LEVEL_WIDTH_MEMBER, walk.source) * LDTK_PIXEL;
+      ldtkNumberMemberOf(level, LEVEL_WIDTH_MEMBER, walk.source) * LDTK_PIXEL;
 }
 
 }  // namespace
 
 std::vector<LdtkPlacement> ldtkPlacementsOf(const std::filesystem::path& file) {
   const std::string source = engine::shownPath(file);
-  const nlohmann::json project =
-      nlohmann::json::parse(engine::dataFileContent(file), nullptr, false);
-  if (project.is_discarded() || !project.is_object()) {
-    refuse(source, NOT_JSON_REASON, {});
-  }
+  const nlohmann::json project = ldtkProjectOf(file, source);
   LdtkLevelWalk walk{.placements = {}, .levelStart = 0.0F, .source = source};
-  for (const nlohmann::json& level : memberOf(project, LEVELS_MEMBER, source)) {
+  for (const nlohmann::json& level :
+       ldtkMemberOf(project, LEVELS_MEMBER, source)) {
     addLevel(level, walk);
   }
   std::ranges::stable_sort(walk.placements, {},

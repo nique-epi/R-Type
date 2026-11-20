@@ -7,7 +7,6 @@
 #include <utility>
 #include <vector>
 #include "ActionAnimation.hpp"
-#include "BackgroundConstants.hpp"
 #include "EngineException.hpp"
 #include "EntityAppearance.hpp"
 #include "EntityAppearances.hpp"
@@ -19,6 +18,7 @@
 #include "EntityTypesTestConstants.hpp"
 #include "HurtBox.hpp"
 #include "HurtZone.hpp"
+#include "PixelGridConstants.hpp"
 #include "SheetPixels.hpp"
 #include "ShippedEntitySheets.hpp"
 #include "SpriteFrame.hpp"
@@ -104,6 +104,32 @@ TEST(EntityAppearances, LeavesTheGameplayToTheServer) {
   const EntityAppearances appearances = appearancesReading(READ_SHEET_TEXT);
 
   EXPECT_NE(appearances.named(READ_TYPE_NAME), nullptr);
+}
+
+/**
+ * Given a sheet that does not name a boss
+ * When its appearance is read
+ * Then it has no boss name
+ */
+TEST(EntityAppearances, ASheetWithoutBossNameHasNone) {
+  const EntityAppearances appearances = appearancesReading(READ_SHEET_TEXT);
+  const EntityAppearance* const read = appearances.named(READ_TYPE_NAME);
+  ASSERT_NE(read, nullptr);
+
+  EXPECT_TRUE(read->bossName.empty());
+}
+
+/**
+ * Given the sheet of the Necromancer the resource fosse brings
+ * When a client reads its appearance
+ * Then its boss name is NECROMANCER, the name its bar writes
+ */
+TEST(EntityAppearances, ReadsTheNameOfTheNecromancer) {
+  const EntityAppearances appearances = fosseAppearances();
+  const EntityAppearance* const read = appearances.named(NECROMANCER_SHEET);
+  ASSERT_NE(read, nullptr);
+
+  EXPECT_EQ(read->bossName, NECROMANCER_BOSS_NAME);
 }
 
 /**
@@ -196,13 +222,13 @@ TEST(EntityAppearances, RefusesAnIdleAnimationOfNoFrame) {
 }
 
 /**
- * Given a sheet whose idle animation holds 16 frames, the most it may
+ * Given a sheet whose idle animation holds 24 frames, the most it may
  * When it is read
- * Then it holds 16 frames
+ * Then it holds 24 frames
  */
 TEST(EntityAppearances, ReadsTheMostFramesAnIdleAnimationMayHold) {
   const EntityAppearances appearances =
-      appearancesReading(SHEET_WITH_SIXTEEN_FRAMES_TEXT);
+      appearancesReading(SHEET_WITH_TWENTY_FOUR_FRAMES_TEXT);
   const EntityAppearance* const read = appearances.named(READ_TYPE_NAME);
   ASSERT_NE(read, nullptr);
 
@@ -210,13 +236,13 @@ TEST(EntityAppearances, ReadsTheMostFramesAnIdleAnimationMayHold) {
 }
 
 /**
- * Given a sheet whose idle animation holds 17 frames, one past the most
+ * Given a sheet whose idle animation holds 25 frames, one past the most
  * When it is read
  * Then reading stops on the frame count
  */
 TEST(EntityAppearances, RefusesOneFramePastTheMost) {
   EXPECT_THROW(
-      static_cast<void>(appearancesReading(SHEET_WITH_SEVENTEEN_FRAMES_TEXT)),
+      static_cast<void>(appearancesReading(SHEET_WITH_TWENTY_FIVE_FRAMES_TEXT)),
       DataFileValueOutOfRangeException);
 }
 
@@ -515,4 +541,19 @@ TEST(EntityAppearances, EveryShippedMaskIsWhatItsSpriteDraws) {
 TEST(EntityAppearances, PeelingASquareOfThreeLeavesItsCenter) {
   EXPECT_EQ(peeled(rowsFrom(FULL_SQUARE_OF_THREE), PEELED_ONCE),
             rowsFrom(CENTER_OF_A_SQUARE_OF_THREE));
+}
+
+/**
+ * Given the sheets the resource fosse brings: its mobs, the Necromancer and
+ * the bodies of its attacks
+ * When a client reads their appearances, as it reads a content pack
+ * Then every one of them is read, so a client can play that pack
+ */
+TEST(EntityAppearances, ReadsEverySheetOfTheFosseResource) {
+  const EntityAppearances appearances = fosseAppearances();
+
+  for (const std::string_view name : FOSSE_SHEET_NAMES) {
+    SCOPED_TRACE(name);
+    EXPECT_NE(appearances.named(name), nullptr);
+  }
 }

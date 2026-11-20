@@ -1,24 +1,48 @@
 --!strict
--- The level fosse, named after the biome it leads into: five stages a team
--- plays one after the other, each one after the first starting at a
--- checkpoint. A server plays it with `set level fosse`.
+-- The two levels the resource fosse brings, each a map the players of a
+-- waiting room vote for (the option map of level.register), each in one
+-- biome. A server that names no level with `set level` offers both to the
+-- vote; one that names a level plays it, and starts it at a stage with
+-- `--stage <n>`.
 --
--- The first two stages cross open space, with the stars alone; the second
--- ends on a mini-boss, the Bydo Tyrant with 40 % of its health. The third
--- stage enters the Pit through its cave, and the last
--- ends on the Bydo Tyrant at full health. In the Pit, the Bydos keep to the
--- rows the maps leave free, from 192 to 848 logical units. The positions are
--- written here until the level places its enemies in its LDtk project.
+-- space, OPEN SPACE: two stages that cross open space, with the stars alone,
+-- the second ending on the Bydo Tyrant.
+--
+-- fosse, THE PIT: three stages in the Pit, already inside it from the start
+-- (the option biome), where only the mobs of the Pit come (server/fosse_mobs.luau and the
+-- Gloomwyrm of server/gloomwyrm.luau); the last one fights its boss, the
+-- Necromancer (server/necromancer.luau). `--stage 2` starts in its depths,
+-- `--stage 3` on the Necromancer. In the Pit, the enemies keep to the rows the
+-- maps leave free, from 192 to 848 logical units, which no ship flies past
+-- (the band of the biome): the Stalagmaw crawls along the top one, the
+-- Sporecap walks along the bottom one. The positions are written here until
+-- the levels place their enemies in their LDtk projects.
 
--- Past the right edge of the playfield, where a Bydo enters.
+-- Past the right edge of the playfield, where an enemy enters.
 local ENTRY_COLUMN = 1984
 
--- The share of its health the Bydo Tyrant has as a mini-boss.
-local MINI_BOSS_HEALTH_PERCENT = 40
+-- The scroll the open space ends at, where the Bydo Tyrant is fought: the
+-- scroll is paused through the fight.
+local END_OF_THE_OPEN_SPACE = 5400
+
+-- The scroll the entry into the Pit and its depths end at, where the next
+-- stage begins.
+local END_OF_THE_PIT_ENTRY = 5280
+local END_OF_THE_DEPTHS = 10800
 
 -- Where the center of a boss appears: half its 512-unit frame past the right
 -- edge, on the middle row of the area of play.
 local BOSS_ENTRY = { x = 2176, y = 492 }
+
+-- Where the center of the Necromancer appears: below the bottom edge, past
+-- half its 556-unit frame, so it stays out of sight through the warning, on
+-- the column where it rests, its right side by the right edge. Its arrival
+-- moves it to its rest and draws it rising out of the floor.
+local NECROMANCER_ENTRY = { x = 1544, y = 1370 }
+
+-- The top and the bottom rows the maps of the Pit leave free: its ceiling and
+-- its floor.
+local CEILING_ROW, FLOOR_ROW = 192, 848
 
 -- How often a stage looks at the sky, in milliseconds.
 local SKY_CHECK_MS = 250
@@ -47,9 +71,9 @@ end
 -- A boss is a body like any other: the players are warned of it once it
 -- appeared, at the end of the tick, so the stage waits before it looks at the
 -- sky.
-local function fight(boss: string, options: { health_percent: number }?)
+local function fight(boss: string, entry: { x: number, y: number }, options: { health_percent: number }?)
 	level.pause_scroll()
-	behaviours.spawn(boss, BOSS_ENTRY, options)
+	behaviours.spawn(boss, entry, options)
 	level.wait(SKY_CHECK_MS)
 	wait_for_a_clear_sky()
 	level.resume_scroll()
@@ -73,47 +97,66 @@ local BYDO_FIELD: { Wave } = {
 }
 
 local INTO_THE_PIT: { Wave } = {
-	{ at = 5880, sheet = "drifter", rows = { 300, 540, 760 } },
-	{ at = 6600, sheet = "weaver", rows = { 360, 720 } },
-	{ at = 7320, sheet = "voltjelly", rows = { 300, 760 } },
-	{ at = 8040, sheet = "drifter", rows = { 240, 420, 600, 780 } },
-	{ at = 8760, sheet = "reaper", rows = { 540 } },
-	{ at = 9480, sheet = "weaver", rows = { 300, 540, 760 } },
-	{ at = 10200, sheet = "drillback", rows = { 540 } },
+	{ at = 480, sheet = "glowmoth", rows = { 300, 380, 460, 540, 620 } },
+	{ at = 1200, sheet = "sporecap", rows = { FLOOR_ROW } },
+	{ at = 1200, sheet = "glowmoth", rows = { 300, 380, 460, 540, 620 } },
+	{ at = 1920, sheet = "lanternfin", rows = { 360, 720 } },
+	{ at = 2640, sheet = "stalagmaw", rows = { CEILING_ROW } },
+	{ at = 2640, sheet = "lanternfin", rows = { 480, 720 } },
+	{ at = 3360, sheet = "ruin_warden", rows = { 540 } },
+	{ at = 3720, sheet = "gloomwyrm", rows = { 260 } },
+	{ at = 4080, sheet = "glowmoth", rows = { 520, 600, 680, 760, 840 } },
+	{ at = 4800, sheet = "ruin_warden", rows = { 360, 720 } },
 }
 
 local DEPTHS: { Wave } = {
-	{ at = 11160, sheet = "bydomancer", rows = { 360, 720 } },
-	{ at = 11880, sheet = "drillback", rows = { 300, 760 } },
-	{ at = 12600, sheet = "reaper", rows = { 300, 540, 760 } },
-	{ at = 13320, sheet = "voltjelly", rows = { 240, 420, 600, 780 } },
-	{ at = 14040, sheet = "bydomancer", rows = { 540 } },
-	{ at = 14760, sheet = "weaver", rows = { 300, 540, 760 } },
-	{ at = 15480, sheet = "drillback", rows = { 360, 720 } },
+	{ at = 5760, sheet = "ruin_warden", rows = { 300, 760 } },
+	{ at = 6480, sheet = "sporecap", rows = { FLOOR_ROW } },
+	{ at = 6480, sheet = "stalagmaw", rows = { CEILING_ROW } },
+	{ at = 7200, sheet = "lanternfin", rows = { 300, 540, 760 } },
+	{ at = 7920, sheet = "glowmoth", rows = { 240, 320, 400, 480, 560 } },
+	{ at = 8280, sheet = "gloomwyrm", rows = { 690 } },
+	{ at = 8640, sheet = "ruin_warden", rows = { 540 } },
+	{ at = 9360, sheet = "stalagmaw", rows = { CEILING_ROW } },
+	{ at = 9360, sheet = "sporecap", rows = { FLOOR_ROW } },
+	{ at = 10080, sheet = "lanternfin", rows = { 360, 720 } },
 }
 
-level.register("fosse", {
+level.register("space", {
 	function()
 		play(OUT_OF_THE_BASE)
 		level.wait_scroll(3000)
 	end,
 	function()
 		play(BYDO_FIELD)
-		level.wait_scroll(5400)
+		level.wait_scroll(END_OF_THE_OPEN_SPACE)
 		wait_for_a_clear_sky()
-		fight("bydo_tyrant", { health_percent = MINI_BOSS_HEALTH_PERCENT })
+		fight("bydo_tyrant", BOSS_ENTRY)
 	end,
+}, { map = "OPEN SPACE", preview = "open_space" })
+
+level.register("fosse", {
 	function()
-		level.biome("fosse")
 		play(INTO_THE_PIT)
-		level.wait_scroll(10680)
+		level.wait_scroll(END_OF_THE_PIT_ENTRY)
 	end,
 	function()
 		play(DEPTHS)
-		level.wait_scroll(16200)
+		level.wait_scroll(END_OF_THE_DEPTHS)
 		wait_for_a_clear_sky()
 	end,
 	function()
-		fight("bydo_tyrant")
+		fight("necromancer", NECROMANCER_ENTRY)
 	end,
+}, {
+	map = "THE PIT",
+	preview = "the_pit",
+	biome = "fosse",
+	starts = {
+		[2] = { scroll = END_OF_THE_PIT_ENTRY, biome = "fosse", biome_since = 0 },
+		[3] = { scroll = END_OF_THE_DEPTHS, biome = "fosse", biome_since = 0 },
+	},
+	bands = {
+		fosse = { top = CEILING_ROW, bottom = FLOOR_ROW },
+	},
 })

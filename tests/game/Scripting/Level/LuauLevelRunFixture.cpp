@@ -2,10 +2,12 @@
 #include <gtest/gtest.h>
 #include <cstddef>
 #include <memory>
+#include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
 #include "BehaviourScriptsFixtures.hpp"
+#include "BiomeGround.hpp"
 #include "EntityType.hpp"
 #include "LdtkPlacement.hpp"
 #include "LevelProgress.hpp"
@@ -23,12 +25,18 @@ void LuauLevelRunFixture::placeEnemies(
   placements_ = std::move(placements);
 }
 
+void LuauLevelRunFixture::giveGround(std::string biome,
+                                     rtype::game::BiomeGround ground) {
+  grounds_.emplace(std::move(biome), std::move(ground));
+}
+
 void LuauLevelRunFixture::play(std::string_view script) {
   scripts_.run(scriptsOf(script));
   rtype::game::LuauLevelEntry* const entry =
       scripts_.levels().entryOf(TEST_LEVEL);
   ASSERT_NE(entry, nullptr);
   entry->placements = std::move(placements_);
+  entry->grounds = std::move(grounds_);
   run_ = std::make_unique<rtype::game::LuauLevelRun>(
       rtype::game::LuauLevelRunParts{.machine = scripts_.machine(),
                                      .levels = scripts_.levels(),

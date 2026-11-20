@@ -8,6 +8,7 @@
 #include "PlayerSettings.hpp"
 #include "RecordingChatChannel.hpp"
 #include "RecordingInterfaceCanvas.hpp"
+#include "RecordingMapBallot.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingServerConnection.hpp"
 #include "RecordingShipLookExchange.hpp"
@@ -32,6 +33,7 @@ class LobbyRulesFixture : public ::testing::Test {
   RecordingServerConnection connection_;
   RecordingWaitingRoom waitingRoom_;
   RecordingShipLookExchange shipLooks_;
+  RecordingMapBallot mapBallot_;
   InterfaceCanvasRecord canvas_;
   RecordingSoundPlayer sounds_;
   rtype::client::PlayerSettings settings_;

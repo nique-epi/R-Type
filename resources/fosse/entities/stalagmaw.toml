@@ -1,0 +1,80 @@
+# The entity type stalagmaw, brought by the resource fosse:
+# a stalactite that crawls along the ceiling and falls on a ship below it.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy"
+layer = "enemy"
+hits = ["player"]
+pilot = "stalagmaw_drop"
+
+[gameplay.hitbox]
+width = 112
+height = 128
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 120
+
+[gameplay.behaviour]
+reach = 80
+crawl_speed = 120
+fall_speed = 900
+signal_ms = 400
+
+[gameplay.health]
+points = 2
+
+[gameplay.score]
+points = 150
+
+[appearance]
+sheet = "sprites/fosse/stalagmaw.png"
+
+# Idle, while it crawls left along the ceiling: its tip sways, its veins glow.
+[appearance.idle]
+left = 0
+top = 0
+width = 28
+height = 32
+frames = 8
+spacing = 2
+frame_ms = 140
+
+# Signal: it shakes before it falls.
+[appearance.attack_0.signal]
+left = 0
+top = 34
+width = 28
+height = 32
+frames = 2
+spacing = 2
+frame_ms = 50
+playback = "loop"
+afterwards = "stay"
+
+# Strike: it falls, motion lines above it.
+[appearance.attack_0.strike]
+left = 0
+top = 68
+width = 28
+height = 40
+frames = 2
+spacing = 2
+frame_ms = 60
+playback = "loop"
+afterwards = "stay"
+anchor_y = -2
+
+# The death, centered on the body; the row under it is the same death without
+# flash.
+[appearance.death]
+left = 0
+top = 110
+width = 48
+height = 48
+frames = 6
+spacing = 2
+frame_ms = 70

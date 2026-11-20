@@ -1,6 +1,7 @@
-# The resource fosse: the level a team plays from the base to the Bydo
-# Tyrant, through the Pit, with the enemies the game ships. A server starts it
-# with the line `ensure fosse` of its server.cfg, and plays it with
-# `set level fosse`.
+# The resource fosse: two maps a waiting room votes for, each a level in one
+# biome: space, open space to the Bydo Tyrant, and fosse, inside the Pit to the
+# Necromancer, with the enemies the game ships and the mobs of the Pit it
+# brings (entities/, sprites/fosse/, server/). A server starts it with the line
+# `ensure fosse` of its server.cfg; `set level fosse` plays the Pit alone.
 # The keys are described on the page "Write a resource" of the docs.
-description = "A level of five stages from open space into the Pit, with a mini-boss and the Bydo Tyrant"
+description = "Two maps to vote for: open space to the Bydo Tyrant, and the Pit with its mobs and the Necromancer"

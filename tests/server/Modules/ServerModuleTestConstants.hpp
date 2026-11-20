@@ -56,6 +56,11 @@ constexpr const char* EXAMPLE_RESOURCE_FROM_THE_ASSETS =
     "../resources/crimson-drifter";
 constexpr const char* WAVES_OF_THE_EXAMPLE_RESOURCE = "waves/waves.toml";
 
+/** @brief The resource fosse the repository ships beside its assets, from the
+ * assets folder: its level, the sheets of the mobs of the Pit and of the
+ * Necromancer, and the scripts that register their behaviours. */
+constexpr const char* FOSSE_RESOURCE_FROM_THE_ASSETS = "../resources/fosse";
+
 /** @brief Lines that set the rules of the game: the difficulty "hard", five
  * lives, friendly fire on; and a difficulty the shipped waves file has no
  * table for. */

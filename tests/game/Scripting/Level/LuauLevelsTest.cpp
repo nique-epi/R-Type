@@ -58,7 +58,7 @@ TEST(LuauLevels, ReadsTheLevelTheRepositoryShips) {
 /**
  * Given the scripts of the resource fosse the repository ships
  * When they run
- * Then the level fosse is registered, with its five stages
+ * Then the level fosse is registered, with its three stages
  */
 TEST(LuauLevels, ReadsTheFosseLevelTheRepositoryShips) {
   FailureLog log;
@@ -71,6 +71,211 @@ TEST(LuauLevels, ReadsTheFosseLevelTheRepositoryShips) {
   const LuauLevelEntry* const entry = scripts.levels().entryOf(FOSSE_LEVEL);
   ASSERT_NE(entry, nullptr);
   EXPECT_EQ(entry->stages.size(), STAGES_OF_THE_FOSSE_LEVEL);
+}
+
+/**
+ * Given the scripts of the resource fosse the repository ships
+ * When they run
+ * Then the level fosse is the map THE PIT
+ */
+TEST(LuauLevels, ReadsTheMapOfTheFosseLevel) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+  const std::array folders{
+      std::filesystem::path{RTYPE_SOURCE_RESOURCES_FOLDER} / FOSSE_RESOURCE};
+
+  scripts.run(rtype::game::scriptSourcesIn(folders));
+
+  const LuauLevelEntry* const entry = scripts.levels().entryOf(FOSSE_LEVEL);
+  ASSERT_NE(entry, nullptr);
+  EXPECT_EQ(entry->mapName.value_or(""), FOSSE_MAP);
+}
+
+/**
+ * Given the scripts of the resource fosse the repository ships
+ * When they run
+ * Then the level space is registered, with its two stages
+ */
+TEST(LuauLevels, ReadsTheSpaceLevelTheRepositoryShips) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+  const std::array folders{
+      std::filesystem::path{RTYPE_SOURCE_RESOURCES_FOLDER} / FOSSE_RESOURCE};
+
+  scripts.run(rtype::game::scriptSourcesIn(folders));
+
+  const LuauLevelEntry* const entry = scripts.levels().entryOf(SPACE_LEVEL);
+  ASSERT_NE(entry, nullptr);
+  EXPECT_EQ(entry->stages.size(), STAGES_OF_THE_SPACE_LEVEL);
+}
+
+/**
+ * Given the scripts of the resource fosse the repository ships
+ * When they run
+ * Then the level space is the map OPEN SPACE
+ */
+TEST(LuauLevels, ReadsTheMapOfTheSpaceLevel) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+  const std::array folders{
+      std::filesystem::path{RTYPE_SOURCE_RESOURCES_FOLDER} / FOSSE_RESOURCE};
+
+  scripts.run(rtype::game::scriptSourcesIn(folders));
+
+  const LuauLevelEntry* const entry = scripts.levels().entryOf(SPACE_LEVEL);
+  ASSERT_NE(entry, nullptr);
+  EXPECT_EQ(entry->mapName.value_or(""), SPACE_MAP);
+}
+
+/**
+ * Given a script that registers a level as the map THE CAVES
+ * When it runs
+ * Then the level is that map
+ */
+TEST(LuauLevels, ReadsTheMapOfALevel) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+
+  scripts.run(scriptsOf(REGISTERS_A_MAP));
+
+  const LuauLevelEntry* const entry = scripts.levels().entryOf(CAVES_LEVEL);
+  ASSERT_NE(entry, nullptr);
+  EXPECT_EQ(entry->mapName.value_or(""), CAVES_MAP);
+}
+
+/**
+ * Given a script that registers levels without the option map
+ * When it runs
+ * Then a level is no map
+ */
+TEST(LuauLevels, ALevelWithoutTheOptionIsNoMap) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+
+  scripts.run(scriptsOf(REGISTERS_TWO_LEVELS));
+
+  const LuauLevelEntry* const entry = scripts.levels().entryOf(CAVES_LEVEL);
+  ASSERT_NE(entry, nullptr);
+  EXPECT_FALSE(entry->mapName.has_value());
+}
+
+/**
+ * Given a script that registers the map THE CAVES with the preview the_caves
+ * When it runs
+ * Then the map names that preview
+ */
+TEST(LuauLevels, ReadsThePreviewOfAMap) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+
+  scripts.run(scriptsOf(REGISTERS_A_MAP_WITH_A_PREVIEW));
+
+  const LuauLevelEntry* const entry = scripts.levels().entryOf(CAVES_LEVEL);
+  ASSERT_NE(entry, nullptr);
+  EXPECT_EQ(entry->mapPreview.value_or(""), CAVES_PREVIEW);
+}
+
+/**
+ * Given a script whose preview names a file outside the previews folder
+ * When it runs
+ * Then it fails, saying what the option is
+ */
+TEST(LuauLevels, RefusesAPreviewOutsideItsFolder) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+
+  EXPECT_THAT(
+      [&] { scripts.run(scriptsOf(REGISTERS_A_PREVIEW_OUTSIDE_ITS_FOLDER)); },
+      ThrowsMessage<ScriptException>(
+          HasSubstr(rtype::game::WRONG_LEVEL_PREVIEW_MESSAGE)));
+}
+
+/**
+ * Given a script that gives a preview to a level that is no map
+ * When it runs
+ * Then it fails, saying what the option is
+ */
+TEST(LuauLevels, RefusesAPreviewWithoutAMap) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+
+  EXPECT_THAT(
+      [&] { scripts.run(scriptsOf(REGISTERS_A_PREVIEW_WITHOUT_A_MAP)); },
+      ThrowsMessage<ScriptException>(
+          HasSubstr(rtype::game::WRONG_LEVEL_PREVIEW_MESSAGE)));
+}
+
+/**
+ * Given a script whose map name is written in small letters
+ * When it runs
+ * Then it fails, saying what the option is
+ */
+TEST(LuauLevels, RefusesAMapNameInSmallLetters) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+
+  EXPECT_THAT([&] { scripts.run(scriptsOf(REGISTERS_A_MAP_IN_SMALL_LETTERS)); },
+              ThrowsMessage<ScriptException>(
+                  HasSubstr(rtype::game::WRONG_LEVEL_MAP_MESSAGE)));
+}
+
+/**
+ * Given a script whose map name is seventeen characters long
+ * When it runs
+ * Then it fails, saying what the option is
+ */
+TEST(LuauLevels, RefusesAMapNameTooLong) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+
+  EXPECT_THAT([&] { scripts.run(scriptsOf(REGISTERS_A_MAP_NAME_TOO_LONG)); },
+              ThrowsMessage<ScriptException>(
+                  HasSubstr(rtype::game::WRONG_LEVEL_MAP_MESSAGE)));
+}
+
+/**
+ * Given a script whose map name is a number
+ * When it runs
+ * Then it fails, saying what the option is
+ */
+TEST(LuauLevels, RefusesAMapThatIsNoText) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+
+  EXPECT_THAT([&] { scripts.run(scriptsOf(REGISTERS_A_MAP_THAT_IS_NO_TEXT)); },
+              ThrowsMessage<ScriptException>(
+                  HasSubstr(rtype::game::WRONG_LEVEL_MAP_MESSAGE)));
+}
+
+/**
+ * Given a script that opens a level in the biome caves
+ * When it runs
+ * Then the level opens in caves
+ */
+TEST(LuauLevels, ReadsTheBiomeALevelOpensIn) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+
+  scripts.run(scriptsOf(REGISTERS_AN_OPENING_BIOME));
+
+  const LuauLevelEntry* const entry = scripts.levels().entryOf(CAVES_LEVEL);
+  ASSERT_NE(entry, nullptr);
+  EXPECT_EQ(entry->openingBiome.value_or(""), CAVES_BIOME_NAME);
+}
+
+/**
+ * Given a script that opens a level in a biome whose name holds capitals and
+ * a space
+ * When it runs
+ * Then it fails, saying what a biome name is
+ */
+TEST(LuauLevels, RefusesAnOpeningBiomeThatIsNoBiomeName) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+
+  EXPECT_THAT([&] { scripts.run(scriptsOf(REGISTERS_A_WRONG_OPENING_BIOME)); },
+              ThrowsMessage<ScriptException>(
+                  HasSubstr(rtype::game::WRONG_BIOME_NAME_MESSAGE)));
 }
 
 /**
@@ -335,4 +540,101 @@ TEST(LuauLevels, RefusesToSpawnThePlacedOutsideAGame) {
   EXPECT_THAT([&] { scripts.run(scriptsOf(SPAWNS_THE_PLACED_WHILE_READ)); },
               ThrowsMessage<ScriptException>(
                   HasSubstr(rtype::game::NO_LEVEL_PLAYED_MESSAGE)));
+}
+
+/**
+ * Given a script that declares the band of the biome pit
+ * When the entry of its level is asked for
+ * Then it holds that band for that biome
+ */
+TEST(LuauLevels, KeepsTheBandOfABiome) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+
+  scripts.run(scriptsOf(REGISTERS_A_BAND));
+
+  const LuauLevelEntry* const entry = scripts.levels().entryOf(CAVES_LEVEL);
+  ASSERT_NE(entry, nullptr);
+  ASSERT_TRUE(entry->bands.contains(BANDED_BIOME));
+  EXPECT_EQ(entry->bands.find(BANDED_BIOME)->second, DECLARED_BAND);
+}
+
+/**
+ * Given the scripts of the resource fosse
+ * When they run
+ * Then the level fosse closes its biome with the ceiling and the floor of the
+ * Pit
+ */
+TEST(LuauLevels, ClosesThePitWithItsCeilingAndItsFloor) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+  const std::array folders{
+      std::filesystem::path{RTYPE_SOURCE_RESOURCES_FOLDER} / FOSSE_RESOURCE};
+
+  scripts.run(rtype::game::scriptSourcesIn(folders));
+
+  const LuauLevelEntry* const entry = scripts.levels().entryOf(FOSSE_LEVEL);
+  ASSERT_NE(entry, nullptr);
+  ASSERT_TRUE(entry->bands.contains(FOSSE_BIOME));
+  EXPECT_EQ(entry->bands.find(FOSSE_BIOME)->second, FOSSE_BAND);
+}
+
+/**
+ * Given a script whose band is narrower than a ship
+ * When it runs
+ * Then it fails, saying what the bands of a level are
+ */
+TEST(LuauLevels, RefusesABandNarrowerThanAShip) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+
+  EXPECT_THAT(
+      [&] { scripts.run(scriptsOf(REGISTERS_A_BAND_NARROWER_THAN_A_SHIP)); },
+      ThrowsMessage<ScriptException>(
+          HasSubstr(rtype::game::WRONG_LEVEL_BANDS_MESSAGE)));
+}
+
+/**
+ * Given a script whose band has its floor below the play area
+ * When it runs
+ * Then it fails, saying what the bands of a level are
+ */
+TEST(LuauLevels, RefusesABandBelowThePlayArea) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+
+  EXPECT_THAT(
+      [&] { scripts.run(scriptsOf(REGISTERS_A_BAND_BELOW_THE_PLAY_AREA)); },
+      ThrowsMessage<ScriptException>(
+          HasSubstr(rtype::game::WRONG_LEVEL_BANDS_MESSAGE)));
+}
+
+/**
+ * Given a script whose band names no biome
+ * When it runs
+ * Then it fails, saying what the bands of a level are
+ */
+TEST(LuauLevels, RefusesABandOfNoBiomeName) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+
+  EXPECT_THAT(
+      [&] { scripts.run(scriptsOf(REGISTERS_A_BAND_OF_NO_BIOME_NAME)); },
+      ThrowsMessage<ScriptException>(
+          HasSubstr(rtype::game::WRONG_LEVEL_BANDS_MESSAGE)));
+}
+
+/**
+ * Given a script that declares a start for the first stage of its level
+ * When it runs
+ * Then it fails, saying what the starts of a level are
+ */
+TEST(LuauLevels, RefusesAStartForTheFirstStage) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+
+  EXPECT_THAT(
+      [&] { scripts.run(scriptsOf(REGISTERS_A_START_FOR_THE_FIRST_STAGE)); },
+      ThrowsMessage<ScriptException>(
+          HasSubstr(rtype::game::WRONG_LEVEL_STARTS_MESSAGE)));
 }

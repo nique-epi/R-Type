@@ -1,0 +1,291 @@
+# The entity type necromancer, brought by the resource fosse:
+# the boss of the Pit, steered by server/necromancer.luau.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy"
+layer = "enemy"
+hits = ["player"]
+pilot = "necromancer_rite"
+
+# The hood and the cape; its script lets a hit apply on either, once it has
+# risen and while it does not hide in its hood.
+[[gameplay.hitbox.box]]
+width = 252
+height = 192
+offset_x = 10
+offset_y = -157
+
+[[gameplay.hitbox.box]]
+width = 444
+height = 312
+offset_x = 22
+offset_y = 95
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 900
+
+# It rises out of the floor at y 598 over 2 s, rests 0.9 s between
+# two attacks, 0.4 s once enraged, and hides 2 s in its hood when it enrages.
+[gameplay.behaviour]
+rest_y = 598
+rise_ms = 2000
+rest_ms = 900
+enraged_rest_ms = 400
+rage_ms = 2000
+
+[gameplay.health]
+points = 300
+
+[gameplay.score]
+points = 12000
+
+[gameplay.boss]
+rage_below_percent = 50
+rage_attack = 4
+arrival_attack = 5
+
+[gameplay.stays_outside]
+
+[gameplay.survives_contact]
+
+# The fist (attack 1) crushes a column in front of it as it lands, the first
+# 333 ms of its strike.
+[[gameplay.hurt_zone.box]]
+offset_x = -448
+offset_y = 35
+width = 192
+height = 432
+attack = 1
+phase = "strike"
+from_ms = 0
+until_ms = 333
+
+# The gaze (attack 3) burns a band at the height of its eyes, from the mask to
+# the left edge of the playfield, the whole strike: the beam necromancer_beam
+# draws, its core and its glow.
+[[gameplay.hurt_zone.beam]]
+offset_x = -25
+offset_y = -110
+length = 1600
+thickness = 48
+from_deg = 0
+to_deg = 0
+attack = 3
+phase = "strike"
+
+[appearance]
+sheet = "sprites/fosse/necromancer.png"
+# The name its bar writes above its gauges.
+boss_name = "NECROMANCER"
+
+# Idle: it bobs, the halo turns, the smoke rolls, the hands breathe out of phase.
+[appearance.idle]
+left = 0
+top = 0
+width = 170
+height = 131
+frames = 12
+spacing = 2
+frame_ms = 83
+
+# Phase 2, below half its health: pink halo and mask, swollen smoke, a second pair of hands.
+[appearance.enraged_idle]
+left = 0
+top = 133
+width = 173
+height = 137
+frames = 12
+spacing = 2
+frame_ms = 83
+
+# Rings, signal.
+[appearance.attack_0.signal]
+left = 0
+top = 272
+width = 170
+height = 138
+frames = 10
+spacing = 2
+frame_ms = 83
+playback = "loop"
+afterwards = "stay"
+anchor_y = -3
+
+# Rings, strike.
+[appearance.attack_0.strike]
+left = 0
+top = 412
+width = 209
+height = 138
+frames = 19
+spacing = 2
+frame_ms = 105
+playback = "hold"
+afterwards = "stay"
+anchor_x = -20
+anchor_y = -3
+
+# Rings, recover.
+[appearance.attack_0.recover]
+left = 0
+top = 552
+width = 197
+height = 131
+frames = 8
+spacing = 2
+frame_ms = 83
+playback = "once"
+afterwards = "idle"
+anchor_x = -14
+
+# Fist, signal.
+[appearance.attack_1.signal]
+left = 0
+top = 685
+width = 211
+height = 131
+frames = 16
+spacing = 2
+frame_ms = 83
+playback = "loop"
+afterwards = "stay"
+anchor_x = -21
+
+# Fist, strike.
+[appearance.attack_1.strike]
+left = 0
+top = 818
+width = 220
+height = 135
+frames = 11
+spacing = 2
+frame_ms = 83
+playback = "hold"
+afterwards = "stay"
+anchor_x = -25
+anchor_y = 3
+
+# Fist, recover.
+[appearance.attack_1.recover]
+left = 0
+top = 955
+width = 210
+height = 135
+frames = 17
+spacing = 2
+frame_ms = 83
+playback = "once"
+afterwards = "idle"
+anchor_x = -20
+anchor_y = 3
+
+# Raise the Dead, signal.
+[appearance.attack_2.signal]
+left = 0
+top = 1092
+width = 172
+height = 139
+frames = 23
+spacing = 2
+frame_ms = 83
+playback = "loop"
+afterwards = "stay"
+anchor_x = -1
+anchor_y = -2
+
+# Raise the Dead, strike.
+[appearance.attack_2.strike]
+left = 0
+top = 1233
+width = 172
+height = 137
+frames = 19
+spacing = 2
+frame_ms = 83
+playback = "hold"
+afterwards = "stay"
+anchor_x = -1
+anchor_y = -6
+
+# Raise the Dead, recover.
+[appearance.attack_2.recover]
+left = 0
+top = 1372
+width = 173
+height = 131
+frames = 8
+spacing = 2
+frame_ms = 83
+playback = "once"
+afterwards = "idle"
+anchor_x = -3
+
+# Gaze, signal.
+[appearance.attack_3.signal]
+left = 0
+top = 1505
+width = 171
+height = 139
+frames = 18
+spacing = 2
+frame_ms = 83
+playback = "loop"
+afterwards = "stay"
+anchor_x = -1
+anchor_y = -3
+
+# Gaze, strike.
+[appearance.attack_3.strike]
+left = 0
+top = 1646
+width = 146
+height = 139
+frames = 10
+spacing = 2
+frame_ms = 83
+playback = "hold"
+afterwards = "stay"
+anchor_x = 2
+anchor_y = -2
+
+# Gaze, recover.
+[appearance.attack_3.recover]
+left = 0
+top = 1787
+width = 170
+height = 133
+frames = 20
+spacing = 2
+frame_ms = 83
+playback = "once"
+afterwards = "idle"
+anchor_x = -1
+anchor_y = 2
+
+# Arrival: it rises out of the floor of the Pit where it rests, the frame cut
+# at the floor and its idle playing as it comes up, slowing to a stop; the
+# first three frames are empty while it moves there from below the screen.
+[appearance.attack_5.signal]
+left = 0
+top = 2188
+width = 170
+height = 131
+frames = 20
+spacing = 2
+frame_ms = 100
+playback = "hold"
+afterwards = "stay"
+
+# The death: a flash, then the robe breaks apart and settles onto the smoke; the row under it is without flash.
+[appearance.death]
+left = 0
+top = 1922
+width = 170
+height = 131
+frames = 6
+spacing = 2
+frame_ms = 110

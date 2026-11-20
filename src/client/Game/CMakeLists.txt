@@ -29,6 +29,7 @@ target_link_libraries(rtype_client_game_module
     rtype_client_input
     rtype_client_interface
     rtype_client_interface_pixel
+    rtype_client_level_transition
     rtype_client_mission_banner
     rtype_client_prediction
     rtype_client_replication

@@ -13,6 +13,7 @@
 #include "OptionsScreenFixtures.hpp"
 #include "PointerEvents.hpp"
 #include "RecordingInterfaceCanvas.hpp"
+#include "RecordingMapPreviews.hpp"
 #include "ScreenTestConstants.hpp"
 
 using rtype::client::ConnectionPhase;
@@ -33,6 +34,7 @@ void LobbyRulesFixture::open(std::optional<GameRules> rules) {
                        .connection = connection_,
                        .waitingRoom = waitingRoom_,
                        .shipLooks = shipLooks_,
+                       .mapBallot = mapBallot_,
                        .playfieldPointAt = samePlayfieldPoint,
                        .keys = settings_.keys,
                        .keyName = nameInTheFile,
@@ -43,7 +45,8 @@ void LobbyRulesFixture::open(std::optional<GameRules> rules) {
                        .chat = chat_,
                        .settings = settings_,
                        .rules = std::move(rules)},
-      std::make_unique<RecordingInterfaceCanvas>(canvas_));
+      std::make_unique<RecordingInterfaceCanvas>(canvas_),
+      std::make_unique<RecordingMapPreviews>());
   screen_->update(ONE_FRAME);
 }
 

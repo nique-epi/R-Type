@@ -1,4 +1,6 @@
 #include "EventMessages.hpp"
+#include <cmath>
+#include <cstdint>
 #include "BossArrival.hpp"
 #include "BossHealthChanged.hpp"
 #include "BossStatus.hpp"
@@ -21,6 +23,12 @@
 namespace rtype::server {
 
 namespace {
+
+/** @returns @p row, a row of a band from 0 to the bottom of the play area
+ * (the scripts of a level check it), to the nearest logical unit. */
+std::uint16_t wireRowOf(float row) {
+  return static_cast<std::uint16_t>(std::lround(row));
+}
 
 network::DestructionReason toWireReason(game::DestructionCause cause) {
   switch (cause) {
@@ -113,10 +121,14 @@ EventMessage eventMessageOf(const game::EffectStarted& event) {
 }
 
 EventMessage eventMessageOf(const game::LevelChange& event) {
-  const network::LevelStatus message{.biome = event.biome,
-                                     .scrollPosition = event.scrollPosition,
-                                     .scrollSpeed = event.scrollSpeed,
-                                     .biomeSince = event.biomeSince};
+  const network::LevelStatus message{
+      .biome = event.biome,
+      .scrollPosition = event.scrollPosition,
+      .scrollSpeed = event.scrollSpeed,
+      .biomeSince = event.biomeSince,
+      .transitionLeft = event.transitionLeft,
+      .bandTop = wireRowOf(event.band.top),
+      .bandBottom = wireRowOf(event.band.bottom)};
   return EventMessage{.message = network::encodedMessage(message),
                       .guaranteed = true};
 }

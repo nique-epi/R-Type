@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <chrono>
 #include <optional>
+#include <string_view>
 #include <utility>
 #include "BossBarConstants.hpp"
 #include "BossBarLook.hpp"
@@ -181,8 +182,8 @@ int centerOf(sf::IntRect gauge) {
   return gauge.position.x + (gauge.size.x / BOSS_GAUGE_COUNT);
 }
 
-void paintNames(IInterfaceCanvas& canvas) {
-  canvas.write(BOSS_NAME_TEXT, {BOSS_BAR_CENTER_X, BOSS_NAME_TOP},
+void paintNames(IInterfaceCanvas& canvas, std::string_view name) {
+  canvas.write(name, {BOSS_BAR_CENTER_X, BOSS_NAME_TOP},
                TextStyle{.font = TextFont::Regular,
                          .color = BOSS_MARK_COLOR,
                          .outlined = true,
@@ -215,6 +216,7 @@ BossBarLook bossBarAt(const BossFight& fight, engine::Duration now,
                         preference == FlashPreference::Full;
   return BossBarLook{
       .shown = true,
+      .name = {},
       .phaseOne = phaseOneOf(fight, health, lag),
       .phaseTwo = phaseTwoOf(fight, health, lag),
       .flickerStep =
@@ -226,7 +228,7 @@ void paintBossBar(IInterfaceCanvas& canvas, const BossBarLook& look) {
   if (!look.shown) {
     return;
   }
-  paintNames(canvas);
+  paintNames(canvas, look.name);
   paintGauge(canvas, BOSS_PHASE_TWO_GAUGE, look.phaseTwo);
   paintGauge(canvas, BOSS_PHASE_ONE_GAUGE, look.phaseOne);
   if (look.phaseTwo.state == BossGaugeState::Enraged) {

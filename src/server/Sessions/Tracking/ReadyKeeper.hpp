@@ -1,7 +1,9 @@
 #pragma once
 
+#include <cstddef>
 #include <functional>
 #include "GameLoaded.hpp"
+#include "MapVote.hpp"
 #include "MessageOrigin.hpp"
 #include "PlayerRoster.hpp"
 #include "ReadyState.hpp"
@@ -9,8 +11,8 @@
 namespace rtype::server {
 
 /**
- * @brief Keeps whether each player declared itself ready, and whether it told
- * the game it shows the game screen.
+ * @brief Keeps whether each player declared itself ready, the map it votes
+ * for, and whether it told the game it shows the game screen.
  *
  * A ReadyState counts only while the game accepts it. DatagramReader
  * already refused the datagrams that are not newer than the newest accepted
@@ -24,8 +26,10 @@ class ReadyKeeper {
    * @param roster The players; it must outlive the keeper.
    * @param readyAccepted Tells whether a ReadyState counts right now; it must
    * not be empty.
+   * @param mapCount How many maps the waiting room offers to the vote.
    */
-  ReadyKeeper(PlayerRoster& roster, std::function<bool()> readyAccepted);
+  ReadyKeeper(PlayerRoster& roster, std::function<bool()> readyAccepted,
+              std::size_t mapCount);
 
   /**
    * @brief Records @p message for the player who sent it, when readyAccepted
@@ -33,6 +37,14 @@ class ReadyKeeper {
    */
   void apply(const network::MessageOrigin& origin,
              const network::ReadyState& message);
+
+  /**
+   * @brief Records the map the player who sent @p message votes for, when
+   * readyAccepted says the waiting room takes its choices, the sender is a
+   * player, and the map is NO_MAP_VOTE or one of the mapCount maps.
+   */
+  void apply(const network::MessageOrigin& origin,
+             const network::MapVote& message);
 
   /**
    * @brief Records that the player who sent @p message is loaded, in any state
@@ -54,6 +66,7 @@ class ReadyKeeper {
  private:
   PlayerRoster& roster_;
   std::function<bool()> readyAccepted_;
+  std::size_t mapCount_;
 };
 
 }  // namespace rtype::server

@@ -12,6 +12,10 @@ namespace rtype::client {
  */
 constexpr std::chrono::milliseconds READY_STATE_INTERVAL{500};
 
+/** @brief How long the client waits before it sends a MapVote again while
+ * the waiting room shows another vote for its player. */
+constexpr std::chrono::milliseconds MAP_VOTE_INTERVAL{500};
+
 /**
  * @brief Time between two ShipLookChoice while no PlayerLooks lists the look
  * the player chose on its ship. Provisional, see the protocol page.

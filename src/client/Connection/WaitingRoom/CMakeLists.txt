@@ -1,5 +1,6 @@
 add_library(rtype_client_waiting_room STATIC
   GameLoadedReminder.cpp
+  MapBallot.cpp
   ShipLookExchange.cpp
   WaitingRoom.cpp
 )
@@ -19,6 +20,7 @@ target_link_libraries(rtype_client_waiting_room
     rtype_network_game_loaded
     rtype_network_game_started
     rtype_network_look_item_won
+    rtype_network_map_vote
     rtype_network_protocol
     rtype_network_ready_state
     rtype_network_ship_look_choice

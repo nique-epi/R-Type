@@ -45,6 +45,7 @@ GameFlowLevelFixture::GameFlowLevelFixture(std::string_view level)
                        .waves = testWavePlan(),
                        .types = game::testing::shippedEntitySheets(),
                        .level = std::string{level},
+                       .maps = {},
                        .scripts = &scriptsOfTheFlowLevels()}) {}
 
 void GameFlowLevelFixture::destroyTheLastShipOf(ConnectedPlayer& player) {

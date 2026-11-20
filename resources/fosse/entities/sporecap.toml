@@ -1,0 +1,100 @@
+# The entity type sporecap, brought by the resource fosse:
+# a walking mushroom that puffs spores at a ship flying above it.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy"
+layer = "enemy"
+hits = ["player"]
+pilot = "sporecap_walk"
+
+[gameplay.hitbox]
+width = 96
+height = 104
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 120
+
+# It puffs three spores 72 units apart at a ship within 160 units of its
+# column, rested 1.5 s; the beats match its animations.
+[gameplay.behaviour]
+reach = 160
+spores = 3
+spore_gap = 72
+rest_ms = 1500
+signal_ms = 400
+strike_ms = 270
+recover_ms = 400
+
+[gameplay.health]
+points = 2
+
+[gameplay.score]
+points = 150
+
+[appearance]
+sheet = "sprites/fosse/sporecap.png"
+
+# Idle, while it walks left: one leg then the other, the body bobbing, the spots
+# glowing.
+[appearance.idle]
+left = 0
+top = 0
+width = 24
+height = 26
+frames = 4
+spacing = 2
+frame_ms = 140
+
+# Signal: the cap swells and flickers before the spores.
+[appearance.attack_0.signal]
+left = 0
+top = 28
+width = 26
+height = 28
+frames = 2
+spacing = 2
+frame_ms = 100
+playback = "loop"
+afterwards = "stay"
+anchor_x = -1
+anchor_y = -1
+
+# Strike: it squashes and puffs spores out of its cap.
+[appearance.attack_0.strike]
+left = 0
+top = 58
+width = 26
+height = 36
+frames = 3
+spacing = 2
+frame_ms = 90
+playback = "once"
+afterwards = "idle"
+anchor_y = -5
+
+# Recover: it settles back.
+[appearance.attack_0.recover]
+left = 0
+top = 96
+width = 24
+height = 26
+frames = 2
+spacing = 2
+frame_ms = 200
+playback = "once"
+afterwards = "idle"
+
+# The death, centered on the body; the row under it is the same death without
+# flash.
+[appearance.death]
+left = 0
+top = 124
+width = 48
+height = 48
+frames = 6
+spacing = 2
+frame_ms = 70

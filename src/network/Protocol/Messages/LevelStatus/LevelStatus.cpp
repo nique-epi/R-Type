@@ -20,6 +20,15 @@ namespace rtype::network {
 namespace {
 
 /** @brief Refuses @p value, the field @p field of a scroll, when it is not a
+ * finite number; the exception holds its bits. */
+void requireFiniteValue(std::string_view field, float value) {
+  if (!std::isfinite(value)) {
+    throw InvalidFieldValueException(field,
+                                     std::bit_cast<std::uint32_t>(value));
+  }
+}
+
+/** @brief Refuses @p value, the field @p field of a scroll, when it is not a
  * finite number from 0; the exception holds its bits. */
 void requireScrollValue(std::string_view field, float value) {
   if (!std::isfinite(value) || value < 0.0F) {
@@ -34,7 +43,10 @@ void validate(const LevelStatus& message) {
   }
   requireScrollValue(SCROLL_POSITION_FIELD, message.scrollPosition);
   requireScrollValue(SCROLL_SPEED_FIELD, message.scrollSpeed);
-  requireScrollValue(BIOME_SINCE_FIELD, message.biomeSince);
+  requireFiniteValue(BIOME_SINCE_FIELD, message.biomeSince);
+  if (message.bandTop >= message.bandBottom) {
+    throw InvalidFieldValueException(BAND_FIELD, message.bandTop);
+  }
 }
 
 }  // namespace
@@ -45,6 +57,9 @@ void encodePayload(ByteWriter& writer, const LevelStatus& message) {
   writer.writeFloat(message.scrollPosition);
   writer.writeFloat(message.scrollSpeed);
   writer.writeFloat(message.biomeSince);
+  writer.writeUint16(message.transitionLeft);
+  writer.writeUint16(message.bandTop);
+  writer.writeUint16(message.bandBottom);
 }
 
 LevelStatus decodePayload(
@@ -55,11 +70,17 @@ LevelStatus decodePayload(
   const float scrollPosition = reader.readFloat();
   const float scrollSpeed = reader.readFloat();
   const float biomeSince = reader.readFloat();
+  const std::uint16_t transitionLeft = reader.readUint16();
+  const std::uint16_t bandTop = reader.readUint16();
+  const std::uint16_t bandBottom = reader.readUint16();
   requireFullyRead(reader);
   LevelStatus message{.biome = std::move(biome),
                       .scrollPosition = scrollPosition,
                       .scrollSpeed = scrollSpeed,
-                      .biomeSince = biomeSince};
+                      .biomeSince = biomeSince,
+                      .transitionLeft = transitionLeft,
+                      .bandTop = bandTop,
+                      .bandBottom = bandBottom};
   validate(message);
   return message;
 }

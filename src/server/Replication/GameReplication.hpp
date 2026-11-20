@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <vector>
 #include "ComponentRegistry.hpp"
 #include "ConnectedPlayer.hpp"
 #include "EntitySheet.hpp"
@@ -11,6 +12,7 @@
 #include "GameEndAnnouncer.hpp"
 #include "GameOutcome.hpp"
 #include "IGameReplication.hpp"
+#include "LobbyMap.hpp"
 #include "LobbyStateAnnouncer.hpp"
 #include "PlayerRoster.hpp"
 #include "ShipSpawnAnnouncer.hpp"
@@ -62,6 +64,8 @@ class GameReplication final : public IGameReplication {
   PlayerRoster& roster_;
   SendDatagram send_;
   std::reference_wrapper<const game::EntitySheet> ship_;
+  /** The maps the waiting room offers to the vote. */
+  std::vector<network::LobbyMap> lobbyMaps_;
   WorldStateSender worldStateSender_;
   std::unique_ptr<ShipSpawnAnnouncer> shipSpawnAnnouncer_;
   std::unique_ptr<LobbyStateAnnouncer> lobbyStateAnnouncer_;

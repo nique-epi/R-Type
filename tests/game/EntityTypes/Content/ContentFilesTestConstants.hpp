@@ -91,4 +91,11 @@ constexpr std::string_view EXAMPLE_RESOURCE_SHEET =
 constexpr std::string_view EXAMPLE_RESOURCE_SPRITES =
     "sprites/crimson-drifter/crimson_drifter.png";
 
+/** @brief A preview of a map in a resource, its bytes, and a file of the
+ * previews folder whose name is no content name, which the pack leaves out. */
+constexpr std::string_view MAP_PREVIEW_FILE = "previews/the_caves.png";
+constexpr std::string_view MAP_PREVIEW_PIXELS = "\x89PNG\r\n\x1a\ncaves";
+constexpr std::string_view FOREIGN_PREVIEW_FILE = "previews/The Caves.png";
+constexpr std::size_t FILES_OF_A_SHEET_ITS_IMAGE_AND_A_PREVIEW = 3;
+
 }  // namespace rtype::game::testing

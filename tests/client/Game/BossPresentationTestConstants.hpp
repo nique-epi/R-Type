@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <cstdint>
+#include <string_view>
 #include "BossStatus.hpp"
 #include "EnemyAction.hpp"
 #include "EntityDestroyed.hpp"
@@ -11,6 +12,12 @@
  * then its fight with 240 points, then its death, its removal by a restart
  * and its body killed; its roar, the strike of its attack 0. */
 constexpr std::uint32_t PRESENTED_BOSS_ID = 51;
+
+/** @brief The name the sheet of the boss gives its bar. */
+constexpr std::string_view PRESENTED_BOSS_NAME = "NECROMANCER";
+
+/** @brief One update of the client, a frame at 60 frames a second. */
+constexpr rtype::engine::Duration ONE_UPDATE = std::chrono::milliseconds(16);
 constexpr rtype::network::BossStatus PRESENTED_BOSS_ARRIVING{
     .stage = rtype::network::BossStage::Arriving};
 constexpr rtype::network::BossStatus PRESENTED_BOSS_FIGHTING{

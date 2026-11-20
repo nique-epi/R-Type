@@ -7,7 +7,7 @@
 #include "AssetLibrary.hpp"
 #include "BackgroundCatalog.hpp"
 #include "GameResult.hpp"
-#include "ISessionBackgrounds.hpp"
+#include "ISessionPack.hpp"
 #include "ScreenContext.hpp"
 #include "ScreenRegistry.hpp"
 #include "ScreenServices.hpp"
@@ -91,7 +91,7 @@ class ClientScreens {
   void followSessionBackgrounds();
 
   const ServerSession* connection_;
-  const ISessionBackgrounds* sessionBackgrounds_;
+  const ISessionPack* sessionPack_;
   const AssetLibrary* assets_;
   /** @brief The backgrounds of the assets, whose images are loaded for good
    * when the screens are built: the sky shows behind every screen. */

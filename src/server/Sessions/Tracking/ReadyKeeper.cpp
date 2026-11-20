@@ -1,10 +1,12 @@
 #include "ReadyKeeper.hpp"
 #include <algorithm>
+#include <cstddef>
 #include <functional>
 #include <utility>
 #include "ConnectedPlayer.hpp"
 #include "ConnectedPlayers.hpp"
 #include "GameLoaded.hpp"
+#include "MapVote.hpp"
 #include "MessageOrigin.hpp"
 #include "PlayerRoster.hpp"
 #include "ReadyState.hpp"
@@ -12,8 +14,11 @@
 namespace rtype::server {
 
 ReadyKeeper::ReadyKeeper(PlayerRoster& roster,
-                         std::function<bool()> readyAccepted)
-    : roster_(roster), readyAccepted_(std::move(readyAccepted)) {}
+                         std::function<bool()> readyAccepted,
+                         std::size_t mapCount)
+    : roster_(roster),
+      readyAccepted_(std::move(readyAccepted)),
+      mapCount_(mapCount) {}
 
 void ReadyKeeper::apply(const network::MessageOrigin& origin,
                         const network::ReadyState& message) {
@@ -22,6 +27,15 @@ void ReadyKeeper::apply(const network::MessageOrigin& origin,
     return;
   }
   player->ready = message.ready;
+}
+
+void ReadyKeeper::apply(const network::MessageOrigin& origin,
+                        const network::MapVote& message) {
+  ConnectedPlayer* const player = roster_.find(origin.sender);
+  if (!readyAccepted_() || player == nullptr || message.map > mapCount_) {
+    return;
+  }
+  player->mapVote = message.map;
 }
 
 void ReadyKeeper::apply(const network::MessageOrigin& origin,

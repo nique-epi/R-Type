@@ -1,0 +1,104 @@
+# The entity type ruin_warden, brought by the resource fosse:
+# a floating ruin that fires a rune bolt every time it rested.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy"
+layer = "enemy"
+hits = ["player"]
+pilot = "warden_float"
+
+[gameplay.hitbox]
+width = 104
+height = 128
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 90
+
+# It bobs 40 % of its speed every 1.6 s, and fires once in the playfield,
+# rested 1.5 s: its gun is ready at once and waits longer than a strike, so
+# it fires one bolt a strike.
+[gameplay.behaviour]
+bob = 40
+bob_ms = 1600
+fire_from_x = 1800
+rest_ms = 1500
+signal_ms = 360
+strike_ms = 140
+recover_ms = 500
+
+[gameplay.health]
+points = 6
+
+[gameplay.score]
+points = 400
+
+[gameplay.gun]
+interval_ms = 1000
+first_shot_ms = 0
+projectile = "ruin_warden_bolt"
+
+[appearance]
+sheet = "sprites/fosse/ruin_warden.png"
+
+# Idle, while it floats left: it hovers up and down, rubble falls under it, its
+# rune pulses.
+[appearance.idle]
+left = 0
+top = 0
+width = 26
+height = 32
+frames = 4
+spacing = 2
+frame_ms = 150
+
+# Signal: the rune lights up before the shot.
+[appearance.attack_0.signal]
+left = 0
+top = 34
+width = 26
+height = 32
+frames = 3
+spacing = 2
+frame_ms = 120
+playback = "loop"
+afterwards = "stay"
+
+# Strike: a muzzle flash in front of the cannon.
+[appearance.attack_0.strike]
+left = 0
+top = 68
+width = 34
+height = 32
+frames = 2
+spacing = 2
+frame_ms = 70
+playback = "once"
+afterwards = "idle"
+anchor_x = -4
+
+# Recover: the rune dims, then comes back.
+[appearance.attack_0.recover]
+left = 0
+top = 102
+width = 26
+height = 32
+frames = 2
+spacing = 2
+frame_ms = 250
+playback = "once"
+afterwards = "idle"
+
+# The death, centered on the body; the row under it is the same death without
+# flash.
+[appearance.death]
+left = 0
+top = 136
+width = 48
+height = 48
+frames = 6
+spacing = 2
+frame_ms = 70

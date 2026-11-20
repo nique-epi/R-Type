@@ -1,0 +1,35 @@
+# The entity type ruin_warden_bolt, brought by the resource fosse:
+# the rune bolt of the Ruin warden.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy_missile"
+layer = "enemy_missile"
+hits = ["player"]
+pilot = "straight"
+
+[gameplay.hitbox]
+width = 32
+height = 32
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 360
+
+[gameplay.behaviour]
+heading = -1
+
+[appearance]
+sheet = "sprites/fosse/ruin_warden_bolt.png"
+
+# Idle: a rune bolt that flickers.
+[appearance.idle]
+left = 0
+top = 0
+width = 8
+height = 8
+frames = 2
+spacing = 2
+frame_ms = 100

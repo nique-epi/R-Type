@@ -12,6 +12,7 @@
 #include "GameTicket.hpp"
 #include "InputPace.hpp"
 #include "LivesConstants.hpp"
+#include "ProtocolConstants.hpp"
 #include "RoundTripMeter.hpp"
 #include "SentStates.hpp"
 #include "TimeConstants.hpp"
@@ -66,6 +67,10 @@ struct ConnectedPlayer {
   /** @brief Whether the player declared itself ready to start; cleared when the
    * game waits for players again. */
   bool ready{false};
+  /** @brief The map the player votes for in the waiting room: its number in
+   * GameSettings::maps, from 1, or NO_MAP_VOTE; kept from one game to the
+   * next, and gone with the player. */
+  std::uint8_t mapVote{network::NO_MAP_VOTE};
   /** @brief Whether the player told the game it shows the game screen, since
    * the game last started waiting for it; cleared when the game does. */
   bool loaded{false};

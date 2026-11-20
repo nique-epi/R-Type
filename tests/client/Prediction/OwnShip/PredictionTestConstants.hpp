@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include "Bounds.hpp"
+#include "PlayBand.hpp"
 #include "Position.hpp"
 #include "PredictionConstants.hpp"
 #include "ShipControlConstants.hpp"
@@ -12,6 +13,19 @@
 namespace rtype::client::testing {
 
 constexpr game::Position START{.x = 400.0F, .y = 300.0F};
+
+/** @brief The band of the Pit, rows 192 to 848, a ship near its floor, and
+ * the row the center of a ship stops on against it: half a ship (32 units)
+ * above it. */
+constexpr game::PlayBand PIT_BAND{.top = 192.0F, .bottom = 848.0F};
+constexpr game::Position NEAR_THE_PIT_FLOOR{.x = 400.0F, .y = 760.0F};
+constexpr float PIT_FLOOR_STOP_Y = 816.0F;
+
+/** @brief A band whose ceiling, row 400, lies below START, and the row the
+ * center of a ship stops on under it. */
+constexpr game::PlayBand BAND_BELOW_THE_START{.top = 400.0F, .bottom = 900.0F};
+constexpr float BELOW_THE_START_STOP_Y = 432.0F;
+
 constexpr game::ShipDirections HOLDING_RIGHT{.right = true};
 constexpr game::ShipDirections HOLDING_DOWN{.down = true};
 constexpr game::ShipDirections HOLDING_NOTHING{};

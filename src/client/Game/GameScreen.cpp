@@ -2,6 +2,7 @@
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Event.hpp>
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <functional>
@@ -52,6 +53,8 @@
 #include "InterpolationTally.hpp"
 #include "KopecksReward.hpp"
 #include "LevelStatus.hpp"
+#include "LevelTransition.hpp"
+#include "LevelTransitionScene.hpp"
 #include "Logger.hpp"
 #include "MissionBanner.hpp"
 #include "MissionStart.hpp"
@@ -60,11 +63,14 @@
 #include "OwnShip.hpp"
 #include "PilotNameTags.hpp"
 #include "PilotShipLooks.hpp"
+#include "PilotShips.hpp"
+#include "PlayBand.hpp"
 #include "PlayerAction.hpp"
 #include "PlayerCommand.hpp"
 #include "PlayerLeft.hpp"
 #include "PlayerPalette.hpp"
 #include "PlayerPreferences.hpp"
+#include "PlayfieldConstants.hpp"
 #include "PositionInterpolation.hpp"
 #include "ScoreBoard.hpp"
 #include "ShipFlightSystem.hpp"
@@ -103,13 +109,24 @@ sf::Vector2i cameraOffsetOf(EffectSpawner& effects) {
   return effects.tools().camera.get().offset();
 }
 
-/** @brief Sets the speed of the stars and the shake of the sky for the time
- * since the start of the game: the warp of MISSION START with flashes, their
+/** @returns How many times their own speed the stars move: with flashes, the
+ * faster of the warp of MISSION START, for the time since the start of the
+ * game, and the warp of the transition the level plays, @p transition; their
  * own speed without. */
-void moveSky(ISky& sky, EffectSpawner& effects, FlashPreference preference) {
-  sky.setSpeedFactor(preference == FlashPreference::Full
-                         ? warpSpeedFactorAt(effects.sinceStart())
-                         : 1.0F);
+float skySpeedFactorOf(EffectSpawner& effects,
+                       const LevelTransitionScene& transition,
+                       FlashPreference preference) {
+  if (preference != FlashPreference::Full) {
+    return 1.0F;
+  }
+  return std::max(warpSpeedFactorAt(effects.sinceStart()),
+                  transitionWarpAt(transition.left()));
+}
+
+/** @brief Sets the speed of the stars of the sky to @p speedFactor and its
+ * shake to that of the camera. */
+void moveSky(ISky& sky, EffectSpawner& effects, float speedFactor) {
+  sky.setSpeedFactor(speedFactor);
   sky.setOffset(cameraOffsetOf(effects));
 }
 
@@ -135,6 +152,7 @@ struct EntityMessageRoutes {
   std::reference_wrapper<DepartureFeed> departures;
   std::reference_wrapper<ISky> sky;
   std::reference_wrapper<OwnPrediction> prediction;
+  std::reference_wrapper<LevelTransitionScene> transition;
 };
 
 /** @returns What the sky shows of the level @p status tells. */
@@ -145,12 +163,22 @@ SkyLevel skyLevelOf(const network::LevelStatus& status) {
                   .biomeSince = status.biomeSince};
 }
 
+/** @returns The rows the ships fly between in the biome @p status names: its
+ * band, the bottom of the play area at the lowest. */
+game::PlayBand bandOf(const network::LevelStatus& status) {
+  return game::PlayBand{
+      .top = static_cast<float>(status.bandTop),
+      .bottom = std::min(static_cast<float>(status.bandBottom),
+                         game::PLAY_AREA_HEIGHT)};
+}
+
 /** @brief Hands an entity message to whoever it goes to: a PlayerLeft to the
  * board and the feed, an EnemyAction to the enemy it animates and to the boss,
  * an EffectPlayed to the player of the named effects, a BossStatus to the
  * boss, an EntityDestroyed to the boss and to the replicator, a LevelStatus to
- * the sky, to the boss and to the prediction, which moves the walls ahead by
- * its scroll, anything else but GameEnded to the replicator. */
+ * the sky, to the transition, to the boss and to the prediction, which moves
+ * the walls ahead by its scroll and keeps the ship in its band, anything else
+ * but GameEnded to the replicator. */
 void routeEntityMessage(const EntityMessageRoutes& routes,
                         const EntityMessage& message) {
   std::visit(
@@ -173,7 +201,9 @@ void routeEntityMessage(const EntityMessageRoutes& routes,
         } else if constexpr (std::is_same_v<Announced, network::LevelStatus>) {
           routes.sky.get().showLevel(skyLevelOf(announced));
           routes.prediction.get().followScroll(announced.scrollSpeed);
+          routes.transition.get().show(announced.transitionLeft);
           routes.boss.get().followLevel();
+          routes.prediction.get().useBand(bandOf(announced));
         } else if constexpr (!std::is_same_v<Announced, network::GameEnded>) {
           routes.replicator.get().apply(announced);
         }
@@ -245,7 +275,9 @@ GameScreen::GameScreen(GameScreenParts parts,
   systems_.add(std::make_unique<SpriteEffectSystem>());
   systems_.add(std::make_unique<GroundEffectSystem>());
   systems_.add(std::make_unique<ShipFlightSystem>());
-  moveSky(*sky_, effects_, flashPreferenceOf(*settings_));
+  moveSky(
+      *sky_, effects_,
+      skySpeedFactorOf(effects_, transition_, flashPreferenceOf(*settings_)));
   entityLayer_->paint(components_, cameraOffsetOf(effects_));
   repaintStatus(boss_.look(flashPreferenceOf(*settings_)));
 }
@@ -280,9 +312,10 @@ void GameScreen::handleEvent(const sf::Event& event) {
 
 void GameScreen::update(engine::Duration elapsed) {
   const std::optional<double> serverTick = serverTicks_->serverTickNow();
-  const PlayerCommand command{.held = playerActions(),
-                              .shownTick = interpolationClock_.shownTick(),
-                              .serverTick = serverTick};
+  const PlayerCommand command{
+      .held = transition_.holdsTheShips() ? ActionSet{} : playerActions(),
+      .shownTick = interpolationClock_.shownTick(),
+      .serverTick = serverTick};
   prediction_.advance(elapsed, command, *inputs_);
   traceHeldActions(logger_, command.held, loggedActions_);
   systems_.run(components_, elapsed);
@@ -294,14 +327,18 @@ void GameScreen::update(engine::Duration elapsed) {
   departures_.advance(elapsed);
   silence_.advance(sinceTheWorld);
   boss_.advance(elapsed);
+  transition_.advance(elapsed);
   applyEntityMessages();
   showOtherEntities(interpolationClock_, components_, feedback_);
   interpolationTally_->countFrame(interpolationClock_.renderTick(), serverTick);
   prediction_.place(replicator_);
+  shiftPilotShips(components_, shipShiftAt(transition_.left()));
   tagPilotShips(components_, scoreBoard_.pilots(), *settings_);
   dressPilotShips(components_, shipLooks_->playerLooks());
   askForTheEndWhenDue();
-  moveSky(*sky_, effects_, flashPreferenceOf(*settings_));
+  moveSky(
+      *sky_, effects_,
+      skySpeedFactorOf(effects_, transition_, flashPreferenceOf(*settings_)));
   entityLayer_->paint(components_, cameraOffsetOf(effects_));
   repaintStatusWhenChanged();
 }
@@ -318,7 +355,8 @@ void GameScreen::applyEntityMessages() {
                                    .scoreBoard = scoreBoard_,
                                    .departures = departures_,
                                    .sky = *sky_,
-                                   .prediction = prediction_};
+                                   .prediction = prediction_,
+                                   .transition = transition_};
   for (const EntityMessage& message : receivedEntityMessages_) {
     routeEntityMessage(routes, message);
     if (const auto* ended = std::get_if<network::GameEnded>(&message)) {

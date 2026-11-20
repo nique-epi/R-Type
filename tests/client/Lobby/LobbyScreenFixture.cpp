@@ -16,6 +16,7 @@
 #include "PointerEvents.hpp"
 #include "RecordingChatChannel.hpp"
 #include "RecordingInterfaceCanvas.hpp"
+#include "RecordingMapPreviews.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingServerConnection.hpp"
 #include "RecordingShipLookExchange.hpp"
@@ -39,6 +40,7 @@ LobbyScreenFixture::LobbyScreenFixture(LobbyPlace place)
                                .connection = connection_,
                                .waitingRoom = waitingRoom_,
                                .shipLooks = shipLooks_,
+                               .mapBallot = mapBallot_,
                                .playfieldPointAt = samePlayfieldPoint,
                                .keys = settings_.keys,
                                .keyName = nameInTheFile,
@@ -48,7 +50,8 @@ LobbyScreenFixture::LobbyScreenFixture(LobbyPlace place)
                                .place = place,
                                .chat = chat_,
                                .settings = settings_},
-              std::make_unique<RecordingInterfaceCanvas>(canvas_)) {
+              std::make_unique<RecordingInterfaceCanvas>(canvas_),
+              std::make_unique<RecordingMapPreviews>()) {
   connection_.setStatus(
       {.phase = ConnectionPhase::Accepted, .playerNumber = OWN_NUMBER});
 }

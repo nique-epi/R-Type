@@ -1,8 +1,10 @@
 #pragma once
 
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <string_view>
+#include "PlayBand.hpp"
 #include "Position.hpp"
 
 namespace rtype::server::testing {
@@ -53,6 +55,28 @@ level.register("directed", { function()
 end })
 )";
 constexpr std::string_view CAVES_BIOME = "caves";
+
+/** @brief A level that opens in the biome caves, and the scroll that biome is
+ * told to have begun at: 4096 units before the start, so its entrance, 2048
+ * units long at the most, has left the screen. */
+constexpr std::string_view LEVEL_THAT_OPENS_IN_THE_CAVES = R"(
+level.register("directed", { function()
+  level.wait(50)
+end }, { biome = "caves" })
+)";
+constexpr float CAVES_BEGAN_BEFORE_THE_START = -4096.0F;
+
+/** @brief A level of the two biomes of LEVEL_OF_TWO_BIOMES, the second one,
+ * caves, closed by a ceiling on row 200 and a floor on row 800. */
+constexpr std::string_view LEVEL_OF_TWO_BIOMES_THE_SECOND_CLOSED = R"(
+level.register("directed", { function()
+  level.biome("wreck")
+  level.wait(50)
+  level.biome("caves")
+  level.wait(50)
+end }, { bands = { caves = { top = 200, bottom = 800 } } })
+)";
+constexpr game::PlayBand CAVES_BAND{.top = 200.0F, .bottom = 800.0F};
 constexpr std::size_t TICK_OF_THE_SECOND_ACT = 4;
 
 /** @brief A level whose stage waits for a long time. */
@@ -149,5 +173,35 @@ level.register("directed", {
   end,
 })
 )";
+
+/**
+ * @brief A level whose stage plays a transition of 3 s, 180 ticks, then waits.
+ * The director counts down the tick that starts it, so it tells 179 ticks
+ * left, 2983 ms; the transition ends at tick 180, and the scroll moves on.
+ */
+constexpr std::string_view LEVEL_THAT_PLAYS_A_TRANSITION = R"(
+level.register("directed", { function()
+  level.transition(3000)
+  level.wait(60000)
+end })
+)";
+constexpr std::uint16_t TRANSITION_LEFT_AS_IT_STARTS = 2983;
+constexpr std::size_t TICKS_UNTIL_THE_TRANSITION_ENDS = 180;
+
+/**
+ * @brief A level of two stages whose second starts at 600 units of scroll in
+ * the caves: 5 s of scroll at 120 units per second, its biome begun there.
+ */
+constexpr std::string_view LEVEL_WITH_A_DECLARED_START = R"(
+level.register("directed", {
+  function() level.wait(60000) end,
+  function() level.wait(60000) end,
+}, { starts = { [2] = { scroll = 600, biome = "caves" } } })
+)";
+constexpr std::size_t FIRST_STAGE = 1;
+constexpr std::size_t SECOND_STAGE = 2;
+constexpr std::size_t SECOND_STAGE_FROM_ZERO = 1;
+constexpr float SCROLL_OF_THE_DECLARED_START = 600.0F;
+constexpr std::chrono::seconds TRAVELLED_TO_THE_DECLARED_START{5};
 
 }  // namespace rtype::server::testing

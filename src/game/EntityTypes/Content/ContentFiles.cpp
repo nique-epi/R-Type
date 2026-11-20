@@ -13,11 +13,14 @@
 #include <vector>
 #include "BackgroundFiles.hpp"
 #include "ContentFile.hpp"
+#include "ContentName.hpp"
 #include "DataFileConstants.hpp"
 #include "DataFileReading.hpp"
 #include "DataFileTable.hpp"
 #include "EntitySheetConstants.hpp"
 #include "GameException.hpp"
+#include "MapPreviewConstants.hpp"
+#include "MapPreviewPath.hpp"
 #include "PathText.hpp"
 #include "SheetMaskText.hpp"
 #include "SheetText.hpp"
@@ -101,6 +104,53 @@ std::string contentOf(std::span<const std::filesystem::path> contentFolders,
   return engine::dataFileContent(folder / path);
 }
 
+/** @returns Every sheet of @p contentFolders, with its mask file when it has
+ * one, then the sprite sheet each names, read once; see contentFilesIn(). */
+std::vector<identifiers::ContentFile> sheetFilesIn(
+    std::span<const std::filesystem::path> contentFolders) {
+  std::vector<SheetText> sheets = sheetTextsInFolders(contentFolders);
+  std::vector<identifiers::ContentFile> files;
+  std::set<std::string> spriteSheets;
+  for (SheetText& sheet : sheets) {
+    spriteSheets.insert(spriteSheetOf(sheet));
+    files.push_back(identifiers::ContentFile{.path = sheetPathOf(sheet.name),
+                                             .bytes = std::move(sheet.text)});
+    if (sheet.mask.has_value()) {
+      files.push_back(
+          identifiers::ContentFile{.path = maskFilePathOf(sheet.name),
+                                   .bytes = std::move(sheet.mask->text)});
+    }
+  }
+  for (const std::string& spriteSheet : spriteSheets) {
+    files.push_back(identifiers::ContentFile{
+        .path = spriteSheet, .bytes = contentOf(contentFolders, spriteSheet)});
+  }
+  return files;
+}
+
+/** @returns The paths of the map previews of @p contentFolders: each file
+ * right in their identifiers::MAP_PREVIEW_FOLDER whose name is a content name
+ * followed by identifiers::MAP_PREVIEW_EXTENSION, written below that folder;
+ * any other file there is left out. */
+std::set<std::string> mapPreviewPathsIn(
+    std::span<const std::filesystem::path> contentFolders) {
+  std::set<std::string> previews;
+  for (const std::filesystem::path& folder : contentFolders) {
+    std::error_code error;
+    for (const std::filesystem::directory_entry& entry :
+         std::filesystem::directory_iterator(
+             folder / identifiers::MAP_PREVIEW_FOLDER, error)) {
+      const std::filesystem::path& file = entry.path();
+      if (entry.is_regular_file(error) &&
+          file.extension() == identifiers::MAP_PREVIEW_EXTENSION &&
+          identifiers::isContentName(file.stem().string())) {
+        previews.insert(mapPreviewPathOf(file.stem().string()));
+      }
+    }
+  }
+  return previews;
+}
+
 }  // namespace
 
 bool isSheetPath(const std::string& path) {
@@ -136,22 +186,10 @@ std::vector<SheetText> sheetTextsOf(
 
 std::vector<identifiers::ContentFile> contentFilesIn(
     std::span<const std::filesystem::path> contentFolders) {
-  std::vector<SheetText> sheets = sheetTextsInFolders(contentFolders);
-  std::vector<identifiers::ContentFile> files;
-  std::set<std::string> spriteSheets;
-  for (SheetText& sheet : sheets) {
-    spriteSheets.insert(spriteSheetOf(sheet));
-    files.push_back(identifiers::ContentFile{.path = sheetPathOf(sheet.name),
-                                             .bytes = std::move(sheet.text)});
-    if (sheet.mask.has_value()) {
-      files.push_back(
-          identifiers::ContentFile{.path = maskFilePathOf(sheet.name),
-                                   .bytes = std::move(sheet.mask->text)});
-    }
-  }
-  for (const std::string& spriteSheet : spriteSheets) {
+  std::vector<identifiers::ContentFile> files = sheetFilesIn(contentFolders);
+  for (const std::string& preview : mapPreviewPathsIn(contentFolders)) {
     files.push_back(identifiers::ContentFile{
-        .path = spriteSheet, .bytes = contentOf(contentFolders, spriteSheet)});
+        .path = preview, .bytes = contentOf(contentFolders, preview)});
   }
   for (identifiers::ContentFile& file : backgroundFilesIn(contentFolders)) {
     if (std::ranges::find(files, file.path, &identifiers::ContentFile::path) ==

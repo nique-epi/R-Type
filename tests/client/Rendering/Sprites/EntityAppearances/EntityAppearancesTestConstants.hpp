@@ -149,7 +149,7 @@ frames = 0
 spacing = 2
 frame_ms = 120
 )";
-constexpr std::string_view SHEET_WITH_SEVENTEEN_FRAMES_TEXT = R"(
+constexpr std::string_view SHEET_WITH_TWENTY_FIVE_FRAMES_TEXT = R"(
 [gameplay]
 
 [appearance]
@@ -160,11 +160,11 @@ left = 10
 top = 20
 width = 8
 height = 6
-frames = 17
+frames = 25
 spacing = 2
 frame_ms = 120
 )";
-constexpr std::string_view SHEET_WITH_SIXTEEN_FRAMES_TEXT = R"(
+constexpr std::string_view SHEET_WITH_TWENTY_FOUR_FRAMES_TEXT = R"(
 [gameplay]
 
 [appearance]
@@ -175,7 +175,7 @@ left = 10
 top = 20
 width = 8
 height = 6
-frames = 16
+frames = 24
 spacing = 2
 frame_ms = 120
 )";
@@ -212,7 +212,7 @@ frame_ms = 120
 
 /** @brief The most frames an idle animation holds, as the sheet format of
  * the architecture page writes it. */
-constexpr std::size_t MOST_FRAMES_A_SHEET_HOLDS = 16;
+constexpr std::size_t MOST_FRAMES_A_SHEET_HOLDS = 24;
 
 /** @brief A square of 3 by 3 drawn pixels, and what peeling its outline once
  * leaves: its center, the one pixel whose four neighbours are drawn. */
@@ -221,3 +221,17 @@ constexpr std::array<std::string_view, 3> FULL_SQUARE_OF_THREE{"###", "###",
 constexpr std::array<std::string_view, 3> CENTER_OF_A_SQUARE_OF_THREE{
     "...", ".#.", "..."};
 constexpr int PEELED_ONCE = 1;
+
+/** @brief The folder of the sheets the resource fosse brings, from the assets
+ * folder of the sources, and the name of every sheet in it. */
+constexpr std::string_view FOSSE_SHEETS_FROM_THE_ASSETS =
+    "../resources/fosse/entities";
+constexpr std::array<std::string_view, 15> FOSSE_SHEET_NAMES{
+    "bone_arm",          "bone_spike",       "glowmoth",    "gloomwyrm",
+    "gloomwyrm_segment", "gloomwyrm_tail",   "lanternfin",  "necromancer",
+    "necromancer_beam",  "necromancer_ring", "ruin_warden", "ruin_warden_bolt",
+    "sporecap",          "sporecap_spore",   "stalagmaw"};
+
+/** @brief The sheet of the boss of the Pit, and the name its bar writes. */
+constexpr std::string_view NECROMANCER_SHEET = "necromancer";
+constexpr std::string_view NECROMANCER_BOSS_NAME = "NECROMANCER";

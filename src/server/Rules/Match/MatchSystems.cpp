@@ -15,8 +15,10 @@
 #include "GameSettings.hpp"
 #include "IEntityOrders.hpp"
 #include "IHitArbitration.hpp"
+#include "LevelConstants.hpp"
 #include "LevelDirector.hpp"
 #include "LevelDirectorParts.hpp"
+#include "LevelTransition.hpp"
 #include "LifeKeeper.hpp"
 #include "LifeKeeperParts.hpp"
 #include "LookItemKeeper.hpp"
@@ -24,7 +26,9 @@
 #include "MatchSystemsParts.hpp"
 #include "PlayerController.hpp"
 #include "ServerException.hpp"
+#include "ShipBand.hpp"
 #include "TimeConstants.hpp"
+#include "TransitionHold.hpp"
 #include "VolleySystem.hpp"
 #include "VolleySystemParts.hpp"
 #include "WaveSpawner.hpp"
@@ -44,6 +48,40 @@ namespace {
 void runWorldSystems(GameContext& game, game::World& world) {
   silenceAwayShips(world, game.roster.get());
   game.systems.get().run(world.components(), engine::SIMULATION_TICK_DURATION);
+}
+
+/**
+ * @brief Holds the ships of @p world while the level @p director directs plays
+ * a transition (see holdEveryShip()), and puts them back at their start once
+ * LEVEL_TRANSITION_RETURN_TICKS are left of it; nothing in a game that plays
+ * its waves.
+ */
+void holdTheShipsOfATransition(GameContext& game, game::World& world,
+                               const LevelDirector* director) {
+  if (director == nullptr) {
+    return;
+  }
+  const std::optional<game::LevelTransition>& transition =
+      director->progress().transition;
+  if (!transition.has_value()) {
+    return;
+  }
+  const std::uint32_t ticksLeft = transition->ticksLeft;
+  holdEveryShip(world, game.roster.get(), ticksLeft);
+  if (ticksLeft == game::LEVEL_TRANSITION_RETURN_TICKS) {
+    returnEveryShip(world, game.roster.get());
+  }
+}
+
+/** @brief Gives the ships of @p world the band of the biome the level
+ * @p director directs shows (see bandEveryShip()); nothing in a game that
+ * plays its waves, whose ships fly in the whole play area. */
+void keepTheShipsInTheirBand(GameContext& game, game::World& world,
+                             const LevelDirector* director) {
+  if (director == nullptr) {
+    return;
+  }
+  bandEveryShip(world, game.roster.get(), director->band());
 }
 
 /** @returns The boss stage of the level played in @p world, its boss created
@@ -128,7 +166,8 @@ std::unique_ptr<LevelDirector> levelDirectorFor(GameContext& game,
                          .events = game.events.get(),
                          .orders = orders,
                          .scripts = *settings.scripts,
-                         .level = *settings.level});
+                         .level = *settings.level,
+                         .startingStage = settings.startingStage});
 }
 
 /** @returns Whether the boss of the level may come at this tick, after
@@ -189,6 +228,8 @@ void MatchSystems::onTick(IHitArbitration& arbitration, std::uint32_t tick) {
   if (levelDirector_ != nullptr) {
     levelDirector_->onTick();
   }
+  holdTheShipsOfATransition(game, world_, levelDirector_.get());
+  keepTheShipsInTheirBand(game, world_, levelDirector_.get());
   runWorldSystems(game, world_);
   weaponSystem_->onTick();
   volleySystem_->onTick();

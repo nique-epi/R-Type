@@ -7,6 +7,7 @@
 #include "BarrelRoll.hpp"
 #include "Bounds.hpp"
 #include "ObstacleBlocking.hpp"
+#include "PlayBand.hpp"
 #include "Position.hpp"
 #include "PredictionConstants.hpp"
 #include "ShipControl.hpp"
@@ -23,7 +24,7 @@ float distanceBetween(game::Position first, game::Position second) {
 
 /** @returns @p ship one tick later, after the input @p change: the presses it
  * records first, then the tick holding the directions it holds now, stopped
- * against @p obstacles and kept inside the play area, as the server moves
+ * against @p obstacles and kept inside its band, as the server moves
  * it. */
 game::MovingShip oneTickLater(game::MovingShip ship, game::HeldChange change,
                               std::span<const engine::Bounds> obstacles) {
@@ -37,7 +38,7 @@ game::MovingShip oneTickLater(game::MovingShip ship, game::HeldChange change,
 
 void ShipPrediction::restart(game::Position start, std::uint32_t acknowledged) {
   started_ = true;
-  current_ = game::MovingShip{.position = start, .motion = {}};
+  current_ = game::MovingShip{.position = start, .motion = {}, .band = band_};
   dropBefore(acknowledged + 1);
   if (pending_.empty()) {
     lastHeld_ = {};
@@ -80,8 +81,8 @@ void ShipPrediction::reconcile(game::Position server,
   if (distanceBetween(confirmed.position, server) <= RECONCILIATION_TOLERANCE) {
     return;
   }
-  replayAfterFront(
-      game::MovingShip{.position = server, .motion = confirmed.motion});
+  replayAfterFront(game::MovingShip{
+      .position = server, .motion = confirmed.motion, .band = band_});
 }
 
 void ShipPrediction::seeObstacles(std::span<const engine::Bounds> obstacles) {
@@ -94,6 +95,11 @@ game::Position ShipPrediction::position() const { return current_.position; }
 
 std::optional<float> ShipPrediction::rollShare() const {
   return game::rollShareOf(current_.motion);
+}
+
+void ShipPrediction::useBand(game::PlayBand band) {
+  band_ = band;
+  current_.band = band;
 }
 
 void ShipPrediction::dropBefore(std::uint32_t inputNumber) {

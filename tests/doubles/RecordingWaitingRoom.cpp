@@ -3,11 +3,17 @@
 #include <span>
 #include <utility>
 #include <vector>
+#include "LobbyMap.hpp"
 #include "LobbyState.hpp"
 
 std::span<const rtype::network::LobbyPlayer>
 RecordingWaitingRoom::lobbyPlayers() const {
   return lobbyPlayers_;
+}
+
+std::span<const rtype::network::LobbyMap> RecordingWaitingRoom::lobbyMaps()
+    const {
+  return lobbyMaps_;
 }
 
 void RecordingWaitingRoom::setReady(bool ready) {
@@ -24,6 +30,11 @@ bool RecordingWaitingRoom::gameStarted() const { return gameStarted_; }
 void RecordingWaitingRoom::setLobbyPlayers(
     std::vector<rtype::network::LobbyPlayer> players) {
   lobbyPlayers_ = std::move(players);
+}
+
+void RecordingWaitingRoom::setLobbyMaps(
+    std::vector<rtype::network::LobbyMap> maps) {
+  lobbyMaps_ = std::move(maps);
 }
 
 void RecordingWaitingRoom::setRequestedReady(std::optional<bool> ready) {

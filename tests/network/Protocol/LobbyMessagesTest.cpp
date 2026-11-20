@@ -1,6 +1,5 @@
 #include <gtest/gtest.h>
 #include <cstddef>
-#include <cstdint>
 #include <string>
 #include <vector>
 #include "ByteSequence.hpp"
@@ -9,35 +8,30 @@
 #include "GameEnded.hpp"
 #include "GameLoaded.hpp"
 #include "GameStarted.hpp"
+#include "LobbyMap.hpp"
+#include "LobbyMessagesFixtures.hpp"
 #include "LobbyState.hpp"
 #include "MessagePayload.hpp"
 #include "NetworkException.hpp"
 #include "PacketHeader.hpp"
+#include "ProtocolConstants.hpp"
 #include "ProtocolTestConstants.hpp"
 #include "ReadyState.hpp"
 
 namespace rtype::network {
-namespace {
 
 using testing::ACCENTED_LETTER;
 using testing::byteSequence;
+using testing::fullLobby;
 using testing::LARGEST_LOBBY_DATAGRAM_SIZE;
 using testing::LAST_PLAYER_NUMBER;
+using testing::lobbyPlayer;
+using testing::ONE_BYTE_MAP_PREVIEW;
 using testing::ONE_BYTE_NICKNAME;
 using testing::PLAYER_NUMBER_ABOVE_THE_LAST;
-using testing::SIXTEEN_BYTE_NICKNAME;
+using testing::PREVIEW_OUTSIDE_THE_PACK;
+using testing::SECOND_MAP;
 using testing::SOME_SCORE_OF_DISTINCT_BYTES;
-
-LobbyPlayer lobbyPlayer(std::uint8_t playerNumber) {
-  return LobbyPlayer{.playerNumber = playerNumber,
-                     .ready = false,
-                     .nickname = std::string{SIXTEEN_BYTE_NICKNAME}};
-}
-
-LobbyState fullLobby() {
-  return LobbyState{.players = {lobbyPlayer(1), lobbyPlayer(2), lobbyPlayer(3),
-                                lobbyPlayer(4)}};
-}
 
 /**
  * Given a player who is ready
@@ -99,19 +93,22 @@ TEST(ReadyState, RefusesBytesAfterTheReadyByte) {
  * Given player 1, ready, named A, and player 2, not ready, named with an
  * accented letter
  * When the LobbyState is encoded
- * Then the payload is the count 2, then each player: number, ready, length
- * and nickname
+ * Then the payload is the count 2, then each player: number, ready, length,
+ * nickname and map vote 0; then the count of maps, 0
  */
 TEST(LobbyState, EncodesThePlayersInOrder) {
   const LobbyState lobby{
       .players = {{.playerNumber = 1,
                    .ready = true,
-                   .nickname = std::string{ONE_BYTE_NICKNAME}},
+                   .nickname = std::string{ONE_BYTE_NICKNAME},
+                   .mapVote = NO_MAP_VOTE},
                   {.playerNumber = 2,
                    .ready = false,
-                   .nickname = std::string{ACCENTED_LETTER}}}};
-  const auto expected = byteSequence(
-      {0x02, 0x01, 0x01, 0x01, 0x41, 0x02, 0x00, 0x02, 0xC3, 0xA9});
+                   .nickname = std::string{ACCENTED_LETTER},
+                   .mapVote = NO_MAP_VOTE}},
+      .maps = {}};
+  const auto expected = byteSequence({0x02, 0x01, 0x01, 0x01, 0x41, 0x00, 0x02,
+                                      0x00, 0x02, 0xC3, 0xA9, 0x00, 0x00});
 
   EXPECT_EQ(encodeMessage(lobby), expected);
 }
@@ -119,16 +116,16 @@ TEST(LobbyState, EncodesThePlayersInOrder) {
 /**
  * Given a waiting room without players
  * When the LobbyState is encoded
- * Then the payload is the count 0 alone
+ * Then the payload is the count of players 0, then the count of maps 0
  */
 TEST(LobbyState, EncodesAnEmptyRoomAsACountOfZero) {
-  const auto expected = byteSequence({0x00});
+  const auto expected = byteSequence({0x00, 0x00});
 
   EXPECT_EQ(encodeMessage(LobbyState{}), expected);
 }
 
 /**
- * Given four players with sixteen-byte nicknames
+ * Given the largest room, four players and eight maps
  * When the LobbyState is encoded then decoded
  * Then the decoded state equals the original
  */
@@ -137,22 +134,25 @@ TEST(LobbyState, DecodesWhatItEncoded) {
 }
 
 /**
- * Given the bytes of a room with one ready player named A
+ * Given the bytes of a room with one ready player named A, voting for the
+ * second of two maps named B and C
  * When they are decoded then encoded again
  * Then the same bytes come back
  */
 TEST(LobbyState, EncodesAgainTheBytesItDecoded) {
-  const auto bytes = byteSequence({0x01, 0x03, 0x01, 0x01, 0x41});
+  const auto bytes = byteSequence({0x01, 0x03, 0x01, 0x01, 0x41, 0x02, 0x02,
+                                   0x01, 0x42, 0x00, 0x01, 0x43, 0x00});
 
   EXPECT_EQ(encodeMessage(decodeMessage<LobbyState>(bytes)), bytes);
 }
 
 /**
- * Given four players with sixteen-byte nicknames, the largest room
+ * Given the largest room: four players and eight maps, every name sixteen
+ * bytes long, every preview the longest path of a pack
  * When its datagram is encoded
- * Then it holds 102 bytes, well within a datagram
+ * Then it holds 763 bytes, within a datagram
  */
-TEST(LobbyState, LargestRoomDatagramHoldsOneHundredAndTwoBytes) {
+TEST(LobbyState, LargestRoomDatagramHoldsSevenHundredAndSixtyThreeBytes) {
   EXPECT_EQ(DatagramCodec::encode(PacketHeader{}, fullLobby()).size(),
             LARGEST_LOBBY_DATAGRAM_SIZE);
 }
@@ -186,7 +186,7 @@ TEST(LobbyState, RefusesToWriteFivePlayers) {
  * Then an InvalidFieldValueException is raised
  */
 TEST(LobbyState, RefusesToReadAPlayerNumberOutsideOneToFour) {
-  const auto bytes = byteSequence({0x01, 0x00, 0x01, 0x01, 0x41});
+  const auto bytes = byteSequence({0x01, 0x00, 0x01, 0x01, 0x41, 0x00, 0x00});
 
   EXPECT_THROW((void)decodeMessage<LobbyState>(bytes),
                InvalidFieldValueException);
@@ -198,8 +198,8 @@ TEST(LobbyState, RefusesToReadAPlayerNumberOutsideOneToFour) {
  * Then a DuplicatePlayerNumberException is raised
  */
 TEST(LobbyState, RefusesToReadTheSamePlayerTwice) {
-  const auto bytes =
-      byteSequence({0x02, 0x01, 0x01, 0x01, 0x41, 0x01, 0x00, 0x01, 0x41});
+  const auto bytes = byteSequence(
+      {0x02, 0x01, 0x01, 0x01, 0x41, 0x00, 0x01, 0x00, 0x01, 0x41, 0x00, 0x00});
 
   EXPECT_THROW((void)decodeMessage<LobbyState>(bytes),
                DuplicatePlayerNumberException);
@@ -211,7 +211,8 @@ TEST(LobbyState, RefusesToReadTheSamePlayerTwice) {
  * Then a DuplicatePlayerNumberException is raised
  */
 TEST(LobbyState, RefusesToWriteTheSamePlayerTwice) {
-  const LobbyState lobby{.players = {lobbyPlayer(2), lobbyPlayer(2)}};
+  const LobbyState lobby{.players = {lobbyPlayer(2), lobbyPlayer(2)},
+                         .maps = {}};
 
   EXPECT_THROW((void)encodeMessage(lobby), DuplicatePlayerNumberException);
 }
@@ -222,7 +223,7 @@ TEST(LobbyState, RefusesToWriteTheSamePlayerTwice) {
  * Then an InvalidNicknameException is raised
  */
 TEST(LobbyState, RefusesToReadAnEmptyNickname) {
-  const auto bytes = byteSequence({0x01, 0x01, 0x01, 0x00});
+  const auto bytes = byteSequence({0x01, 0x01, 0x01, 0x00, 0x00, 0x00});
 
   EXPECT_THROW((void)decodeMessage<LobbyState>(bytes),
                InvalidNicknameException);
@@ -272,9 +273,100 @@ TEST(LobbyState, RefusesAPlayerCutShort) {
  * Then a TrailingBytesException is raised
  */
 TEST(LobbyState, RefusesBytesAfterTheLastPlayer) {
-  const auto bytes = byteSequence({0x01, 0x01, 0x01, 0x01, 0x41, 0x00});
+  const auto bytes =
+      byteSequence({0x01, 0x01, 0x01, 0x01, 0x41, 0x00, 0x00, 0x00});
 
   EXPECT_THROW((void)decodeMessage<LobbyState>(bytes), TrailingBytesException);
+}
+
+/**
+ * Given player 1 voting for the second map, and two maps named A and B
+ * When the LobbyState is encoded
+ * Then the vote follows the nickname, and the maps follow the players: their
+ * count, then each length and name
+ */
+TEST(LobbyState, EncodesTheMapsAfterThePlayers) {
+  const LobbyState lobby{
+      .players = {{.playerNumber = 1,
+                   .ready = false,
+                   .nickname = std::string{ONE_BYTE_NICKNAME},
+                   .mapVote = SECOND_MAP}},
+      .maps = {
+          LobbyMap{.name = "A", .preview = ""},
+          LobbyMap{.name = "B", .preview = std::string{ONE_BYTE_MAP_PREVIEW}}}};
+  const auto expected =
+      byteSequence({0x01, 0x01, 0x00, 0x01, 0x41, 0x02, 0x02, 0x01, 0x41, 0x00,
+                    0x01, 0x42, 0x01, 0x70});
+
+  EXPECT_EQ(encodeMessage(lobby), expected);
+}
+
+/**
+ * Given a payload without players announcing nine maps, one more than a room
+ * holds, and no name
+ * When it is decoded
+ * Then an InvalidFieldValueException is raised before any name is read
+ */
+TEST(LobbyState, RefusesToReadNineMapsBeforeReadingThem) {
+  const auto bytes = byteSequence({0x00, 0x09});
+
+  EXPECT_THROW((void)decodeMessage<LobbyState>(bytes),
+               InvalidFieldValueException);
+}
+
+/**
+ * Given a payload whose player votes for the second map of a room of one map
+ * When it is decoded
+ * Then an InvalidFieldValueException is raised
+ */
+TEST(LobbyState, RefusesToReadAVotePastTheLastMap) {
+  const auto bytes = byteSequence(
+      {0x01, 0x01, 0x00, 0x01, 0x41, 0x02, 0x01, 0x01, 0x41, 0x00});
+
+  EXPECT_THROW((void)decodeMessage<LobbyState>(bytes),
+               InvalidFieldValueException);
+}
+
+/**
+ * Given a payload without players whose one map has an empty name
+ * When it is decoded
+ * Then an InvalidFieldValueException is raised
+ */
+TEST(LobbyState, RefusesToReadAnEmptyMapName) {
+  const auto bytes = byteSequence({0x00, 0x01, 0x00, 0x00});
+
+  EXPECT_THROW((void)decodeMessage<LobbyState>(bytes),
+               InvalidFieldValueException);
+}
+
+/**
+ * Given a payload without players whose one map, named A, names a preview
+ * that leaves the folder of the pack
+ * When it is decoded
+ * Then an InvalidFieldValueException is raised
+ */
+TEST(LobbyState, RefusesToReadAPreviewOutsideThePack) {
+  ByteWriter writer;
+  writer.writeUint8(0);
+  writer.writeUint8(1);
+  writer.writeString("A");
+  writer.writeString(PREVIEW_OUTSIDE_THE_PACK);
+
+  EXPECT_THROW((void)decodeMessage<LobbyState>(writer.bytes()),
+               InvalidFieldValueException);
+}
+
+/**
+ * Given a room of one map whose player votes for the second
+ * When it is encoded
+ * Then an InvalidFieldValueException is raised
+ */
+TEST(LobbyState, RefusesToWriteAVotePastTheLastMap) {
+  LobbyState lobby{.players = {lobbyPlayer(1)},
+                   .maps = {LobbyMap{.name = "A", .preview = ""}}};
+  lobby.players.front().mapVote = SECOND_MAP;
+
+  EXPECT_THROW((void)encodeMessage(lobby), InvalidFieldValueException);
 }
 
 /**
@@ -460,16 +552,31 @@ TEST(GameEnded, RefusesAnOutcomeOutsideOneAndTwo) {
 }
 
 /**
- * Given the end of a game whose outcome is not one of the two
+ * Given the end of a game whose outcome is not one of the two, cast from 0
+ * on purpose, which the static analyzer reports
  * When it is encoded
  * Then an InvalidFieldValueException is raised and nothing is written
  */
 TEST(GameEnded, RefusesToWriteAnUnknownOutcome) {
+  // NOLINTNEXTLINE(clang-analyzer-optin.core.EnumCastOutOfRange)
   const GameEnded ended{.outcome = static_cast<WireGameOutcome>(0),
                         .players = {}};
 
   EXPECT_THROW((void)encodeMessage(ended), InvalidFieldValueException);
 }
 
-}  // namespace
+/**
+ * Given a room of one map whose preview leaves the folder of the pack
+ * When it is encoded
+ * Then an InvalidFieldValueException is raised, naming the preview
+ */
+TEST(LobbyState, RefusesToWriteAPreviewOutsideThePack) {
+  const LobbyState lobby{
+      .players = {lobbyPlayer(1)},
+      .maps = {LobbyMap{.name = "A",
+                        .preview = std::string{PREVIEW_OUTSIDE_THE_PACK}}}};
+
+  EXPECT_THROW((void)encodeMessage(lobby), InvalidFieldValueException);
+}
+
 }  // namespace rtype::network

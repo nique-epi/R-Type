@@ -125,6 +125,33 @@ engine::LaunchOption startAtBossOption(LaunchValues& values) {
       }};
 }
 
+/**
+ * @returns The stage @p text writes, from FIRST_LEVEL_STAGE; the setting it
+ * forces checks that the level has as many stages.
+ * @throws engine::InvalidLaunchOptionValueException when it is not one.
+ */
+std::size_t stageFromText(std::string_view text) {
+  const auto stage =
+      wholeNumberFromText<std::size_t>(START_AT_STAGE_OPTION, text);
+  if (stage < FIRST_LEVEL_STAGE) {
+    throw engine::InvalidLaunchOptionValueException(
+        std::string(START_AT_STAGE_OPTION), std::string(text));
+  }
+  return stage;
+}
+
+/** @returns `--stage <stage>`, which forces the setting that starts every
+ * game that plays a level at that stage. */
+engine::LaunchOption startAtStageOption(LaunchValues& values) {
+  return engine::LaunchOption{
+      .name = START_AT_STAGE_OPTION,
+      .takesValue = true,
+      .record = [&values](std::string_view stage) {
+        values.forcedLines.push_back(engine::settingLine(
+            START_AT_STAGE_SETTING_NAME, std::to_string(stageFromText(stage))));
+      }};
+}
+
 /** @returns The lines of the usage that describe the options that give a
  * setting a value of its own kind. */
 std::string settingOptionEntries() {
@@ -155,6 +182,13 @@ std::string settingOptionEntries() {
       "Starts every game at its boss, without the waves, to test the fight. "
       "Its ships never die, and its results are not vanilla. A level without "
       "a boss is won at once. Default: the waves are played.");
+  text += engine::usageEntry(
+      std::string(START_AT_STAGE_OPTION) + " <stage>",
+      "Starts every game that plays a level at that stage of it, from " +
+          std::to_string(FIRST_LEVEL_STAGE) +
+          ", where the script of the level says it starts, to test it; its "
+          "results are not vanilla, as for any level. Default: " +
+          std::to_string(FIRST_LEVEL_STAGE) + ".");
   return text;
 }
 
@@ -203,6 +237,7 @@ LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
       stateRateOption(options.values_),
       inputDelayOption(options.values_),
       startAtBossOption(options.values_),
+      startAtStageOption(options.values_),
       databaseOption(options.values_.forcedLines),
       engine::setOption(options.values_.forcedLines),
       engine::pathOption(network::TRAFFIC_CSV_OPTION,

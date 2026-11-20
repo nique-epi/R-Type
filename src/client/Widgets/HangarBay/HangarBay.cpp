@@ -173,6 +173,17 @@ void paintNickname(IInterfaceCanvas& canvas, sf::Vector2i topLeft,
                nicknameRowStyle(DIALOG_MESSAGE_COLOR));
 }
 
+/** @brief Writes the map a pilot voted for, dim, centered on its row;
+ * nothing without a vote. */
+void paintMapVote(IInterfaceCanvas& canvas, sf::Vector2i topLeft,
+                  std::string_view mapVote) {
+  if (mapVote.empty()) {
+    return;
+  }
+  canvas.write(mapVote, middleAnchor(topLeft, BAY_VOTE_TOP),
+               nicknameRowStyle(FIELD_TEXT_COLOR));
+}
+
 /** @brief Writes OPEN BAY, dim, on the row of the nickname. */
 void paintOpenBayLabel(IInterfaceCanvas& canvas, sf::Vector2i topLeft) {
   canvas.write(OPEN_BAY_TEXT, middleAnchor(topLeft, BAY_NICKNAME_TOP),
@@ -228,7 +239,7 @@ void paintBeacons(IInterfaceCanvas& canvas, sf::Vector2i topLeft,
 }
 
 /** @brief Paints who holds a bay: YOU for the local player, the band of its
- * color, its nickname and its cell. The ship, which moves, is painted
+ * color, its nickname, its vote and its cell. The ship, which moves, is painted
  * apart. */
 void paintPilot(IInterfaceCanvas& canvas, const HangarBay& bay,
                 const BayPilot& pilot) {
@@ -237,6 +248,7 @@ void paintPilot(IInterfaceCanvas& canvas, const HangarBay& bay,
   }
   paintColorBand(canvas, bay);
   paintNickname(canvas, bay.topLeft, pilot.nickname);
+  paintMapVote(canvas, bay.topLeft, pilot.mapVote);
   paintCell(canvas, bay.topLeft, pilot.readiness);
 }
 

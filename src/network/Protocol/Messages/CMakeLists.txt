@@ -22,6 +22,7 @@ add_subdirectory(LeaderboardRequest)
 add_subdirectory(LevelStatus)
 add_subdirectory(LobbyState)
 add_subdirectory(LookItemWon)
+add_subdirectory(MapVote)
 add_subdirectory(MasterProbe)
 add_subdirectory(OrderedMessage)
 add_subdirectory(PlayerChatLine)
@@ -72,6 +73,7 @@ target_link_libraries(rtype_network_messages
     rtype_network_player_input
     rtype_network_player_left
     rtype_network_player_looks
+    rtype_network_map_vote
     rtype_network_ready_state
     rtype_network_round_trips
     rtype_network_server_information

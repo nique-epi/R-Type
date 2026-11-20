@@ -20,8 +20,12 @@ constexpr std::size_t INT16_WIRE_SIZE = sizeof(std::int16_t);
 constexpr std::uint32_t PROTOCOL_ID = 0x52545950;
 
 /**
- * @brief The version of the protocol this code speaks. Version 18 adds the
- * game ticket of the player to ConnectionRequest, see the Version 18 section;
+ * @brief The version of the protocol this code speaks. Version 19 adds the
+ * time left of a transition and the band of a biome to LevelStatus, and the
+ * vote for a map of the waiting room (MapVote, the maps and the votes of
+ * LobbyState), see the Version 19 section;
+ * version 18 adds the game ticket of the player to ConnectionRequest, see the
+ * Version 18 section;
  * version 17 adds the hull to a ship look, see the Version 17 section; version
  * 16 adds the look of each entity to WorldState and DeltaWorldState, and
  * EffectPlayed, see the Version 16 section; version 15 removes the ban: the
@@ -50,7 +54,7 @@ constexpr std::uint32_t PROTOCOL_ID = 0x52545950;
  * frame, see the Compression section; version 3 adds the outcome of a game to
  * GameEnded, see the Version 3 section.
  */
-constexpr std::uint8_t PROTOCOL_VERSION = 18;
+constexpr std::uint8_t PROTOCOL_VERSION = 19;
 
 /**
  * @brief The session token of a datagram sent before the connection is
@@ -377,6 +381,14 @@ constexpr std::size_t MINIMUM_NICKNAME_SIZE = 1;
 constexpr std::size_t MAXIMUM_NICKNAME_SIZE = 16;
 
 /**
+ * @brief The most maps a waiting room lists in its LobbyState, so a server
+ * cannot make a client keep more names than that; and the vote a player casts
+ * for none, the maps being numbered from 1.
+ */
+constexpr std::size_t MAXIMUM_LOBBY_MAPS = 8;
+constexpr std::uint8_t NO_MAP_VOTE = 0;
+
+/**
  * @brief The most difficulties a server may hold, so its heartbeat and the
  * list of its games stay small: one per table of its waves file, the shipped
  * file having three.
@@ -597,6 +609,10 @@ constexpr std::uint32_t NO_SHOWN_TICK = 0;
  * protocol page writes them.
  */
 constexpr std::string_view PLAYER_NUMBER_FIELD = "playerNumber";
+constexpr std::string_view MAP_NAME_FIELD = "mapName";
+constexpr std::string_view MAP_COUNT_FIELD = "mapCount";
+constexpr std::string_view MAP_PREVIEW_FIELD = "mapPreview";
+constexpr std::string_view MAP_VOTE_FIELD = "mapVote";
 constexpr std::string_view HEAD_FIELD = "head";
 constexpr std::string_view EYES_FIELD = "eyes";
 constexpr std::string_view FACE_FIELD = "face";
@@ -642,6 +658,13 @@ constexpr std::string_view BIOME_FIELD = "biome";
 constexpr std::string_view SCROLL_POSITION_FIELD = "scrollPosition";
 constexpr std::string_view SCROLL_SPEED_FIELD = "scrollSpeed";
 constexpr std::string_view BIOME_SINCE_FIELD = "biomeSince";
+constexpr std::string_view BAND_FIELD = "band";
+
+/** @brief The bottom row of the band of a LevelStatus whose biome closes
+ * nothing: past any playfield, so the ships fly down to the bottom of the
+ * play area. */
+constexpr std::uint16_t OPEN_BAND_BOTTOM =
+    std::numeric_limits<std::uint16_t>::max();
 
 /**
  * @brief Wire steps in one logical unit: a coordinate is sent in eighths of a

@@ -7,12 +7,13 @@
 #include "Endpoint.hpp"
 #include "EntityAppearances.hpp"
 #include "IEntityTypeTable.hpp"
+#include "IMapBallot.hpp"
 #include "IOwnRoundTrip.hpp"
 #include "IPlayerRoundTrips.hpp"
 #include "IServerPingProbe.hpp"
 #include "IServerTicks.hpp"
 #include "ISessionArrivals.hpp"
-#include "ISessionBackgrounds.hpp"
+#include "ISessionPack.hpp"
 #include "InstallContext.hpp"
 #include "LocalContentReading.hpp"
 #include "NetworkConditions.hpp"
@@ -39,6 +40,7 @@ PlayerConnection::PlayerConnection(const network::NetworkConditions& conditions,
       orderedInbox_(dispatcher_),
       waitingRoom_(dispatcher_, gameLoaded_),
       shipLooks_(dispatcher_, waitingRoom_),
+      mapBallot_(waitingRoom_),
       entityMessages_(dispatcher_, waitingRoom_, gameLoaded_),
       roundTrips_(dispatcher_, clock_),
       leaderboard_(dispatcher_),
@@ -52,8 +54,9 @@ PlayerConnection::PlayerConnection(const network::NetworkConditions& conditions,
           .entityTypes = entityTypes_,
           .content = content_,
           .arrivals = arrivals_,
-          .observers = {waitingRoom_, shipLooks_, entityMessages_, gameLoaded_,
-                        roundTrips_, leaderboard_, chat_, orderedInbox_}}),
+          .observers = {waitingRoom_, shipLooks_, mapBallot_, entityMessages_,
+                        gameLoaded_, roundTrips_, leaderboard_, chat_,
+                        orderedInbox_}}),
       pings_(router_.addRoute(), clock_) {}
 
 void PlayerConnection::update(engine::Duration elapsed) {
@@ -73,6 +76,7 @@ void PlayerConnection::provideParts(engine::InstallContext& context) {
   context.provide(session_);
   context.provide(waitingRoom_);
   context.provide(shipLooks_);
+  context.provide<IMapBallot>(mapBallot_);
   context.provide(entityMessages_);
   context.provide(leaderboard_);
   context.provide(chat_);
@@ -81,7 +85,7 @@ void PlayerConnection::provideParts(engine::InstallContext& context) {
   context.provide<IOwnRoundTrip>(roundTrips_);
   context.provide<ISessionArrivals>(arrivals_);
   context.provide<IEntityTypeTable>(entityTypes_);
-  context.provide<ISessionBackgrounds>(entityTypes_);
+  context.provide<ISessionPack>(entityTypes_);
   context.provide(network_.traffic());
 }
 

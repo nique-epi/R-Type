@@ -10,6 +10,8 @@
 
 using rtype::client::ShipPrediction;
 using rtype::client::testing::AGAINST_THE_WALL_ON_THE_RIGHT_X;
+using rtype::client::testing::BAND_BELOW_THE_START;
+using rtype::client::testing::BELOW_THE_START_STOP_Y;
 using rtype::client::testing::BEYOND_THE_TOLERANCE;
 using rtype::client::testing::COMMAND_AFTER_THE_DOUBLE_TAP_WINDOW;
 using rtype::client::testing::COMMANDS_OF_ONE_SECOND;
@@ -18,8 +20,11 @@ using rtype::client::testing::HOLDING_DOWN;
 using rtype::client::testing::HOLDING_NOTHING;
 using rtype::client::testing::HOLDING_RIGHT;
 using rtype::client::testing::INSIDE_THE_TOLERANCE;
+using rtype::client::testing::NEAR_THE_PIT_FLOOR;
 using rtype::client::testing::OLDER_THAN_ANY_KEPT_COMMAND;
 using rtype::client::testing::ONE_TICK_INTO_A_ROLL;
+using rtype::client::testing::PIT_BAND;
+using rtype::client::testing::PIT_FLOOR_STOP_Y;
 using rtype::client::testing::SECOND_COMMAND;
 using rtype::client::testing::shiftedRight;
 using rtype::client::testing::shipAfterCommands;
@@ -44,6 +49,39 @@ TEST(ShipPrediction, MovesTheShipAtOnceWhenAKeyIsHeld) {
   EXPECT_GT(prediction.position().x, START.x);
   EXPECT_FLOAT_EQ(prediction.position().x, server.position.x);
   EXPECT_FLOAT_EQ(prediction.position().y, server.position.y);
+}
+
+/**
+ * Given a prediction kept in the band of the Pit, started near its floor
+ * When it predicts a second of commands holding down
+ * Then the ship stops with its side on the floor, as the server stops it
+ */
+TEST(ShipPrediction, StopsTheShipAtTheFloorOfItsBand) {
+  ShipPrediction prediction;
+  prediction.useBand(PIT_BAND);
+  prediction.restart(NEAR_THE_PIT_FLOOR, OLDER_THAN_ANY_KEPT_COMMAND);
+
+  for (std::uint32_t command = 1; command <= COMMANDS_OF_ONE_SECOND;
+       ++command) {
+    prediction.predict(HOLDING_DOWN, command);
+  }
+
+  EXPECT_FLOAT_EQ(prediction.position().y, PIT_FLOOR_STOP_Y);
+}
+
+/**
+ * Given a started prediction whose ship lies above the ceiling of a band
+ * When it is kept in that band, then predicts a command holding nothing
+ * Then the ship is brought down under the ceiling
+ */
+TEST(ShipPrediction, TakesABandGivenAfterItStarted) {
+  ShipPrediction prediction;
+  prediction.restart(START, OLDER_THAN_ANY_KEPT_COMMAND);
+
+  prediction.useBand(BAND_BELOW_THE_START);
+  prediction.predict(HOLDING_NOTHING, FIRST_COMMAND);
+
+  EXPECT_FLOAT_EQ(prediction.position().y, BELOW_THE_START_STOP_Y);
 }
 
 /**

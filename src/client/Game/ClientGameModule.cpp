@@ -33,7 +33,7 @@ AssetList gameAssetsOf(const ScreenContext& context) {
   return withBackgroundImages(
       withEntitySheets(gameAssets(),
                        context.services.entityTable.get().appearances()),
-      context.services.sessionBackgrounds.get().backgrounds().get());
+      context.services.sessionPack.get().backgrounds().get());
 }
 
 /** @returns The loading screen of gameAssetsOf() while some are not loaded,

@@ -38,6 +38,8 @@ using rtype::client::testing::HELP_CHIP_MIDDLE;
 using rtype::client::testing::LAST_ROOM_STEP;
 using rtype::client::testing::LAST_STEP;
 using rtype::client::testing::LAST_STEP_WORD;
+using rtype::client::testing::MAP_STEP;
+using rtype::client::testing::MAP_STEP_KEY_NAME;
 using rtype::client::testing::MOVES_STEP;
 using rtype::client::testing::OWN_BAY_STEP;
 using rtype::client::testing::OWN_BAY_STEP_WORD;
@@ -222,9 +224,9 @@ TEST_F(HelpWalkthroughFixture, AnOpenHelpLeavesTheEndOfAnInputToTheRoom) {
 /**
  * Given the help on the last step of the room
  * When Enter is pressed
- * Then the next step, the eighth, is the first to show a game
+ * Then the next step, the ninth, is the first to show a game
  */
-TEST_F(HelpWalkthroughFixture, TheEighthStepIsTheFirstToShowAGame) {
+TEST_F(HelpWalkthroughFixture, TheNinthStepIsTheFirstToShowAGame) {
   showStep(LAST_ROOM_STEP);
   EXPECT_FALSE(help().showsGame());
 
@@ -283,6 +285,17 @@ TEST_F(HelpWalkthroughFixture, TheBubbleClimbsAboveReady) {
   EXPECT_THAT(
       anchorOf(painted(), READY_STEP_WORD),
       Optional(Field(&sf::Vector2i::y, Lt(ROOM_AREAS.ready.position.y))));
+}
+
+/**
+ * Given the help on the step that explains MAP
+ * When it is painted
+ * Then a keycap names M, the key of the bar
+ */
+TEST_F(HelpWalkthroughFixture, TheMapStepNamesItsKey) {
+  showStep(MAP_STEP);
+
+  EXPECT_NE(writingOf(painted(), MAP_STEP_KEY_NAME), nullptr);
 }
 
 /**

@@ -127,7 +127,8 @@ TEST_F(WaitingRoomFixture, StopsSendingReadyStateOnceTheRoomShowsIt) {
   deliverInSession(
       network::LobbyState{.players = {{.playerNumber = ACCEPTED_PLAYER_NUMBER,
                                        .ready = true,
-                                       .nickname = std::string{NICKNAME}}}},
+                                       .nickname = std::string{NICKNAME}}},
+                          .maps = {}},
       FIRST_SEQUENCE);
   update();
 
@@ -149,7 +150,8 @@ TEST_F(WaitingRoomFixture, KeepsTheLobbyStateOfTheSession) {
                    .nickname = std::string{OTHER_NICKNAME}},
                   {.playerNumber = ACCEPTED_PLAYER_NUMBER,
                    .ready = false,
-                   .nickname = std::string{NICKNAME}}}};
+                   .nickname = std::string{NICKNAME}}},
+      .maps = {}};
   deliverInSession(lobby, FIRST_SEQUENCE);
 
   update();
@@ -169,7 +171,8 @@ TEST_F(WaitingRoomFixture, IgnoresALobbyStateWithAnotherToken) {
   deliver(network::LobbyState{.players = {{.playerNumber = OTHER_PLAYER_NUMBER,
                                            .ready = true,
                                            .nickname =
-                                               std::string{OTHER_NICKNAME}}}},
+                                               std::string{OTHER_NICKNAME}}},
+                              .maps = {}},
           server(), forged);
 
   update();
@@ -189,11 +192,13 @@ TEST_F(WaitingRoomFixture, IgnoresALateLobbyState) {
   const network::LobbyState newer{
       .players = {{.playerNumber = ACCEPTED_PLAYER_NUMBER,
                    .ready = true,
-                   .nickname = std::string{NICKNAME}}}};
+                   .nickname = std::string{NICKNAME}}},
+      .maps = {}};
   const network::LobbyState older{
       .players = {{.playerNumber = ACCEPTED_PLAYER_NUMBER,
                    .ready = false,
-                   .nickname = std::string{NICKNAME}}}};
+                   .nickname = std::string{NICKNAME}}},
+      .maps = {}};
   deliverInSession(newer, SECOND_SEQUENCE);
   deliverInSession(older, FIRST_SEQUENCE);
 
@@ -282,7 +287,8 @@ TEST_F(WaitingRoomFixture, ShowsNoRoomFromAServerThatComesBack) {
                        .nickname = std::string{NICKNAME}},
                       {.playerNumber = OTHER_PLAYER_NUMBER,
                        .ready = false,
-                       .nickname = std::string{OTHER_NICKNAME}}}},
+                       .nickname = std::string{OTHER_NICKNAME}}},
+          .maps = {}},
       FIRST_SEQUENCE);
   update();
 

@@ -20,7 +20,7 @@ namespace rtype::game {
  * axes or neither (a wall that moved onto it). It loses its velocity along that
  * axis, as against an edge of the play area. A ship that only touches a box
  * along an edge is not moved (engine::overlaps()). The ship is then kept
- * inside the play area (stoppedAtTheEdges()): a ship a wall pushes past an
+ * inside its band (stoppedAtTheEdges()): a ship a wall pushes past an
  * edge stays over the wall, which CollisionRules turns into a contact. The ship
  * is the box SHIP_WIDTH by SHIP_HEIGHT on its center, as the sheet of a ship
  * must give it.

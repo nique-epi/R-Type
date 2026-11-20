@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <limits>
 #include <string_view>
+#include "PlayBand.hpp"
 
 namespace rtype::server::testing {
 
@@ -51,5 +52,15 @@ constexpr std::uint32_t BOSS_WARNING_MILLISECONDS = 4400;
 constexpr std::string_view LEVEL_BIOME = "wreck";
 constexpr float LEVEL_SCROLL_POSITION = 240.0F;
 constexpr float PAUSED_LEVEL_SCROLL_SPEED = 0.0F;
+
+/** @brief The band of that level, its ceiling on row 192 and its floor on row
+ * 848, as the level holds it and as the wire writes it. */
+constexpr game::PlayBand LEVEL_BAND{.top = 192.0F, .bottom = 848.0F};
+constexpr std::uint16_t WIRE_LEVEL_BAND_TOP = 192;
+constexpr std::uint16_t WIRE_LEVEL_BAND_BOTTOM = 848;
+
+/** @brief Where the scroll stood when the biome a level opens in began: 4096
+ * logical units before its start. */
+constexpr float OPENING_BIOME_BEGAN_AT = -4096.0F;
 
 }  // namespace rtype::server::testing

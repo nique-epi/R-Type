@@ -19,7 +19,8 @@ constexpr int HANGAR_BAY_GAP = 8;
  * @brief Inside a bay, from its top-left corner: the player number, the tag
  * of the local player as far from the right side, the band of the ship color,
  * the top of the ship enlarged BAY_SHIP_SCALE times, the row of the nickname
- * and the cell that says whether the pilot is ready. As on the picture of the
+ * the row of the map it voted for, and the cell that says whether the pilot
+ * is ready. As on the picture of the
  * waiting room the team chose.
  */
 constexpr sf::Vector2i BAY_NUMBER_OFFSET(8, 8);
@@ -27,6 +28,7 @@ constexpr sf::IntRect BAY_COLOR_BAND({8, 20}, {86, 2});
 constexpr int BAY_SHIP_SCALE = 2;
 constexpr int BAY_SHIP_TOP = 30;
 constexpr int BAY_NICKNAME_TOP = 70;
+constexpr int BAY_VOTE_TOP = 78;
 constexpr sf::IntRect BAY_STATE_CELL({8, 86}, {86, 16});
 
 /**
