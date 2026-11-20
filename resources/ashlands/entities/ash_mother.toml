@@ -11,8 +11,9 @@ layer = "enemy"
 hits = ["player"]
 pilot = "ash_mother_brood"
 
-# Her head and her body; only the rows of her maw let a hit through, while
-# she does not strike.
+# Her head, her thorax and abdomen down to where her legs begin, and her
+# spikes and wings; every hit on them counts while she does not strike. Her
+# legs have no box.
 [[gameplay.hitbox.box]]
 width = 160
 height = 150
@@ -21,9 +22,15 @@ offset_y = 29
 
 [[gameplay.hitbox.box]]
 width = 330
-height = 240
+height = 220
 offset_x = 123
-offset_y = 24
+offset_y = 14
+
+[[gameplay.hitbox.box]]
+width = 292
+height = 144
+offset_x = 134
+offset_y = -168
 
 [gameplay.motion]
 kind = "steady"

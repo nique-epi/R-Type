@@ -11,10 +11,10 @@
 -- across the lower front, the Atomic breath charges then burns her row, the
 -- Brood pours mites towards the ships, and the Fling throws eggs with her
 -- front legs at where the nearest ship was AIM_BEFORE_MS before the throw,
--- spread around that point, along a low arc that never follows the ship. The armour of
--- her head and thorax stops every missile; her maw takes damage on its rows,
--- judged where a missile coming from the left first touches her head, except
--- while she strikes. Below 40 % of her health she spreads her wings (attack
+-- spread around that point, along a low arc that never follows the ship. Her
+-- head, thorax, abdomen, spikes and wings take damage wherever a missile
+-- touches them, except while she strikes; her legs have no box, so a missile
+-- flies through them. Below 40 % of her health she spreads her wings (attack
 -- 4): she rests less, and each brood and each fling holds more.
 --
 -- Every place below is measured from the center of her body, in logical units
@@ -36,8 +36,8 @@ local BEATS = {
 	[ARRIVAL] = { strike = 240, recover = 360 },
 }
 
--- The rows of her maw, from the center of her body.
-local MAW_ROW, MAW_HALF_HEIGHT = 64, 72
+-- The row of her maw, from the center of her body.
+local MAW_ROW = 64
 
 -- Where the beam of her breath lies: its 1600 units end at her maw.
 local BEAM = { x = -990, y = MAW_ROW }
@@ -106,7 +106,7 @@ behaviours.register("ash_mother_brood", {
 	local settings = e.settings
 	local striking = true
 	behaviours.pre_hit(function(hit)
-		if not striking and math.abs(hit.offset.y - MAW_ROW) <= MAW_HALF_HEIGHT then
+		if not striking then
 			return true
 		end
 		behaviours.destroy(hit.missile)
