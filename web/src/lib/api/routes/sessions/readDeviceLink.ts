@@ -1,7 +1,7 @@
 import { master } from '../../clients';
 import { type ApiResponse, handleApiError } from '../../helpers';
+import { bearerHeadersOf } from '../../helpers/bearer-headers';
 import type { DeviceLinkState } from '../../schemas';
-import { bearerHeadersOf } from './bearer';
 
 export type DeviceLinkRequest = {
   /** The short code of the link, as the master keeps it. */

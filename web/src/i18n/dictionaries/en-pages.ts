@@ -9,6 +9,7 @@ export const enPages: PageCopy = {
     ranking: 'Leaderboard',
     wiki: 'Wiki',
     team: 'Team',
+    signIn: 'Sign in',
     signUp: 'Sign up',
   },
   site: {
@@ -358,6 +359,8 @@ export const enPages: PageCopy = {
     lede: 'Create your pilot account: your nickname is yours, on every server.',
     home: 'Back to the home page',
     download: 'Download the game',
+    haveAccount: 'Already have an account?',
+    signIn: 'Sign in',
     form: {
       title: 'New account',
       nickname: 'Nickname',
@@ -439,6 +442,8 @@ export const enPages: PageCopy = {
       },
     },
     signedIn: 'You are signed in.',
+    noAccount: 'No account yet?',
+    signUp: 'Sign up',
   },
   linkPage: {
     eyebrow: 'Pilot account',

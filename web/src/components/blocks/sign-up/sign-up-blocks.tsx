@@ -23,6 +23,7 @@ export function SignUpBlocks({ lang }: { lang: Locale }) {
           signUp={signUpAction}
           homeHref={pathOf(lang, 'home')}
           downloadHref={pathOf(lang, 'download')}
+          signInHref={pathOf(lang, 'signIn')}
           labels={copy}
         />
       </PageBody>

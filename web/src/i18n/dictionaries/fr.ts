@@ -14,6 +14,8 @@ export const fr: Dictionary = {
     navigation: 'Principale',
     logo: 'R-Type',
     download: 'Telecharger',
+    signIn: 'Connexion',
+    signOut: 'Deconnexion',
   },
   download: { systems: 'Système', progress: 'Progression du téléchargement' },
   gamesTable: {

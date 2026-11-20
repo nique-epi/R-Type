@@ -16,6 +16,7 @@ import {
   signInFormSchema,
   signInOutcomeOf,
 } from '@/lib/rtype/sign-in';
+import { AccountSwitchLink } from './account-switch-link';
 
 /** An outcome with no session: why the master opened none. */
 type SignInRefusal = Exclude<SignInOutcome['status'], 'signedIn'>;
@@ -34,6 +35,9 @@ export type SignInSectionLabels = {
   problems: Record<SignInRefusal, { title: string; text: string }>;
   /** Shown while the page leads to the next one. */
   signedIn: string;
+  /** "Pas encore de compte ?", before the link to the sign-up page. */
+  noAccount: string;
+  signUp: string;
 };
 
 export type SignInSectionProps = {
@@ -41,6 +45,8 @@ export type SignInSectionProps = {
   signIn: SignIn;
   /** The page of the site to go to once signed in. */
   nextHref: string;
+  /** The sign-up page, for a visitor with no account yet. */
+  signUpHref: string;
   labels: SignInSectionLabels;
 };
 
@@ -50,11 +56,12 @@ const EMPTY_FORM: SignInForm = { nickname: '', password: '' };
  * The sign-in form: a nickname and a password, which the browser may fill
  * from its password manager. A try that opened no session says why over the
  * form; once signed in, the page leads to `nextHref`, such as the page that
- * validates a game.
+ * validates a game. Under the form, a link leads to the sign-up page.
  */
 export function SignInSection({
   signIn,
   nextHref,
+  signUpHref,
   labels,
 }: SignInSectionProps) {
   const router = useRouter();
@@ -130,6 +137,11 @@ export function SignInSection({
           {pending ? labels.form.pending : labels.form.submit}
         </Button>
       </div>
+      <AccountSwitchLink
+        prompt={labels.noAccount}
+        href={signUpHref}
+        label={labels.signUp}
+      />
     </form>
   );
 }
