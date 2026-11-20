@@ -11,28 +11,64 @@
 using rtype::client::BUTLER_FRAME_SIZE;
 using rtype::client::BUTLER_FRAMES_PER_POSE;
 using rtype::client::BUTLER_SHEET_ID;
-using rtype::client::CASINO_DOORS_AJAR_ID;
 using rtype::client::CASINO_DOORS_CLOSED_ID;
 using rtype::client::CASINO_DOORS_OPEN_ID;
+using rtype::client::CASHIER_ROOM_ID;
 using rtype::client::CHIP_SELECTOR_FRAME_SIZE;
 using rtype::client::CHIP_SELECTOR_SHEET_ID;
 using rtype::client::CHIP_SELECTOR_STRIDE;
+using rtype::client::HALL_BOXER_FRAME_SIZE;
+using rtype::client::HALL_BOXER_FRAMES;
+using rtype::client::HALL_BOXERS_SHEET_ID;
+using rtype::client::HALL_PICTURE_ID;
 using rtype::client::INTERFACE_AREA;
+using rtype::client::TELLER_FRAME_SIZE;
+using rtype::client::TELLER_FRAMES_PER_POSE;
+using rtype::client::TELLER_SHEET_ID;
 using rtype::client::testing::BUTLER_POSE_COUNT;
 using rtype::client::testing::SELECTOR_CHIP_COUNT;
+using rtype::client::testing::TELLER_POSE_COUNT;
 using rtype::game::SpriteFrame;
 
 /**
- * Given the three pictures of the front of the casino shipped in assets/
+ * Given the pictures of the rooms of the casino shipped in assets/: its
+ * front, doors closed and open, its hall and its cashier
  * When they are read
  * Then each is as large as the interface picture, which it fills
  */
-TEST(CasinoSpriteConstants, TheFrontOfTheCasinoFillsTheInterface) {
-  for (const std::string_view front :
-       {CASINO_DOORS_CLOSED_ID, CASINO_DOORS_AJAR_ID, CASINO_DOORS_OPEN_ID}) {
-    SCOPED_TRACE(front);
-    EXPECT_EQ(sf::Vector2i(shippedSheet(front).getSize()), INTERFACE_AREA.size);
+TEST(CasinoSpriteConstants, EachRoomOfTheCasinoFillsTheInterface) {
+  for (const std::string_view room :
+       {CASINO_DOORS_CLOSED_ID, CASINO_DOORS_OPEN_ID, HALL_PICTURE_ID,
+        CASHIER_ROOM_ID}) {
+    SCOPED_TRACE(room);
+    EXPECT_EQ(sf::Vector2i(shippedSheet(room).getSize()), INTERFACE_AREA.size);
   }
+}
+
+/**
+ * Given the strip of the boxers of the hall shipped in assets/
+ * When it is read
+ * Then it holds HALL_BOXER_FRAMES frames side by side, and no more
+ */
+TEST(CasinoSpriteConstants, TheBoxersStripHoldsEightFramesInARow) {
+  const sf::Vector2i expected(HALL_BOXER_FRAME_SIZE.x * HALL_BOXER_FRAMES,
+                              HALL_BOXER_FRAME_SIZE.y);
+
+  EXPECT_EQ(sf::Vector2i(shippedSheet(HALL_BOXERS_SHEET_ID).getSize()),
+            expected);
+}
+
+/**
+ * Given the sheet of the teller of the cashier shipped in assets/
+ * When it is read
+ * Then it holds TELLER_POSE_COUNT rows of TELLER_FRAMES_PER_POSE frames, one
+ * row per pose, and no more
+ */
+TEST(CasinoSpriteConstants, TheTellerSheetHoldsTwoPosesOfEightFrames) {
+  const sf::Vector2i expected(TELLER_FRAME_SIZE.x * TELLER_FRAMES_PER_POSE,
+                              TELLER_FRAME_SIZE.y * TELLER_POSE_COUNT);
+
+  EXPECT_EQ(sf::Vector2i(shippedSheet(TELLER_SHEET_ID).getSize()), expected);
 }
 
 /**

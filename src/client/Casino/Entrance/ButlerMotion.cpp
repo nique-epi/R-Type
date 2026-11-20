@@ -53,7 +53,7 @@ const char* doorsPictureAt(EntranceStage stage, engine::Duration since) {
     case EntranceStage::Doors:
       return CASINO_DOORS_CLOSED_ID;
     case EntranceStage::Opening:
-      return since < DOORS_OPEN_AFTER ? CASINO_DOORS_AJAR_ID
+      return since < DOORS_OPEN_AFTER ? CASINO_DOORS_CLOSED_ID
                                       : CASINO_DOORS_OPEN_ID;
     case EntranceStage::Hall:
       break;

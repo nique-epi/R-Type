@@ -16,8 +16,6 @@ constexpr std::string_view CHIPS_HELD_TEXT = "1 250";
 /** @brief The pictures of the front of the casino. */
 constexpr std::string_view DOORS_CLOSED_PICTURE =
     "sprites/casino/entrance_doors_closed.png";
-constexpr std::string_view DOORS_AJAR_PICTURE =
-    "sprites/casino/entrance_doors_ajar.png";
 constexpr std::string_view DOORS_OPEN_PICTURE =
     "sprites/casino/entrance_doors_open.png";
 
@@ -40,7 +38,7 @@ constexpr std::string_view ROULETTE_WORD = "ROULETTE";
 
 /** @brief How long the doors take to open: the greeting and the bow of the
  * butler, four frames of 150 ms each, 1.2 s; a time short of it, and a time
- * inside the greeting, while the doors stand ajar. */
+ * inside the greeting, while the doors stay closed. */
 constexpr std::chrono::milliseconds DOORS_OPENING_TIME{1200};
 constexpr std::chrono::milliseconds JUST_BEFORE_THE_HALL{1100};
 constexpr std::chrono::milliseconds DURING_THE_GREETING{300};

@@ -24,7 +24,7 @@ namespace rtype::client {
                                               MotionPreference motion);
 
 /** @returns The picture of the front of the casino @p since it reached
- * @p stage: the doors closed before them, ajar during the greeting, open from
+ * @p stage: the doors closed before them and during the greeting, open from
  * DOORS_OPEN_AFTER on and in the hall. */
 [[nodiscard]] const char* doorsPictureAt(EntranceStage stage,
                                          engine::Duration since);

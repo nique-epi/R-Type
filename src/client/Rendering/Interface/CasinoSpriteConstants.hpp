@@ -7,15 +7,33 @@ namespace rtype::client {
 
 /**
  * @brief Asset ids of the pictures of the casino, the Bydo Palace, each as
- * large as the interface picture: its front, the doors closed, ajar, then
- * open.
+ * large as the interface picture: its front, the doors closed then open, its
+ * 777 pylon and its marquee painted in.
  */
 constexpr const char* CASINO_DOORS_CLOSED_ID =
     "sprites/casino/entrance_doors_closed.png";
-constexpr const char* CASINO_DOORS_AJAR_ID =
-    "sprites/casino/entrance_doors_ajar.png";
 constexpr const char* CASINO_DOORS_OPEN_ID =
     "sprites/casino/entrance_doors_open.png";
+
+/**
+ * @brief The main hall, as large as the interface picture, its boxing ring
+ * empty; and the strip of the two boxers who spar in it, HALL_BOXER_FRAMES
+ * frames of HALL_BOXER_FRAME_SIZE side by side, their feet on the bottom row.
+ */
+constexpr const char* HALL_PICTURE_ID = "sprites/casino/hall.png";
+constexpr const char* HALL_BOXERS_SHEET_ID = "sprites/casino/hall_boxers.png";
+constexpr sf::Vector2i HALL_BOXER_FRAME_SIZE(88, 55);
+constexpr int HALL_BOXER_FRAMES = 8;
+
+/**
+ * @brief The cashier cage, as large as the interface picture; and the sheet
+ * of its old teller, frames of TELLER_FRAME_SIZE, TELLER_FRAMES_PER_POSE in a
+ * row for each pose, the rows from the top: counting, serving.
+ */
+constexpr const char* CASHIER_ROOM_ID = "sprites/casino/cashier.png";
+constexpr const char* TELLER_SHEET_ID = "sprites/casino/cashier_teller.png";
+constexpr sf::Vector2i TELLER_FRAME_SIZE(128, 128);
+constexpr int TELLER_FRAMES_PER_POSE = 8;
 
 /**
  * @brief The sheet of Balthazar, the Bydo butler of the casino: frames of
@@ -77,7 +95,8 @@ constexpr const char* CASINO_PROPS_SHEET_ID = "sprites/casino/props.png";
 /** @brief Every picture of the casino a screen draws, which the title loads,
  * so the casino opens over the waiting room without loading. */
 constexpr std::array CASINO_TEXTURES{
-    CASINO_DOORS_CLOSED_ID, CASINO_DOORS_AJAR_ID,   CASINO_DOORS_OPEN_ID,
+    CASINO_DOORS_CLOSED_ID, CASINO_DOORS_OPEN_ID,  HALL_PICTURE_ID,
+    HALL_BOXERS_SHEET_ID,   CASHIER_ROOM_ID,       TELLER_SHEET_ID,
     BUTLER_SHEET_ID,        CHIP_SELECTOR_SHEET_ID, ROULETTE_ROOM_ID,
     ROULETTE_TABLE_ID,      WHEEL_BOWL_ID,          WHEEL_ROTOR_ID,
     WHEEL_ROTOR_TURN_ID,    WHEEL_WHOLE_ID,         WHEEL_BALL_ID,

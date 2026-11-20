@@ -25,7 +25,7 @@ constexpr int BUTLER_IN_THE_HALL_LEFT = 110;
 /**
  * @brief How the butler moves: an idle frame every BUTLER_IDLE_FRAME_TIME,
  * round and round; while the doors open, the four frames of his greeting then
- * the four of his bow, each OPENING_FRAME_TIME. The doors stand ajar during
+ * the four of his bow, each OPENING_FRAME_TIME. The doors stay closed during
  * the greeting and open with the bow, and the hall shows once the bow ended.
  */
 constexpr engine::Duration BUTLER_IDLE_FRAME_TIME =

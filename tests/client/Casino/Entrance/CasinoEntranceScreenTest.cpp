@@ -15,7 +15,6 @@ using rtype::client::CASINO_CASH_OUT_SCREEN;
 using rtype::client::MotionPreference;
 using rtype::client::ROULETTE_SCREEN;
 using rtype::client::testing::CHIPS_HELD_TEXT;
-using rtype::client::testing::DOORS_AJAR_PICTURE;
 using rtype::client::testing::DOORS_CLOSED_PICTURE;
 using rtype::client::testing::DOORS_OPEN_PICTURE;
 using rtype::client::testing::DURING_THE_GREETING;
@@ -89,15 +88,15 @@ TEST_F(CasinoEntranceScreenFixture, BackClosesTheCasinoWithoutSeating) {
 /**
  * Given a casino whose player just entered
  * When the greeting of the butler runs
- * Then the doors stand ajar
+ * Then the doors stay closed until his bow
  */
-TEST_F(CasinoEntranceScreenFixture, TheDoorsStandAjarDuringTheGreeting) {
+TEST_F(CasinoEntranceScreenFixture, TheDoorsStayClosedDuringTheGreeting) {
   press(Key::Enter);
 
   wait(DURING_THE_GREETING);
 
   ASSERT_FALSE(canvas().images.empty());
-  EXPECT_EQ(canvas().images.front().assetId, DOORS_AJAR_PICTURE);
+  EXPECT_EQ(canvas().images.front().assetId, DOORS_CLOSED_PICTURE);
 }
 
 /**
