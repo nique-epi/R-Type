@@ -1,6 +1,6 @@
 # The entity type geiger_mine, brought by the resource ashlands:
 # a floating mine that ticks faster as a ship comes near, then bursts
-# in a ring of eight shards; shot early, it just pops.
+# in a ring of six shards; shot early, it just pops.
 # Only the server reads [gameplay]; a client draws [appearance] from the
 # content pack the supervisor serves. The keys are described on the page
 # "Writing an entity sheet" of the docs.
@@ -19,13 +19,13 @@ height = 104
 kind = "steady"
 top_speed = 80
 
-# It bobs 30 units every 1.4 s; a ship within 280 units makes it tick
-# 0.9 s, then burst.
+# It bobs 30 units every 1.4 s; a ship within 200 units makes it tick
+# 1.3 s, then burst.
 [gameplay.behaviour]
-trigger = 280
+trigger = 200
 bob = 30
 bob_ms = 1400
-signal_ms = 900
+signal_ms = 1300
 strike_ms = 240
 
 [gameplay.health]
@@ -34,15 +34,15 @@ points = 1
 [gameplay.score]
 points = 150
 
-# The ring of eight shards, 45 degrees apart, as the mine bursts.
+# The ring of six shards, 60 degrees apart, as the mine bursts.
 [[gameplay.volley]]
 attack = 0
 phase = "strike"
 body = "geiger_mine_shard"
-count = 8
+count = 6
 offset_x = 0
 offset_y = 0
-spread_deg = 315
+spread_deg = 300
 distance = 40
 
 [appearance]

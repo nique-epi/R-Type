@@ -17,10 +17,10 @@ height = 64
 [gameplay.motion]
 kind = "scroll"
 
-# It wakes once left of x 1500 and sends 3 Fixbots.
+# It wakes once left of x 1500 and sends 2 Fixbots.
 [gameplay.behaviour]
 wake_x = 1500
-fixbots = 3
+fixbots = 2
 
 [gameplay.obstacle]
 contact = "blocking"

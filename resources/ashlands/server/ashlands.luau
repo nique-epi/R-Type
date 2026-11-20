@@ -1,17 +1,18 @@
 --!strict
 -- The level the resource ashlands brings: THE ASHLANDS, a map the players of
--- a waiting room vote for, in four stages, each in a biome of its own.
+-- a waiting room vote for, in five stages across four biomes.
 --
 -- 1, Highway Zero (biome cendres): the burnt desert, the broken highway and
 -- the checkpoint, under an open sky; Cindermites, Dunecrawlers and
--- Scrapdrones, then the Sandmaw (server/sandmaw.luau), planted in the floor of
--- the checkpoint.
--- 2, Shelter 9 (cendres_abri): its gate, dormitory and machine room, a
+-- Scrapdrones.
+-- 2, the checkpoint: the Sandmaw (server/sandmaw.luau), planted in its floor.
+-- 3, Shelter 9 (cendres_abri): its gate, dormitory and machine room, a
 -- corridor whose blast doors decide where the ships fly; Rail turrets, Geiger
--- mines and Fixbots.
--- 3, the core (cendres_coeur): a short way in, then the Glowheart
+-- mines and Fixbots. The core arrives as it ends, so it has fully come in by
+-- the fight of the next stage.
+-- 4, the core (cendres_coeur): a short way in, then the Glowheart
 -- (server/glowheart.luau) among the steam vents that purge with it.
--- 4, Silo Zero (cendres_silo): the floor of the core gives way into the nest
+-- 5, Silo Zero (cendres_silo): the floor of the core gives way into the nest
 -- (a transition), then the Ash Mother (server/ash_mother.luau).
 --
 -- The mobs are in server/ashlands_mobs.luau, the decor that does something in
@@ -57,9 +58,9 @@ local ON_THE_WALL = {
 	meltdown_lamp = 300,
 }
 
--- A blast door leaves a gap GAP units tall around its row; each half is 480
--- units tall.
-local DOOR_GAP = 260
+-- A blast door leaves a gap DOOR_GAP units tall around its row, five ships;
+-- each half is 480 units tall.
+local DOOR_GAP = 340
 local DOOR_HALF = 480
 
 -- Where each boss appears: the Sandmaw under the floor by the right edge,
@@ -165,33 +166,28 @@ local HIGHWAY_DECOR: { Decor } = {
 
 local SHELTER: { Wave } = {
 	{ at = 5760, sheet = "rail_turret", rows = { CEILING_ROW } },
-	{ at = 6000, sheet = "fixbot", rows = { ROLL_ROW } },
-	{ at = 6240, sheet = "geiger_mine", rows = { 360, 680 } },
-	{ at = 7560, sheet = "rail_turret", rows = { CEILING_ROW } },
-	{ at = 7680, sheet = "fixbot", rows = { ROLL_ROW } },
-	{ at = 7920, sheet = "geiger_mine", rows = { 300, 520, 740 } },
-	{ at = 8880, sheet = "rail_turret", rows = { CEILING_ROW } },
-	{ at = 9240, sheet = "fixbot", rows = { ROLL_ROW } },
-	{ at = 9600, sheet = "geiger_mine", rows = { 420, 640 } },
-	{ at = 9960, sheet = "rail_turret", rows = { CEILING_ROW } },
-	{ at = 10200, sheet = "cindermite", rows = SWARM_HIGH },
+	{ at = 6480, sheet = "geiger_mine", rows = { 520 } },
+	{ at = 7200, sheet = "fixbot", rows = { ROLL_ROW } },
+	{ at = 7920, sheet = "rail_turret", rows = { CEILING_ROW } },
+	{ at = 8640, sheet = "geiger_mine", rows = { 300, 740 } },
+	{ at = 9360, sheet = "fixbot", rows = { ROLL_ROW } },
+	{ at = 10080, sheet = "cindermite", rows = SWARM_HIGH },
 }
 
+-- The decor of the shelter, a piece every 720 units of scroll at least, so
+-- one never stands on another.
 local SHELTER_DECOR: { Decor } = {
 	{ at = 5520, sheet = "blast_door", row = 520 },
-	{ at = 6480, sheet = "live_cable" },
-	{ at = 6720, sheet = "alarm_beacon" },
-	{ at = 7080, sheet = "vent_grille" },
-	{ at = 7320, sheet = "blast_door", row = 360 },
-	{ at = 8280, sheet = "live_cable" },
-	{ at = 8400, sheet = "live_cable" },
-	{ at = 8640, sheet = "blast_door", row = 700 },
-	{ at = 8880, sheet = "vent_grille" },
+	{ at = 6120, sheet = "live_cable" },
+	{ at = 6840, sheet = "alarm_beacon" },
+	{ at = 7560, sheet = "vent_grille" },
+	{ at = 8280, sheet = "blast_door", row = 360 },
+	{ at = 9000, sheet = "live_cable" },
+	{ at = 9720, sheet = "blast_door", row = 700 },
 }
 
 local INTO_THE_CORE: { Wave } = {
-	{ at = 11040, sheet = "geiger_mine", rows = { 360, 680 } },
-	{ at = 11520, sheet = "scrapdrone", rows = { 300, 740 } },
+	{ at = 11280, sheet = "geiger_mine", rows = { 520 } },
 }
 
 -- The decor of the core: the way in, then the arena, laid so that it stands
@@ -220,12 +216,15 @@ level.register("ashlands", {
 		play(HIGHWAY, HIGHWAY_DECOR)
 		level.wait_scroll(END_OF_THE_HIGHWAY)
 		wait_for_a_clear_sky()
+	end,
+	function()
 		fight("sandmaw", SANDMAW_ENTRY)
 	end,
 	function()
 		level.biome("cendres_abri")
 		play(SHELTER, SHELTER_DECOR)
 		level.wait_scroll(END_OF_THE_SHELTER)
+		level.biome("cendres_coeur")
 		wait_for_a_clear_sky()
 	end,
 	function()
@@ -247,9 +246,10 @@ level.register("ashlands", {
 	preview = "the_ashlands",
 	biome = "cendres",
 	starts = {
-		[2] = { scroll = END_OF_THE_HIGHWAY, biome = "cendres_abri", biome_since = 0 },
-		[3] = { scroll = END_OF_THE_SHELTER, biome = "cendres_coeur", biome_since = 0 },
-		[4] = { scroll = END_OF_THE_CORE, biome = "cendres_silo", biome_since = 0 },
+		[2] = { scroll = END_OF_THE_HIGHWAY, biome = "cendres", biome_since = 0 },
+		[3] = { scroll = END_OF_THE_HIGHWAY, biome = "cendres_abri", biome_since = 0 },
+		[4] = { scroll = END_OF_THE_SHELTER, biome = "cendres_coeur", biome_since = 0 },
+		[5] = { scroll = END_OF_THE_CORE, biome = "cendres_silo", biome_since = 0 },
 	},
 	bands = {
 		cendres = { top = OPEN_SKY_ROW, bottom = FLOOR_ROW },

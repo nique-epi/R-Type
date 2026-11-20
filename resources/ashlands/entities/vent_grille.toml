@@ -18,9 +18,9 @@ height = 80
 [gameplay.motion]
 kind = "scroll"
 
-# Left of x 1800, it lets a Cindermite out every 1.4 s.
+# Left of x 1800, it lets a Cindermite out every 2.4 s.
 [gameplay.behaviour]
-interval_ms = 1400
+interval_ms = 2400
 spawn_from_x = 1800
 
 [gameplay.health]

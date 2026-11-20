@@ -20,11 +20,11 @@ offset_y = 1024
 [gameplay.motion]
 kind = "scroll"
 
-# They first rise 0.8 s after they show, then rest 1.6 s, climb 0.5 s,
+# They first rise 0.8 s after they show, then rest 3 s, climb 0.5 s,
 # stay up 1.2 s and sink 0.32 s.
 [gameplay.behaviour]
 first_ms = 800
-idle_ms = 1600
+idle_ms = 3000
 signal_ms = 500
 strike_ms = 1200
 recover_ms = 320
