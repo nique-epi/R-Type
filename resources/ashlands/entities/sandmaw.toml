@@ -24,7 +24,7 @@ top_speed = 400
 
 # It comes up out of its dune at y 820 over 1.4 s, rests 1.2 s between two attacks (0.6 s
 # enraged), opens its maw 0.9 s, inhales 2.4 s, letting a clod in every
-# 0.22 s (0.14 s enraged), spits 3 boulders (5 enraged) 0.15 s apart, and
+# 0.5 s (0.33 s enraged), spits 3 boulders (5 enraged) 0.15 s apart, and
 # closes its maw over 0.4 s.
 [gameplay.behaviour]
 rest_y = 820
@@ -33,8 +33,8 @@ rest_ms = 1200
 enraged_rest_ms = 600
 open_ms = 900
 inhale_ms = 2400
-debris_ms = 220
-enraged_debris_ms = 140
+debris_ms = 500
+enraged_debris_ms = 330
 boulders = 3
 enraged_boulders = 5
 boulder_gap_ms = 150
