@@ -1,4 +1,4 @@
-#include "WheelSoundsFixture.hpp"
+#include "RoundSoundsFixture.hpp"
 #include <chrono>
 #include <string>
 #include <vector>
@@ -11,13 +11,13 @@ using rtype::client::MotionPreference;
 using rtype::client::RouletteReading;
 using rtype::client::testing::spinningRoom;
 
-void WheelSoundsFixture::see(const rtype::network::CasinoRoomState& room) {
+void RoundSoundsFixture::see(const rtype::network::CasinoRoomState& room) {
   RouletteReading reading;
   reading.room = room;
   wheel_.follow(reading);
 }
 
-void WheelSoundsFixture::seeWithLessMotion(
+void RoundSoundsFixture::seeWithLessMotion(
     const rtype::network::CasinoRoomState& room) {
   RouletteReading reading;
   reading.room = room;
@@ -25,13 +25,13 @@ void WheelSoundsFixture::seeWithLessMotion(
   wheel_.follow(reading);
 }
 
-rtype::network::CasinoRoomState WheelSoundsFixture::spinningWith(
+rtype::network::CasinoRoomState RoundSoundsFixture::spinningWith(
     std::chrono::seconds left) {
   rtype::network::CasinoRoomState room = spinningRoom();
   room.serverTime = room.resultAt - left;
   return room;
 }
 
-const std::vector<std::string>& WheelSoundsFixture::played() const {
+const std::vector<std::string>& RoundSoundsFixture::played() const {
   return sounds_.played();
 }

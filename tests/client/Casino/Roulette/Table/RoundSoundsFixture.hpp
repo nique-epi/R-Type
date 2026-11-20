@@ -6,11 +6,11 @@
 #include <vector>
 #include "CasinoRoomState.hpp"
 #include "RecordingSoundPlayer.hpp"
-#include "WheelSounds.hpp"
+#include "RoundSounds.hpp"
 
 /** @brief The sounds of a wheel, followed frame after frame over the rooms
  * of the roulette fixtures, with a recording sound player. */
-class WheelSoundsFixture : public ::testing::Test {
+class RoundSoundsFixture : public ::testing::Test {
  protected:
   /** @brief Shows the wheel @p room, as one frame of the table. */
   void see(const rtype::network::CasinoRoomState& room);
@@ -26,5 +26,5 @@ class WheelSoundsFixture : public ::testing::Test {
 
  private:
   RecordingSoundPlayer sounds_;
-  rtype::client::WheelSounds wheel_{sounds_};
+  rtype::client::RoundSounds wheel_{sounds_};
 };

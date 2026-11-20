@@ -8,6 +8,7 @@
 #include <optional>
 #include <string>
 #include <vector>
+#include "BigWin.hpp"
 #include "ButlerFrames.hpp"
 #include "ButlerPose.hpp"
 #include "CasinoPlayer.hpp"
@@ -186,7 +187,35 @@ std::vector<OtherPlayerBets> othersBetsOf(const RouletteReading& reading) {
   return others;
 }
 
+/** @returns The banner of the biggest win of the round of @p reading, for
+ * its first BIG_WIN_TIME of result; nothing after. */
+std::optional<BigWin> bigWinBannerOf(const RouletteReading& reading) {
+  if (!reading.room.has_value() ||
+      reading.room->serverTime - reading.room->resultAt >= BIG_WIN_TIME) {
+    return std::nullopt;
+  }
+  return bigWinOf(reading);
+}
+
 }  // namespace
+
+std::optional<BigWin> bigWinOf(const RouletteReading& reading) {
+  if (!reading.room.has_value() ||
+      reading.room->phase != RoulettePhase::Result) {
+    return std::nullopt;
+  }
+  std::optional<BigWin> biggest;
+  for (const CasinoPlayer& player : reading.room->players) {
+    const std::uint32_t payout = player.payout.value_or(0);
+    const std::uint32_t gain =
+        payout > player.stake ? payout - player.stake : 0;
+    if (gain >= BIG_WIN_GAIN &&
+        (!biggest.has_value() || gain > biggest->gain)) {
+      biggest = BigWin{.nickname = player.nickname, .gain = gain};
+    }
+  }
+  return biggest;
+}
 
 RouletteBarStates barStatesOf(const RouletteReading& reading) {
   const bool open = betsOpen(reading);
@@ -210,6 +239,7 @@ RouletteView rouletteViewOf(const RouletteReading& reading) {
       .roomName = roomNameOf(reading),
       .roster = rosterRowsOf(reading),
       .lastNumbers = lastNumbersOf(reading),
+      .bigWin = bigWinBannerOf(reading),
       .band = RouletteBand{.chips = chipsShownOf(reading),
                            .stake = betsOpen(reading)
                                         ? static_cast<std::uint32_t>(

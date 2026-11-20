@@ -49,6 +49,25 @@ constexpr const char* SPIN_IN_START = "SPIN IN ";
 constexpr engine::Duration SPIN_COUNTDOWN_SPAN = std::chrono::seconds(20);
 constexpr std::int64_t SPIN_HURRY_SECONDS = 3;
 
+/**
+ * @brief The banner of a big win, across the middle of the table for the
+ * first BIG_WIN_TIME of the result: JACKPOT twice the size of a text in
+ * gold, then who won how many chips, in a gold frame lined in red. A win is
+ * big once the payout of a player passes its stake by BIG_WIN_GAIN chips,
+ * more than four times the dearest look of the shop: 100 chips on a number
+ * gain 3500 and show it, 50 gain 1750 and do not.
+ */
+constexpr std::uint32_t BIG_WIN_GAIN = 2500;
+constexpr engine::Duration BIG_WIN_TIME = std::chrono::seconds(4);
+constexpr sf::IntRect BIG_WIN_AREA({60, 104}, {360, 62});
+constexpr int BIG_WIN_LINING_INSET = 3;
+constexpr sf::Vector2i BIG_WIN_TITLE_TOP_MIDDLE(240, 114);
+constexpr int BIG_WIN_TITLE_SCALE = 2;
+constexpr sf::Vector2i BIG_WIN_LINE_TOP_MIDDLE(240, 142);
+constexpr const char* BIG_WIN_TITLE = "JACKPOT";
+constexpr const char* BIG_WIN_WON = " WON ";
+constexpr const char* BIG_WIN_CHIPS = " CHIPS";
+
 /** @brief The keys that move the cursor over the cloth, and the one that lays
  * a chip of the value chosen where it stands. */
 constexpr sf::Keyboard::Key CURSOR_LEFT_KEY = sf::Keyboard::Key::Left;

@@ -5,6 +5,7 @@
 #include <optional>
 #include <string>
 #include <vector>
+#include "BigWin.hpp"
 #include "ClothPlace.hpp"
 #include "OtherPlayerBets.hpp"
 #include "RouletteBand.hpp"
@@ -36,6 +37,9 @@ struct RouletteView {
   std::string roomName;
   std::vector<TableRosterRow> roster;
   std::vector<std::uint8_t> lastNumbers;
+  /** @brief The banner of the biggest win of the round, for BIG_WIN_TIME
+   * from its result. */
+  std::optional<BigWin> bigWin = std::nullopt;
   RouletteBand band;
 };
 

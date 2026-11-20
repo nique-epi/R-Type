@@ -4,6 +4,7 @@
 #include <SFML/System/Vector2.hpp>
 #include <string>
 #include "BackgroundColorConstants.hpp"
+#include "BigWin.hpp"
 #include "CasinoPainting.hpp"
 #include "CasinoPaintingConstants.hpp"
 #include "CasinoSpriteConstants.hpp"
@@ -94,6 +95,26 @@ void paintSpinCountdown(IInterfaceCanvas& canvas,
               urgency);
 }
 
+/** @brief Paints the banner of @p bigWin across the middle of the table. */
+void paintBigWin(IInterfaceCanvas& canvas, const BigWin& bigWin) {
+  canvas.fill(BIG_WIN_AREA, CASINO_PANEL_INSIDE_COLOR);
+  paintEdges(canvas, BIG_WIN_AREA, CASINO_GOLD);
+  paintEdges(canvas, insetOf(BIG_WIN_AREA, BIG_WIN_LINING_INSET),
+             CASINO_NEON_RED);
+  canvas.write(BIG_WIN_TITLE, BIG_WIN_TITLE_TOP_MIDDLE,
+               TextStyle{.font = TextFont::Regular,
+                         .color = STAR_GOLD,
+                         .outlined = true,
+                         .alignment = TextAlignment::Center,
+                         .scale = BIG_WIN_TITLE_SCALE});
+  canvas.write(bigWin.nickname + BIG_WIN_WON + std::to_string(bigWin.gain) +
+                   BIG_WIN_CHIPS,
+               BIG_WIN_LINE_TOP_MIDDLE,
+               TextStyle{.font = TextFont::Regular,
+                         .color = STAR_WHITE,
+                         .alignment = TextAlignment::Center});
+}
+
 }  // namespace
 
 void paintRoulette(IInterfaceCanvas& canvas, const RouletteView& view) {
@@ -116,6 +137,9 @@ void paintRoulette(IInterfaceCanvas& canvas, const RouletteView& view) {
   paintLastNumbers(canvas, view.lastNumbers);
   paintTableRoster(canvas, view.roster, view.roomName);
   paintRouletteBand(canvas, view.band);
+  if (view.bigWin.has_value()) {
+    paintBigWin(canvas, *view.bigWin);
+  }
 }
 
 }  // namespace rtype::client

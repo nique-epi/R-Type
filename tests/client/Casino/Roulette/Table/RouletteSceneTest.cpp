@@ -2,6 +2,7 @@
 #include <SFML/Graphics/Color.hpp>
 #include <string>
 #include <vector>
+#include "BigWin.hpp"
 #include "CasinoRoomState.hpp"
 #include "InterfaceColorConstants.hpp"
 #include "MillisecondDate.hpp"
@@ -15,6 +16,7 @@
 #include "RouletteView.hpp"
 #include "SpinCountdown.hpp"
 
+using rtype::client::BigWin;
 using rtype::client::MotionPreference;
 using rtype::client::OtherPlayerBets;
 using rtype::client::PLAYER_COLORS;
@@ -23,14 +25,19 @@ using rtype::client::rouletteViewOf;
 using rtype::client::SpinCountdown;
 using rtype::client::testing::A_ROUND;
 using rtype::client::testing::ACE_NAME;
+using rtype::client::testing::AS_THE_BANNER_LEAVES;
 using rtype::client::testing::bettingRoom;
 using rtype::client::testing::FIRST_IDLE_FRAME;
 using rtype::client::testing::FIRST_OTHER_STACK_OFFSET;
+using rtype::client::testing::GAIN_AT_THE_THRESHOLD;
 using rtype::client::testing::HELD_GREETING_FRAME;
 using rtype::client::testing::INTO_THE_GREETING_OF_A_CYCLE;
 using rtype::client::testing::INTO_THE_IDLE_OF_A_CYCLE;
 using rtype::client::testing::LUNA_PLACE;
 using rtype::client::testing::OTHER_STACK_ALPHA_OF_THE_DESIGN;
+using rtype::client::testing::PAYOUT_AT_THE_THRESHOLD;
+using rtype::client::testing::PAYOUT_SHORT_OF_THE_THRESHOLD;
+using rtype::client::testing::resultRoom;
 using rtype::client::testing::SECOND_GREETING_FRAME;
 using rtype::client::testing::SECOND_IDLE_FRAME;
 using rtype::client::testing::spinningRoom;
@@ -186,4 +193,44 @@ TEST(RouletteScene, TheOwnBetsAreNoOtherStack) {
   reading.ownNickname = std::string{ACE_NAME};
 
   EXPECT_TRUE(rouletteViewOf(reading).others.empty());
+}
+
+/**
+ * Given a result where ACE gains 2500 chips past its stake
+ * When the table is read
+ * Then the banner of the big win names ACE and those 2500 chips
+ */
+TEST(RouletteScene, ABigWinShowsItsBanner) {
+  RouletteReading reading;
+  reading.room = resultRoom(PAYOUT_AT_THE_THRESHOLD);
+
+  const BigWin banner = rouletteViewOf(reading).bigWin.value_or(BigWin{});
+
+  EXPECT_EQ(banner.nickname, ACE_NAME);
+  EXPECT_EQ(banner.gain, GAIN_AT_THE_THRESHOLD);
+}
+
+/**
+ * Given a result where ACE gains 2499 chips past its stake
+ * When the table is read
+ * Then no banner shows
+ */
+TEST(RouletteScene, AWinShortOfTheThresholdShowsNoBanner) {
+  RouletteReading reading;
+  reading.room = resultRoom(PAYOUT_SHORT_OF_THE_THRESHOLD);
+
+  EXPECT_FALSE(rouletteViewOf(reading).bigWin.has_value());
+}
+
+/**
+ * Given a result with a big win
+ * When 4 s of the result passed
+ * Then the banner left the table
+ */
+TEST(RouletteScene, TheBannerLeavesAfterFourSeconds) {
+  RouletteReading reading;
+  reading.room = resultRoom(PAYOUT_AT_THE_THRESHOLD);
+  reading.room->serverTime = reading.room->resultAt + AS_THE_BANNER_LEAVES;
+
+  EXPECT_FALSE(rouletteViewOf(reading).bigWin.has_value());
 }

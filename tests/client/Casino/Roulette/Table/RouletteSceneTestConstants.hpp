@@ -45,4 +45,14 @@ constexpr std::uint8_t OTHER_STACK_ALPHA_OF_THE_DESIGN = 140;
 constexpr sf::Vector2i FIRST_OTHER_STACK_OFFSET(-5, 2);
 constexpr std::size_t LUNA_PLACE = 1;
 
+/**
+ * @brief Payouts of ACE, who staked 25 chips (STAKE_OF_ACE), on either side
+ * of a big win, which gains 2500 chips past the stake: 2525 gains 2500
+ * exactly, 2524 gains 2499. The banner leaves 4 s into the result.
+ */
+constexpr std::uint32_t PAYOUT_AT_THE_THRESHOLD = 2525;
+constexpr std::uint32_t PAYOUT_SHORT_OF_THE_THRESHOLD = 2524;
+constexpr std::uint32_t GAIN_AT_THE_THRESHOLD = 2500;
+constexpr std::chrono::seconds AS_THE_BANNER_LEAVES{4};
+
 }  // namespace rtype::client::testing

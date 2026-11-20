@@ -91,7 +91,7 @@ RouletteScreen::RouletteScreen(RouletteScreenParts parts,
     : navigator_(&parts.navigator.get()),
       ambience_(parts.audio.get(), Ambience::CasinoTables),
       sounds_(&parts.sounds.get()),
-      wheelSounds_(parts.sounds.get()),
+      roundSounds_(parts.sounds.get()),
       casino_(&parts.casino.get()),
       memory_(&parts.memory.get()),
       wallet_(&parts.wallet.get()),
@@ -120,7 +120,7 @@ RouletteScreen::RouletteScreen(RouletteScreenParts parts,
   const std::optional<BetsReading>& bets = casino_->lastBets();
   memory_->follow(room, bets);
   const RouletteReading reading = readTable(room, bets);
-  wheelSounds_.follow(reading);
+  roundSounds_.follow(reading);
   repaint(reading);
 }
 
@@ -143,7 +143,7 @@ void RouletteScreen::update([[maybe_unused]] engine::Duration elapsed) {
   const std::optional<BetsReading>& bets = casino_->lastBets();
   memory_->follow(room, bets);
   const RouletteReading reading = readTable(room, bets);
-  wheelSounds_.follow(reading);
+  roundSounds_.follow(reading);
   repaint(reading);
 }
 

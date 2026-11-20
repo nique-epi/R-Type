@@ -1,27 +1,27 @@
-#include "WheelSounds.hpp"
+#include "RoundSounds.hpp"
 #include <optional>
 #include "ISoundPlayer.hpp"
 #include "MotionPreference.hpp"
 #include "RoulettePhase.hpp"
 #include "RouletteReading.hpp"
+#include "RouletteScene.hpp"
 #include "RouletteTexts.hpp"
+#include "RoundBeat.hpp"
 #include "SoundConstants.hpp"
-#include "WheelBeat.hpp"
 #include "WheelMotion.hpp"
 
 namespace rtype::client {
 
 namespace {
 
-/** @returns Where the wheel of @p reading stands; nothing without a room, or
- * with less motion, when the wheel does not move. */
-std::optional<WheelBeat> beatOf(const RouletteReading& reading) {
-  if (!reading.room.has_value() ||
-      reading.motion == MotionPreference::Reduced) {
+/** @returns Where the round of @p reading stands; nothing without a
+ * room. */
+std::optional<RoundBeat> beatOf(const RouletteReading& reading) {
+  if (!reading.room.has_value()) {
     return std::nullopt;
   }
   const network::RoulettePhase phase = reading.room->phase;
-  return WheelBeat{.round = reading.room->round,
+  return RoundBeat{.round = reading.room->round,
                    .phase = phase,
                    .ballInPocket = phase == network::RoulettePhase::Result ||
                                    (phase == network::RoulettePhase::Spinning &&
@@ -29,30 +29,41 @@ std::optional<WheelBeat> beatOf(const RouletteReading& reading) {
 }
 
 /** @returns Whether the wheel started to spin from @p before to @p now. */
-bool startedToSpin(const WheelBeat& before, const WheelBeat& now) {
+bool startedToSpin(const RoundBeat& before, const RoundBeat& now) {
   return before.phase == network::RoulettePhase::Betting &&
          now.phase == network::RoulettePhase::Spinning;
 }
 
 /** @returns Whether the ball dropped in its pocket from @p before to
  * @p now. */
-bool ballFell(const WheelBeat& before, const WheelBeat& now) {
+bool ballFell(const RoundBeat& before, const RoundBeat& now) {
   return before.phase == network::RoulettePhase::Spinning &&
          !before.ballInPocket && now.ballInPocket;
 }
 
+/** @returns Whether the result of the round came from @p before to
+ * @p now. */
+bool resultCame(const RoundBeat& before, const RoundBeat& now) {
+  return before.phase != network::RoulettePhase::Result &&
+         now.phase == network::RoulettePhase::Result;
+}
+
 }  // namespace
 
-WheelSounds::WheelSounds(ISoundPlayer& sounds) : sounds_(&sounds) {}
+RoundSounds::RoundSounds(ISoundPlayer& sounds) : sounds_(&sounds) {}
 
-void WheelSounds::follow(const RouletteReading& reading) {
-  const std::optional<WheelBeat> now = beatOf(reading);
+void RoundSounds::follow(const RouletteReading& reading) {
+  const std::optional<RoundBeat> now = beatOf(reading);
   if (now.has_value() && last_.has_value() && last_->round == now->round) {
-    if (startedToSpin(*last_, *now)) {
+    const bool wheelMoves = reading.motion != MotionPreference::Reduced;
+    if (wheelMoves && startedToSpin(*last_, *now)) {
       sounds_->play(ROULETTE_SPIN_SOUND_ID);
     }
-    if (ballFell(*last_, *now)) {
+    if (wheelMoves && ballFell(*last_, *now)) {
       sounds_->play(ROULETTE_DROP_SOUND_ID);
+    }
+    if (resultCame(*last_, *now) && bigWinOf(reading).has_value()) {
+      sounds_->play(ROULETTE_JACKPOT_SOUND_ID);
     }
   }
   last_ = now;

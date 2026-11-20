@@ -9,7 +9,7 @@ add_library(rtype_client_casino_roulette_table STATIC
   RouletteScreen.cpp
   RouletteTexts.cpp
   TableRosterPainting.cpp
-  WheelSounds.cpp
+  RoundSounds.cpp
 )
 
 target_include_directories(rtype_client_casino_roulette_table PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
