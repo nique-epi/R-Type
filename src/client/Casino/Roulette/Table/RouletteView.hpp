@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include "ClothPlace.hpp"
+#include "OtherPlayerBets.hpp"
 #include "RouletteBand.hpp"
 #include "RouletteBet.hpp"
 #include "SpinCountdown.hpp"
@@ -24,6 +25,8 @@ struct RouletteView {
   sf::IntRect croupier;
   /** @brief The plaque under the croupier, while the bets are open. */
   std::optional<SpinCountdown> countdown;
+  /** @brief The bets of the other players seated in the room. */
+  std::vector<OtherPlayerBets> others;
   WheelPicture wheel;
   std::vector<network::RouletteBet> bets;
   std::optional<ClothPlace> cursor = std::nullopt;

@@ -105,6 +105,7 @@ void paintRoulette(IInterfaceCanvas& canvas, const RouletteView& view) {
   if (view.drawn.has_value()) {
     paintDrawnNumber(canvas, *view.drawn);
   }
+  paintOtherPlayersBets(canvas, view.others);
   paintClothBets(canvas, view.bets);
   if (view.cursor.has_value()) {
     paintClothCursor(canvas, *view.cursor);

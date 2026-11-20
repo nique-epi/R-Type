@@ -7,11 +7,14 @@
 #include <string>
 #include <vector>
 #include "ButlerPose.hpp"
+#include "CasinoPlayer.hpp"
 #include "CasinoSpriteConstants.hpp"
+#include "ChipStackLook.hpp"
 #include "ChipsAtHand.hpp"
 #include "ClothPlace.hpp"
 #include "DurationConversion.hpp"
 #include "MotionPreference.hpp"
+#include "OtherPlayerBets.hpp"
 #include "RouletteBand.hpp"
 #include "RouletteBarStates.hpp"
 #include "RoulettePhase.hpp"
@@ -30,6 +33,7 @@ namespace rtype::client {
 
 namespace {
 
+using network::CasinoPlayer;
 using network::RoulettePhase;
 
 /** @returns Whether the room of @p reading takes bets. */
@@ -158,6 +162,31 @@ std::optional<SpinCountdown> countdownOf(const RouletteReading& reading) {
       .hurry = seconds <= SPIN_HURRY_SECONDS};
 }
 
+/** @returns The bets of every player seated in the room of @p reading but the
+ * player, each tinted in the color of its place, as the roster colors it,
+ * and moved aside by the next of OTHER_STACK_OFFSETS. */
+std::vector<OtherPlayerBets> othersBetsOf(const RouletteReading& reading) {
+  std::vector<OtherPlayerBets> others;
+  if (!reading.room.has_value()) {
+    return others;
+  }
+  const std::vector<CasinoPlayer>& players = reading.room->players;
+  for (std::size_t place = 0; place < players.size(); ++place) {
+    const CasinoPlayer& player = players.at(place);
+    if (player.nickname == reading.ownNickname || player.bets.empty()) {
+      continue;
+    }
+    sf::Color tint = reading.palette.at(place % reading.palette.size()).ship;
+    tint.a = OTHER_STACK_ALPHA;
+    others.push_back(OtherPlayerBets{
+        .bets = player.bets,
+        .look = ChipStackLook{.offset = OTHER_STACK_OFFSETS.at(
+                                  others.size() % OTHER_STACK_OFFSETS.size()),
+                              .tint = tint}});
+  }
+  return others;
+}
+
 }  // namespace
 
 RouletteBarStates barStatesOf(const RouletteReading& reading) {
@@ -173,6 +202,7 @@ RouletteView rouletteViewOf(const RouletteReading& reading) {
   return RouletteView{
       .croupier = croupierFrameOf(reading),
       .countdown = countdownOf(reading),
+      .others = othersBetsOf(reading),
       .wheel = wheelOf(reading),
       .bets = reading.bets,
       .cursor = betsOpen(reading) ? std::optional<ClothPlace>(reading.cursor)

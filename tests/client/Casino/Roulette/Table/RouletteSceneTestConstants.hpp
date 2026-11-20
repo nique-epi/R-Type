@@ -1,7 +1,9 @@
 #pragma once
 
 #include <SFML/Graphics/Rect.hpp>
+#include <SFML/System/Vector2.hpp>
 #include <chrono>
+#include <cstddef>
 #include <cstdint>
 
 namespace rtype::client::testing {
@@ -35,5 +37,12 @@ constexpr std::int64_t TWELVE_SECONDS = 12;
 constexpr float TWELVE_OF_TWENTY_SECONDS = 0.6F;
 constexpr std::chrono::seconds TWO_SECONDS_BEFORE_THE_SPIN{2};
 constexpr std::int64_t TWO_SECONDS = 2;
+
+/** @brief The stacks of the other players: half clear, 140 of 255, and the
+ * first moved 5 pixels left and 2 down; LUNA sits second at the table, so
+ * its chips take the second player color, as its row of the roster. */
+constexpr std::uint8_t OTHER_STACK_ALPHA_OF_THE_DESIGN = 140;
+constexpr sf::Vector2i FIRST_OTHER_STACK_OFFSET(-5, 2);
+constexpr std::size_t LUNA_PLACE = 1;
 
 }  // namespace rtype::client::testing

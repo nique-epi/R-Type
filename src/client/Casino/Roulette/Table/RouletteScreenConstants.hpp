@@ -3,7 +3,9 @@
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Keyboard.hpp>
+#include <array>
 #include <cstddef>
+#include <cstdint>
 #include "CasinoBar.hpp"
 #include "CasinoSpriteConstants.hpp"
 #include "WidgetConstants.hpp"
@@ -69,6 +71,17 @@ constexpr std::size_t FIRST_CHOSEN_CHIP = 2;
  * number drawn, CLOTH_CORNERS_MARGIN out of their box.
  */
 constexpr int CLOTH_CHIP_LIFT = 2;
+
+/**
+ * @brief The stacks of the other players seated in the room: their chips
+ * multiplied by the color of each player, at OTHER_STACK_ALPHA of 255, and
+ * moved aside, each other player in turn by the next of OTHER_STACK_OFFSETS,
+ * so the stacks of the player, drawn over them, stay readable.
+ */
+constexpr std::uint8_t OTHER_STACK_ALPHA = 140;
+constexpr std::array OTHER_STACK_OFFSETS{
+    sf::Vector2i(-5, 2), sf::Vector2i(5, 2), sf::Vector2i(-5, -2),
+    sf::Vector2i(5, -2)};
 constexpr std::size_t CLOTH_STACK_CHIPS = 5;
 constexpr int CLOTH_CORNERS_MARGIN = 1;
 
