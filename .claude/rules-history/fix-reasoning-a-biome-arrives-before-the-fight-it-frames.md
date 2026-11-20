@@ -29,3 +29,7 @@ The distance between the biome and the pause was assumed from the scrolls writte
 
 - ❌ **Before (wrong)**: stage 3 begins with `level.biome("cendres_coeur")` after the shelter waited for a clear sky, then pauses at 12960 → the Glowheart in front of half the shelter.
 - ✅ **After (right)**: the shelter names `cendres_coeur` right after `level.wait_scroll(10800)`, 2160 units before the pause.
+
+## Update (2026-11-20) — the biome on the first line of a stage
+
+After a restart at the checkpoint of the stage of the silo, the user saw the silo come in from the right edge with an empty screen behind it. The stage named the silo on its first line, so its checkpoint held the core; the restart and that line fell in one tick, and the client, which still showed the silo, saw its entrance jump back. The training run had the same shape. The biomes are now named at the end of the stage before.
