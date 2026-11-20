@@ -18,8 +18,8 @@
 --
 -- Each biome is named at the end of the stage before the one it frames, after
 -- its fight: a checkpoint is the start of a stage, so a team sent back to it
--- finds the biome already there, and the stage names it again for a game
--- started there with `--stage`, which changes nothing otherwise.
+-- finds the biome already there; a game started at a stage with `--stage`
+-- gets it from the option starts.
 --
 -- The mobs are in server/ashlands_mobs.luau, the decor that does something in
 -- server/ashlands_props.luau. `--stage <n>` starts a game at a stage. The
@@ -228,21 +228,18 @@ level.register("ashlands", {
 		level.biome("cendres_abri")
 	end,
 	function()
-		level.biome("cendres_abri")
 		play(SHELTER, SHELTER_DECOR)
 		level.wait_scroll(END_OF_THE_SHELTER)
 		level.biome("cendres_coeur")
 		wait_for_a_clear_sky()
 	end,
 	function()
-		level.biome("cendres_coeur")
 		play(INTO_THE_CORE, CORE_DECOR)
 		level.wait_scroll(END_OF_THE_CORE)
 		fight("glowheart", GLOWHEART_ENTRY)
 		level.biome("cendres_silo")
 	end,
 	function()
-		level.biome("cendres_silo")
 		play(DESCENT, {})
 		level.wait_scroll(END_OF_THE_DESCENT)
 		wait_for_a_clear_sky()
