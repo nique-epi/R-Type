@@ -13,7 +13,7 @@
 -- front legs at where the nearest ship was AIM_BEFORE_MS before the throw,
 -- spread around that point, along a low arc that never follows the ship. Her
 -- head, thorax, abdomen and wings take damage wherever a missile
--- touches them, while she attacks too; her legs have no box, so a missile
+-- touches them, at every moment, while she rises and attacks too; her legs have no box, so a missile
 -- flies through them. Below 40 % of her health she spreads her wings (attack
 -- 4): she then plays her attacks in pairs, back to back, rests less, and
 -- each brood and each fling holds more.
@@ -138,15 +138,6 @@ behaviours.register("ash_mother_brood", {
 	{ name = "egg_gap_ms", lowest = 1, highest = 60000 },
 }, function(e)
 	local settings = e.settings
-	local arriving = true
-	behaviours.pre_hit(function(hit)
-		if not arriving then
-			return true
-		end
-		behaviours.destroy(hit.missile)
-		return false
-	end)
-
 	behaviours.wait(settings.rise_ms, {
 		direction = STILL,
 		jumps_to = { x = e.position.x, y = settings.rest_y },
@@ -156,7 +147,6 @@ behaviours.register("ash_mother_brood", {
 	behaviours.wait(BEATS[ARRIVAL].recover, { direction = STILL, starts_action = { attack = ARRIVAL, phase = "recover" } })
 	e = behaviours.wait(1, { direction = STILL, ends_action = true })
 	local center = { x = e.position.x, y = e.position.y }
-	arriving = false
 
 	local raged = false
 	local played = 0

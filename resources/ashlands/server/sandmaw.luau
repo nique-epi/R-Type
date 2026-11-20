@@ -11,8 +11,8 @@
 -- flying from the left edge into its maw, which the ships dodge or shoot, or
 -- spits boulders along an arc, and a Dunecrawler every second spit; then it
 -- closes its maw (the recover). Both use attack 0, the only one its sheet
--- draws. A missile hurts it anywhere on its body once it has come up, while
--- it attacks too; every missile is stopped while it comes up. Once enraged it rests less,
+-- draws. A missile hurts it anywhere on its body at every moment, while it
+-- comes up and while it attacks. Once enraged it rests less,
 -- inhales a thicker stream, spits more, and picks either at random.
 
 local STILL = { x = 0, y = 0 }
@@ -89,15 +89,6 @@ behaviours.register("sandmaw_maw", {
 	{ name = "close_ms", lowest = 1, highest = 60000 },
 }, function(e)
 	local settings = e.settings
-	local arriving = true
-	behaviours.pre_hit(function(hit)
-		if not arriving then
-			return true
-		end
-		behaviours.destroy(hit.missile)
-		return false
-	end)
-
 	behaviours.wait(settings.rise_ms, {
 		direction = STILL,
 		jumps_to = { x = e.position.x, y = rest_row(e, settings) },
@@ -105,7 +96,6 @@ behaviours.register("sandmaw_maw", {
 	})
 	e = behaviours.wait(1, { direction = STILL, ends_action = true })
 	maw_point = { x = e.position.x + MAW.x, y = e.position.y + MAW.y }
-	arriving = false
 
 	local raged = false
 	local spits = 0
