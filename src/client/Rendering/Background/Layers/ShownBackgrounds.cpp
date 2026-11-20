@@ -21,10 +21,10 @@ namespace rtype::client {
 
 namespace {
 
-/** @returns How many background pixels @p level scrolled since its biome
- * began. */
-float scrolledBy(const SkyLevel& level) {
-  return (level.scrollPosition - level.biomeSince) / BACKGROUND_PIXEL_SIZE;
+/** @returns How many background pixels @p level scrolled since the scroll
+ * @p since, in logical units. */
+float scrolledSince(const SkyLevel& level, float since) {
+  return (level.scrollPosition - since) / BACKGROUND_PIXEL_SIZE;
 }
 
 /** @brief Builds into @p built every background of @p catalog from
@@ -54,7 +54,7 @@ void ShownBackgrounds::show(const SkyLevel& level) {
   if (next != shown_) {
     const bool arrives = next != nullptr && next->entranceLayer().has_value();
     leaving_ = arrives ? shown_ : nullptr;
-    leavingScrolled_ = scrolledBy(level_);
+    leavingSince_ = level_.biomeSince;
     shown_ = next;
     if (shown_ != nullptr) {
       shown_->restart();
@@ -69,8 +69,9 @@ void ShownBackgrounds::advance(engine::Duration elapsed) {
   level_.scrollPosition +=
       level_.scrollSpeed * std::chrono::duration<float>(step).count();
   if (leaving_ != nullptr) {
-    leaving_->advance(step, BackgroundPace{.scrolled = leavingScrolled_,
-                                           .speedFactor = speedFactor_});
+    leaving_->advance(
+        step, BackgroundPace{.scrolled = scrolledSince(level_, leavingSince_),
+                             .speedFactor = speedFactor_});
   }
   if (shown_ == nullptr) {
     return;
@@ -138,7 +139,7 @@ LayeredBackground* ShownBackgrounds::builtNamed(std::string_view name) {
 }
 
 BackgroundPace ShownBackgrounds::paceOfTheShown() const {
-  return BackgroundPace{.scrolled = scrolledBy(level_),
+  return BackgroundPace{.scrolled = scrolledSince(level_, level_.biomeSince),
                         .speedFactor = speedFactor_};
 }
 

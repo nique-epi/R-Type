@@ -10,6 +10,11 @@ constexpr std::string_view SHIPPED_SKY = "space";
 constexpr std::string_view SHIPPED_PIT = "fosse";
 constexpr std::string_view BIOME_WITHOUT_A_BACKGROUND = "nowhere";
 
+/** @brief A background the repository ships that arrives through its
+ * entrance over another one in the middle of a level: Shelter 9, the
+ * second biome of the Ashlands. */
+constexpr std::string_view SHIPPED_SHELTER = "cendres_abri";
+
 /** @brief What the pack of a server may bring: a background named as the
  * sky, or a nebula of its own, each a sky of the planet the repository
  * ships. */
