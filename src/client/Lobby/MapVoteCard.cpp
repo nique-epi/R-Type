@@ -230,7 +230,7 @@ void MapVoteCard::press() {
 
 void MapVoteCard::pressBack() {
   if (isOpen()) {
-    voteAfter(room_->lobbyMaps().size() - 1);
+    voteAfter(room_->lobbyMaps().size());
   }
 }
 
@@ -283,6 +283,9 @@ std::string MapVoteCard::shownName() const {
 }
 
 std::optional<std::uint8_t> MapVoteCard::shownMap() const {
+  if (ballot_->requestedMap() == network::NO_MAP_VOTE) {
+    return std::nullopt;
+  }
   const std::optional<std::uint8_t> voted = votedMap();
   return voted.has_value()
              ? voted
@@ -299,10 +302,9 @@ std::optional<std::uint8_t> MapVoteCard::votedMap() const {
 }
 
 void MapVoteCard::voteAfter(std::size_t step) {
-  const std::size_t count = room_->lobbyMaps().size();
-  const std::size_t current = shownMap().value_or(FIRST_MAP_NUMBER);
-  ballot_->voteFor(static_cast<std::uint8_t>(
-      ((current - FIRST_MAP_NUMBER + step) % count) + FIRST_MAP_NUMBER));
+  const std::size_t choices = room_->lobbyMaps().size() + 1;
+  const std::size_t current = shownMap().value_or(network::NO_MAP_VOTE);
+  ballot_->voteFor(static_cast<std::uint8_t>((current + step) % choices));
 }
 
 }  // namespace rtype::client
