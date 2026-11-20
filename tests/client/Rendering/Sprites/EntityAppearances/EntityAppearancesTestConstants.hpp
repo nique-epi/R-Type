@@ -236,26 +236,20 @@ constexpr std::array<std::string_view, 15> FOSSE_SHEET_NAMES{
  * assets folder of the sources, and the name of every sheet in it. */
 constexpr std::string_view ASHLANDS_SHEETS_FROM_THE_ASSETS =
     "../resources/ashlands/entities";
-constexpr std::array<std::string_view, 37> ASHLANDS_SHEET_NAMES{
-    "alarm_beacon",      "ash_mother",
-    "atomic_breath",     "billboard",
-    "billboard_wreck",   "blast_door",
-    "blast_door_lower",  "brood_mite",
-    "cindermite",        "control_rods",
-    "coolant_leak",      "dunecrawler",
-    "dunecrawler_barb",  "fixbot",
-    "fixbot_wrench",     "geiger_mine",
-    "geiger_mine_shard", "glowheart",
-    "glowheart_drop",    "glowheart_tendril",
-    "live_cable",        "meltdown_beam",
-    "meltdown_lamp",     "rad_geyser",
-    "rail_turret",       "rail_turret_shot",
-    "sand_debris",       "sandmaw",
-    "sandmaw_boulder",   "scrapdrone",
-    "scrapdrone_bolt",   "searchlight",
-    "steam_vent",        "toxic_barrel",
-    "toxic_blast",       "toxic_puddle",
-    "vent_grille"};
+constexpr std::array<std::string_view, 38> ASHLANDS_SHEET_NAMES{
+    "alarm_beacon",  "ash_egg",          "ash_mother",
+    "atomic_breath", "billboard",        "billboard_wreck",
+    "blast_door",    "blast_door_lower", "brood_mite",
+    "cindermite",    "control_rods",     "coolant_leak",
+    "dunecrawler",   "dunecrawler_barb", "fixbot",
+    "fixbot_wrench", "geiger_mine",      "geiger_mine_shard",
+    "glowheart",     "glowheart_drop",   "glowheart_tendril",
+    "live_cable",    "meltdown_beam",    "meltdown_lamp",
+    "rad_geyser",    "rail_turret",      "rail_turret_shot",
+    "sand_debris",   "sandmaw",          "sandmaw_boulder",
+    "scrapdrone",    "scrapdrone_bolt",  "searchlight",
+    "steam_vent",    "toxic_barrel",     "toxic_blast",
+    "toxic_puddle",  "vent_grille"};
 
 /** @brief The sheet of the boss of the Pit, and the name its bar writes. */
 constexpr std::string_view NECROMANCER_SHEET = "necromancer";

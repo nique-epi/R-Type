@@ -11,7 +11,8 @@ layer = "enemy"
 hits = ["player"]
 pilot = "ash_mother_brood"
 
-# Her head and her body; only the rows of her open maw let a hit through.
+# Her head and her body; only the rows of her maw let a hit through, while
+# she does not strike.
 [[gameplay.hitbox.box]]
 width = 160
 height = 150
@@ -29,8 +30,8 @@ kind = "steady"
 top_speed = 900
 
 # She climbs out of the rubble at y 620 over 1.8 s, rests 1 s between two attacks, 0.45 s
-# once enraged, spreads her wings 1.5 s as she enrages, and her brood
-# holds 5 mites, 8 enraged.
+# once enraged, spreads her wings 1.5 s as she enrages; her brood holds 5
+# mites, 8 enraged, and her legs fling 3 eggs, 5 enraged, 0.2 s apart.
 [gameplay.behaviour]
 rest_y = 620
 rise_ms = 1800
@@ -39,6 +40,9 @@ enraged_rest_ms = 450
 rage_ms = 1500
 brood = 5
 enraged_brood = 8
+eggs = 3
+enraged_eggs = 5
+egg_gap_ms = 200
 
 [gameplay.health]
 points = 100
@@ -241,3 +245,38 @@ height = 162
 frames = 6
 spacing = 2
 frame_ms = 70
+
+# The Fling (attack 5): her front legs rise and swing up, the motion of her
+# Scythes, as they fling her eggs into the air; it hurts nothing itself.
+[appearance.attack_5.signal]
+left = 0
+top = 280
+width = 146
+height = 138
+frames = 2
+spacing = 2
+frame_ms = 120
+playback = "loop"
+afterwards = "stay"
+
+[appearance.attack_5.strike]
+left = 0
+top = 420
+width = 146
+height = 138
+frames = 3
+spacing = 2
+frame_ms = 80
+playback = "once"
+afterwards = "idle"
+
+[appearance.attack_5.recover]
+left = 0
+top = 560
+width = 146
+height = 138
+frames = 2
+spacing = 2
+frame_ms = 180
+playback = "once"
+afterwards = "idle"
