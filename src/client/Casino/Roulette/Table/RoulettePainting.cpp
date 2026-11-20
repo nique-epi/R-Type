@@ -51,17 +51,14 @@ void paintWheel(IInterfaceCanvas& canvas, const WheelPicture& wheel) {
 }
 
 /** @brief Paints the room, the croupier behind the table, then the table. */
-void paintRoom(IInterfaceCanvas& canvas, bool croupierInvites) {
+void paintRoom(IInterfaceCanvas& canvas, sf::IntRect croupier) {
   paintPicture(
       canvas,
       TextureArea{.assetId = ROULETTE_ROOM_ID, .rectangle = INTERFACE_AREA},
       {0, 0});
-  paintPicture(
-      canvas,
-      TextureArea{.assetId = BUTLER_SHEET_ID,
-                  .rectangle = croupierInvites ? CROUPIER_INVITING_FRAME
-                                               : CROUPIER_WAITING_FRAME},
-      CROUPIER_TOP_LEFT);
+  paintPicture(canvas,
+               TextureArea{.assetId = BUTLER_SHEET_ID, .rectangle = croupier},
+               CROUPIER_TOP_LEFT);
   paintPicture(canvas,
                TextureArea{.assetId = ROULETTE_TABLE_ID,
                            .rectangle = {{0, 0},
@@ -73,7 +70,7 @@ void paintRoom(IInterfaceCanvas& canvas, bool croupierInvites) {
 }  // namespace
 
 void paintRoulette(IInterfaceCanvas& canvas, const RouletteView& view) {
-  paintRoom(canvas, view.croupierInvites);
+  paintRoom(canvas, view.croupier);
   paintWheel(canvas, view.wheel);
   if (view.drawn.has_value()) {
     paintDrawnNumber(canvas, *view.drawn);

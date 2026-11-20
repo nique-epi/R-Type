@@ -2,6 +2,8 @@
 
 #include <SFML/System/Vector2.hpp>
 #include <array>
+#include <chrono>
+#include "TimeConstants.hpp"
 
 namespace rtype::client {
 
@@ -45,6 +47,14 @@ constexpr const char* BUTLER_SHEET_ID = "sprites/casino/majordome.png";
 constexpr sf::Vector2i BUTLER_FRAME_SIZE(80, 112);
 constexpr int BUTLER_FRAMES_PER_POSE = 4;
 constexpr int BUTLER_FLOOR_ROW = 108;
+
+/** @brief The pace of the butler: an idle frame every
+ * BUTLER_IDLE_FRAME_TIME, a frame of his greeting or of his bow every
+ * BUTLER_GESTURE_FRAME_TIME. */
+constexpr engine::Duration BUTLER_IDLE_FRAME_TIME =
+    std::chrono::milliseconds(250);
+constexpr engine::Duration BUTLER_GESTURE_FRAME_TIME =
+    std::chrono::milliseconds(150);
 
 /**
  * @brief The sheet of the chips of the selector, as the cashier and the
@@ -95,8 +105,8 @@ constexpr const char* CASINO_PROPS_SHEET_ID = "sprites/casino/props.png";
 /** @brief Every picture of the casino a screen draws, which the title loads,
  * so the casino opens over the waiting room without loading. */
 constexpr std::array CASINO_TEXTURES{
-    CASINO_DOORS_CLOSED_ID, CASINO_DOORS_OPEN_ID,  HALL_PICTURE_ID,
-    HALL_BOXERS_SHEET_ID,   CASHIER_ROOM_ID,       TELLER_SHEET_ID,
+    CASINO_DOORS_CLOSED_ID, CASINO_DOORS_OPEN_ID,   HALL_PICTURE_ID,
+    HALL_BOXERS_SHEET_ID,   CASHIER_ROOM_ID,        TELLER_SHEET_ID,
     BUTLER_SHEET_ID,        CHIP_SELECTOR_SHEET_ID, ROULETTE_ROOM_ID,
     ROULETTE_TABLE_ID,      WHEEL_BOWL_ID,          WHEEL_ROTOR_ID,
     WHEEL_ROTOR_TURN_ID,    WHEEL_WHOLE_ID,         WHEEL_BALL_ID,

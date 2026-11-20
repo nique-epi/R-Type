@@ -18,9 +18,16 @@ constexpr sf::Vector2i WHEEL_TOP_LEFT(18, 89);
 
 /**
  * @brief The butler, croupier behind the table: the top CROUPIER_HEIGHT rows
- * of a frame of his sheet, the table hiding the rest; his greeting while the
- * bets are open, his first idle frame otherwise.
+ * of a frame of his sheet, the table hiding the rest. He stands idle, round
+ * and round; while the bets are open, he greets the players once every
+ * CROUPIER_INVITE_CYCLE, his greeting starting CROUPIER_INVITE_AFTER into
+ * it. With less motion, he holds a frame of his greeting while the bets are
+ * open, his first idle frame otherwise.
  */
+constexpr engine::Duration CROUPIER_INVITE_CYCLE =
+    std::chrono::milliseconds(2600);
+constexpr engine::Duration CROUPIER_INVITE_AFTER =
+    std::chrono::milliseconds(2000);
 constexpr sf::Vector2i CROUPIER_TOP_LEFT(222, 6);
 constexpr int CROUPIER_HEIGHT = 76;
 constexpr sf::IntRect CROUPIER_INVITING_FRAME({2 * BUTLER_FRAME_SIZE.x,

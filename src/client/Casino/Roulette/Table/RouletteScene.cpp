@@ -1,12 +1,16 @@
 #include "RouletteScene.hpp"
+#include <SFML/Graphics/Rect.hpp>
 #include <algorithm>
 #include <cctype>
 #include <cstdint>
 #include <optional>
 #include <string>
 #include <vector>
+#include "ButlerPose.hpp"
+#include "CasinoSpriteConstants.hpp"
 #include "ChipsAtHand.hpp"
 #include "ClothPlace.hpp"
+#include "MotionPreference.hpp"
 #include "RouletteBand.hpp"
 #include "RouletteBarStates.hpp"
 #include "RoulettePhase.hpp"
@@ -15,6 +19,7 @@
 #include "RouletteScreenConstants.hpp"
 #include "RouletteTexts.hpp"
 #include "RouletteView.hpp"
+#include "TimeConstants.hpp"
 #include "WheelMoment.hpp"
 #include "WheelMotion.hpp"
 #include "WheelPicture.hpp"
@@ -104,6 +109,36 @@ std::string roomNameOf(const RouletteReading& reading) {
   return name;
 }
 
+/** @returns The frame @p frame of @p row of the sheet of the butler, cut at
+ * CROUPIER_HEIGHT. */
+sf::IntRect croupierFrame(int row, int frame) {
+  return {{frame * BUTLER_FRAME_SIZE.x, row * BUTLER_FRAME_SIZE.y},
+          {BUTLER_FRAME_SIZE.x, CROUPIER_HEIGHT}};
+}
+
+/** @returns The frame of the croupier at the time of the master of
+ * @p reading: idle, round and round, and, while the bets are open, his
+ * greeting at the end of each CROUPIER_INVITE_CYCLE; the frames of less
+ * motion, or before the first state of the room, held still. */
+sf::IntRect croupierFrameOf(const RouletteReading& reading) {
+  if (reading.motion == MotionPreference::Reduced ||
+      !reading.room.has_value()) {
+    return betsOpen(reading) ? CROUPIER_INVITING_FRAME : CROUPIER_WAITING_FRAME;
+  }
+  const engine::Duration now = reading.room->serverTime.time_since_epoch();
+  const engine::Duration intoInvite = now % CROUPIER_INVITE_CYCLE;
+  if (betsOpen(reading) && intoInvite >= CROUPIER_INVITE_AFTER) {
+    const auto frame =
+        (intoInvite - CROUPIER_INVITE_AFTER) / BUTLER_GESTURE_FRAME_TIME;
+    return croupierFrame(static_cast<int>(ButlerPose::Greeting),
+                         static_cast<int>(std::min<engine::Duration::rep>(
+                             frame, BUTLER_FRAMES_PER_POSE - 1)));
+  }
+  return croupierFrame(static_cast<int>(ButlerPose::Idle),
+                       static_cast<int>((now / BUTLER_IDLE_FRAME_TIME) %
+                                        BUTLER_FRAMES_PER_POSE));
+}
+
 }  // namespace
 
 RouletteBarStates barStatesOf(const RouletteReading& reading) {
@@ -117,7 +152,7 @@ RouletteBarStates barStatesOf(const RouletteReading& reading) {
 
 RouletteView rouletteViewOf(const RouletteReading& reading) {
   return RouletteView{
-      .croupierInvites = betsOpen(reading),
+      .croupier = croupierFrameOf(reading),
       .wheel = wheelOf(reading),
       .bets = reading.bets,
       .cursor = betsOpen(reading) ? std::optional<ClothPlace>(reading.cursor)

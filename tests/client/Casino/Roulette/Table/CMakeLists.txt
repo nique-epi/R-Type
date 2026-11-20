@@ -1,4 +1,5 @@
 target_sources(client_screen_tests PRIVATE
+  RouletteSceneTest.cpp
   RouletteScreenFixture.cpp
   RouletteScreenFixtures.cpp
   RouletteScreenTest.cpp

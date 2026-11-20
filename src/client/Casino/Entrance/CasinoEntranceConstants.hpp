@@ -26,9 +26,7 @@ constexpr sf::Vector2i CASINO_BUTLER_TOP_LEFT(396, 176);
  * the greeting and open with the bow, and the hall opens once the bow
  * ended.
  */
-constexpr engine::Duration BUTLER_IDLE_FRAME_TIME =
-    std::chrono::milliseconds(250);
-constexpr engine::Duration OPENING_FRAME_TIME = std::chrono::milliseconds(150);
+constexpr engine::Duration OPENING_FRAME_TIME = BUTLER_GESTURE_FRAME_TIME;
 constexpr int OPENING_POSE_COUNT = 2;
 constexpr engine::Duration DOORS_OPEN_AFTER =
     OPENING_FRAME_TIME * BUTLER_FRAMES_PER_POSE;
