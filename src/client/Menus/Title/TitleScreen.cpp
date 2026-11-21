@@ -8,8 +8,6 @@
 #include "ClientVersionConstants.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "IScreenNavigator.hpp"
-#include "KopecksLabelConstants.hpp"
-#include "KopecksPainting.hpp"
 #include "Menu.hpp"
 #include "MenuBuilder.hpp"
 #include "MenuScreenIdConstants.hpp"
@@ -21,10 +19,9 @@
 #include "SignInScreenIdConstants.hpp"
 #include "SquadronConstants.hpp"
 #include "TimeConstants.hpp"
-#include "TitleScreenConstants.hpp"
+#include "TitleAccountChipsParts.hpp"
 #include "TitleScreenParts.hpp"
 #include "UpdateScreenIdConstants.hpp"
-#include "WalletPurse.hpp"
 
 namespace rtype::client {
 
@@ -45,23 +42,29 @@ TitleScreen::TitleScreen(TitleScreenParts parts,
     : canvas_(std::move(canvas)),
       playfieldPointAt_(std::move(parts.playfieldPointAt)),
       settings_(&parts.settings.get()),
-      wallet_(&parts.wallet.get()),
       navigator_(&parts.navigator.get()),
       account_(&parts.account.get()),
       deviceLinks_(&parts.deviceLinks.get()),
       signInReturn_(&parts.signInReturn.get()),
       notice_(parts.notice),
       menu_(buildMenu(parts.sounds.get(), parts.playStart)),
+      accountChips_(TitleAccountChipsParts{.account = parts.account.get(),
+                                           .wallet = parts.wallet,
+                                           .sounds = parts.sounds,
+                                           .signIn = [this] { signIn(); },
+                                           .signOut = [this] { signOut(); }}),
       squadron_(parts.motion, parts.seed, parts.squadronStart) {
   repaint();
 }
 
 void TitleScreen::handleEvent(const sf::Event& event) {
+  if (accountChips_.handleEvent(event, playfieldPointAt_)) {
+    return;
+  }
   menu_.handleEvent(event, playfieldPointAt_);
 }
 
 void TitleScreen::update(engine::Duration elapsed) {
-  showAccount();
   menu_.advance(elapsed);
   squadron_.advance(elapsed);
   askForNotice();
@@ -88,8 +91,6 @@ Menu TitleScreen::buildMenu(ISoundPlayer& sounds, PlayStart playStart) {
           [&navigator] { navigator.push(LEADERBOARD_SCREEN); })
       .button({.label = SETTINGS_LABEL, .description = SETTINGS_DESCRIPTION},
               [&navigator] { navigator.push(OPTIONS_SCREEN); })
-      .button({.label = SIGN_IN_LABEL, .description = SIGN_IN_DESCRIPTION},
-              [this] { signInOrOut(); })
       .cancelButton({.label = QUIT_LABEL, .description = QUIT_DESCRIPTION},
                     [&navigator] { navigator.push(QUIT_CONFIRMATION_SCREEN); })
       .illustration(SQUADRON_BOX_SIZE)
@@ -97,25 +98,15 @@ Menu TitleScreen::buildMenu(ISoundPlayer& sounds, PlayStart playStart) {
       .build();
 }
 
-void TitleScreen::signInOrOut() {
-  if (account_->signedIn()) {
-    deviceLinks_->askSignOut(account_->token());
-    account_->signOut();
-    return;
-  }
+void TitleScreen::signIn() {
+  handleEvent(sf::Event::FocusLost{});
   *signInReturn_ = SignInReturn{};
   navigator_->push(SIGN_IN_SCREEN);
 }
 
-void TitleScreen::showAccount() {
-  if (!account_->signedIn()) {
-    menu_.setLabel(ACCOUNT_BUTTON, SIGN_IN_LABEL);
-    menu_.setDescription(ACCOUNT_BUTTON, SIGN_IN_DESCRIPTION);
-    return;
-  }
-  menu_.setLabel(ACCOUNT_BUTTON,
-                 std::string{SIGN_OUT_START} + account_->nickname());
-  menu_.setDescription(ACCOUNT_BUTTON, SIGN_OUT_DESCRIPTION);
+void TitleScreen::signOut() {
+  deviceLinks_->askSignOut(account_->token());
+  account_->signOut();
 }
 
 void TitleScreen::askForNotice() {
@@ -139,8 +130,7 @@ void TitleScreen::repaint() {
     squadron_.paint(*canvas_, squadronBox->position,
                     playerPaletteOf(*settings_));
   }
-  paintKopecksBalance(*canvas_, KOPECKS_BALANCE_TOP_RIGHT,
-                      walletKopecks(*wallet_));
+  accountChips_.paint(*canvas_);
   canvas_->display();
 }
 

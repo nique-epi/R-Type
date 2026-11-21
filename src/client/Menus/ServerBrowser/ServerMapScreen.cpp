@@ -65,9 +65,7 @@ Button::Text backText() {
 /** @returns Where a chip with @p text lies, ending at @p right on the row of
  * the chips of the map. */
 sf::IntRect chipAreaEndingAt(const Button::Text& text, int right) {
-  sf::IntRect area = MenuBuilder::chipArea(text, right);
-  area.position.y = SERVER_MAP_CHIPS_TOP;
-  return area;
+  return MenuBuilder::chipArea(text, right, SERVER_MAP_CHIPS_TOP);
 }
 
 /** @returns Where the chip of @p text lies, just left of @p rightNeighbour. */

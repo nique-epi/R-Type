@@ -14,6 +14,8 @@ export const en: Dictionary = {
     navigation: 'Main',
     logo: 'R-Type',
     download: 'Download',
+    signIn: 'Sign in',
+    signOut: 'Sign out',
   },
   download: { systems: 'System', progress: 'Download progress' },
   gamesTable: {

@@ -1,7 +1,7 @@
 import { master } from '../../clients';
 import { type ApiResponse, handleApiError } from '../../helpers';
+import { bearerHeadersOf } from '../../helpers/bearer-headers';
 import type { DeviceLinkDecision, DeviceLinkState } from '../../schemas';
-import { bearerHeadersOf } from './bearer';
 import type { DeviceLinkRequest } from './readDeviceLink';
 
 export type DeviceLinkDecisionRequest = DeviceLinkRequest & {

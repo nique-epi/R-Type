@@ -8,13 +8,13 @@
 #include "IScreenNavigator.hpp"
 #include "ISoundPlayer.hpp"
 #include "IUpdateNotice.hpp"
-#include "IWallet.hpp"
 #include "Menu.hpp"
 #include "PlayStart.hpp"
 #include "PlayfieldMapping.hpp"
 #include "SignInReturn.hpp"
 #include "Squadron.hpp"
 #include "TimeConstants.hpp"
+#include "TitleAccountChips.hpp"
 #include "TitleScreenParts.hpp"
 
 namespace rtype::client {
@@ -35,6 +35,11 @@ struct PlayerSettings;
  * are painted once when the screen is built, so its first frame already shows
  * them. Once the update module says a release waits, it puts the update
  * panel over itself; once it says notes wait, WHAT'S NEW; each once.
+ *
+ * The account stands outside the column, in TitleAccountChips: SIGN IN in the
+ * top-right corner for a guest, which opens SIGN_IN_SCREEN over the title;
+ * for a player signed in, the balance in that corner and SIGN OUT in the
+ * bottom-right corner, which closes the session on the master too.
  */
 class TitleScreen : public IScreen {
  public:
@@ -50,13 +55,12 @@ class TitleScreen : public IScreen {
  private:
   [[nodiscard]] Menu buildMenu(ISoundPlayer& sounds, PlayStart playStart);
 
-  /** @brief Signs out the player signed in, on the master too, or opens
-   * SIGN_IN_SCREEN for a guest. */
-  void signInOrOut();
+  /** @brief Opens SIGN_IN_SCREEN over the title, once its controls dropped
+   * what they held. */
+  void signIn();
 
-  /** @brief Writes on the account bar what it does now: SIGN IN, or SIGN OUT
-   * and the nickname. */
-  void showAccount();
+  /** @brief Signs out the player signed in, on the master too. */
+  void signOut();
   void repaint();
   /** @brief Puts the update panel over the title once a release waits, or
    * else WHAT'S NEW once notes wait; each once per title. */
@@ -65,7 +69,6 @@ class TitleScreen : public IScreen {
   std::unique_ptr<IInterfaceCanvas> canvas_;
   PlayfieldMapping playfieldPointAt_;
   const PlayerSettings* settings_;
-  const IWallet* wallet_;
   IScreenNavigator* navigator_;
   IAccountSession* account_;
   IDeviceLinkFlow* deviceLinks_;
@@ -74,6 +77,7 @@ class TitleScreen : public IScreen {
   bool updateAsked_{};
   bool notesAsked_{};
   Menu menu_;
+  TitleAccountChips accountChips_;
   Squadron squadron_;
 };
 

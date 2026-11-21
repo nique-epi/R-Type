@@ -13,6 +13,7 @@ import {
   type SignUp,
   type SignUpOutcome,
 } from '@/lib/rtype/sign-up';
+import { AccountSwitchLink } from './account-switch-link';
 import { SignUpForm, type SignUpFormLabels } from './sign-up-form';
 
 /** An outcome with no account: why the master gave none. */
@@ -26,6 +27,9 @@ export type SignUpSectionLabels = {
   created: { title: string; welcome: string };
   home: string;
   download: string;
+  /** "Déjà un compte ?", before the link to the sign-in page. */
+  haveAccount: string;
+  signIn: string;
 };
 
 export type SignUpSectionProps = {
@@ -33,6 +37,8 @@ export type SignUpSectionProps = {
   signUp: SignUp;
   homeHref: string;
   downloadHref: string;
+  /** The sign-in page, for a pilot who already has an account. */
+  signInHref: string;
   labels: SignUpSectionLabels;
 };
 
@@ -40,12 +46,14 @@ export type SignUpSectionProps = {
  * The sign-up page under its hero: the form, then the account the master
  * created. A try that gave no account says why over the form, which keeps
  * what was typed; once the account exists the form is gone, and the
- * passwords with it.
+ * passwords with it. Under the form, and after the welcome, a link leads to
+ * the sign-in page.
  */
 export function SignUpSection({
   signUp,
   homeHref,
   downloadHref,
+  signInHref,
   labels,
 }: SignUpSectionProps) {
   const titleId = useId();
@@ -92,27 +100,35 @@ export function SignUpSection({
             {labels.home}
           </Button>
           <Button href={downloadHref}>{labels.download}</Button>
+          <Button href={signInHref}>{labels.signIn}</Button>
         </div>
       </section>
     );
   }
 
   return (
-    <SignUpForm
-      onSubmit={create}
-      pending={pending}
-      labels={labels.form}
-      problem={
-        problem ? (
-          <Notice
-            role="alert"
-            tone="warning"
-            title={labels.problems[problem].title}
-          >
-            {labels.problems[problem].text}
-          </Notice>
-        ) : null
-      }
-    />
+    <div className="grid gap-6">
+      <SignUpForm
+        onSubmit={create}
+        pending={pending}
+        labels={labels.form}
+        problem={
+          problem ? (
+            <Notice
+              role="alert"
+              tone="warning"
+              title={labels.problems[problem].title}
+            >
+              {labels.problems[problem].text}
+            </Notice>
+          ) : null
+        }
+      />
+      <AccountSwitchLink
+        prompt={labels.haveAccount}
+        href={signInHref}
+        label={labels.signIn}
+      />
+    </div>
   );
 }
