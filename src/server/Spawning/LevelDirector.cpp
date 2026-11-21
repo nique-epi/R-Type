@@ -13,6 +13,7 @@
 #include "EntityDestruction.hpp"
 #include "EntityType.hpp"
 #include "EventBus.hpp"
+#include "GameRuleConstants.hpp"
 #include "LevelChange.hpp"
 #include "LevelCheckpoint.hpp"
 #include "LevelDirectorConstants.hpp"
@@ -94,6 +95,7 @@ LevelDirector::LevelDirector(LevelDirectorParts parts)
       startOfStage(entry_, parts_.level, parts_.startingStage);
   if (progress_.checkpoint.has_value()) {
     restartFromCheckpoint();
+    progress_.continuesLeft = identifiers::TEAM_CONTINUES;
   } else {
     openInBiome(progress_, entry_);
   }
@@ -124,9 +126,10 @@ bool LevelDirector::failed() const {
 }
 
 bool LevelDirector::restartFromCheckpoint() {
-  if (!run_.restartFromCheckpoint()) {
+  if (progress_.continuesLeft == 0 || !run_.restartFromCheckpoint()) {
     return false;
   }
+  --progress_.continuesLeft;
   removeEveryBodyButTheShips();
   placer_.restartAt(progress_.scroll.position());
   progress_.biomeSince = std::min(
@@ -183,7 +186,8 @@ void LevelDirector::announceChange() {
                         .scrollSpeed = progress_.scroll.speed(),
                         .biomeSince = progress_.biomeSince,
                         .transitionLeft = transitionLeftOf(progress_),
-                        .band = band()});
+                        .band = band(),
+                        .continuesLeft = progress_.continuesLeft});
 }
 
 void LevelDirector::removeEveryBodyButTheShips() const {

@@ -54,7 +54,7 @@ constexpr std::uint32_t PROTOCOL_ID = 0x52545950;
  * frame, see the Compression section; version 3 adds the outcome of a game to
  * GameEnded, see the Version 3 section.
  */
-constexpr std::uint8_t PROTOCOL_VERSION = 19;
+constexpr std::uint8_t PROTOCOL_VERSION = 20;
 
 /**
  * @brief The session token of a datagram sent before the connection is
@@ -659,6 +659,7 @@ constexpr std::string_view SCROLL_POSITION_FIELD = "scrollPosition";
 constexpr std::string_view SCROLL_SPEED_FIELD = "scrollSpeed";
 constexpr std::string_view BIOME_SINCE_FIELD = "biomeSince";
 constexpr std::string_view BAND_FIELD = "band";
+constexpr std::string_view CONTINUES_LEFT_FIELD = "continuesLeft";
 
 /** @brief The bottom row of the band of a LevelStatus whose biome closes
  * nothing: past any playfield, so the ships fly down to the bottom of the

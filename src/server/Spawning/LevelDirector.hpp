@@ -87,8 +87,11 @@ class LevelDirector {
    * before the checkpoint at the latest, as a level that opens in a biome:
    * nothing is left behind the entrance of a background after a restart, so
    * the players start inside it.
-   * @returns Whether the level had reached a checkpoint and has not failed;
-   * nothing changes otherwise.
+   * Each restart spends one of the continues of the team
+   * (LevelProgress::continuesLeft), and the change of the level that follows
+   * tells how many are left.
+   * @returns Whether the level had reached a checkpoint, has not failed and
+   * its team held a continue; nothing changes otherwise.
    */
   bool restartFromCheckpoint();
 

@@ -221,4 +221,10 @@ constexpr std::size_t SECOND_STAGE_FROM_ZERO = 1;
 constexpr float SCROLL_OF_THE_DECLARED_START = 600.0F;
 constexpr std::chrono::seconds TRAVELLED_TO_THE_DECLARED_START{5};
 
+/** @brief The continues of a team, 3, and what is left of them after one
+ * restart from a checkpoint and after three. */
+constexpr std::uint8_t CONTINUES_AFTER_ONE_RESTART = 2;
+constexpr std::uint8_t CONTINUES_AFTER_THREE_RESTARTS = 0;
+constexpr std::size_t RESTARTS_A_TEAM_HAS = 3;
+
 }  // namespace rtype::server::testing

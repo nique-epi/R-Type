@@ -41,6 +41,7 @@ struct LevelStatus {
   std::uint16_t transitionLeft{};
   std::uint16_t bandTop{};
   std::uint16_t bandBottom{OPEN_BAND_BOTTOM};
+  std::uint8_t continuesLeft{};
 
   bool operator==(const LevelStatus&) const = default;
 };

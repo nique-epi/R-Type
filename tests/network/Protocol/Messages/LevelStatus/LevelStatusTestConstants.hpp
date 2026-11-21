@@ -24,6 +24,12 @@ constexpr std::uint16_t LONGEST_TRANSITION_LEFT =
 constexpr std::uint16_t STATUS_BAND_TOP = 192;
 constexpr std::uint16_t STATUS_BAND_BOTTOM = 848;
 
+/** @brief Continues left to the team of a status: 2 of its 3, all 3, and one
+ * more than a team ever gets. */
+constexpr std::uint8_t STATUS_CONTINUES_LEFT = 2;
+constexpr std::uint8_t ALL_THE_CONTINUES = 3;
+constexpr std::uint8_t ONE_CONTINUE_TOO_MANY = 4;
+
 /** @brief A scroll that is paused, and values no scroll can have. */
 constexpr float PAUSED_SCROLL_SPEED = 0.0F;
 constexpr float NEGATIVE_SCROLL = -1.0F;
