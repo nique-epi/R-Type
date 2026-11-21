@@ -38,7 +38,7 @@ enraged_mites = 5
 mite_gap_ms = 200
 
 [gameplay.health]
-points = 80
+points = 180
 
 [gameplay.score]
 points = 15000

@@ -60,7 +60,7 @@ recover_ms = 480
 calm_ms = 1200
 
 [gameplay.health]
-points = 220
+points = 300
 
 [gameplay.score]
 points = 20000
