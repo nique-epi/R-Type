@@ -56,6 +56,37 @@ export function typedUserCodeOf(typed: string, previous: string): string {
 }
 
 /**
+ * Where the caret goes in `shown`, the code `typedUserCodeOf` wrote, after the
+ * player typed `typed` with the caret at `caret`: after as many letters and
+ * digits as stood before it, the dash put in left aside; at the end of `shown`
+ * when the caret stood after the last of them, so typing at the end goes on
+ * after the dash.
+ */
+export function userCodeCaretOf(
+  typed: string,
+  caret: number,
+  shown: string,
+): number {
+  const before = typed
+    .slice(0, caret)
+    .toUpperCase()
+    .replaceAll(NOT_A_CODE_CHARACTER, '').length;
+  if (before >= shown.replaceAll(USER_CODE_SEPARATOR, '').length) {
+    return shown.length;
+  }
+  let passed = 0;
+  let index = 0;
+  while (passed < before) {
+    if (shown[index] !== USER_CODE_SEPARATOR) {
+      passed += 1;
+    }
+    index += 1;
+  }
+
+  return index;
+}
+
+/**
  * How a decision on a link ended, as the page reads it: the link connected or
  * refused, or why the decision was not written. `decided` is the 409 of the
  * master, `unknown` its 404, `signedOut` its 401.

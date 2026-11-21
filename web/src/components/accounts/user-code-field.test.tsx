@@ -35,6 +35,20 @@ describe('UserCodeField', () => {
     expect(field.value).toBe('XCMH');
   });
 
+  it('keeps the caret where the player types inside the code', () => {
+    const field = renderField('XCMH-CXCZ');
+
+    fireEvent.change(field, {
+      target: { value: 'kMH-CXCZ', selectionStart: 1, selectionEnd: 1 },
+    });
+    fireEvent.change(field, {
+      target: { value: 'KqMHC-XCZ', selectionStart: 2, selectionEnd: 2 },
+    });
+
+    expect(field.value).toBe('KQMH-CXCZ');
+    expect(field.selectionStart).toBe(2);
+  });
+
   it('writes the code the page opened with as the game shows it', () => {
     expect(renderField('xcmhcxcz').value).toBe('XCMH-CXCZ');
   });
