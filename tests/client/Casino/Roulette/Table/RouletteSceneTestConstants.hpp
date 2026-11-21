@@ -5,6 +5,7 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <string_view>
 
 namespace rtype::client::testing {
 
@@ -54,5 +55,10 @@ constexpr std::uint32_t PAYOUT_AT_THE_THRESHOLD = 2525;
 constexpr std::uint32_t PAYOUT_SHORT_OF_THE_THRESHOLD = 2524;
 constexpr std::uint32_t GAIN_AT_THE_THRESHOLD = 2500;
 constexpr std::chrono::seconds AS_THE_BANNER_LEAVES{4};
+
+/** @brief The value the roster writes for ACE: its stake of 25 chips while
+ * the wheel turns, and its payout of 900 chips after + once it stopped. */
+constexpr std::string_view STAKE_OF_ACE_TEXT = "25";
+constexpr std::string_view GAIN_OF_A_STRAIGHT_TEXT = "+900";
 
 }  // namespace rtype::client::testing
