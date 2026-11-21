@@ -201,6 +201,8 @@ local THE_LINE: { Wave } = {
 	{ at = 13320, sheet = "shroud", rows = { 300, 680 } },
 	{ at = 13800, sheet = "carrion", rows = { 260, 460, 660 } },
 	{ at = 14280, sheet = "shroud", rows = { 480 } },
+	{ at = 14760, sheet = "carrion", rows = { 300, 500, 700 } },
+	{ at = 15240, sheet = "shroud", rows = { 360, 620 } },
 }
 
 -- Kegs along the track.
