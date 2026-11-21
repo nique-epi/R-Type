@@ -7,7 +7,8 @@
 #include "ScreenId.hpp"
 
 /** @brief The screens the menus module registers. */
-constexpr std::array<rtype::client::ScreenId, 14> MENU_SCREENS{
+constexpr std::array<rtype::client::ScreenId, 15> MENU_SCREENS{
+    rtype::client::HEADPHONES_SCREEN,
     rtype::client::INTRO_SCREEN,
     rtype::client::TITLE_SCREEN,
     rtype::client::TITLE_AFTER_INTRO_SCREEN,
