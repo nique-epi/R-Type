@@ -12,6 +12,8 @@
 #include "EnemyStrength.hpp"
 #include "EntityOrders.hpp"
 #include "EntityOrdersParts.hpp"
+#include "ExtraLifeKeeper.hpp"
+#include "ExtraLifeKeeperParts.hpp"
 #include "GameContext.hpp"
 #include "GameInstanceConstants.hpp"
 #include "GameSettings.hpp"
@@ -202,6 +204,17 @@ std::unique_ptr<LifeKeeper> lifeKeeperFor(const MatchSystemsParts& parts) {
 }
 
 /** @returns The keeper of the look items the players of @p world win. */
+/** @returns The keeper of the extra lives of @p parts: it subscribes after
+ * the ScoreKeeper of the game, which the game built before any world. */
+std::unique_ptr<ExtraLifeKeeper> extraLifeKeeperFor(
+    const MatchSystemsParts& parts) {
+  const GameContext& game = parts.game.get();
+  return std::make_unique<ExtraLifeKeeper>(
+      ExtraLifeKeeperParts{.events = game.events.get(),
+                           .world = parts.world.get(),
+                           .roster = game.roster.get()});
+}
+
 std::unique_ptr<LookItemKeeper> lookItemKeeperFor(GameContext& game,
                                                   game::World& world) {
   return std::make_unique<LookItemKeeper>(
@@ -228,6 +241,7 @@ MatchSystems::MatchSystems(const MatchSystemsParts& parts)
       levelDirector_(levelDirectorFor(game_, world_, *entityOrders_)),
       bossStage_(bossStageFor(game_, world_, *entityOrders_)),
       lifeKeeper_(lifeKeeperFor(parts)),
+      extraLifeKeeper_(extraLifeKeeperFor(parts)),
       lookItemKeeper_(lookItemKeeperFor(game_, world_)) {}
 
 void MatchSystems::onTick(IHitArbitration& arbitration, std::uint32_t tick) {

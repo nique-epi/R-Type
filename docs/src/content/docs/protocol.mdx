@@ -500,6 +500,7 @@ A `GameEvent` drives sounds and effects on the client, never a game rule. `event
 | 1 | `EntityDamaged`: hit, still alive | 0 | the entity |
 | 2 | `PlayerHit`: the player lost a life | the player | 0 |
 | 3 | `PlayerEliminated`: no life left, the player now watches | the player | 0 |
+| 4 | `ExtraLifeWon`: the score of the player passed a step of the extra lives, and it holds one life more | the player | 0 |
 
 An `EntityDamaged` naming an entity the client does not know changes nothing. The explosion of a ship that is hit comes from its `EntityDestroyed` (`Killed`).
 
@@ -915,7 +916,7 @@ Version 19 gives `LevelStatus` three last fields, each a `u16`: `transitionLeft`
 
 ## Version 20
 
-Version 20 gives `LevelStatus` a last field, `continuesLeft`, a `u8`: the times the team of the level may still go back to its last checkpoint after losing every life (see [Level status](#level-status)). A peer of version 19 would read the new byte as a trailing byte and drop the status, so `version` became 20, and the server answers a client of version 19 with `ConnectionRefused` (`IncompatibleVersion`). The layout of the header and of every other message is the same as in version 19.
+Version 20 gives `LevelStatus` a last field, `continuesLeft`, a `u8`: the times the team of the level may still go back to its last checkpoint after losing every life (see [Level status](#level-status)), and `GameEvent` a fourth kind, `ExtraLifeWon` (4), when the score of a player wins it a life. A peer of version 19 would read the new byte as a trailing byte and drop the status, and would refuse the new kind, so `version` became 20, and the server answers a client of version 19 with `ConnectionRefused` (`IncompatibleVersion`). The layout of the header and of every other message is the same as in version 19.
 
 ## Implementation status
 

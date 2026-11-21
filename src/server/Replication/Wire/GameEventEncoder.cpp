@@ -28,6 +28,11 @@ EventMessage GameEventEncoder::encode(const game::PlayerElimination& event) {
                          event.playerNumber, identifiers::NO_ENTITY_ID);
 }
 
+EventMessage GameEventEncoder::encode(const game::ExtraLifeWon& event) {
+  return encodeGameEvent(network::GameEventKind::ExtraLifeWon,
+                         event.playerNumber, identifiers::NO_ENTITY_ID);
+}
+
 EventMessage GameEventEncoder::encodeGameEvent(network::GameEventKind kind,
                                                std::uint8_t playerNumber,
                                                std::uint32_t entityId) {

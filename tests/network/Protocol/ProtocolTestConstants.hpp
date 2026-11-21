@@ -256,6 +256,9 @@ constexpr std::uint8_t SECOND_MAP = 2;
  */
 constexpr std::uint32_t SOME_INPUT_NUMBER = 0x01020304;
 constexpr std::uint16_t SOME_EVENT_NUMBER = 0x0102;
+/** @brief The player and the entity a GameEvent of the tests names. */
+constexpr std::uint8_t SECOND_PLAYER_OF_A_GAME_EVENT = 2;
+constexpr std::uint32_t SOME_ENTITY_OF_A_GAME_EVENT = 9;
 
 /**
  * @brief An attack number of an EnemyAction.

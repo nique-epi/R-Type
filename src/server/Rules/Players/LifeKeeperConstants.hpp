@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <cstddef>
+#include <cstdint>
 #include "TimeConstants.hpp"
 
 namespace rtype::server {
@@ -38,5 +39,16 @@ constexpr engine::Duration INVULNERABILITY_DURATION = std::chrono::seconds(2);
  */
 constexpr std::size_t INVULNERABILITY_TICKS =
     engine::wholeTicksIn(INVULNERABILITY_DURATION);
+
+/**
+ * @brief The score at which a player wins its first extra life, and the score
+ * it wins one more at each time after: 30000, 90000, 150000 and so on, as
+ * arcade shooters give a life at fixed steps of the score. A player never
+ * holds more than identifiers::HIGHEST_LIVES.
+ *
+ * Provisional: gameplay will tune them against the scores of whole games.
+ */
+constexpr std::uint32_t FIRST_EXTRA_LIFE_SCORE = 30000;
+constexpr std::uint32_t EXTRA_LIFE_SCORE_STEP = 60000;
 
 }  // namespace rtype::server
