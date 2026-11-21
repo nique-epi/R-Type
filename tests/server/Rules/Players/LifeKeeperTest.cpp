@@ -32,6 +32,19 @@ TEST_F(LifeKeeperFixture, TakesALifeWhenItsShipTouchesABydo) {
 }
 
 /**
+ * Given a player who never lost a ship
+ * When its ship touches a Bydo
+ * Then the player counts one death
+ */
+TEST_F(LifeKeeperFixture, CountsADeathForTheShipLost) {
+  const ConnectedPlayer& player = join(FIRST_PLAYER);
+
+  touchABydo(player);
+
+  EXPECT_EQ(player.deaths, ONE_DEATH);
+}
+
+/**
  * Given a player with a ship
  * When its ship touches a Bydo
  * Then the ship and the Bydo both explode, once each

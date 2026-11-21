@@ -11,15 +11,13 @@ constexpr std::array<std::string_view, 4> NICKNAMES{"ACE", "BOB", "CID", "DEE"};
 constexpr std::string_view KEEPER_DIFFICULTY = "normal";
 constexpr std::uint32_t KEEPER_SCORE = 1200;
 constexpr std::uint32_t KEEPER_BOUNTY = 650;
-constexpr std::uint8_t NO_LIFE = 0;
 constexpr std::uint32_t EVERY_LIFE_LOST = 3;
 constexpr std::uint8_t THREE_AT_THE_START = 3;
 
-/** @brief A game whose rules give five lives, a player who has two left at
- * the end, and the three it lost. */
+/** @brief A game whose rules give five lives, and a player who lost three
+ * ships, then got its five lives back at a checkpoint. */
 constexpr std::uint8_t FIVE_LIVES_OF_THE_RULES = 5;
-constexpr std::uint8_t TWO_LIVES_LEFT = 2;
-constexpr std::uint32_t THREE_LIVES_LOST = 3;
+constexpr std::uint32_t THREE_SHIPS_LOST = 3;
 
 /**
  * @brief Two look items a player won, as LookItemWon numbers them (their place
