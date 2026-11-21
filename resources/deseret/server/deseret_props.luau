@@ -13,6 +13,15 @@
 
 local STILL = { x = 0, y = 0 }
 local RIGHT = { x = 1, y = 0 }
+
+-- Past this column a rolling cart has left the screen by the right edge, where
+-- nothing removes an enemy and its blast would be removed at once: it is gone
+-- there, so it never holds a level that waits for a clear sky.
+local GONE_RIGHT = 2120
+
+-- How long a laden cart stays after its burst when its blast missed it: the
+-- half second the blast lasts.
+local LINGER_AFTER_BURST_MS = 500
 local LEFT = { x = -1, y = 0 }
 
 -- How fast the ground scrolls left, in logical units per second
@@ -198,7 +207,7 @@ end)
 -- A mine cart rests on its rails, moving with the ground. The first hit sets
 -- it rolling right at its top speed, its ram ahead of it, for roll_ms; a
 -- laden cart then bursts its keg on itself, and dies in its blast; an empty
--- one is gone.
+-- one is gone. A cart that rolls out by the right edge is gone there.
 behaviours.register("cart_roll", {
 	{ name = "roll_ms", lowest = 1, highest = 60000 },
 	{ name = "laden", lowest = 0, highest = 1 },
@@ -227,6 +236,11 @@ behaviours.register("cart_roll", {
 	entry.x, entry.y, entry.steps = e.position.x, e.position.y, entry.steps + 1
 	carts[e.id] = entry
 	data.rolled_ms += e.elapsed_ms
+	if e.position.x > GONE_RIGHT then
+		carts[e.id] = nil
+		behaviours.destroy(e.id)
+		return { direction = STILL }
+	end
 	if data.rolled_ms < settings.roll_ms then
 		return { direction = RIGHT }
 	end
@@ -235,6 +249,8 @@ behaviours.register("cart_roll", {
 		if not data.bursting then
 			data.bursting = true
 			burst(0, { x = e.position.x, y = e.position.y })
+		elseif data.rolled_ms - settings.roll_ms >= LINGER_AFTER_BURST_MS then
+			behaviours.destroy(e.id)
 		end
 		return { direction = STILL }
 	end
