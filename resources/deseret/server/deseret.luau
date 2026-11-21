@@ -65,7 +65,7 @@ local UNDER_THE_CEILING = { lantern_wisp = 140 }
 local IRON_PILGRIM_ENTRY = { x = 2200, y = 860 }
 local OLD_WIDOW_ENTRY = { x = 1560, y = 1320 }
 
--- How often a stage looks at the sky, in milliseconds.
+-- How often a fight looks for its boss, in milliseconds.
 local SKY_CHECK_MS = 250
 
 type Wave = { at: number, sheet: string, rows: { number } }
@@ -120,27 +120,29 @@ local function play(waves: { Wave }, decors: { Decor }, shift: number)
 	end
 end
 
--- How much later than `planned` the stage that starts now begins: a stage
--- before it that waited for a clear sky names the biome later, and the stage
--- then plays everything that much later.
+-- How much later than `planned` the stage that starts now begins: a fight
+-- before it holds the scroll, so the stage then plays everything that much
+-- later.
 local function lateness(planned: number): number
 	return math.max(0, level.scroll() - planned)
 end
 
-local function wait_for_a_clear_sky()
-	while level.enemies() > 0 do
+-- Waits until no boss is left: the mobs still on screen never hold the
+-- level, they fly on and leave as the scroll goes on.
+local function wait_for_the_boss()
+	while level.bosses() > 0 do
 		level.wait(SKY_CHECK_MS)
 	end
 end
 
 -- A boss is a body like any other: the players are warned of it once it
--- appeared, at the end of the tick, so the stage waits before it looks at the
--- sky.
+-- appeared, at the end of the tick, so the stage waits before it looks for
+-- it. The scroll moves on once the boss is killed, whatever mobs are left.
 local function fight(boss: string, entry: { x: number, y: number })
 	level.pause_scroll()
 	behaviours.spawn(boss, entry)
 	level.wait(SKY_CHECK_MS)
-	wait_for_a_clear_sky()
+	wait_for_the_boss()
 	level.resume_scroll()
 end
 
@@ -302,20 +304,17 @@ level.register("deseret", {
 		play(FLATS, FLATS_DECOR, 0)
 		level.wait_scroll(END_OF_THE_FLATS)
 		level.biome("deseret_hoodoos")
-		wait_for_a_clear_sky()
 	end,
 	function()
 		local shift = lateness(END_OF_THE_FLATS)
 		play(HOODOOS, HOODOOS_DECOR, shift)
 		level.wait_scroll(END_OF_THE_HOODOOS + shift)
 		level.biome("deseret_line")
-		wait_for_a_clear_sky()
 	end,
 	function()
 		local shift = lateness(END_OF_THE_HOODOOS)
 		play(THE_LINE, THE_LINE_DECOR, shift)
 		level.wait_scroll(END_OF_THE_LINE + shift)
-		wait_for_a_clear_sky()
 	end,
 	function()
 		fight("iron_pilgrim", IRON_PILGRIM_ENTRY)
@@ -326,13 +325,11 @@ level.register("deseret", {
 		play(MINE, MINE_DECOR, shift)
 		level.wait_scroll(END_OF_THE_MINE + shift)
 		level.biome("deseret_mesa")
-		wait_for_a_clear_sky()
 	end,
 	function()
 		local shift = lateness(END_OF_THE_MINE)
 		play(UP_THE_MESA, {}, shift)
 		level.wait_scroll(FOOT_OF_THE_MESA + shift)
-		wait_for_a_clear_sky()
 		fight("old_widow", OLD_WIDOW_ENTRY)
 	end,
 }, {
