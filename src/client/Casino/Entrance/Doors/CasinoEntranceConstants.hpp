@@ -33,13 +33,16 @@ constexpr engine::Duration OPENING_DURATION =
 
 /**
  * @brief The panel of the butler, at the bottom of the picture, over the
- * threshold of the doors: his name on its tag, CASINO_SPEECH_TAG_LEFT in
- * from its left side, and what he says from CASINO_SPEECH_FIRST_LINE, in
- * lines CASINO_SPEECH_TEXT_WIDTH wide at most.
+ * threshold of the doors: his name on its tag, astride its top edge,
+ * CASINO_SPEECH_TAG_LEFT in from its left side so the name starts above his
+ * text, and what he says from CASINO_SPEECH_FIRST_LINE, in lines
+ * CASINO_SPEECH_TEXT_WIDTH wide at most. His two lines keep 6 pixels free
+ * under the tag and 7 above the bars astride the bottom edge, and his text
+ * 20 pixels on each side; the panel ends 8 pixels short of the butler.
  */
-constexpr sf::IntRect CASINO_SPEECH_AREA({128, 226}, {252, 34});
-constexpr int CASINO_SPEECH_TAG_LEFT = 10;
-constexpr sf::Vector2i CASINO_SPEECH_FIRST_LINE(12, 6);
+constexpr sf::IntRect CASINO_SPEECH_AREA({120, 214}, {268, 46});
+constexpr int CASINO_SPEECH_TAG_LEFT = 14;
+constexpr sf::Vector2i CASINO_SPEECH_FIRST_LINE(20, 12);
 constexpr int CASINO_SPEECH_TEXT_WIDTH = 228;
 constexpr const char* BUTLER_NAME = "BALTHAZAR";
 
