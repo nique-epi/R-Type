@@ -8,4 +8,5 @@ export const usersEndpointsSchema = {
     input: z.object({ nickname: z.string(), password: z.string() }),
     output: userSchema,
   },
+  '@get/users/me': { output: userSchema },
 } satisfies FetchSchemaRoutes;

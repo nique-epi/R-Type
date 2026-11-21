@@ -14,6 +14,7 @@ function renderSection(signUp: SignUp) {
       signUp={signUp}
       homeHref="/fr"
       downloadHref="/fr/download"
+      signInHref="/fr/signin"
       labels={labels}
     />,
   );
@@ -31,6 +32,27 @@ function signUpAsAce() {
 }
 
 describe('SignUpSection', () => {
+  it('leads a pilot who has an account to the sign-in page', () => {
+    renderSection(async () => ({ data: { status: 'taken' } }));
+
+    expect(
+      screen.getByRole('link', { name: labels.signIn }).getAttribute('href'),
+    ).toBe('/fr/signin');
+  });
+
+  it('offers to sign in once the account exists', async () => {
+    renderSection(async () => ({
+      data: { status: 'created', user: { id: 1, nickname: 'ACE' } },
+    }));
+
+    signUpAsAce();
+
+    await screen.findByText(labels.created.title);
+    expect(
+      screen.getByRole('link', { name: labels.signIn }).getAttribute('href'),
+    ).toBe('/fr/signin');
+  });
+
   it('welcomes the pilot once the account exists, and drops the form', async () => {
     renderSection(async () => ({
       data: { status: 'created', user: { id: 1, nickname: 'ACE' } },

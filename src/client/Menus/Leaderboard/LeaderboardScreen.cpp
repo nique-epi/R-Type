@@ -57,9 +57,7 @@ namespace {
 /** @returns Where a chip with this text lies: as MenuBuilder lays it ending at
  * @p right, on the row of the chips of the leaderboard. */
 sf::IntRect chipAreaEndingAt(const Button::Text& text, int right) {
-  sf::IntRect area = MenuBuilder::chipArea(text, right);
-  area.position.y = LEADERBOARD_CHIPS_TOP;
-  return area;
+  return MenuBuilder::chipArea(text, right, LEADERBOARD_CHIPS_TOP);
 }
 
 sf::IntRect backChipArea() {

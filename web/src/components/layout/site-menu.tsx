@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type * as React from 'react';
 import { useRef } from 'react';
+import { SignedInAccount } from '@/components/accounts/signed-in-account';
 import { Button } from '@/components/primitives/actions/button';
 import { IconButton } from '@/components/primitives/actions/icon-button';
 import { PixelIcon } from '@/components/primitives/icons/pixel-icon';
@@ -15,6 +16,7 @@ import { motionAllowed, useMotion } from '@/hooks/use-motion';
 import { gsap } from '@/lib/gsap';
 import { cn } from '@/lib/utils';
 import { isCurrent, type NavItem } from './nav-item';
+import type { SiteAccountProps } from './site-account';
 
 export type SiteMenuLabels = {
   menu: string;
@@ -22,6 +24,8 @@ export type SiteMenuLabels = {
   navigation: string;
   logo: string;
   download: string;
+  signIn: string;
+  signOut: string;
 };
 
 export type SiteMenuProps = {
@@ -32,12 +36,14 @@ export type SiteMenuProps = {
   /** The line under the download button: "v0.1.0 · Linux · Windows · macOS". */
   footnote: React.ReactNode;
   labels: SiteMenuLabels;
-};
+} & Pick<SiteAccountProps, 'account' | 'signOut'>;
 
 /**
  * The menu of every page: a panel that slides in from the right over a
  * dimmed page, its links large, the current page marked. It is a modal
  * dialog: the focus stays in it, Escape and a click beside it close it.
+ * Signed in, the nickname of the visitor and *Sign out* stand over the
+ * download button, so a phone, whose header hides them, can sign out.
  */
 export function SiteMenu({
   open,
@@ -46,6 +52,8 @@ export function SiteMenu({
   downloadHref,
   footnote,
   labels,
+  account,
+  signOut,
 }: SiteMenuProps) {
   const panel = useRef<HTMLDialogElement>(null);
   const pathname = usePathname();
@@ -148,6 +156,14 @@ export function SiteMenu({
         </nav>
         <div className="relative mt-auto grid gap-5 pt-8">
           <Ship data-menu-item player={1} />
+          {account ? (
+            <SignedInAccount
+              data-menu-item
+              nickname={account.nickname}
+              signOutLabel={labels.signOut}
+              signOut={signOut}
+            />
+          ) : null}
           <Button
             data-menu-item
             href={downloadHref}
