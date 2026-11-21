@@ -8,6 +8,7 @@
 #include <vector>
 #include "CollisionBox.hpp"
 #include "DataFileTable.hpp"
+#include "HurtZone.hpp"
 #include "MaskSheet.hpp"
 #include "ObstacleContact.hpp"
 #include "SheetText.hpp"
@@ -126,5 +127,16 @@ void checkSheetNames(std::span<const SheetText> texts);
  */
 [[nodiscard]] std::optional<MaskSheet> maskOf(
     const engine::DataFileTable& gameplay, const SheetText& sheet);
+
+/**
+ * @returns The zone of `[gameplay.hurt_zone]`, its boxes and beams in the
+ * order of the file; nothing without it.
+ * @throws InconsistentEntitySheetException when the zone holds no box, a part
+ * names an attack without a phase or a phase without an attack, a time
+ * without an action, a window that ends no later than it starts, or a beam
+ * that sweeps without an end; and what the data file readers throw.
+ */
+[[nodiscard]] std::optional<HurtZone> hurtZoneOf(
+    const engine::DataFileTable& gameplay);
 
 }  // namespace rtype::game
