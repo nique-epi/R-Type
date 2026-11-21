@@ -165,6 +165,20 @@ TEST(EntityAppearances, RefusesAKeyInTheTableOfHurtBeams) {
 }
 
 /**
+ * Given the shipped sheet of the Bydo Tyrant, whose frames draw none of its
+ * beams
+ * When a client reads its appearance
+ * Then the client paints its hurt beams
+ */
+TEST(EntityAppearances, TheTyrantPaintsItsHurtBeams) {
+  const EntityAppearances appearances = shippedAppearances();
+  const EntityAppearance* const read = appearances.named(BYDO_TYRANT_SHEET);
+  ASSERT_NE(read, nullptr);
+
+  EXPECT_TRUE(read->paintsHurtBeams);
+}
+
+/**
  * Given the sheet of the Necromancer the resource fosse brings, whose frames
  * draw its beam
  * When a client reads its appearance

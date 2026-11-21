@@ -336,6 +336,9 @@ sheet = "sprites/mobs/bydo_tyrant.png"
 # The name its bar writes above its gauges.
 boss_name = "BYDO TYRANT"
 
+# Its beams are painted by the client while they hurt: its frames draw none.
+[appearance.hurt_beams]
+
 [appearance.idle]
 left = 0
 top = 0
