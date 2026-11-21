@@ -1,10 +1,12 @@
 #include <gtest/gtest.h>
 #include <string>
+#include <vector>
 #include "ConnectedPlayer.hpp"
 #include "EnemyKilled.hpp"
 #include "EventBus.hpp"
 #include "PlayerRoster.hpp"
 #include "ProtocolConstants.hpp"
+#include "ScoreChanged.hpp"
 #include "ScoreKeeper.hpp"
 #include "ScoreKeeperFixture.hpp"
 #include "ScoreKeeperTestConstants.hpp"
@@ -144,6 +146,42 @@ TEST(ScoreKeeper, StopsListeningOnceDestroyed) {
   events.dispatch();
 
   EXPECT_EQ(player->score, 0U);
+}
+
+/**
+ * Given a player with a score of a Drifter
+ * When the player kills another Drifter
+ * Then the keeper publishes its score before and after the kill
+ */
+TEST_F(ScoreKeeperFixture, PublishesTheScoreBeforeAndAfter) {
+  kill(FIRST_NUMBER, DRIFTER_WORTH);
+
+  kill(FIRST_NUMBER, DRIFTER_WORTH);
+
+  EXPECT_EQ(changes().back(),
+            (game::ScoreChanged{.playerNumber = FIRST_NUMBER,
+                                .before = DRIFTER_WORTH,
+                                .after = DRIFTER_WORTH + DRIFTER_WORTH}));
+}
+
+/**
+ * Given two connected players with no score
+ * When the second destroys a boss worth 3 000 points, the first having dealt
+ * it three damage and the second one
+ * Then the keeper publishes the score of each, from 0 to 2 250 and to 750
+ */
+TEST_F(ScoreKeeperFixture, PublishesTheScoreOfEachPilotABossPays) {
+  publish(game::EnemyKilled{.playerNumber = SECOND_NUMBER,
+                            .points = BOSS_WORTH,
+                            .damageByPilot = THREE_THEN_ONE});
+
+  EXPECT_EQ(changes(), (std::vector<game::ScoreChanged>{
+                           {.playerNumber = FIRST_NUMBER,
+                            .before = 0,
+                            .after = THREE_QUARTERS_OF_THE_BOSS},
+                           {.playerNumber = SECOND_NUMBER,
+                            .before = 0,
+                            .after = A_QUARTER_OF_THE_BOSS}}));
 }
 
 }  // namespace rtype::server::testing

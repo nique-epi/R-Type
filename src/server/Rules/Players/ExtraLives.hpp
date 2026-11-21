@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cstdint>
-#include "ScoreChange.hpp"
+#include "ScoreChanged.hpp"
 
 namespace rtype::server {
 
@@ -11,6 +11,6 @@ namespace rtype::server {
  * above its score before and at or below its score after. 0 when the score
  * did not grow.
  */
-[[nodiscard]] std::uint32_t extraLivesWonBy(ScoreChange change);
+[[nodiscard]] std::uint32_t extraLivesWonBy(const game::ScoreChanged& change);
 
 }  // namespace rtype::server

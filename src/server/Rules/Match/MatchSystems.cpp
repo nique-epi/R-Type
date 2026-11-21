@@ -205,9 +205,7 @@ std::unique_ptr<LifeKeeper> lifeKeeperFor(const MatchSystemsParts& parts) {
                       .shipsNeverDie = game.settings.startsAtBoss});
 }
 
-/** @returns The keeper of the look items the players of @p world win. */
-/** @returns The keeper of the extra lives of @p parts: it subscribes after
- * the ScoreKeeper of the game, which the game built before any world. */
+/** @returns The keeper of the extra lives of the players of @p parts. */
 std::unique_ptr<ExtraLifeKeeper> extraLifeKeeperFor(
     const MatchSystemsParts& parts) {
   const GameContext& game = parts.game.get();
@@ -217,6 +215,7 @@ std::unique_ptr<ExtraLifeKeeper> extraLifeKeeperFor(
                            .roster = game.roster.get()});
 }
 
+/** @returns The keeper of the look items the players of @p world win. */
 std::unique_ptr<LookItemKeeper> lookItemKeeperFor(GameContext& game,
                                                   game::World& world) {
   return std::make_unique<LookItemKeeper>(

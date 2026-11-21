@@ -1,5 +1,4 @@
 #include "AimedBehaviour.hpp"
-#include <cmath>
 #include <memory>
 #include <optional>
 #include <span>
@@ -12,6 +11,7 @@
 #include "Direction.hpp"
 #include "Intent.hpp"
 #include "Position.hpp"
+#include "UnitHeading.hpp"
 
 namespace rtype::game {
 
@@ -21,16 +21,11 @@ namespace {
  * full speed on each axis whose length is 1; LEFTWARD when there is no ship,
  * or when the ship is not left of the body. */
 Direction headingTowardsTheShip(const BehaviourView& view) {
-  if (!view.nearestShip.has_value()) {
+  if (!view.nearestShip.has_value() || view.nearestShip->x >= view.position.x) {
     return LEFTWARD;
   }
-  const float across = view.nearestShip->x - view.position.x;
-  const float down = view.nearestShip->y - view.position.y;
-  const float length = std::hypot(across, down);
-  if (across >= 0.0F || length <= 0.0F) {
-    return LEFTWARD;
-  }
-  return Direction{.x = across / length, .y = down / length};
+  return headingAlong(Direction{.x = view.nearestShip->x - view.position.x,
+                                .y = view.nearestShip->y - view.position.y});
 }
 
 /** @returns The heading the body took on its first tick, nothing before that
@@ -63,12 +58,14 @@ std::span<const BehaviourSetting> AimedBehaviour::settings() const {
 }
 
 Intent AimedBehaviour::steer(const BehaviourView& view) const {
-  const std::optional<Direction> kept = keptHeadingOf(view);
-  const Direction heading = kept.value_or(headingTowardsTheShip(view));
-  if (!kept.has_value()) {
-    keepHeading(view, heading);
+  std::optional<Direction> heading = keptHeadingOf(view);
+  if (!heading.has_value()) {
+    heading = headingTowardsTheShip(view);
+    keepHeading(view, *heading);
   }
-  return Intent{.direction = heading, .shooting = true, .steered = true};
+  return Intent{.direction = heading.value_or(LEFTWARD),
+                .shooting = true,
+                .steered = true};
 }
 
 }  // namespace rtype::game
