@@ -34,8 +34,8 @@ class ISoundPlayer;
  * bottom-right corner. A dialog is a panel centered on the picture: its
  * heading, its message or at most DIALOG_ROW_CAPACITY rows, then its buttons in
  * a centered row; an illustration goes where its heading goes, the screen
- * painting it in place of the heading and the message, and the panel grows to
- * hold it. A form is a panel
+ * painting it in place of the heading and the message, which are then left
+ * out, and the panel grows to hold it. A form is a panel
  * centered on the picture too: its heading, its fields one under the other,
  * its buttons in a centered row, then the line describing the selected bar
  * and the status line under it; the pointer selects one of its bars only by

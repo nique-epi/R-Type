@@ -16,4 +16,9 @@ constexpr sf::IntRect DIALOG_PICTURE_AREA({120, 108}, DIALOG_PICTURE_SIZE);
 constexpr sf::Vector2i BACK_UNDER_THE_PICTURE(220, 150);
 constexpr std::string_view BACK_OF_THE_PICTURE = "BACK";
 
+/** @brief A heading and a message asked of a dialog that holds an
+ * illustration too. */
+constexpr std::string_view HEADING_UNDER_THE_PICTURE = "HIDDEN HEADING";
+constexpr std::string_view MESSAGE_UNDER_THE_PICTURE = "HIDDEN MESSAGE";
+
 }  // namespace rtype::client::testing

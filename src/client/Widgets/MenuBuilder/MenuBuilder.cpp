@@ -429,16 +429,17 @@ void MenuBuilder::placeDialog(Menu::Content& content) {
   if (illustration_.has_value()) {
     content.illustration =
         sf::IntRect(panelTopLeft + DIALOG_ILLUSTRATION_OFFSET, *illustration_);
-  }
-  if (heading_.has_value()) {
-    content.labels.emplace_back(std::move(*heading_),
-                                panelTopLeft + DIALOG_HEADING_OFFSET,
-                                DIALOG_HEADING_STYLE);
-  }
-  if (message_.has_value()) {
-    content.labels.emplace_back(std::move(*message_),
-                                panelTopLeft + DIALOG_MESSAGE_OFFSET,
-                                DIALOG_MESSAGE_STYLE);
+  } else {
+    if (heading_.has_value()) {
+      content.labels.emplace_back(std::move(*heading_),
+                                  panelTopLeft + DIALOG_HEADING_OFFSET,
+                                  DIALOG_HEADING_STYLE);
+    }
+    if (message_.has_value()) {
+      content.labels.emplace_back(std::move(*message_),
+                                  panelTopLeft + DIALOG_MESSAGE_OFFSET,
+                                  DIALOG_MESSAGE_STYLE);
+    }
   }
   placeDialogBars(content, buttons_, layout);
 }
