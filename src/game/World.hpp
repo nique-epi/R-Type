@@ -5,6 +5,7 @@
 #include <optional>
 #include "BodyPlacement.hpp"
 #include "ComponentRegistry.hpp"
+#include "EnemyStrength.hpp"
 #include "Entity.hpp"
 #include "EntityRegistry.hpp"
 #include "EntitySheet.hpp"
@@ -47,7 +48,8 @@ class World {
    * when the sheet gives them, the gun waiting the first shot of the sheet;
    * its ShardBurst, its HurtZone, its SurvivesContact and its Fragile when
    * the sheet declares them, and a CurrentAction, idle, for every body of
-   * side enemy.
+   * side enemy. A body of side enemy that is no boss gets its health and its
+   * gun at the EnemyStrength set last (see setEnemyStrength()).
    * A body no behaviour pilots is the ship of a player: it also gets
    * STARTING_LIVES Lives, which the server replaces with the lives of the
    * rules of its game, and no protection in its Invulnerable, and is listed
@@ -77,6 +79,13 @@ class World {
    * @throws NetworkIdExhaustedException when every network id was given.
    */
   [[nodiscard]] std::uint32_t reserveNetworkId();
+
+  /**
+   * @brief Makes every enemy spawned from now on as strong as @p strength
+   * says; the enemies already in the world keep theirs. A new world makes its
+   * enemies at the strength of their sheets until it is set.
+   */
+  void setEnemyStrength(EnemyStrength strength);
 
   /**
    * @brief Destroys the ship of a player, found by the network id spawn()
@@ -128,6 +137,7 @@ class World {
   /** @brief The masks the ships of this world show through a barrel roll,
    * one set per sheet. */
   RolledMaskCatalog rolledMasks_;
+  EnemyStrength enemyStrength_;
 };
 
 }  // namespace rtype::game

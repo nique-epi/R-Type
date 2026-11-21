@@ -8,6 +8,8 @@
 #include "BossStageParts.hpp"
 #include "CollisionRules.hpp"
 #include "DamageRules.hpp"
+#include "EnemyScaling.hpp"
+#include "EnemyStrength.hpp"
 #include "EntityOrders.hpp"
 #include "EntityOrdersParts.hpp"
 #include "GameContext.hpp"
@@ -170,6 +172,13 @@ std::unique_ptr<LevelDirector> levelDirectorFor(GameContext& game,
                          .startingStage = settings.startingStage});
 }
 
+/** @returns The strength the enemies of @p game are made at now: the
+ * strength its difficulty gives, scaled for its connected players. */
+game::EnemyStrength enemyStrengthOf(GameContext& game) {
+  return game::scaledEnemyStrength(game.settings.waves.enemyStrength,
+                                   game.roster.get().connected().size());
+}
+
 /** @returns Whether the boss of the level may come at this tick, after
  * moving @p waves on a tick: once the last wave is over, or at once, without
  * any wave, in a game that @p startsAtBoss. */
@@ -223,6 +232,7 @@ MatchSystems::MatchSystems(const MatchSystemsParts& parts)
 
 void MatchSystems::onTick(IHitArbitration& arbitration, std::uint32_t tick) {
   GameContext& game = game_.get();
+  world_.get().setEnemyStrength(enemyStrengthOf(game));
   lookItemKeeper_->onTick();
   arbitration.giveViews(world_, game.roster.get(), tick);
   if (levelDirector_ != nullptr) {

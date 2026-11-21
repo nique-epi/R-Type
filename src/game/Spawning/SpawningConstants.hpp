@@ -59,4 +59,10 @@ constexpr float ENEMY_PATTERN_ROOM = 48.0F;
 constexpr float ENEMY_ROW_MARGIN =
     ENEMY_SPAWN_VERTICAL_MARGIN + ENEMY_PATTERN_ROOM;
 
+/** @brief Each player past the first adds this percent to the health of an
+ * enemy that is no boss: 115 % for two players, 145 % for four. Less than
+ * the 25 % of a boss (BOSS_HEALTH_PER_EXTRA_PLAYER), since every enemy of a
+ * stage is hit by the whole team only while it is on screen. */
+constexpr int ENEMY_HEALTH_PER_EXTRA_PLAYER = 15;
+
 }  // namespace rtype::game

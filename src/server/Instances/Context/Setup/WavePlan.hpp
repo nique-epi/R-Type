@@ -4,6 +4,7 @@
 #include <optional>
 #include <string>
 #include <vector>
+#include "EnemyStrength.hpp"
 #include "PercentConstants.hpp"
 #include "WaveCurve.hpp"
 #include "WavePlanConstants.hpp"
@@ -24,6 +25,9 @@ struct WavePlan {
   /** @brief The health of the boss in percent of what its sheet gives,
    * before the players scale it (see BossStage). */
   int bossHealthPercent{game::WHOLE_PERCENT};
+  /** @brief The strength of every other enemy, before the players scale it
+   * (see game::scaledEnemyStrength()). */
+  game::EnemyStrength enemyStrength{};
   /** @brief The look items that float in at the start of a wave, taken in
    * turn; empty for a level without any. */
   std::vector<std::string> lookItems;

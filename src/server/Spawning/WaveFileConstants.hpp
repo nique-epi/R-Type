@@ -40,17 +40,21 @@ constexpr std::string_view LEVEL_WAVES_KEY = "level_waves";
  * a sheet with a table `[gameplay.boss]`. */
 constexpr std::string_view BOSS_KEY = "boss";
 
-/** @brief The optional key of a difficulty that scales the health of its
- * boss, in percent of the health its sheet gives, from 1 to 1000;
- * DEFAULT_BOSS_HEALTH_PERCENT when left out. */
+/** @brief The optional keys of a difficulty that scale, in percent of what
+ * the sheets give, from 1 to 1000 (PERCENT_KEY_RANGE) and game::WHOLE_PERCENT
+ * when left out: the health of its boss, the health of its other enemies, and
+ * the ticks of the guns of those enemies, less for enemies that fire more
+ * often. */
 constexpr std::string_view BOSS_HEALTH_PERCENT_KEY = "boss_health_percent";
-constexpr engine::WholeNumberRange BOSS_HEALTH_PERCENT_RANGE{.lowest = 1,
-                                                             .highest = 1000};
-constexpr int DEFAULT_BOSS_HEALTH_PERCENT = 100;
+constexpr std::string_view ENEMY_HEALTH_PERCENT_KEY = "enemy_health_percent";
+constexpr std::string_view ENEMY_GUN_INTERVAL_PERCENT_KEY =
+    "enemy_gun_interval_percent";
+constexpr engine::WholeNumberRange PERCENT_KEY_RANGE{.lowest = 1,
+                                                     .highest = 1000};
 
 /**
  * @brief Every key the root of a waves file may hold, and every key a
- * difficulty may hold; all are required but `boss`, `boss_health_percent`,
+ * difficulty may hold; all are required but `boss`, the three percents,
  * `look_items` and `look_item_every`. Any other key is refused, so a misspelt
  * key never goes unnoticed.
  */
@@ -66,7 +70,9 @@ constexpr std::array WAVE_PLAN_KEYS{ENEMIES_KEY,
                                     WAVE_PAUSE_KEY,
                                     LEVEL_WAVES_KEY,
                                     BOSS_KEY,
-                                    BOSS_HEALTH_PERCENT_KEY};
+                                    BOSS_HEALTH_PERCENT_KEY,
+                                    ENEMY_HEALTH_PERCENT_KEY,
+                                    ENEMY_GUN_INTERVAL_PERCENT_KEY};
 
 /**
  * @brief The most Bydos a first wave may hold or a wave may add, and the most

@@ -11,7 +11,7 @@ Only the server reads the file: the supervisor and each game process, once, when
 
 ## A difficulty, key by key
 
-A difficulty is a table `[difficulty.<name>]` holding eight keys, a ninth, `boss`, when its level ends with a boss, a tenth, `boss_health_percent`, to make that boss sturdier or frailer, an eleventh, `look_items`, and a twelfth, `look_item_every`, that may both be left out:
+A difficulty is a table `[difficulty.<name>]` holding eight keys, a ninth, `boss`, when its level ends with a boss, a tenth, `boss_health_percent`, to make that boss sturdier or frailer, two more, `enemy_health_percent` and `enemy_gun_interval_percent`, to make every other enemy sturdier and quicker to fire or the reverse, and two last, `look_items` and `look_item_every`; every key past the eighth may be left out:
 
 ```toml
 [difficulty.normal]
@@ -40,8 +40,10 @@ boss = "bydo_tyrant"
 | `level_waves` | waves | 1 to 100 | how many waves the level holds: without a boss, the game is won once the last one is over (see [How the waves grow](#how-the-waves-grow)) |
 | `boss` | a name | the name of an entity sheet with a `[gameplay.boss]` table; may be left out | the boss that arrives once the last wave is over: the game is then won once it is destroyed and no enemy is left (see [The boss](#the-boss)) |
 | `boss_health_percent` | percent | 1 to 1000; 100 when left out | the health of its boss, in percent of the health its sheet gives once scaled for the players (see [The boss](#the-boss)) |
+| `enemy_health_percent` | percent | 1 to 1000; 100 when left out | the health of every enemy that is no boss, in percent of what its sheet gives, rounded down and never under one point; each player past the first adds `ENEMY_HEALTH_PER_EXTRA_PLAYER` (15) to it. It holds in a level a script directs too, whose enemies come from the same sheets |
+| `enemy_gun_interval_percent` | percent | 1 to 1000; 100 when left out | the ticks the gun of every enemy that is no boss waits, between two shots and before the first, in percent of what its sheet gives, rounded down and never under one tick between two shots: less for an enemy that fires more often. In a level too |
 
-Every key but `boss`, `boss_health_percent`, `look_items` and `look_item_every` is required, and any other key is refused, so a misspelt key stops the server instead of being ignored. Every number is a TOML integer: `2500`, never `2500.0` or `"2500"`. The keys and the ranges live in `src/server/Spawning/WaveFileConstants.hpp`; the names are those of the entity sheets.
+Every key but `boss`, the three percents, `look_items` and `look_item_every` is required, and any other key is refused, so a misspelt key stops the server instead of being ignored. Every number is a TOML integer: `2500`, never `2500.0` or `"2500"`. The keys and the ranges live in `src/server/Spawning/WaveFileConstants.hpp`; the names are those of the entity sheets.
 
 ## How the waves grow
 
@@ -90,8 +92,10 @@ A name of `look_items` is the name of an entity sheet of side `look_item` (see [
 | `level_waves` | 5 | 8 | 10 |
 | `boss` | none | `bydo_tyrant` | `bydo_tyrant` |
 | `boss_health_percent` | none | none: 100 | 130 |
+| `enemy_health_percent` | 80 | 100 | 120 |
+| `enemy_gun_interval_percent` | 130 | 100 | 80 |
 
-`easy` leans on the Drifter, which is easier to hit; `normal` adds one Voltjelly and one Reaper in six Bydos; `hard` leans on the Weaver, sends each of the four mobs once in eight Bydos and brings two more Bydos per wave. A wave ends only once its Bydos are gone, so the Voltjelly, twice as slow, makes its wave last longer, and the Reaper and the Bydomancer, which never leave by themselves, hold their wave until they are killed. `easy` ends once its last wave is over; `normal` and `hard` end with the Bydo Tyrant, 30 % sturdier in `hard`. No test pins these values: tuning them needs no rebuild and breaks no test.
+`easy` leans on the Drifter, which is easier to hit; `normal` adds one Voltjelly and one Reaper in six Bydos; `hard` leans on the Weaver, sends each of the four mobs once in eight Bydos and brings two more Bydos per wave. A wave ends only once its Bydos are gone, so the Voltjelly, twice as slow, makes its wave last longer, and the Reaper and the Bydomancer, which never leave by themselves, hold their wave until they are killed. `easy` ends once its last wave is over; `normal` and `hard` end with the Bydo Tyrant, 30 % sturdier in `hard`. Every other enemy has 80 % of its health and waits 130 % of the ticks of its gun in `easy`, 120 % and 80 % in `hard`, in the waves and in every map alike: a Drifter of 3 points has 2 in `easy` and 3 in `hard` (3.6 rounded down), 4 in `hard` with two players and 5 with four. No test pins these values: tuning them needs no rebuild and breaks no test.
 
 ## Designing a difficulty
 
