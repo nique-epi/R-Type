@@ -342,7 +342,7 @@ The resource deseret brings the map DESERET, the level `deseret` of six stages a
 | `dust_devil` | `dust_drift` | drifts left, swaying, swallows every missile that crosses it, and is gone after `life_ms` |
 | `lantern_wisp` | `lantern_float` | floats left under the ceiling, keeping to it; a ship below it within `reach` makes it drop a `lantern_drop`, which lights a `ground_fire` where it lands (`oil_fall`) |
 | `tumblecage` | `tumblecage_roll` | rolls left along the floor, keeping to it; shot down, it throws four `tumblecage_barb` up, two on each side (`tumblecage_break`, `debris_toss`) |
-| `surveyor` | `surveyor_aim` | walks left on its tripod along the floor; left of `fire_from_x` and rested, it aims with its eye lit, then fires a `surveyor_shot` from its lens at the nearest ship (`aimed_slug`) |
+| `surveyor` | `surveyor_aim` | walks left on its tripod along the floor; left of `fire_from_x` and rested, it aims with its eye lit, then fires a `surveyor_shot` from its lens at the nearest ship (the built-in pilot `aimed`) |
 | `dust_bat` | `bat_swarm` | flutters left in swarms, `amplitude` units around its row, keeping under the ceiling of the mine; left of a column its row sets (`dive_from_x` at most), a ship within `reach` of its column lights its eyes for `signal_ms`, then it dives once at that ship at `dive_speed` for `dive_ms` at most, and climbs back |
 | `vultureling` | `vultureling_circle` | drifts left while it circles, one turn every `circle_ms`; left of a column its row sets (`dive_from_x` at most), it screeches for `signal_ms`, then dives in a straight line at the nearest ship at `dive_speed` until it leaves the screen |
 
