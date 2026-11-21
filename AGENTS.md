@@ -193,6 +193,8 @@ Paths below are relative to `.claude/rules/`.
 - `fix/reasoning/fix-reasoning-a-biome-by-day-is-drawn-under-the-halo.md`
 - `fix/reasoning/fix-reasoning-a-dive-never-runs-along-the-row-the-shots-fly.md`
 - `fix/reasoning/fix-reasoning-a-phase-that-stays-never-plays-once.md`
+- `fix/reasoning/fix-reasoning-a-body-killed-by-another-lies-in-a-layer-it-hits.md`
+- `fix/reasoning/fix-reasoning-a-shot-leaves-the-body-that-fires-it.md`
 
 **Execution (shell, git, build) — `fix/execution/`**
 - `fix/execution/fix-execution-a-cmake-loop-tests-the-length-of-its-list.md`
