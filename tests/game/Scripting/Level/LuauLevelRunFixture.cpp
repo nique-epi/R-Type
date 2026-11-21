@@ -8,6 +8,8 @@
 #include <vector>
 #include "BehaviourScriptsFixtures.hpp"
 #include "BiomeGround.hpp"
+#include "Boss.hpp"
+#include "Entity.hpp"
 #include "EntityType.hpp"
 #include "LdtkPlacement.hpp"
 #include "LevelProgress.hpp"
@@ -55,6 +57,12 @@ void LuauLevelRunFixture::tick(std::size_t count) {
 
 void LuauLevelRunFixture::addEnemy() {
   components_.add(entities_.create(), rtype::game::EntityType::Enemy);
+}
+
+void LuauLevelRunFixture::addBoss() {
+  const rtype::engine::Entity boss = entities_.create();
+  components_.add(boss, rtype::game::EntityType::Enemy);
+  components_.add(boss, rtype::game::Boss{});
 }
 
 rtype::game::LuauLevelRun& LuauLevelRunFixture::run() { return *run_; }

@@ -14,6 +14,7 @@ target_link_libraries(rtype_game_spawning
     rtype_game_spawning_constants
   PRIVATE
     rtype_engine_collision
+    rtype_game_boss
     rtype_game_exceptions
 )
 
