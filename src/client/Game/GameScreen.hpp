@@ -10,6 +10,7 @@
 #include "BossPresentation.hpp"
 #include "ChatWindow.hpp"
 #include "ComponentRegistry.hpp"
+#include "ContinueNotice.hpp"
 #include "DepartureFeed.hpp"
 #include "EffectPlayer.hpp"
 #include "EffectSpawner.hpp"
@@ -18,6 +19,8 @@
 #include "EntityMessage.hpp"
 #include "EntityRegistry.hpp"
 #include "EntityReplicator.hpp"
+#include "ExtraLifeNotice.hpp"
+#include "ExtraLifeRises.hpp"
 #include "GameEnded.hpp"
 #include "GameResult.hpp"
 #include "GameScreenParts.hpp"
@@ -223,6 +226,10 @@ class GameScreen : public IScreen {
   ISky* sky_;
   IAudioService* audio_;
   MissionBannerLook paintedBanner_;
+  ContinueNotice continues_;
+  std::optional<std::uint8_t> paintedContinues_;
+  ExtraLifeNotice extraLives_;
+  ExtraLifeRises paintedExtraLives_{};
   std::optional<PlayerPalette> paintedPalette_;
   DepartureFeed departures_;
   SilenceWarning silence_;

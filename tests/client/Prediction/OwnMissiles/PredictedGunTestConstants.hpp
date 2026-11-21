@@ -6,8 +6,7 @@
 
 namespace rtype::client::testing {
 
-/** @brief The gun of the shipped ship: one shot every 20 ticks, the first at
- * once. */
+/** @brief A gun of a ship: one shot every 20 ticks, the first at once. */
 constexpr game::ShipGun READY_GUN{.shipType = 4,
                                   .projectileType = 3,
                                   .intervalTicks = 20,

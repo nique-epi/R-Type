@@ -57,7 +57,7 @@ boulder_gap_ms = 150
 close_ms = 400
 
 [gameplay.health]
-points = 40
+points = 120
 
 [gameplay.score]
 points = 3000

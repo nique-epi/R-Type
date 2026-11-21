@@ -39,8 +39,10 @@ using testing::OWNER_AND_INPUT_BYTE_COUNT;
 using testing::PLAYER_NUMBER_ABOVE_THE_LAST;
 using testing::REPEATED_INPUT_LIMIT;
 using testing::SECOND_PLAYER_NUMBER;
+using testing::SECOND_PLAYER_OF_A_GAME_EVENT;
 using testing::SHOWN_TICK_BYTE_COUNT;
 using testing::SMALLEST_WIRE_COORDINATE;
+using testing::SOME_ENTITY_OF_A_GAME_EVENT;
 using testing::SOME_EVENT_NUMBER;
 using testing::SOME_FIRING_INPUT;
 using testing::SOME_INPUT_NUMBER;
@@ -597,7 +599,7 @@ TEST(GameEvent, AcceptsTheEventNumberZero) {
 }
 
 /**
- * Given the kinds 0 and 4, just outside the kinds of the protocol page
+ * Given the kinds 0 and 5, just outside the kinds of the protocol page
  * When each payload is decoded
  * Then each is refused
  */
@@ -605,7 +607,7 @@ TEST(GameEvent, RefusesToReadAKindOutsideTheList) {
   const auto belowTheFirst =
       byteSequence({0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00});
   const auto aboveTheLast =
-      byteSequence({0x00, 0x01, 0x04, 0x01, 0x00, 0x00, 0x00, 0x00});
+      byteSequence({0x00, 0x01, 0x05, 0x01, 0x00, 0x00, 0x00, 0x00});
 
   EXPECT_THROW((void)decodeMessage<GameEvent>(belowTheFirst),
                InvalidFieldValueException);
@@ -663,6 +665,35 @@ TEST(GameEvent, RefusesAnEliminatedPlayerNamingAnEntity) {
 
   EXPECT_THROW((void)decodeMessage<GameEvent>(bytes),
                InvalidFieldValueException);
+}
+
+/**
+ * Given a payload of kind 4, ExtraLifeWon, naming the second player
+ * When it is decoded
+ * Then it is the extra life won by that player
+ */
+TEST(GameEvent, ReadsAnExtraLifeWon) {
+  const auto payload =
+      byteSequence({0x00, 0x01, 0x04, 0x02, 0x00, 0x00, 0x00, 0x00});
+
+  const auto event = decodeMessage<GameEvent>(payload);
+
+  EXPECT_EQ(event.kind, GameEventKind::ExtraLifeWon);
+  EXPECT_EQ(event.playerNumber, SECOND_PLAYER_OF_A_GAME_EVENT);
+}
+
+/**
+ * Given an ExtraLifeWon that also names an entity
+ * When it is encoded
+ * Then it is refused: an extra life names a player and no entity
+ */
+TEST(GameEvent, RefusesAnExtraLifeNamingAnEntity) {
+  const GameEvent event{.eventNumber = SOME_EVENT_NUMBER,
+                        .kind = GameEventKind::ExtraLifeWon,
+                        .playerNumber = SECOND_PLAYER_OF_A_GAME_EVENT,
+                        .entityId = SOME_ENTITY_OF_A_GAME_EVENT};
+
+  EXPECT_THROW((void)encodeMessage(event), InvalidFieldValueException);
 }
 
 /**

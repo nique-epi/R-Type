@@ -5,6 +5,7 @@
 #include "EntityDamage.hpp"
 #include "EntityIdConstants.hpp"
 #include "EventMessage.hpp"
+#include "ExtraLifeWon.hpp"
 #include "GameEvent.hpp"
 #include "MessagePayload.hpp"
 #include "PlayerElimination.hpp"
@@ -25,6 +26,11 @@ EventMessage GameEventEncoder::encode(const game::PlayerHit& event) {
 
 EventMessage GameEventEncoder::encode(const game::PlayerElimination& event) {
   return encodeGameEvent(network::GameEventKind::PlayerEliminated,
+                         event.playerNumber, identifiers::NO_ENTITY_ID);
+}
+
+EventMessage GameEventEncoder::encode(const game::ExtraLifeWon& event) {
+  return encodeGameEvent(network::GameEventKind::ExtraLifeWon,
                          event.playerNumber, identifiers::NO_ENTITY_ID);
 }
 

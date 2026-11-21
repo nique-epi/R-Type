@@ -67,7 +67,6 @@ using rtype::game::testing::REQUIRED_BYDO_SIZE;
 using rtype::game::testing::REQUIRED_BYDO_SPEED;
 using rtype::game::testing::REQUIRED_DRIFTER_POINTS;
 using rtype::game::testing::REQUIRED_SHIP_FIRST_SHOT_TICKS;
-using rtype::game::testing::REQUIRED_SHIP_SHOT_TICKS;
 using rtype::game::testing::REQUIRED_WEAVE;
 using rtype::game::testing::RIGHT_HEADING_TABLE;
 using rtype::game::testing::SCORE_TABLE;
@@ -82,6 +81,7 @@ using rtype::game::testing::STEADY_MOTION_IN_A_FLOAT;
 using rtype::game::testing::STEADY_MOTION_WITHOUT_TOP_SPEED;
 using rtype::game::testing::STILL_HEADING_TABLE;
 using rtype::game::testing::TEXT_THAT_IS_NOT_TOML;
+using rtype::game::testing::TICKS_NEAREST_TO_333_MS;
 using rtype::game::testing::TOO_FAR_HEADING_TABLE;
 using rtype::game::testing::UNKNOWN_MOTION;
 using rtype::game::testing::UNKNOWN_ROOT_TABLE;
@@ -237,14 +237,13 @@ TEST_F(EntitySheetReaderFixture, TurnsAnIntervalOf1500MsInto90Ticks) {
 /**
  * Given the sheet of a ship whose gun fires every 333 ms, 19.98 ticks
  * When its gameplay is read
- * Then its gun fires every 20 ticks, the nearest whole number, 3 shots per
- * second as today
+ * Then its gun fires every 20 ticks, the nearest whole number
  */
 TEST_F(EntitySheetReaderFixture, TurnsAnIntervalOf333MsIntoTheNearest20Ticks) {
   const EntitySheet sheet =
       read({SHIP_GAMEPLAY, SHIP_HITBOX, SHIP_MOTION, SHIP_GUN, APPEARANCE});
 
-  EXPECT_EQ(intervalTicksOf(sheet), REQUIRED_SHIP_SHOT_TICKS);
+  EXPECT_EQ(intervalTicksOf(sheet), TICKS_NEAREST_TO_333_MS);
 }
 
 /**

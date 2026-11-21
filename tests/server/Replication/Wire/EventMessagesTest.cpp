@@ -294,6 +294,22 @@ TEST(EventMessagesTest, EncodesAChangeOfTheLevel) {
 }
 
 /**
+ * Given a change of the level whose team holds 2 continues
+ * When the change of the level is encoded and decoded
+ * Then the LevelStatus says 2 continues are left
+ */
+TEST(EventMessagesTest, EncodesTheContinuesLeftOfTheLevel) {
+  const EventMessage message =
+      eventMessageOf(game::LevelChange{.biome = std::string{LEVEL_BIOME},
+                                       .continuesLeft = LEVEL_CONTINUES_LEFT});
+
+  EXPECT_EQ(
+      network::decodeMessage<network::LevelStatus>(message.message.payload)
+          .continuesLeft,
+      LEVEL_CONTINUES_LEFT);
+}
+
+/**
  * Given the change of a level that opens in its biome, the biome told to
  * have begun 4096 logical units before the scroll started
  * When the change of the level is encoded and decoded

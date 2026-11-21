@@ -7,6 +7,7 @@
 #include "SheetTextReading.hpp"
 #include "ShipGun.hpp"
 #include "ShipGunReading.hpp"
+#include "ShipGunReadingFixtures.hpp"
 #include "ShipGunReadingTestConstants.hpp"
 #include "ShippedEntitySheets.hpp"
 
@@ -17,33 +18,15 @@ using rtype::game::ShipGun;
 using rtype::game::shipGunOf;
 using rtype::game::shipGunOrNoneOf;
 using rtype::game::testing::PLUGIN_PILOT_SHEET_TEXT;
-using rtype::game::testing::SHIPPED_GUN_FIRST_SHOT_TICKS;
-using rtype::game::testing::SHIPPED_GUN_INTERVAL_TICKS;
-using rtype::game::testing::SHIPPED_PLAYER_MISSILE_NUMBER;
-using rtype::game::testing::SHIPPED_PLAYER_MISSILE_SPEED;
-using rtype::game::testing::SHIPPED_SHIP_NUMBER;
 using rtype::game::testing::shippedEntitySheets;
+using rtype::game::testing::shippedGun;
 using rtype::game::testing::shippedSheetFolder;
 using rtype::game::testing::UNARMED_SHIP_SHEET_TEXT;
-
-namespace {
-
-/** @returns The gun of the shipped ship, as the shipped sheets describe it. */
-ShipGun shippedGun() {
-  return ShipGun{.shipType = SHIPPED_SHIP_NUMBER,
-                 .projectileType = SHIPPED_PLAYER_MISSILE_NUMBER,
-                 .intervalTicks = SHIPPED_GUN_INTERVAL_TICKS,
-                 .firstShotTicks = SHIPPED_GUN_FIRST_SHOT_TICKS,
-                 .velocityX = SHIPPED_PLAYER_MISSILE_SPEED,
-                 .velocityY = 0.0F};
-}
-
-}  // namespace
 
 /**
  * Given the shipped sheets
  * When the gun of the ships is read from them
- * Then it is the one of ship, firing player_missile every 20 ticks from the
+ * Then it is the one of ship, firing player_missile every 10 ticks from the
  * start, the missile flying right at 960 units per second
  */
 TEST(ShipGunOf, IsTheGunOfTheShippedShip) {

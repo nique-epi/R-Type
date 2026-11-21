@@ -57,4 +57,8 @@ constexpr std::size_t TICKS_PAST_THE_CHECKPOINT = 6;
 /** @brief The lives the rules of a game give each player by default. */
 constexpr std::uint8_t LIVES_OF_THE_RULES = 3;
 
+/** @brief The times a team that lost every life past a checkpoint goes back
+ * to it before it loses: its 3 continues. */
+constexpr std::size_t CONTINUES_OF_A_TEAM = 3;
+
 }  // namespace rtype::server::testing

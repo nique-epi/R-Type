@@ -13,6 +13,7 @@
 #include "EventBus.hpp"
 #include "EventMessage.hpp"
 #include "EventMessages.hpp"
+#include "ExtraLifeWon.hpp"
 #include "GameEventBroadcasterParts.hpp"
 #include "GameEventConstants.hpp"
 #include "LevelChange.hpp"
@@ -66,6 +67,7 @@ GameEventBroadcaster::GameEventBroadcaster(GameEventBroadcasterParts parts)
   subscribeTo<game::LevelChange>(LEVEL_CHANGE_EVENT_NAME);
   subscribeTo<game::PlayerHit>(PLAYER_HIT_EVENT_NAME);
   subscribeTo<game::PlayerElimination>(PLAYER_ELIMINATION_EVENT_NAME);
+  subscribeTo<game::ExtraLifeWon>(EXTRA_LIFE_WON_EVENT_NAME);
   subscribeTo<game::PlayerDeparture>(PLAYER_DEPARTURE_EVENT_NAME);
 }
 

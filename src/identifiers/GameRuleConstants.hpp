@@ -38,4 +38,11 @@ constexpr std::uint8_t HIGHEST_LIVES = 9;
 static_assert(DEFAULT_LIVES >= LOWEST_LIVES && DEFAULT_LIVES <= HIGHEST_LIVES,
               "the default lives must be a count the rules accept");
 
+/**
+ * @brief The times a team that lost every life past a checkpoint of a level
+ * goes back to it with the lives of the rules; once none is left, such a team
+ * loses the game. A game gets them back whole with each new world.
+ */
+constexpr std::uint8_t TEAM_CONTINUES = 3;
+
 }  // namespace rtype::identifiers

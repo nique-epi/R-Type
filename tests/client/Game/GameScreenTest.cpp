@@ -20,6 +20,7 @@
 #include "FakeEntityMessageSource.hpp"
 #include "FixedEntityTypeSourceConstants.hpp"
 #include "GameEnded.hpp"
+#include "GameEvent.hpp"
 #include "GameResult.hpp"
 #include "GameScreen.hpp"
 #include "GameScreenFixture.hpp"
@@ -1248,4 +1249,39 @@ TEST(GameScreenTallyTest, CountsTheMovesOfTheTickShown) {
   game.update(THREE_TICKS);
 
   EXPECT_EQ(doubles.interpolationTally.recalibrations().count, 1U);
+}
+
+/**
+ * Given a game of a level whose team held 3 continues
+ * When the server tells it went back to its checkpoint with 2 left
+ * Then the status canvas writes the notice of the 2 continues left
+ */
+TEST_F(GameScreenFixture, PaintsTheContinuesLeftOnceTheTeamGoesBack) {
+  entityMessages().queue(
+      rtype::network::LevelStatus{.biome = std::string{TOLD_BIOME},
+                                  .continuesLeft = CONTINUES_BEFORE_THE_WIPE});
+  screens().update(ONE_FRAME);
+
+  entityMessages().queue(
+      rtype::network::LevelStatus{.biome = std::string{TOLD_BIOME},
+                                  .continuesLeft = CONTINUES_AFTER_THE_WIPE});
+  screens().update(ONE_FRAME);
+
+  EXPECT_NE(writingOf(statusCanvas(), CONTINUES_LEFT_NOTICE), nullptr);
+}
+
+/**
+ * Given a game in progress
+ * When the server tells the first player won an extra life
+ * Then the status canvas writes 1UP
+ */
+TEST_F(GameScreenFixture, PaintsOneUpWhenAPlayerWinsALife) {
+  entityMessages().queue(rtype::network::GameEvent{
+      .eventNumber = EXTRA_LIFE_EVENT_NUMBER,
+      .kind = rtype::network::GameEventKind::ExtraLifeWon,
+      .playerNumber = PLAYER_WHO_WON_A_LIFE});
+
+  screens().update(ONE_FRAME);
+
+  EXPECT_NE(writingOf(statusCanvas(), ONE_UP_WORD), nullptr);
 }

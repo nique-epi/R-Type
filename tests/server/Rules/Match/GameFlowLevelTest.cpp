@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <cstddef>
 #include <vector>
 #include "ConnectedPlayer.hpp"
 #include "GameEnded.hpp"
@@ -15,6 +16,7 @@ using rtype::network::GameEnded;
 using rtype::network::WireGameOutcome;
 using rtype::server::ConnectedPlayer;
 using rtype::server::GameState;
+using rtype::server::testing::CONTINUES_OF_A_TEAM;
 using rtype::server::testing::FIRST_PLAYER;
 using rtype::server::testing::GameFlowBrokenLevelFixture;
 using rtype::server::testing::GameFlowFightingLevelFixture;
@@ -55,6 +57,27 @@ TEST_F(GameFlowTwoStagesFixture, GoesOnFromTheCheckpointWhenTheTeamIsLost) {
   tick();
 
   EXPECT_EQ(flow().state(), GameState::InProgress);
+}
+
+/**
+ * Given a game that plays a level, past its first checkpoint, whose team lost
+ * every life and went back to it three times
+ * When its only player loses every life once more
+ * Then the game is lost: the team spent its 3 continues
+ */
+TEST_F(GameFlowTwoStagesFixture, IsLostOnceTheContinuesAreSpent) {
+  startGameWith({FIRST_PLAYER});
+  runTicks(TICKS_PAST_THE_CHECKPOINT);
+  for (std::size_t wipe = 0; wipe < CONTINUES_OF_A_TEAM; ++wipe) {
+    takeEveryLifeOf(*roster().find(playerEndpoint(FIRST_PLAYER)));
+    tick();
+    ASSERT_EQ(flow().state(), GameState::InProgress);
+  }
+  takeEveryLifeOf(*roster().find(playerEndpoint(FIRST_PLAYER)));
+
+  tick();
+
+  EXPECT_EQ(flow().state(), GameState::Finished);
 }
 
 /**

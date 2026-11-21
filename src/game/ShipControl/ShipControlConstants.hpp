@@ -31,17 +31,20 @@ constexpr float SHIP_HEIGHT = 64.0F;
  * times SHIP_SPEED, and never less than floor x tick. The floor ends the
  * curve instead of letting it creep. While a direction of the axis is held,
  * DRIFT_RISE_RATE per second with DRIFT_RISE_FLOOR units per second squared:
- * a ship at rest reaches SHIP_SPEED on its 21st tick.
+ * the floor, 125 units a second more each tick, outruns the rate all the way,
+ * and its 4th step closes the gap whole, so a ship at rest reaches SHIP_SPEED
+ * on its 4th tick (67 ms) and answers its player at once.
  */
 constexpr float DRIFT_RISE_RATE = 6.0F;
-constexpr float DRIFT_RISE_FLOOR = 960.0F;
+constexpr float DRIFT_RISE_FLOOR = 7500.0F;
 
 /**
  * @brief The drift once no direction of the axis is held: a ship let go at
- * SHIP_SPEED glides 85 units and stops on its 28th tick.
+ * SHIP_SPEED glides 11.5 units and stops on its 4th tick, so a player who
+ * lets go before a shot is out of its row.
  */
 constexpr float DRIFT_FALL_RATE = 4.5F;
-constexpr float DRIFT_FALL_FLOOR = 720.0F;
+constexpr float DRIFT_FALL_FLOOR = 7500.0F;
 
 /**
  * @brief A barrel roll slides the ship ROLL_SIDESTEP units up or down over

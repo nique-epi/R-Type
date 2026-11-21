@@ -53,6 +53,9 @@ constexpr std::string_view LEVEL_BIOME = "wreck";
 constexpr float LEVEL_SCROLL_POSITION = 240.0F;
 constexpr float PAUSED_LEVEL_SCROLL_SPEED = 0.0F;
 
+/** @brief The continues a team of a level holds after one restart. */
+constexpr std::uint8_t LEVEL_CONTINUES_LEFT = 2;
+
 /** @brief The band of that level, its ceiling on row 192 and its floor on row
  * 848, as the level holds it and as the wire writes it. */
 constexpr game::PlayBand LEVEL_BAND{.top = 192.0F, .bottom = 848.0F};

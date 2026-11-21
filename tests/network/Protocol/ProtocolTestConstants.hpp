@@ -112,10 +112,10 @@ constexpr std::uint16_t SOME_ACKNOWLEDGED_SEQUENCE = 0x0D0E;
 constexpr std::uint32_t SOME_ACKNOWLEDGEMENT_BITS = 0x0F101112;
 
 /**
- * @brief The 22 bytes of a default header: RTYP, version 19, then zeros.
+ * @brief The 22 bytes of a default header: RTYP, version 20, then zeros.
  */
 constexpr auto DEFAULT_HEADER_BYTES = std::to_array<std::uint8_t>(
-    {0x52, 0x54, 0x59, 0x50, 0x13, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    {0x52, 0x54, 0x59, 0x50, 0x14, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00});
 
 /**
@@ -256,6 +256,9 @@ constexpr std::uint8_t SECOND_MAP = 2;
  */
 constexpr std::uint32_t SOME_INPUT_NUMBER = 0x01020304;
 constexpr std::uint16_t SOME_EVENT_NUMBER = 0x0102;
+/** @brief The player and the entity a GameEvent of the tests names. */
+constexpr std::uint8_t SECOND_PLAYER_OF_A_GAME_EVENT = 2;
+constexpr std::uint32_t SOME_ENTITY_OF_A_GAME_EVENT = 9;
 
 /**
  * @brief An attack number of an EnemyAction.

@@ -2,9 +2,11 @@
 
 #include <gtest/gtest.h>
 #include <cstdint>
+#include <vector>
 #include "ConnectedPlayer.hpp"
 #include "EventBus.hpp"
 #include "PlayerRoster.hpp"
+#include "ScoreChanged.hpp"
 #include "ScoreKeeper.hpp"
 
 namespace rtype::server::testing {
@@ -19,6 +21,8 @@ class ScoreKeeperFixture : public ::testing::Test {
   [[nodiscard]] std::uint32_t firstScore() const;
   [[nodiscard]] std::uint32_t secondScore() const;
   void giveFirstPlayerScore(std::uint32_t score);
+  /** @returns Every ScoreChanged the keeper published. */
+  [[nodiscard]] const std::vector<game::ScoreChanged>& changes() const;
 
  private:
   engine::EventBus events_;
@@ -26,6 +30,7 @@ class ScoreKeeperFixture : public ::testing::Test {
   ScoreKeeper keeper_{events_, roster_};
   ConnectedPlayer* first_{nullptr};
   ConnectedPlayer* second_{nullptr};
+  std::vector<game::ScoreChanged> changes_;
 };
 
 }  // namespace rtype::server::testing

@@ -11,13 +11,14 @@ namespace rtype::network {
 
 /**
  * @brief What a GameEvent tells. EntityDamaged names an entity and no player;
- * PlayerHit and PlayerEliminated name a player and no entity. The values are
- * the ones of the protocol page.
+ * PlayerHit, PlayerEliminated and ExtraLifeWon name a player and no entity.
+ * The values are the ones of the protocol page.
  */
 enum class GameEventKind : std::uint8_t {
   EntityDamaged = 1,
   PlayerHit = 2,
   PlayerEliminated = 3,
+  ExtraLifeWon = 4,
 };
 
 /**
@@ -29,10 +30,10 @@ enum class GameEventKind : std::uint8_t {
 struct GameEvent {
   static constexpr MessageType TYPE = MessageType::GameEvent;
 
-  std::uint16_t eventNumber;
-  GameEventKind kind;
-  std::uint8_t playerNumber;
-  std::uint32_t entityId;
+  std::uint16_t eventNumber{};
+  GameEventKind kind{};
+  std::uint8_t playerNumber{};
+  std::uint32_t entityId{};
 
   bool operator==(const GameEvent&) const = default;
 };

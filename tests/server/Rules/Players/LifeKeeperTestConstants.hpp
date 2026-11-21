@@ -19,4 +19,7 @@ constexpr std::size_t ONE_SECOND_IN_TICKS = 60;
  * came back after a hit cannot be hit. */
 constexpr std::size_t TWO_SECONDS_IN_TICKS = 120;
 
+/** @brief The deaths of a player who lost one ship. */
+constexpr std::uint32_t ONE_DEATH = 1;
+
 }  // namespace rtype::server::testing

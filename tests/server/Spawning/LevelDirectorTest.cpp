@@ -20,6 +20,8 @@ using rtype::server::testing::CAVES_BAND;
 using rtype::server::testing::CAVES_BEGAN_BEFORE_THE_CHECKPOINT;
 using rtype::server::testing::CAVES_BEGAN_BEFORE_THE_START;
 using rtype::server::testing::CAVES_BIOME;
+using rtype::server::testing::CONTINUES_AFTER_ONE_RESTART;
+using rtype::server::testing::CONTINUES_AFTER_THREE_RESTARTS;
 using rtype::server::testing::DIRECTED_LEVEL;
 using rtype::server::testing::FIRST_STAGE;
 using rtype::server::testing::LEVEL_ENEMY_SHEET;
@@ -38,6 +40,7 @@ using rtype::server::testing::LEVEL_THAT_SPAWNS_THE_PLACED;
 using rtype::server::testing::LEVEL_THAT_WAITS;
 using rtype::server::testing::LEVEL_WITH_A_DECLARED_START;
 using rtype::server::testing::LevelDirectorFixture;
+using rtype::server::testing::RESTARTS_A_TEAM_HAS;
 using rtype::server::testing::SCROLL_OF_ONE_SECOND;
 using rtype::server::testing::SCROLL_OF_ONE_TICK;
 using rtype::server::testing::SCROLL_OF_THE_DECLARED_START;
@@ -539,4 +542,40 @@ TEST_F(LevelDirectorFixture, RefusesAStageWithoutADeclaredStart) {
                    startOfStage(*scripts().levels().entryOf(DIRECTED_LEVEL),
                                 std::string{DIRECTED_LEVEL}, SECOND_STAGE)),
                UnknownLevelStartException);
+}
+
+/**
+ * Given a level past its checkpoint, its team holding its 3 continues
+ * When it restarts from its checkpoint and a tick passes
+ * Then 2 continues are left, and the game is told so
+ */
+TEST_F(LevelDirectorFixture, ARestartSpendsAContinue) {
+  direct(LEVEL_OF_TWO_STAGES);
+  tick(TICKS_INTO_THE_SECOND_STAGE);
+
+  static_cast<void>(director().restartFromCheckpoint());
+  tick(1);
+
+  EXPECT_EQ(director().progress().continuesLeft, CONTINUES_AFTER_ONE_RESTART);
+  EXPECT_EQ(changes().back().continuesLeft, CONTINUES_AFTER_ONE_RESTART);
+}
+
+/**
+ * Given a level past its checkpoint whose team restarted from it three times
+ * When it is asked to restart once more
+ * Then it refuses: the team spent every continue, and loses
+ */
+TEST_F(LevelDirectorFixture, RefusesARestartOnceTheContinuesAreSpent) {
+  direct(LEVEL_OF_TWO_STAGES);
+  tick(TICKS_INTO_THE_SECOND_STAGE);
+  for (std::size_t restart = 0; restart < RESTARTS_A_TEAM_HAS; ++restart) {
+    ASSERT_TRUE(director().restartFromCheckpoint());
+    tick(1);
+  }
+
+  const bool restarted = director().restartFromCheckpoint();
+
+  EXPECT_FALSE(restarted);
+  EXPECT_EQ(director().progress().continuesLeft,
+            CONTINUES_AFTER_THREE_RESTARTS);
 }
