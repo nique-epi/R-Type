@@ -1,10 +1,9 @@
 #pragma once
 
-#include <optional>
-#include <string>
 #include "Ambience.hpp"
 #include "IMusicPlayer.hpp"
 #include "ISoundPlayer.hpp"
+#include "LevelTracks.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -33,17 +32,18 @@ class IAudioService {
   virtual void playTheme() = 0;
 
   /** @brief Stops the theme and starts the music of a game a silence later,
-   * unless it plays already or is about to. When @p levelMusic names the
-   * asset of a music, the level plays it in place of the music of a game,
-   * bosses included, until playTheme(); without it, the music the level
-   * named last in the game plays, or the music of a game. */
-  virtual void playGameMusic(const std::optional<std::string>& levelMusic) = 0;
+   * unless it plays already or is about to. When @p tracks names a music,
+   * the level plays it in place of the music of a game until playTheme(),
+   * and its bosses play the boss music it names, or nothing but the music of
+   * the level when it names none; without a music, the musics the level
+   * named last in the game play, or the music of a game. */
+  virtual void playGameMusic(const LevelTracks& tracks) = 0;
 
   /** @brief Stops the music of a game at once, without fade, and cancels the
    * silence before it: playGameMusic() starts it again GAME_MUSIC_SILENCE
    * later. The theme is left as it is.
    * @returns False, stopping nothing, while the level plays a music of its
-   * own, which a boss leaves playing. */
+   * own and names no music for its bosses: a boss then leaves it playing. */
   [[nodiscard]] virtual bool silenceMusic() = 0;
 
   /** @brief Stops the music of a game and the theme, and starts the music of

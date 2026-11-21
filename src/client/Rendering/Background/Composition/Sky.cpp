@@ -8,6 +8,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <utility>
 #include "BackgroundCatalog.hpp"
 #include "BackgroundColorConstants.hpp"
@@ -22,6 +23,20 @@
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
+
+namespace {
+
+/** @returns The background of @p biome: the one @p laidOver holds, when it is
+ * given and holds one, else the one @p catalog holds; nullptr for none. */
+const BackgroundDescription* describedBiome(const BackgroundCatalog* laidOver,
+                                            const BackgroundCatalog& catalog,
+                                            std::string_view biome) {
+  const BackgroundDescription* const laid =
+      laidOver == nullptr ? nullptr : laidOver->named(biome);
+  return laid != nullptr ? laid : catalog.named(biome);
+}
+
+}  // namespace
 
 Sky::Sky(const BackgroundCatalog& catalog, SkySources sources)
     : backgrounds_(catalog, LayerSources{.fileOf = std::move(sources.fileOf),
@@ -42,12 +57,15 @@ void Sky::showLevel(const SkyLevel& level) {
 }
 
 std::optional<std::string> Sky::biomeMusic() const {
-  const BackgroundDescription* shown =
-      laidOver_ == nullptr ? nullptr : laidOver_->named(biome_);
-  if (shown == nullptr) {
-    shown = catalog_->named(biome_);
-  }
+  const BackgroundDescription* const shown =
+      describedBiome(laidOver_.get(), *catalog_, biome_);
   return shown == nullptr ? std::nullopt : shown->music;
+}
+
+std::optional<std::string> Sky::biomeBossMusic() const {
+  const BackgroundDescription* const shown =
+      describedBiome(laidOver_.get(), *catalog_, biome_);
+  return shown == nullptr ? std::nullopt : shown->bossMusic;
 }
 
 void Sky::layOver(std::shared_ptr<const BackgroundCatalog> backgrounds) {

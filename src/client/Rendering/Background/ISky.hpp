@@ -44,6 +44,11 @@ class ISky {
    * names, the background a server laid over winning; none when that
    * background names none, or before a level is shown. */
   [[nodiscard]] virtual std::optional<std::string> biomeMusic() const = 0;
+
+  /** @returns The asset id of the music the background of the biome shown
+   * names for its bosses, as biomeMusic() finds it; none when it names
+   * none. */
+  [[nodiscard]] virtual std::optional<std::string> biomeBossMusic() const = 0;
 };
 
 }  // namespace rtype::client

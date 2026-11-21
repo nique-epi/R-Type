@@ -467,13 +467,14 @@ std::vector<EmissionGroupDescription> groupsOf(
   return groups;
 }
 
-/** @returns The asset id of the music @p root names; none when it leaves the
- * key out. */
-std::optional<std::string> musicOf(const engine::DataFileTable& root) {
-  if (!holds(root, MUSIC_KEY)) {
+/** @returns The asset id of the music the key @p key of @p root names; none
+ * when it leaves the key out. */
+std::optional<std::string> musicAt(const engine::DataFileTable& root,
+                                   std::string_view key) {
+  if (!holds(root, key)) {
     return std::nullopt;
   }
-  return assetIdAt(root, MUSIC_KEY);
+  return assetIdAt(root, key);
 }
 
 }  // namespace
@@ -487,7 +488,8 @@ BackgroundDescription readBackground(const BackgroundText& text) {
   return BackgroundDescription{.name = text.name,
                                .layers = std::move(layers),
                                .groups = std::move(groups),
-                               .music = musicOf(root)};
+                               .music = musicAt(root, MUSIC_KEY),
+                               .bossMusic = musicAt(root, BOSS_MUSIC_KEY)};
 }
 
 }  // namespace rtype::client

@@ -51,6 +51,7 @@ class Sky final : public ISky {
   void setOffset(sf::Vector2i pixels) override;
   void showLevel(const SkyLevel& level) override;
   [[nodiscard]] std::optional<std::string> biomeMusic() const override;
+  [[nodiscard]] std::optional<std::string> biomeBossMusic() const override;
 
   /** @brief Lays the backgrounds of the pack of a server over those of the
    * sky, or takes them off for nullptr, see ShownBackgrounds::layOver(). */

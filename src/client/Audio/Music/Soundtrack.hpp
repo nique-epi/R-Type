@@ -50,14 +50,12 @@ class Soundtrack {
 
   /** @brief Plays @p music in place of the music of a game until the next
    * playTheme(): at once when the music of a game plays, at the end of the
-   * silence when it is about to; nothing when it plays already. */
-  void useLevelMusic(IMusicPlayer& music);
+   * silence when it is about to; nothing when it plays already. Its bosses
+   * play @p bossMusic in place of the music of the bosses; without it, the
+   * music of the level plays on through them. */
+  void useLevelMusic(IMusicPlayer& music, IMusicPlayer* bossMusic);
 
  private:
-  /** @returns The music of a game that plays: the level's own, or the music
-   * of a game. */
-  [[nodiscard]] IMusicPlayer& gameMusic() const;
-
   /** @brief Cancels the wait before the music of the boss and stops it. */
   void stopBoss();
 
@@ -65,6 +63,7 @@ class Soundtrack {
   IMusicPlayer* gameMusic_;
   IMusicPlayer* bossMusic_;
   IMusicPlayer* levelMusic_{nullptr};
+  IMusicPlayer* levelBossMusic_{nullptr};
   std::optional<engine::Duration> silenceLeft_;
   std::optional<engine::Duration> alarmLeft_;
   /** @brief Whether pauseTheme() paused a theme that played, and nothing

@@ -1,6 +1,5 @@
 #include "ClientGameModule.hpp"
 #include <memory>
-#include <optional>
 #include <random>
 #include <string>
 #include <vector>
@@ -14,6 +13,7 @@
 #include "IScreen.hpp"
 #include "InstallContext.hpp"
 #include "InterpolationTally.hpp"
+#include "LevelTracks.hpp"
 #include "ModuleConstants.hpp"
 #include "PlayerPreferences.hpp"
 #include "PlayerSettings.hpp"
@@ -42,7 +42,7 @@ AssetList gameAssetsOf(const ScreenContext& context) {
  * the other entities. */
 std::unique_ptr<IScreen> buildGameScreen(const ScreenContext& context,
                                          InterpolationTally& tally) {
-  context.services.audio.get().playGameMusic(std::nullopt);
+  context.services.audio.get().playGameMusic(LevelTracks{});
   std::unique_ptr<IScreen> loading =
       loadingScreenUnlessLoaded(context, gameAssetsOf(context), GAME_SCREEN);
   if (loading != nullptr) {

@@ -1,12 +1,12 @@
 #include "AudioService.hpp"
 #include <optional>
-#include <string>
 #include "Ambience.hpp"
 #include "AmbienceMusic.hpp"
 #include "AssetLibrary.hpp"
 #include "AudioConstants.hpp"
 #include "IMusicPlayer.hpp"
 #include "ISoundPlayer.hpp"
+#include "LevelTracks.hpp"
 #include "SettingsService.hpp"
 #include "SoundConstants.hpp"
 #include "SoundtrackParts.hpp"
@@ -44,9 +44,14 @@ IMusicPlayer& AudioService::theme() { return theme_; }
 
 void AudioService::playTheme() { soundtrack_.playTheme(); }
 
-void AudioService::playGameMusic(const std::optional<std::string>& levelMusic) {
-  if (levelMusic.has_value()) {
-    soundtrack_.useLevelMusic(levelMusic_.playerOf(*levelMusic, *library_));
+void AudioService::playGameMusic(const LevelTracks& tracks) {
+  if (tracks.music.has_value()) {
+    IMusicPlayer* const boss =
+        tracks.bossMusic.has_value()
+            ? &levelMusic_.playerOf(*tracks.bossMusic, *library_)
+            : nullptr;
+    soundtrack_.useLevelMusic(levelMusic_.playerOf(*tracks.music, *library_),
+                              boss);
   }
   soundtrack_.playGameMusic();
 }

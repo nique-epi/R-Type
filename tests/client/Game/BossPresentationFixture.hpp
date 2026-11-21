@@ -24,6 +24,9 @@ class BossPresentationFixture : public ::testing::Test {
   void placeNamedBoss();
   /** @brief Has the level name LEVEL_MUSIC as the music it plays. */
   void playLevelMusic();
+  /** @brief Has the level name LEVEL_MUSIC, and LEVEL_BOSS_MUSIC for its
+   * bosses. */
+  void playLevelAndBossMusic();
   [[nodiscard]] const RecordingSoundPlayer& sounds() const;
   [[nodiscard]] const RecordingAudioService& audio() const;
 

@@ -56,6 +56,23 @@ TEST_F(BossPresentationFixture, TheMusicOfALevelPlaysOnThroughTheArrival) {
 }
 
 /**
+ * Given a level that plays a music of its own and names one for its bosses
+ * When the boss starts to arrive
+ * Then the alarm plays and the music of the boss is asked for, which the
+ * level gives
+ */
+TEST_F(BossPresentationFixture, ABossOfALevelWithBossMusicPlaysTheAlarm) {
+  playLevelAndBossMusic();
+
+  presentation().apply(PRESENTED_BOSS_ARRIVING);
+
+  EXPECT_EQ(sounds().played(), std::vector<std::string>{BOSS_ALARM_SOUND_ID});
+  EXPECT_EQ(audio().musicCalls(),
+            (std::vector<MusicCall>{MusicCall::LevelMusic, MusicCall::Silence,
+                                    MusicCall::BossMusic}));
+}
+
+/**
  * Given a presentation told nothing
  * When the boss starts to arrive
  * Then the alarm plays once, and the music of the boss is asked for after

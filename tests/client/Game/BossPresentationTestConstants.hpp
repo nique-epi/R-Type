@@ -49,3 +49,6 @@ constexpr rtype::engine::Duration TO_THE_ROAR = std::chrono::milliseconds(6300);
 
 /** @brief The music a level names, which plays through its bosses. */
 constexpr std::string_view LEVEL_MUSIC = "music/crawl_out.mp3";
+
+/** @brief The music a level names for its bosses. */
+constexpr std::string_view LEVEL_BOSS_MUSIC = "music/uranium_rock.mp3";

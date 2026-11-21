@@ -729,15 +729,28 @@ TEST(BackgroundReading, ReadsTheMusicOfABackground) {
 }
 
 /**
+ * Given a background that names the music of its bosses
+ * When it is read
+ * Then it holds the asset id of that music
+ */
+TEST(BackgroundReading, ReadsTheBossMusicOfABackground) {
+  const BackgroundDescription background =
+      backgroundReading(A_BACKGROUND_WITH_MUSIC);
+
+  EXPECT_EQ(background.bossMusic.value_or(""), BACKGROUND_BOSS_MUSIC);
+}
+
+/**
  * Given a background that names no music
  * When it is read
- * Then it holds none, the music of a game playing over it
+ * Then it holds none, neither for the level nor for its bosses
  */
 TEST(BackgroundReading, ABackgroundWithoutMusicNamesNone) {
   const BackgroundDescription background =
       backgroundReading(A_PLANET_THEN_WALLS);
 
   EXPECT_FALSE(background.music.has_value());
+  EXPECT_FALSE(background.bossMusic.has_value());
 }
 
 /**

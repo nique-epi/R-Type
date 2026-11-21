@@ -15,6 +15,10 @@ void RecordingSky::showLevel(const rtype::client::SkyLevel& level) {
 
 std::optional<std::string> RecordingSky::biomeMusic() const { return music_; }
 
+std::optional<std::string> RecordingSky::biomeBossMusic() const {
+  return std::nullopt;
+}
+
 void RecordingSky::setBiomeMusic(std::optional<std::string> music) {
   music_ = std::move(music);
 }

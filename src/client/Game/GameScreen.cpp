@@ -55,6 +55,7 @@
 #include "InterpolationTally.hpp"
 #include "KopecksReward.hpp"
 #include "LevelStatus.hpp"
+#include "LevelTracks.hpp"
 #include "LevelTransition.hpp"
 #include "LevelTransitionScene.hpp"
 #include "Logger.hpp"
@@ -168,12 +169,14 @@ SkyLevel skyLevelOf(const network::LevelStatus& status) {
 
 /** @brief Shows the level @p status tells in the sky of @p routes, and plays
  * the music its background names, when it names one, in place of the music
- * of a game. */
+ * of a game, with the music it names for its bosses. */
 void showLevel(const EntityMessageRoutes& routes,
                const network::LevelStatus& status) {
+  const ISky& sky = routes.sky.get();
   routes.sky.get().showLevel(skyLevelOf(status));
-  if (const std::optional<std::string> music = routes.sky.get().biomeMusic()) {
-    routes.audio.get().playGameMusic(music);
+  if (std::optional<std::string> music = sky.biomeMusic()) {
+    routes.audio.get().playGameMusic(LevelTracks{
+        .music = std::move(music), .bossMusic = sky.biomeBossMusic()});
   }
 }
 

@@ -23,6 +23,7 @@
 #include "IInterfaceCanvas.hpp"
 #include "ISoundPlayer.hpp"
 #include "InterfacePixel.hpp"
+#include "LevelTracks.hpp"
 #include "Position.hpp"
 #include "SoundConstants.hpp"
 #include "TimeConstants.hpp"
@@ -116,7 +117,7 @@ void BossPresentation::apply(const network::EntityDestroyed& destroyed) {
   chargeSignalledAt_.reset();
   if (bossMusicStarted_) {
     bossMusicStarted_ = false;
-    audio_->playGameMusic(std::nullopt);
+    audio_->playGameMusic(LevelTracks{});
   }
 }
 
@@ -186,7 +187,7 @@ void BossPresentation::followMusic() {
       (playsALevel_ && tracker_.fight().stage == network::BossStage::Defeated);
   if (bossGone && bossMusicStarted_) {
     bossMusicStarted_ = false;
-    audio_->playGameMusic(std::nullopt);
+    audio_->playGameMusic(LevelTracks{});
   }
 }
 

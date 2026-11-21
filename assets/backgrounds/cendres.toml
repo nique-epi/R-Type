@@ -3,9 +3,10 @@
 # Three layers cut from the map of its LDtk project, written by
 # generator/procedural/; the background arrives through its nearest layer.
 
-# The level plays Crawl Out Through the Fallout while this biome shows,
-# bosses included.
+# The level plays Crawl Out Through the Fallout while this biome shows.
 music = "music/crawl_out_through_the_fallout.mp3"
+# The Sandmaw is fought here, to its own music.
+boss_music = "music/uranium_fever.mp3"
 
 [[layer]]
 name = "far plane"

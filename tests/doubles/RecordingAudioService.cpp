@@ -1,10 +1,9 @@
 #include "RecordingAudioService.hpp"
-#include <optional>
-#include <string>
 #include <vector>
 #include "Ambience.hpp"
 #include "IMusicPlayer.hpp"
 #include "ISoundPlayer.hpp"
+#include "LevelTracks.hpp"
 #include "MusicCall.hpp"
 #include "TimeConstants.hpp"
 
@@ -21,18 +20,22 @@ rtype::client::IMusicPlayer& RecordingAudioService::theme() { return theme_; }
 void RecordingAudioService::playTheme() {
   musicCalls_.push_back(MusicCall::Theme);
   levelMusicNamed_ = false;
+  bossMusicNamed_ = false;
 }
 
 void RecordingAudioService::playGameMusic(
-    const std::optional<std::string>& levelMusic) {
-  levelMusicNamed_ = levelMusicNamed_ || levelMusic.has_value();
-  musicCalls_.push_back(levelMusic.has_value() ? MusicCall::LevelMusic
-                                               : MusicCall::GameMusic);
+    const rtype::client::LevelTracks& tracks) {
+  if (tracks.music.has_value()) {
+    levelMusicNamed_ = true;
+    bossMusicNamed_ = tracks.bossMusic.has_value();
+  }
+  musicCalls_.push_back(tracks.music.has_value() ? MusicCall::LevelMusic
+                                                 : MusicCall::GameMusic);
 }
 
 bool RecordingAudioService::silenceMusic() {
   musicCalls_.push_back(MusicCall::Silence);
-  return !levelMusicNamed_;
+  return !levelMusicNamed_ || bossMusicNamed_;
 }
 
 void RecordingAudioService::playBossMusic() {

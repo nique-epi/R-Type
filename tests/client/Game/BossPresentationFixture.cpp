@@ -5,6 +5,7 @@
 #include "BossPresentationTestConstants.hpp"
 #include "EffectTestConstants.hpp"
 #include "Entity.hpp"
+#include "LevelTracks.hpp"
 #include "NetworkIdentity.hpp"
 #include "RecordingAudioService.hpp"
 #include "RecordingSoundPlayer.hpp"
@@ -40,7 +41,14 @@ const RecordingSoundPlayer& BossPresentationFixture::sounds() const {
 }
 
 void BossPresentationFixture::playLevelMusic() {
-  audio_.playGameMusic(std::string{LEVEL_MUSIC});
+  audio_.playGameMusic(
+      rtype::client::LevelTracks{.music = std::string{LEVEL_MUSIC}});
+}
+
+void BossPresentationFixture::playLevelAndBossMusic() {
+  audio_.playGameMusic(
+      rtype::client::LevelTracks{.music = std::string{LEVEL_MUSIC},
+                                 .bossMusic = std::string{LEVEL_BOSS_MUSIC}});
 }
 
 const RecordingAudioService& BossPresentationFixture::audio() const {
