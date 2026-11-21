@@ -32,20 +32,22 @@ SignInLines waitingLines(const DeviceLinkReading& reading,
                          std::chrono::sys_seconds now) {
   return SignInLines{.title = reading.userCode,
                      .line = std::string{ENTER_CODE_AT_START} +
-                             pageShownOf(reading.verificationUri) +
-                             validityOf(reading, now),
+                             pageShownOf(reading.verificationUri),
+                     .validity = validityOf(reading, now),
                      .offersNewCode = false};
 }
 
 SignInLines askingLines() {
   return SignInLines{.title = std::string{SIGN_IN_TITLE},
                      .line = std::string{ASKING_CODE_LINE},
+                     .validity = std::nullopt,
                      .offersNewCode = false};
 }
 
 SignInLines endedLines(std::string_view title, std::string_view line) {
   return SignInLines{.title = std::string{title},
                      .line = std::string{line},
+                     .validity = std::nullopt,
                      .offersNewCode = true};
 }
 
@@ -55,6 +57,7 @@ SignInLines signedInLines(bool sessionRefused) {
   }
   return SignInLines{.title = std::string{SIGNED_IN_TITLE},
                      .line = std::string{OPENING_ACCOUNT_LINE},
+                     .validity = std::nullopt,
                      .offersNewCode = false};
 }
 

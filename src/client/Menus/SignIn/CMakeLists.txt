@@ -1,6 +1,7 @@
 add_library(rtype_client_menus_sign_in STATIC
   SignInScreen.cpp
   SignInText.cpp
+  WaitingCodePainting.cpp
 )
 
 target_include_directories(rtype_client_menus_sign_in PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

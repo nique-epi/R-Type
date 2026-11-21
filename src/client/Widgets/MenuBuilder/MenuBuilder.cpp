@@ -50,6 +50,14 @@ struct FormLayout {
   int buttonCount{};
 };
 
+/** @brief Where the panel of a dialog lies, and how far down it its buttons
+ * stand. */
+struct DialogLayout {
+  sf::Vector2i panelTopLeft;
+  sf::Vector2i panelSize;
+  int buttonsTop{};
+};
+
 /** @returns The top of what comes under a line of a column, which is left out
  * when it was not asked for. */
 int placeColumnLine(Menu::Content& content, std::optional<std::string>& text,
@@ -204,30 +212,42 @@ int rowCountOf(const std::vector<PendingButton>& bars) {
 }
 
 /** @returns How far down its panel a dialog of @p rowCount rows places its
- * buttons: DIALOG_BUTTONS_TOP under a message, ROW_GAP under the last row
- * otherwise. */
-int dialogButtonsTopOf(int rowCount) {
+ * buttons: DIALOG_SPACE_ABOVE_BUTTONS under an illustration of @p
+ * illustration size, DIALOG_BUTTONS_TOP under a message, ROW_GAP under the
+ * last row otherwise. */
+int dialogButtonsTopOf(int rowCount, std::optional<sf::Vector2i> illustration) {
+  if (illustration.has_value()) {
+    return DIALOG_ILLUSTRATION_OFFSET.y + illustration->y +
+           DIALOG_SPACE_ABOVE_BUTTONS;
+  }
   if (rowCount == 0) {
     return DIALOG_BUTTONS_TOP;
   }
   return DIALOG_ROWS_TOP + (rowCount * DIALOG_ROW_PITCH) + ROW_GAP;
 }
 
-/** @returns The size of a dialog of @p rowCount rows: DIALOG_SIZE under a
- * message, and with rows as tall as ends DIALOG_MARGIN_UNDER_BUTTONS under its
- * buttons. */
-sf::Vector2i dialogSizeOf(int rowCount) {
-  if (rowCount == 0) {
-    return DIALOG_SIZE;
+/** @returns Where a dialog of @p rowCount rows and an illustration of @p
+ * illustration size lies: DIALOG_SIZE under a message; with rows or an
+ * illustration, as tall as ends DIALOG_MARGIN_UNDER_BUTTONS under its
+ * buttons; centered on the picture. */
+DialogLayout dialogLayoutOf(int rowCount,
+                            std::optional<sf::Vector2i> illustration) {
+  const int buttonsTop = dialogButtonsTopOf(rowCount, illustration);
+  sf::Vector2i size = DIALOG_SIZE;
+  if (rowCount > 0 || illustration.has_value()) {
+    size.y = buttonsTop + DIALOG_BUTTON_SIZE.y + DIALOG_MARGIN_UNDER_BUTTONS;
   }
-  return {DIALOG_SIZE.x, dialogButtonsTopOf(rowCount) + DIALOG_BUTTON_SIZE.y +
-                             DIALOG_MARGIN_UNDER_BUTTONS};
+  return DialogLayout{
+      .panelTopLeft = (INTERFACE_AREA.size - size) / SIDES_PER_AXIS,
+      .panelSize = size,
+      .buttonsTop = buttonsTop};
 }
 
 /** @brief Places the rows of a dialog under its heading and its buttons in a
  * centered row; rows keep Left and Right to step their values. */
 void placeDialogBars(Menu::Content& content, std::vector<PendingButton>& bars,
-                     sf::Vector2i panel) {
+                     const DialogLayout& layout) {
+  const sf::Vector2i panel = layout.panelTopLeft;
   const int rowCount = rowCountOf(bars);
   const int barCount = static_cast<int>(bars.size()) - rowCount;
   const int rowWidth =
@@ -238,7 +258,7 @@ void placeDialogBars(Menu::Content& content, std::vector<PendingButton>& bars,
           .firstRow = {panel.x + DIALOG_ROW_INSET, panel.y + DIALOG_ROWS_TOP},
           .rowSize = DIALOG_ROW_SIZE,
           .firstBar = {panel.x + ((DIALOG_SIZE.x - rowWidth) / SIDES_PER_AXIS),
-                       panel.y + dialogButtonsTopOf(rowCount)},
+                       panel.y + layout.buttonsTop},
           .barSize = DIALOG_BUTTON_SIZE,
           .barGap = DIALOG_BUTTON_GAP});
   if (rowCount > 0) {
@@ -402,10 +422,14 @@ void MenuBuilder::placeColumn(Menu::Content& content) {
 }
 
 void MenuBuilder::placeDialog(Menu::Content& content) {
-  const sf::Vector2i size = dialogSizeOf(rowCountOf(buttons_));
-  const sf::Vector2i panelTopLeft =
-      (INTERFACE_AREA.size - size) / SIDES_PER_AXIS;
-  content.panel = sf::IntRect(panelTopLeft, size);
+  const DialogLayout layout =
+      dialogLayoutOf(rowCountOf(buttons_), illustration_);
+  const sf::Vector2i panelTopLeft = layout.panelTopLeft;
+  content.panel = sf::IntRect(panelTopLeft, layout.panelSize);
+  if (illustration_.has_value()) {
+    content.illustration =
+        sf::IntRect(panelTopLeft + DIALOG_ILLUSTRATION_OFFSET, *illustration_);
+  }
   if (heading_.has_value()) {
     content.labels.emplace_back(std::move(*heading_),
                                 panelTopLeft + DIALOG_HEADING_OFFSET,
@@ -416,7 +440,7 @@ void MenuBuilder::placeDialog(Menu::Content& content) {
                                 panelTopLeft + DIALOG_MESSAGE_OFFSET,
                                 DIALOG_MESSAGE_STYLE);
   }
-  placeDialogBars(content, buttons_, panelTopLeft);
+  placeDialogBars(content, buttons_, layout);
 }
 
 void MenuBuilder::placeForm(Menu::Content& content) {

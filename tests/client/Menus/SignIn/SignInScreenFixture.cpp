@@ -53,6 +53,10 @@ const std::vector<std::string>& SignInScreenFixture::openedPages() const {
   return openedPages_;
 }
 
+const InterfaceCanvasRecord& SignInScreenFixture::painting() const {
+  return canvas_;
+}
+
 void SignInScreenFixture::frame() { screen_->update(PRESS_DURATION); }
 
 void SignInScreenFixture::choose(sf::Keyboard::Key key) {
