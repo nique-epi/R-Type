@@ -12,11 +12,26 @@ layer = "enemy"
 hits = ["player"]
 pilot = "sandmaw_maw"
 
-# Its body above the dune; every hit on it counts once it has come up.
-[gameplay.hitbox]
-width = 232
-height = 120
-offset_y = -16
+# Its body above the dune, as three boxes that follow it: its head behind
+# the tips of its fangs, its middle and its tail, never the dune nor the air
+# above the tail; every hit on them counts once it has come up.
+[[gameplay.hitbox.box]]
+width = 84
+height = 84
+offset_x = -46
+offset_y = -14
+
+[[gameplay.hitbox.box]]
+width = 56
+height = 96
+offset_x = 24
+offset_y = -12
+
+[[gameplay.hitbox.box]]
+width = 60
+height = 80
+offset_x = 82
+offset_y = 0
 
 [gameplay.motion]
 kind = "steady"
@@ -59,6 +74,7 @@ arrival_attack = 2
 [appearance]
 sheet = "sprites/cendres/sandmaw.png"
 boss_name = "SANDMAW"
+boss_music = "music/uranium_fever.mp3"
 
 [appearance.idle]
 left = 0

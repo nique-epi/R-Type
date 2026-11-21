@@ -92,6 +92,7 @@ phase = "strike"
 [appearance]
 sheet = "sprites/cendres/ash_mother.png"
 boss_name = "THE ASH MOTHER"
+boss_music = "music/uranium_rock.mp3"
 
 [appearance.idle]
 left = 0
