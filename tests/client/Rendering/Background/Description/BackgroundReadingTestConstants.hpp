@@ -342,12 +342,12 @@ constexpr std::size_t ONE_LAYER_TOO_MANY = 33;
 constexpr std::string_view TOO_MANY_LAYERS_REFUSAL =
     "layer holds more than 32 tables";
 
-/** @brief A background that names the music a game plays while it shows,
- * one that names a file outside the assets, and the refusal of the second. */
-constexpr std::string_view A_BACKGROUND_WITH_ITS_MUSIC =
-    "music = \"music/big_iron.mp3\"\n"
+/** @brief A background that names its music above its one layer, the asset
+ * id it names, and one that names a music outside the content folders. */
+constexpr std::string_view A_BACKGROUND_WITH_MUSIC =
+    "music = \"music/crawl_out.mp3\"\n"
     "[[layer]]\nname = \"far\"\nimage = { file = \"a.png\" }\n";
-constexpr std::string_view THE_MUSIC_IT_NAMES = "music/big_iron.mp3";
+constexpr std::string_view BACKGROUND_MUSIC = "music/crawl_out.mp3";
 constexpr std::string_view A_MUSIC_OUTSIDE_THE_ASSETS =
     "music = \"../secret.mp3\"\n"
     "[[layer]]\nname = \"far\"\nimage = { file = \"a.png\" }\n";

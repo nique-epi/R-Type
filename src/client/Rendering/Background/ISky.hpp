@@ -1,8 +1,8 @@
 #pragma once
 
 #include <SFML/System/Vector2.hpp>
+#include <optional>
 #include <string>
-#include <string_view>
 #include "SkyLevel.hpp"
 
 namespace rtype::client {
@@ -40,10 +40,10 @@ class ISky {
    */
   virtual void showLevel(const SkyLevel& level) = 0;
 
-  /** @returns The music a game plays while the background of the biome
-   * @p biome shows, as its file names it (`music`); empty when it names none
-   * or the client has no background for that biome. */
-  [[nodiscard]] virtual std::string musicOf(std::string_view biome) const = 0;
+  /** @returns The asset id of the music the background of the biome shown
+   * names, the background a server laid over winning; none when that
+   * background names none, or before a level is shown. */
+  [[nodiscard]] virtual std::optional<std::string> biomeMusic() const = 0;
 };
 
 }  // namespace rtype::client

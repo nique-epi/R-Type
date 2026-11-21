@@ -38,7 +38,7 @@ twinkle_steps = 8
 
 A table in braces fits on one line; one that needs several lines is written as a table of its own, `[layer.particles]`, after the keys of its layer.
 
-Before its layers, a file may name the music a game plays while it shows, by its asset id: `music = "music/big_iron.mp3"` in the five backgrounds of Deseret. The client plays it in a loop over the whole file in place of the music of a game, from the first `LevelStatus` that names the biome, and goes back to the music of a game for a biome that names none (`LevelMusic`, see [Sounds and music](/R-Type/client/#sounds-and-music-iaudioservice-soundplayer-musicplayer)). A text that is no asset id is refused, as a file of a layer is.
+A background may also name, above its layers, the music a game plays while it shows, by its asset id: `music = "music/crawl_out_through_the_fallout.mp3"` in the four backgrounds of the Ashlands, `music = "music/big_iron.mp3"` in the five of Deseret, a file of `assets/music/`. It plays in place of the music of a game from the first status of the level that shows the biome until the game ends, bosses included, which then play neither their alarm nor the music of a boss, unless the sheet of the boss names a music of its own (`boss_music`, see [Client](/R-Type/client/#sounds-and-music-iaudioservice-soundplayer-musicplayer)). A background without `music` leaves the music of a game. A resource of a server does not send the file of a music: the client looks for it in its own assets.
 
 ## A layer
 

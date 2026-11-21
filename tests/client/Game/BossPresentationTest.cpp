@@ -40,6 +40,57 @@ TEST_F(BossPresentationFixture, TheArrivalSilencesTheMusic) {
 }
 
 /**
+ * Given a level that plays a music of its own
+ * When the boss starts to arrive
+ * Then no alarm plays and no music of the boss is asked for: the silence the
+ * arrival asks for is refused, and the music of the level plays on
+ */
+TEST_F(BossPresentationFixture, TheMusicOfALevelPlaysOnThroughTheArrival) {
+  playLevelMusic();
+
+  presentation().apply(PRESENTED_BOSS_ARRIVING);
+
+  EXPECT_THAT(sounds().played(), Not(Contains(BOSS_ALARM_SOUND_ID)));
+  EXPECT_EQ(audio().musicCalls(), (std::vector<MusicCall>{MusicCall::LevelMusic,
+                                                          MusicCall::Silence}));
+}
+
+/**
+ * Given a level that plays a music of its own, and a boss whose sheet names
+ * the music it fights to, arriving
+ * When the first status of its fight arrives
+ * Then the music of the boss is asked for, in place of the music of the level
+ */
+TEST_F(BossPresentationFixture, TheMusicOfABossSheetTakesOverTheMusicOfALevel) {
+  playLevelMusic();
+  placeBossWithMusic();
+  presentation().apply(PRESENTED_BOSS_ARRIVING);
+
+  presentation().apply(PRESENTED_BOSS_FIGHTING);
+
+  EXPECT_EQ(audio().musicCalls(),
+            (std::vector<MusicCall>{MusicCall::LevelMusic, MusicCall::Silence,
+                                    MusicCall::BossMusic}));
+}
+
+/**
+ * Given a level that plays a music of its own, and a boss whose sheet names
+ * no music, arriving
+ * When the first status of its fight arrives
+ * Then no music of the boss is asked for: the music of the level plays on
+ */
+TEST_F(BossPresentationFixture, ABossWithoutMusicLeavesTheMusicOfALevel) {
+  playLevelMusic();
+  placeNamedBoss();
+  presentation().apply(PRESENTED_BOSS_ARRIVING);
+
+  presentation().apply(PRESENTED_BOSS_FIGHTING);
+
+  EXPECT_EQ(audio().musicCalls(), (std::vector<MusicCall>{MusicCall::LevelMusic,
+                                                          MusicCall::Silence}));
+}
+
+/**
  * Given a presentation told nothing
  * When the boss starts to arrive
  * Then the alarm plays once, and the music of the boss is asked for after

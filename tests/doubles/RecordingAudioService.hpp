@@ -1,6 +1,8 @@
 #pragma once
 
 #include <functional>
+#include <optional>
+#include <string>
 #include <string_view>
 #include <vector>
 #include "Ambience.hpp"
@@ -24,8 +26,12 @@ class RecordingAudioService final : public rtype::client::IAudioService {
   [[nodiscard]] rtype::client::ISoundPlayer& sounds() override;
   [[nodiscard]] rtype::client::IMusicPlayer& theme() override;
   void playTheme() override;
-  void playGameMusic(std::string_view music) override;
-  void silenceMusic() override;
+  /** @brief Writes down GameMusic, or LevelMusic when @p levelMusic names
+   * a music. */
+  void playGameMusic(const std::optional<std::string>& levelMusic) override;
+  /** @brief Writes down Silence; false once a level named its music, as the
+   * real service. */
+  [[nodiscard]] bool silenceMusic() override;
   void playBossMusic(std::string_view music) override;
   void setAmbience(rtype::client::Ambience ambience) override;
   [[nodiscard]] rtype::client::Ambience ambience() const override;
@@ -39,5 +45,6 @@ class RecordingAudioService final : public rtype::client::IAudioService {
   std::reference_wrapper<rtype::client::ISoundPlayer> sounds_;
   FakeMusicPlayer theme_;
   std::vector<MusicCall> musicCalls_;
+  bool levelMusicNamed_{false};
   rtype::client::Ambience ambience_{rtype::client::Ambience::None};
 };

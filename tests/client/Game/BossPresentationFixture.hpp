@@ -22,6 +22,11 @@ class BossPresentationFixture : public ::testing::Test {
   /** @brief Places the boss PRESENTED_BOSS_ID, drawn from a sheet that names
    * it PRESENTED_BOSS_NAME. */
   void placeNamedBoss();
+  /** @brief Places the boss PRESENTED_BOSS_ID, drawn from a sheet that names
+   * PRESENTED_BOSS_MUSIC as the music it fights to. */
+  void placeBossWithMusic();
+  /** @brief Has the level name LEVEL_MUSIC as the music it plays. */
+  void playLevelMusic();
   [[nodiscard]] const RecordingSoundPlayer& sounds() const;
   [[nodiscard]] const RecordingAudioService& audio() const;
 
@@ -33,4 +38,7 @@ class BossPresentationFixture : public ::testing::Test {
   RecordingAudioService audio_{sounds_};
   rtype::client::BossPresentation presentation_;
   rtype::client::EntityAppearance namedBossAppearance_;
+  rtype::client::EntityAppearance bossWithMusicAppearance_;
+  /** @brief Places the boss PRESENTED_BOSS_ID, drawn from @p appearance. */
+  void placeBoss(const rtype::client::EntityAppearance& appearance);
 };

@@ -717,31 +717,31 @@ TEST(BackgroundReading, RefusesOneLayerTooMany) {
 }
 
 /**
- * Given a background that names the music of its level
+ * Given a background that names its music
  * When it is read
- * Then it holds that music
+ * Then it holds the asset id of that music
  */
-TEST(BackgroundReading, ReadsTheMusicItNames) {
+TEST(BackgroundReading, ReadsTheMusicOfABackground) {
   const BackgroundDescription background =
-      backgroundReading(A_BACKGROUND_WITH_ITS_MUSIC);
+      backgroundReading(A_BACKGROUND_WITH_MUSIC);
 
-  EXPECT_EQ(background.music, THE_MUSIC_IT_NAMES);
+  EXPECT_EQ(background.music.value_or(""), BACKGROUND_MUSIC);
 }
 
 /**
  * Given a background that names no music
  * When it is read
- * Then it holds none, so a game plays its own music
+ * Then it holds none, the music of a game playing over it
  */
-TEST(BackgroundReading, ABackgroundWithoutMusicHoldsNone) {
+TEST(BackgroundReading, ABackgroundWithoutMusicNamesNone) {
   const BackgroundDescription background =
       backgroundReading(A_PLANET_THEN_WALLS);
 
-  EXPECT_TRUE(background.music.empty());
+  EXPECT_FALSE(background.music.has_value());
 }
 
 /**
- * Given a background whose music lies outside the assets
+ * Given a background whose music climbs out of the content folders
  * When it is read
  * Then an InconsistentBackgroundException says a file is named by its asset
  * id

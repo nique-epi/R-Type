@@ -23,14 +23,26 @@ BossPresentationFixture::BossPresentationFixture()
                            .looks = {},
                            .bossName = std::string{PRESENTED_BOSS_NAME},
                            .bossMusic = {},
-                           .sounds = {}} {}
+                           .sounds = {}},
+      bossWithMusicAppearance_(namedBossAppearance_) {
+  bossWithMusicAppearance_.bossMusic = std::string{PRESENTED_BOSS_MUSIC};
+}
 
 void BossPresentationFixture::placeNamedBoss() {
+  placeBoss(namedBossAppearance_);
+}
+
+void BossPresentationFixture::placeBossWithMusic() {
+  placeBoss(bossWithMusicAppearance_);
+}
+
+void BossPresentationFixture::placeBoss(
+    const rtype::client::EntityAppearance& appearance) {
   const rtype::engine::Entity boss = entities_.create();
   components_.add(boss,
                   rtype::game::NetworkIdentity{.networkId = PRESENTED_BOSS_ID});
-  components_.add(boss, rtype::client::AppearanceReference{
-                            .appearance = &namedBossAppearance_});
+  components_.add(
+      boss, rtype::client::AppearanceReference{.appearance = &appearance});
 }
 
 rtype::client::BossPresentation& BossPresentationFixture::presentation() {
@@ -39,6 +51,10 @@ rtype::client::BossPresentation& BossPresentationFixture::presentation() {
 
 const RecordingSoundPlayer& BossPresentationFixture::sounds() const {
   return sounds_;
+}
+
+void BossPresentationFixture::playLevelMusic() {
+  audio_.playGameMusic(std::string{LEVEL_MUSIC});
 }
 
 const RecordingAudioService& BossPresentationFixture::audio() const {

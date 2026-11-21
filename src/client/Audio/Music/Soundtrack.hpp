@@ -12,7 +12,9 @@ namespace rtype::client {
  * once a game starts. Entering a game stops the theme at once and starts the
  * music of the game GAME_MUSIC_SILENCE later; a title screen stops the music
  * of the game and plays the theme again. A screen with a music of its own
- * pauses the theme for as long as it shows.
+ * pauses the theme for as long as it shows. A level may name a music of its
+ * own (useLevelMusic()): it then plays in place of the music of a game, from
+ * then to the next title screen, bosses included.
  */
 class Soundtrack {
  public:
@@ -28,12 +30,14 @@ class Soundtrack {
 
   /** @brief Stops the theme and the music of a game, and starts the music of
    * the boss BOSS_ALARM_DURATION later, unless it plays already or is about
-   * to. */
+   * to; over a music of the level that plays, which no alarm silenced, it
+   * stops that music and starts the music of the boss at once. */
   void playBossMusic();
 
   /** @brief Stops the music of a game at once and cancels the silence before
-   * it; the theme is left as it is. */
-  void silenceMusic();
+   * it; the theme is left as it is.
+   * @returns False, stopping nothing, while the level plays its own music. */
+  [[nodiscard]] bool silenceMusic();
   /** @brief Pauses the theme when it plays, for a screen that plays a music
    * of its own; playTheme() then leaves it paused. */
   void pauseTheme();
@@ -45,13 +49,23 @@ class Soundtrack {
    * boss on by @p elapsed, and starts each music once its wait is over. */
   void advance(engine::Duration elapsed);
 
+  /** @brief Plays @p music in place of the music of a game until the next
+   * playTheme(): at once when the music of a game plays, at the end of the
+   * silence when it is about to; nothing when it plays already. */
+  void useLevelMusic(IMusicPlayer& music);
+
  private:
+  /** @returns The music of a game that plays: the level's own, or the music
+   * of a game. */
+  [[nodiscard]] IMusicPlayer& gameMusic() const;
+
   /** @brief Cancels the wait before the music of the boss and stops it. */
   void stopBoss();
 
   IMusicPlayer* theme_;
   IMusicPlayer* gameMusic_;
   IMusicPlayer* bossMusic_;
+  IMusicPlayer* levelMusic_{nullptr};
   std::optional<engine::Duration> silenceLeft_;
   std::optional<engine::Duration> alarmLeft_;
   /** @brief Whether pauseTheme() paused a theme that played, and nothing

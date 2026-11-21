@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+#include <string>
 #include <string_view>
 #include "Ambience.hpp"
 #include "AmbienceMusic.hpp"
@@ -7,6 +9,7 @@
 #include "IAudioService.hpp"
 #include "IMusicPlayer.hpp"
 #include "ISoundPlayer.hpp"
+#include "LevelMusic.hpp"
 #include "MusicPlayer.hpp"
 #include "SettingsService.hpp"
 #include "SoundBank.hpp"
@@ -46,8 +49,8 @@ class AudioService final : public IAudioService {
   [[nodiscard]] ISoundPlayer& sounds() override;
   [[nodiscard]] IMusicPlayer& theme() override;
   void playTheme() override;
-  void playGameMusic(std::string_view music) override;
-  void silenceMusic() override;
+  void playGameMusic(const std::optional<std::string>& levelMusic) override;
+  [[nodiscard]] bool silenceMusic() override;
   void playBossMusic(std::string_view music) override;
   void setAmbience(Ambience ambience) override;
   [[nodiscard]] Ambience ambience() const override;
@@ -65,6 +68,7 @@ class AudioService final : public IAudioService {
   MusicPlayer gameMusic_;
   MusicPlayer bossMusic_;
   AmbienceMusic ambiences_;
+  LevelMusic levelMusic_;
   Ambience ambience_{Ambience::None};
   Soundtrack soundtrack_;
 };

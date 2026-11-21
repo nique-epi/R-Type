@@ -467,14 +467,13 @@ std::vector<EmissionGroupDescription> groupsOf(
   return groups;
 }
 
-/** @returns The music `music` of @p root names, or nothing when the file
- * leaves it out. @throws InconsistentBackgroundException when the text is not
- * an asset id. */
-std::string musicOf(const engine::DataFileTable& root) {
-  if (!holds(root, BACKGROUND_MUSIC_KEY)) {
-    return {};
+/** @returns The asset id of the music @p root names; none when it leaves the
+ * key out. */
+std::optional<std::string> musicOf(const engine::DataFileTable& root) {
+  if (!holds(root, MUSIC_KEY)) {
+    return std::nullopt;
   }
-  return assetIdAt(root, BACKGROUND_MUSIC_KEY);
+  return assetIdAt(root, MUSIC_KEY);
 }
 
 }  // namespace

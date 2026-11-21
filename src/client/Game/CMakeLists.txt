@@ -5,7 +5,6 @@ add_library(rtype_client_game_module STATIC
   GameScreen.cpp
   HeldKey.cpp
   KopecksReward.cpp
-  LevelMusic.cpp
   PilotNameTags.cpp
   PilotShipLooks.cpp
   PilotShips.cpp

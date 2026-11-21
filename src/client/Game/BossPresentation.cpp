@@ -131,7 +131,7 @@ void BossPresentation::apply(const network::EntityDestroyed& destroyed) {
   chargeSignalledAt_.reset();
   if (bossMusicStarted_) {
     bossMusicStarted_ = false;
-    audio_->playGameMusic(CHOSEN_GAME_MUSIC);
+    audio_->playGameMusic(std::nullopt);
   }
 }
 
@@ -158,7 +158,7 @@ void BossPresentation::readBossSheet() {
   }
   if (bossInPlay_.has_value() && !bossMusic_.has_value()) {
     bossMusic_ = bossMusicOf(*components_, *bossInPlay_);
-    if (bossMusic_.has_value() && bossMusicStarted_) {
+    if (bossMusicStarted_ && !bossMusic_.value_or(std::string{}).empty()) {
       audio_->playBossMusic(*bossMusic_);
     }
   }
@@ -196,9 +196,10 @@ void BossPresentation::followMusic() {
   const bool arriving = !gameEnded_ && isArriving(tracker_, now_);
   if (arriving && !bossMusicStarted_) {
     bossMusicStarted_ = true;
-    audio_->silenceMusic();
-    sounds_->play(BOSS_ALARM_SOUND_ID);
-    audio_->playBossMusic(bossMusic_.value_or(std::string{}));
+    if (audio_->silenceMusic()) {
+      sounds_->play(BOSS_ALARM_SOUND_ID);
+      audio_->playBossMusic(bossMusic_.value_or(std::string{}));
+    }
     return;
   }
   const bool bossGone =
@@ -206,7 +207,7 @@ void BossPresentation::followMusic() {
       (playsALevel_ && tracker_.fight().stage == network::BossStage::Defeated);
   if (bossGone && bossMusicStarted_) {
     bossMusicStarted_ = false;
-    audio_->playGameMusic(CHOSEN_GAME_MUSIC);
+    audio_->playGameMusic(std::nullopt);
   }
 }
 

@@ -21,6 +21,7 @@
 #include "GameEnded.hpp"
 #include "GameResult.hpp"
 #include "GameScreenParts.hpp"
+#include "IAudioService.hpp"
 #include "IEntityLayer.hpp"
 #include "IEntityMessageSource.hpp"
 #include "IInterfaceCanvas.hpp"
@@ -32,7 +33,6 @@
 #include "ISky.hpp"
 #include "InterpolationClock.hpp"
 #include "InterpolationTally.hpp"
-#include "LevelMusic.hpp"
 #include "LevelTransitionScene.hpp"
 #include "Logger.hpp"
 #include "MissionBanner.hpp"
@@ -221,7 +221,7 @@ class GameScreen : public IScreen {
   logging::Logger logger_{std::string{GAME_SCREEN_LOGGER_NAME}};
   std::uint8_t loggedActions_{0};
   ISky* sky_;
-  LevelMusic levelMusic_;
+  IAudioService* audio_;
   MissionBannerLook paintedBanner_;
   std::optional<PlayerPalette> paintedPalette_;
   DepartureFeed departures_;

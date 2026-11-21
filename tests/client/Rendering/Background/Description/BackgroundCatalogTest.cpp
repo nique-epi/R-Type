@@ -271,6 +271,6 @@ TEST(BackgroundCatalog, EveryBiomeOfDeseretPlaysBigIron) {
     SCOPED_TRACE(name);
     const BackgroundDescription* const biome = catalog.named(name);
     ASSERT_NE(biome, nullptr);
-    EXPECT_EQ(biome->music, DESERET_MUSIC);
+    EXPECT_EQ(biome->music.value_or(""), DESERET_MUSIC);
   }
 }

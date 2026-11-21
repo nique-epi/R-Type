@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+#include <string>
 #include <string_view>
 #include "Ambience.hpp"
 #include "IMusicPlayer.hpp"
@@ -31,22 +33,25 @@ class IAudioService {
    * already. */
   virtual void playTheme() = 0;
 
-  /** @brief Makes @p music the music of a game, played in place of the one
-   * that plays when it differs, then stops the theme and starts the music of
-   * a game a silence later, unless it plays already or is about to.
-   * CHOSEN_GAME_MUSIC keeps the music chosen last; GAME_MUSIC_ID is the music
-   * of a game that names no other. */
-  virtual void playGameMusic(std::string_view music) = 0;
+  /** @brief Stops the theme and starts the music of a game a silence later,
+   * unless it plays already or is about to. When @p levelMusic names the
+   * asset of a music, the level plays it in place of the music of a game,
+   * bosses included, until playTheme(); without it, the music the level
+   * named last in the game plays, or the music of a game. */
+  virtual void playGameMusic(const std::optional<std::string>& levelMusic) = 0;
 
   /** @brief Stops the music of a game at once, without fade, and cancels the
    * silence before it: playGameMusic() starts it again GAME_MUSIC_SILENCE
-   * later. The theme is left as it is. */
-  virtual void silenceMusic() = 0;
+   * later. The theme is left as it is.
+   * @returns False, stopping nothing, while the level plays a music of its
+   * own, which a boss leaves playing. */
+  [[nodiscard]] virtual bool silenceMusic() = 0;
 
-  /** @brief Makes @p music the music of the boss, played in place of the one
-   * that plays when it differs (BOSS_MUSIC_ID when empty), then stops the
+  /** @brief Makes @p music the music of the boss (BOSS_MUSIC_ID when empty),
+   * played in place of the one that plays when it differs, then stops the
    * music of a game and the theme, and starts the music of the boss
-   * BOSS_ALARM_DURATION later, unless it plays already or is about to.
+   * BOSS_ALARM_DURATION later, unless it plays already or is about to. Over
+   * a music a level names, which no alarm silenced, it starts at once.
    * playTheme() and playGameMusic() stop it. */
   virtual void playBossMusic(std::string_view music) = 0;
 

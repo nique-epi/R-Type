@@ -8,7 +8,6 @@
 #include <memory>
 #include <optional>
 #include <string>
-#include <string_view>
 #include <utility>
 #include "BackgroundCatalog.hpp"
 #include "BackgroundColorConstants.hpp"
@@ -25,9 +24,9 @@
 namespace rtype::client {
 
 Sky::Sky(const BackgroundCatalog& catalog, SkySources sources)
-    : catalog_(&catalog),
-      backgrounds_(catalog, LayerSources{.fileOf = std::move(sources.fileOf),
+    : backgrounds_(catalog, LayerSources{.fileOf = std::move(sources.fileOf),
                                          .seed = sources.seed}),
+      catalog_(&catalog),
       canvas_(std::move(sources.textureOf)),
       picture_(0) {}
 
@@ -37,19 +36,22 @@ void Sky::setSpeedFactor(float factor) { backgrounds_.setSpeedFactor(factor); }
 
 void Sky::setOffset(sf::Vector2i pixels) { offset_ = pixels; }
 
-void Sky::showLevel(const SkyLevel& level) { backgrounds_.show(level); }
+void Sky::showLevel(const SkyLevel& level) {
+  biome_ = level.biome;
+  backgrounds_.show(level);
+}
 
-std::string Sky::musicOf(std::string_view biome) const {
-  const BackgroundDescription* found =
-      pack_ == nullptr ? nullptr : pack_->named(biome);
-  if (found == nullptr) {
-    found = catalog_->named(biome);
+std::optional<std::string> Sky::biomeMusic() const {
+  const BackgroundDescription* shown =
+      laidOver_ == nullptr ? nullptr : laidOver_->named(biome_);
+  if (shown == nullptr) {
+    shown = catalog_->named(biome_);
   }
-  return found == nullptr ? std::string{} : found->music;
+  return shown == nullptr ? std::nullopt : shown->music;
 }
 
 void Sky::layOver(std::shared_ptr<const BackgroundCatalog> backgrounds) {
-  pack_ = backgrounds;
+  laidOver_ = backgrounds;
   backgrounds_.layOver(std::move(backgrounds));
 }
 
