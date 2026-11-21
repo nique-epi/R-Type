@@ -4,6 +4,7 @@
 #include <SFML/System/Vector2.hpp>
 #include "AssetTextureSource.hpp"
 #include "ComponentRegistry.hpp"
+#include "HurtBeamPainter.hpp"
 #include "IEntityLayer.hpp"
 #include "PixelBatch.hpp"
 #include "PixelCanvas.hpp"
@@ -54,6 +55,7 @@ class EntityLayer : public IEntityLayer {
   SfmlDrawSurface surface_;
   RenderSystem renderSystem_;
   PixelBatch groundPixels_;
+  HurtBeamPainter beams_;
 };
 
 }  // namespace rtype::client

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <string_view>
 #include "CollisionBox.hpp"
@@ -30,6 +31,12 @@ constexpr game::ShipGun LOOKED_UP_SHIP_GUN{.shipType = 0,
                                            .firstShotTicks = 0,
                                            .velocityX = 0.0F,
                                            .velocityY = 0.0F};
+
+/** @brief The one hurt beam the table gives LOOKED_UP_TYPE_NAME: 1920 units
+ * long, from its center. */
+constexpr float LOOKED_UP_BEAM_LENGTH = 1920.0F;
+constexpr float LOOKED_UP_BEAM_THICKNESS = 52.0F;
+constexpr std::size_t ONE_LOOKED_UP_BEAM = 1;
 
 /** @brief The sheet of LOOKED_UP_TYPE_NAME, as the client reads it. */
 constexpr std::string_view LOOKED_UP_SHEET_TEXT = R"(

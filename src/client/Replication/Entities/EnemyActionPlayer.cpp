@@ -9,12 +9,12 @@
 #include "AppearanceReference.hpp"
 #include "ComponentRegistry.hpp"
 #include "EnemyAction.hpp"
-#include "EnemyPhase.hpp"
 #include "Enraged.hpp"
 #include "Entity.hpp"
 #include "EntityAppearance.hpp"
 #include "EntityWithAppearance.hpp"
 #include "ISoundPlayer.hpp"
+#include "SheetPhase.hpp"
 #include "ShownLooks.hpp"
 #include "SpriteAnimation.hpp"
 #include "TimeConstants.hpp"
@@ -22,21 +22,6 @@
 namespace rtype::client {
 
 namespace {
-
-/** @returns The phase of the sheets that the phase of the wire names. */
-game::EnemyPhase phaseOf(network::EnemyActionPhase phase) {
-  switch (phase) {
-    case network::EnemyActionPhase::Signal:
-      return game::EnemyPhase::Signal;
-    case network::EnemyActionPhase::Strike:
-      return game::EnemyPhase::Strike;
-    case network::EnemyActionPhase::Recover:
-      return game::EnemyPhase::Recover;
-    case network::EnemyActionPhase::Enraged:
-      return game::EnemyPhase::Enraged;
-  }
-  return game::EnemyPhase::Signal;
-}
 
 /** @returns The animation @p appearance gives @p key, or nothing when the
  * sheet gives none. */
@@ -89,7 +74,7 @@ void EnemyActionPlayer::apply(const network::EnemyAction& action) {
   const EntityAppearance& appearance =
       *components_->get<AppearanceReference>(*enemy)->appearance;
   const game::ActionKey key{.attack = action.attack,
-                            .phase = phaseOf(action.phase)};
+                            .phase = sheetPhaseOf(action.phase)};
   if (const std::string* sound = actionSoundOf(appearance, key)) {
     sounds_->play(*sound);
   }

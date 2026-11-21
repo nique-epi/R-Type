@@ -25,7 +25,8 @@ class IEntityLayer {
 
   /**
    * @brief Repaints the layer with every entity that has a Position and a
-   * Sprite, and every pixel effect.
+   * Sprite, every pixel effect, and the hurt beams the sheets ask it to paint
+   * (HurtBeamPainter).
    *
    * @param offset How many pixels of the canvas everything is painted away
    * from its place: the shake of the camera, (0, 0) at rest.

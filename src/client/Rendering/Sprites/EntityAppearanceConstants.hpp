@@ -33,10 +33,15 @@ constexpr std::string_view DEATH_TABLE_KEY = "death";
  * the music of a boss. */
 constexpr std::string_view BOSS_NAME_KEY = "boss_name";
 constexpr std::string_view BOSS_MUSIC_KEY = "boss_music";
+
+/** @brief The optional table of `[appearance]` that asks the client to paint
+ * the hurt beams of `[gameplay.hurt_zone]` while they hurt, an empty table:
+ * a sheet whose frames draw its beams leaves it out. */
+constexpr std::string_view HURT_BEAMS_TABLE_KEY = "hurt_beams";
 constexpr std::array OPTIONAL_APPEARANCE_KEYS{
-    ENRAGED_IDLE_TABLE_KEY, DEATH_TABLE_KEY, game::EFFECTS_TABLE_KEY,
-    game::LOOKS_TABLE_KEY,  BOSS_NAME_KEY,   BOSS_MUSIC_KEY,
-    game::SOUNDS_TABLE_KEY};
+    ENRAGED_IDLE_TABLE_KEY, DEATH_TABLE_KEY,     game::EFFECTS_TABLE_KEY,
+    game::LOOKS_TABLE_KEY,  BOSS_NAME_KEY,       BOSS_MUSIC_KEY,
+    game::SOUNDS_TABLE_KEY, HURT_BEAMS_TABLE_KEY};
 
 /**
  * @brief The keys of `[appearance.sounds]` besides its attack tables: the
