@@ -23,6 +23,7 @@
 #include "BossPresentation.hpp"
 #include "BossStatus.hpp"
 #include "ChatWindow.hpp"
+#include "ContinueBanner.hpp"
 #include "DepartureFeed.hpp"
 #include "EffectPlayed.hpp"
 #include "EffectPlayer.hpp"
@@ -156,6 +157,7 @@ struct EntityMessageRoutes {
   std::reference_wrapper<IAudioService> audio;
   std::reference_wrapper<OwnPrediction> prediction;
   std::reference_wrapper<LevelTransitionScene> transition;
+  std::reference_wrapper<ContinueBanner> continueBanner;
 };
 
 /** @returns What the sky shows of the level @p status tells. */
@@ -186,13 +188,26 @@ game::PlayBand bandOf(const network::LevelStatus& status) {
                          game::PLAY_AREA_HEIGHT)};
 }
 
+/** @brief Hands the status of the level @p status to whoever follows it: the
+ * sky and its music, the prediction, which moves the walls ahead by its
+ * scroll and keeps the ship in its band, the transition, the boss, and the
+ * banner of a continue. */
+void followLevel(const EntityMessageRoutes& routes,
+                 const network::LevelStatus& status) {
+  showLevel(routes, status);
+  routes.prediction.get().followScroll(status.scrollSpeed);
+  routes.transition.get().show(status.transitionLeft);
+  routes.boss.get().followLevel();
+  routes.prediction.get().useBand(bandOf(status));
+  routes.continueBanner.get().follow(status.continuesLeft);
+}
+
 /** @brief Hands an entity message to whoever it goes to: a PlayerLeft to the
  * board and the feed, an EnemyAction to the enemy it animates and to the boss,
  * an EffectPlayed to the player of the named effects, a BossStatus to the
  * boss, an EntityDestroyed to the boss and to the replicator, a LevelStatus to
- * the sky and its music, to the transition, to the boss and to the prediction,
- * which moves the walls ahead by its scroll and keeps the ship in its band,
- * anything else but GameEnded to the replicator. */
+ * whoever follows the level (see followLevel()), anything else but GameEnded
+ * to the replicator. */
 void routeEntityMessage(const EntityMessageRoutes& routes,
                         const EntityMessage& message) {
   std::visit(
@@ -213,11 +228,7 @@ void routeEntityMessage(const EntityMessageRoutes& routes,
           routes.boss.get().apply(announced);
           routes.replicator.get().apply(announced);
         } else if constexpr (std::is_same_v<Announced, network::LevelStatus>) {
-          showLevel(routes, announced);
-          routes.prediction.get().followScroll(announced.scrollSpeed);
-          routes.transition.get().show(announced.transitionLeft);
-          routes.boss.get().followLevel();
-          routes.prediction.get().useBand(bandOf(announced));
+          followLevel(routes, announced);
         } else if constexpr (!std::is_same_v<Announced, network::GameEnded>) {
           routes.replicator.get().apply(announced);
         }
@@ -341,6 +352,7 @@ void GameScreen::update(engine::Duration elapsed) {
   advanceEffects(effects_, *settings_, sinceTheWorld);
   departures_.advance(elapsed);
   silence_.advance(sinceTheWorld);
+  continueBanner_.advance(elapsed);
   boss_.advance(elapsed);
   transition_.advance(elapsed);
   applyEntityMessages();
@@ -372,7 +384,8 @@ void GameScreen::applyEntityMessages() {
                                    .sky = *sky_,
                                    .audio = *audio_,
                                    .prediction = prediction_,
-                                   .transition = transition_};
+                                   .transition = transition_,
+                                   .continueBanner = continueBanner_};
   for (const EntityMessage& message : receivedEntityMessages_) {
     routeEntityMessage(routes, message);
     if (const auto* ended = std::get_if<network::GameEnded>(&message)) {
@@ -428,6 +441,7 @@ void GameScreen::repaintStatusWhenChanged() {
       paintedPalette_ != playerPaletteOf(*settings_) ||
       departures_.revision() != paintedDepartures_ ||
       silence_.isShown() != paintedSilence_ || boss != paintedBoss_ ||
+      continueBanner_.shownContinues() != paintedContinues_ ||
       chat_.isShown() || paintedChat_) {
     repaintStatus(boss);
   }
@@ -440,6 +454,7 @@ void GameScreen::repaintStatus(const BossLook& boss) {
   paintBossAlert(*statusCanvas_, boss);
   paintStatusBand(*statusCanvas_, scoreBoard_.pilots(), palette);
   paintMissionBanner(*statusCanvas_, banner);
+  continueBanner_.paint(*statusCanvas_);
   paintBossBar(*statusCanvas_, boss.bar);
   departures_.paint(
       *statusCanvas_, palette,
@@ -452,6 +467,7 @@ void GameScreen::repaintStatus(const BossLook& boss) {
   paintedPalette_ = palette;
   paintedDepartures_ = departures_.revision();
   paintedSilence_ = silence_.isShown();
+  paintedContinues_ = continueBanner_.shownContinues();
   paintedChat_ = chat_.isShown();
   paintedBoss_ = boss;
 }

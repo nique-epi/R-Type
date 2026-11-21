@@ -106,6 +106,12 @@ constexpr std::string_view TOLD_BIOME = "fosse";
 constexpr float TOLD_SCROLL_POSITION = 240.0F;
 constexpr float TOLD_SCROLL_SPEED = 120.0F;
 
+/** @brief The continues the server tells before and after the team restarted
+ * from a checkpoint, and the title of the banner that says so. */
+constexpr std::uint8_t CONTINUES_BEFORE_THE_RESTART = 3;
+constexpr std::uint8_t CONTINUES_AFTER_THE_RESTART = 2;
+constexpr std::string_view CONTINUE_WORD_ON_SCREEN = "CONTINUE";
+
 /** @brief Where the server is while the tests draw a state of APPLIED_TICK:
  * some ticks ahead of it, as during a game. */
 constexpr double SERVER_TICK_AHEAD_OF_THE_STATE = 16.0;

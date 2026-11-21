@@ -774,6 +774,38 @@ TEST_F(GameScreenFixture, ShowsTheSkyTheLevelTheServerTells) {
 }
 
 /**
+ * Given a game the server told 3 continues
+ * When the server tells 2, the team having restarted from a checkpoint, and
+ * a frame passes
+ * Then the banner of a continue is painted
+ */
+TEST_F(GameScreenFixture, PaintsTheBannerOfAContinueTaken) {
+  entityMessages().queue(rtype::network::LevelStatus{
+      .biome = {}, .continuesLeft = CONTINUES_BEFORE_THE_RESTART});
+  screens().update(ONE_FRAME);
+  entityMessages().queue(rtype::network::LevelStatus{
+      .biome = {}, .continuesLeft = CONTINUES_AFTER_THE_RESTART});
+
+  screens().update(ONE_FRAME);
+
+  EXPECT_NE(writingOf(statusCanvas(), CONTINUE_WORD_ON_SCREEN), nullptr);
+}
+
+/**
+ * Given a game in progress
+ * When the first status of its level tells 3 continues and a frame passes
+ * Then no banner of a continue is painted
+ */
+TEST_F(GameScreenFixture, PaintsNoBannerForTheContinuesOfTheStart) {
+  entityMessages().queue(rtype::network::LevelStatus{
+      .biome = {}, .continuesLeft = CONTINUES_BEFORE_THE_RESTART});
+
+  screens().update(ONE_FRAME);
+
+  EXPECT_EQ(writingOf(statusCanvas(), CONTINUE_WORD_ON_SCREEN), nullptr);
+}
+
+/**
  * Given a game whose sky shows the biome of its level
  * When the game leaves the stack
  * Then the sky shows no biome any more

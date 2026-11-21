@@ -9,7 +9,6 @@
 #include "TextStyle.hpp"
 #include "TimeConstants.hpp"
 #include "Typing.hpp"
-#include "WidgetConstants.hpp"
 #include "WidgetText.hpp"
 
 namespace rtype::client {
@@ -19,11 +18,7 @@ namespace {
 /** @brief Paints one rule of the banner, centered on the line, on that
  * row. */
 void paintRule(IInterfaceCanvas& canvas, int row, int halfWidth) {
-  const int middle = MISSION_BANNER_AREA.position.x +
-                     (MISSION_BANNER_AREA.size.x / SIDES_PER_AXIS);
-  canvas.fill(
-      sf::IntRect({middle - halfWidth, row}, {SIDES_PER_AXIS * halfWidth, 1}),
-      EDGE_BLUE);
+  canvas.fill(centeredRule(MISSION_BANNER_AREA, row, halfWidth), EDGE_BLUE);
 }
 
 }  // namespace
