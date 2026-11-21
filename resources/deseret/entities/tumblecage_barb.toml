@@ -8,7 +8,7 @@
 side = "enemy_missile"
 layer = "enemy_missile"
 hits = ["player"]
-pilot = "barb_toss"
+pilot = "debris_toss"
 
 [gameplay.hitbox]
 width = 20

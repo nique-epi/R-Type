@@ -41,10 +41,11 @@ local LENS = { x = -60, y = -28 }
 local LINGER_AFTER_BURST_MS = 500
 
 
--- The share of their spread each of the four barbs of a Tumblecage takes,
--- in the order they appear.
-local BARB_SHARES = { -1, -1 / 3, 1 / 3, 1 }
-local next_barb = 0
+-- The share of their spread each of the four pieces of a throw takes, in
+-- the order they appear: the barbs of a Tumblecage, the rocks of a crate of
+-- dynamite (server/deseret_props.luau).
+local TOSS_SHARES = { -1, -1 / 3, 1 / 3, 1 }
+local next_toss = 0
 
 local function percent(value: number): number
 	return value / 100
@@ -444,7 +445,7 @@ behaviours.on_hit("tumblecage_break", function(hit)
 	if place == nil then
 		return
 	end
-	for _ = 1, #BARB_SHARES do
+	for _ = 1, #TOSS_SHARES do
 		behaviours.spawn("tumblecage_barb", place)
 	end
 end)
@@ -455,17 +456,17 @@ local function falling_with_the_ground(e)
 	return { x = -math.min(1, SCROLL_SPEED / e.top_speed), y = 1 }
 end
 
--- A barb rises, drifting to its side of the spread around the ground that
--- scrolls under it, then falls back.
-behaviours.register("barb_toss", {
+-- A piece of a throw, a barb or a rock, rises, drifting to its side of the
+-- spread around the ground that scrolls under it, then falls back.
+behaviours.register("debris_toss", {
 	{ name = "spread", lowest = 0, highest = 100 },
 	{ name = "rise_ms", lowest = 1, highest = 60000 },
 }, function(e)
 	local settings = e.settings
 	local data = e.data
 	if data.share == nil then
-		next_barb = next_barb % #BARB_SHARES + 1
-		data.share = BARB_SHARES[next_barb]
+		next_toss = next_toss % #TOSS_SHARES + 1
+		data.share = TOSS_SHARES[next_toss]
 	end
 	local climb = -1 + 2 * e.age_ms / settings.rise_ms
 	local drift = data.share * percent(settings.spread) - SCROLL_SPEED / e.top_speed

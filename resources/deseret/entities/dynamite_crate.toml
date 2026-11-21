@@ -1,7 +1,7 @@
 # The entity type dynamite_crate, brought by the resource deseret:
 # a crate of dynamite on the floor. Hit, its longer fuse burns 900 ms, then it
-# blows up within 200 units, fells the nearest spire across a corridor of
-# falling rocks, or knocks a prop off the ceiling of the mine.
+# blows up within 200 units and throws four clumps of rocks up, or knocks a
+# prop off the ceiling of the mine.
 # Only the server reads [gameplay]; a client draws [appearance] from the
 # content pack the supervisor serves. The keys are described on the page
 # "Writing an entity sheet" of the docs.

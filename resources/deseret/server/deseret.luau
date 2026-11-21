@@ -7,7 +7,7 @@
 -- Carrions, swarms of crickets, Shrouds and Tumblecages, and powder kegs
 -- whose blasts light each other.
 -- 2, the Hoodoo Field (deseret_hoodoos): Aeronauts, dust devils and
--- Surveyors behind the spires; crates of dynamite that fell a spire.
+-- Surveyors behind the spires; crates of dynamite that throw rocks.
 -- 3, the Line (deseret_line): Carrions and Shrouds along the abandoned
 -- railroad, kegs along the track.
 -- 4, the Iron Pilgrim (server/iron_pilgrim.luau), on the track.

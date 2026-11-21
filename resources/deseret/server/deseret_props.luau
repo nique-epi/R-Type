@@ -7,7 +7,7 @@
 -- What sets the decor of Deseret apart from the toxic barrel of the Ashlands
 -- is its visible fuse: hit, a keg or a crate does not burst at once, it
 -- warns; and its blast lights the kegs around it, a chain the players see
--- coming and may turn against the mobs. A crate also fells a spire in the
+-- coming and may turn against the mobs. A crate also throws rocks up in the
 -- open, or knocks a prop off the ceiling of the mine. A mine cart shot from
 -- behind rolls off and crushes the mobs ahead of it.
 
@@ -35,12 +35,10 @@ local BLASTS = {
 	[1] = { mobs = "dynamite_blast", ships = "dynamite_heat" },
 }
 
--- Where the dust of a felled spire falls from (its top at the top of the
--- playfield), how far around the column of the crate its rocks fall, and how
--- far under the ceiling a prop of the mine hangs from.
-local SPIRE_DUST_ROW = 96
-local ROCK_SPREAD = 48
-local ROCK_ROW = 0
+-- How many clumps of rocks a crate throws up in the open, one for each share
+-- of the spread of debris_toss (server/deseret_mobs.luau), and how far under
+-- the ceiling a prop of the mine hangs from.
+local CRATE_ROCKS = 4
 local PROP_DROP = 68
 
 -- How far ahead of a rolling cart its ram lies, and how many of its steps
@@ -80,14 +78,16 @@ local function light_around(place: { x: number, y: number }, reach: number)
 end
 
 -- What a crate brings down as it bursts: a prop off the ceiling over it in
--- the mine, a spire across a corridor of rocks in the open.
+-- the mine, clumps of rocks thrown up from where it stood in the open.
 local function bring_down(place: { x: number, y: number })
 	local found, ceiling = pcall(level.ceiling, place.x)
 	if found and ceiling ~= nil then
 		behaviours.spawn("mine_prop", { x = place.x, y = ceiling + PROP_DROP })
 		return
 	end
-	behaviours.spawn("spire_dust", { x = place.x, y = SPIRE_DUST_ROW })
+	for _ = 1, CRATE_ROCKS do
+		behaviours.spawn("crate_rock", place)
+	end
 end
 
 -- Lets a hit through when `through()` says so; otherwise refuses it, and
@@ -185,24 +185,6 @@ behaviours.register("fading_fire", {
 	return { direction = STILL }
 end)
 
--- The dust of a felled spire falls warn_ms, then rocks fall along its
--- column for fall_ms, one every rock_gap_ms, and it is gone.
-behaviours.register("spire_fall", {
-	{ name = "warn_ms", lowest = 1, highest = 60000 },
-	{ name = "fall_ms", lowest = 1, highest = 60000 },
-	{ name = "rock_gap_ms", lowest = 1, highest = 60000 },
-}, function(e)
-	local settings = e.settings
-	e = behaviours.wait(settings.warn_ms, { direction = STILL })
-	local left = settings.fall_ms
-	while left > 0 do
-		behaviours.spawn("spire_rock", { x = e.position.x + math.random(-ROCK_SPREAD, ROCK_SPREAD), y = ROCK_ROW })
-		e = behaviours.wait(settings.rock_gap_ms, { direction = STILL })
-		left -= settings.rock_gap_ms
-	end
-	behaviours.destroy(e.id)
-	return { direction = STILL }
-end)
 
 -- A mine cart rests on its rails, moving with the ground. The first hit sets
 -- it rolling right at its top speed, its ram ahead of it, for roll_ms; a
