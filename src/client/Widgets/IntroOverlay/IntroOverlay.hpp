@@ -21,4 +21,11 @@ namespace rtype::client {
 void paintIntroOverlay(IInterfaceCanvas& canvas, float real,
                        IntroOverlayLook look);
 
+/**
+ * @brief Covers the whole picture with INK at @p covered of its opacity, from
+ * 0, which paints nothing, to 1, the whole ink: the black second of the intro
+ * and its fade in, and any screen that fades into or out of that ink.
+ */
+void paintInkCover(IInterfaceCanvas& canvas, float covered);
+
 }  // namespace rtype::client
