@@ -1,4 +1,5 @@
 #include "SignInScreen.hpp"
+#include <SFML/Graphics/Rect.hpp>
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Window/Event.hpp>
 #include <memory>
@@ -16,6 +17,7 @@
 #include "SignInScreenParts.hpp"
 #include "SignInText.hpp"
 #include "TimeConstants.hpp"
+#include "WaitingCodePainting.hpp"
 #include "WidgetConstants.hpp"
 
 namespace rtype::client {
@@ -94,7 +96,11 @@ void SignInScreen::show(const SignInLines& lines) {
   }
   shown_ = lines;
   MenuBuilder builder(MenuBuilder::Frame::Dialog, &parts_.sounds.get());
-  builder.heading(lines.title).message(lines.line);
+  if (lines.validity.has_value()) {
+    builder.illustration(SIGN_IN_CODE_AREA_SIZE);
+  } else {
+    builder.heading(lines.title).message(lines.line);
+  }
   if (lines.offersNewCode) {
     builder.button({.label = NEW_CODE_LABEL}, [this] { askNewCode(); });
   }
@@ -116,6 +122,9 @@ void SignInScreen::back() const {
 void SignInScreen::repaint() {
   canvas_->clear();
   menu_.paint(*canvas_);
+  if (const std::optional<sf::IntRect> area = menu_.illustrationArea()) {
+    paintWaitingCode(*canvas_, *area, shown_);
+  }
   canvas_->display();
 }
 

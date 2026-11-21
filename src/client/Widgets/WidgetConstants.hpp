@@ -82,6 +82,15 @@ constexpr sf::Vector2i DIALOG_BUTTON_SIZE(64, 20);
 constexpr int DIALOG_BUTTON_GAP = 32;
 
 /**
+ * @brief The picture a screen paints in a dialog, in place of its heading and
+ * its message: from where the heading goes, its buttons standing as far under
+ * it as they stand under a message (56 - 32 - 8 = 16 pixels).
+ */
+constexpr sf::Vector2i DIALOG_ILLUSTRATION_OFFSET = DIALOG_HEADING_OFFSET;
+constexpr int DIALOG_SPACE_ABOVE_BUTTONS =
+    DIALOG_BUTTONS_TOP - DIALOG_MESSAGE_OFFSET.y - TEXT_LINE_HEIGHT;
+
+/**
  * @brief Form: a panel centered on the picture, as wide as the column of a
  * page and as tall as its parts. Its heading sits where a dialog has it; its
  * fields stand one under the other, as far from the left side of the panel as

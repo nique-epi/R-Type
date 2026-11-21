@@ -33,7 +33,9 @@ class ISoundPlayer;
  * illustration sits against the right side of the margin, its footer in the
  * bottom-right corner. A dialog is a panel centered on the picture: its
  * heading, its message or at most DIALOG_ROW_CAPACITY rows, then its buttons in
- * a centered row. A form is a panel
+ * a centered row; an illustration goes where its heading goes, the screen
+ * painting it in place of the heading and the message, which are then left
+ * out, and the panel grows to hold it. A form is a panel
  * centered on the picture too: its heading, its fields one under the other,
  * its buttons in a centered row, then the line describing the selected bar
  * and the status line under it; the pointer selects one of its bars only by
@@ -118,8 +120,9 @@ class MenuBuilder {
    */
   MenuBuilder& backButton(IScreenNavigator& navigator);
 
-  /** @brief Reserves an area of this size, in pixels, against the right side
-   * of a page, for a picture its screen paints. */
+  /** @brief Reserves an area of this size, in pixels, for a picture its
+   * screen paints: against the right side of a page, or from where the
+   * heading of a dialog goes, the dialog growing to hold it. */
   MenuBuilder& illustration(sf::Vector2i size);
 
   /** @brief Small line in the bottom-right corner of a page. */

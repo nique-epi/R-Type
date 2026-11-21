@@ -28,6 +28,64 @@ export function userCodeOf(text: string | null | undefined): string | null {
   return `${letters.slice(0, USER_CODE_GROUP)}${USER_CODE_SEPARATOR}${letters.slice(USER_CODE_GROUP)}`;
 }
 
+/** Anything a player types that is neither a letter nor a digit. */
+const NOT_A_CODE_CHARACTER = /[^A-Z0-9]/g;
+
+/**
+ * What the code field shows once a player typed `typed` over `previous`: the
+ * letters and digits in capitals, at most as many as a code holds, with the
+ * dash put in after the first group. The dash comes as soon as the fourth
+ * letter is typed, but not when the player erases back to four letters, so
+ * erasing the dash is never undone. A vowel or a digit stays, for
+ * `userCodeOf` to refuse.
+ */
+export function typedUserCodeOf(typed: string, previous: string): string {
+  const letters = typed
+    .toUpperCase()
+    .replaceAll(NOT_A_CODE_CHARACTER, '')
+    .slice(0, USER_CODE_LETTERS);
+  const growing = typed.length > previous.length;
+  if (
+    letters.length > USER_CODE_GROUP ||
+    (letters.length === USER_CODE_GROUP && growing)
+  ) {
+    return `${letters.slice(0, USER_CODE_GROUP)}${USER_CODE_SEPARATOR}${letters.slice(USER_CODE_GROUP)}`;
+  }
+
+  return letters;
+}
+
+/**
+ * Where the caret goes in `shown`, the code `typedUserCodeOf` wrote, after the
+ * player typed `typed` with the caret at `caret`: after as many letters and
+ * digits as stood before it, the dash put in left aside; at the end of `shown`
+ * when the caret stood after the last of them, so typing at the end goes on
+ * after the dash.
+ */
+export function userCodeCaretOf(
+  typed: string,
+  caret: number,
+  shown: string,
+): number {
+  const before = typed
+    .slice(0, caret)
+    .toUpperCase()
+    .replaceAll(NOT_A_CODE_CHARACTER, '').length;
+  if (before >= shown.replaceAll(USER_CODE_SEPARATOR, '').length) {
+    return shown.length;
+  }
+  let passed = 0;
+  let index = 0;
+  while (passed < before) {
+    if (shown[index] !== USER_CODE_SEPARATOR) {
+      passed += 1;
+    }
+    index += 1;
+  }
+
+  return index;
+}
+
 /**
  * How a decision on a link ended, as the page reads it: the link connected or
  * refused, or why the decision was not written. `decided` is the 409 of the

@@ -24,6 +24,8 @@ class SignInScreenFixture : public ::testing::Test {
   [[nodiscard]] FakeAccountSession& account();
   [[nodiscard]] rtype::client::SignInReturn& signInReturn();
   [[nodiscard]] const std::vector<std::string>& openedPages() const;
+  /** @brief What the dialog painted last. */
+  [[nodiscard]] const InterfaceCanvasRecord& painting() const;
 
   /** @brief Lets one frame of PRESS_DURATION pass. */
   void frame();

@@ -9,9 +9,9 @@
 namespace rtype::client {
 
 /**
- * @returns What the sign-in dialog shows of @p reading at @p now: the code
- * and the page it is entered at, with the whole minutes it stays valid, while
- * it waits; why it ended otherwise, offering a new code; and once the link
+ * @returns What the sign-in dialog shows of @p reading at @p now: the code,
+ * the page it is entered at and the whole minutes it stays valid, while it
+ * waits; why it ended otherwise, offering a new code; and once the link
  * gave a token, that the account opens, or that it was refused when
  * @p sessionRefused.
  */
