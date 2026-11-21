@@ -9,6 +9,7 @@
 [gameplay]
 side = "enemy"
 layer = "enemy"
+hits = ["player"]
 pilot = "iron_pilgrim_run"
 
 # Its boiler, low and long, then its cab at the back; the stack has no box,
@@ -68,7 +69,8 @@ arrival_attack = 4
 
 [gameplay.survives_contact]
 
-# Its cowcatcher hurts while it charges, and nothing else of it.
+# A ship that touches its body dies, as with any boss; its cowcatcher reaches
+# further ahead while it charges.
 [[gameplay.hurt_zone.box]]
 offset_x = -180
 offset_y = 76
