@@ -1,5 +1,7 @@
 add_library(rtype_server_rules_players STATIC
   Bounties.cpp
+  ExtraLifeKeeper.cpp
+  ExtraLives.cpp
   LifeKeeper.cpp
   LookItemKeeper.cpp
   PlayerController.cpp

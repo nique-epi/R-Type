@@ -11,7 +11,7 @@ This page is the specification of the protocol the client and the server speak: 
 
 ## Status of this document
 
-- This is version 21 of the protocol. It is the only version the code speaks. [Versions and compatibility](#versions-and-compatibility) says when the version changes and what two programs of different versions do; [Version 2](#version-2), [Version 3](#version-3), [Version 4](#version-4), [Version 5](#version-5), [Version 6](#version-6), [Version 7](#version-7), [Version 8](#version-8), [Version 9](#version-9), [Version 10](#version-10), [Version 11](#version-11), [Version 12](#version-12), [Version 13](#version-13), [Version 14](#version-14), [Version 15](#version-15), [Version 16](#version-16), [Version 17](#version-17), [Version 18](#version-18), [Version 19](#version-19), [Version 20](#version-20) and [Version 21](#version-21) say what each changed from the version before, and what the rest of the second part of the project will change.
+- This is version 22 of the protocol. It is the only version the code speaks. [Versions and compatibility](#versions-and-compatibility) says when the version changes and what two programs of different versions do; [Version 2](#version-2), [Version 3](#version-3), [Version 4](#version-4), [Version 5](#version-5), [Version 6](#version-6), [Version 7](#version-7), [Version 8](#version-8), [Version 9](#version-9), [Version 10](#version-10), [Version 11](#version-11), [Version 12](#version-12), [Version 13](#version-13), [Version 14](#version-14), [Version 15](#version-15), [Version 16](#version-16), [Version 17](#version-17), [Version 18](#version-18), [Version 19](#version-19), [Version 20](#version-20), [Version 21](#version-21) and [Version 22](#version-22) say what each changed from the version before, and what the rest of the second part of the project will change.
 - The words MUST, MUST NOT, SHOULD and MAY are used as in RFC 2119. A MUST is a rule every implementation follows to interoperate; a SHOULD names a behavior the code of this repository has and another implementation can drop without breaking the exchange.
 - Everything on this page is checked against the code of `src/network`, `src/server` and `src/client`. [Implementation status](#implementation-status) lists the rules the programs do not apply yet, so a rule never reads as working when it does not.
 - Numbers are decimal unless written `0x`. A size is in bytes.
@@ -500,6 +500,7 @@ A `GameEvent` drives sounds and effects on the client, never a game rule. `event
 | 1 | `EntityDamaged`: hit, still alive | 0 | the entity |
 | 2 | `PlayerHit`: the player lost a life | the player | 0 |
 | 3 | `PlayerEliminated`: no life left, the player now watches | the player | 0 |
+| 4 | `ExtraLifeWon`: the score of the player passed a step of the extra lives, and it holds one life more | the player | 0 |
 
 An `EntityDamaged` naming an entity the client does not know changes nothing. The explosion of a ship that is hit comes from its `EntityDestroyed` (`Killed`).
 
@@ -919,6 +920,10 @@ Version 20 gives `LevelStatus` a last field, `continuesLeft`, a `u8`: how many t
 ## Version 21
 
 Version 21 gives each player of `GameEnded` a last field, `bounty`, a `u32`, after its score: the kopecks the bosses destroyed and the level cleared while it was there paid it, which the client adds to the kopecks of its score to show the gain of the game (see [Messages](#messages)). A peer of version 20 would read the players of the message wrong, so `version` became 21, and the server answers a client of version 20 with `ConnectionRefused` (`IncompatibleVersion`). The layout of the header and of every other message is the same as in version 20.
+
+## Version 22
+
+Version 22 gives `GameEvent` a fourth kind, `ExtraLifeWon` (4), when the score of a player wins it a life (see [Messages](#messages)). A peer of version 21 would refuse the new kind and drop the event, so `version` became 22, and the server answers a client of version 21 with `ConnectionRefused` (`IncompatibleVersion`). The layout of the header and of every message is the same as in version 21.
 
 ## Implementation status
 

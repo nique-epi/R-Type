@@ -3,6 +3,7 @@
 #include <cstdint>
 #include "EntityDamage.hpp"
 #include "EventMessage.hpp"
+#include "ExtraLifeWon.hpp"
 #include "GameEvent.hpp"
 #include "GameEventConstants.hpp"
 #include "PlayerElimination.hpp"
@@ -32,6 +33,9 @@ class GameEventEncoder {
   /** @returns A GameEvent of kind PlayerEliminated with the next event number,
    * guaranteed. */
   [[nodiscard]] EventMessage encode(const game::PlayerElimination& event);
+  /** @returns A GameEvent of kind ExtraLifeWon with the next event number,
+   * guaranteed. */
+  [[nodiscard]] EventMessage encode(const game::ExtraLifeWon& event);
 
  private:
   [[nodiscard]] EventMessage encodeGameEvent(network::GameEventKind kind,
