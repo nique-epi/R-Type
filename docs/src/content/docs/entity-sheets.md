@@ -390,8 +390,10 @@ Each program stops on the first error and exits with code 1. A game process prin
 | `behaviour` | `heading` -1 | `amplitude` 48, `period_ms` 2000 | none | `heading` 1 | `heading` -1 |
 | `health` | 3 | 3 | none | none | none |
 | `score` | 100 | 200 | none | none | none |
-| `gun` | 1500 ms, first after 1500 ms, `enemy_missile` | 1500 ms, first after 1500 ms, `enemy_missile` | 167 ms, first at once, `player_missile` | none | none |
+| `gun` | 1500 ms, first after 1500 ms, `enemy_missile` | 1500 ms, first after 1500 ms, `weaver_bolt` | 167 ms, first at once, `player_missile` | none | none |
 | `idle` on `sprites/entities.png` | 24 × 24, 2 frames of 250 ms | 24 × 24, 2 frames of 250 ms | 32 × 16, 2 frames of 80 ms | 16 × 6, 2 frames of 60 ms | 8 × 8, 2 frames of 120 ms |
+
+`weaver_bolt` is `enemy_missile` flown by `aimed` instead of `straight`, with no `behaviour` table: a Weaver shoots at the nearest ship, a Drifter along its row.
 
 The mobs and their projectiles draw from a sheet of their own in `sprites/mobs/`:
 

@@ -35,10 +35,15 @@ constexpr float REQUIRED_ENEMY_MISSILE_SPEED = 360.0F;
 constexpr std::string_view REQUIRED_STRAIGHT_NAME = "straight";
 constexpr std::string_view REQUIRED_WEAVE_NAME = "weave";
 
+/** @brief The behaviour that flies the bolt of a Weaver: aimed at the
+ * nearest ship. */
+constexpr std::string_view REQUIRED_AIMED_NAME = "aimed";
+
 /** @brief The names of the sheets the game ships, as the tests ask for them. */
 constexpr std::string_view SHIP_SHEET = "ship";
 constexpr std::string_view DRIFTER_SHEET = "drifter";
 constexpr std::string_view WEAVER_SHEET = "weaver";
+constexpr std::string_view WEAVER_BOLT_SHEET = "weaver_bolt";
 constexpr std::string_view PLAYER_MISSILE_SHEET = "player_missile";
 constexpr std::string_view ENEMY_MISSILE_SHEET = "enemy_missile";
 constexpr std::string_view VOLTJELLY_SHEET = "voltjelly";
@@ -114,6 +119,7 @@ constexpr std::array SHIPPED_SHEET_NAMES{BYDO_TYRANT_SHEET,
                                          TYRANT_SPORE_SHEET,
                                          TYRANT_SPORE_SHARD_SHEET,
                                          VOLTJELLY_SHEET,
-                                         WEAVER_SHEET};
+                                         WEAVER_SHEET,
+                                         WEAVER_BOLT_SHEET};
 
 }  // namespace rtype::game::testing

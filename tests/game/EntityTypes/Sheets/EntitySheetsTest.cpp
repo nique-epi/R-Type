@@ -64,6 +64,7 @@ using rtype::game::testing::pilotBehaviourName;
 using rtype::game::testing::PLAYER_MISSILE_NAME_IN_TESTS;
 using rtype::game::testing::PLAYER_MISSILE_SHEET_TEXT;
 using rtype::game::testing::projectileNameOf;
+using rtype::game::testing::REQUIRED_AIMED_NAME;
 using rtype::game::testing::REQUIRED_BYDO_HEALTH;
 using rtype::game::testing::REQUIRED_BYDO_SHOT_TICKS;
 using rtype::game::testing::REQUIRED_BYDO_SIZE;
@@ -92,6 +93,7 @@ using rtype::game::testing::sheetText;
 using rtype::game::testing::SHIP_NAME_IN_TESTS;
 using rtype::game::testing::SHIPPED_SHEET_NAMES;
 using rtype::game::testing::shippedEntitySheets;
+using rtype::game::testing::WEAVER_BOLT_SHEET;
 using rtype::game::testing::WEAVER_NAME_IN_TESTS;
 using rtype::game::testing::WEAVER_NUMBER_AMONG_THREE;
 using rtype::game::testing::WEAVER_SHEET_TEXT;
@@ -422,8 +424,8 @@ TEST(EntitySheets, TheShippedDrifterIsTodaysDrifter) {
 /**
  * Given the shipped sheet of the Weaver
  * When it is read
- * Then it is today's Weaver: a Drifter that weaves 48 units every 2000 ms and
- * is worth 200 points
+ * Then it is today's Weaver: a Drifter that weaves 48 units every 2000 ms, is
+ * worth 200 points and fires the aimed bolt of a Weaver
  */
 TEST(EntitySheets, TheShippedWeaverIsTodaysWeaver) {
   const EntitySheets& sheets = shippedEntitySheets();
@@ -439,7 +441,22 @@ TEST(EntitySheets, TheShippedWeaverIsTodaysWeaver) {
   EXPECT_EQ(weaver.health.value_or(0), REQUIRED_BYDO_HEALTH);
   EXPECT_EQ(weaver.points.value_or(0U), REQUIRED_WEAVER_POINTS);
   EXPECT_EQ(intervalTicksOf(weaver), REQUIRED_BYDO_SHOT_TICKS);
-  EXPECT_EQ(projectileNameOf(weaver), ENEMY_MISSILE_SHEET);
+  EXPECT_EQ(projectileNameOf(weaver), WEAVER_BOLT_SHEET);
+}
+
+/**
+ * Given the shipped sheet of the bolt of a Weaver
+ * When it is read
+ * Then it is a missile of an enemy flown by the aimed behaviour, so a Weaver
+ * shoots at the ships instead of along its row
+ */
+TEST(EntitySheets, TheShippedWeaverBoltIsAimedAtTheShips) {
+  const EntitySheets& sheets = shippedEntitySheets();
+
+  const EntitySheet& bolt = sheets.named(WEAVER_BOLT_SHEET);
+
+  EXPECT_EQ(bolt.side, EntityType::EnemyMissile);
+  EXPECT_EQ(pilotBehaviourName(bolt), REQUIRED_AIMED_NAME);
 }
 
 /**

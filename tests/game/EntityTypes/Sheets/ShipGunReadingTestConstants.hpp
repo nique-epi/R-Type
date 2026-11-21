@@ -6,7 +6,7 @@
 namespace rtype::game::testing {
 
 /** @brief The numbers of the shipped ship and its missile, in the order of
- * the names of the thirty-eight shipped sheets: ship is the thirty-second,
+ * the names of the thirty-nine shipped sheets: ship is the thirty-second,
  * player_missile the twenty-ninth. */
 constexpr std::uint8_t SHIPPED_SHIP_NUMBER = 32;
 constexpr std::uint8_t SHIPPED_PLAYER_MISSILE_NUMBER = 29;
