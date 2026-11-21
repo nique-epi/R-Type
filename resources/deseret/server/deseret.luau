@@ -150,16 +150,28 @@ local SWARM_WIDE = { 260, 360, 460, 560, 660 }
 
 local FLATS: { Wave } = {
 	{ at = 360, sheet = "carrion", rows = { 300, 520 } },
+	{ at = 600, sheet = "vultureling", rows = { 220, 340, 460 } },
 	{ at = 840, sheet = "cricket", rows = SWARM_HIGH },
+	{ at = 1080, sheet = "carrion", rows = { 420 } },
 	{ at = 1320, sheet = "tumblecage", rows = { FLOOR_ROW } },
+	{ at = 1500, sheet = "vultureling", rows = { 260, 400 } },
 	{ at = 1680, sheet = "shroud", rows = { 420 } },
+	{ at = 1920, sheet = "vultureling", rows = { 240, 360, 480 } },
 	{ at = 2160, sheet = "carrion", rows = { 260, 460, 660 } },
+	{ at = 2400, sheet = "vultureling", rows = { 280, 420 } },
 	{ at = 2640, sheet = "cricket", rows = SWARM_LOW },
+	{ at = 2880, sheet = "vultureling", rows = { 220, 340, 460 } },
 	{ at = 3000, sheet = "tumblecage", rows = { FLOOR_ROW } },
+	{ at = 3120, sheet = "carrion", rows = { 380, 620 } },
 	{ at = 3360, sheet = "shroud", rows = { 300, 700 } },
+	{ at = 3600, sheet = "vultureling", rows = { 260, 380, 500 } },
 	{ at = 3840, sheet = "carrion", rows = { 360, 600 } },
+	{ at = 4020, sheet = "vultureling", rows = { 240, 400 } },
 	{ at = 4200, sheet = "tumblecage", rows = { FLOOR_ROW } },
+	{ at = 4380, sheet = "carrion", rows = { 300, 620 } },
 	{ at = 4560, sheet = "cricket", rows = SWARM_WIDE },
+	{ at = 4800, sheet = "vultureling", rows = { 240, 360, 480 } },
+	{ at = 5040, sheet = "carrion", rows = { 400, 620 } },
 }
 
 -- Kegs in pairs and threes, close enough that one blast lights the next.
@@ -174,16 +186,29 @@ local FLATS_DECOR: { Decor } = {
 }
 
 local HOODOOS: { Wave } = {
+	{ at = 5460, sheet = "vultureling", rows = { 260, 400 } },
 	{ at = 5640, sheet = "aeronaut", rows = { 220 } },
+	{ at = 5880, sheet = "vultureling", rows = { 300, 420, 540 } },
 	{ at = 6120, sheet = "surveyor", rows = { FLOOR_ROW } },
+	{ at = 6360, sheet = "carrion", rows = { 360, 580 } },
 	{ at = 6600, sheet = "dust_devil", rows = { 560 } },
+	{ at = 6840, sheet = "vultureling", rows = { 240, 380, 520 } },
 	{ at = 7080, sheet = "aeronaut", rows = { 200, 300 } },
+	{ at = 7320, sheet = "cricket", rows = SWARM_WIDE },
 	{ at = 7560, sheet = "surveyor", rows = { FLOOR_ROW } },
+	{ at = 7800, sheet = "carrion", rows = { 300, 560 } },
 	{ at = 8040, sheet = "dust_devil", rows = { 440 } },
+	{ at = 8220, sheet = "vultureling", rows = { 260, 400 } },
 	{ at = 8400, sheet = "cricket", rows = SWARM_HIGH },
+	{ at = 8640, sheet = "vultureling", rows = { 280, 420, 560 } },
 	{ at = 8880, sheet = "surveyor", rows = { FLOOR_ROW } },
+	{ at = 9060, sheet = "carrion", rows = { 420, 640 } },
 	{ at = 9240, sheet = "aeronaut", rows = { 240 } },
+	{ at = 9480, sheet = "vultureling", rows = { 280, 420, 560 } },
 	{ at = 9720, sheet = "dust_devil", rows = { 620 } },
+	{ at = 9960, sheet = "cricket", rows = SWARM_LOW },
+	{ at = 10200, sheet = "carrion", rows = { 320, 560 } },
+	{ at = 10380, sheet = "vultureling", rows = { 300, 460 } },
 }
 
 local HOODOOS_DECOR: { Decor } = {
@@ -193,16 +218,28 @@ local HOODOOS_DECOR: { Decor } = {
 }
 
 local THE_LINE: { Wave } = {
+	{ at = 10740, sheet = "vultureling", rows = { 260, 400, 540 } },
 	{ at = 10920, sheet = "carrion", rows = { 300, 500 } },
+	{ at = 11160, sheet = "vultureling", rows = { 240, 380 } },
 	{ at = 11400, sheet = "shroud", rows = { 360 } },
+	{ at = 11640, sheet = "cricket", rows = SWARM_HIGH },
 	{ at = 11880, sheet = "carrion", rows = { 240, 440, 640 } },
+	{ at = 12120, sheet = "vultureling", rows = { 300, 460, 620 } },
 	{ at = 12360, sheet = "shroud", rows = { 600 } },
+	{ at = 12600, sheet = "cricket", rows = SWARM_LOW },
 	{ at = 12840, sheet = "carrion", rows = { 320, 560 } },
+	{ at = 13080, sheet = "vultureling", rows = { 260, 420 } },
 	{ at = 13320, sheet = "shroud", rows = { 300, 680 } },
+	{ at = 13560, sheet = "cricket", rows = SWARM_WIDE },
 	{ at = 13800, sheet = "carrion", rows = { 260, 460, 660 } },
+	{ at = 14040, sheet = "vultureling", rows = { 280, 440, 600 } },
 	{ at = 14280, sheet = "shroud", rows = { 480 } },
+	{ at = 14520, sheet = "cricket", rows = SWARM_HIGH },
 	{ at = 14760, sheet = "carrion", rows = { 300, 500, 700 } },
+	{ at = 15000, sheet = "vultureling", rows = { 300, 480 } },
 	{ at = 15240, sheet = "shroud", rows = { 360, 620 } },
+	{ at = 15480, sheet = "carrion", rows = { 360, 580 } },
+	{ at = 15660, sheet = "vultureling", rows = { 260, 420 } },
 }
 
 -- Kegs along the track.
@@ -216,15 +253,28 @@ local THE_LINE_DECOR: { Decor } = {
 }
 
 local MINE: { Wave } = {
+	{ at = 16020, sheet = "dust_bat", rows = { 250, 300, 350, 400 } },
 	{ at = 16200, sheet = "lantern_wisp", rows = { CEILING_ROW } },
+	{ at = 16440, sheet = "dust_bat", rows = { 260, 320, 380 } },
 	{ at = 16680, sheet = "cricket", rows = SWARM_LOW },
+	{ at = 16920, sheet = "dust_bat", rows = { 250, 300, 350, 400 } },
 	{ at = 17160, sheet = "surveyor", rows = { FLOOR_ROW } },
+	{ at = 17400, sheet = "carrion", rows = { 420, 620 } },
 	{ at = 17640, sheet = "lantern_wisp", rows = { CEILING_ROW } },
+	{ at = 17880, sheet = "dust_bat", rows = { 250, 310, 370, 430 } },
 	{ at = 18120, sheet = "cricket", rows = SWARM_WIDE },
+	{ at = 18360, sheet = "dust_bat", rows = { 260, 320, 380 } },
 	{ at = 18600, sheet = "surveyor", rows = { FLOOR_ROW } },
+	{ at = 18840, sheet = "carrion", rows = { 400, 600 } },
 	{ at = 19080, sheet = "lantern_wisp", rows = { CEILING_ROW } },
+	{ at = 19320, sheet = "dust_bat", rows = { 250, 300, 350, 400 } },
 	{ at = 19560, sheet = "cricket", rows = SWARM_HIGH },
+	{ at = 19800, sheet = "dust_bat", rows = { 260, 320, 380 } },
 	{ at = 20040, sheet = "surveyor", rows = { FLOOR_ROW } },
+	{ at = 20280, sheet = "dust_bat", rows = { 250, 310, 370, 430 } },
+	{ at = 20520, sheet = "cricket", rows = SWARM_LOW },
+	{ at = 20760, sheet = "dust_bat", rows = { 260, 320, 380 } },
+	{ at = 20940, sheet = "lantern_wisp", rows = { CEILING_ROW } },
 }
 
 local MINE_DECOR: { Decor } = {
@@ -236,8 +286,15 @@ local MINE_DECOR: { Decor } = {
 }
 
 local UP_THE_MESA: { Wave } = {
+	{ at = 21300, sheet = "vultureling", rows = { 260, 400, 540 } },
 	{ at = 21480, sheet = "carrion", rows = { 300, 540 } },
+	{ at = 21720, sheet = "cricket", rows = SWARM_HIGH },
+	{ at = 21960, sheet = "vultureling", rows = { 300, 440 } },
 	{ at = 22200, sheet = "carrion", rows = { 260, 460, 660 } },
+	{ at = 22440, sheet = "shroud", rows = { 380 } },
+	{ at = 22680, sheet = "vultureling", rows = { 260, 400, 540 } },
+	{ at = 22920, sheet = "cricket", rows = SWARM_LOW },
+	{ at = 23100, sheet = "vultureling", rows = { 300, 460 } },
 }
 
 level.register("deseret", {

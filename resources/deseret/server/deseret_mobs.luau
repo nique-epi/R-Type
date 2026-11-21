@@ -258,6 +258,115 @@ behaviours.register("cricket_swarm", {
 	return { direction = { x = -1, y = math.clamp(step, -1, 1) } }
 end)
 
+-- The row a dust bat keeps: `gap` units under the ceiling the biome draws at
+-- its column when it was spawned under one, else the row it was spawned at.
+local function bat_row(e, data): number
+	if data.gap == nil then
+		return data.row
+	end
+	local found, ceiling = pcall(level.ceiling, e.position.x)
+	if not found or ceiling == nil then
+		return data.row
+	end
+	return ceiling + data.gap
+end
+
+-- A dust bat flutters left in a swarm, its wave shifted by its row, keeping
+-- its gap under the ceiling. Left of a column its row sets, with a ship within
+-- `reach` of its column, its eyes light up for signal_ms, then it dives
+-- straight at that ship, at dive_speed for dive_ms at most, and climbs back
+-- for recover_ms to flutter on; it dives once.
+behaviours.register("bat_swarm", {
+	{ name = "amplitude", lowest = 0, highest = 200 },
+	{ name = "period_ms", lowest = 1, highest = 60000 },
+	{ name = "dive_from_x", lowest = 0, highest = 1920 },
+	{ name = "reach", lowest = 0, highest = 1920 },
+	{ name = "signal_ms", lowest = 1, highest = 60000 },
+	{ name = "dive_speed", lowest = 1, highest = 4000 },
+	{ name = "dive_ms", lowest = 1, highest = 60000 },
+	{ name = "recover_ms", lowest = 1, highest = 60000 },
+}, function(e)
+	local settings = e.settings
+	local data = e.data
+	if data.row == nil then
+		data.row = e.position.y
+		local found, ceiling = pcall(level.ceiling, e.position.x)
+		if found and ceiling ~= nil then
+			data.gap = e.position.y - ceiling
+		end
+	end
+	local ship = e.nearest_ship
+	local dives_at = settings.dive_from_x - (data.row * 53) % 400
+	if
+		not data.dived
+		and ship ~= nil
+		and e.position.x < RIGHT_EDGE
+		and e.position.x <= dives_at
+		and math.abs(ship.x - e.position.x) <= settings.reach
+	then
+		data.dived = true
+		local cruise = e.top_speed
+		e = behaviours.wait(settings.signal_ms, {
+			direction = { x = -0.3, y = 0 },
+			starts_action = { attack = 0, phase = "signal" },
+		})
+		local heading, distance = heading_to(e.position, e.nearest_ship or ship)
+		local dive_ms = math.clamp(distance / settings.dive_speed * 1000, 1, settings.dive_ms)
+		behaviours.wait(dive_ms, {
+			direction = heading,
+			top_speed = settings.dive_speed,
+			starts_action = { attack = 0, phase = "strike" },
+		})
+		behaviours.wait(settings.recover_ms, {
+			direction = { x = -0.6, y = -1 },
+			top_speed = cruise,
+			starts_action = { attack = 0, phase = "recover" },
+		})
+		e = behaviours.wait(1, { direction = LEFT, ends_action = true })
+	end
+	local wave = settings.amplitude * math.sin(FULL_TURN * e.age_ms / settings.period_ms + data.row / 90)
+	local step = (bat_row(e, data) + wave - e.position.y) / (e.top_speed * TICK_SECONDS)
+	return { direction = { x = -1, y = math.clamp(step, -1, 1) } }
+end)
+
+-- A vultureling drifts left at `drift` percent of its speed while it circles,
+-- `circle` percent of its speed turning round every circle_ms, the turn
+-- shifted by its row so a flock does not wheel as one. Left of a column its
+-- row sets, with a ship in play, it screeches for signal_ms, then dives in a
+-- straight line at where that ship is, at dive_speed, until it leaves.
+behaviours.register("vultureling_circle", {
+	{ name = "drift", lowest = 0, highest = 100 },
+	{ name = "circle", lowest = 0, highest = 100 },
+	{ name = "circle_ms", lowest = 1, highest = 60000 },
+	{ name = "dive_from_x", lowest = 0, highest = 1920 },
+	{ name = "signal_ms", lowest = 1, highest = 60000 },
+	{ name = "dive_speed", lowest = 1, highest = 4000 },
+}, function(e)
+	local settings = e.settings
+	local data = e.data
+	if data.heading ~= nil then
+		return { direction = data.heading, top_speed = settings.dive_speed }
+	end
+	if data.row == nil then
+		data.row = e.position.y
+	end
+	local ship = e.nearest_ship
+	local dives_at = settings.dive_from_x - (data.row * 41) % 450
+	if ship ~= nil and e.position.x < RIGHT_EDGE and e.position.x <= dives_at then
+		e = behaviours.wait(settings.signal_ms, { direction = STILL, starts_action = { attack = 0, phase = "signal" } })
+		data.heading = heading_to(e.position, e.nearest_ship or ship)
+		behaviours.wait(1, {
+			direction = data.heading,
+			top_speed = settings.dive_speed,
+			starts_action = { attack = 0, phase = "strike" },
+		})
+		return { direction = data.heading, top_speed = settings.dive_speed }
+	end
+	local turn = FULL_TURN * e.age_ms / settings.circle_ms + data.row / 100
+	local share = percent(settings.circle)
+	return { direction = { x = -percent(settings.drift) + share * math.cos(turn), y = share * math.sin(turn) } }
+end)
+
 -- The dust devil drifts left, swaying; it swallows every missile that
 -- crosses it, shows its lighter frame for its last warn_ms, and is gone after
 -- life_ms.

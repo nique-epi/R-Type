@@ -1,0 +1,99 @@
+# The entity type dust_bat, brought by the resource deseret:
+# a bat of the Sheol mine the Bydo swelled, pink-eyed; a swarm flutters
+# under the ceiling, and each bat dives once at a ship below it.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy"
+layer = "enemy"
+hits = ["player"]
+pilot = "bat_swarm"
+
+[gameplay.hitbox]
+width = 64
+height = 48
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 260
+
+# It flutters 36 units around its row every 0.7 s, under a ceiling at the gap
+# it was spawned at; left of a column drawn from 1100 to 1500 by its row, with
+# a ship within 360 units of its column, its eyes light 350 ms, it dives at
+# 620 units per second for 0.8 s at most, and climbs back 0.5 s.
+[gameplay.behaviour]
+amplitude = 36
+period_ms = 700
+dive_from_x = 1500
+reach = 360
+signal_ms = 350
+dive_speed = 620
+dive_ms = 800
+recover_ms = 500
+
+[gameplay.health]
+points = 1
+
+[gameplay.score]
+points = 40
+
+[appearance]
+sheet = "sprites/deseret/dust_bat.png"
+
+# Idle: wings up, spread, down, spread.
+[appearance.idle]
+left = 0
+top = 0
+width = 16
+height = 12
+frames = 4
+spacing = 2
+frame_ms = 70
+
+# Signal: its eyes light white.
+[appearance.attack_0.signal]
+left = 72
+top = 0
+width = 16
+height = 12
+frames = 1
+spacing = 2
+frame_ms = 350
+playback = "loop"
+afterwards = "stay"
+
+# Strike: wings folded, it drops on the ship.
+[appearance.attack_0.strike]
+left = 90
+top = 0
+width = 16
+height = 12
+frames = 1
+spacing = 2
+frame_ms = 100
+playback = "loop"
+afterwards = "stay"
+
+# Recover: it beats its wings back up.
+[appearance.attack_0.recover]
+left = 0
+top = 0
+width = 16
+height = 12
+frames = 4
+spacing = 2
+frame_ms = 70
+playback = "once"
+afterwards = "idle"
+
+# The death, centered on the body; the row under it is the same death without flash.
+[appearance.death]
+left = 0
+top = 14
+width = 48
+height = 48
+frames = 6
+spacing = 2
+frame_ms = 70
