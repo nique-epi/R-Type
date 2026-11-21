@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <string_view>
 
 namespace rtype::game::testing {
@@ -46,6 +47,24 @@ constexpr std::string_view SHEET_OF_TWO_BOXES =
     "[appearance]\n";
 constexpr std::size_t TWO_LISTED_BOXES = 2;
 constexpr float SECOND_LISTED_BOX_WIDTH = 100.0F;
+/** @brief The sheet of a boss with a box and a beam that hurts in the strike
+ * of its attack 2: from (-76, -52), 1920 long and 52 thick, as the beam of
+ * the Bydo Tyrant. */
+constexpr std::string_view BEAMER_TYPE = "beamer";
+constexpr std::string_view SHEET_OF_A_BEAMER =
+    "[gameplay]\nside = \"enemy\"\n"
+    "[gameplay.hitbox]\nwidth = 96\nheight = 96\n"
+    "[[gameplay.hurt_zone.box]]\noffset_x = 0\noffset_y = 0\nwidth = 96\n"
+    "height = 96\n"
+    "[[gameplay.hurt_zone.beam]]\noffset_x = -76\noffset_y = -52\n"
+    "length = 1920\nthickness = 52\nfrom_deg = 0\nto_deg = 0\n"
+    "attack = 2\nphase = \"strike\"\n[appearance]\n";
+constexpr std::size_t ONE_HURT_BEAM = 1;
+constexpr float BEAMER_BEAM_OFFSET_X = -76.0F;
+constexpr float BEAMER_BEAM_OFFSET_Y = -52.0F;
+constexpr float BEAMER_BEAM_LENGTH = 1920.0F;
+constexpr float BEAMER_BEAM_THICKNESS = 52.0F;
+constexpr std::uint8_t BEAMER_BEAM_ATTACK = 2;
 constexpr std::string_view SHEET_WITHOUT_SIDE =
     "[gameplay]\npilot = \"drifter\"\n[appearance]\n";
 constexpr std::string_view SHEET_WITHOUT_BOX =

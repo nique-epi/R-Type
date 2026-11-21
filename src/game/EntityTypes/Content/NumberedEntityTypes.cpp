@@ -31,7 +31,8 @@ std::shared_ptr<const engine::PixelMask> maskPixelsOf(
 }
 
 /** @returns The type @p sheet describes: its name, and the side, the box,
- * the collision mask and the contact of an obstacle its `[gameplay]` names. */
+ * the collision mask, the contact of an obstacle and the hurt zone its
+ * `[gameplay]` names. */
 NumberedEntityType typeOf(const SheetText& sheet) {
   const toml::table root = engine::parseDataFile(sheet.text, sheet.source);
   const engine::DataFileTable gameplay =
@@ -42,7 +43,8 @@ NumberedEntityType typeOf(const SheetText& sheet) {
       .hitbox = hitboxOf(gameplay),
       .hitboxParts = hitboxPartsOf(gameplay),
       .mask = maskPixelsOf(gameplay, sheet),
-      .obstacle = obstacleContactOf(gameplay)};
+      .obstacle = obstacleContactOf(gameplay),
+      .hurtZone = hurtZoneOf(gameplay)};
 }
 
 }  // namespace
