@@ -2,6 +2,7 @@
 #include <gtest/gtest.h>
 #include <SFML/Audio/SoundBuffer.hpp>
 #include <filesystem>
+#include <string>
 #include "AssetLibrary.hpp"
 #include "AssetTestConstants.hpp"
 #include "ClientException.hpp"

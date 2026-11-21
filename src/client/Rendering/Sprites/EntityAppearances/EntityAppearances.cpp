@@ -4,7 +4,6 @@
 #include <cstdint>
 #include <filesystem>
 #include <functional>
-#include <initializer_list>
 #include <map>
 #include <optional>
 #include <ranges>
@@ -334,16 +333,25 @@ EntitySounds soundsOf(const engine::DataFileTable& appearance) {
   return sounds;
 }
 
-/** @brief Names each sound of @p sounds by its whole path below @p folder. */
-void placeBelow(const std::filesystem::path& folder, EntitySounds& sounds) {
-  for (std::string* sound : {&sounds.appear, &sounds.death}) {
+/** @brief Calls @p visit with each sound @p sounds names, the ones it leaves
+ * out skipped; @p Sounds is EntitySounds, const or not. */
+template <typename Sounds, typename Visit>
+void forEachNamedSound(Sounds& sounds, Visit visit) {
+  for (auto* sound : {&sounds.appear, &sounds.death}) {
     if (!sound->empty()) {
-      *sound = logging::genericText(folder / *sound);
+      visit(*sound);
     }
   }
-  for (ActionSound& action : sounds.actions) {
-    action.sound = logging::genericText(folder / action.sound);
+  for (auto& action : sounds.actions) {
+    visit(action.sound);
   }
+}
+
+/** @brief Names each sound of @p sounds by its whole path below @p folder. */
+void placeBelow(const std::filesystem::path& folder, EntitySounds& sounds) {
+  forEachNamedSound(sounds, [&folder](std::string& sound) {
+    sound = logging::genericText(folder / sound);
+  });
 }
 
 /** @returns The appearance the `[appearance]` table @p appearance
@@ -420,15 +428,9 @@ std::vector<std::string> EntityAppearances::sheets() const {
 std::vector<std::string> EntityAppearances::sounds() const {
   std::set<std::string> distinct;
   for (const EntityAppearance& appearance : std::views::values(appearances_)) {
-    const EntitySounds& sounds = appearance.sounds;
-    for (const std::string& sound : {sounds.appear, sounds.death}) {
-      if (!sound.empty()) {
-        distinct.insert(sound);
-      }
-    }
-    for (const ActionSound& action : sounds.actions) {
-      distinct.insert(action.sound);
-    }
+    forEachNamedSound(appearance.sounds, [&distinct](const std::string& sound) {
+      distinct.insert(sound);
+    });
   }
   return {distinct.begin(), distinct.end()};
 }

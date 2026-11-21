@@ -1,6 +1,8 @@
 #include "EnemyScene.hpp"
 #include <cstdint>
+#include <string>
 #include <utility>
+#include <vector>
 #include "Animation.hpp"
 #include "AppearanceReference.hpp"
 #include "EnemyAction.hpp"

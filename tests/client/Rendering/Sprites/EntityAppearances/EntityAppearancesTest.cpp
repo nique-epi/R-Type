@@ -9,7 +9,6 @@
 #include <vector>
 #include "ActionAnimation.hpp"
 #include "ActionKey.hpp"
-#include "ActionSound.hpp"
 #include "EnemyPhase.hpp"
 #include "EngineException.hpp"
 #include "EntityAppearance.hpp"

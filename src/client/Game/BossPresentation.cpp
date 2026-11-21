@@ -3,7 +3,6 @@
 #include <optional>
 #include <string>
 #include "AppearanceReference.hpp"
-#include "AudioConstants.hpp"
 #include "BossArrivalConstants.hpp"
 #include "BossArrivalEffects.hpp"
 #include "BossBar.hpp"
@@ -41,30 +40,16 @@ bool isArriving(const BossTracker& tracker, engine::Duration now) {
          !tracker.fight().fightingSince.has_value();
 }
 
-/** @returns The name the sheet of the entity of network id @p bossId gives
- * its bar, empty when its sheet names none; nothing while the client has no
- * such entity drawn from a sheet. */
-std::optional<std::string> bossNameOf(engine::ComponentRegistry& components,
-                                      std::uint32_t bossId) {
+/** @returns The appearance the sheet of the entity of network id @p bossId
+ * gives it; nullptr while the client has no such entity drawn from a sheet. */
+const EntityAppearance* bossAppearanceOf(engine::ComponentRegistry& components,
+                                         std::uint32_t bossId) {
   const std::optional<engine::Entity> boss =
       entityWithAppearance(components, bossId);
   if (!boss.has_value()) {
-    return std::nullopt;
+    return nullptr;
   }
-  return components.get<AppearanceReference>(*boss)->appearance->bossName;
-}
-
-/** @returns The music the sheet of the entity of network id @p bossId names,
- * empty for the music of a boss; nothing while the client has no such entity
- * drawn from a sheet. */
-std::optional<std::string> bossMusicOf(engine::ComponentRegistry& components,
-                                       std::uint32_t bossId) {
-  const std::optional<engine::Entity> boss =
-      entityWithAppearance(components, bossId);
-  if (!boss.has_value()) {
-    return std::nullopt;
-  }
-  return components.get<AppearanceReference>(*boss)->appearance->bossMusic;
+  return components.get<AppearanceReference>(*boss)->appearance;
 }
 
 }  // namespace
@@ -153,14 +138,17 @@ void BossPresentation::advance(engine::Duration elapsed) {
 void BossPresentation::followLevel() { playsALevel_ = true; }
 
 void BossPresentation::readBossSheet() {
-  if (bossInPlay_.has_value() && !bossName_.has_value()) {
-    bossName_ = bossNameOf(*components_, *bossInPlay_);
+  if (!bossInPlay_.has_value() || bossName_.has_value()) {
+    return;
   }
-  if (bossInPlay_.has_value() && !bossMusic_.has_value()) {
-    bossMusic_ = bossMusicOf(*components_, *bossInPlay_);
-    if (bossMusicStarted_ && !bossMusic_.value_or(std::string{}).empty()) {
-      audio_->playBossMusic(*bossMusic_);
-    }
+  const EntityAppearance* sheet = bossAppearanceOf(*components_, *bossInPlay_);
+  if (sheet == nullptr) {
+    return;
+  }
+  bossName_ = sheet->bossName;
+  bossMusic_ = sheet->bossMusic;
+  if (bossMusicStarted_ && !sheet->bossMusic.empty()) {
+    audio_->playBossMusic(sheet->bossMusic);
   }
 }
 
