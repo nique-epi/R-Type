@@ -8,7 +8,7 @@
 -- She waits below the screen through her warning, then rises out of the
 -- mesa where she rests (her arrival, attack 4, whose frames are cut at the
 -- top of her butte) and her wheel starts. Then she takes her attacks in turn,
--- calm between two: the gale (attack 0), sand blown along three lanes of
+-- calm between two: the gale (attack 0), sand blown along two lanes of
 -- five; the blades (attack 1), two blades thrown to the left edge and back;
 -- the pump (attack 2), the ground cracking under the nearest ship and at two
 -- other places, then a geyser of oil out of each crack. Once enraged she
@@ -35,7 +35,7 @@ local EYE = { x = -32, y = -176 }
 -- from, and how many lanes it blows along.
 local LANES = { 90, 260, 430, 600, 770 }
 local GUST_COLUMN = 1300
-local GUSTED_LANES = 3
+local GUSTED_LANES = 2
 
 -- Where the cracks of her pump open besides the one under the nearest ship:
 -- two columns drawn between these; and how far above the ground the middle of

@@ -38,7 +38,7 @@ top_speed = 1
 
 # It rises out of the mesa (its arrival, 1.32 s) where it rests, its feet on
 # the ground under it (y 620 where the biome gives none); rested 1.2 s (0.6 s
-# enraged), it takes its attacks in turn: the gale blows sand along 3 lanes of
+# enraged), it takes its attacks in turn: the gale blows sand along 2 lanes of
 # 5 for 1.2 s, the blades fly to the left edge and back, the pump cracks the
 # ground under the nearest ship and at two other places 1.4 s before their
 # geysers; enraged, its veil tears
@@ -60,7 +60,7 @@ recover_ms = 480
 calm_ms = 1200
 
 [gameplay.health]
-points = 400
+points = 220
 
 [gameplay.score]
 points = 20000
