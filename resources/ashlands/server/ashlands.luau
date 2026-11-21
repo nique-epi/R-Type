@@ -85,7 +85,7 @@ local SANDMAW_ENTRY = { x = 1660, y = 1160 }
 local GLOWHEART_ENTRY = { x = 2200, y = 520 }
 local ASH_MOTHER_ENTRY = { x = 1608, y = 1320 }
 
--- How often a stage looks at the sky, in milliseconds.
+-- How often a stage looks for its boss, in milliseconds.
 local SKY_CHECK_MS = 250
 
 type Wave = { at: number, sheet: string, rows: { number } }
@@ -116,8 +116,8 @@ local function row_of(sheet: string, column: number): number
 end
 
 -- Lays a piece of decor where the scroll has brought it: at DECOR_COLUMN on
--- its scroll, further left when the stage reaches it late (a stage that
--- waited for a clear sky), so two pieces never appear on top of each other. A
+-- its scroll, further left when the stage reaches it late, so two pieces
+-- never appear on top of each other. A
 -- blast door is two halves around the row of its gap.
 local function place(decor: Decor)
 	local column = DECOR_COLUMN - math.max(0, level.scroll() - decor.at)
@@ -151,8 +151,8 @@ end
 
 -- How much later than `planned` the stage that starts now begins. The waves
 -- and the decor of a stage are written for a stage that starts at the scroll
--- its biome begins, `planned`; a stage before it that waited for a clear sky
--- names the biome later, and the stage then plays everything that much later,
+-- its biome begins, `planned`; a stage before it that ran late names the
+-- biome later, and the stage then plays everything that much later,
 -- so no piece of its decor is laid left of where its biome comes in, over the
 -- biome that leaves. A stage restarted from its checkpoint starts where it
 -- started the first time.
@@ -160,20 +160,22 @@ local function lateness(planned: number): number
 	return math.max(0, level.scroll() - planned)
 end
 
-local function wait_for_a_clear_sky()
-	while level.enemies() > 0 do
+-- Waits until no boss is left: the mobs still on screen never hold the
+-- level, they fly on and leave as the scroll goes on.
+local function wait_for_the_boss()
+	while level.bosses() > 0 do
 		level.wait(SKY_CHECK_MS)
 	end
 end
 
 -- A boss is a body like any other: the players are warned of it once it
--- appeared, at the end of the tick, so the stage waits before it looks at the
--- sky. The hazards on screen are removed once the boss is killed.
+-- appeared, at the end of the tick, so the stage waits before it looks for it.
+-- The scroll moves on once the boss is killed, whatever mobs are left. The hazards on screen are removed once the boss is killed.
 local function fight(boss: string, entry: { x: number, y: number })
 	level.pause_scroll()
 	behaviours.spawn(boss, entry)
 	level.wait(SKY_CHECK_MS)
-	wait_for_a_clear_sky()
+	wait_for_the_boss()
 	level.resume_scroll()
 end
 
@@ -257,7 +259,6 @@ level.register("ashlands", {
 	function()
 		play(HIGHWAY, HIGHWAY_DECOR, 0)
 		level.wait_scroll(END_OF_THE_HIGHWAY)
-		wait_for_a_clear_sky()
 	end,
 	function()
 		fight("sandmaw", SANDMAW_ENTRY)
@@ -268,7 +269,6 @@ level.register("ashlands", {
 		play(SHELTER, SHELTER_DECOR, shift)
 		level.wait_scroll(END_OF_THE_SHELTER + shift)
 		level.biome("cendres_coeur")
-		wait_for_a_clear_sky()
 	end,
 	function()
 		local shift = lateness(END_OF_THE_SHELTER)
@@ -281,7 +281,6 @@ level.register("ashlands", {
 		local shift = lateness(END_OF_THE_CORE)
 		play(DESCENT, {}, shift)
 		level.wait_scroll(END_OF_THE_DESCENT + shift)
-		wait_for_a_clear_sky()
 	end,
 	function()
 		fight("ash_mother", ASH_MOTHER_ENTRY)

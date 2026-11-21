@@ -36,6 +36,9 @@ class LuauLevelRunFixture : public ::testing::Test {
   void tick(std::size_t count);
   /** @brief Puts one enemy in the world of the level. */
   void addEnemy();
+  /** @brief Puts one boss in the world of the level, an enemy that holds a
+   * Boss. */
+  void addBoss();
   /** @returns The run of the level played. */
   [[nodiscard]] rtype::game::LuauLevelRun& run();
   /** @returns The progress of the level played. */

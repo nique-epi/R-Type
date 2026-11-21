@@ -44,7 +44,7 @@ local NECROMANCER_ENTRY = { x = 1544, y = 1370 }
 -- its floor.
 local CEILING_ROW, FLOOR_ROW = 192, 848
 
--- How often a stage looks at the sky, in milliseconds.
+-- How often a stage looks for its boss, in milliseconds.
 local SKY_CHECK_MS = 250
 
 type Wave = { at: number, sheet: string, rows: { number } }
@@ -62,20 +62,22 @@ local function play(waves: { Wave })
 	end
 end
 
-local function wait_for_a_clear_sky()
-	while level.enemies() > 0 do
+-- Waits until no boss is left: the mobs still on screen never hold the
+-- level, they fly on and leave as the scroll goes on.
+local function wait_for_the_boss()
+	while level.bosses() > 0 do
 		level.wait(SKY_CHECK_MS)
 	end
 end
 
 -- A boss is a body like any other: the players are warned of it once it
--- appeared, at the end of the tick, so the stage waits before it looks at the
--- sky.
+-- appeared, at the end of the tick, so the stage waits before it looks for it.
+-- The scroll moves on once the boss is killed, whatever mobs are left.
 local function fight(boss: string, entry: { x: number, y: number }, options: { health_percent: number }?)
 	level.pause_scroll()
 	behaviours.spawn(boss, entry, options)
 	level.wait(SKY_CHECK_MS)
-	wait_for_a_clear_sky()
+	wait_for_the_boss()
 	level.resume_scroll()
 end
 
@@ -130,7 +132,6 @@ level.register("space", {
 	function()
 		play(BYDO_FIELD)
 		level.wait_scroll(END_OF_THE_OPEN_SPACE)
-		wait_for_a_clear_sky()
 		fight("bydo_tyrant", BOSS_ENTRY)
 	end,
 }, { map = "OPEN SPACE", preview = "open_space" })
@@ -143,7 +144,6 @@ level.register("fosse", {
 	function()
 		play(DEPTHS)
 		level.wait_scroll(END_OF_THE_DEPTHS)
-		wait_for_a_clear_sky()
 	end,
 	function()
 		fight("necromancer", NECROMANCER_ENTRY)
