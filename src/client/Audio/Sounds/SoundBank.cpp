@@ -3,6 +3,7 @@
 #include <span>
 #include <string_view>
 #include "AssetLibrary.hpp"
+#include "AssetLoadResult.hpp"
 #include "AssetProblemReport.hpp"
 #include "AssetsById.hpp"
 
@@ -16,6 +17,11 @@ void SoundBank::load(const AssetLibrary& library,
                     loadAssetFile(sounds_, soundId, library.fileOf(soundId)));
   }
   problems.throwIfAny();
+}
+
+bool SoundBank::loadOne(const AssetLibrary& library, std::string_view soundId) {
+  return loadAssetFile(sounds_, soundId, library.fileOf(soundId)) ==
+         AssetLoadResult::Loaded;
 }
 
 const sf::SoundBuffer& SoundBank::sound(std::string_view soundId) const {

@@ -1,0 +1,87 @@
+# The entity type widow_geyser, brought by the resource deseret:
+# a geyser of black oil out of the cracked ground: it wells at its crack for
+# 1.4 s, rises for 320 ms, hurts while it stands at its full height for 240
+# ms, then falls back.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy"
+layer = "hazard"
+hits = ["player"]
+pilot = "geyser_burst"
+
+[gameplay.hitbox]
+width = 4
+height = 4
+offset_y = 1024
+
+[gameplay.motion]
+kind = "scroll"
+
+[gameplay.behaviour]
+well_ms = 1400
+rise_ms = 320
+burst_ms = 240
+fall_ms = 160
+
+[gameplay.survives_contact]
+
+# Only the column at its full height hurts: the 280 units above the ground.
+[[gameplay.hurt_zone.box]]
+offset_x = 0
+offset_y = 12
+width = 56
+height = 280
+attack = 0
+phase = "strike"
+
+[appearance]
+sheet = "sprites/deseret/widow_geyser.png"
+
+# Idle: the oil wells at the crack.
+[appearance.idle]
+left = 0
+top = 0
+width = 22
+height = 76
+frames = 1
+spacing = 2
+frame_ms = 1000
+
+# Signal: the column rises.
+[appearance.attack_0.signal]
+left = 0
+top = 0
+width = 22
+height = 76
+frames = 4
+spacing = 2
+frame_ms = 80
+playback = "hold"
+afterwards = "stay"
+
+# Strike: the column at its full height, which hurts.
+[appearance.attack_0.strike]
+left = 96
+top = 0
+width = 22
+height = 76
+frames = 2
+spacing = 2
+frame_ms = 120
+playback = "hold"
+afterwards = "stay"
+
+# Recover: the column falls back.
+[appearance.attack_0.recover]
+left = 144
+top = 0
+width = 22
+height = 76
+frames = 2
+spacing = 2
+frame_ms = 80
+playback = "hold"
+afterwards = "stay"

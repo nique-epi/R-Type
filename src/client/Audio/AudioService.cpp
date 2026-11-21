@@ -1,12 +1,13 @@
 #include "AudioService.hpp"
 #include <optional>
+#include <string>
+#include <string_view>
 #include "Ambience.hpp"
 #include "AmbienceMusic.hpp"
 #include "AssetLibrary.hpp"
 #include "AudioConstants.hpp"
 #include "IMusicPlayer.hpp"
 #include "ISoundPlayer.hpp"
-#include "LevelTracks.hpp"
 #include "SettingsService.hpp"
 #include "SoundConstants.hpp"
 #include "SoundtrackParts.hpp"
@@ -17,7 +18,7 @@ namespace rtype::client {
 AudioService::AudioService(AssetLibrary& library, SettingsService& settings)
     : library_(&library),
       settings_(&settings),
-      sounds_(bank_, settings),
+      sounds_(bank_, library, settings),
       theme_(settings, THEME_TRACK),
       gameMusic_(settings, GAME_TRACK),
       bossMusic_(settings, BOSS_TRACK),
@@ -44,21 +45,19 @@ IMusicPlayer& AudioService::theme() { return theme_; }
 
 void AudioService::playTheme() { soundtrack_.playTheme(); }
 
-void AudioService::playGameMusic(const LevelTracks& tracks) {
-  if (tracks.music.has_value()) {
-    IMusicPlayer* const boss =
-        tracks.bossMusic.has_value()
-            ? &levelMusic_.playerOf(*tracks.bossMusic, *library_)
-            : nullptr;
-    soundtrack_.useLevelMusic(levelMusic_.playerOf(*tracks.music, *library_),
-                              boss);
+void AudioService::playGameMusic(const std::optional<std::string>& levelMusic) {
+  if (levelMusic.has_value()) {
+    soundtrack_.useLevelMusic(levelMusic_.playerOf(*levelMusic, *library_));
   }
   soundtrack_.playGameMusic();
 }
 
 bool AudioService::silenceMusic() { return soundtrack_.silenceMusic(); }
 
-void AudioService::playBossMusic() { soundtrack_.playBossMusic(); }
+void AudioService::playBossMusic(std::string_view music) {
+  bossMusic_.switchTo(*library_, music.empty() ? BOSS_MUSIC_ID : music);
+  soundtrack_.playBossMusic();
+}
 
 void AudioService::setAmbience(Ambience ambience) {
   if (ambience == ambience_) {

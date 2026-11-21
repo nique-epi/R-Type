@@ -1,3 +1,4 @@
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "EnemyAction.hpp"
 #include "EnemyActionPlayerFixtures.hpp"
@@ -8,6 +9,7 @@
 
 using rtype::client::Playback;
 using rtype::client::testing::appearanceWithARage;
+using rtype::client::testing::appearanceWithAStrikeSound;
 using rtype::client::testing::DESCRIBED_ATTACK;
 using rtype::client::testing::ENEMY_ID;
 using rtype::client::testing::EnemyScene;
@@ -19,6 +21,7 @@ using rtype::client::testing::RAGE_FRAME_TIME;
 using rtype::client::testing::STRIKE_ANCHOR;
 using rtype::client::testing::STRIKE_FRAME_COUNT;
 using rtype::client::testing::STRIKE_FRAME_TIME;
+using rtype::client::testing::STRIKE_SOUND;
 using rtype::client::testing::UNDESCRIBED_ATTACK;
 using rtype::client::testing::UNKNOWN_ENEMY_ID;
 using rtype::network::EnemyActionPhase;
@@ -153,4 +156,30 @@ TEST(EnemyActionPlayer, ARageForAnotherEntityLeavesTheEnemyCalm) {
   scene.play(STRIKE_FRAME_TIME * STRIKE_FRAME_COUNT);
 
   EXPECT_EQ(scene.shownFrame(), IDLE_FRAME);
+}
+
+/**
+ * Given an enemy whose sheet names a sound for the strike of one attack
+ * When the server announces that strike
+ * Then the client plays that sound, once
+ */
+TEST(EnemyActionPlayer, PlaysTheSoundTheSheetNamesForThePhase) {
+  EnemyScene scene{appearanceWithAStrikeSound()};
+
+  scene.announce(ENEMY_ID, DESCRIBED_ATTACK, EnemyActionPhase::Strike);
+
+  EXPECT_THAT(scene.playedSounds(), ::testing::ElementsAre(STRIKE_SOUND));
+}
+
+/**
+ * Given the same enemy
+ * When the server announces the signal of that attack, which has no sound
+ * Then the client plays no sound
+ */
+TEST(EnemyActionPlayer, PlaysNoSoundForAPhaseTheSheetGivesNone) {
+  EnemyScene scene{appearanceWithAStrikeSound()};
+
+  scene.announce(ENEMY_ID, DESCRIBED_ATTACK, EnemyActionPhase::Signal);
+
+  EXPECT_TRUE(scene.playedSounds().empty());
 }

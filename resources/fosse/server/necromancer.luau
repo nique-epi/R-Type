@@ -6,8 +6,8 @@
 -- It rises out of the floor where it stands, then plays in place its four
 -- attacks, each in three beats: a signal the players learn, a strike that
 -- always leaves a lane free, and a recover. A missile that touches its hood or
--- its cape hurts it; every missile is stopped while it comes up or hides in its
--- hood. Below half its health it hides in its hood (attack 4), then pairs
+-- its cape hurts it at every moment, while it comes up and hides in its hood
+-- too. Below half its health it hides in its hood (attack 4), then pairs
 -- its attacks: rings with the fist, skeleton arms under the gaze.
 --
 -- Every place below is measured from the center of its body, in logical units
@@ -108,15 +108,6 @@ behaviours.register("necromancer_rite", {
 	{ name = "rage_ms", lowest = 1, highest = 60000 },
 }, function(e)
 	local settings = e.settings
-	local uncovered = false
-	behaviours.pre_hit(function(hit)
-		if uncovered then
-			return true
-		end
-		behaviours.destroy(hit.missile)
-		return false
-	end)
-
 	behaviours.wait(settings.rise_ms, {
 		direction = STILL,
 		jumps_to = { x = e.position.x, y = settings.rest_y },
@@ -124,17 +115,14 @@ behaviours.register("necromancer_rite", {
 	})
 	e = behaviours.wait(1, { direction = STILL, ends_action = true })
 	local center = { x = e.position.x, y = settings.rest_y }
-	uncovered = true
 
 	local raged = false
 	local played = 0
 	while true do
 		if e.enraged and not raged then
 			raged = true
-			uncovered = false
 			behaviours.wait(settings.rage_ms, { direction = STILL, starts_action = { attack = RAGE, phase = "enraged" } })
 			e = behaviours.wait(1, { direction = STILL, ends_action = true })
-			uncovered = true
 		end
 		played += 1
 		local chosen = FIRST_ORDER[played] or math.random(RINGS, GAZE)

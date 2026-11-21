@@ -1,0 +1,32 @@
+# The entity type widow_gale, brought by the resource deseret:
+# a gust of sand of the Old Widow, driven to the left along a lane.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy_missile"
+layer = "enemy_missile"
+hits = ["player"]
+pilot = "flying_left"
+
+[gameplay.hitbox]
+width = 384
+height = 160
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 900
+
+[appearance]
+sheet = "sprites/deseret/widow_gale.png"
+
+# Idle: the sand streams.
+[appearance.idle]
+left = 0
+top = 0
+width = 96
+height = 48
+frames = 4
+spacing = 2
+frame_ms = 70

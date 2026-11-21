@@ -17,6 +17,10 @@ constexpr std::uint32_t UNKNOWN_ENEMY_ID = 8;
 constexpr std::uint8_t DESCRIBED_ATTACK = 1;
 constexpr std::uint8_t UNDESCRIBED_ATTACK = 2;
 
+/** @brief The sound the sheet names for the strike of the described
+ * attack. */
+constexpr const char* STRIKE_SOUND = "sounds/enemy/strike.ogg";
+
 /** @brief The idle frame of the enemy, the frames of its strike, and how long
  * each strike frame shows. */
 constexpr game::SpriteFrame IDLE_FRAME{

@@ -47,9 +47,10 @@ constexpr std::string_view PLANET_ASSET_ID = "backgrounds/space/planet.png";
 constexpr std::string_view MOON_ASSET_ID = "backgrounds/space/moon.png";
 
 /** @brief The six images of the sky the repository ships, the three
- * tilesets of its Pit and the three tilesets of each of the four biomes of the
- * Ashlands: 21 images, the planet and the near walls among them. */
-constexpr std::size_t IMAGES_OF_THE_SHIPPED_BACKGROUNDS = 21;
+ * tilesets of its Pit, the three tilesets of each of the four biomes of the
+ * Ashlands and of each of the five biomes of Deseret: 36 images, the planet
+ * and the near walls among them. */
+constexpr std::size_t IMAGES_OF_THE_SHIPPED_BACKGROUNDS = 36;
 constexpr std::string_view NEAR_WALL_TILESET = "biomes/fosse/fosse_near.png";
 
 /** @brief The backgrounds the repository ships: the sky, whose events never
@@ -65,3 +66,12 @@ constexpr std::size_t LAYERS_OF_THE_PIT = 3;
 constexpr std::array<std::string_view, 4> SHIPPED_ASHLANDS_NAMES{
     "cendres", "cendres_abri", "cendres_coeur", "cendres_silo"};
 constexpr std::size_t LAYERS_OF_AN_ASHLANDS_BIOME = 3;
+
+/** @brief The five biomes of Deseret the repository ships, one per stage of
+ * its map, each three layers entered through the last, as the Ashlands. */
+constexpr std::array<std::string_view, 5> SHIPPED_DESERET_NAMES{
+    "deseret", "deseret_hoodoos", "deseret_line", "deseret_mine",
+    "deseret_mesa"};
+
+/** @brief The music every background of Deseret names. */
+constexpr std::string_view DESERET_MUSIC = "music/big_iron.mp3";

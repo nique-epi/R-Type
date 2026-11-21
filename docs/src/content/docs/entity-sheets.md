@@ -263,8 +263,10 @@ frame_ms = 250
 | `[appearance.enraged_idle]` | | the keys of `idle`; may be left out | the idle animation of an enemy once the server announced it enraged, which every attack that ends with `afterwards = "idle"` goes back to; the enemy keeps `idle` without it |
 | `[appearance.death]` | | the keys of `idle`; may be left out | the death the client plays once, centered where the enemy died, when the server says it was killed; its version without flash, played with REDUCE FLASHES, is the row right under it, frame for frame, `height` + `spacing` pixels lower. An enemy without it plays the Bydo explosion of `sprites/effects.png` |
 | `boss_name` | | a text; may be left out | the name the bar of a boss writes above its gauges, `BYDO TYRANT` for the Tyrant and `NECROMANCER` for the boss of the Pit; a boss without it shows no name |
+| `boss_music` | | an asset id of the client; may be left out | the music the boss fights to, a file of `assets/music/` the client plays in place of the music of a boss once its alarm ends, or at once over the music a level names, `music/freight_train_boogie.mp3` for the Iron Pilgrim; a boss without it fights to `music/boss_theme.mp3` |
+| `[appearance.sounds]` | | the texts `appear`, `death` and a table `attack_<n>` of phases; may be left out | the sounds the client plays for a body of the type, see [Sounds](#sounds) |
 
-Every key of `idle` is required, `enraged_idle`, `death`, `effects` and `looks` are the only optional tables besides the attack animations, `boss_name` the only optional text, and any other key is refused. The keys and ranges live in `src/client/Rendering/Sprites/EntityAppearanceConstants.hpp`. A pixel of a sheet covers 4 × 4 logical units of the playfield, so a frame should be the hitbox divided by 4: 24 × 24 pixels for a box of 96 × 96. `EntityAppearances.EveryShippedSheetDrawsTheBoxTheServerHits` checks it for every shipped sheet whose boxes all hurt in an action only. A sheet with a box that always hurts, the Voltjelly and the Bydo Tyrant, draws a frame that holds its hitbox, offset included, and every such box instead: the Tyrant is drawn 128 × 128 pixels, 512 × 512 units, and hit on a box of 440 × 488 that covers its body (`AFrameHoldsTheBoxesThatAlwaysHurt`). The side of the sheet, never its appearance, picks the layer the entity is drawn in (see [Client](/R-Type/client/#drawing-order-layer)). Whether the sprite sheet exists is checked when the game screen loads it, like any other asset.
+Every key of `idle` is required, `enraged_idle`, `death`, `effects`, `looks` and `sounds` are the only optional tables besides the attack animations, `boss_name` and `boss_music` the only optional texts, and any other key is refused. The keys and ranges live in `src/client/Rendering/Sprites/EntityAppearanceConstants.hpp`. A pixel of a sheet covers 4 × 4 logical units of the playfield, so a frame should be the hitbox divided by 4: 24 × 24 pixels for a box of 96 × 96. `EntityAppearances.EveryShippedSheetDrawsTheBoxTheServerHits` checks it for every shipped sheet whose boxes all hurt in an action only. A sheet with a box that always hurts, the Voltjelly and the Bydo Tyrant, draws a frame that holds its hitbox, offset included, and every such box instead: the Tyrant is drawn 128 × 128 pixels, 512 × 512 units, and hit on a box of 440 × 488 that covers its body (`AFrameHoldsTheBoxesThatAlwaysHurt`). The side of the sheet, never its appearance, picks the layer the entity is drawn in (see [Client](/R-Type/client/#drawing-order-layer)). Whether the sprite sheet exists is checked when the game screen loads it, like any other asset.
 
 ### Attack animations
 
@@ -326,6 +328,23 @@ frame_ms = 120
 - The frames lie in the sprite sheet of `sheet`, the only image a content pack carries for a type.
 
 A script asks for them by name (see [Scripting](/R-Type/scripting/#what-the-function-returns-the-intent)). A name the sheet does not hold is dropped by the server; a client whose sheet does not hold the name, or that does not have the body, draws nothing.
+
+### Sounds
+
+A sheet may name the sounds of its type in `[appearance.sounds]`, so a resource gets sounds without any code on the client:
+
+```toml
+[appearance.sounds]
+appear = "sounds/whistle.ogg"
+death = "sounds/crash.ogg"
+
+[appearance.sounds.attack_1]
+signal = "sounds/whistle.ogg"
+```
+
+- `appear` plays as a body of the type appears, in place of the shot of a missile; `death` as it is killed, in place of its explosion; a phase of a table `attack_<n>` (`signal`, `strike`, `recover`) as the body enters that phase of attack `n`. A sound the sheet leaves out plays the sound the client gives that moment, or none.
+- Each sound is a file, named as `sheet` is: an asset id for the sheets of the client, a path below the folder of the pack for a content pack, which carries the file with its sprite sheets (`contentFilesIn()`). The client reads every sound the sheets of the session name as a game starts, so none is read during the game; a file it cannot read stays silent.
+- Any other key of `[appearance.sounds]` or of an attack table is refused.
 
 ## When a program refuses a sheet
 

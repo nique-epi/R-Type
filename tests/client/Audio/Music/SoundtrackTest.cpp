@@ -396,7 +396,7 @@ TEST(Soundtrack, TheMusicOfALevelPlaysInPlaceOfTheMusicOfAGame) {
       .theme = theme, .gameMusic = gameMusic, .bossMusic = bossMusic});
   soundtrack.playGameMusic();
 
-  soundtrack.useLevelMusic(levelMusic, nullptr);
+  soundtrack.useLevelMusic(levelMusic);
   soundtrack.advance(LONGER_THAN_THE_SILENCE);
 
   EXPECT_TRUE(levelMusic.playingOffset().has_value());
@@ -418,7 +418,7 @@ TEST(Soundtrack, TheMusicOfALevelTakesOverTheMusicThatPlays) {
   soundtrack.playGameMusic();
   soundtrack.advance(LONGER_THAN_THE_SILENCE);
 
-  soundtrack.useLevelMusic(levelMusic, nullptr);
+  soundtrack.useLevelMusic(levelMusic);
 
   EXPECT_TRUE(levelMusic.playingOffset().has_value());
   EXPECT_FALSE(gameMusic.playingOffset().has_value());
@@ -437,7 +437,7 @@ TEST(Soundtrack, ABossLeavesTheMusicOfALevelPlaying) {
   Soundtrack soundtrack(SoundtrackParts{
       .theme = theme, .gameMusic = gameMusic, .bossMusic = bossMusic});
   soundtrack.playGameMusic();
-  soundtrack.useLevelMusic(levelMusic, nullptr);
+  soundtrack.useLevelMusic(levelMusic);
   soundtrack.advance(LONGER_THAN_THE_SILENCE);
 
   const bool silenced = soundtrack.silenceMusic();
@@ -459,7 +459,7 @@ TEST(Soundtrack, TheThemeForgetsTheMusicOfTheLevel) {
   Soundtrack soundtrack(SoundtrackParts{
       .theme = theme, .gameMusic = gameMusic, .bossMusic = bossMusic});
   soundtrack.playGameMusic();
-  soundtrack.useLevelMusic(levelMusic, nullptr);
+  soundtrack.useLevelMusic(levelMusic);
   soundtrack.advance(LONGER_THAN_THE_SILENCE);
   soundtrack.playTheme();
 
@@ -471,59 +471,66 @@ TEST(Soundtrack, TheThemeForgetsTheMusicOfTheLevel) {
 }
 
 /**
- * Given the music of a level that plays, the level naming a music for its
- * bosses
- * When a boss arrives: the music is silenced, then the boss music asked for,
- * then the alarm passes
- * Then the music of the bosses of the level plays, and not the music of the
- * bosses
+ * Given the music of a level that plays, which no alarm silenced
+ * When the music of a boss is asked for
+ * Then it plays at once, with no alarm to wait for
  */
-TEST(Soundtrack, ABossPlaysTheBossMusicTheLevelNames) {
+TEST(Soundtrack, TheMusicOfABossStartsAtOnceOverTheMusicOfALevel) {
   FakeMusicPlayer theme;
   FakeMusicPlayer gameMusic;
   FakeMusicPlayer bossMusic;
   FakeMusicPlayer levelMusic;
-  FakeMusicPlayer levelBossMusic;
   Soundtrack soundtrack(SoundtrackParts{
       .theme = theme, .gameMusic = gameMusic, .bossMusic = bossMusic});
   soundtrack.playGameMusic();
-  soundtrack.useLevelMusic(levelMusic, &levelBossMusic);
+  soundtrack.useLevelMusic(levelMusic);
   soundtrack.advance(LONGER_THAN_THE_SILENCE);
 
-  const bool silenced = soundtrack.silenceMusic();
   soundtrack.playBossMusic();
-  soundtrack.advance(BOSS_ALARM_DURATION);
 
-  EXPECT_TRUE(silenced);
-  EXPECT_TRUE(levelBossMusic.playingOffset().has_value());
-  EXPECT_FALSE(bossMusic.playingOffset().has_value());
+  EXPECT_TRUE(bossMusic.playingOffset().has_value());
+}
+
+/**
+ * Given the music of a level that plays
+ * When the music of a boss is asked for
+ * Then the music of the level stops
+ */
+TEST(Soundtrack, TheMusicOfABossStopsTheMusicOfALevel) {
+  FakeMusicPlayer theme;
+  FakeMusicPlayer gameMusic;
+  FakeMusicPlayer bossMusic;
+  FakeMusicPlayer levelMusic;
+  Soundtrack soundtrack(SoundtrackParts{
+      .theme = theme, .gameMusic = gameMusic, .bossMusic = bossMusic});
+  soundtrack.playGameMusic();
+  soundtrack.useLevelMusic(levelMusic);
+  soundtrack.advance(LONGER_THAN_THE_SILENCE);
+
+  soundtrack.playBossMusic();
+
   EXPECT_FALSE(levelMusic.playingOffset().has_value());
 }
 
 /**
- * Given the music of the bosses of a level that plays
- * When the boss is defeated and the music of a game is asked again, then the
- * whole silence passes
- * Then the music of the level plays again, and the music of its bosses stops
+ * Given the music of a boss that took over the music of a level
+ * When the boss is gone and the music of a game is asked for again
+ * Then the music of the level plays again once the silence passed
  */
-TEST(Soundtrack, TheMusicOfTheLevelComesBackAfterItsBoss) {
+TEST(Soundtrack, TheMusicOfALevelComesBackAfterTheMusicOfABoss) {
   FakeMusicPlayer theme;
   FakeMusicPlayer gameMusic;
   FakeMusicPlayer bossMusic;
   FakeMusicPlayer levelMusic;
-  FakeMusicPlayer levelBossMusic;
   Soundtrack soundtrack(SoundtrackParts{
       .theme = theme, .gameMusic = gameMusic, .bossMusic = bossMusic});
   soundtrack.playGameMusic();
-  soundtrack.useLevelMusic(levelMusic, &levelBossMusic);
+  soundtrack.useLevelMusic(levelMusic);
   soundtrack.advance(LONGER_THAN_THE_SILENCE);
-  static_cast<void>(soundtrack.silenceMusic());
   soundtrack.playBossMusic();
-  soundtrack.advance(BOSS_ALARM_DURATION);
 
   soundtrack.playGameMusic();
   soundtrack.advance(LONGER_THAN_THE_SILENCE);
 
   EXPECT_TRUE(levelMusic.playingOffset().has_value());
-  EXPECT_FALSE(levelBossMusic.playingOffset().has_value());
 }

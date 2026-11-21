@@ -1,0 +1,46 @@
+# The entity type widow_tatter, brought by the resource deseret:
+# a tatter of the veil of the Old Widow, drifting left; it stops the shots
+# that meet it.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy"
+layer = "boss_effect"
+hits = ["player"]
+pilot = "tatter_drift"
+
+[gameplay.hitbox]
+width = 56
+height = 72
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 160
+
+# It drifts left, swaying 50 units every 1.4 s, and is gone after 5 s.
+[gameplay.behaviour]
+sway = 50
+sway_ms = 1400
+life_ms = 5000
+
+# It has health so missiles meet it; its pre_hit refuses every hit, so it
+# never dies and draws no death.
+[gameplay.health]
+points = 1
+
+[gameplay.survives_contact]
+
+[appearance]
+sheet = "sprites/deseret/widow_tatter.png"
+
+# A strip of the veil drifting; it stops shots.
+[appearance.idle]
+left = 0
+top = 0
+width = 14
+height = 18
+frames = 4
+spacing = 2
+frame_ms = 110

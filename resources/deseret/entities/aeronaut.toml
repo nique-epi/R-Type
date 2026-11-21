@@ -1,0 +1,97 @@
+# The entity type aeronaut, brought by the resource deseret:
+# an army observation balloon, patched and burnt, that drifts along the top of
+# the screen and lets dynamite fall.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy"
+layer = "enemy"
+hits = ["player"]
+pilot = "aeronaut_drift"
+
+[gameplay.hitbox]
+width = 128
+height = 168
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 70
+
+# It bobs 15 % of its speed around its row every 2.4 s; left of x 1760 and
+# rested 2.2 s, its fuse burns 600 ms, then it lets a stick of dynamite fall
+# from its basket.
+[gameplay.behaviour]
+bob = 15
+bob_ms = 2400
+fire_from_x = 1760
+rest_ms = 2200
+signal_ms = 600
+strike_ms = 300
+recover_ms = 300
+
+[gameplay.health]
+points = 6
+
+[gameplay.score]
+points = 400
+
+[appearance]
+sheet = "sprites/deseret/aeronaut.png"
+
+# Idle: the basket sways one way, then the other.
+[appearance.idle]
+left = 0
+top = 0
+width = 32
+height = 42
+frames = 4
+spacing = 2
+frame_ms = 300
+
+# Signal: the fuse lights under the basket.
+[appearance.attack_0.signal]
+left = 136
+top = 0
+width = 32
+height = 42
+frames = 1
+spacing = 2
+frame_ms = 600
+playback = "loop"
+afterwards = "stay"
+
+# Strike: the stick drops.
+[appearance.attack_0.strike]
+left = 170
+top = 0
+width = 32
+height = 42
+frames = 1
+spacing = 2
+frame_ms = 300
+playback = "hold"
+afterwards = "stay"
+
+# Recover: the basket swings back.
+[appearance.attack_0.recover]
+left = 0
+top = 0
+width = 32
+height = 42
+frames = 1
+spacing = 2
+frame_ms = 300
+playback = "once"
+afterwards = "idle"
+
+# The death, centered on the body; the row under it is the same death without flash.
+[appearance.death]
+left = 0
+top = 44
+width = 48
+height = 48
+frames = 6
+spacing = 2
+frame_ms = 70

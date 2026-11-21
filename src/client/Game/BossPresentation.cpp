@@ -23,7 +23,6 @@
 #include "IInterfaceCanvas.hpp"
 #include "ISoundPlayer.hpp"
 #include "InterfacePixel.hpp"
-#include "LevelTracks.hpp"
 #include "Position.hpp"
 #include "SoundConstants.hpp"
 #include "TimeConstants.hpp"
@@ -41,17 +40,16 @@ bool isArriving(const BossTracker& tracker, engine::Duration now) {
          !tracker.fight().fightingSince.has_value();
 }
 
-/** @returns The name the sheet of the entity of network id @p bossId gives
- * its bar, empty when its sheet names none; nothing while the client has no
- * such entity drawn from a sheet. */
-std::optional<std::string> bossNameOf(engine::ComponentRegistry& components,
-                                      std::uint32_t bossId) {
+/** @returns The appearance the sheet of the entity of network id @p bossId
+ * gives it; nullptr while the client has no such entity drawn from a sheet. */
+const EntityAppearance* bossAppearanceOf(engine::ComponentRegistry& components,
+                                         std::uint32_t bossId) {
   const std::optional<engine::Entity> boss =
       entityWithAppearance(components, bossId);
   if (!boss.has_value()) {
-    return std::nullopt;
+    return nullptr;
   }
-  return components.get<AppearanceReference>(*boss)->appearance->bossName;
+  return components.get<AppearanceReference>(*boss)->appearance;
 }
 
 }  // namespace
@@ -68,11 +66,12 @@ void BossPresentation::apply(const network::BossStatus& status) {
     roarAt_.reset();
     chargeSignalledAt_.reset();
     bossName_.reset();
+    bossMusic_.reset();
   }
   tracker_.follow(status, now_);
   if (status.stage != network::BossStage::Arriving) {
     bossInPlay_ = status.bossEntityId;
-    findBossName();
+    readBossSheet();
   }
   if (status.stage != network::BossStage::Arriving && shielded_.has_value()) {
     effects_.shield(*shielded_, false);
@@ -117,12 +116,12 @@ void BossPresentation::apply(const network::EntityDestroyed& destroyed) {
   chargeSignalledAt_.reset();
   if (bossMusicStarted_) {
     bossMusicStarted_ = false;
-    audio_->playGameMusic(LevelTracks{});
+    audio_->playGameMusic(std::nullopt);
   }
 }
 
 void BossPresentation::advance(engine::Duration elapsed) {
-  findBossName();
+  readBossSheet();
   const std::optional<engine::Duration> before = tracker_.sinceArrival(now_);
   now_ += elapsed;
   const std::optional<engine::Duration> since = tracker_.sinceArrival(now_);
@@ -138,9 +137,18 @@ void BossPresentation::advance(engine::Duration elapsed) {
 
 void BossPresentation::followLevel() { playsALevel_ = true; }
 
-void BossPresentation::findBossName() {
-  if (bossInPlay_.has_value() && !bossName_.has_value()) {
-    bossName_ = bossNameOf(*components_, *bossInPlay_);
+void BossPresentation::readBossSheet() {
+  if (!bossInPlay_.has_value() || bossName_.has_value()) {
+    return;
+  }
+  const EntityAppearance* sheet = bossAppearanceOf(*components_, *bossInPlay_);
+  if (sheet == nullptr) {
+    return;
+  }
+  bossName_ = sheet->bossName;
+  bossMusic_ = sheet->bossMusic;
+  if (bossMusicStarted_ && !sheet->bossMusic.empty()) {
+    audio_->playBossMusic(sheet->bossMusic);
   }
 }
 
@@ -178,7 +186,7 @@ void BossPresentation::followMusic() {
     bossMusicStarted_ = true;
     if (audio_->silenceMusic()) {
       sounds_->play(BOSS_ALARM_SOUND_ID);
-      audio_->playBossMusic();
+      audio_->playBossMusic(bossMusic_.value_or(std::string{}));
     }
     return;
   }
@@ -187,7 +195,7 @@ void BossPresentation::followMusic() {
       (playsALevel_ && tracker_.fight().stage == network::BossStage::Defeated);
   if (bossGone && bossMusicStarted_) {
     bossMusicStarted_ = false;
-    audio_->playGameMusic(LevelTracks{});
+    audio_->playGameMusic(std::nullopt);
   }
 }
 

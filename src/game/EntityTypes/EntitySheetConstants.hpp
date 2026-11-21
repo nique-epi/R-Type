@@ -38,6 +38,14 @@ constexpr std::string_view SPRITE_SHEET_KEY = "sheet";
 constexpr std::string_view EFFECTS_TABLE_KEY = "effects";
 constexpr std::string_view LOOKS_TABLE_KEY = "looks";
 
+/**
+ * @brief The optional table of `[appearance]` that names the sounds of a
+ * body: `appear` and `death`, and one table `attack_<n>` per attack whose
+ * phases have a sound. Each value is the path of a sound file of the content,
+ * which a content pack carries next to the sprite sheets.
+ */
+constexpr std::string_view SOUNDS_TABLE_KEY = "sounds";
+
 /** @brief The most effects, and the most looks, one sheet names: a look is
  * numbered on one byte, and a sheet holding more would be hard to read. */
 constexpr std::size_t MOST_EFFECTS = 16;

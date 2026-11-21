@@ -1,6 +1,7 @@
 #include "EnemyActionPlayerFixtures.hpp"
 #include "ActionAnimation.hpp"
 #include "ActionKey.hpp"
+#include "ActionSound.hpp"
 #include "EnemyActionPlayerTestConstants.hpp"
 #include "EnemyPhase.hpp"
 #include "EntityAppearance.hpp"
@@ -28,7 +29,9 @@ EntityAppearance appearanceWithAStrike() {
       .deathFramesWithoutFlash = {},
       .effects = {},
       .looks = {},
-      .bossName = {}};
+      .bossName = {},
+      .bossMusic = {},
+      .sounds = {}};
 }
 
 EntityAppearance appearanceWithARage() {
@@ -43,6 +46,15 @@ EntityAppearance appearanceWithARage() {
       .playback = Playback::Hold,
       .returnsToIdle = true,
       .anchor = STRIKE_ANCHOR});
+  return appearance;
+}
+
+EntityAppearance appearanceWithAStrikeSound() {
+  EntityAppearance appearance = appearanceWithAStrike();
+  appearance.sounds.actions.push_back(
+      ActionSound{.key = game::ActionKey{.attack = DESCRIBED_ATTACK,
+                                         .phase = game::EnemyPhase::Strike},
+                  .sound = STRIKE_SOUND});
   return appearance;
 }
 

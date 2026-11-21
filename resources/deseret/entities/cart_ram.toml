@@ -1,0 +1,36 @@
+# The entity type cart_ram, brought by the resource deseret:
+# the front of a rolling mine cart, which crushes the mobs it meets; drawn by
+# the cart.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "player_missile"
+layer = "hazard_blast"
+hits = ["enemy"]
+pilot = "cart_ram"
+
+[gameplay.hitbox]
+width = 96
+height = 72
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 1
+
+[gameplay.damage]
+points = 6
+
+[appearance]
+sheet = "sprites/deseret/blank.png"
+
+# Idle: nothing; the cart is drawn.
+[appearance.idle]
+left = 0
+top = 0
+width = 1
+height = 1
+frames = 1
+spacing = 2
+frame_ms = 1000

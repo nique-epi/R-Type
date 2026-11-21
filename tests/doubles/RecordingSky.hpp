@@ -15,8 +15,6 @@ class RecordingSky : public rtype::client::ISky {
   void showLevel(const rtype::client::SkyLevel& level) override;
   [[nodiscard]] std::optional<std::string> biomeMusic() const override;
 
-  [[nodiscard]] std::optional<std::string> biomeBossMusic() const override;
-
   /** @brief Names @p music as the music of the biome shown. */
   void setBiomeMusic(std::optional<std::string> music);
 

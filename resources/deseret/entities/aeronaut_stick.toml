@@ -1,0 +1,56 @@
+# The entity type aeronaut_stick, brought by the resource deseret:
+# a stick of dynamite an Aeronaut lets fall; it blows up where it meets the
+# ground, and a missile can shoot it down on its way.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy"
+layer = "enemy"
+hits = ["player"]
+pilot = "dynamite_fall"
+
+[gameplay.hitbox]
+width = 24
+height = 40
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 420
+
+# It falls drifting left by 20 % of its speed, faster as it falls, and blows
+# up 20 units above the ground under it (row 900 where the biome gives none).
+[gameplay.behaviour]
+drift = 20
+blast_above = 20
+floor_y = 900
+
+[gameplay.health]
+points = 1
+
+[gameplay.score]
+points = 50
+
+[appearance]
+sheet = "sprites/deseret/aeronaut_stick.png"
+
+# Idle: the fuse spits.
+[appearance.idle]
+left = 0
+top = 0
+width = 4
+height = 10
+frames = 2
+spacing = 2
+frame_ms = 80
+
+# It dies in the blast of a crate, shot down or on the ground; the row under it is the same without flash.
+[appearance.death]
+left = 0
+top = 12
+width = 48
+height = 48
+frames = 12
+spacing = 2
+frame_ms = 83

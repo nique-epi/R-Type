@@ -1,0 +1,24 @@
+# The Hoodoo Field, the second stage of Deseret: banded sandstone and
+# its spires, by day then under the white sun, with no ceiling.
+# Three layers cut from the map of its LDtk project, written by
+# generator/procedural/; the background arrives through its nearest layer.
+
+# The music a game plays while this background shows: Big Iron, by Marty
+# Robbins (see assets/README.md).
+music = "music/big_iron.mp3"
+
+[[layer]]
+name = "far plane"
+motion = { parallax = 0.25 }
+tiles = { project = "biomes/deseret_hoodoos/deseret_hoodoos.ldtk", layer = "Far", tileset = "biomes/deseret_hoodoos/deseret_hoodoos_far.png" }
+
+[[layer]]
+name = "middle plane"
+motion = { parallax = 0.5 }
+tiles = { project = "biomes/deseret_hoodoos/deseret_hoodoos.ldtk", layer = "Mid", tileset = "biomes/deseret_hoodoos/deseret_hoodoos_mid.png" }
+
+[[layer]]
+name = "near plane"
+motion = { parallax = 1 }
+entrance = true
+tiles = { project = "biomes/deseret_hoodoos/deseret_hoodoos.ldtk", layer = "Near", tileset = "biomes/deseret_hoodoos/deseret_hoodoos_near.png" }

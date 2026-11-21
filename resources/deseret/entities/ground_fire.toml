@@ -1,0 +1,45 @@
+# The entity type ground_fire, brought by the resource deseret:
+# oil burning on the floor of the mine where a bead of a Lantern fell; it
+# burns 2 s.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy"
+layer = "hazard"
+hits = ["player"]
+pilot = "fading_fire"
+
+[gameplay.hitbox]
+width = 4
+height = 4
+offset_y = 1024
+
+[gameplay.motion]
+kind = "scroll"
+
+[gameplay.behaviour]
+life_ms = 2000
+
+[gameplay.survives_contact]
+
+# It burns 64 units of floor, up to the top of its flames.
+[[gameplay.hurt_zone.box]]
+offset_x = 0
+offset_y = 16
+width = 64
+height = 96
+
+[appearance]
+sheet = "sprites/deseret/ground_fire.png"
+
+# Idle: the flames, a loop of the effects of Deseret.
+[appearance.idle]
+left = 0
+top = 0
+width = 32
+height = 32
+frames = 12
+spacing = 2
+frame_ms = 83

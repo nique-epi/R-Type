@@ -3,6 +3,7 @@
 #include <array>
 #include <chrono>
 #include <cstddef>
+#include <cstdint>
 #include <string_view>
 #include "SpriteFrame.hpp"
 #include "TimeConstants.hpp"
@@ -46,6 +47,57 @@ height = 6
 frames = 3
 spacing = 2
 frame_ms = 120
+)";
+
+/** @brief A sheet that names three sounds: its appearance, its death and
+ * the strike of its attack 2; those sounds, that attack, and where a content
+ * pack wrote them. */
+constexpr std::string_view APPEAR_SOUND_ID = "sounds/voltjelly/appear.ogg";
+constexpr std::string_view DEATH_SOUND_ID = "sounds/voltjelly/death.ogg";
+constexpr std::string_view STRIKE_SOUND_ID = "sounds/voltjelly/strike.ogg";
+constexpr std::uint8_t SOUNDED_ATTACK = 2;
+constexpr std::string_view SOUND_PACK_FOLDER = "/packs/0123";
+constexpr std::string_view SHEET_WITH_SOUNDS_TEXT = R"(
+[gameplay]
+
+[appearance]
+sheet = "sprites/voltjelly.png"
+
+[appearance.idle]
+left = 10
+top = 20
+width = 8
+height = 6
+frames = 3
+spacing = 2
+frame_ms = 120
+
+[appearance.sounds]
+appear = "sounds/voltjelly/appear.ogg"
+death = "sounds/voltjelly/death.ogg"
+
+[appearance.sounds.attack_2]
+strike = "sounds/voltjelly/strike.ogg"
+)";
+
+/** @brief A sheet whose sounds hold a key no sheet knows. */
+constexpr std::string_view SHEET_WITH_AN_UNKNOWN_SOUND_KEY_TEXT = R"(
+[gameplay]
+
+[appearance]
+sheet = "sprites/voltjelly.png"
+
+[appearance.idle]
+left = 10
+top = 20
+width = 8
+height = 6
+frames = 3
+spacing = 2
+frame_ms = 120
+
+[appearance.sounds]
+hit = "sounds/voltjelly/hit.ogg"
 )";
 
 /** @brief A sheet that draws from OTHER_SHEET_ID. */
@@ -279,6 +331,29 @@ constexpr std::array<std::string_view, 41> ASHLANDS_SHEET_NAMES{
     "toxic_puddle",
     "vent_grille"};
 
+/** @brief The folder of the sheets the resource deseret brings, from the
+ * assets folder of the sources, and the name of every sheet in it. */
+constexpr std::string_view DESERET_SHEETS_FROM_THE_ASSETS =
+    "../resources/deseret/entities";
+constexpr std::array<std::string_view, 36> DESERET_SHEET_NAMES{
+    "aeronaut",       "aeronaut_stick",  "carrion",       "cart_ram",
+    "crate_rock",     "cricket",         "dust_bat",      "dust_devil",
+    "dynamite_blast", "dynamite_crate",  "dynamite_heat", "ground_fire",
+    "iron_pilgrim",   "keg_blast",       "keg_heat",      "lantern_drop",
+    "lantern_wisp",   "mine_cart",       "mine_cart_keg", "mine_prop",
+    "old_widow",      "pilgrim_cinder",  "pilgrim_coal",  "pilgrim_coal_fire",
+    "powder_keg",     "shroud",          "surveyor",      "surveyor_shot",
+    "tumblecage",     "tumblecage_barb", "vultureling",   "widow_blade",
+    "widow_crack",    "widow_gale",      "widow_geyser",  "widow_tatter"};
+
 /** @brief The sheet of the boss of the Pit, and the name its bar writes. */
 constexpr std::string_view NECROMANCER_SHEET = "necromancer";
 constexpr std::string_view NECROMANCER_BOSS_NAME = "NECROMANCER";
+
+/** @brief The two bosses of Deseret and the music each sheet names; the
+ * Necromancer names none, so it fights to the music of a boss. */
+constexpr std::string_view IRON_PILGRIM_SHEET = "iron_pilgrim";
+constexpr std::string_view IRON_PILGRIM_MUSIC =
+    "music/freight_train_boogie.mp3";
+constexpr std::string_view OLD_WIDOW_SHEET = "old_widow";
+constexpr std::string_view OLD_WIDOW_MUSIC = "music/stratosphere_boogie.mp3";

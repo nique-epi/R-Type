@@ -1,6 +1,7 @@
 #pragma once
 
 #include <gtest/gtest.h>
+#include "AssetLibrary.hpp"
 #include "PlayerSettings.hpp"
 #include "RecordingSettingsStorage.hpp"
 #include "SettingsService.hpp"
@@ -18,6 +19,7 @@ class SoundPlayerFixture : public ::testing::Test {
 
  private:
   rtype::client::SoundBank bank_;
+  rtype::client::AssetLibrary library_;
   rtype::client::PlayerSettings settings_;
   RecordingSettingsStorage storage_;
   rtype::client::SettingsService service_;

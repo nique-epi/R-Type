@@ -22,6 +22,11 @@
  * sheet drawing from READ_SHEET_ID. */
 [[nodiscard]] rtype::client::EntityAppearances threeAppearancesOnTwoSheets();
 
+/** @returns The appearances of one sheet, named READ_TYPE_NAME, holding
+ * @p text, as a content pack written to SOUND_PACK_FOLDER brings it. */
+[[nodiscard]] rtype::client::EntityAppearances appearancesReadingInAPack(
+    std::string_view text);
+
 /** @returns The appearances of the sheets shipped in assets/. */
 [[nodiscard]] rtype::client::EntityAppearances shippedAppearances();
 
@@ -32,6 +37,10 @@
 /** @returns The appearances of the sheets the resource ashlands brings,
  * read as a client reads them. */
 [[nodiscard]] rtype::client::EntityAppearances ashlandsAppearances();
+
+/** @returns The appearances of the sheets the resource deseret brings, read
+ * as a client reads them. */
+[[nodiscard]] rtype::client::EntityAppearances deseretAppearances();
 
 /** @returns Whether @p sheet has a hurt box that hurts all the time. */
 [[nodiscard]] bool hurtsAllTheTime(const rtype::game::EntitySheet& sheet);

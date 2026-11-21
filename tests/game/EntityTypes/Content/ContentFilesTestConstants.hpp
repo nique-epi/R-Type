@@ -16,6 +16,18 @@ constexpr std::string_view BYDO_PIXELS = "\x89PNG\r\n\x1a\nbydos";
 
 /** @brief The mask file of the Weaver next to its sheet, its path in a pack,
  * and the files of a sheet, its mask file and its sprite sheet. */
+/** @brief A sheet that names two sounds, its death and the strike of its
+ * attack 0, and those sounds: the sheet, its image and both sounds are four
+ * files. */
+constexpr std::string_view SHEET_NAMING_TWO_SOUNDS =
+    "[gameplay]\n[appearance]\nsheet = \"sprites/bydos.png\"\n"
+    "[appearance.sounds]\ndeath = \"sounds/bydos/death.ogg\"\n"
+    "[appearance.sounds.attack_0]\nstrike = \"sounds/bydos/strike.ogg\"\n";
+constexpr std::string_view DEATH_SOUND_FILE = "sounds/bydos/death.ogg";
+constexpr std::string_view STRIKE_SOUND_FILE = "sounds/bydos/strike.ogg";
+constexpr std::string_view SOUND_BYTES = "OggS bydos";
+constexpr std::size_t FILES_OF_A_SHEET_ITS_IMAGE_AND_TWO_SOUNDS = 4;
+
 constexpr std::string_view WEAVER_MASK_FILE = "entities/masks/weaver.txt";
 constexpr std::string_view WEAVER_MASK = "#.#\n###\n";
 constexpr std::size_t FILES_OF_A_SHEET_ITS_MASK_AND_ITS_IMAGE = 3;

@@ -2,6 +2,7 @@
 #include <gtest/gtest.h>
 #include <SFML/Audio/SoundBuffer.hpp>
 #include <filesystem>
+#include <string>
 #include "AssetLibrary.hpp"
 #include "AssetTestConstants.hpp"
 #include "ClientException.hpp"
@@ -25,6 +26,8 @@ using rtype::client::testing::LONG_SOUND_SAMPLES;
 using rtype::client::testing::MISSING_SOUND_ID;
 using rtype::client::testing::NOT_AN_ASSET;
 using rtype::client::testing::ONLY_THE_SHOT;
+using rtype::client::testing::PACK_FOLDER;
+using rtype::client::testing::PACK_SOUND_FILE;
 using rtype::client::testing::SHORT_SOUND_SAMPLES;
 using rtype::client::testing::SHOT_SOUND_ID;
 using rtype::client::testing::THE_SHOT_AND_THE_EXPLOSION;
@@ -191,4 +194,41 @@ TEST(SoundBank, TheRepositoryHoldsEverySoundOfTheClient) {
   for (const char* soundId : ALL_SOUND_IDS) {
     EXPECT_NO_THROW(static_cast<void>(bank.sound(soundId))) << soundId;
   }
+}
+
+/**
+ * Given a sound a content pack wrote below its folder, outside the assets
+ * folder
+ * When the bank reads that one sound by its whole path
+ * Then it holds it, and finds it by that path
+ */
+TEST(SoundBank, LoadsOneSoundOfAPackByItsWholePath) {
+  const TemporaryFolder assets;
+  const std::string sound =
+      genericText(assets.path() / PACK_FOLDER / PACK_SOUND_FILE);
+  writeSilentSound(sound, SHORT_SOUND_SAMPLES);
+  const AssetLibrary library{assets.path()};
+  SoundBank bank;
+
+  const bool loaded = bank.loadOne(library, sound);
+
+  EXPECT_TRUE(loaded);
+  EXPECT_EQ(bank.sound(sound).getSampleCount(), SHORT_SOUND_SAMPLES);
+}
+
+/**
+ * Given a sound of a pack that was never written
+ * When the bank reads that one sound
+ * Then it says it does not hold it, and throws nothing
+ */
+TEST(SoundBank, ASoundItCannotReadAloneIsNotHeld) {
+  const TemporaryFolder assets;
+  const std::string sound =
+      genericText(assets.path() / PACK_FOLDER / PACK_SOUND_FILE);
+  const AssetLibrary library{assets.path()};
+  SoundBank bank;
+
+  const bool loaded = bank.loadOne(library, sound);
+
+  EXPECT_FALSE(loaded);
 }

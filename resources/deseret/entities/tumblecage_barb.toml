@@ -1,0 +1,38 @@
+# The entity type tumblecage_barb, brought by the resource deseret:
+# a barb a broken Tumblecage throws up, slow, easy to dodge.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy_missile"
+layer = "enemy_missile"
+hits = ["player"]
+pilot = "debris_toss"
+
+[gameplay.hitbox]
+width = 20
+height = 20
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 180
+
+# It rises, each of the four barbs of a cage spread 60 % of its speed to one
+# side or the other, and falls back after 900 ms.
+[gameplay.behaviour]
+spread = 60
+rise_ms = 900
+
+[appearance]
+sheet = "sprites/deseret/tumblecage_barb.png"
+
+# Idle: it spins.
+[appearance.idle]
+left = 0
+top = 0
+width = 5
+height = 5
+frames = 2
+spacing = 2
+frame_ms = 100

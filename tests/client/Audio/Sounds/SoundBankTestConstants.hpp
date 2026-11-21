@@ -16,6 +16,11 @@ constexpr const char* CORRUPT_SOUND_ID = "sounds/corrupt.wav";
 constexpr const char* MISSING_SOUND_ID = "sounds/missing.wav";
 constexpr const char* BADLY_NAMED_SOUND_ID = "sounds/Shot.wav";
 
+/** @brief Where a content pack lies below the temporary folder, and a sound
+ * of its, which the bank reads by its whole path. */
+constexpr const char* PACK_FOLDER = "pack";
+constexpr const char* PACK_SOUND_FILE = "sounds/deseret/caw.wav";
+
 /** @brief Two lengths of silence, so a test tells which file was read. */
 constexpr std::uint64_t SHORT_SOUND_SAMPLES = 100;
 constexpr std::uint64_t LONG_SOUND_SAMPLES = 200;

@@ -40,6 +40,14 @@ constexpr std::string_view ASHLANDS_LEVEL = "ashlands";
 constexpr std::size_t STAGES_OF_THE_ASHLANDS_LEVEL = 6;
 constexpr std::string_view ASHLANDS_MAP = "THE ASHLANDS";
 
+/** @brief The level of the resource deseret the repository ships: six
+ * stages, the Salt Flats, the Hoodoo Field, the Line, its Iron Pilgrim, Sheol
+ * Mine and the Old Widow on her mesa, as one map. */
+constexpr std::string_view DESERET_RESOURCE = "deseret";
+constexpr std::string_view DESERET_LEVEL = "deseret";
+constexpr std::size_t STAGES_OF_THE_DESERET_LEVEL = 6;
+constexpr std::string_view DESERET_MAP = "DESERET";
+
 /** @brief A script that registers a level as the map THE CAVES, and that
  * name. */
 constexpr std::string_view REGISTERS_A_MAP = R"(

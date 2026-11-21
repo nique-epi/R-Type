@@ -58,12 +58,40 @@ std::optional<SheetMaskText> maskTextIn(
                        .text = mask->bytes};
 }
 
-/** @returns The sprite sheet the `[appearance]` of @p sheet names. */
-std::string spriteSheetOf(const SheetText& sheet) {
+/** @brief Adds to @p sounds every text right in @p table. */
+void addTextsOf(const toml::table& table, std::set<std::string>& sounds) {
+  for (const auto& [key, node] : table) {
+    if (const std::optional<std::string> path = node.value<std::string>()) {
+      sounds.insert(*path);
+    }
+  }
+}
+
+/** @brief Adds to @p sounds the paths of the sound files `[appearance.sounds]`
+ * names, @p table: its texts (`appear`, `death`) and those of the tables it
+ * holds (one per attack, a text per phase), whose keys the client checks. */
+void addSoundPaths(const toml::table& table, std::set<std::string>& sounds) {
+  addTextsOf(table, sounds);
+  for (const auto& [key, node] : table) {
+    if (const toml::table* attack = node.as_table()) {
+      addTextsOf(*attack, sounds);
+    }
+  }
+}
+
+/** @brief Adds to @p named the files the `[appearance]` of @p sheet names,
+ * read once: its sprite sheet, and the sound files of its table `sounds`, if
+ * it has one. */
+void addFilesNamedBy(const SheetText& sheet, std::set<std::string>& named) {
   const toml::table root = engine::parseDataFile(sheet.text, sheet.source);
   const engine::DataFileTable appearance =
       engine::tableAt(engine::rootOf(root, sheet.source), APPEARANCE_KEY);
-  return engine::textAt(appearance, SPRITE_SHEET_KEY);
+  named.insert(engine::textAt(appearance, SPRITE_SHEET_KEY));
+  const std::optional<engine::DataFileTable> sounds =
+      engine::optionalTableAt(appearance, SOUNDS_TABLE_KEY);
+  if (sounds.has_value()) {
+    addSoundPaths(sounds->table.get(), named);
+  }
 }
 
 /** @returns The folders of @p contentFolders that hold @p path. */
@@ -105,14 +133,15 @@ std::string contentOf(std::span<const std::filesystem::path> contentFolders,
 }
 
 /** @returns Every sheet of @p contentFolders, with its mask file when it has
- * one, then the sprite sheet each names, read once; see contentFilesIn(). */
+ * one, then the sprite sheet and the sounds each names, read once; see
+ * contentFilesIn(). */
 std::vector<identifiers::ContentFile> sheetFilesIn(
     std::span<const std::filesystem::path> contentFolders) {
   std::vector<SheetText> sheets = sheetTextsInFolders(contentFolders);
   std::vector<identifiers::ContentFile> files;
-  std::set<std::string> spriteSheets;
+  std::set<std::string> namedFiles;
   for (SheetText& sheet : sheets) {
-    spriteSheets.insert(spriteSheetOf(sheet));
+    addFilesNamedBy(sheet, namedFiles);
     files.push_back(identifiers::ContentFile{.path = sheetPathOf(sheet.name),
                                              .bytes = std::move(sheet.text)});
     if (sheet.mask.has_value()) {
@@ -121,9 +150,9 @@ std::vector<identifiers::ContentFile> sheetFilesIn(
                                    .bytes = std::move(sheet.mask->text)});
     }
   }
-  for (const std::string& spriteSheet : spriteSheets) {
+  for (const std::string& named : namedFiles) {
     files.push_back(identifiers::ContentFile{
-        .path = spriteSheet, .bytes = contentOf(contentFolders, spriteSheet)});
+        .path = named, .bytes = contentOf(contentFolders, named)});
   }
   return files;
 }

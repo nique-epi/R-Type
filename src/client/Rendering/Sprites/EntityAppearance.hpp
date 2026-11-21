@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include "ActionAnimation.hpp"
+#include "EntitySounds.hpp"
 #include "NamedEffect.hpp"
 #include "NamedLook.hpp"
 #include "SpriteFrame.hpp"
@@ -54,6 +55,13 @@ struct EntityAppearance {
   /** @brief The name the bar of a boss writes, from `boss_name`; empty when
    * the sheet gives none. */
   std::string bossName;
+  /** @brief The music a game plays while this boss fights, as an asset id of
+   * the client (`music/freight_train_boogie.mp3`), from `boss_music`; empty
+   * for the music of a boss. */
+  std::string bossMusic;
+  /** @brief The sounds the sheet names, `[appearance.sounds]`; each empty
+   * when left out. */
+  EntitySounds sounds;
 };
 
 }  // namespace rtype::client

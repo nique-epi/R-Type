@@ -1,0 +1,85 @@
+# The entity type vultureling, brought by the resource deseret:
+# a young vulture the Bydo hatched, bald and pink-eyed; a flock circles over
+# the desert, then each one screeches and dives in a straight line at a ship.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy"
+layer = "enemy"
+hits = ["player"]
+pilot = "vultureling_circle"
+
+[gameplay.hitbox]
+width = 80
+height = 56
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 240
+
+# It drifts left at 55 % of its speed while it circles at 75 %, a turn every
+# 1.6 s; left of a column drawn from 1150 to 1600 by its row, it screeches
+# 400 ms, then dives at 560 units per second at the nearest ship, in a
+# straight line, until it leaves.
+[gameplay.behaviour]
+drift = 55
+circle = 75
+circle_ms = 1600
+dive_from_x = 1600
+signal_ms = 400
+dive_speed = 560
+
+[gameplay.health]
+points = 1
+
+[gameplay.score]
+points = 50
+
+[appearance]
+sheet = "sprites/deseret/vultureling.png"
+
+# Idle: wings up, spread, down, spread.
+[appearance.idle]
+left = 0
+top = 0
+width = 20
+height = 14
+frames = 4
+spacing = 2
+frame_ms = 90
+
+# Signal: its eye lights white and it beats its wings, screeching.
+[appearance.attack_0.signal]
+left = 88
+top = 0
+width = 20
+height = 14
+frames = 2
+spacing = 2
+frame_ms = 100
+playback = "loop"
+afterwards = "stay"
+
+# Strike: wings folded, it dives.
+[appearance.attack_0.strike]
+left = 132
+top = 0
+width = 20
+height = 14
+frames = 1
+spacing = 2
+frame_ms = 100
+playback = "loop"
+afterwards = "stay"
+
+# The death, centered on the body; the row under it is the same death without flash.
+[appearance.death]
+left = 0
+top = 16
+width = 48
+height = 48
+frames = 6
+spacing = 2
+frame_ms = 70

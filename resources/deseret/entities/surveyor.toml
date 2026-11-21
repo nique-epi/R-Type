@@ -1,0 +1,97 @@
+# The entity type surveyor, brought by the resource deseret:
+# the theodolite of the surveyors of the line, its lens turned into an eye; it
+# plants its tripod, aims with its eye lit, and fires one slug from its lens
+# at the nearest ship.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy"
+layer = "enemy"
+hits = ["player"]
+pilot = "surveyor_aim"
+
+[gameplay.hitbox]
+width = 104
+height = 120
+
+# It walks 80 units per second over the ground, which scrolls at 120; it
+# stands still on it as it aims.
+[gameplay.motion]
+kind = "steady"
+top_speed = 200
+
+# Left of x 1800 and rested 2.4 s, it aims 700 ms, its eye lit, then fires
+# one slug from its lens at the nearest ship.
+[gameplay.behaviour]
+fire_from_x = 1800
+rest_ms = 2400
+signal_ms = 700
+strike_ms = 270
+recover_ms = 200
+
+[gameplay.health]
+points = 4
+
+[gameplay.score]
+points = 300
+
+[appearance]
+sheet = "sprites/deseret/surveyor.png"
+
+# Idle: it walks on its tripod.
+[appearance.idle]
+left = 0
+top = 0
+width = 26
+height = 30
+frames = 4
+spacing = 2
+frame_ms = 160
+
+# Signal: it aims, the eye lit.
+[appearance.attack_0.signal]
+left = 112
+top = 0
+width = 26
+height = 30
+frames = 2
+spacing = 2
+frame_ms = 350
+playback = "loop"
+afterwards = "stay"
+
+# Strike: the flash, the recoil and its smoke, the return.
+[appearance.attack_0.strike]
+left = 168
+top = 0
+width = 26
+height = 30
+frames = 3
+spacing = 2
+frame_ms = 90
+playback = "hold"
+afterwards = "stay"
+
+# Recover: it stands again.
+[appearance.attack_0.recover]
+left = 0
+top = 0
+width = 26
+height = 30
+frames = 1
+spacing = 2
+frame_ms = 200
+playback = "once"
+afterwards = "idle"
+
+# The death, centered on the body; the row under it is the same death without flash.
+[appearance.death]
+left = 0
+top = 32
+width = 48
+height = 48
+frames = 6
+spacing = 2
+frame_ms = 70

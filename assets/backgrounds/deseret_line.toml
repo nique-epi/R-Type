@@ -1,0 +1,24 @@
+# The Line, the third stage of Deseret: the abandoned railroad across
+# the sandstone, where the Iron Pilgrim rolls, with no ceiling.
+# Three layers cut from the map of its LDtk project, written by
+# generator/procedural/; the background arrives through its nearest layer.
+
+# The music a game plays while this background shows: Big Iron, by Marty
+# Robbins (see assets/README.md).
+music = "music/big_iron.mp3"
+
+[[layer]]
+name = "far plane"
+motion = { parallax = 0.25 }
+tiles = { project = "biomes/deseret_line/deseret_line.ldtk", layer = "Far", tileset = "biomes/deseret_line/deseret_line_far.png" }
+
+[[layer]]
+name = "middle plane"
+motion = { parallax = 0.5 }
+tiles = { project = "biomes/deseret_line/deseret_line.ldtk", layer = "Mid", tileset = "biomes/deseret_line/deseret_line_mid.png" }
+
+[[layer]]
+name = "near plane"
+motion = { parallax = 1 }
+entrance = true
+tiles = { project = "biomes/deseret_line/deseret_line.ldtk", layer = "Near", tileset = "biomes/deseret_line/deseret_line_near.png" }

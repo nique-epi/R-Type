@@ -237,3 +237,40 @@ TEST(BackgroundCatalog, ReadsTheAshlandsTheRepositoryShips) {
     }
   }
 }
+
+/**
+ * Given the assets the repository ships
+ * When their backgrounds are read
+ * Then each of the five biomes of Deseret is among them: three layers of
+ * tiles, entered through the last alone
+ */
+TEST(BackgroundCatalog, ReadsDeseretTheRepositoryShips) {
+  const BackgroundCatalog catalog = shippedBackgrounds();
+
+  for (const std::string_view name : SHIPPED_DESERET_NAMES) {
+    SCOPED_TRACE(name);
+    const BackgroundDescription* const biome = catalog.named(name);
+    ASSERT_NE(biome, nullptr);
+    ASSERT_EQ(biome->layers.size(), LAYERS_OF_AN_ASHLANDS_BIOME);
+    for (const LayerDescription& layer : biome->layers) {
+      EXPECT_TRUE(std::holds_alternative<MapContent>(layer.content));
+      EXPECT_EQ(layer.entrance, &layer == &biome->layers.back());
+    }
+  }
+}
+
+/**
+ * Given the backgrounds of Deseret the repository ships
+ * When the catalog reads them
+ * Then each names Big Iron, so the music follows the level across its biomes
+ */
+TEST(BackgroundCatalog, EveryBiomeOfDeseretPlaysBigIron) {
+  const BackgroundCatalog catalog = shippedBackgrounds();
+
+  for (const std::string_view name : SHIPPED_DESERET_NAMES) {
+    SCOPED_TRACE(name);
+    const BackgroundDescription* const biome = catalog.named(name);
+    ASSERT_NE(biome, nullptr);
+    EXPECT_EQ(biome->music.value_or(""), DESERET_MUSIC);
+  }
+}

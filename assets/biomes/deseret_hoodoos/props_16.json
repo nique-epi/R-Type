@@ -1,0 +1,303 @@
+[
+  {
+    "name": "bones",
+    "x": 0,
+    "y": 0,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "bridle",
+    "x": 16,
+    "y": 0,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "bucket",
+    "x": 32,
+    "y": 0,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "butte",
+    "x": 48,
+    "y": 0,
+    "width": 80,
+    "height": 48
+  },
+  {
+    "name": "cabin",
+    "x": 128,
+    "y": 0,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "can",
+    "x": 144,
+    "y": 0,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "corral",
+    "x": 160,
+    "y": 0,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "crate",
+    "x": 176,
+    "y": 0,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "gen:sandstone:drum",
+    "x": 192,
+    "y": 0,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "gen:sandstone:lintel",
+    "x": 208,
+    "y": 0,
+    "width": 32,
+    "height": 16
+  },
+  {
+    "name": "gen:sandstone:pile",
+    "x": 240,
+    "y": 0,
+    "width": 32,
+    "height": 16
+  },
+  {
+    "name": "gen:sandstone:pillar",
+    "x": 272,
+    "y": 0,
+    "width": 32,
+    "height": 32
+  },
+  {
+    "name": "gen:sandstone:pillar_broken",
+    "x": 304,
+    "y": 0,
+    "width": 32,
+    "height": 32
+  },
+  {
+    "name": "gen:sandstone:slab",
+    "x": 336,
+    "y": 0,
+    "width": 32,
+    "height": 16
+  },
+  {
+    "name": "gen:sandstone:steps",
+    "x": 368,
+    "y": 0,
+    "width": 32,
+    "height": 16
+  },
+  {
+    "name": "gen:sandstone:wall",
+    "x": 400,
+    "y": 0,
+    "width": 32,
+    "height": 32
+  },
+  {
+    "name": "handcar",
+    "x": 432,
+    "y": 0,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "hitchrail",
+    "x": 448,
+    "y": 0,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "horseshoe",
+    "x": 464,
+    "y": 0,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "juniper",
+    "x": 480,
+    "y": 0,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "lantern",
+    "x": 496,
+    "y": 0,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "lassopost",
+    "x": 0,
+    "y": 48,
+    "width": 16,
+    "height": 32
+  },
+  {
+    "name": "mesa",
+    "x": 16,
+    "y": 48,
+    "width": 96,
+    "height": 48
+  },
+  {
+    "name": "oxskull",
+    "x": 112,
+    "y": 48,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "pup",
+    "x": 128,
+    "y": 48,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "saddle",
+    "x": 144,
+    "y": 48,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "sage",
+    "x": 160,
+    "y": 48,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "signal",
+    "x": 176,
+    "y": 48,
+    "width": 16,
+    "height": 32
+  },
+  {
+    "name": "signalfire",
+    "x": 192,
+    "y": 48,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "sleepers",
+    "x": 208,
+    "y": 48,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "smoke",
+    "x": 224,
+    "y": 48,
+    "width": 32,
+    "height": 32
+  },
+  {
+    "name": "smokecolumn",
+    "x": 256,
+    "y": 48,
+    "width": 32,
+    "height": 32
+  },
+  {
+    "name": "spikes",
+    "x": 288,
+    "y": 48,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "spires",
+    "x": 304,
+    "y": 48,
+    "width": 32,
+    "height": 16
+  },
+  {
+    "name": "telegraph",
+    "x": 336,
+    "y": 48,
+    "width": 32,
+    "height": 32
+  },
+  {
+    "name": "tent",
+    "x": 368,
+    "y": 48,
+    "width": 32,
+    "height": 16
+  },
+  {
+    "name": "trestle",
+    "x": 400,
+    "y": 48,
+    "width": 48,
+    "height": 16
+  },
+  {
+    "name": "trough",
+    "x": 448,
+    "y": 48,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "wagon",
+    "x": 464,
+    "y": 48,
+    "width": 32,
+    "height": 16
+  },
+  {
+    "name": "watertank",
+    "x": 496,
+    "y": 48,
+    "width": 16,
+    "height": 32
+  },
+  {
+    "name": "well",
+    "x": 0,
+    "y": 96,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "wheel",
+    "x": 16,
+    "y": 96,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "windpump",
+    "x": 32,
+    "y": 96,
+    "width": 16,
+    "height": 16
+  }
+]

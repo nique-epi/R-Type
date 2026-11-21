@@ -1,5 +1,8 @@
 #pragma once
 
+#include <optional>
+#include <string>
+#include <string_view>
 #include "Ambience.hpp"
 #include "AmbienceMusic.hpp"
 #include "AssetLibrary.hpp"
@@ -7,7 +10,6 @@
 #include "IMusicPlayer.hpp"
 #include "ISoundPlayer.hpp"
 #include "LevelMusic.hpp"
-#include "LevelTracks.hpp"
 #include "MusicPlayer.hpp"
 #include "SettingsService.hpp"
 #include "SoundBank.hpp"
@@ -47,9 +49,9 @@ class AudioService final : public IAudioService {
   [[nodiscard]] ISoundPlayer& sounds() override;
   [[nodiscard]] IMusicPlayer& theme() override;
   void playTheme() override;
-  void playGameMusic(const LevelTracks& tracks) override;
+  void playGameMusic(const std::optional<std::string>& levelMusic) override;
   [[nodiscard]] bool silenceMusic() override;
-  void playBossMusic() override;
+  void playBossMusic(std::string_view music) override;
   void setAmbience(Ambience ambience) override;
   [[nodiscard]] Ambience ambience() const override;
   /** @throws AssetLoadingException naming every sound of ALL_SOUND_IDS that

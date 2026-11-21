@@ -1,0 +1,37 @@
+# The entity type pilgrim_cinder, brought by the resource deseret:
+# a cinder of the volley of the Iron Pilgrim, thrown along an arc.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy_missile"
+layer = "enemy_missile"
+hits = ["player"]
+pilot = "cinder_arc"
+
+[gameplay.hitbox]
+width = 36
+height = 36
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 480
+
+# It leaves up and left along the angle the volley gives it, and falls
+# faster the older it is, as fast as it rose after 1.1 s.
+[gameplay.behaviour]
+fall_ms = 1100
+
+[appearance]
+sheet = "sprites/deseret/pilgrim_cinder.png"
+
+# A cinder of the volley.
+[appearance.idle]
+left = 0
+top = 0
+width = 10
+height = 10
+frames = 4
+spacing = 2
+frame_ms = 80

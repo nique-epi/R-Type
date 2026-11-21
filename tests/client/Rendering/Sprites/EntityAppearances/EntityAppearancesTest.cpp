@@ -2,11 +2,14 @@
 #include <gtest/gtest.h>
 #include <SFML/Graphics/Image.hpp>
 #include <array>
+#include <filesystem>
 #include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
 #include "ActionAnimation.hpp"
+#include "ActionKey.hpp"
+#include "EnemyPhase.hpp"
 #include "EngineException.hpp"
 #include "EntityAppearance.hpp"
 #include "EntityAppearances.hpp"
@@ -18,6 +21,7 @@
 #include "EntityTypesTestConstants.hpp"
 #include "HurtBox.hpp"
 #include "HurtZone.hpp"
+#include "PathText.hpp"
 #include "PixelGridConstants.hpp"
 #include "SheetPixels.hpp"
 #include "ShippedEntitySheets.hpp"
@@ -34,6 +38,8 @@ using rtype::engine::DataFileValueOutOfRangeException;
 using rtype::engine::Duration;
 using rtype::engine::MissingDataFileKeyException;
 using rtype::engine::UnknownDataFileKeyException;
+using rtype::game::ActionKey;
+using rtype::game::EnemyPhase;
 using rtype::game::EntitySheet;
 using rtype::game::HurtBox;
 using rtype::game::HurtZone;
@@ -52,6 +58,7 @@ using rtype::game::testing::SHIPPED_SHEET_NAMES;
 using rtype::game::testing::shippedEntitySheets;
 using rtype::game::testing::VOLTJELLY_SHEET;
 using rtype::game::testing::WEAVER_SHEET;
+using rtype::logging::genericText;
 using ::testing::ElementsAre;
 using ::testing::ElementsAreArray;
 
@@ -198,6 +205,54 @@ TEST(EntityAppearances, RefusesAnUnknownKeyOfTheAppearance) {
   EXPECT_THROW(static_cast<void>(appearancesReading(
                    SHEET_WITH_AN_UNKNOWN_APPEARANCE_KEY_TEXT)),
                UnknownDataFileKeyException);
+}
+
+/**
+ * Given a sheet that names the sound of its appearance, of its death and of
+ * the strike of its attack 2
+ * When its appearance is read
+ * Then it holds the three sounds, the third under that attack and phase
+ */
+TEST(EntityAppearances, ReadsTheSoundsTheSheetNames) {
+  const EntityAppearances appearances =
+      appearancesReading(SHEET_WITH_SOUNDS_TEXT);
+  const EntityAppearance* const read = appearances.named(READ_TYPE_NAME);
+  ASSERT_NE(read, nullptr);
+
+  EXPECT_EQ(read->sounds.appear, APPEAR_SOUND_ID);
+  EXPECT_EQ(read->sounds.death, DEATH_SOUND_ID);
+  ASSERT_EQ(read->sounds.actions.size(), 1U);
+  EXPECT_EQ(read->sounds.actions.front().key,
+            (ActionKey{.attack = SOUNDED_ATTACK, .phase = EnemyPhase::Strike}));
+  EXPECT_EQ(read->sounds.actions.front().sound, STRIKE_SOUND_ID);
+}
+
+/**
+ * Given a sheet whose sounds hold a key no sheet knows
+ * When it is read
+ * Then reading stops on that key
+ */
+TEST(EntityAppearances, RefusesAnUnknownKeyOfTheSounds) {
+  EXPECT_THROW(static_cast<void>(
+                   appearancesReading(SHEET_WITH_AN_UNKNOWN_SOUND_KEY_TEXT)),
+               UnknownDataFileKeyException);
+}
+
+/**
+ * Given the same sheet, as a content pack written to a folder brings it
+ * When the sounds of its appearances are listed
+ * Then each is named by its whole path below that folder, in alphabetical
+ * order, so the bank reads it from the pack and not from the assets
+ */
+TEST(EntityAppearances, NamesTheSoundsOfAPackBelowItsFolder) {
+  const EntityAppearances appearances =
+      appearancesReadingInAPack(SHEET_WITH_SOUNDS_TEXT);
+  const std::filesystem::path pack{SOUND_PACK_FOLDER};
+
+  EXPECT_THAT(appearances.sounds(),
+              ElementsAre(genericText(pack / APPEAR_SOUND_ID),
+                          genericText(pack / DEATH_SOUND_ID),
+                          genericText(pack / STRIKE_SOUND_ID)));
 }
 
 /**
@@ -571,4 +626,48 @@ TEST(EntityAppearances, ReadsEverySheetOfTheAshlandsResource) {
     SCOPED_TRACE(name);
     EXPECT_NE(appearances.named(name), nullptr);
   }
+}
+
+/**
+ * Given the sheets the resource deseret brings: its mobs, its decor, its
+ * two bosses and the bodies of their attacks
+ * When a client reads their appearances, as it reads a content pack
+ * Then every one of them is read, so a client can play that pack
+ */
+TEST(EntityAppearances, ReadsEverySheetOfTheDeseretResource) {
+  const EntityAppearances appearances = deseretAppearances();
+
+  for (const std::string_view name : DESERET_SHEET_NAMES) {
+    SCOPED_TRACE(name);
+    EXPECT_NE(appearances.named(name), nullptr);
+  }
+}
+
+/**
+ * Given the sheets of the two bosses of Deseret
+ * When a client reads them
+ * Then each names the music it fights to
+ */
+TEST(EntityAppearances, ReadsTheMusicOfEachBossOfDeseret) {
+  const EntityAppearances appearances = deseretAppearances();
+  const EntityAppearance* const pilgrim = appearances.named(IRON_PILGRIM_SHEET);
+  const EntityAppearance* const widow = appearances.named(OLD_WIDOW_SHEET);
+  ASSERT_NE(pilgrim, nullptr);
+  ASSERT_NE(widow, nullptr);
+
+  EXPECT_EQ(pilgrim->bossMusic, IRON_PILGRIM_MUSIC);
+  EXPECT_EQ(widow->bossMusic, OLD_WIDOW_MUSIC);
+}
+
+/**
+ * Given the sheet of the Necromancer, which names no music
+ * When a client reads it
+ * Then its music is empty, so it fights to the music of a boss
+ */
+TEST(EntityAppearances, ABossWithoutMusicHasNone) {
+  const EntityAppearances appearances = fosseAppearances();
+  const EntityAppearance* const read = appearances.named(NECROMANCER_SHEET);
+  ASSERT_NE(read, nullptr);
+
+  EXPECT_TRUE(read->bossMusic.empty());
 }

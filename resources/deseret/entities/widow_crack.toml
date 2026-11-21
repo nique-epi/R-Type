@@ -1,0 +1,35 @@
+# The entity type widow_crack, brought by the resource deseret:
+# the ground splitting under a ship, its oil glowing through, 1.4 s before the
+# geyser of oil of the Old Widow; it warns and never hurts.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy"
+layer = "boss_effect"
+pilot = "ground_crack"
+
+[gameplay.hitbox]
+width = 4
+height = 4
+offset_y = 1024
+
+[gameplay.motion]
+kind = "scroll"
+
+[gameplay.behaviour]
+crack_ms = 1400
+
+[appearance]
+sheet = "sprites/deseret/widow_crack.png"
+
+# Idle: the ground splits, its oil glows, then bubbles up.
+[appearance.idle]
+left = 0
+top = 0
+width = 32
+height = 8
+frames = 3
+spacing = 2
+frame_ms = 300

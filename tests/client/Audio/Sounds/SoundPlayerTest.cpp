@@ -30,3 +30,14 @@ TEST_F(SoundPlayerFixture, APlayerBuiltBeforeTheSettingsWereReadFollowsThem) {
 
   EXPECT_NO_THROW(player().play(UNKNOWN_SOUND_ID));
 }
+
+/**
+ * Given a sound player that can be heard, asked to load a sound no asset has
+ * When it plays that sound
+ * Then it plays nothing, and does not fail
+ */
+TEST_F(SoundPlayerFixture, ASoundItCouldNotLoadPlaysNothing) {
+  player().load(UNKNOWN_SOUND_ID);
+
+  EXPECT_NO_THROW(player().play(UNKNOWN_SOUND_ID));
+}

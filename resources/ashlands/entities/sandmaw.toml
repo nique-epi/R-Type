@@ -74,6 +74,7 @@ arrival_attack = 2
 [appearance]
 sheet = "sprites/cendres/sandmaw.png"
 boss_name = "SANDMAW"
+boss_music = "music/uranium_fever.mp3"
 
 [appearance.idle]
 left = 0

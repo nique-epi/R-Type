@@ -10,6 +10,8 @@ class ComponentRegistry;
 
 namespace rtype::client {
 
+class ISoundPlayer;
+
 /**
  * @brief Plays on an enemy the animation its sheet gives to the attack and
  * the phase an EnemyAction announces.
@@ -20,18 +22,23 @@ namespace rtype::client {
  * attack and phase, is left as it is. The animation replaces the
  * SpriteAnimation of the entity from its first frame, and goes back to the idle
  * animation once it has ended when the sheet says so (see ActionAnimation).
- * Call it from the frame loop only, outside any forEach of the registry. The
- * registry must outlive the player.
+ * It also plays the sound the sheet names for that attack and phase, if it
+ * names one (see EntitySounds). Call it from the frame loop only, outside any
+ * forEach of the registry. The registry and the sound player must outlive the
+ * player.
  */
 class EnemyActionPlayer {
  public:
-  explicit EnemyActionPlayer(engine::ComponentRegistry& components);
+  EnemyActionPlayer(engine::ComponentRegistry& components,
+                    ISoundPlayer& sounds);
 
-  /** @brief Plays the animation @p action announces; see the class. */
+  /** @brief Plays the animation and the sound @p action announces; see the
+   * class. */
   void apply(const network::EnemyAction& action);
 
  private:
   engine::ComponentRegistry* components_;
+  ISoundPlayer* sounds_;
 };
 
 }  // namespace rtype::client

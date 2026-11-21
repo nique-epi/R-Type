@@ -128,6 +128,42 @@ TEST(LuauLevels, ReadsTheMapOfTheAshlandsLevel) {
 }
 
 /**
+ * Given the scripts of the resource deseret the repository ships
+ * When they run
+ * Then the level deseret is registered, with its six stages
+ */
+TEST(LuauLevels, ReadsTheDeseretLevelTheRepositoryShips) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+  const std::array folders{
+      std::filesystem::path{RTYPE_SOURCE_RESOURCES_FOLDER} / DESERET_RESOURCE};
+
+  scripts.run(rtype::game::scriptSourcesIn(folders));
+
+  const LuauLevelEntry* const entry = scripts.levels().entryOf(DESERET_LEVEL);
+  ASSERT_NE(entry, nullptr);
+  EXPECT_EQ(entry->stages.size(), STAGES_OF_THE_DESERET_LEVEL);
+}
+
+/**
+ * Given the scripts of the resource deseret the repository ships
+ * When they run
+ * Then the level deseret is the map DESERET
+ */
+TEST(LuauLevels, ReadsTheMapOfTheDeseretLevel) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+  const std::array folders{
+      std::filesystem::path{RTYPE_SOURCE_RESOURCES_FOLDER} / DESERET_RESOURCE};
+
+  scripts.run(rtype::game::scriptSourcesIn(folders));
+
+  const LuauLevelEntry* const entry = scripts.levels().entryOf(DESERET_LEVEL);
+  ASSERT_NE(entry, nullptr);
+  EXPECT_EQ(entry->mapName.value_or(""), DESERET_MAP);
+}
+
+/**
  * Given the scripts of the resource fosse the repository ships
  * When they run
  * Then the level space is registered, with its two stages

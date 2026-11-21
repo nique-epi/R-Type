@@ -303,3 +303,23 @@ TEST_F(ServerGamesFixture,
       .contentFolders = {std::filesystem::path{RTYPE_SOURCE_ASSETS_FOLDER},
                          resource}}));
 }
+
+/**
+ * Given the shipped assets and the resource deseret, whose sheets name the
+ * behaviours its scripts register (its mobs, its decor, the Iron Pilgrim, the
+ * Old Widow and the bodies of their attacks)
+ * When the application starts with both
+ * Then the games start: every sheet holds together with its behaviour
+ */
+TEST_F(ServerGamesFixture,
+       StartsWithTheSheetsAndTheScriptsOfTheDeseretResource) {
+  const std::filesystem::path resource =
+      std::filesystem::path{RTYPE_SOURCE_ASSETS_FOLDER} /
+      DESERET_RESOURCE_FROM_THE_ASSETS;
+
+  EXPECT_NO_THROW(startWith(rtype::server::GamesSettings{
+      .seed = SOME_SEED,
+      .wavesFiles = shippedWaves().wavesFiles,
+      .contentFolders = {std::filesystem::path{RTYPE_SOURCE_ASSETS_FOLDER},
+                         resource}}));
+}

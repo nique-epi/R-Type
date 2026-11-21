@@ -28,12 +28,23 @@ constexpr std::array APPEARANCE_KEYS{SHEET_KEY, IDLE_TABLE_KEY};
 constexpr std::string_view ENRAGED_IDLE_TABLE_KEY = "enraged_idle";
 constexpr std::string_view DEATH_TABLE_KEY = "death";
 
-/** @brief The optional text of `[appearance]` that names a boss on its bar;
- * a boss without it shows no name. */
+/** @brief The optional texts of `[appearance]` that name a boss on its bar
+ * and the music it fights to; a boss without them shows no name and fights to
+ * the music of a boss. */
 constexpr std::string_view BOSS_NAME_KEY = "boss_name";
+constexpr std::string_view BOSS_MUSIC_KEY = "boss_music";
 constexpr std::array OPTIONAL_APPEARANCE_KEYS{
     ENRAGED_IDLE_TABLE_KEY, DEATH_TABLE_KEY, game::EFFECTS_TABLE_KEY,
-    game::LOOKS_TABLE_KEY, BOSS_NAME_KEY};
+    game::LOOKS_TABLE_KEY,  BOSS_NAME_KEY,   BOSS_MUSIC_KEY,
+    game::SOUNDS_TABLE_KEY};
+
+/**
+ * @brief The keys of `[appearance.sounds]` besides its attack tables: the
+ * sound of the body appearing and the sound of its death.
+ */
+constexpr std::string_view APPEAR_SOUND_KEY = "appear";
+constexpr std::string_view DEATH_SOUND_KEY = DEATH_TABLE_KEY;
+constexpr std::array SOUND_KEYS{APPEAR_SOUND_KEY, DEATH_SOUND_KEY};
 
 /**
  * @brief The keys of `[appearance.idle]`: the first frame, in pixels of the
@@ -93,6 +104,15 @@ static_assert(PLAYBACK_NAMES.size() == PLAYBACKS.size(),
 constexpr std::string_view RETURNS_TO_IDLE = "idle";
 constexpr std::string_view STAYS_ON_LAST_FRAME = "stay";
 constexpr std::array AFTERWARDS_NAMES{RETURNS_TO_IDLE, STAYS_ON_LAST_FRAME};
+
+/**
+ * @brief The rule a phase breaks when it plays `once` and stays on its last
+ * frame: AnimationSystem destroys an entity whose animation played once with
+ * nothing after it, so such a phase would take the body away from the screen
+ * while the server keeps it.
+ */
+constexpr std::string_view ONCE_THAT_STAYS_RULE =
+    "a phase that stays on its last frame plays loop or hold, never once";
 
 /**
  * @brief The largest side of a sprite sheet the client reads, in pixels:

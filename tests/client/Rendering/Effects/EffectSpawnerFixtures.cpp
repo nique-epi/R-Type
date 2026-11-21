@@ -155,5 +155,7 @@ EntityAppearance appearanceWithADeath() {
       .deathFrameDuration = MOB_DEATH_FRAME_TIME,
       .effects = {},
       .looks = {},
-      .bossName = {}};
+      .bossName = {},
+      .bossMusic = {},
+      .sounds = {}};
 }

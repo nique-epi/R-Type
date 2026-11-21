@@ -5,6 +5,7 @@
 #include <chrono>
 #include <optional>
 #include <string>
+#include <string_view>
 #include "AssetKind.hpp"
 #include "AssetLibrary.hpp"
 #include "AssetLoadResult.hpp"
@@ -35,13 +36,15 @@ sf::Music::TimeSpan loopOf(const MusicTrack& track) {
 MusicPlayer::MusicPlayer(const SettingsService& settings, MusicTrack track)
     : settings_(&settings),
       track_(track),
+      assetId_(track.assetId),
       logger_(std::string{AUDIO_LOGGER_NAME}) {}
 
 void MusicPlayer::start() {
   if (!opened_ || music_.getStatus() == sf::SoundSource::Status::Playing) {
     return;
   }
-  if (track_.loopLength > engine::Duration::zero()) {
+  if (assetId_ == track_.assetId &&
+      track_.loopLength > engine::Duration::zero()) {
     music_.setLoopPoints(loopOf(track_));
   }
   music_.setLooping(true);
@@ -74,18 +77,29 @@ std::optional<engine::Duration> MusicPlayer::playingOffset() const {
 
 void MusicPlayer::open(AssetLibrary& library) {
   opened_ = false;
-  if (library.load(AssetKind::Music, track_.assetId) !=
-      AssetLoadResult::Loaded) {
-    logger_.warn("no music file ", track_.assetId,
-                 ": the client plays without it");
+  if (library.load(AssetKind::Music, assetId_) != AssetLoadResult::Loaded) {
+    logger_.warn("no music file ", assetId_, ": the client plays without it");
     return;
   }
-  if (!music_.openFromFile(library.musicFile(track_.assetId))) {
-    logger_.warn("the music file ", track_.assetId,
+  if (!music_.openFromFile(library.musicFile(assetId_))) {
+    logger_.warn("the music file ", assetId_,
                  " cannot be read: the client plays without it");
     return;
   }
   opened_ = true;
+}
+
+void MusicPlayer::switchTo(AssetLibrary& library, std::string_view assetId) {
+  if (assetId == assetId_) {
+    return;
+  }
+  const bool played = playingOffset().has_value();
+  music_.stop();
+  assetId_ = assetId;
+  open(library);
+  if (played) {
+    start();
+  }
 }
 
 void MusicPlayer::applyVolume() {

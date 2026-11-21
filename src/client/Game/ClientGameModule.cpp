@@ -1,5 +1,6 @@
 #include "ClientGameModule.hpp"
 #include <memory>
+#include <optional>
 #include <random>
 #include <string>
 #include <vector>
@@ -11,9 +12,9 @@
 #include "GameScreenIdConstants.hpp"
 #include "GameScreenParts.hpp"
 #include "IScreen.hpp"
+#include "ISoundPlayer.hpp"
 #include "InstallContext.hpp"
 #include "InterpolationTally.hpp"
-#include "LevelTracks.hpp"
 #include "ModuleConstants.hpp"
 #include "PlayerPreferences.hpp"
 #include "PlayerSettings.hpp"
@@ -37,12 +38,24 @@ AssetList gameAssetsOf(const ScreenContext& context) {
       context.services.sessionPack.get().backgrounds().get());
 }
 
+/** @brief Reads every sound the sheets of the content of the session name,
+ * so the game plays them without reading the disk; a sound read before is
+ * not read again. */
+void loadEntitySounds(const ScreenContext& context) {
+  ISoundPlayer& sounds = soundsOf(context);
+  for (const std::string& sound :
+       context.services.entityTable.get().appearances().sounds()) {
+    sounds.load(sound);
+  }
+}
+
 /** @returns The loading screen of gameAssetsOf() while some are not loaded,
  * the game screen once they all are, which counts in @p tally how it shows
  * the other entities. */
 std::unique_ptr<IScreen> buildGameScreen(const ScreenContext& context,
                                          InterpolationTally& tally) {
-  context.services.audio.get().playGameMusic(LevelTracks{});
+  context.services.audio.get().playGameMusic(std::nullopt);
+  loadEntitySounds(context);
   std::unique_ptr<IScreen> loading =
       loadingScreenUnlessLoaded(context, gameAssetsOf(context), GAME_SCREEN);
   if (loading != nullptr) {

@@ -1,8 +1,10 @@
 #include "EnemyActionPlayer.hpp"
 #include <algorithm>
 #include <optional>
+#include <string>
 #include "ActionAnimation.hpp"
 #include "ActionKey.hpp"
+#include "ActionSound.hpp"
 #include "Animation.hpp"
 #include "AppearanceReference.hpp"
 #include "ComponentRegistry.hpp"
@@ -12,6 +14,7 @@
 #include "Entity.hpp"
 #include "EntityAppearance.hpp"
 #include "EntityWithAppearance.hpp"
+#include "ISoundPlayer.hpp"
 #include "ShownLooks.hpp"
 #include "SpriteAnimation.hpp"
 #include "TimeConstants.hpp"
@@ -58,10 +61,20 @@ SpriteAnimation playingOf(const ActionAnimation& action,
           action.returnsToIdle ? std::optional<Animation>{idle} : std::nullopt};
 }
 
+/** @returns The sound @p appearance names for @p key, or nullptr when the
+ * sheet names none. */
+const std::string* actionSoundOf(const EntityAppearance& appearance,
+                                 game::ActionKey key) {
+  const auto found =
+      std::ranges::find(appearance.sounds.actions, key, &ActionSound::key);
+  return found == appearance.sounds.actions.end() ? nullptr : &found->sound;
+}
+
 }  // namespace
 
-EnemyActionPlayer::EnemyActionPlayer(engine::ComponentRegistry& components)
-    : components_(&components) {}
+EnemyActionPlayer::EnemyActionPlayer(engine::ComponentRegistry& components,
+                                     ISoundPlayer& sounds)
+    : components_(&components), sounds_(&sounds) {}
 
 void EnemyActionPlayer::apply(const network::EnemyAction& action) {
   const std::optional<engine::Entity> enemy =
@@ -73,16 +86,19 @@ void EnemyActionPlayer::apply(const network::EnemyAction& action) {
   if (rage) {
     components_->add(*enemy, Enraged{});
   }
+  const EntityAppearance& appearance =
+      *components_->get<AppearanceReference>(*enemy)->appearance;
+  const game::ActionKey key{.attack = action.attack,
+                            .phase = phaseOf(action.phase)};
+  if (const std::string* sound = actionSoundOf(appearance, key)) {
+    sounds_->play(*sound);
+  }
   auto* const playing = components_->get<SpriteAnimation>(*enemy);
   if (playing == nullptr) {
     return;
   }
-  const EntityAppearance& appearance =
-      *components_->get<AppearanceReference>(*enemy)->appearance;
   const Animation idle = restingAnimationOf(*components_, *enemy, appearance);
-  const ActionAnimation* const found = actionOf(
-      appearance,
-      game::ActionKey{.attack = action.attack, .phase = phaseOf(action.phase)});
+  const ActionAnimation* const found = actionOf(appearance, key);
   if (found != nullptr) {
     *playing = playingOf(*found, idle);
   } else if (rage) {

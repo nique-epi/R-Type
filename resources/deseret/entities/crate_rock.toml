@@ -1,0 +1,38 @@
+# The entity type crate_rock, brought by the resource deseret:
+# a clump of rocks a crate of dynamite throws up as it bursts in the open.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy_missile"
+layer = "enemy_missile"
+hits = ["player"]
+pilot = "debris_toss"
+
+[gameplay.hitbox]
+width = 72
+height = 48
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 300
+
+# It rises, each of the four clumps of a crate spread 70 % of its speed to
+# one side or the other, and falls back after 700 ms.
+[gameplay.behaviour]
+spread = 70
+rise_ms = 700
+
+[appearance]
+sheet = "sprites/deseret/crate_rock.png"
+
+# Idle: the rocks tumble.
+[appearance.idle]
+left = 0
+top = 0
+width = 24
+height = 16
+frames = 2
+spacing = 2
+frame_ms = 90

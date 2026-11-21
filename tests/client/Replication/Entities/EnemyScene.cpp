@@ -1,6 +1,8 @@
 #include "EnemyScene.hpp"
 #include <cstdint>
+#include <string>
 #include <utility>
+#include <vector>
 #include "Animation.hpp"
 #include "AppearanceReference.hpp"
 #include "EnemyAction.hpp"
@@ -62,6 +64,10 @@ const SpriteAnimation& EnemyScene::playing() {
 
 game::SpriteFrame EnemyScene::shownFrame() {
   return components_.get<game::Sprite>(enemy_)->frame;
+}
+
+const std::vector<std::string>& EnemyScene::playedSounds() const {
+  return sounds_.played();
 }
 
 }  // namespace rtype::client::testing

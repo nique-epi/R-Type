@@ -20,6 +20,11 @@ class ISoundPlayer {
    * player for a sound of VOICE_SOUND_IDS, at its EFFECTS volume for any
    * other; nothing plays while MUTE ALL is on. */
   virtual void play(std::string_view soundId) = 0;
+
+  /** @brief Reads the sound of an asset id that was not loaded at launch, a
+   * sound a content pack brings, so it plays without reading the disk. A
+   * sound it cannot read stays silent: play() then plays nothing for it. */
+  virtual void load(std::string_view soundId) = 0;
 };
 
 }  // namespace rtype::client

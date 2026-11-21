@@ -1,0 +1,46 @@
+# The entity type mine_cart, brought by the resource deseret:
+# a mine cart on its rails; shot from behind, it rolls off and crushes the
+# mobs ahead of it.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy"
+layer = "enemy"
+hits = ["player"]
+pilot = "cart_roll"
+
+[gameplay.hitbox]
+width = 96
+height = 72
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 640
+
+# It rests on its rails, carried by the scroll; hit from behind, it rolls
+# right at its top speed, crushing the mobs ahead of it.
+[gameplay.behaviour]
+roll_ms = 4000
+laden = 0
+
+# It has health so missiles meet it; its pre_hit refuses every hit but the
+# one that sets it rolling, and it never dies, so it draws no death.
+[gameplay.health]
+points = 1
+
+[gameplay.survives_contact]
+
+[appearance]
+sheet = "sprites/deseret/mine_cart.png"
+
+# Idle: its wheels, a spoke turned 45 degrees.
+[appearance.idle]
+left = 0
+top = 0
+width = 24
+height = 18
+frames = 2
+spacing = 2
+frame_ms = 120
