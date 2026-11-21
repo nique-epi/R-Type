@@ -21,9 +21,11 @@ target_link_libraries(rtype_client_game_module
     rtype_client_boss_bar
     rtype_client_chat_window
     rtype_client_connection_module
+    rtype_client_continue_notice
     rtype_client_departure_feed
     rtype_client_drawing
     rtype_client_edge_pulse
+    rtype_client_extra_life_notice
     rtype_client_flight_log_interfaces
     rtype_client_handshake
     rtype_client_input

@@ -106,6 +106,20 @@ constexpr std::string_view TOLD_BIOME = "fosse";
 constexpr float TOLD_SCROLL_POSITION = 240.0F;
 constexpr float TOLD_SCROLL_SPEED = 120.0F;
 
+/** @brief The continues the team of the level holds before it loses every
+ * life and after it goes back to its checkpoint, and the notice that tells
+ * it. */
+constexpr std::uint8_t CONTINUES_BEFORE_THE_WIPE = 3;
+constexpr std::uint8_t CONTINUES_AFTER_THE_WIPE = 2;
+constexpr std::string_view CONTINUES_LEFT_NOTICE =
+    "CHECKPOINT - 2 CONTINUES LEFT";
+
+/** @brief The first event of a game, telling the first player won an extra
+ * life, and the word over its bay. */
+constexpr std::uint16_t EXTRA_LIFE_EVENT_NUMBER = 1;
+constexpr std::uint8_t PLAYER_WHO_WON_A_LIFE = 1;
+constexpr std::string_view ONE_UP_WORD = "1UP";
+
 /** @brief Where the server is while the tests draw a state of APPLIED_TICK:
  * some ticks ahead of it, as during a game. */
 constexpr double SERVER_TICK_AHEAD_OF_THE_STATE = 16.0;

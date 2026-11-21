@@ -23,6 +23,7 @@
 #include "BossPresentation.hpp"
 #include "BossStatus.hpp"
 #include "ChatWindow.hpp"
+#include "ContinueNotice.hpp"
 #include "DepartureFeed.hpp"
 #include "EffectPlayed.hpp"
 #include "EffectPlayer.hpp"
@@ -35,6 +36,8 @@
 #include "EntityMessage.hpp"
 #include "EntityReplicator.hpp"
 #include "EntityReplicatorParts.hpp"
+#include "ExtraLifeNotice.hpp"
+#include "ExtraLifeRises.hpp"
 #include "FinalPilot.hpp"
 #include "FinalRanking.hpp"
 #include "FlashPreference.hpp"
@@ -156,6 +159,10 @@ struct EntityMessageRoutes {
   std::reference_wrapper<IAudioService> audio;
   std::reference_wrapper<OwnPrediction> prediction;
   std::reference_wrapper<LevelTransitionScene> transition;
+  std::reference_wrapper<ContinueNotice> continues;
+  std::reference_wrapper<ExtraLifeNotice> extraLives;
+  /** @brief When the messages are handed over, since the start of the game. */
+  engine::Duration now{};
 };
 
 /** @returns What the sky shows of the level @p status tells. */
@@ -186,13 +193,25 @@ game::PlayBand bandOf(const network::LevelStatus& status) {
                          game::PLAY_AREA_HEIGHT)};
 }
 
+/** @brief Hands @p status to the sky and its music, to the transition, to the
+ * boss, to the prediction, which moves the walls ahead by its scroll and keeps
+ * the ship in its band, and to the notice of the continues. */
+void routeLevelStatus(const EntityMessageRoutes& routes,
+                      const network::LevelStatus& status) {
+  showLevel(routes, status);
+  routes.prediction.get().followScroll(status.scrollSpeed);
+  routes.transition.get().show(status.transitionLeft);
+  routes.boss.get().followLevel();
+  routes.prediction.get().useBand(bandOf(status));
+  routes.continues.get().follow(status.continuesLeft, routes.now);
+}
+
 /** @brief Hands an entity message to whoever it goes to: a PlayerLeft to the
  * board and the feed, an EnemyAction to the enemy it animates and to the boss,
  * an EffectPlayed to the player of the named effects, a BossStatus to the
- * boss, an EntityDestroyed to the boss and to the replicator, a LevelStatus to
- * the sky and its music, to the transition, to the boss and to the prediction,
- * which moves the walls ahead by its scroll and keeps the ship in its band,
- * anything else but GameEnded to the replicator. */
+ * boss, an EntityDestroyed to the boss and to the replicator, a LevelStatus
+ * as routeLevelStatus() says, a GameEvent to the notice of the extra lives
+ * and to the replicator, anything else but GameEnded to the replicator. */
 void routeEntityMessage(const EntityMessageRoutes& routes,
                         const EntityMessage& message) {
   std::visit(
@@ -213,11 +232,10 @@ void routeEntityMessage(const EntityMessageRoutes& routes,
           routes.boss.get().apply(announced);
           routes.replicator.get().apply(announced);
         } else if constexpr (std::is_same_v<Announced, network::LevelStatus>) {
-          showLevel(routes, announced);
-          routes.prediction.get().followScroll(announced.scrollSpeed);
-          routes.transition.get().show(announced.transitionLeft);
-          routes.boss.get().followLevel();
-          routes.prediction.get().useBand(bandOf(announced));
+          routeLevelStatus(routes, announced);
+        } else if constexpr (std::is_same_v<Announced, network::GameEvent>) {
+          routes.extraLives.get().apply(announced, routes.now);
+          routes.replicator.get().apply(announced);
         } else if constexpr (!std::is_same_v<Announced, network::GameEnded>) {
           routes.replicator.get().apply(announced);
         }
@@ -372,7 +390,10 @@ void GameScreen::applyEntityMessages() {
                                    .sky = *sky_,
                                    .audio = *audio_,
                                    .prediction = prediction_,
-                                   .transition = transition_};
+                                   .transition = transition_,
+                                   .continues = continues_,
+                                   .extraLives = extraLives_,
+                                   .now = effects_.sinceStart()};
   for (const EntityMessage& message : receivedEntityMessages_) {
     routeEntityMessage(routes, message);
     if (const auto* ended = std::get_if<network::GameEnded>(&message)) {
@@ -425,6 +446,8 @@ void GameScreen::repaintStatusWhenChanged() {
   const BossLook boss = boss_.look(flashPreferenceOf(*settings_));
   if (scoreBoard_.revision() != paintedStatusRevision_ ||
       missionBannerAt(effects_.sinceStart()) != paintedBanner_ ||
+      continues_.shownAt(effects_.sinceStart()) != paintedContinues_ ||
+      extraLives_.risesAt(effects_.sinceStart()) != paintedExtraLives_ ||
       paintedPalette_ != playerPaletteOf(*settings_) ||
       departures_.revision() != paintedDepartures_ ||
       silence_.isShown() != paintedSilence_ || boss != paintedBoss_ ||
@@ -435,11 +458,18 @@ void GameScreen::repaintStatusWhenChanged() {
 
 void GameScreen::repaintStatus(const BossLook& boss) {
   const MissionBannerLook banner = missionBannerAt(effects_.sinceStart());
+  const std::optional<std::uint8_t> continues =
+      continues_.shownAt(effects_.sinceStart());
+  const ExtraLifeRises extraLives = extraLives_.risesAt(effects_.sinceStart());
   const PlayerPalette& palette = playerPaletteOf(*settings_);
   statusCanvas_->clear();
   paintBossAlert(*statusCanvas_, boss);
   paintStatusBand(*statusCanvas_, scoreBoard_.pilots(), palette);
   paintMissionBanner(*statusCanvas_, banner);
+  if (continues.has_value()) {
+    ContinueNotice::paint(*statusCanvas_, *continues);
+  }
+  ExtraLifeNotice::paint(*statusCanvas_, extraLives);
   paintBossBar(*statusCanvas_, boss.bar);
   departures_.paint(
       *statusCanvas_, palette,
@@ -449,6 +479,8 @@ void GameScreen::repaintStatus(const BossLook& boss) {
   statusCanvas_->display();
   paintedStatusRevision_ = scoreBoard_.revision();
   paintedBanner_ = banner;
+  paintedContinues_ = continues;
+  paintedExtraLives_ = extraLives;
   paintedPalette_ = palette;
   paintedDepartures_ = departures_.revision();
   paintedSilence_ = silence_.isShown();
