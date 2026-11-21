@@ -64,14 +64,14 @@ static_assert(NEAR_AN_EDGE < SHIP_SPEED,
 /** @brief A ship at rest in the middle of the play area. */
 constexpr MovingShip SHIP_AT_REST{.position = PLAY_AREA_CENTER, .motion = {}};
 
-/** @brief The tick held on which a ship at rest reaches SHIP_SPEED: 350 ms,
- * the full speed of the design. */
-constexpr std::size_t FULL_SPEED_TICK = 21;
+/** @brief The tick held on which a ship at rest reaches SHIP_SPEED: 67 ms, a
+ * ship that answers its player at once. */
+constexpr std::size_t FULL_SPEED_TICK = 4;
 
 /** @brief The tick after it is let go on which a ship at SHIP_SPEED stops,
- * and how far it glides: 467 ms and 21.2 pixels of the design, 4 units each. */
-constexpr std::size_t STOP_TICK = 28;
-constexpr float GLIDE_DISTANCE = 84.94F;
+ * and how far it glides: 67 ms and 2.9 pixels of the design, 4 units each. */
+constexpr std::size_t STOP_TICK = 4;
+constexpr float GLIDE_DISTANCE = 11.5F;
 
 /** @brief Ticks after which a ship holding a direction is surely at full speed.
  */
@@ -116,10 +116,10 @@ constexpr std::uint32_t LATE_SECOND_PRESS = 15;
 
 /** @brief How far a ship at rest drifts while its player holds a direction for
  * SIMULATION_TICKS_PER_SECOND ticks, and for its first tick: replayed from the
- * drift of the design (rates 6 and 4.5, floors of 240 and 180 pixels per
- * second squared, 4 units a pixel) outside the C++. */
-constexpr float HELD_SECOND_DISTANCE = 417.29F;
-constexpr float FIRST_TICK_DISTANCE = 0.7613F;
+ * drift (rates 6 and 4.5, floors of 1875 pixels per second squared, 4 units
+ * a pixel) outside the C++: 125, 250, 375 then 480 units per second. */
+constexpr float HELD_SECOND_DISTANCE = 468.5F;
+constexpr float FIRST_TICK_DISTANCE = 2.0833F;
 
 /** @brief A share of the full speed on one axis, between none and full. */
 constexpr float PARTIAL_STEERING = 0.25F;
