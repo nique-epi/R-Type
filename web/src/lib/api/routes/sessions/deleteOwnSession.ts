@@ -1,6 +1,6 @@
 import { master } from '../../clients';
 import { type ApiResponse, handleApiError } from '../../helpers';
-import { bearerHeadersOf } from './bearer';
+import { bearerHeadersOf } from '../../helpers/bearer-headers';
 
 /**
  * Closes the session of `token` on the master with `DELETE /api/sessions/me`;

@@ -111,6 +111,23 @@ constexpr std::size_t TICKS_UNTIL_THE_CHECKPOINT = 4;
 constexpr std::size_t TICKS_INTO_THE_SECOND_STAGE = 30;
 constexpr float SCROLL_ONE_TICK_AFTER_THE_CHECKPOINT = 8.0F;
 
+/** @brief A level whose first stage names the biome caves, then waits 50 ms:
+ * its checkpoint lies at 6 units of scroll, 6 units after the biome began;
+ * a restart tells that biome begun 4096 units before the checkpoint, -4090,
+ * so its entrance does not come back on screen with nothing behind it. */
+constexpr std::string_view LEVEL_THAT_NAMES_A_BIOME_BEFORE_ITS_CHECKPOINT = R"(
+level.register("directed", {
+  function()
+    level.biome("caves")
+    level.wait(50)
+  end,
+  function()
+    level.wait(60000)
+  end,
+})
+)";
+constexpr float CAVES_BEGAN_BEFORE_THE_CHECKPOINT = -4090.0F;
+
 /** @brief The shipped sheets of an enemy and of the ship of a player, and
  * where the tests put them. */
 constexpr std::string_view LEVEL_ENEMY_SHEET = "drifter";

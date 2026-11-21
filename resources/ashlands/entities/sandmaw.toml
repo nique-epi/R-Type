@@ -1,0 +1,140 @@
+# The entity type sandmaw, brought by the resource ashlands:
+# the worm under the highway, the mini-boss of Highway Zero: planted in
+# the floor at the right edge, its maw inhales debris across the screen and
+# spits boulders and Dunecrawlers.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy"
+layer = "enemy"
+hits = ["player"]
+pilot = "sandmaw_maw"
+
+# Its body above the dune, as three boxes that follow it: its head behind
+# the tips of its fangs, its middle and its tail, never the dune nor the air
+# above the tail; every hit on them counts once it has come up.
+[[gameplay.hitbox.box]]
+width = 84
+height = 84
+offset_x = -46
+offset_y = -14
+
+[[gameplay.hitbox.box]]
+width = 56
+height = 96
+offset_x = 24
+offset_y = -12
+
+[[gameplay.hitbox.box]]
+width = 60
+height = 80
+offset_x = 82
+offset_y = 0
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 400
+
+# It comes up out of its dune onto the floor under it (y 820 where the biome
+# gives no ground) over 1.4 s, rests 1.2 s between two attacks (0.6 s
+# enraged), opens its maw 0.9 s, inhales 2.4 s, letting a clod in every
+# 0.5 s (0.33 s enraged), spits 3 boulders (5 enraged) 0.15 s apart, and
+# closes its maw over 0.4 s.
+[gameplay.behaviour]
+rest_y = 820
+rise_ms = 1400
+rest_ms = 1200
+enraged_rest_ms = 600
+open_ms = 900
+inhale_ms = 2400
+debris_ms = 500
+enraged_debris_ms = 330
+boulders = 3
+enraged_boulders = 5
+boulder_gap_ms = 150
+close_ms = 400
+
+[gameplay.health]
+points = 40
+
+[gameplay.score]
+points = 3000
+
+[gameplay.boss]
+rage_below_percent = 50
+rage_attack = 1
+arrival_attack = 2
+
+[gameplay.stays_outside]
+
+[gameplay.survives_contact]
+
+[appearance]
+sheet = "sprites/cendres/sandmaw.png"
+boss_name = "SANDMAW"
+
+[appearance.idle]
+left = 0
+top = 0
+width = 62
+height = 38
+frames = 4
+spacing = 2
+frame_ms = 140
+
+[appearance.attack_0.signal]
+left = 0
+top = 40
+width = 62
+height = 38
+frames = 2
+spacing = 2
+frame_ms = 120
+playback = "loop"
+afterwards = "stay"
+
+[appearance.attack_0.strike]
+left = 0
+top = 80
+width = 62
+height = 38
+frames = 3
+spacing = 2
+frame_ms = 80
+playback = "once"
+afterwards = "idle"
+
+[appearance.attack_0.recover]
+left = 0
+top = 120
+width = 62
+height = 38
+frames = 2
+spacing = 2
+frame_ms = 180
+playback = "once"
+afterwards = "idle"
+
+[appearance.death]
+left = 0
+top = 160
+width = 78
+height = 78
+frames = 6
+spacing = 2
+frame_ms = 70
+
+# Arrival: it comes up out of its dune, slowing to a stop; the dune shows
+# first, every row under its top cut.
+[appearance.attack_2.signal]
+left = 0
+top = 320
+width = 62
+height = 38
+frames = 14
+spacing = 2
+frame_ms = 100
+playback = "hold"
+afterwards = "stay"

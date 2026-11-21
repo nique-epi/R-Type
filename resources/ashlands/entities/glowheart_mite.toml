@@ -1,0 +1,51 @@
+# The entity type glowheart_mite, brought by the resource ashlands:
+# a Cindermite the Glowheart spits out of its chimneys in its Overload,
+# drawn as one, turning towards the nearest ship.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy"
+layer = "enemy"
+hits = ["player"]
+pilot = "brood_swarm"
+
+[gameplay.hitbox]
+width = 72
+height = 64
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 220
+
+# It turns 35 % of the way towards the nearest ship.
+[gameplay.behaviour]
+turn = 35
+
+[gameplay.health]
+points = 1
+
+[gameplay.score]
+points = 50
+
+[appearance]
+sheet = "sprites/cendres/cindermite.png"
+
+[appearance.idle]
+left = 0
+top = 0
+width = 18
+height = 16
+frames = 4
+spacing = 2
+frame_ms = 60
+
+[appearance.death]
+left = 0
+top = 18
+width = 34
+height = 34
+frames = 6
+spacing = 2
+frame_ms = 70

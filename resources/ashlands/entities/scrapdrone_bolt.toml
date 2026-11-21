@@ -1,0 +1,31 @@
+# The entity type scrapdrone_bolt, brought by the resource ashlands:
+# the amber bolt of the Scrapdrone, aimed at a ship.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy_missile"
+layer = "enemy_missile"
+hits = ["player"]
+pilot = "aimed_bolt"
+
+[gameplay.hitbox]
+width = 32
+height = 32
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 420
+
+[appearance]
+sheet = "sprites/cendres/scrapdrone_bolt.png"
+
+[appearance.idle]
+left = 0
+top = 0
+width = 8
+height = 8
+frames = 2
+spacing = 2
+frame_ms = 60

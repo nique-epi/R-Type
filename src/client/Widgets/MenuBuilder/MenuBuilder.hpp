@@ -159,12 +159,14 @@ class MenuBuilder {
 
   /**
    * @returns Where the chip of a room lies: as wide as its label and its keycap
-   * need, on the bottom row of the safe margin, ending at @p right; by default
-   * against the bottom-right corner, where the room lays its cancel chip. A
-   * room lays another chip beside one by ending it BUTTON_GAP to its left.
+   * need, ending at @p right, its top on @p top; by default against the
+   * bottom-right corner of the safe margin, where the room lays its cancel
+   * chip. A room lays another chip beside one by ending it BUTTON_GAP to its
+   * left; a screen with a row of chips of its own gives that row's top.
    */
   [[nodiscard]] static sf::IntRect chipArea(
-      const Button::Text& text, std::optional<int> right = std::nullopt);
+      const Button::Text& text, std::optional<int> right = std::nullopt,
+      std::optional<int> top = std::nullopt);
 
  private:
   void placeColumn(Menu::Content& content);

@@ -2,6 +2,7 @@
 #include "Ambience.hpp"
 #include "IMusicPlayer.hpp"
 #include "ISoundPlayer.hpp"
+#include "LevelTracks.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -12,9 +13,10 @@ IMusicPlayer& SilentAudioService::theme() { return theme_; }
 
 void SilentAudioService::playTheme() {}
 
-void SilentAudioService::playGameMusic() {}
+void SilentAudioService::playGameMusic(
+    [[maybe_unused]] const LevelTracks& tracks) {}
 
-void SilentAudioService::silenceMusic() {}
+bool SilentAudioService::silenceMusic() { return true; }
 
 void SilentAudioService::playBossMusic() {}
 

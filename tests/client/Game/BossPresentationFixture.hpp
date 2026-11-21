@@ -22,6 +22,11 @@ class BossPresentationFixture : public ::testing::Test {
   /** @brief Places the boss PRESENTED_BOSS_ID, drawn from a sheet that names
    * it PRESENTED_BOSS_NAME. */
   void placeNamedBoss();
+  /** @brief Has the level name LEVEL_MUSIC as the music it plays. */
+  void playLevelMusic();
+  /** @brief Has the level name LEVEL_MUSIC, and LEVEL_BOSS_MUSIC for its
+   * bosses. */
+  void playLevelAndBossMusic();
   [[nodiscard]] const RecordingSoundPlayer& sounds() const;
   [[nodiscard]] const RecordingAudioService& audio() const;
 

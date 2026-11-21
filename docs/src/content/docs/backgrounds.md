@@ -11,7 +11,7 @@ The client reads the folder `backgrounds` (`BACKGROUND_FOLDER_IN_ASSETS`) of its
 
 | Part | State | Where |
 |---|---|---|
-| Backgrounds of the client: `space`, the sky, and `fosse`, the Pit | Available | `assets/backgrounds/` |
+| Backgrounds of the client: `space`, the sky, `fosse`, the Pit, and the four biomes of the Ashlands, `cendres`, `cendres_abri`, `cendres_coeur` and `cendres_silo` | Available | `assets/backgrounds/` |
 | A background a resource of a server brings, sent to the players | Available | `resources/<name>/backgrounds/`, see [A background of a resource](#a-background-of-a-resource) |
 
 ## A file
@@ -37,6 +37,8 @@ twinkle_steps = 8
 ```
 
 A table in braces fits on one line; one that needs several lines is written as a table of its own, `[layer.particles]`, after the keys of its layer.
+
+A background may also name, above its layers, the music a game plays while it shows, by its asset id: `music = "music/crawl_out_through_the_fallout.mp3"`, a file of `assets/music/`. It plays in place of the music of a game from the first status of the level that shows the biome until the game ends. `boss_music`, beside it, names the music a boss fought while the biome shows plays after its alarm, in place of the music of the bosses; the music of the level comes back once the boss is defeated. Without `boss_music`, a boss plays neither its alarm nor its music and the music of the level plays on (see [Client](/R-Type/client/#sounds-and-music-iaudioservice-soundplayer-musicplayer)). The Ashlands name Uranium Fever for the Sandmaw (`cendres`), Atom Bomb Baby for the Glowheart (`cendres_coeur`) and Uranium Rock for the Ash Mother (`cendres_silo`). A background without `music` leaves the music of a game, and its `boss_music` is then not read. A resource of a server does not send the file of a music: the client looks for it in its own assets.
 
 ## A layer
 
@@ -168,7 +170,7 @@ A file holds at most 32 layers and 8 groups, a layer of particles 16 sprites and
 
 | You want to… | Look at |
 |---|---|
-| Change the sky or the Pit | `assets/backgrounds/space.toml`, `assets/backgrounds/fosse.toml` |
+| Change the sky, the Pit or a biome of the Ashlands | `assets/backgrounds/space.toml`, `assets/backgrounds/fosse.toml`, `assets/backgrounds/cendres*.toml` |
 | Add a background for a biome | a file `assets/backgrounds/<biome>.toml`, and `level.biome("<biome>")` in the script of the level |
 | Bring a background with a resource | `resources/<name>/backgrounds/`, see [A background of a resource](#a-background-of-a-resource) |
 | Change which files of a background a pack carries | `backgroundFilesIn()` in `src/game/Backgrounds/BackgroundFiles.cpp` |

@@ -1,0 +1,90 @@
+# The entity type control_rods, brought by the resource ashlands:
+# three control rods that rise out of the floor in turn and narrow the
+# band from below.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy"
+layer = "hazard"
+hits = ["player"]
+pilot = "hazard_cycle"
+
+# Nothing collides with its body: only its hurt zone hurts.
+[gameplay.hitbox]
+width = 4
+height = 4
+offset_y = 1024
+
+[gameplay.motion]
+kind = "scroll"
+
+# They first rise 0.8 s after they show, then rest 3 s, climb 0.5 s,
+# stay up 1.2 s and sink 0.32 s.
+[gameplay.behaviour]
+first_ms = 800
+idle_ms = 3000
+signal_ms = 500
+strike_ms = 1200
+recover_ms = 320
+
+[gameplay.survives_contact]
+
+# The raised rods hurt.
+[[gameplay.hurt_zone.box]]
+offset_x = 0
+offset_y = -14
+width = 96
+height = 228
+attack = 0
+phase = "strike"
+
+[appearance]
+sheet = "sprites/cendres/control_rods.png"
+
+# Idle: the rods sunk in their base.
+[appearance.idle]
+left = 0
+top = 0
+width = 26
+height = 64
+frames = 1
+spacing = 2
+frame_ms = 1000
+
+# Signal: they climb a little, their caps flashing.
+[appearance.attack_0.signal]
+left = 0
+top = 66
+width = 26
+height = 64
+frames = 2
+spacing = 2
+frame_ms = 120
+playback = "loop"
+afterwards = "stay"
+
+# Strike: they shoot up and stay raised.
+[appearance.attack_0.strike]
+left = 0
+top = 132
+width = 26
+height = 64
+frames = 2
+spacing = 2
+frame_ms = 90
+playback = "hold"
+afterwards = "stay"
+
+# Recover: they sink back.
+[appearance.attack_0.recover]
+left = 0
+top = 198
+width = 26
+height = 64
+frames = 2
+spacing = 2
+frame_ms = 160
+playback = "once"
+afterwards = "idle"

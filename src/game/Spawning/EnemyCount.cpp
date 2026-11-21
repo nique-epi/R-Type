@@ -1,5 +1,6 @@
 #include "EnemyCount.hpp"
 #include <cstddef>
+#include "Boss.hpp"
 #include "ComponentRegistry.hpp"
 #include "Entity.hpp"
 #include "EntityType.hpp"
@@ -15,6 +16,13 @@ std::size_t enemiesIn(engine::ComponentRegistry& components) {
         }
       });
   return enemies;
+}
+
+std::size_t bossesIn(engine::ComponentRegistry& components) {
+  std::size_t bosses = 0;
+  components.forEach<Boss, EntityType>(
+      [&bosses](engine::Entity, const Boss&, const EntityType&) { ++bosses; });
+  return bosses;
 }
 
 }  // namespace rtype::game

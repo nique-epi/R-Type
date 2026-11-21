@@ -4,6 +4,7 @@
 #include "IAudioService.hpp"
 #include "IMusicPlayer.hpp"
 #include "ISoundPlayer.hpp"
+#include "LevelTracks.hpp"
 #include "NullMusicPlayer.hpp"
 #include "NullSoundPlayer.hpp"
 #include "TimeConstants.hpp"
@@ -17,8 +18,8 @@ class SilentAudioService final : public IAudioService {
   [[nodiscard]] ISoundPlayer& sounds() override;
   [[nodiscard]] IMusicPlayer& theme() override;
   void playTheme() override;
-  void playGameMusic() override;
-  void silenceMusic() override;
+  void playGameMusic(const LevelTracks& tracks) override;
+  [[nodiscard]] bool silenceMusic() override;
   void playBossMusic() override;
   void setAmbience(Ambience ambience) override;
   [[nodiscard]] Ambience ambience() const override;

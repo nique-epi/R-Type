@@ -1,0 +1,50 @@
+# The entity type sand_debris, brought by the resource ashlands:
+# a clod of sand the Sandmaw inhales, flying from the left edge into its
+# maw; a missile breaks it.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy"
+layer = "enemy"
+hits = ["player"]
+pilot = "swallowed_debris"
+
+[gameplay.hitbox]
+width = 36
+height = 36
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 520
+
+[gameplay.health]
+points = 1
+
+[gameplay.score]
+points = 10
+
+[appearance]
+sheet = "sprites/cendres/sand_debris.png"
+
+# Idle: a clod of sand and stone tumbling towards the maw of the Sandmaw.
+[appearance.idle]
+left = 0
+top = 0
+width = 9
+height = 9
+frames = 4
+spacing = 2
+frame_ms = 80
+
+# The death, centered on the body; the row under it is the same death without
+# flash.
+[appearance.death]
+left = 0
+top = 11
+width = 33
+height = 33
+frames = 6
+spacing = 2
+frame_ms = 70

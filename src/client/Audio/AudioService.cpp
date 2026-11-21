@@ -1,10 +1,12 @@
 #include "AudioService.hpp"
+#include <optional>
 #include "Ambience.hpp"
 #include "AmbienceMusic.hpp"
 #include "AssetLibrary.hpp"
 #include "AudioConstants.hpp"
 #include "IMusicPlayer.hpp"
 #include "ISoundPlayer.hpp"
+#include "LevelTracks.hpp"
 #include "SettingsService.hpp"
 #include "SoundConstants.hpp"
 #include "SoundtrackParts.hpp"
@@ -20,6 +22,7 @@ AudioService::AudioService(AssetLibrary& library, SettingsService& settings)
       gameMusic_(settings, GAME_TRACK),
       bossMusic_(settings, BOSS_TRACK),
       ambiences_(settings),
+      levelMusic_(settings),
       soundtrack_(SoundtrackParts{
           .theme = theme_, .gameMusic = gameMusic_, .bossMusic = bossMusic_}) {
   settings_->subscribe(sounds_);
@@ -41,9 +44,19 @@ IMusicPlayer& AudioService::theme() { return theme_; }
 
 void AudioService::playTheme() { soundtrack_.playTheme(); }
 
-void AudioService::playGameMusic() { soundtrack_.playGameMusic(); }
+void AudioService::playGameMusic(const LevelTracks& tracks) {
+  if (tracks.music.has_value()) {
+    IMusicPlayer* const boss =
+        tracks.bossMusic.has_value()
+            ? &levelMusic_.playerOf(*tracks.bossMusic, *library_)
+            : nullptr;
+    soundtrack_.useLevelMusic(levelMusic_.playerOf(*tracks.music, *library_),
+                              boss);
+  }
+  soundtrack_.playGameMusic();
+}
 
-void AudioService::silenceMusic() { soundtrack_.silenceMusic(); }
+bool AudioService::silenceMusic() { return soundtrack_.silenceMusic(); }
 
 void AudioService::playBossMusic() { soundtrack_.playBossMusic(); }
 

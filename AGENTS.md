@@ -146,6 +146,11 @@ Paths below are relative to `.claude/rules/`.
 - `fix/reasoning/fix-reasoning-a-generated-sheet-keeps-the-limits-of-its-reader.md`
 - `fix/reasoning/fix-reasoning-an-in-between-frame-of-pixel-art-is-drawn-never-dithered.md`
 - `fix/reasoning/fix-reasoning-a-guard-after-the-write-is-only-an-alarm.md`
+- `fix/reasoning/fix-reasoning-a-body-a-missile-kills-draws-its-own-death.md`
+- `fix/reasoning/fix-reasoning-a-body-out-of-the-ground-rises-in-its-frames.md`
+- `fix/reasoning/fix-reasoning-a-weak-point-is-measured-by-the-time-it-is-open.md`
+- `fix/reasoning/fix-reasoning-a-biome-arrives-before-the-fight-it-frames.md`
+- `fix/reasoning/fix-reasoning-decor-is-laid-at-its-scroll-against-its-surface.md`
 - `fix/reasoning/fix-reasoning-a-library-may-fail-without-throwing.md`
 - `fix/reasoning/fix-reasoning-a-second-connection-of-a-test-waits-like-the-first.md`
 - `fix/reasoning/fix-reasoning-a-pointer-is-read-in-the-grid-it-is-compared-with.md`
@@ -179,6 +184,9 @@ Paths below are relative to `.claude/rules/`.
 - `fix/reasoning/fix-reasoning-validate-the-instrument-before-reporting-a-count.md`
 - `fix/reasoning/fix-reasoning-a-weak-point-is-reached-from-where-shots-come.md`
 - `fix/reasoning/fix-reasoning-a-body-on-the-terrain-reads-the-ground-under-it.md`
+- `fix/reasoning/fix-reasoning-a-stage-is-played-from-the-scroll-it-starts-at.md`
+- `fix/reasoning/fix-reasoning-a-fight-waits-on-its-boss-never-on-every-enemy.md`
+- `fix/reasoning/fix-reasoning-a-shootable-body-lies-where-the-shots-fly.md`
 - `fix/reasoning/fix-reasoning-an-anchor-is-measured-against-every-idle-it-leaves.md`
 - `fix/reasoning/fix-reasoning-a-value-sent-keeps-the-rules-of-its-message.md`
 - `fix/reasoning/fix-reasoning-a-letter-on-a-keycap-is-read-by-its-code.md`

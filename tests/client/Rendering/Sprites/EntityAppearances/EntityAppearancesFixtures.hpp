@@ -29,6 +29,10 @@
  * client reads them. */
 [[nodiscard]] rtype::client::EntityAppearances fosseAppearances();
 
+/** @returns The appearances of the sheets the resource ashlands brings,
+ * read as a client reads them. */
+[[nodiscard]] rtype::client::EntityAppearances ashlandsAppearances();
+
 /** @returns Whether @p sheet has a hurt box that hurts all the time. */
 [[nodiscard]] bool hurtsAllTheTime(const rtype::game::EntitySheet& sheet);
 

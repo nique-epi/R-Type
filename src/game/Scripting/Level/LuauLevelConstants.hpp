@@ -20,6 +20,7 @@ constexpr std::string_view LEVEL_PAUSE_SCROLL_FUNCTION_NAME = "pause_scroll";
 constexpr std::string_view LEVEL_RESUME_SCROLL_FUNCTION_NAME = "resume_scroll";
 constexpr std::string_view LEVEL_BIOME_FUNCTION_NAME = "biome";
 constexpr std::string_view LEVEL_ENEMIES_FUNCTION_NAME = "enemies";
+constexpr std::string_view LEVEL_BOSSES_FUNCTION_NAME = "bosses";
 constexpr std::string_view LEVEL_PLACEMENTS_FUNCTION_NAME = "placements";
 constexpr std::string_view LEVEL_SPAWN_PLACED_FUNCTION_NAME = "spawn_placed";
 constexpr std::string_view LEVEL_TRANSITION_FUNCTION_NAME = "transition";

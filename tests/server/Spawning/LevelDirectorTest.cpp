@@ -17,6 +17,7 @@ using rtype::server::startOfStage;
 using rtype::server::UnknownLevelException;
 using rtype::server::UnknownLevelStartException;
 using rtype::server::testing::CAVES_BAND;
+using rtype::server::testing::CAVES_BEGAN_BEFORE_THE_CHECKPOINT;
 using rtype::server::testing::CAVES_BEGAN_BEFORE_THE_START;
 using rtype::server::testing::CAVES_BIOME;
 using rtype::server::testing::DIRECTED_LEVEL;
@@ -29,6 +30,7 @@ using rtype::server::testing::LEVEL_OF_TWO_STAGES;
 using rtype::server::testing::LEVEL_OF_TWO_STAGES_THAT_SPAWNS_THE_PLACED;
 using rtype::server::testing::LEVEL_SHIP_SHEET;
 using rtype::server::testing::LEVEL_THAT_FAILS;
+using rtype::server::testing::LEVEL_THAT_NAMES_A_BIOME_BEFORE_ITS_CHECKPOINT;
 using rtype::server::testing::LEVEL_THAT_OPENS_IN_THE_CAVES;
 using rtype::server::testing::LEVEL_THAT_PAUSES;
 using rtype::server::testing::LEVEL_THAT_PLAYS_A_TRANSITION;
@@ -69,6 +71,7 @@ using rtype::server::testing::WHERE_THE_SHIP_IS;
 using rtype::server::testing::WRECK_BIOME;
 using ::testing::ElementsAre;
 using ::testing::IsEmpty;
+using ::testing::Not;
 using ::testing::SizeIs;
 
 /**
@@ -292,6 +295,25 @@ TEST_F(LevelDirectorFixture, TellsTheLevelAgainAfterARestart) {
   ASSERT_THAT(changes(), SizeIs(toldBefore + 1));
   EXPECT_NEAR(changes().back().scrollPosition,
               SCROLL_ONE_TICK_AFTER_THE_CHECKPOINT, SCROLL_TOLERANCE);
+}
+
+/**
+ * Given a level past its checkpoint, 6 units after its biome caves began
+ * When it restarts from its checkpoint and a tick passes
+ * Then the caves are told begun 4096 units before the checkpoint, so their
+ * entrance has left the screen
+ */
+TEST_F(LevelDirectorFixture, ARestartTellsItsBiomeAlreadyIn) {
+  direct(LEVEL_THAT_NAMES_A_BIOME_BEFORE_ITS_CHECKPOINT);
+  tick(TICKS_INTO_THE_SECOND_STAGE);
+  static_cast<void>(director().restartFromCheckpoint());
+
+  tick(1);
+
+  ASSERT_THAT(changes(), Not(IsEmpty()));
+  EXPECT_EQ(changes().back().biome, CAVES_BIOME);
+  EXPECT_NEAR(changes().back().biomeSince, CAVES_BEGAN_BEFORE_THE_CHECKPOINT,
+              SCROLL_TOLERANCE);
 }
 
 /**

@@ -90,7 +90,10 @@ class ShownBackgrounds {
   LayeredBackground* leaving_{};
   SkyLevel level_;
   float speedFactor_{1.0F};
-  float leavingScrolled_{};
+  /** @brief The scroll the biome of the background that leaves began at,
+   * in logical units: it follows the scroll of the level from there, as the
+   * background shown does from its own. */
+  float leavingSince_{};
   std::string unknownBiome_;
 };
 

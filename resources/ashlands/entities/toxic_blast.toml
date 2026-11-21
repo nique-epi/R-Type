@@ -1,0 +1,39 @@
+# The entity type toxic_blast, brought by the resource ashlands:
+# the blast of a toxic barrel, which hurts the mobs it touches.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "player_missile"
+layer = "hazard_blast"
+hits = ["enemy"]
+pilot = "blast_life"
+
+[gameplay.hitbox]
+width = 120
+height = 120
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 1
+
+# It lasts 0.28 s, the length of its animation.
+[gameplay.behaviour]
+life_ms = 280
+
+[gameplay.damage]
+points = 3
+
+[appearance]
+sheet = "sprites/cendres/toxic_blast.png"
+
+# Idle: the green blast of a barrel, swelling out of the drum.
+[appearance.idle]
+left = 0
+top = 0
+width = 30
+height = 30
+frames = 4
+spacing = 2
+frame_ms = 70

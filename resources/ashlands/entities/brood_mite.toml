@@ -1,0 +1,54 @@
+# The entity type brood_mite, brought by the resource ashlands:
+# a small flyer that pours out of the egg sac of the Ash Mother towards
+# the ships.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy"
+layer = "enemy"
+hits = ["player"]
+pilot = "brood_swarm"
+
+[gameplay.hitbox]
+width = 56
+height = 48
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 280
+
+# It turns 60 % of the way towards the nearest ship.
+[gameplay.behaviour]
+turn = 60
+
+[gameplay.health]
+points = 1
+
+[gameplay.score]
+points = 30
+
+[appearance]
+sheet = "sprites/cendres/brood_mite.png"
+
+# Idle: a mite of the brood, its wings buzzing.
+[appearance.idle]
+left = 0
+top = 0
+width = 14
+height = 12
+frames = 2
+spacing = 2
+frame_ms = 60
+
+# The death, centered on the body; the row under it is the same death without
+# flash.
+[appearance.death]
+left = 0
+top = 14
+width = 50
+height = 50
+frames = 6
+spacing = 2
+frame_ms = 70

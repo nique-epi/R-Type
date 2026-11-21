@@ -30,6 +30,7 @@ export function SignInBlocks({
         <SignInSection
           signIn={signInAction}
           nextHref={nextPathOf(next, pathOf(lang, 'home'))}
+          signUpHref={pathOf(lang, 'signUp')}
           labels={copy}
         />
       </PageBody>

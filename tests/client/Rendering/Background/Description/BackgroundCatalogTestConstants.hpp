@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstddef>
 #include <string_view>
 
@@ -45,10 +46,10 @@ constexpr std::string_view MOON_LAYER_NAME = "moon";
 constexpr std::string_view PLANET_ASSET_ID = "backgrounds/space/planet.png";
 constexpr std::string_view MOON_ASSET_ID = "backgrounds/space/moon.png";
 
-/** @brief The six images of the sky the repository ships and the three
- * tilesets of its Pit: nine images, the planet and the near walls among
- * them. */
-constexpr std::size_t IMAGES_OF_THE_SHIPPED_BACKGROUNDS = 9;
+/** @brief The six images of the sky the repository ships, the three
+ * tilesets of its Pit and the three tilesets of each of the four biomes of the
+ * Ashlands: 21 images, the planet and the near walls among them. */
+constexpr std::size_t IMAGES_OF_THE_SHIPPED_BACKGROUNDS = 21;
 constexpr std::string_view NEAR_WALL_TILESET = "biomes/fosse/fosse_near.png";
 
 /** @brief The backgrounds the repository ships: the sky, whose events never
@@ -58,3 +59,9 @@ constexpr std::string_view SHIPPED_SKY_NAME = "space";
 constexpr std::size_t SKY_EVENTS_AT_ONCE = 4;
 constexpr std::string_view SHIPPED_PIT_NAME = "fosse";
 constexpr std::size_t LAYERS_OF_THE_PIT = 3;
+
+/** @brief The four biomes of the Ashlands the repository ships, each three
+ * layers of its map entered through the last, as the Pit. */
+constexpr std::array<std::string_view, 4> SHIPPED_ASHLANDS_NAMES{
+    "cendres", "cendres_abri", "cendres_coeur", "cendres_silo"};
+constexpr std::size_t LAYERS_OF_AN_ASHLANDS_BIOME = 3;

@@ -5,6 +5,7 @@
 #include "BossPresentationTestConstants.hpp"
 #include "EffectTestConstants.hpp"
 #include "Entity.hpp"
+#include "LevelTracks.hpp"
 #include "NetworkIdentity.hpp"
 #include "RecordingAudioService.hpp"
 #include "RecordingSoundPlayer.hpp"
@@ -37,6 +38,17 @@ rtype::client::BossPresentation& BossPresentationFixture::presentation() {
 
 const RecordingSoundPlayer& BossPresentationFixture::sounds() const {
   return sounds_;
+}
+
+void BossPresentationFixture::playLevelMusic() {
+  audio_.playGameMusic(
+      rtype::client::LevelTracks{.music = std::string{LEVEL_MUSIC}});
+}
+
+void BossPresentationFixture::playLevelAndBossMusic() {
+  audio_.playGameMusic(
+      rtype::client::LevelTracks{.music = std::string{LEVEL_MUSIC},
+                                 .bossMusic = std::string{LEVEL_BOSS_MUSIC}});
 }
 
 const RecordingAudioService& BossPresentationFixture::audio() const {

@@ -503,6 +503,18 @@ int enemyCount(lua_State* state) {
   return 1;
 }
 
+/** @brief `level.bosses()`: how many bosses the world holds, from their
+ * warning to their death. */
+int bossCount(lua_State* state) {
+  engine::ComponentRegistry* const components =
+      levelsOf(state).step().components;
+  if (components == nullptr) {
+    throw engine::ScriptException(NO_LEVEL_PLAYED_MESSAGE);
+  }
+  lua_pushnumber(state, static_cast<double>(bossesIn(*components)));
+  return 1;
+}
+
 /** @brief Sets the field @p key of the table on top of the stack to
  * @p value. */
 void setField(lua_State* state, const char* key, const LdtkFieldValue& value) {
@@ -622,6 +634,8 @@ LuauLevels::LuauLevels(engine::ScriptMachine& machine) {
                              .function = showBiome},
       engine::ScriptFunction{.name = LEVEL_ENEMIES_FUNCTION_NAME,
                              .function = enemyCount},
+      engine::ScriptFunction{.name = LEVEL_BOSSES_FUNCTION_NAME,
+                             .function = bossCount},
       engine::ScriptFunction{.name = LEVEL_PLACEMENTS_FUNCTION_NAME,
                              .function = placementsOfLevel},
       engine::ScriptFunction{.name = LEVEL_SPAWN_PLACED_FUNCTION_NAME,

@@ -188,6 +188,21 @@ TEST_F(LuauLevelRunFixture, AScriptCountsTheEnemies) {
 }
 
 /**
+ * Given a world that holds an enemy and a boss
+ * When a stage counts the bosses
+ * Then it counts the boss alone
+ */
+TEST_F(LuauLevelRunFixture, AScriptCountsTheBossesAlone) {
+  addEnemy();
+  addBoss();
+  play(COUNTS_THE_BOSSES);
+
+  tick(1);
+
+  EXPECT_EQ(progress().biome, BIOME_OF_ONE_BOSS);
+}
+
+/**
  * Given a level of two stages
  * When its first stage has not ended
  * Then the level has reached no checkpoint

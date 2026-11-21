@@ -3,7 +3,7 @@ title: Generating the maps of a biome
 description: How the procedural generator builds the background maps of a biome, how to run it, and how to create a biome of your own.
 ---
 
-`generator/procedural/` is a Python tool that draws the background maps of a biome and exports them as an LDtk project. A map is a chain of screens of 480 × 272 pixels, each one a zone template written by hand; the tool draws the terrain, the decor and the light, then keeps the map only if it passes its level design checks. It is a tool of the repository, never shipped with the game, and it ships without any biome: a biome is a folder of data kept outside the repository, and maps are generated locally. The client draws the project of the Pit, through its background `assets/backgrounds/fosse.toml` (see [Writing a background](/R-Type/backgrounds/)).
+`generator/procedural/` is a Python tool that draws the background maps of a biome and exports them as an LDtk project. A map is a chain of screens of 480 × 272 pixels, each one a zone template written by hand; the tool draws the terrain, the decor and the light, then keeps the map only if it passes its level design checks. It is a tool of the repository, never shipped with the game, and it ships without any biome: a biome is a folder of data kept outside the repository, and maps are generated locally. The client draws the project of the Pit, through its background `assets/backgrounds/fosse.toml`, and the four projects of the Ashlands, through `assets/backgrounds/cendres*.toml` (see [Writing a background](/R-Type/backgrounds/)).
 
 This page tells you how to run it, how a map is built, and how to write a biome of your own.
 
@@ -19,6 +19,7 @@ This page tells you how to run it, how a map is built, and how to write a biome 
 | Biomes | Kept outside the repository, in the folder `--biomes` names | none |
 | Palette from pictures, sprite import, preview | Available | `generator/procedural/tools/` |
 | LDtk project generated for the Pit: six maps of three screens, the first opening on the cave entrance `cave_mouth` | Available, drawn by the client | `assets/biomes/fosse/` |
+| LDtk projects generated for the four biomes of the Ashlands, one map of three screens each: `cendres` (open sky), `cendres_abri`, `cendres_coeur` and `cendres_silo` | Available, drawn by the client | `assets/biomes/cendres*/` |
 | Drawing the maps in the game | Available: a layer of a background names a tile layer or an entity layer of the project (see [Writing a background](/R-Type/backgrounds/)) | `src/client/Rendering/Background/Layers/`, `assets/backgrounds/fosse.toml` |
 
 ## Running it

@@ -83,7 +83,10 @@ class LevelDirector {
 
   /**
    * @brief Puts the level back at its last checkpoint, without any body but
-   * the ships of the players.
+   * the ships of the players. Its biome is told begun OPENING_BIOME_LEAD
+   * before the checkpoint at the latest, as a level that opens in a biome:
+   * nothing is left behind the entrance of a background after a restart, so
+   * the players start inside it.
    * @returns Whether the level had reached a checkpoint and has not failed;
    * nothing changes otherwise.
    */

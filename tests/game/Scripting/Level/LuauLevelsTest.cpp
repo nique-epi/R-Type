@@ -92,6 +92,42 @@ TEST(LuauLevels, ReadsTheMapOfTheFosseLevel) {
 }
 
 /**
+ * Given the scripts of the resource ashlands the repository ships
+ * When they run
+ * Then the level ashlands is registered, with its six stages
+ */
+TEST(LuauLevels, ReadsTheAshlandsLevelTheRepositoryShips) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+  const std::array folders{
+      std::filesystem::path{RTYPE_SOURCE_RESOURCES_FOLDER} / ASHLANDS_RESOURCE};
+
+  scripts.run(rtype::game::scriptSourcesIn(folders));
+
+  const LuauLevelEntry* const entry = scripts.levels().entryOf(ASHLANDS_LEVEL);
+  ASSERT_NE(entry, nullptr);
+  EXPECT_EQ(entry->stages.size(), STAGES_OF_THE_ASHLANDS_LEVEL);
+}
+
+/**
+ * Given the scripts of the resource ashlands the repository ships
+ * When they run
+ * Then the level ashlands is the map THE ASHLANDS
+ */
+TEST(LuauLevels, ReadsTheMapOfTheAshlandsLevel) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+  const std::array folders{
+      std::filesystem::path{RTYPE_SOURCE_RESOURCES_FOLDER} / ASHLANDS_RESOURCE};
+
+  scripts.run(rtype::game::scriptSourcesIn(folders));
+
+  const LuauLevelEntry* const entry = scripts.levels().entryOf(ASHLANDS_LEVEL);
+  ASSERT_NE(entry, nullptr);
+  EXPECT_EQ(entry->mapName.value_or(""), ASHLANDS_MAP);
+}
+
+/**
  * Given the scripts of the resource fosse the repository ships
  * When they run
  * Then the level space is registered, with its two stages

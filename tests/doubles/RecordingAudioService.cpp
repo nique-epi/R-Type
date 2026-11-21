@@ -3,6 +3,7 @@
 #include "Ambience.hpp"
 #include "IMusicPlayer.hpp"
 #include "ISoundPlayer.hpp"
+#include "LevelTracks.hpp"
 #include "MusicCall.hpp"
 #include "TimeConstants.hpp"
 
@@ -18,14 +19,23 @@ rtype::client::IMusicPlayer& RecordingAudioService::theme() { return theme_; }
 
 void RecordingAudioService::playTheme() {
   musicCalls_.push_back(MusicCall::Theme);
+  levelMusicNamed_ = false;
+  bossMusicNamed_ = false;
 }
 
-void RecordingAudioService::playGameMusic() {
-  musicCalls_.push_back(MusicCall::GameMusic);
+void RecordingAudioService::playGameMusic(
+    const rtype::client::LevelTracks& tracks) {
+  if (tracks.music.has_value()) {
+    levelMusicNamed_ = true;
+    bossMusicNamed_ = tracks.bossMusic.has_value();
+  }
+  musicCalls_.push_back(tracks.music.has_value() ? MusicCall::LevelMusic
+                                                 : MusicCall::GameMusic);
 }
 
-void RecordingAudioService::silenceMusic() {
+bool RecordingAudioService::silenceMusic() {
   musicCalls_.push_back(MusicCall::Silence);
+  return !levelMusicNamed_ || bossMusicNamed_;
 }
 
 void RecordingAudioService::playBossMusic() {

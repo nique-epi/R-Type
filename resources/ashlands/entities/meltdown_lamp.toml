@@ -1,0 +1,45 @@
+# The entity type meltdown_lamp, brought by the resource ashlands:
+# a lamp in a hazard frame under the ceiling of the core, which flashes
+# with the charge of the Meltdown of the Glowheart, so every player sees it
+# coming.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "obstacle"
+layer = "decor"
+pilot = "meltdown_lamp_watch"
+
+[gameplay.hitbox]
+width = 80
+height = 80
+
+[gameplay.motion]
+kind = "scroll"
+
+[gameplay.obstacle]
+contact = "blocking"
+
+[appearance]
+sheet = "sprites/cendres/meltdown_lamp.png"
+
+# Idle: the lamp, dim.
+[appearance.idle]
+left = 0
+top = 0
+width = 20
+height = 20
+frames = 1
+spacing = 2
+frame_ms = 1000
+
+# Flashing: it blinks with the Meltdown signal of the Glowheart.
+[appearance.looks.flashing]
+left = 0
+top = 22
+width = 20
+height = 20
+frames = 2
+spacing = 2
+frame_ms = 100

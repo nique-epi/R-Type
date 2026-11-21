@@ -7,9 +7,12 @@
 #include <cstddef>
 #include <memory>
 #include <optional>
+#include <string>
+#include <string_view>
 #include <utility>
 #include "BackgroundCatalog.hpp"
 #include "BackgroundColorConstants.hpp"
+#include "BackgroundDescription.hpp"
 #include "LayerSources.hpp"
 #include "LayeredBackground.hpp"
 #include "PixelGridConstants.hpp"
@@ -21,9 +24,24 @@
 
 namespace rtype::client {
 
+namespace {
+
+/** @returns The background of @p biome: the one @p laidOver holds, when it is
+ * given and holds one, else the one @p catalog holds; nullptr for none. */
+const BackgroundDescription* describedBiome(const BackgroundCatalog* laidOver,
+                                            const BackgroundCatalog& catalog,
+                                            std::string_view biome) {
+  const BackgroundDescription* const laid =
+      laidOver == nullptr ? nullptr : laidOver->named(biome);
+  return laid != nullptr ? laid : catalog.named(biome);
+}
+
+}  // namespace
+
 Sky::Sky(const BackgroundCatalog& catalog, SkySources sources)
     : backgrounds_(catalog, LayerSources{.fileOf = std::move(sources.fileOf),
                                          .seed = sources.seed}),
+      catalog_(&catalog),
       canvas_(std::move(sources.textureOf)),
       picture_(0) {}
 
@@ -33,9 +51,25 @@ void Sky::setSpeedFactor(float factor) { backgrounds_.setSpeedFactor(factor); }
 
 void Sky::setOffset(sf::Vector2i pixels) { offset_ = pixels; }
 
-void Sky::showLevel(const SkyLevel& level) { backgrounds_.show(level); }
+void Sky::showLevel(const SkyLevel& level) {
+  biome_ = level.biome;
+  backgrounds_.show(level);
+}
+
+std::optional<std::string> Sky::biomeMusic() const {
+  const BackgroundDescription* const shown =
+      describedBiome(laidOver_.get(), *catalog_, biome_);
+  return shown == nullptr ? std::nullopt : shown->music;
+}
+
+std::optional<std::string> Sky::biomeBossMusic() const {
+  const BackgroundDescription* const shown =
+      describedBiome(laidOver_.get(), *catalog_, biome_);
+  return shown == nullptr ? std::nullopt : shown->bossMusic;
+}
 
 void Sky::layOver(std::shared_ptr<const BackgroundCatalog> backgrounds) {
+  laidOver_ = backgrounds;
   backgrounds_.layOver(std::move(backgrounds));
 }
 

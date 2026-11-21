@@ -11,6 +11,7 @@ export const frPages = {
     ranking: 'Classement',
     wiki: 'Wiki',
     team: 'Equipe',
+    signIn: 'Connexion',
     signUp: 'Inscription',
   },
   site: {
@@ -361,6 +362,8 @@ export const frPages = {
     lede: 'Créez votre compte de pilote : votre pseudo vous appartient, sur tous les serveurs.',
     home: "Revenir a l'accueil",
     download: 'Telecharger le jeu',
+    haveAccount: 'Déjà un compte ?',
+    signIn: 'Se connecter',
     form: {
       title: 'Nouveau compte',
       nickname: 'Pseudo',
@@ -442,6 +445,8 @@ export const frPages = {
       },
     },
     signedIn: 'Vous êtes connecté.',
+    noAccount: 'Pas encore de compte ?',
+    signUp: "S'inscrire",
   },
   linkPage: {
     eyebrow: 'Compte pilote',
