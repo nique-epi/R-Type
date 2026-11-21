@@ -72,7 +72,7 @@ struct BodyStart {
   Position position;
   Position origin;
   int healthPercent;
-  EnemyStrength strength;
+  std::reference_wrapper<const EnemyStrength> strength;
 };
 
 /** @returns The health of @p start, which its sheet gives health: that
@@ -80,14 +80,15 @@ struct BodyStart {
  * strength, rounded down once, never under 1. */
 int healthOf(const BodyStart& start, int sheetHealth) {
   const std::int64_t scaled = std::int64_t{sheetHealth} * start.healthPercent *
-                              start.strength.healthPercent /
+                              start.strength.get().healthPercent /
                               (std::int64_t{WHOLE_PERCENT} * WHOLE_PERCENT);
   return std::max(1, static_cast<int>(scaled));
 }
 
-/** @returns @p ticks at @p percent, rounded down. */
-std::size_t ticksAt(std::size_t ticks, int percent) {
-  return ticks * static_cast<std::size_t>(percent) /
+/** @returns @p ticks at the gun interval percent of @p strength, rounded
+ * down. */
+std::size_t ticksAt(std::size_t ticks, EnemyStrength strength) {
+  return ticks * static_cast<std::size_t>(strength.gunIntervalPercent) /
          static_cast<std::size_t>(WHOLE_PERCENT);
 }
 
@@ -95,9 +96,8 @@ std::size_t ticksAt(std::size_t ticks, int percent) {
  * @p strength: never under one tick between two shots. */
 Gun gunOf(const GunSheet& sheet, EnemyStrength strength) {
   return Gun{.intervalTicks = std::max<std::size_t>(
-                 1, ticksAt(sheet.intervalTicks, strength.gunIntervalPercent)),
-             .ticksUntilReady =
-                 ticksAt(sheet.firstShotTicks, strength.gunIntervalPercent),
+                 1, ticksAt(sheet.intervalTicks, strength)),
+             .ticksUntilReady = ticksAt(sheet.firstShotTicks, strength),
              .projectileNumber = sheet.projectileNumber};
 }
 
@@ -187,7 +187,7 @@ void addCombat(engine::ComponentRegistry& components, const BodyStart& start) {
     components.add(start.body, ScoreValue{.points = *sheet.points});
   }
   if (sheet.gun.has_value()) {
-    components.add(start.body, gunOf(*sheet.gun, start.strength));
+    components.add(start.body, gunOf(*sheet.gun, start.strength.get()));
   }
   if (sheet.burst.has_value()) {
     components.add(start.body,
@@ -294,12 +294,13 @@ std::uint32_t World::spawnFrom(const EntitySheet& sheet,
   const std::uint32_t networkId = placement.reservedNetworkId.has_value()
                                       ? *placement.reservedNetworkId
                                       : networkIds_.allocate();
+  const EnemyStrength strength = strengthFor(sheet, enemyStrength_);
   const BodyStart start{.body = registry_.create(),
                         .sheet = sheet,
                         .position = placement.position,
                         .origin = placement.origin,
                         .healthPercent = placement.healthPercent,
-                        .strength = strengthFor(sheet, enemyStrength_)};
+                        .strength = strength};
   addPlace(components_, start);
   addMotion(components_, start);
   addRollMasks(components_, start, rolledMasks_);

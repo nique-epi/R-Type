@@ -10,7 +10,6 @@
 #include "PlayerLives.hpp"
 #include "PlayerRoster.hpp"
 #include "ScoreChanged.hpp"
-#include "World.hpp"
 
 namespace rtype::server {
 
@@ -26,8 +25,8 @@ ExtraLifeKeeper::~ExtraLifeKeeper() {
 }
 
 void ExtraLifeKeeper::onScoreChanged(const game::ScoreChanged& change) {
-  ConnectedPlayer* const player =
-      parts_.roster.get().findByNumber(change.playerNumber);
+  PlayerRoster& roster = parts_.roster.get();
+  ConnectedPlayer* const player = roster.findByNumber(change.playerNumber);
   if (player == nullptr || livesOf(parts_.world.get(), *player) == 0) {
     return;
   }
@@ -37,7 +36,8 @@ void ExtraLifeKeeper::onScoreChanged(const game::ScoreChanged& change) {
   }
 }
 
-bool ExtraLifeKeeper::giveLives(ConnectedPlayer& player, std::uint32_t won) {
+bool ExtraLifeKeeper::giveLives(ConnectedPlayer& player,
+                                std::uint32_t won) const {
   const std::uint8_t held = livesOf(parts_.world.get(), player);
   const auto lives = static_cast<std::uint8_t>(
       std::min<std::uint32_t>(held + won, identifiers::HIGHEST_LIVES));

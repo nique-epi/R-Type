@@ -162,7 +162,7 @@ struct EntityMessageRoutes {
   std::reference_wrapper<ContinueNotice> continues;
   std::reference_wrapper<ExtraLifeNotice> extraLives;
   /** @brief When the messages are handed over, since the start of the game. */
-  engine::Duration now{};
+  engine::Duration now;
 };
 
 /** @returns What the sky shows of the level @p status tells. */

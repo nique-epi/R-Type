@@ -30,10 +30,10 @@ enum class GameEventKind : std::uint8_t {
 struct GameEvent {
   static constexpr MessageType TYPE = MessageType::GameEvent;
 
-  std::uint16_t eventNumber;
-  GameEventKind kind;
-  std::uint8_t playerNumber;
-  std::uint32_t entityId;
+  std::uint16_t eventNumber{};
+  GameEventKind kind{};
+  std::uint8_t playerNumber{};
+  std::uint32_t entityId{};
 
   bool operator==(const GameEvent&) const = default;
 };

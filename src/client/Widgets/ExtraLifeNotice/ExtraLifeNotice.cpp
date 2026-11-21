@@ -59,11 +59,12 @@ ExtraLifeRises ExtraLifeNotice::risesAt(engine::Duration now) const {
 void ExtraLifeNotice::paint(IInterfaceCanvas& canvas,
                             const ExtraLifeRises& rises) {
   for (std::size_t bay = 0; bay < rises.size(); ++bay) {
-    if (!rises.at(bay).has_value()) {
+    const std::optional<int>& rise = rises.at(bay);
+    if (!rise.has_value()) {
       continue;
     }
     const int top = STATUS_BAND_AREA.position.y - TEXT_LINE_HEIGHT -
-                    EXTRA_LIFE_NOTICE_GAP - *rises.at(bay);
+                    EXTRA_LIFE_NOTICE_GAP - *rise;
     canvas.write(
         EXTRA_LIFE_NOTICE_TEXT,
         {statusBayLeft(static_cast<int>(bay)) + STATUS_LIVES_TOP_LEFT.x, top},

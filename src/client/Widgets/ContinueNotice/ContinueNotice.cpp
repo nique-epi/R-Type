@@ -60,7 +60,7 @@ void ContinueNotice::paint(IInterfaceCanvas& canvas,
 }
 
 std::string continueNoticeText(std::uint8_t continuesLeft) {
-  std::string line{CONTINUE_NOTICE_OPENING};
+  const std::string line{CONTINUE_NOTICE_OPENING};
   if (continuesLeft == 0) {
     return line + std::string{NO_CONTINUE_LEFT_TEXT};
   }

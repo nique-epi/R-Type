@@ -676,7 +676,7 @@ TEST(GameEvent, ReadsAnExtraLifeWon) {
   const auto payload =
       byteSequence({0x00, 0x01, 0x04, 0x02, 0x00, 0x00, 0x00, 0x00});
 
-  const GameEvent event = decodeMessage<GameEvent>(payload);
+  const auto event = decodeMessage<GameEvent>(payload);
 
   EXPECT_EQ(event.kind, GameEventKind::ExtraLifeWon);
   EXPECT_EQ(event.playerNumber, SECOND_PLAYER_OF_A_GAME_EVENT);
