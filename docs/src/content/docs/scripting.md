@@ -328,6 +328,32 @@ The decor that does something is a body the level creates past the right edge, m
 
 The Glowheart publishes `glowheart_meltdown` and `glowheart_purge`, each with `ms`, the length of what it announces. A hazard learns the id of the boss on screen from `boss_health_changed` and removes itself once that boss is killed, so a fight whose scroll is paused ends with the boss. The values of these sheets are **provisional** until gameplay tunes them.
 
+### Deseret
+
+The resource deseret brings the map DESERET, the level `deseret` of six stages across Utah in 1869, under an open sky but in the mine, across five biomes named with `level.biome`: the Salt Flats (`deseret`), the Hoodoo Field (`deseret_hoodoos`), the Line (`deseret_line`), where the Iron Pilgrim waits on the track, Sheol Mine (`deseret_mine`, a timbered gallery under a ceiling) and Widow's Mesa (`deseret_mesa`), where the Old Widow ends the level. Its sheets are in `entities/`, its sprites in `sprites/deseret/`, its scripts in `server/`: `deseret.luau` directs the level, `deseret_mobs.luau` steers the mobs, `deseret_props.luau` the decor, and `iron_pilgrim.luau` and `old_widow.luau` the two bosses. `--stage 4` starts on the Iron Pilgrim, `--stage 5` in the mine and `--stage 6` on the way up the mesa. Every mob crosses from the right to the left; those that attack play the three actions of attack 0, and every attack warns, with a white eye, a lit fuse or a pink sight:
+
+| Sheet | Pilot | What it does |
+|---|---|---|
+| `carrion` | `carrion_dive` | flies left, bobbing; a ship ahead within `reach`, above or below its row, makes it raise its wings, then dive at where the ship was during its signal, and climb back |
+| `shroud` | `shroud_sweep` | drifts left; a ship within `align` units of its row makes it glide to that row, then sweep left at `sweep_speed` |
+| `aeronaut` | `aeronaut_drift` | drifts left along the top; left of `fire_from_x` and rested, its fuse burns, then it drops an `aeronaut_stick` that blows up `blast_above` units over the ground (`dynamite_fall`) |
+| `cricket` | `cricket_swarm` | weaves left in swarms; past a column its row sets, it lights up, tells the crickets within `reach`, and they all head for the nearest ship |
+| `dust_devil` | `dust_drift` | drifts left, swaying, swallows every missile that crosses it, and is gone after `life_ms` |
+| `lantern_wisp` | `lantern_float` | floats left under the ceiling, keeping to it; a ship below it within `reach` makes it drop a `lantern_drop`, which lights a `ground_fire` where it lands (`oil_fall`) |
+| `tumblecage` | `tumblecage_roll` | rolls left along the floor, keeping to it; shot down, it throws four `tumblecage_barb` up, two on each side (`tumblecage_break`, `barb_toss`) |
+| `surveyor` | `surveyor_aim` | walks left on its tripod along the floor; left of `fire_from_x` and rested, it aims with its eye lit, then fires a `surveyor_shot` from its lens at the nearest ship (`aimed_slug`) |
+
+The two bosses each have a `[gameplay.boss]` table, a `boss_name` and a `boss_music`, a country boogie the client plays in place of the music of the level (see [Writing an entity sheet](/R-Type/entity-sheets/#appearance-key-by-key)). The Iron Pilgrim (`iron_pilgrim`) rolls in from past the right edge to its rest on the track, then plays in turn its Volley (attack 0: its stack spits `pilgrim_cinder` along arcs, five then seven once enraged), its Charge (1: headlamp and whistle, then a rush left along the floor out of the screen, and back from the right, its cowcatcher alone hurting) and its Brood (2: three Carrions burst from its growths). The Old Widow (`old_widow`) rises out of the mesa where she rests (attack 4, its frames cut at the top of her butte), then plays her Gale (0, `widow_gale` along two lanes of five), her Blades (1, two `widow_blade` thrown to the left edge and back) and her Pump (2, a `widow_crack` under the nearest ship and at two other places, then a `widow_geyser` of oil out of each); once enraged she tears her veil (3, `widow_tatter` that drift left and stop the shots) every third attack. A hit on the body of either counts at every moment of the fight, its arrival and its attacks included.
+
+The decor that does something is a body the level creates past the right edge, moved by the scroll. What sets it apart from the barrels of the Ashlands is a visible fuse: hit, it warns before it bursts, and its blast lights the explosives around it, a chain the players can turn against the mobs:
+
+| Kind | Sheets | What it does |
+|---|---|---|
+| Explosive (`fuse_watch`) | `powder_keg`, `dynamite_crate` | a hit, or a blast within reach, lights it; its fuse burns `fuse_ms`, then it bursts in its own blast (`keg_blast` and `keg_heat`, `dynamite_blast` and `dynamite_heat`), which hurts the mobs and the ships, and lights the explosives within `light_reach`; a crate also fells a spire in the open (`spire_dust`, then `spire_rock` along its column) or knocks a `mine_prop` off the ceiling of the mine |
+| Mine cart (`cart_roll`) | `mine_cart`, `mine_cart_keg` | rests on its rails; the first hit sets it rolling right for `roll_ms`, a `cart_ram` ahead of it crushing the mobs; a laden cart then bursts its keg, an empty one is gone |
+
+The values of these sheets are **provisional** until gameplay tunes them.
+
 ## Placing the enemies in LDtk
 
 A level places its enemies in [LDtk](https://ldtk.io), on a layer of entities named `Mobs`, instead of writing each position in its script. The script names the file with the option `ldtk` of `level.register`, a path relative to its content folder, `levels/<level>.ldtk` by convention; a resource may also lay its file over one of the assets or of a resource started before it, the last folder that holds it winning. Each game process reads the file when it starts, after the entity sheets, and refuses to start on a file that is missing, that is not JSON, whose levels are saved in separate files, that has no `Mobs` layer of entities, or that places an entity the game cannot read: the error names the file, the entity and where it is placed (`the entity Ghost placed at 2224, 300 names no sheet ghost`), and the supervisor goes on. The reader is `ldtkPlacementsOf()` (`src/game/Level/Ldtk/`, `rtype_game_level_ldtk`), which reads the JSON with `nlohmann-json`.
@@ -418,6 +444,7 @@ The three sides found the same 9,457,143 collisions, about 2,600 a tick: 300 bod
 | Change when a stage is resumed, or what a checkpoint keeps | `LuauLevelRun` in `src/game/Scripting/Level/`, `LevelCheckpoint` in `src/game/Level/` |
 | Change a mob of the Pit, the Necromancer or one of its attacks | its sheet in `resources/fosse/entities/`, its behaviour in `resources/fosse/server/fosse_mobs.luau` or `necromancer.luau`, when they come in `fosse.luau` |
 | Change a mob, a piece of decor or a boss of the Ashlands | its sheet in `resources/ashlands/entities/`, its behaviour in `resources/ashlands/server/ashlands_mobs.luau`, `ashlands_props.luau`, `sandmaw.luau`, `glowheart.luau` or `ash_mother.luau`, when it comes in `ashlands.luau` |
+| Change a mob, a piece of decor or a boss of Deseret | its sheet in `resources/deseret/entities/`, its behaviour in `resources/deseret/server/deseret_mobs.luau`, `deseret_props.luau`, `iron_pilgrim.luau` or `old_widow.luau`, when it comes in `deseret.luau` |
 | Change how an LDtk file is read, or what it refuses | `ldtkPlacementsOf()` in `src/game/Level/Ldtk/LdtkPlacementReading.cpp`, the members and reasons in `LdtkConstants.hpp`; the check of the sheets in `readLevelPlacements()`, `src/game/Scripting/Level/LevelPlacementFiles.cpp` |
 | Change when a placed enemy comes in, or where it appears | `PlacedEnemySpawner` in `src/game/Spawning/`, ticked by `LevelDirector` in `src/server/Spawning/` |
 | Expose another function to the scripts | `ScriptMachine::expose()`, before the first script runs, as `BehaviourScripts` exposes `behaviours.register` |
