@@ -40,9 +40,6 @@ local LENS = { x = -60, y = -28 }
 -- it: the half second the blast lasts.
 local LINGER_AFTER_BURST_MS = 500
 
--- Half the length of the sight of a Surveyor (1920 units): its center lies
--- that far left of the lens.
-local SIGHT_HALF = 960
 
 -- The share of their spread each of the four barbs of a Tumblecage takes,
 -- in the order they appear.
@@ -367,19 +364,16 @@ behaviours.register("barb_toss", {
 end)
 
 -- The Surveyor walks left on its tripod along the floor; left of
--- fire_from_x and rested, it plants itself, locks its sight on the row of the
--- nearest ship, then fires once along it.
+-- fire_from_x and rested, it plants itself, aims with its eye lit, then fires
+-- one slug from its lens at the nearest ship (aimed_slug).
 behaviours.register("surveyor_aim", with_attack({
 	{ name = "fire_from_x", lowest = 0, highest = 1920 },
 }), function(e)
 	local settings = e.settings
 	local ship = e.nearest_ship
 	if ship ~= nil and e.position.x <= settings.fire_from_x and rested(e, settings.rest_ms) then
-		local row = ship.y
-		local lens = { x = e.position.x + LENS.x, y = row }
-		behaviours.spawn("surveyor_sight", { x = lens.x - SIGHT_HALF, y = row })
 		e = behaviours.wait(settings.signal_ms, { direction = planted(e), starts_action = { attack = 0, phase = "signal" } })
-		behaviours.spawn("surveyor_shot", { x = e.position.x + LENS.x, y = row })
+		behaviours.spawn("surveyor_shot", { x = e.position.x + LENS.x, y = e.position.y + LENS.y })
 		behaviours.wait(settings.strike_ms, { direction = planted(e), starts_action = { attack = 0, phase = "strike" } })
 		behaviours.wait(settings.recover_ms, { direction = planted(e), starts_action = { attack = 0, phase = "recover" } })
 		behaviours.wait(1, { direction = planted(e), ends_action = true })
@@ -387,14 +381,23 @@ behaviours.register("surveyor_aim", with_attack({
 	return { direction = along(e, level.ground, SURVEYOR_GAP) }
 end)
 
--- The sight of a Surveyor stays on its row for life_ms, then is gone.
-behaviours.register("sight_hold", {
-	{ name = "life_ms", lowest = 1, highest = 60000 },
-}, function(e)
-	if e.age_ms >= e.settings.life_ms then
-		behaviours.destroy(e.id)
+-- A slug flies straight at where the nearest ship was on its first tick, as
+-- the bolt of a Rail turret does; to the left when it sees no ship, or one
+-- behind it.
+behaviours.register("aimed_slug", {}, function(e)
+	local data = e.data
+	if data.heading == nil then
+		local ship = e.nearest_ship
+		data.heading = LEFT
+		if ship ~= nil then
+			local x, y = ship.x - e.position.x, ship.y - e.position.y
+			local length = math.sqrt(x * x + y * y)
+			if x < 0 and length > 0 then
+				data.heading = { x = x / length, y = y / length }
+			end
+		end
 	end
-	return { direction = STILL }
+	return { direction = data.heading }
 end)
 
 -- A missile that flies straight left.

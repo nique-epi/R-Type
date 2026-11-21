@@ -1,5 +1,5 @@
 # The entity type surveyor_shot, brought by the resource deseret:
-# the slug of the Surveyor, flying left along its sight.
+# the slug of the Surveyor, fired from its lens at the ship it aimed at.
 # Only the server reads [gameplay]; a client draws [appearance] from the
 # content pack the supervisor serves. The keys are described on the page
 # "Writing an entity sheet" of the docs.
@@ -8,15 +8,15 @@
 side = "enemy_missile"
 layer = "enemy_missile"
 hits = ["player"]
-pilot = "flying_left"
+pilot = "aimed_slug"
 
 [gameplay.hitbox]
-width = 56
-height = 12
+width = 28
+height = 16
 
 [gameplay.motion]
 kind = "steady"
-top_speed = 1400
+top_speed = 900
 
 [appearance]
 sheet = "sprites/deseret/surveyor_shot.png"
