@@ -10,10 +10,11 @@
 #   1. Does each package hold its own program and files, and only those?
 #      The client package must carry its sprites and must not carry the
 #      server, nor the waves file only the server reads; the server package
-#      must carry the waves and must not carry the client, nor the music only
-#      the client plays. When vpk packed the client (velopack/), its feed and
-#      full package must be there, its installer on Windows, and its AppImage
-#      on Linux, unpacked to check it too.
+#      must carry the waves, the resources and the biome projects, and must
+#      not carry the client, nor the music only the client plays. When vpk
+#      packed the client (velopack/), its feed and full package must be
+#      there, its installer on Windows, and its AppImage on Linux, unpacked
+#      to check it too.
 #
 #   2. Does the client start?
 #      It is run with --help. If a library it needs is missing from the
@@ -114,6 +115,10 @@ check_each_package_holds_only_its_program() {
     fail "the server package has no assets/entities"
   [ -d "$server_folder/assets/sprites" ] ||
     fail "the server package has no assets/sprites, which its content pack serves"
+  [ -f "$server_folder/resources/fosse/resource.toml" ] ||
+    fail "the server package has no resources/, which its ensure lines start"
+  [ -f "$server_folder/assets/biomes/fosse/fosse.ldtk" ] ||
+    fail "the server package has no assets/biomes, which its levels read the ground from"
   [ ! -e "$(dirname "$client_program")/r-type_server$exe" ] ||
     fail "the client package also holds the server"
   [ ! -e "$client_folder/assets/waves" ] ||
