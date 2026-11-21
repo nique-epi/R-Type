@@ -2,12 +2,15 @@
 #include <cstddef>
 #include <span>
 #include <vector>
+#include "EnemyPhase.hpp"
 #include "EngineException.hpp"
 #include "EntitySheet.hpp"
 #include "EntitySheetsFixtures.hpp"
 #include "EntitySheetsTestConstants.hpp"
 #include "EntityType.hpp"
 #include "GameException.hpp"
+#include "HurtBeam.hpp"
+#include "HurtZone.hpp"
 #include "MaskSheet.hpp"
 #include "NumberedEntityType.hpp"
 #include "NumberedEntityTypes.hpp"
@@ -19,8 +22,11 @@
 #include "ShippedEntitySheets.hpp"
 
 using rtype::engine::MissingDataFileKeyException;
+using rtype::game::EnemyPhase;
 using rtype::game::EntitySheet;
 using rtype::game::EntityType;
+using rtype::game::HurtBeam;
+using rtype::game::HurtZone;
 using rtype::game::MaskSheet;
 using rtype::game::NumberedEntityType;
 using rtype::game::numberedEntityTypesOf;
@@ -28,14 +34,22 @@ using rtype::game::ObstacleContact;
 using rtype::game::SheetText;
 using rtype::game::sheetTextsIn;
 using rtype::game::TooManyEntityTypesException;
+using rtype::game::testing::BEAMER_BEAM_ATTACK;
+using rtype::game::testing::BEAMER_BEAM_LENGTH;
+using rtype::game::testing::BEAMER_BEAM_OFFSET_X;
+using rtype::game::testing::BEAMER_BEAM_OFFSET_Y;
+using rtype::game::testing::BEAMER_BEAM_THICKNESS;
+using rtype::game::testing::BEAMER_TYPE;
 using rtype::game::testing::enemyMissileSheets;
 using rtype::game::testing::LANCER_BOX_HEIGHT;
 using rtype::game::testing::LANCER_BOX_WIDTH;
 using rtype::game::testing::LANCER_TYPE;
 using rtype::game::testing::MOST_SHEETS_LOADED;
+using rtype::game::testing::ONE_HURT_BEAM;
 using rtype::game::testing::ONE_SHEET_TOO_MANY;
 using rtype::game::testing::ONE_TYPE;
 using rtype::game::testing::SECOND_LISTED_BOX_WIDTH;
+using rtype::game::testing::SHEET_OF_A_BEAMER;
 using rtype::game::testing::SHEET_OF_A_BLOCKING_WALL;
 using rtype::game::testing::SHEET_OF_A_PLUGIN_PILOT;
 using rtype::game::testing::SHEET_OF_TWO_BOXES;
@@ -228,4 +242,27 @@ TEST(NumberedEntityTypes, ReadsTheMaskOfEverySheetThatNamesOne) {
       EXPECT_EQ(types[index].mask->height(), read.pixels->height());
     }
   }
+}
+
+/**
+ * Given the sheet of a boss whose beam hurts in the strike of its attack 2
+ * When a client reads its type
+ * Then it holds that beam, where and when the server lays it
+ */
+TEST(NumberedEntityTypes, ReadsTheHurtZoneOfAType) {
+  const std::vector<SheetText> sheets{
+      sheetText(BEAMER_TYPE, SHEET_OF_A_BEAMER)};
+
+  const std::vector<NumberedEntityType> types = numberedEntityTypesOf(sheets);
+
+  ASSERT_EQ(types.size(), ONE_TYPE);
+  const HurtZone zone = types[0].hurtZone.value_or(HurtZone{});
+  ASSERT_EQ(zone.beams.size(), ONE_HURT_BEAM);
+  const HurtBeam& beam = zone.beams.front();
+  EXPECT_EQ(beam.offsetX, BEAMER_BEAM_OFFSET_X);
+  EXPECT_EQ(beam.offsetY, BEAMER_BEAM_OFFSET_Y);
+  EXPECT_EQ(beam.length, BEAMER_BEAM_LENGTH);
+  EXPECT_EQ(beam.thickness, BEAMER_BEAM_THICKNESS);
+  EXPECT_EQ(beam.activeIn.attack, BEAMER_BEAM_ATTACK);
+  EXPECT_EQ(beam.activeIn.phase, EnemyPhase::Strike);
 }

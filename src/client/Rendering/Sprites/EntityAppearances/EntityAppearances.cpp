@@ -354,6 +354,18 @@ void placeBelow(const std::filesystem::path& folder, EntitySounds& sounds) {
   });
 }
 
+/** @returns Whether @p appearance holds the table `hurt_beams`, which holds
+ * no key.
+ * @throws What engine::refuseUnknownKeys() throws for a key in it. */
+bool paintsHurtBeamsOf(const engine::DataFileTable& appearance) {
+  const std::optional<engine::DataFileTable> hurtBeams =
+      engine::optionalTableAt(appearance, HURT_BEAMS_TABLE_KEY);
+  if (hurtBeams.has_value()) {
+    engine::refuseUnknownKeys(*hurtBeams, std::span<const std::string_view>{});
+  }
+  return hurtBeams.has_value();
+}
+
 /** @returns The appearance the `[appearance]` table @p appearance
  * describes, every key checked. */
 EntityAppearance appearanceFrom(const engine::DataFileTable& appearance) {
@@ -373,7 +385,8 @@ EntityAppearance appearanceFrom(const engine::DataFileTable& appearance) {
                         .looks = {},
                         .bossName = optionalTextAt(appearance, BOSS_NAME_KEY),
                         .bossMusic = optionalTextAt(appearance, BOSS_MUSIC_KEY),
-                        .sounds = soundsOf(appearance)};
+                        .sounds = soundsOf(appearance),
+                        .paintsHurtBeams = paintsHurtBeamsOf(appearance)};
   readEnragedIdle(appearance, look);
   readDeath(appearance, look);
   return look;

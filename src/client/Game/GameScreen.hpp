@@ -37,6 +37,7 @@
 #include "Logger.hpp"
 #include "MissionBanner.hpp"
 #include "OwnPrediction.hpp"
+#include "PaintedBeamAnnouncer.hpp"
 #include "PlayerCommands.hpp"
 #include "PlayerPalette.hpp"
 #include "ScoreBoard.hpp"
@@ -198,6 +199,7 @@ class GameScreen : public IScreen {
   OwnPrediction prediction_;
   EntityReplicator replicator_;
   EnemyActionPlayer enemyActions_;
+  PaintedBeamAnnouncer paintedBeams_;
   EffectPlayer namedEffects_;
   BossPresentation boss_;
   LevelTransitionScene transition_;

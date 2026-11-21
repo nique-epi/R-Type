@@ -346,6 +346,46 @@ constexpr std::array<std::string_view, 36> DESERET_SHEET_NAMES{
     "tumblecage",     "tumblecage_barb", "vultureling",   "widow_blade",
     "widow_crack",    "widow_gale",      "widow_geyser",  "widow_tatter"};
 
+/** @brief A sheet that asks the client to paint its hurt beams, and one that
+ * puts a key in that table, which holds none. */
+constexpr std::string_view SHEET_PAINTING_HURT_BEAMS = R"(
+[gameplay]
+whatever = "the client never reads it"
+
+[appearance]
+sheet = "sprites/voltjelly.png"
+
+[appearance.idle]
+left = 10
+top = 20
+width = 8
+height = 6
+frames = 3
+spacing = 2
+frame_ms = 120
+
+[appearance.hurt_beams]
+)";
+constexpr std::string_view SHEET_WITH_A_KEY_IN_HURT_BEAMS = R"(
+[gameplay]
+whatever = "the client never reads it"
+
+[appearance]
+sheet = "sprites/voltjelly.png"
+
+[appearance.idle]
+left = 10
+top = 20
+width = 8
+height = 6
+frames = 3
+spacing = 2
+frame_ms = 120
+
+[appearance.hurt_beams]
+color = "pink"
+)";
+
 /** @brief The sheet of the boss of the Pit, and the name its bar writes. */
 constexpr std::string_view NECROMANCER_SHEET = "necromancer";
 constexpr std::string_view NECROMANCER_BOSS_NAME = "NECROMANCER";

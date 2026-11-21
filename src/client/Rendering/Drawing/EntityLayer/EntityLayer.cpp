@@ -22,6 +22,7 @@ void EntityLayer::paint(engine::ComponentRegistry& components,
   canvas.setView(shiftedBy(canvas.getDefaultView(), offset));
   groundPixels_.clear();
   paintGroundEffects(components, groundPixels_);
+  beams_.paint(components, groundPixels_);
   canvas.draw(groundPixels_);
   renderSystem_.render(components, surface_);
   canvas.setView(canvas.getDefaultView());

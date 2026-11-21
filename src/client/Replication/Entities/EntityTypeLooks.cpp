@@ -24,12 +24,14 @@ std::optional<EntityTypeLook> EntityTypeLooks::lookOf(
   if (appearance == nullptr) {
     return std::nullopt;
   }
-  return EntityTypeLook{.side = entry->side,
-                        .appearance = *appearance,
-                        .hitbox = entry->hitbox,
-                        .hitboxParts = entry->hitboxParts,
-                        .mask = entry->mask,
-                        .obstacle = entry->obstacle};
+  return EntityTypeLook{
+      .side = entry->side,
+      .appearance = *appearance,
+      .hitbox = entry->hitbox,
+      .hitboxParts = entry->hitboxParts,
+      .mask = entry->mask,
+      .obstacle = entry->obstacle,
+      .hurtZone = entry->hurtZone.has_value() ? &*entry->hurtZone : nullptr};
 }
 
 game::ShipGun EntityTypeLooks::shipGun() const { return table_->shipGun(); }

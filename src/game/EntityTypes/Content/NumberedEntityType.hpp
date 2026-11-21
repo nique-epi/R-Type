@@ -6,6 +6,7 @@
 #include <vector>
 #include "CollisionBox.hpp"
 #include "EntityType.hpp"
+#include "HurtZone.hpp"
 #include "ObstacleContact.hpp"
 #include "PixelMask.hpp"
 
@@ -15,8 +16,9 @@ namespace rtype::game {
  * @brief What a client knows of an entity type it draws: the name of its
  * sheet, its side, its box, the boxes its sheet lists, none for a body of one
  * box, and its collision mask, none for a sheet without one, which the client
- * tests its own missiles against as the server does, and what an obstacle
- * does to a ship. Its number is its place in the list
+ * tests its own missiles against as the server does, what an obstacle does
+ * to a ship, and its hurt zone, whose beams the client paints for a sheet
+ * that asks for it. Its number is its place in the list
  * numberedEntityTypesOf() gives, from 1.
  */
 struct NumberedEntityType {
@@ -29,6 +31,9 @@ struct NumberedEntityType {
    * obstacle: the client predicts its own ship against a blocking one; nothing
    * for any other body. */
   std::optional<ObstacleContact> obstacle{std::nullopt};
+  /** @brief Its hurt zone, for a body whose beams the client paints (see
+   * the appearance `hurt_beams`); nothing for a sheet without one. */
+  std::optional<HurtZone> hurtZone{std::nullopt};
 };
 
 }  // namespace rtype::game

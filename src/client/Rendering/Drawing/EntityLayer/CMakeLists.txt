@@ -5,6 +5,7 @@ target_include_directories(rtype_client_entity_layer PUBLIC ${CMAKE_CURRENT_SOUR
 target_link_libraries(rtype_client_entity_layer
   PUBLIC
     rtype_client_asset_texture_source
+    rtype_client_hurt_beam_painter
     rtype_client_pixel_batch
     rtype_client_pixel_canvas
     rtype_client_render_system

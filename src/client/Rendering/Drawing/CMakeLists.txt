@@ -10,4 +10,5 @@ target_link_libraries(rtype_client_drawing
 
 add_subdirectory(RenderSystem)
 add_subdirectory(SfmlDrawSurface)
+add_subdirectory(HurtBeamPainter)
 add_subdirectory(EntityLayer)
