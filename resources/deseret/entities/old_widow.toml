@@ -288,3 +288,51 @@ height = 172
 frames = 6
 spacing = 2
 frame_ms = 90
+
+# Sand swirling round the wheel as the gale blows; the row under it is the same effect without flash.
+[appearance.effects.gale_swirl]
+left = 0
+top = 3034
+width = 80
+height = 80
+frames = 8
+spacing = 2
+frame_ms = 60
+anchor_x = -8
+anchor_y = -45
+
+# The glint of the hub as the blades are thrown; the row under it is the same effect without flash.
+[appearance.effects.blade_glint]
+left = 658
+top = 3034
+width = 32
+height = 32
+frames = 6
+spacing = 2
+frame_ms = 50
+anchor_x = -8
+anchor_y = -45
+
+# Scraps of the veil as she tears it; the row under it is the same effect without flash.
+[appearance.effects.veil_shred]
+left = 864
+top = 3034
+width = 56
+height = 56
+frames = 6
+spacing = 2
+frame_ms = 80
+anchor_x = -6
+anchor_y = -4
+
+# Dust thrown from her feet as the pump strikes; the row under it is the same effect without flash.
+[appearance.effects.pump_thump]
+left = 0
+top = 3198
+width = 112
+height = 28
+frames = 6
+spacing = 2
+frame_ms = 70
+anchor_x = -8
+anchor_y = 68

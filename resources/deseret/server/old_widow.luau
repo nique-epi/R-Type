@@ -13,7 +13,9 @@
 -- the pump (attack 2), the ground cracking under the nearest ship and at two
 -- other places, then a geyser of oil out of each crack. Once enraged she
 -- rests less and tears her veil (attack 3) every third attack: tatters drift
--- left and stop the shots while she blows.
+-- left and stop the shots while she blows. Each strike plays an effect her
+-- sheet draws: sand swirling round her wheel, the glint of her hub, dust
+-- thrown from her feet, scraps of her veil.
 --
 -- A missile that touches her wheel, her tower or her vane hurts her, at every
 -- moment of the fight, her rise and her attacks included.
@@ -21,6 +23,12 @@
 local STILL = { x = 0, y = 0 }
 
 local GALE, BLADES, PUMP, VEIL, ARRIVAL, RAGE = 0, 1, 2, 3, 4, 5
+
+-- The effects of her sheet each attack plays as it strikes.
+local GALE_SWIRL = "gale_swirl"
+local BLADE_GLINT = "blade_glint"
+local PUMP_THUMP = "pump_thump"
+local VEIL_SHRED = "veil_shred"
 
 -- The turn of her attacks, calm then enraged.
 local CALM_TURN = { GALE, BLADES, PUMP }
@@ -61,8 +69,13 @@ local function ground_at(x: number, otherwise: number): number
 	return ground
 end
 
-local function beat(attack: number, phase: string, ms: number)
-	behaviours.wait(ms, { direction = STILL, starts_action = { attack = attack, phase = phase } })
+local function beat(attack: number, phase: string, ms: number, effect: string?)
+	behaviours.wait(ms, { direction = STILL, starts_action = { attack = attack, phase = phase }, effect = effect })
+end
+
+-- The first tick of the strike of `attack`, playing `effect`.
+local function strike(attack: number, effect: string)
+	return behaviours.wait(1, { direction = STILL, starts_action = { attack = attack, phase = "strike" }, effect = effect })
 end
 
 -- Draws `count` of the lanes, each once.
@@ -77,7 +90,7 @@ end
 
 local function gale(settings)
 	beat(GALE, "signal", settings.signal_ms)
-	behaviours.wait(1, { direction = STILL, starts_action = { attack = GALE, phase = "strike" } })
+	strike(GALE, GALE_SWIRL)
 	local lanes = lanes_drawn(GUSTED_LANES)
 	local left = settings.gale_ms
 	while left > 0 do
@@ -92,7 +105,7 @@ end
 
 local function blades(e, settings)
 	beat(BLADES, "signal", settings.signal_ms)
-	e = behaviours.wait(1, { direction = STILL, starts_action = { attack = BLADES, phase = "strike" } })
+	e = strike(BLADES, BLADE_GLINT)
 	local hub = { x = e.position.x + EYE.x, y = e.position.y + EYE.y }
 	behaviours.spawn("widow_blade", hub)
 	behaviours.spawn("widow_blade", hub)
@@ -119,13 +132,13 @@ local function pump(e, settings)
 		crack_at(math.random(CRACK_LEFT, CRACK_RIGHT))
 	end
 	behaviours.wait(settings.crack_ms, { direction = STILL })
-	beat(PUMP, "strike", settings.pump_ms)
+	beat(PUMP, "strike", settings.pump_ms, PUMP_THUMP)
 	beat(PUMP, "recover", settings.recover_ms)
 end
 
 local function veil(e, settings)
 	beat(VEIL, "signal", settings.signal_ms)
-	e = behaviours.wait(1, { direction = STILL, starts_action = { attack = VEIL, phase = "strike" } })
+	e = strike(VEIL, VEIL_SHRED)
 	for index = 1, settings.tatters do
 		local share = (index - 1) / math.max(1, settings.tatters - 1)
 		behaviours.spawn("widow_tatter", {

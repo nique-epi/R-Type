@@ -1,0 +1,39 @@
+# The entity type pilgrim_coal, brought by the resource deseret:
+# a lump of burning coal the Iron Pilgrim lobs from its stack; where it lands
+# it lights a fire on the floor (pilgrim_coal_fire).
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy_missile"
+layer = "enemy_missile"
+hits = ["player"]
+pilot = "lobbed_coal"
+
+[gameplay.hitbox]
+width = 40
+height = 40
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 900
+
+# It lands where its throw aimed it in 1.2 s, along a line bent 320 units up
+# at its middle.
+[gameplay.behaviour]
+flight_ms = 1200
+bump = 320
+
+[appearance]
+sheet = "sprites/deseret/pilgrim_coal.png"
+
+# Idle: a lump of coal, its cracks glowing as it flies.
+[appearance.idle]
+left = 0
+top = 0
+width = 10
+height = 10
+frames = 4
+spacing = 2
+frame_ms = 90

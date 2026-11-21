@@ -35,6 +35,8 @@ top_speed = 1100
 # takes its attacks in turn. The volley: 500 ms of smoke, 5 cinders (7
 # enraged). The charge: 800 ms of whistle, then it rushes left out of the
 # screen and comes back from the right 1.5 s later. The brood: 3 Carrions.
+# The burning coal: 700 ms of glowing stack, then 3 lumps of coal (5
+# enraged) lobbed around the nearest ship, each leaving a fire on the floor.
 [gameplay.behaviour]
 rest_x = 1500
 rest_y = 860
@@ -53,6 +55,11 @@ brood_signal_ms = 600
 brood_strike_ms = 480
 brood_recover_ms = 600
 brood = 3
+coal_signal_ms = 700
+coal_strike_ms = 600
+coal_recover_ms = 480
+coals = 3
+enraged_coals = 5
 
 [gameplay.health]
 points = 180
@@ -221,3 +228,87 @@ height = 80
 frames = 6
 spacing = 2
 frame_ms = 90
+
+# Burning coal, signal: the stack glows red and coughs soot.
+[appearance.attack_5.signal]
+left = 0
+top = 890
+width = 100
+height = 64
+frames = 6
+spacing = 2
+frame_ms = 100
+playback = "loop"
+afterwards = "stay"
+
+# Burning coal, strike: lumps of coal leap out of the stack.
+[appearance.attack_5.strike]
+left = 0
+top = 956
+width = 100
+height = 64
+frames = 6
+spacing = 2
+frame_ms = 80
+playback = "hold"
+afterwards = "stay"
+
+# Burning coal, recover: the last smoke clears.
+[appearance.attack_5.recover]
+left = 0
+top = 1022
+width = 100
+height = 64
+frames = 4
+spacing = 2
+frame_ms = 120
+playback = "once"
+afterwards = "idle"
+
+# The blast of the stack as a volley leaves it; the row under it is the same effect without flash.
+[appearance.effects.stack_blast]
+left = 0
+top = 1088
+width = 40
+height = 40
+frames = 6
+spacing = 2
+frame_ms = 60
+anchor_x = -21
+anchor_y = -25
+
+# Soot and coal out of the stack as the coal leaves it; the row under it is the same effect without flash.
+[appearance.effects.coal_toss]
+left = 254
+top = 1088
+width = 40
+height = 40
+frames = 6
+spacing = 2
+frame_ms = 70
+anchor_x = -21
+anchor_y = -25
+
+# The growths of the boiler bursting as the brood tears out; the row under it is the same effect without flash.
+[appearance.effects.flesh_burst]
+left = 508
+top = 1088
+width = 64
+height = 40
+frames = 6
+spacing = 2
+frame_ms = 70
+anchor_x = -2
+anchor_y = 0
+
+# The flare of the headlamp before the charge; the row under it is the same effect without flash.
+[appearance.effects.headlamp_flare]
+left = 906
+top = 1088
+width = 48
+height = 24
+frames = 8
+spacing = 2
+frame_ms = 90
+anchor_x = -34
+anchor_y = -1
