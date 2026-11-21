@@ -36,6 +36,10 @@ local BASKET_DROP = 90
 local GLASS_DROP = 60
 local LENS = { x = -60, y = -28 }
 
+-- How long a stick of dynamite stays after its burst when its blast missed
+-- it: the half second the blast lasts.
+local LINGER_AFTER_BURST_MS = 500
+
 -- Half the length of the sight of a Surveyor (1920 units): its center lies
 -- that far left of the lens.
 local SIGHT_HALF = 960
@@ -414,18 +418,23 @@ end
 
 -- A stick of dynamite falls drifting left; blast_above units over the
 -- ground it blows up: the blast of a crate on itself, which kills it, so it
--- dies in its burst, and hurts the ships around.
+-- dies in its burst, and hurts the ships around. Its layer is the one the
+-- blast hits; should the blast still miss it, it is gone LINGER_AFTER_BURST_MS
+-- after its burst, so a stick never stays on the ground and holds the level.
 behaviours.register("dynamite_fall", {
 	{ name = "drift", lowest = 0, highest = 100 },
 	{ name = "blast_above", lowest = 0, highest = 1080 },
 	{ name = "floor_y", lowest = 0, highest = 1080 },
 }, function(e)
 	local settings = e.settings
-	if e.data.burst then
+	if e.data.burst_at ~= nil then
+		if e.age_ms - e.data.burst_at >= LINGER_AFTER_BURST_MS then
+			behaviours.destroy(e.id)
+		end
 		return { direction = STILL }
 	end
 	if e.position.y >= ground_under(e, settings.floor_y) - settings.blast_above then
-		e.data.burst = true
+		e.data.burst_at = e.age_ms
 		behaviours.spawn("dynamite_blast", e.position)
 		behaviours.spawn("dynamite_heat", e.position)
 		return { direction = STILL }

@@ -7,7 +7,7 @@
 
 [gameplay]
 side = "enemy"
-layer = "enemy_missile"
+layer = "enemy"
 hits = ["player"]
 pilot = "dynamite_fall"
 
