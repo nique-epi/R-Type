@@ -705,7 +705,7 @@ A datagram of this protocol with another version is answered with `ConnectionRef
 
 ## Resources: `ensure` lines
 
-A resource is content a host adds to the server without touching its assets or rebuilding it: a folder of `resources/`, beside the assets folder, started by an `ensure <name>` line of `server.cfg` (see [Configuration commands](/R-Type/commands/#ensure)). It has the shape of the assets folder and is laid over it:
+A resource is content a host adds to the server without touching its assets or rebuilding it: a folder of `resources/`, beside the assets folder, started by an `ensure <name>` line of `server.cfg` (see [Configuration commands](/R-Type/commands/#ensure)). The server package holds the resources of the repository in its own `resources/`, and the LDtk projects of the biomes in `assets/biomes/`, which a level reads the ground of its biomes from. A resource has the shape of the assets folder and is laid over it:
 
 | In `resources/<name>/` | Holds | Read by |
 |---|---|---|

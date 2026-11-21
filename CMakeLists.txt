@@ -211,6 +211,18 @@ install(DIRECTORY ${CMAKE_SOURCE_DIR}/assets
 install(DIRECTORY ${CMAKE_SOURCE_DIR}/assets/waves ${CMAKE_SOURCE_DIR}/assets/entities ${CMAKE_SOURCE_DIR}/assets/sprites
   DESTINATION assets COMPONENT server
 )
+# A level script reads the ground of each biome it flies through from the
+# LDtk project of that biome (readLevelGrounds()); the tilesets beside it are
+# drawn by the client only.
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/assets/biomes
+  DESTINATION assets COMPONENT server
+  FILES_MATCHING PATTERN "*.ldtk"
+)
+# The resources an ensure line of server.cfg starts sit beside assets/
+# (contentFoldersOf()); a line naming one the package lacks stops the server.
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/resources
+  DESTINATION . COMPONENT server
+)
 
 # The app carries the Velopack library in Contents/Frameworks, where the rpath
 # of the client points; vcpkg links it as a dylib on macOS.
