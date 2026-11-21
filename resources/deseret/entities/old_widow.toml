@@ -77,6 +77,7 @@ arrival_attack = 4
 [appearance]
 sheet = "sprites/deseret/old_widow.png"
 boss_name = "THE OLD WIDOW"
+boss_music = "music/stratosphere_boogie.mp3"
 
 # Idle: the wheel turns a blade period in 8 frames, the veil sways.
 [appearance.idle]

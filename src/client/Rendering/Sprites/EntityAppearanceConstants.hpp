@@ -28,12 +28,15 @@ constexpr std::array APPEARANCE_KEYS{SHEET_KEY, IDLE_TABLE_KEY};
 constexpr std::string_view ENRAGED_IDLE_TABLE_KEY = "enraged_idle";
 constexpr std::string_view DEATH_TABLE_KEY = "death";
 
-/** @brief The optional text of `[appearance]` that names a boss on its bar;
- * a boss without it shows no name. */
+/** @brief The optional texts of `[appearance]` that name a boss on its bar
+ * and the music it fights to; a boss without them shows no name and fights to
+ * the music of a boss. */
 constexpr std::string_view BOSS_NAME_KEY = "boss_name";
+constexpr std::string_view BOSS_MUSIC_KEY = "boss_music";
 constexpr std::array OPTIONAL_APPEARANCE_KEYS{
     ENRAGED_IDLE_TABLE_KEY, DEATH_TABLE_KEY, game::EFFECTS_TABLE_KEY,
-    game::LOOKS_TABLE_KEY,  BOSS_NAME_KEY,   game::SOUNDS_TABLE_KEY};
+    game::LOOKS_TABLE_KEY,  BOSS_NAME_KEY,   BOSS_MUSIC_KEY,
+    game::SOUNDS_TABLE_KEY};
 
 /**
  * @brief The keys of `[appearance.sounds]` besides its attack tables: the

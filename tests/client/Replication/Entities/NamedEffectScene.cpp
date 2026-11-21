@@ -45,6 +45,7 @@ EntityAppearance appearanceWithASpark() {
           .anchor = SPARK_ANCHOR}},
       .looks = {},
       .bossName = {},
+      .bossMusic = {},
       .sounds = {}};
 }
 

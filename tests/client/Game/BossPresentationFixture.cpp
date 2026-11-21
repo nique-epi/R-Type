@@ -22,6 +22,7 @@ BossPresentationFixture::BossPresentationFixture()
                            .effects = {},
                            .looks = {},
                            .bossName = std::string{PRESENTED_BOSS_NAME},
+                           .bossMusic = {},
                            .sounds = {}} {}
 
 void BossPresentationFixture::placeNamedBoss() {

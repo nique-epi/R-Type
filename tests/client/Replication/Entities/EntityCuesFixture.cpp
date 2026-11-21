@@ -28,6 +28,7 @@ EntityCuesFixture::EntityCuesFixture()
                   .effects = {},
                   .looks = {},
                   .bossName = {},
+                  .bossMusic = {},
                   .sounds = EntitySounds{.appear = CUED_APPEAR_SOUND,
                                          .death = CUED_DEATH_SOUND,
                                          .actions = {}}},

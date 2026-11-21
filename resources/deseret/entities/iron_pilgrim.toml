@@ -82,6 +82,7 @@ phase = "strike"
 [appearance]
 sheet = "sprites/deseret/iron_pilgrim.png"
 boss_name = "THE IRON PILGRIM"
+boss_music = "music/freight_train_boogie.mp3"
 
 # Idle: it rolls, the crank a whole turn in 12 frames, smoke from the stack.
 [appearance.idle]

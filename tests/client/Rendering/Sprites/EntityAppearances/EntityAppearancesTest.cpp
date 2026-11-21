@@ -643,3 +643,32 @@ TEST(EntityAppearances, ReadsEverySheetOfTheDeseretResource) {
     EXPECT_NE(appearances.named(name), nullptr);
   }
 }
+
+/**
+ * Given the sheets of the two bosses of Deseret
+ * When a client reads them
+ * Then each names the music it fights to
+ */
+TEST(EntityAppearances, ReadsTheMusicOfEachBossOfDeseret) {
+  const EntityAppearances appearances = deseretAppearances();
+  const EntityAppearance* const pilgrim = appearances.named(IRON_PILGRIM_SHEET);
+  const EntityAppearance* const widow = appearances.named(OLD_WIDOW_SHEET);
+  ASSERT_NE(pilgrim, nullptr);
+  ASSERT_NE(widow, nullptr);
+
+  EXPECT_EQ(pilgrim->bossMusic, IRON_PILGRIM_MUSIC);
+  EXPECT_EQ(widow->bossMusic, OLD_WIDOW_MUSIC);
+}
+
+/**
+ * Given the sheet of the Necromancer, which names no music
+ * When a client reads it
+ * Then its music is empty, so it fights to the music of a boss
+ */
+TEST(EntityAppearances, ABossWithoutMusicHasNone) {
+  const EntityAppearances appearances = fosseAppearances();
+  const EntityAppearance* const read = appearances.named(NECROMANCER_SHEET);
+  ASSERT_NE(read, nullptr);
+
+  EXPECT_TRUE(read->bossMusic.empty());
+}

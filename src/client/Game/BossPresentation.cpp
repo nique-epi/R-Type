@@ -54,6 +54,19 @@ std::optional<std::string> bossNameOf(engine::ComponentRegistry& components,
   return components.get<AppearanceReference>(*boss)->appearance->bossName;
 }
 
+/** @returns The music the sheet of the entity of network id @p bossId names,
+ * empty for the music of a boss; nothing while the client has no such entity
+ * drawn from a sheet. */
+std::optional<std::string> bossMusicOf(engine::ComponentRegistry& components,
+                                       std::uint32_t bossId) {
+  const std::optional<engine::Entity> boss =
+      entityWithAppearance(components, bossId);
+  if (!boss.has_value()) {
+    return std::nullopt;
+  }
+  return components.get<AppearanceReference>(*boss)->appearance->bossMusic;
+}
+
 }  // namespace
 
 BossPresentation::BossPresentation(EffectTools tools, ISoundPlayer& sounds,
@@ -68,11 +81,12 @@ void BossPresentation::apply(const network::BossStatus& status) {
     roarAt_.reset();
     chargeSignalledAt_.reset();
     bossName_.reset();
+    bossMusic_.reset();
   }
   tracker_.follow(status, now_);
   if (status.stage != network::BossStage::Arriving) {
     bossInPlay_ = status.bossEntityId;
-    findBossName();
+    readBossSheet();
   }
   if (status.stage != network::BossStage::Arriving && shielded_.has_value()) {
     effects_.shield(*shielded_, false);
@@ -122,7 +136,7 @@ void BossPresentation::apply(const network::EntityDestroyed& destroyed) {
 }
 
 void BossPresentation::advance(engine::Duration elapsed) {
-  findBossName();
+  readBossSheet();
   const std::optional<engine::Duration> before = tracker_.sinceArrival(now_);
   now_ += elapsed;
   const std::optional<engine::Duration> since = tracker_.sinceArrival(now_);
@@ -138,9 +152,15 @@ void BossPresentation::advance(engine::Duration elapsed) {
 
 void BossPresentation::followLevel() { playsALevel_ = true; }
 
-void BossPresentation::findBossName() {
+void BossPresentation::readBossSheet() {
   if (bossInPlay_.has_value() && !bossName_.has_value()) {
     bossName_ = bossNameOf(*components_, *bossInPlay_);
+  }
+  if (bossInPlay_.has_value() && !bossMusic_.has_value()) {
+    bossMusic_ = bossMusicOf(*components_, *bossInPlay_);
+    if (bossMusic_.has_value() && bossMusicStarted_) {
+      audio_->playBossMusic(*bossMusic_);
+    }
   }
 }
 
@@ -178,7 +198,7 @@ void BossPresentation::followMusic() {
     bossMusicStarted_ = true;
     audio_->silenceMusic();
     sounds_->play(BOSS_ALARM_SOUND_ID);
-    audio_->playBossMusic();
+    audio_->playBossMusic(bossMusic_.value_or(std::string{}));
     return;
   }
   const bool bossGone =

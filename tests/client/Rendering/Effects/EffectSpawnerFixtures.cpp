@@ -156,5 +156,6 @@ EntityAppearance appearanceWithADeath() {
       .effects = {},
       .looks = {},
       .bossName = {},
+      .bossMusic = {},
       .sounds = {}};
 }

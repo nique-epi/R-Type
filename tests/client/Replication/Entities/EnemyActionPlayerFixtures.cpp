@@ -30,6 +30,7 @@ EntityAppearance appearanceWithAStrike() {
       .effects = {},
       .looks = {},
       .bossName = {},
+      .bossMusic = {},
       .sounds = {}};
 }
 

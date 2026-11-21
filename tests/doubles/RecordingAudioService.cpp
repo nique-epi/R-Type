@@ -29,7 +29,7 @@ void RecordingAudioService::silenceMusic() {
   musicCalls_.push_back(MusicCall::Silence);
 }
 
-void RecordingAudioService::playBossMusic() {
+void RecordingAudioService::playBossMusic(std::string_view /*music*/) {
   musicCalls_.push_back(MusicCall::BossMusic);
 }
 

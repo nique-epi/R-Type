@@ -364,6 +364,7 @@ EntityAppearance appearanceFrom(const engine::DataFileTable& appearance) {
                         .effects = {},
                         .looks = {},
                         .bossName = optionalTextAt(appearance, BOSS_NAME_KEY),
+                        .bossMusic = optionalTextAt(appearance, BOSS_MUSIC_KEY),
                         .sounds = soundsOf(appearance)};
   readEnragedIdle(appearance, look);
   readDeath(appearance, look);

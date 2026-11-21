@@ -17,7 +17,7 @@ void SilentAudioService::playGameMusic(std::string_view /*music*/) {}
 
 void SilentAudioService::silenceMusic() {}
 
-void SilentAudioService::playBossMusic() {}
+void SilentAudioService::playBossMusic(std::string_view /*music*/) {}
 
 void SilentAudioService::setAmbience([[maybe_unused]] Ambience ambience) {}
 

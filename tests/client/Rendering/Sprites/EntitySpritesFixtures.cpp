@@ -22,6 +22,7 @@ const EntityAppearance& testAppearance() {
       .effects = {},
       .looks = {},
       .bossName = {},
+      .bossMusic = {},
       .sounds = {}};
   return appearance;
 }

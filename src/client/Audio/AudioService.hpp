@@ -48,7 +48,7 @@ class AudioService final : public IAudioService {
   void playTheme() override;
   void playGameMusic(std::string_view music) override;
   void silenceMusic() override;
-  void playBossMusic() override;
+  void playBossMusic(std::string_view music) override;
   void setAmbience(Ambience ambience) override;
   [[nodiscard]] Ambience ambience() const override;
   /** @throws AssetLoadingException naming every sound of ALL_SOUND_IDS that

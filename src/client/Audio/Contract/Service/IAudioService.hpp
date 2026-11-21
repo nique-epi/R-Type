@@ -43,10 +43,12 @@ class IAudioService {
    * later. The theme is left as it is. */
   virtual void silenceMusic() = 0;
 
-  /** @brief Stops the music of a game and the theme, and starts the music of
-   * the boss BOSS_ALARM_DURATION later, unless it plays already or is about
-   * to. playTheme() and playGameMusic() stop it. */
-  virtual void playBossMusic() = 0;
+  /** @brief Makes @p music the music of the boss, played in place of the one
+   * that plays when it differs (BOSS_MUSIC_ID when empty), then stops the
+   * music of a game and the theme, and starts the music of the boss
+   * BOSS_ALARM_DURATION later, unless it plays already or is about to.
+   * playTheme() and playGameMusic() stop it. */
+  virtual void playBossMusic(std::string_view music) = 0;
 
   /** @brief Plays @p ambience under the theme, and stops the one that
    * played; Ambience::None leaves only the music. Ambience::Shop,

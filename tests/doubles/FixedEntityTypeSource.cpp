@@ -36,6 +36,7 @@ EntityAppearance appearancePlaying(const Animation& animation) {
       .effects = {},
       .looks = {},
       .bossName = {},
+      .bossMusic = {},
       .sounds = {}};
 }
 

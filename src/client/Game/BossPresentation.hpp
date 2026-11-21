@@ -76,10 +76,12 @@ class BossPresentation {
 
   [[nodiscard]] std::optional<engine::Duration> sinceRoar() const;
 
-  /** @brief Reads the name the sheet of the boss in play gives its bar, once
-   * the client has its entity: a status of its fight can come before the
-   * entity it names, so each update looks again until it is found. */
-  void findBossName();
+  /** @brief Reads the name the sheet of the boss in play gives its bar and
+   * the music it fights to, once the client has its entity: a status of its
+   * fight can come before the entity it names, so each update looks again
+   * until it is found. A music found once the boss music started takes its
+   * place (the boss is only known after its Arriving status). */
+  void readBossSheet();
 
   BossTracker tracker_;
   BossArrivalEffects effects_;
@@ -101,6 +103,9 @@ class BossPresentation {
   /** @brief The name the sheet of the boss in play gives its bar, empty when
    * it names none; nothing until the client has the entity of that boss. */
   std::optional<std::string> bossName_;
+  /** @brief The music the sheet of the boss in play names, empty for the
+   * music of a boss; nothing until the client has the entity of that boss. */
+  std::optional<std::string> bossMusic_;
   bool bossMusicStarted_{false};
   bool gameEnded_{false};
   bool playsALevel_{false};
