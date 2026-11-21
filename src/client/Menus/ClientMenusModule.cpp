@@ -12,6 +12,8 @@
 #include "ConnectionStart.hpp"
 #include "DialogMenus.hpp"
 #include "GameListSnapshot.hpp"
+#include "HeadphonesScreen.hpp"
+#include "HeadphonesScreenParts.hpp"
 #include "IScreen.hpp"
 #include "IUpdateNotice.hpp"
 #include "InstallContext.hpp"
@@ -27,6 +29,7 @@
 #include "ModuleConstants.hpp"
 #include "NewGameDialog.hpp"
 #include "NewGameMenuParts.hpp"
+#include "OpeningScreen.hpp"
 #include "OptionsPlace.hpp"
 #include "OptionsScreen.hpp"
 #include "OptionsScreenParts.hpp"
@@ -48,6 +51,15 @@
 namespace rtype::client {
 
 namespace {
+
+/** @returns HEADPHONES RECOMMENDED, which gives way to the intro, or to the
+ * title when the system asks for less motion. */
+std::unique_ptr<IScreen> buildHeadphonesScreen(const ScreenContext& context) {
+  return std::make_unique<HeadphonesScreen>(
+      HeadphonesScreenParts{.navigator = context.navigator.get(),
+                            .next = screenAfterTheHeadphones()},
+      interfaceCanvasOf(context));
+}
 
 std::unique_ptr<IScreen> buildIntroScreen(const ScreenContext& context) {
   return std::make_unique<IntroScreen>(
@@ -262,6 +274,7 @@ std::vector<std::string> ClientMenusModule::optionalDependencies() const {
 void ClientMenusModule::install(engine::InstallContext& context) {
   auto& registry = context.require<ScreenRegistry>();
   const IUpdateNotice* notice = context.find<IUpdateNotice>();
+  registry.add(HEADPHONES_SCREEN, buildHeadphonesScreen);
   registry.add(INTRO_SCREEN, buildIntroScreen);
   registry.add(TITLE_SCREEN, [notice](const ScreenContext& screens) {
     return buildTitleScreen(

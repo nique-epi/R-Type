@@ -2,6 +2,7 @@ add_library(rtype_client_title STATIC
   ConnectionScreen.cpp
   EndpointForm.cpp
   DialogMenus.cpp
+  HeadphonesScreen.cpp
   IntroScreen.cpp
   JoinTicketWait.cpp
   TitleAccountChips.cpp
@@ -32,6 +33,8 @@ target_link_libraries(rtype_client_title
     rtype_network_constants
     rtype_network_protocol
   PRIVATE
+    rtype_client_easing
+    rtype_client_game_module
     rtype_client_intro_cast_builder
     rtype_client_intro_cues
     rtype_client_intro_overlay

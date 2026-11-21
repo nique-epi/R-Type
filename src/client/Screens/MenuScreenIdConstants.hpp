@@ -5,7 +5,12 @@
 namespace rtype::client {
 
 /** @brief The screen the client opens on, entered through replaceAll() only,
- * at launch: it replaces itself with TITLE_AFTER_INTRO_SCREEN. */
+ * at launch: HEADPHONES RECOMMENDED, which replaces itself with
+ * screenAfterTheHeadphones(). */
+constexpr ScreenId HEADPHONES_SCREEN{"headphones"};
+
+/** @brief The intro, entered through replaceAll() only, after
+ * HEADPHONES_SCREEN: it replaces itself with TITLE_AFTER_INTRO_SCREEN. */
 constexpr ScreenId INTRO_SCREEN{"intro"};
 
 /** @brief The title screen, entered through replaceAll() only: building it

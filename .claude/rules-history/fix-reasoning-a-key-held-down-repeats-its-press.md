@@ -27,3 +27,7 @@ Why: SFML turns key repeat on by default and `src/` never turns it off, so the `
 
 - ❌ **Before (wrong)**: `tabAskedBy()` opens the neighbouring tab on each `KeyPressed` of Q or E → with E held, the leaderboard flips between SERVER and GLOBAL, plays a click, and sends a `LeaderboardRequest` on each return.
 - ✅ **After (right)**: `tabKeyHeld_` lets the first press through until a release or `FocusLost`; `AHeldTabKeyChangesTabOnce` presses E twice and checks the source was asked nothing more.
+
+## Update (21 November 2026) — A screen that leaves on a timer hands the held key to the next one
+
+`HeadphonesScreen`, the notice the client opens on, acted on the release of a key so that a held key would never reach the intro, and said so in its doc comment and on the site. A review walked a key pressed at 1 s and held: the notice gave way at 3.6 s on its own, the key still down, and the repeats of its press reached `IntroScreen`, which opens the title on any press during its black second. The test of the held key only checked that the notice did not leave early. The notice now waits in the ink while a key whose press it saw is held, and a test holds the key past its time.
