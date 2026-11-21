@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <string_view>
 
@@ -109,6 +110,9 @@ constexpr std::string_view ENEMY_GUN =
 constexpr std::string_view SHIP_GUN =
     "[gameplay.gun]\ninterval_ms = 333\nfirst_shot_ms = 0\n"
     "projectile = \"player_missile\"\n";
+/** @brief The ticks the 333 ms of SHIP_GUN come to: 19.98, rounded to the
+ * nearest whole number. */
+constexpr std::size_t TICKS_NEAREST_TO_333_MS = 20;
 constexpr std::string_view GUN_WITHOUT_PROJECTILE =
     "[gameplay.gun]\ninterval_ms = 1500\nfirst_shot_ms = 1500\n";
 constexpr std::string_view APPEARANCE = "[appearance]\n";

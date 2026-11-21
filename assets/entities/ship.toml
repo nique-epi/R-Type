@@ -23,7 +23,7 @@ height = 64
 kind = "ship"
 
 [gameplay.gun]
-interval_ms = 333
+interval_ms = 167
 first_shot_ms = 0
 projectile = "player_missile"
 

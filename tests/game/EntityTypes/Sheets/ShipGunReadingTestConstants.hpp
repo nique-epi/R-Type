@@ -11,9 +11,9 @@ namespace rtype::game::testing {
 constexpr std::uint8_t SHIPPED_SHIP_NUMBER = 32;
 constexpr std::uint8_t SHIPPED_PLAYER_MISSILE_NUMBER = 29;
 
-/** @brief The gun of the shipped ship: 333 ms between shots is 20 ticks, the
+/** @brief The gun of the shipped ship: 167 ms between shots is 10 ticks, the
  * first shot at once, its missile flying right at 960 units per second. */
-constexpr std::uint16_t SHIPPED_GUN_INTERVAL_TICKS = 20;
+constexpr std::uint16_t SHIPPED_GUN_INTERVAL_TICKS = 10;
 constexpr std::uint16_t SHIPPED_GUN_FIRST_SHOT_TICKS = 0;
 constexpr float SHIPPED_PLAYER_MISSILE_SPEED = 960.0F;
 

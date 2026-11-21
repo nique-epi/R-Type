@@ -8,10 +8,10 @@ namespace rtype::server::testing {
 
 /**
  * @brief The fire rate chosen for the game: a ship whose player holds shoot
- * fires three missiles per second, one every 20 ticks at 60 ticks per second.
+ * fires six missiles per second, one every 10 ticks at 60 ticks per second.
  */
-constexpr std::size_t MISSILES_PER_SECOND_OF_FIRE = 3;
-constexpr std::size_t TICKS_BETWEEN_TWO_SHOTS = 20;
+constexpr std::size_t MISSILES_PER_SECOND_OF_FIRE = 6;
+constexpr std::size_t TICKS_BETWEEN_TWO_SHOTS = 10;
 
 /** @brief The newest input a test applied to the ship that fires. */
 constexpr std::uint32_t SOME_APPLIED_INPUT = 41;
@@ -50,7 +50,7 @@ constexpr float FIRST_SHIP_MISSILE_X = 288.0F;
 constexpr std::size_t HALF_A_SECOND_IN_TICKS = 30;
 
 /** @brief The missiles a ship holding shoot fires in one and a half seconds:
- * at the 1st, 21st, 41st, 61st and 81st tick of the 90. */
-constexpr std::size_t SHIPS_MISSILES_IN_ONE_AND_A_HALF_SECONDS = 5;
+ * at the 1st, 11th, 21st and so on to the 81st tick of the 90. */
+constexpr std::size_t SHIPS_MISSILES_IN_ONE_AND_A_HALF_SECONDS = 9;
 
 }  // namespace rtype::server::testing

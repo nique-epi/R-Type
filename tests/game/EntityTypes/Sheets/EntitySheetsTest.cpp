@@ -446,7 +446,7 @@ TEST(EntitySheets, TheShippedWeaverIsTodaysWeaver) {
  * Given the shipped sheet of the ship
  * When it is read
  * Then it is today's ship: a body of side player of 128 by 64, moved as a ship
- * and piloted by its player, that fires a missile of a player every 20 ticks
+ * and piloted by its player, that fires a missile of a player every 10 ticks
  * and at once
  */
 TEST(EntitySheets, TheShippedShipIsTodaysShip) {

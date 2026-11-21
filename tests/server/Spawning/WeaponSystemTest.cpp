@@ -163,7 +163,7 @@ TEST_F(ShipWeaponFixture, FiresNothingWithoutAShooter) {
 /**
  * Given a ship that fired, then belongs to no connected player, its Intent
  * still wanting to shoot
- * When its wait of 20 ticks is over and one more tick runs
+ * When its wait of 10 ticks is over and one more tick runs
  * Then no missile appears: a missile of a player always has an owner
  */
 TEST_F(ShipWeaponFixture, ShipOfNoConnectedPlayerFiresNothing) {
@@ -181,9 +181,9 @@ TEST_F(ShipWeaponFixture, ShipOfNoConnectedPlayerFiresNothing) {
 /**
  * Given a player with a ship who holds shoot
  * When a second of ticks runs
- * Then three missiles appeared, the rate chosen for the game
+ * Then six missiles appeared, the rate chosen for the game
  */
-TEST_F(ShipWeaponFixture, ShipFiresThreeMissilesPerSecondWhileShootIsHeld) {
+TEST_F(ShipWeaponFixture, ShipFiresSixMissilesPerSecondWhileShootIsHeld) {
   runTicksShooting(connect(FIRST_PLAYER), engine::SIMULATION_TICKS_PER_SECOND);
 
   EXPECT_EQ(missilesInTheWorld(), MISSILES_PER_SECOND_OF_FIRE);
@@ -191,10 +191,10 @@ TEST_F(ShipWeaponFixture, ShipFiresThreeMissilesPerSecondWhileShootIsHeld) {
 
 /**
  * Given a player with a ship who holds shoot
- * When 20 ticks run, then one more
- * Then one missile appeared in the 20 ticks, and the second at the 21st
+ * When 10 ticks run, then one more
+ * Then one missile appeared in the 10 ticks, and the second at the 11th
  */
-TEST_F(ShipWeaponFixture, ShipWaitsTwentyTicksBetweenTwoMissiles) {
+TEST_F(ShipWeaponFixture, ShipWaitsTenTicksBetweenTwoMissiles) {
   ConnectedPlayer& shooter = connect(FIRST_PLAYER);
 
   runTicksShooting(shooter, TICKS_BETWEEN_TWO_SHOTS);
@@ -207,7 +207,7 @@ TEST_F(ShipWeaponFixture, ShipWaitsTwentyTicksBetweenTwoMissiles) {
 /**
  * Given a player who fired, then releases and presses shoot again at every
  * tick, as a modified client could
- * When the rest of the 20 ticks runs
+ * When the rest of the 10 ticks runs
  * Then no second missile appeared: pressing again does not shorten the wait
  */
 TEST_F(ShipWeaponFixture, PressingShootAgainFiresNoSooner) {
@@ -228,7 +228,7 @@ TEST_F(ShipWeaponFixture, PressingShootAgainFiresNoSooner) {
 }
 
 /**
- * Given a player who fired, then released shoot for 20 ticks
+ * Given a player who fired, then released shoot for 10 ticks
  * When it holds shoot again for one tick
  * Then a second missile appears at once
  */
@@ -391,7 +391,7 @@ TEST_F(ShipWeaponFixture, ShipAndBydoHaveTheirOwnFirstShot) {
 /**
  * Given a ship that holds shoot and a Bydo, both under the same system
  * When one and a half seconds run
- * Then the ship fired a missile every 20 ticks, five times, and the Bydo
+ * Then the ship fired a missile every 10 ticks, nine times, and the Bydo
  * once, at the 90th tick
  */
 TEST_F(ShipWeaponFixture, ShipAndBydoFireAtTheirOwnCadence) {

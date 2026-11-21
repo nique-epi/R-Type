@@ -110,7 +110,7 @@ TEST_F(GameInstanceShootingFixture, FiresNothingWhileFinished) {
 /**
  * Given a game in progress whose first player sends DATAGRAMS_PER_TICK inputs
  * holding shoot before every tick, as a modified client could
- * When 20 ticks run
+ * When 10 ticks run, the wait of the gun of a ship
  * Then one missile only was fired
  */
 TEST_F(GameInstanceShootingFixture, ManyInputsPerTickFireNoFaster) {

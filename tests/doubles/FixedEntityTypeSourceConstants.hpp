@@ -52,8 +52,8 @@ constexpr std::array TWO_BOX_ENEMY_PARTS{
 constexpr int HOLLOW_ENEMY_SIDE = 24;
 constexpr int HOLLOW_ENEMY_DRAWN_ROWS = 4;
 
-/** @brief The gun of the shipped ship: one missile every 20 ticks from the
- * start, flying right at 960 units per second. */
+/** @brief The gun of the ships of the double: one missile every 20 ticks from
+ * the start, flying right at 960 units per second. */
 constexpr std::uint16_t SHIP_GUN_INTERVAL_TICKS = 20;
 constexpr float PLAYER_MISSILE_SPEED = 960.0F;
 

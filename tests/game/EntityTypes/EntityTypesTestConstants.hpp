@@ -25,7 +25,7 @@ constexpr std::array<std::int64_t, 1> REQUIRED_RIGHT_HEADING{1};
 constexpr std::array<std::int64_t, 2> REQUIRED_WEAVE{48, 2000};
 constexpr float REQUIRED_SHIP_WIDTH = 128.0F;
 constexpr float REQUIRED_SHIP_HEIGHT = 64.0F;
-constexpr std::size_t REQUIRED_SHIP_SHOT_TICKS = 20;
+constexpr std::size_t REQUIRED_SHIP_SHOT_TICKS = 10;
 constexpr std::size_t REQUIRED_SHIP_FIRST_SHOT_TICKS = 0;
 constexpr float REQUIRED_PLAYER_MISSILE_WIDTH = 64.0F;
 constexpr float REQUIRED_PLAYER_MISSILE_HEIGHT = 24.0F;

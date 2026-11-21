@@ -25,7 +25,7 @@ using rtype::client::testing::THIRTIETH_INPUT;
 using rtype::client::testing::THIRTY_COMMANDS;
 
 /**
- * Given the gun of the shipped ship, ready at once
+ * Given a gun of a ship of 20 ticks, ready at once
  * When 41 commands hold shoot
  * Then it fires on the first, the 21st and the 41st, every 20 ticks, as
  * WeaponSystem does

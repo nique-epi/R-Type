@@ -100,7 +100,7 @@ The rules play while a game is `InProgress`. What needs only entities lives in `
 | Rule | In short | Where |
 |---|---|---|
 | [Moving](#moving-the-ships-shipcontrol) | A ship follows the arrows of the newest input of its player, at `SHIP_SPEED` (480 logical units per second), and stays in the play area | `src/game/ShipControl/`, `src/game/Systems/MovementSystem/` |
-| [Shooting](#shooting-weaponsystem) | A ship fires a missile every 333 ms (20 ticks) while shoot is held, a Bydo every 1500 ms (90 ticks): the gun of their [sheet](/R-Type/entity-sheets/) | `src/server/Spawning/`, `assets/entities/` |
+| [Shooting](#shooting-weaponsystem) | A ship fires a missile every 167 ms (10 ticks) while shoot is held, a Bydo every 1500 ms (90 ticks): the gun of their [sheet](/R-Type/entity-sheets/) | `src/server/Spawning/`, `assets/entities/` |
 | [Bydos](#waves-of-bydos-wavedirector) | They come in waves read from `assets/waves/waves.toml`; the next wave waits until none is left, and after the last wave of the level comes the boss its difficulty names, if any | `src/game/Waves/`, `src/server/Spawning/` |
 | [Boss](#boss-bosssystem-and-bossstage) | The Bydo Tyrant arrives 4400 ms after the last wave of `normal` and `hard`, takes no hit during its arrival, has more health with more players, enrages below half its health, and is hit anywhere on its body | `src/game/Boss/`, `src/server/Spawning/`, `assets/entities/bydo_tyrant.toml` |
 | [Contacts](#rules-collisionrules) | The sheets say which bodies touch, with `layer` and `hits`; the shipped ones keep four pairs: a missile of a player and a Bydo, a missile of a Bydo and a ship, a ship and a Bydo, a ship and a look item; with friendly fire, a missile of a player and the ship of another player too | `assets/entities/`, `src/game/Systems/CollisionRules/` |
@@ -152,7 +152,7 @@ To change one of them, see [Where to intervene](#where-to-intervene).
 | Ship of each player, created when the player joins and announced to the others | Available | `src/game/Spawning/`, `src/server/Replication/Announcements/Milestones/` |
 | Ship control: how a ship drifts from the directions its player holds, rolls and dashes on a double press, kept above the status band | Available; the client runs `shipAfter` to predict its own ship | `src/game/ShipControl/`, `src/game/Systems/MovementSystem/`, `src/server/Rules/Players/` |
 | Bydos appearing off screen at random heights above the status band of the clients, in waves, then moving left | Available | `src/game/Spawning/WaveEntryPosition.*`, `src/server/Spawning/` |
-| Missiles of the players: fired in front of the ship while shoot is held, three per second at most, removed past the right edge | Available | `src/server/Spawning/`, `src/game/Spawning/ProjectileStartPosition.*`, `src/game/Systems/PlayfieldExitSystem/` |
+| Missiles of the players: fired in front of the ship while shoot is held, six per second at most, removed past the right edge | Available | `src/server/Spawning/`, `src/game/Spawning/ProjectileStartPosition.*`, `src/game/Systems/PlayfieldExitSystem/` |
 | Missiles of the Bydos: every Bydo fires to the left 1.5 s after it appears, then every 1.5 s; removed past the left edge | Available | `src/server/Spawning/`, `src/game/Spawning/ProjectileStartPosition.*`, `src/game/Systems/PlayfieldExitSystem/` |
 | Score: the points of the sheet of each Bydo, credited to the player who fired the missile, sent in the world state | Available | `assets/entities/`, `src/game/Systems/DamageRules/`, `src/server/Rules/Players/` |
 | Waves of Bydos that grow, read from the waves file at launch, up to the last wave of the level | Available: each game plays the difficulty its creator chose, `normal` (8 waves) by default, then the Bydo Tyrant in `normal` and `hard` (see [Boss](#boss-bosssystem-and-bossstage)) | `src/game/Waves/`, `src/server/Spawning/`, `assets/waves/waves.toml` |
@@ -1133,7 +1133,7 @@ A game that plays a level is never vanilla (see [Vanilla games](#vanilla-games-v
 
 | Body | Fires | Interval | First shot |
 |---|---|---|---|
-| Ship (`ship.toml`) | `player_missile` | 333 ms, 20 ticks (**provisional**) | at once: `first_shot_ms` is 0 |
+| Ship (`ship.toml`) | `player_missile` | 167 ms, 10 ticks (**provisional**) | at once: `first_shot_ms` is 0 |
 | Bydo (`drifter.toml`, `weaver.toml`) | `enemy_missile` | 1500 ms, 90 ticks (**provisional**) | after 1500 ms, a whole interval |
 | Bydomancer (`bydomancer.toml`) | `rune_orb` | 1000 ms, 60 ticks (**provisional**); its behaviour wants to shoot during the cast of an orb only, so it fires one orb a cast | at its first cast: `first_shot_ms` is 0 |
 | Diver of the Bydo Tyrant (`tyrant_diver.toml`) | `enemy_missile` | 1800 ms, 108 ticks (**provisional**) | after 800 ms, counted once its summoning is over (see [Volleys](#volleys-volleysystem)) |

@@ -43,7 +43,7 @@ ShipGun shippedGun() {
 /**
  * Given the shipped sheets
  * When the gun of the ships is read from them
- * Then it is the one of ship, firing player_missile every 20 ticks from the
+ * Then it is the one of ship, firing player_missile every 10 ticks from the
  * start, the missile flying right at 960 units per second
  */
 TEST(ShipGunOf, IsTheGunOfTheShippedShip) {

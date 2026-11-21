@@ -698,7 +698,7 @@ TEST(World, SpawnedBydoHasAGunThatWaitsAWholeIntervalFirst) {
 /**
  * Given an empty world
  * When the ship of a player is spawned
- * Then it carries a gun of missiles of a player that fires every 20 ticks and
+ * Then it carries a gun of missiles of a player that fires every 10 ticks and
  * is ready at once
  */
 TEST(World, SpawnedShipHasAGunThatIsReadyAtOnce) {

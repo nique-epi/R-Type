@@ -110,7 +110,7 @@ projectile = "enemy_missile"
 
 - `side`, `layer`, `pilot`, `hitbox` and `motion` are required, and `obstacle` for a sheet of side `obstacle`; the keys `hits` and `on_hit` and the tables `behaviour`, `health`, `score`, `damage`, `gun`, `hurt_zone`, `survives_contact`, `fragile`, `stays_outside`, `burst`, `volley` and `boss` may be left out. The three keys of `boss` are required in it. A body without `health` takes no damage: a missile that hits it still disappears, and a ship pays a hit with a life instead (see [Lives](/R-Type/server/#lives-lifekeeper)). A body without `score` earns nothing, without `gun` fires nothing.
 - Any other key is refused, so a misspelt key stops the program instead of being ignored. Every number is a TOML integer: `240`, never `240.0` or `"240"`.
-- A duration of the gun becomes the nearest whole number of ticks of a sixtieth of a second: 333 ms are 20 ticks, 1500 ms are 90. The interval is at least 1 tick (`MINIMUM_GUN_INTERVAL_TICKS`), and so is the time before a burst (`MINIMUM_BURST_TICKS`).
+- A duration of the gun becomes the nearest whole number of ticks of a sixtieth of a second: 167 ms are 10 ticks, 1500 ms are 90. The interval is at least 1 tick (`MINIMUM_GUN_INTERVAL_TICKS`), and so is the time before a burst (`MINIMUM_BURST_TICKS`).
 - The keys, the choices and the ranges live in `src/game/EntityTypes/EntitySheetConstants.hpp`.
 
 ## Rules between keys and between sheets
@@ -389,7 +389,7 @@ Each program stops on the first error and exits with code 1. A game process prin
 | `behaviour` | `heading` -1 | `amplitude` 48, `period_ms` 2000 | none | `heading` 1 | `heading` -1 |
 | `health` | 3 | 3 | none | none | none |
 | `score` | 100 | 200 | none | none | none |
-| `gun` | 1500 ms, first after 1500 ms, `enemy_missile` | 1500 ms, first after 1500 ms, `enemy_missile` | 333 ms, first at once, `player_missile` | none | none |
+| `gun` | 1500 ms, first after 1500 ms, `enemy_missile` | 1500 ms, first after 1500 ms, `enemy_missile` | 167 ms, first at once, `player_missile` | none | none |
 | `idle` on `sprites/entities.png` | 24 × 24, 2 frames of 250 ms | 24 × 24, 2 frames of 250 ms | 32 × 16, 2 frames of 80 ms | 16 × 6, 2 frames of 60 ms | 8 × 8, 2 frames of 120 ms |
 
 The mobs and their projectiles draw from a sheet of their own in `sprites/mobs/`:
