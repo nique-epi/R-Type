@@ -37,7 +37,7 @@ class ExtraLifeKeeper {
   void onScoreChanged(const game::ScoreChanged& change);
   /** @brief Gives @p player @p won lives, up to identifiers::HIGHEST_LIVES.
    * @returns Whether it holds more lives than before. */
-  bool giveLives(ConnectedPlayer& player, std::uint32_t won);
+  bool giveLives(ConnectedPlayer& player, std::uint32_t won) const;
 
   ExtraLifeKeeperParts parts_;
   engine::SubscriptionHandle subscription_;

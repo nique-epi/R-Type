@@ -5,6 +5,7 @@
 #include "EntityDamage.hpp"
 #include "EntityIdConstants.hpp"
 #include "EventMessage.hpp"
+#include "ExtraLifeWon.hpp"
 #include "GameEvent.hpp"
 #include "MessagePayload.hpp"
 #include "PlayerElimination.hpp"

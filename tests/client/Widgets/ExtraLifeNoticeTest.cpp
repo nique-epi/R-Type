@@ -5,7 +5,6 @@
 #include "ExtraLifeRises.hpp"
 #include "GameEvent.hpp"
 #include "RecordingInterfaceCanvas.hpp"
-#include "TimeTestConstants.hpp"
 
 using rtype::client::ExtraLifeNotice;
 using rtype::client::ExtraLifeRises;
