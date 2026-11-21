@@ -1,0 +1,49 @@
+# The entity type meltdown_beam, brought by the resource ashlands:
+# the beam of the Meltdown of the Glowheart: its aim, then its burn; the
+# boss sheet holds the zone it hurts.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy"
+layer = "boss_effect"
+pilot = "lingering_effect"
+
+# Nothing collides with its body: only its hurt zone hurts.
+[gameplay.hitbox]
+width = 4
+height = 4
+offset_y = 1024
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 1
+
+# It shows its aim 1.4 s, the signal of the Meltdown, then burns 0.9 s.
+[gameplay.behaviour]
+strike_after_ms = 1400
+life_ms = 2300
+
+[appearance]
+sheet = "sprites/cendres/meltdown_beam.png"
+
+# Idle: the green beam, 1600 units long, its core pulsing.
+[appearance.idle]
+left = 0
+top = 0
+width = 400
+height = 14
+frames = 2
+spacing = 2
+frame_ms = 60
+
+# Aim: a thin line that blinks where the beam will burn.
+[appearance.looks.aim]
+left = 0
+top = 16
+width = 400
+height = 14
+frames = 2
+spacing = 2
+frame_ms = 90

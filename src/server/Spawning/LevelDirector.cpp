@@ -1,4 +1,5 @@
 #include "LevelDirector.hpp"
+#include <algorithm>
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
@@ -128,6 +129,8 @@ bool LevelDirector::restartFromCheckpoint() {
   }
   removeEveryBodyButTheShips();
   placer_.restartAt(progress_.scroll.position());
+  progress_.biomeSince = std::min(
+      progress_.biomeSince, progress_.scroll.position() - OPENING_BIOME_LEAD);
   progress_.transition.reset();
   announcedBiome_.reset();
   logger_.info("the level ", parts_.level,

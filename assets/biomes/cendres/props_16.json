@@ -1,0 +1,478 @@
+[
+  {
+    "name": "ammo",
+    "x": 0,
+    "y": 0,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "billboard",
+    "x": 16,
+    "y": 0,
+    "width": 48,
+    "height": 48
+  },
+  {
+    "name": "blastdoor",
+    "x": 64,
+    "y": 0,
+    "width": 32,
+    "height": 32
+  },
+  {
+    "name": "boiler",
+    "x": 96,
+    "y": 0,
+    "width": 16,
+    "height": 32
+  },
+  {
+    "name": "bone",
+    "x": 112,
+    "y": 0,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "brazier",
+    "x": 128,
+    "y": 0,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "bucket",
+    "x": 144,
+    "y": 0,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "bunks",
+    "x": 160,
+    "y": 0,
+    "width": 32,
+    "height": 32
+  },
+  {
+    "name": "cabinet",
+    "x": 192,
+    "y": 0,
+    "width": 16,
+    "height": 32
+  },
+  {
+    "name": "canister",
+    "x": 208,
+    "y": 0,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "cans",
+    "x": 224,
+    "y": 0,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "car",
+    "x": 240,
+    "y": 0,
+    "width": 32,
+    "height": 16
+  },
+  {
+    "name": "carfire",
+    "x": 272,
+    "y": 0,
+    "width": 32,
+    "height": 16
+  },
+  {
+    "name": "cart",
+    "x": 304,
+    "y": 0,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "cask",
+    "x": 320,
+    "y": 0,
+    "width": 16,
+    "height": 32
+  },
+  {
+    "name": "chair",
+    "x": 336,
+    "y": 0,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "cone",
+    "x": 352,
+    "y": 0,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "console",
+    "x": 368,
+    "y": 0,
+    "width": 32,
+    "height": 16
+  },
+  {
+    "name": "cooling",
+    "x": 400,
+    "y": 0,
+    "width": 32,
+    "height": 64
+  },
+  {
+    "name": "crate",
+    "x": 432,
+    "y": 0,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "deadtree",
+    "x": 448,
+    "y": 0,
+    "width": 16,
+    "height": 32
+  },
+  {
+    "name": "desk",
+    "x": 464,
+    "y": 0,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "dome",
+    "x": 0,
+    "y": 64,
+    "width": 64,
+    "height": 48
+  },
+  {
+    "name": "drum",
+    "x": 64,
+    "y": 64,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "duct",
+    "x": 80,
+    "y": 64,
+    "width": 48,
+    "height": 16
+  },
+  {
+    "name": "egg",
+    "x": 128,
+    "y": 64,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "eggs",
+    "x": 144,
+    "y": 64,
+    "width": 32,
+    "height": 16
+  },
+  {
+    "name": "extinguisher",
+    "x": 176,
+    "y": 64,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "fanbox",
+    "x": 192,
+    "y": 64,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "fence",
+    "x": 208,
+    "y": 64,
+    "width": 32,
+    "height": 32
+  },
+  {
+    "name": "furnace",
+    "x": 240,
+    "y": 64,
+    "width": 32,
+    "height": 32
+  },
+  {
+    "name": "gauge",
+    "x": 272,
+    "y": 64,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "gen:concrete:pile",
+    "x": 288,
+    "y": 64,
+    "width": 48,
+    "height": 16
+  },
+  {
+    "name": "generator",
+    "x": 336,
+    "y": 64,
+    "width": 32,
+    "height": 16
+  },
+  {
+    "name": "guardpost",
+    "x": 368,
+    "y": 64,
+    "width": 16,
+    "height": 32
+  },
+  {
+    "name": "hazard",
+    "x": 384,
+    "y": 64,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "hubcap",
+    "x": 400,
+    "y": 64,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "husk",
+    "x": 416,
+    "y": 64,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "jersey",
+    "x": 432,
+    "y": 64,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "lamppost",
+    "x": 448,
+    "y": 64,
+    "width": 16,
+    "height": 32
+  },
+  {
+    "name": "locker",
+    "x": 464,
+    "y": 64,
+    "width": 16,
+    "height": 32
+  },
+  {
+    "name": "lockers",
+    "x": 480,
+    "y": 64,
+    "width": 32,
+    "height": 32
+  },
+  {
+    "name": "mast",
+    "x": 0,
+    "y": 112,
+    "width": 16,
+    "height": 64
+  },
+  {
+    "name": "mesa",
+    "x": 16,
+    "y": 112,
+    "width": 64,
+    "height": 32
+  },
+  {
+    "name": "overpass",
+    "x": 80,
+    "y": 112,
+    "width": 80,
+    "height": 32
+  },
+  {
+    "name": "panels",
+    "x": 160,
+    "y": 112,
+    "width": 32,
+    "height": 16
+  },
+  {
+    "name": "pipes",
+    "x": 192,
+    "y": 112,
+    "width": 48,
+    "height": 32
+  },
+  {
+    "name": "rack",
+    "x": 240,
+    "y": 112,
+    "width": 32,
+    "height": 32
+  },
+  {
+    "name": "ribcage",
+    "x": 272,
+    "y": 112,
+    "width": 32,
+    "height": 16
+  },
+  {
+    "name": "rock",
+    "x": 304,
+    "y": 112,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "rustbarrel",
+    "x": 320,
+    "y": 112,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "sandbags",
+    "x": 336,
+    "y": 112,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "searchlight",
+    "x": 352,
+    "y": 112,
+    "width": 16,
+    "height": 32
+  },
+  {
+    "name": "shell",
+    "x": 368,
+    "y": 112,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "shelves",
+    "x": 384,
+    "y": 112,
+    "width": 48,
+    "height": 48
+  },
+  {
+    "name": "sign",
+    "x": 432,
+    "y": 112,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "skullpost",
+    "x": 448,
+    "y": 112,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "slab",
+    "x": 464,
+    "y": 112,
+    "width": 32,
+    "height": 16
+  },
+  {
+    "name": "spent",
+    "x": 0,
+    "y": 176,
+    "width": 32,
+    "height": 16
+  },
+  {
+    "name": "table",
+    "x": 32,
+    "y": 176,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "tag",
+    "x": 48,
+    "y": 176,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "terminal",
+    "x": 64,
+    "y": 176,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "tire",
+    "x": 80,
+    "y": 176,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "toolbox",
+    "x": 96,
+    "y": 176,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "turbine",
+    "x": 112,
+    "y": 176,
+    "width": 48,
+    "height": 32
+  },
+  {
+    "name": "valve",
+    "x": 160,
+    "y": 176,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "watertower",
+    "x": 176,
+    "y": 176,
+    "width": 32,
+    "height": 48
+  },
+  {
+    "name": "wire",
+    "x": 208,
+    "y": 176,
+    "width": 16,
+    "height": 16
+  }
+]

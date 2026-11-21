@@ -1,0 +1,91 @@
+# The entity type rail_turret, brought by the resource ashlands:
+# a defence gun that slides left along the ceiling rail and fires down
+# on a ship below it.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy"
+layer = "enemy"
+hits = ["player"]
+pilot = "rail_turret_slide"
+
+[gameplay.hitbox]
+width = 120
+height = 120
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 100
+
+# It fires three shots 120 ms apart at a ship within 120 units of its
+# column, rested 1.5 s; the beats match its animations.
+[gameplay.behaviour]
+reach = 120
+shots = 3
+shot_gap_ms = 120
+rest_ms = 1500
+signal_ms = 400
+strike_ms = 360
+recover_ms = 360
+
+[gameplay.health]
+points = 3
+
+[gameplay.score]
+points = 250
+
+[appearance]
+sheet = "sprites/cendres/rail_turret.png"
+
+[appearance.idle]
+left = 0
+top = 0
+width = 30
+height = 30
+frames = 4
+spacing = 2
+frame_ms = 140
+
+[appearance.attack_0.signal]
+left = 0
+top = 32
+width = 30
+height = 30
+frames = 2
+spacing = 2
+frame_ms = 120
+playback = "loop"
+afterwards = "stay"
+
+[appearance.attack_0.strike]
+left = 0
+top = 64
+width = 30
+height = 30
+frames = 3
+spacing = 2
+frame_ms = 80
+playback = "once"
+afterwards = "idle"
+
+[appearance.attack_0.recover]
+left = 0
+top = 96
+width = 30
+height = 30
+frames = 2
+spacing = 2
+frame_ms = 180
+playback = "once"
+afterwards = "idle"
+
+[appearance.death]
+left = 0
+top = 128
+width = 46
+height = 46
+frames = 6
+spacing = 2
+frame_ms = 70

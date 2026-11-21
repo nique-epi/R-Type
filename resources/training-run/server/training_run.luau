@@ -5,9 +5,9 @@
 --
 -- The first stage crosses open space, with the stars alone: two groups of
 -- Bydos come in as the level scrolls, then the scroll stops until the first
--- Reaper is destroyed. The second stage starts at a checkpoint, in the biome
--- fosse, entered through its cave, and stops the scroll again on the last two
--- Reapers: a team that loses every life there starts that stage again, and
+-- Reaper is destroyed, and names the biome fosse as it ends. The second stage
+-- starts at a checkpoint, in that biome, entered through its cave, and stops
+-- the scroll again on the last two Reapers: a team that loses every life there starts that stage again, and
 -- only the enemies placed after the checkpoint come back. The level is cleared
 -- once its last stage is over and no enemy is left. The functions of `level`
 -- are described on the page "Scripting enemies in Luau" of the docs.
@@ -46,9 +46,9 @@ level.register("training_run", {
 		level.spawn_placed()
 		hold_the_scroll_at(reaper_arrivals()[1])
 		level.wait_scroll(1440)
+		level.biome("fosse")
 	end,
 	function()
-		level.biome("fosse")
 		hold_the_scroll_at(reaper_arrivals()[2])
 	end,
 }, { ldtk = "levels/training_run.ldtk" })

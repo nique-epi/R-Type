@@ -1,0 +1,37 @@
+# The entity type sandmaw_boulder, brought by the resource ashlands:
+# a boulder the Sandmaw spits, tumbling left along an arc.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy_missile"
+layer = "enemy_missile"
+hits = ["player"]
+pilot = "thrown_wrench"
+
+[gameplay.hitbox]
+width = 52
+height = 52
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 420
+
+# It leaves rising at 80 % of its speed and has turned down after 1.2 s.
+[gameplay.behaviour]
+lift = 80
+fall_ms = 1200
+
+[appearance]
+sheet = "sprites/cendres/sandmaw_boulder.png"
+
+# Idle: a boulder the Sandmaw spits, tumbling along its arc.
+[appearance.idle]
+left = 0
+top = 0
+width = 13
+height = 13
+frames = 4
+spacing = 2
+frame_ms = 90

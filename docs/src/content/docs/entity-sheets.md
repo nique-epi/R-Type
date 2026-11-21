@@ -216,7 +216,7 @@ An obstacle is a wall or a piece of the decor, neither an enemy nor a missile: t
 - With `motion.kind = "scroll"`, the wall follows the scroll of its level, and stops while the level pauses it; in a game that plays no level, it stands where it appears. Its pilot still writes an `Intent`, which nothing reads: `straight` with a `heading` of 0 suits it.
 - A wall is removed once its box is wholly past the left edge, so a wide wall stays while a part of it shows.
 
-No shipped sheet is an obstacle yet; a server script places one with `behaviours.spawn`.
+The blast doors of the Ashlands (`blast_door`, `blast_door_lower`) are the shipped obstacles; their sheets list `player_missile` and `enemy_missile` in their `hits`, so they stop the missiles of both sides without a missile sheet naming their layer. A server script places one with `behaviours.spawn`.
 
 ## Behaviours and their settings
 

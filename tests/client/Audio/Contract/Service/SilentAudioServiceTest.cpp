@@ -1,8 +1,10 @@
 #include <gtest/gtest.h>
 #include "AudioTestConstants.hpp"
+#include "LevelTracks.hpp"
 #include "ScreenTestConstants.hpp"
 #include "SilentAudioService.hpp"
 
+using rtype::client::LevelTracks;
 using rtype::client::SilentAudioService;
 using rtype::client::testing::UNKNOWN_SOUND_ID;
 
@@ -41,7 +43,7 @@ TEST(SilentAudioService, EveryCallOfTheScreensAndTheModuleIsAccepted) {
 
   EXPECT_NO_THROW({
     audio.playTheme();
-    audio.playGameMusic();
+    audio.playGameMusic(LevelTracks{});
     audio.open();
     audio.update(ONE_FRAME);
   });

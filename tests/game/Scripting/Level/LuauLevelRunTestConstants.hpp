@@ -96,6 +96,17 @@ end })
 )";
 constexpr std::string_view BIOME_OF_ONE_ENEMY = "one_enemy";
 
+/** @brief A level whose stage names a biome when the world holds one boss,
+ * whatever enemies it holds besides. */
+constexpr std::string_view COUNTS_THE_BOSSES = R"(
+level.register("test_level", { function()
+  if level.bosses() == 1 then
+    level.biome("one_boss")
+  end
+end })
+)";
+constexpr std::string_view BIOME_OF_ONE_BOSS = "one_boss";
+
 /** @brief A level of two stages. The first names a biome and waits 50 ms: it
  * ends at tick 4, after 3 ticks of scroll, where the checkpoint is. The
  * second, which starts at tick 5, names a biome, pauses the scroll, waits

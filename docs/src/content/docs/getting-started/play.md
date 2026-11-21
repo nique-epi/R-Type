@@ -70,7 +70,7 @@ The map then shows `MASTER UNREACHABLE`. Press D (ADDRESS) to open the connectio
 | client | `--no-sound` | start without sound |
 | server | `--seed <n>` | the same waves in every game |
 | server | `--boss` | start every game at the boss, to test the fight |
-| server | `--stage <n>` | start every game of a level at its stage `n`: `--stage 2` opens the level `fosse` in the depths of the Pit, `--stage 3` on its boss, the Necromancer |
+| server | `--stage <n>` | start every game of a level at its stage `n`: `--stage 2` opens the level `fosse` in the depths of the Pit, `--stage 3` on its boss, the Necromancer; `--stage 2` opens the level `ashlands` on the Sandmaw, `--stage 4` on the way to the Glowheart, `--stage 6` on the Ash Mother |
 | both | `--network bad` | play through a simulated bad network |
 | both | `--log-level debug` | a more detailed journal |
 

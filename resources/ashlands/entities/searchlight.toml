@@ -1,0 +1,93 @@
+# The entity type searchlight, brought by the resource ashlands:
+# the searchlight tower of the checkpoint; a ship caught in its beam
+# calls a wave of Scrapdrones.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "obstacle"
+layer = "decor"
+pilot = "searchlight_sweep"
+
+[gameplay.hitbox]
+width = 64
+height = 136
+offset_x = 200
+offset_y = 132
+
+[gameplay.motion]
+kind = "scroll"
+
+# Its beam sweeps 20 to 100 degrees and back every 2.4 s, 900 units
+# long, and calls 3 drones once.
+[gameplay.behaviour]
+sweep_ms = 2400
+reach = 900
+drones = 3
+
+[gameplay.obstacle]
+contact = "blocking"
+
+[appearance]
+sheet = "sprites/cendres/searchlight.png"
+
+# Idle: the tower, its beam up and to the left.
+[appearance.idle]
+left = 0
+top = 0
+width = 120
+height = 100
+frames = 1
+spacing = 2
+frame_ms = 1000
+
+# Beam 20: the beam 20 degrees above the left, its end flickering.
+[appearance.looks.beam_20]
+left = 0
+top = 102
+width = 120
+height = 100
+frames = 2
+spacing = 2
+frame_ms = 120
+
+# Beam 40: the beam 40 degrees above the left, its end flickering.
+[appearance.looks.beam_40]
+left = 0
+top = 204
+width = 120
+height = 100
+frames = 2
+spacing = 2
+frame_ms = 120
+
+# Beam 60: the beam 60 degrees above the left, its end flickering.
+[appearance.looks.beam_60]
+left = 0
+top = 306
+width = 120
+height = 100
+frames = 2
+spacing = 2
+frame_ms = 120
+
+# Beam 80: the beam 80 degrees above the left, its end flickering.
+[appearance.looks.beam_80]
+left = 0
+top = 408
+width = 120
+height = 100
+frames = 2
+spacing = 2
+frame_ms = 120
+
+# Beam 100: the beam 100 degrees above the left, its end flickering.
+[appearance.looks.beam_100]
+left = 0
+top = 510
+width = 120
+height = 100
+frames = 2
+spacing = 2
+frame_ms = 120

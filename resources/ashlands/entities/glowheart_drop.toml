@@ -1,0 +1,35 @@
+# The entity type glowheart_drop, brought by the resource ashlands:
+# a drop of green coolant, falling from a leak of the ceiling.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy_missile"
+layer = "enemy_missile"
+hits = ["player"]
+pilot = "falling_shot"
+
+[gameplay.hitbox]
+width = 28
+height = 36
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 520
+
+# It drifts left by 4 % of its speed as it falls.
+[gameplay.behaviour]
+drift = 4
+
+[appearance]
+sheet = "sprites/cendres/glowheart_drop.png"
+
+[appearance.idle]
+left = 0
+top = 0
+width = 7
+height = 9
+frames = 2
+spacing = 2
+frame_ms = 60

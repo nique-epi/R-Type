@@ -1,0 +1,25 @@
+# Highway Zero, the first stage of the Ashlands: the burnt desert, the
+# broken highway and the checkpoint under a dusk sky, with no ceiling.
+# Three layers cut from the map of its LDtk project, written by
+# generator/procedural/; the background arrives through its nearest layer.
+
+# The level plays Crawl Out Through the Fallout while this biome shows.
+music = "music/crawl_out_through_the_fallout.mp3"
+# The Sandmaw is fought here, to its own music.
+boss_music = "music/uranium_fever.mp3"
+
+[[layer]]
+name = "far plane"
+motion = { parallax = 0.25 }
+tiles = { project = "biomes/cendres/cendres.ldtk", layer = "Far", tileset = "biomes/cendres/cendres_far.png" }
+
+[[layer]]
+name = "middle plane"
+motion = { parallax = 0.5 }
+tiles = { project = "biomes/cendres/cendres.ldtk", layer = "Mid", tileset = "biomes/cendres/cendres_mid.png" }
+
+[[layer]]
+name = "near plane"
+motion = { parallax = 1 }
+entrance = true
+tiles = { project = "biomes/cendres/cendres.ldtk", layer = "Near", tileset = "biomes/cendres/cendres_near.png" }

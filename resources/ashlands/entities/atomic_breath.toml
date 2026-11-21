@@ -1,0 +1,49 @@
+# The entity type atomic_breath, brought by the resource ashlands:
+# the beam of the Atomic breath of the Ash Mother: its aim, then its
+# burn; her sheet holds the zone it hurts.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy"
+layer = "boss_effect"
+pilot = "lingering_effect"
+
+# Nothing collides with its body: only its hurt zone hurts.
+[gameplay.hitbox]
+width = 4
+height = 4
+offset_y = 1024
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 1
+
+# It shows its aim 1.2 s, the signal of the breath, then burns 0.6 s.
+[gameplay.behaviour]
+strike_after_ms = 1200
+life_ms = 1800
+
+[appearance]
+sheet = "sprites/cendres/meltdown_beam.png"
+
+# Idle: the green blast of her breath, 1600 units long, its core pulsing.
+[appearance.idle]
+left = 0
+top = 0
+width = 400
+height = 14
+frames = 2
+spacing = 2
+frame_ms = 60
+
+# Aim: a thin line that blinks where the beam will burn.
+[appearance.looks.aim]
+left = 0
+top = 16
+width = 400
+height = 14
+frames = 2
+spacing = 2
+frame_ms = 90

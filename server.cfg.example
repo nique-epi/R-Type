@@ -99,6 +99,7 @@ set server-name "R-Type server"
 # resource stops the server.
 # ensure crimson-drifter
 # ensure fosse
+# ensure ashlands
 
 # [games] The CSV file the game-statistics plugin writes a row per Bydo killed to, then
 # the total of each game, named after it: each game writes <name>_<its port><extension>,

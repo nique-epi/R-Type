@@ -9,4 +9,4 @@ target_sources(game_scripting_tests PRIVATE
 
 target_include_directories(game_scripting_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${RTYPE_TEST_SOURCE_DIR}/game/Level/Ldtk)
 
-target_link_libraries(game_scripting_tests PRIVATE rtype_test_shipped_entity_sheets)
+target_link_libraries(game_scripting_tests PRIVATE rtype_game_boss rtype_test_shipped_entity_sheets)

@@ -715,3 +715,53 @@ TEST(BackgroundReading, RefusesOneLayerTooMany) {
       ThrowsMessage<TooManyBackgroundTablesException>(
           HasSubstr(std::string{TOO_MANY_LAYERS_REFUSAL})));
 }
+
+/**
+ * Given a background that names its music
+ * When it is read
+ * Then it holds the asset id of that music
+ */
+TEST(BackgroundReading, ReadsTheMusicOfABackground) {
+  const BackgroundDescription background =
+      backgroundReading(A_BACKGROUND_WITH_MUSIC);
+
+  EXPECT_EQ(background.music.value_or(""), BACKGROUND_MUSIC);
+}
+
+/**
+ * Given a background that names the music of its bosses
+ * When it is read
+ * Then it holds the asset id of that music
+ */
+TEST(BackgroundReading, ReadsTheBossMusicOfABackground) {
+  const BackgroundDescription background =
+      backgroundReading(A_BACKGROUND_WITH_MUSIC);
+
+  EXPECT_EQ(background.bossMusic.value_or(""), BACKGROUND_BOSS_MUSIC);
+}
+
+/**
+ * Given a background that names no music
+ * When it is read
+ * Then it holds none, neither for the level nor for its bosses
+ */
+TEST(BackgroundReading, ABackgroundWithoutMusicNamesNone) {
+  const BackgroundDescription background =
+      backgroundReading(A_PLANET_THEN_WALLS);
+
+  EXPECT_FALSE(background.music.has_value());
+  EXPECT_FALSE(background.bossMusic.has_value());
+}
+
+/**
+ * Given a background whose music climbs out of the content folders
+ * When it is read
+ * Then an InconsistentBackgroundException says a file is named by its asset
+ * id
+ */
+TEST(BackgroundReading, RefusesAMusicThatIsNotAnAssetId) {
+  EXPECT_THAT(
+      [] { static_cast<void>(backgroundReading(A_MUSIC_OUTSIDE_THE_ASSETS)); },
+      ThrowsMessage<InconsistentBackgroundException>(
+          HasSubstr(std::string{MUSIC_REFUSAL})));
+}

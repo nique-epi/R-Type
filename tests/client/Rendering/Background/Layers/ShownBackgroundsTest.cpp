@@ -77,6 +77,29 @@ TEST_F(ShownBackgroundsFixture, TheBackgroundThatLeavesKeepsMoving) {
 }
 
 /**
+ * Given the Pit shown 100 units in, by a level that scrolls 120 units per
+ * second, then Shelter 9 arriving over it at that scroll
+ * When one second passes without another message
+ * Then the Pit that leaves followed the scroll too: its far walls lie 13.75
+ * pixels left, where they would lie had it stayed shown
+ */
+TEST_F(ShownBackgroundsFixture, TheBackgroundThatLeavesFollowsTheScroll) {
+  ShownBackgrounds backgrounds = shippedSky();
+  SkyLevel level = levelInThePit(A_HUNDRED_UNITS);
+  level.scrollSpeed = A_HUNDRED_AND_TWENTY_UNITS_PER_SECOND;
+  backgrounds.show(level);
+  level.biome = std::string{SHIPPED_SHELTER};
+  level.biomeSince = level.scrollPosition;
+  backgrounds.show(level);
+
+  passOneSecond(backgrounds);
+
+  ASSERT_NE(backgrounds.leaving(), nullptr);
+  EXPECT_NEAR(whereLies(*backgrounds.leaving(), FAR_WALLS_OF_THE_PIT),
+              FAR_WALLS_ONE_SECOND_LATER, ROUNDING_OF_THE_SKY);
+}
+
+/**
  * Given the Pit 400 units in: its entrance stands on the column 492
  * When a frame passes
  * Then the sky is still leaving behind it

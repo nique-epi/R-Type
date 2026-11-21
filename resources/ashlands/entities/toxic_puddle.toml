@@ -1,0 +1,46 @@
+# The entity type toxic_puddle, brought by the resource ashlands:
+# the glowing puddle a toxic barrel leaves on the floor.
+# Only the server reads [gameplay]; a client draws [appearance] from the
+# content pack the supervisor serves. The keys are described on the page
+# "Writing an entity sheet" of the docs.
+
+[gameplay]
+side = "enemy"
+layer = "hazard"
+hits = ["player"]
+pilot = "fading_hazard"
+
+# Nothing collides with its body: only its hurt zone hurts.
+[gameplay.hitbox]
+width = 4
+height = 4
+offset_y = 1024
+
+[gameplay.motion]
+kind = "scroll"
+
+# It glows 4 s.
+[gameplay.behaviour]
+life_ms = 4000
+
+[gameplay.survives_contact]
+
+# Its glow hurts what flies low over it, down to the floor.
+[[gameplay.hurt_zone.box]]
+offset_x = 0
+offset_y = -40
+width = 72
+height = 100
+
+[appearance]
+sheet = "sprites/cendres/toxic_puddle.png"
+
+# Idle: the glowing puddle a barrel leaves, its shine sliding.
+[appearance.idle]
+left = 0
+top = 0
+width = 20
+height = 6
+frames = 2
+spacing = 2
+frame_ms = 260
