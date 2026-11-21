@@ -22,3 +22,7 @@ The sheets and the scripts were written from the design, and the attack was neve
 
 - ❌ **Before (wrong)**: `aeronaut_stick` in `layer = "enemy_missile"`, its `dynamite_blast` with `hits = ["enemy"]` → sticks standing on the ground, the level stuck.
 - ✅ **After (right)**: the stick in `layer = "enemy"`, and gone `LINGER_AFTER_BURST_MS` after its burst if the blast still missed it.
+
+## Update (2026-11-21) — a cart out by the right, a boss without hits
+
+The user found the Old Widow never came: a laden mine cart, shot, rolled out by the right edge and burst there; its blast, a missile of a player past the right edge, was removed at once, and the cart stayed alive out of sight, so `level.enemies()` never fell to zero. The same session, the Iron Pilgrim let ships fly through it: its sheet, unlike every other boss sheet, had no `hits = ["player"]`.
