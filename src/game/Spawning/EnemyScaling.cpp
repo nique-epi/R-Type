@@ -10,12 +10,16 @@ namespace rtype::game {
 
 EnemyStrength scaledEnemyStrength(EnemyStrength difficulty,
                                   std::size_t players) {
-  const int forPlayers = teamPercent(
+  const int healthForPlayers = teamPercent(
       TeamScaling{.percentPerExtraPlayer = ENEMY_HEALTH_PER_EXTRA_PLAYER,
                   .players = players});
-  return EnemyStrength{
-      .healthPercent = difficulty.healthPercent * forPlayers / WHOLE_PERCENT,
-      .gunIntervalPercent = difficulty.gunIntervalPercent};
+  const int gunForPlayers = teamPercent(
+      TeamScaling{.percentPerExtraPlayer = ENEMY_GUN_INTERVAL_PER_EXTRA_PLAYER,
+                  .players = players});
+  return EnemyStrength{.healthPercent = difficulty.healthPercent *
+                                        healthForPlayers / WHOLE_PERCENT,
+                       .gunIntervalPercent = difficulty.gunIntervalPercent *
+                                             gunForPlayers / WHOLE_PERCENT};
 }
 
 }  // namespace rtype::game

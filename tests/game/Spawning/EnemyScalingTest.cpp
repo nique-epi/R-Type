@@ -7,6 +7,7 @@
 using rtype::game::EnemyStrength;
 using rtype::game::scaledEnemyStrength;
 using rtype::game::testing::FOUR_PLAYERS;
+using rtype::game::testing::HARD_GUN_INTERVAL_FOR_FOUR;
 using rtype::game::testing::HARD_HEALTH_FOR_FOUR;
 using rtype::game::testing::HARD_STRENGTH;
 using rtype::game::testing::NO_PLAYER;
@@ -24,7 +25,7 @@ TEST(EnemyScaling, OnePlayerFacesTheStrengthOfTheDifficulty) {
 /**
  * Given the strength of hard and a team of four
  * When the strength of its enemies is scaled
- * Then their health rises 15 % per player past the first, to 174 %
+ * Then their health rises 40 % per player past the first, to 264 %
  */
 TEST(EnemyScaling, EachPlayerPastTheFirstRaisesTheHealth) {
   EXPECT_EQ(scaledEnemyStrength(HARD_STRENGTH, FOUR_PLAYERS).healthPercent,
@@ -34,11 +35,11 @@ TEST(EnemyScaling, EachPlayerPastTheFirstRaisesTheHealth) {
 /**
  * Given the strength of hard and a team of four
  * When the strength of its enemies is scaled
- * Then their guns keep the interval of hard: more players add no shot
+ * Then their guns wait 10 % fewer ticks per player past the first, 56 %
  */
-TEST(EnemyScaling, PlayersLeaveTheGunsAsTheDifficultyGivesThem) {
+TEST(EnemyScaling, EachPlayerPastTheFirstShortensTheGuns) {
   EXPECT_EQ(scaledEnemyStrength(HARD_STRENGTH, FOUR_PLAYERS).gunIntervalPercent,
-            HARD_STRENGTH.gunIntervalPercent);
+            HARD_GUN_INTERVAL_FOR_FOUR);
 }
 
 /**
