@@ -72,7 +72,7 @@ charge_strike_ms = 1600
 charge_recover_ms = 1000
 
 [gameplay.health]
-points = 240
+points = 180
 
 [gameplay.score]
 points = 10000

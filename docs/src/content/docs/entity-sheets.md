@@ -419,7 +419,7 @@ The final boss, the diver it calls in and its projectiles: the Tyrant draws from
 | `pilot` | `bydo_tyrant` | `scatter` | `scatter` | `straight`, `heading` -1 | `scatter` |
 | `hitbox` | 440 × 488, 12 units right of and 4 below its center: its body | 96 × 96 | 32 × 32 | 36 × 36 | 32 × 32 |
 | `motion` | `steady`, 2500, fast enough for its charge | `steady`, 360 | `steady`, 420 | `steady`, 1: a mine | `steady`, 300 |
-| `health` | 240, scaled once its warning is over (see [Boss](/R-Type/server/#boss-bosssystem-and-bossstage)) | 2 | none | none | none |
+| `health` | 180, scaled once its warning is over (see [Boss](/R-Type/server/#boss-bosssystem-and-bossstage)) | 2 | none | none | none |
 | `score` | 10000 | 150 | none | none | none |
 | `gun` | none | 1800 ms, first after 800 ms, `enemy_missile` | none | none | none |
 | `boss` | enrages below 50 %, rage attack 9, arrival attack 0 | | | | |

@@ -4,8 +4,8 @@
 
 namespace rtype::game::testing {
 
-/** @brief The health the sheet of the Bydo Tyrant gives, and what the boss
- * has for one to four players: each player past the first adds 25 %. */
+/** @brief The health a sheet gives a boss, and what the boss has for one to
+ * four players: each player past the first adds 25 %. */
 constexpr int SHEET_BOSS_HEALTH = 240;
 constexpr int BOSS_HEALTH_FOR_ONE_PLAYER = 240;
 constexpr int BOSS_HEALTH_FOR_TWO_PLAYERS = 300;

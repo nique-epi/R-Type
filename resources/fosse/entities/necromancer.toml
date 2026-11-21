@@ -38,7 +38,7 @@ enraged_rest_ms = 400
 rage_ms = 2000
 
 [gameplay.health]
-points = 300
+points = 270
 
 [gameplay.score]
 points = 12000

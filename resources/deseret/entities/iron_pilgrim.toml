@@ -62,7 +62,7 @@ coals = 3
 enraged_coals = 5
 
 [gameplay.health]
-points = 180
+points = 150
 
 [gameplay.score]
 points = 8000
