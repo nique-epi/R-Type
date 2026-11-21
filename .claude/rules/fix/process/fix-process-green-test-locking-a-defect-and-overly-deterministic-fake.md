@@ -52,6 +52,11 @@ Why: an assertion copied from the output turns the current behavior into the spe
 2. **Assert what only that check produces**: its reason, the message it writes, the exception it throws, never only the refusal both share.
 3. **The red proof removes the check alone**: a variant left green means the test reads the refusal of the backup, and is rewritten before the commit.
 
+### A fade is asserted in its middle, not only at its ends
+
+1. **A test of a fade (in, out, a color that moves) reads one frame strictly inside it**, with the value computed from the requirement: the alpha of a linear fade is 255 × elapsed / length, rounded as the code rounds it, written next to the constant.
+2. **Assertions at the ends (all ink, fully lit) and on the moment the next screen comes pass when the fade is dropped** and replaced by a cut: the red proof removes the fade and the middle test must turn red.
+
 ## Example
 
 - ❌ **Before (wrong)**:
@@ -66,3 +71,5 @@ Why: an assertion copied from the output turns the current behavior into the spe
   plus a test of the receiver under a fake transport that **reorders** datagrams, asserting that an older snapshot never overwrites a newer one.
 - ❌ **Before (wrong)**: `ForgetEverythingWhenTheSessionCloses` closed the session, let the delay pass, wrote the acknowledgement into a header, then asserted nothing was due; writing the acknowledgement ends the wait, so a `close()` that kept the wait left the test green.
 - ✅ **After (right)**: `ForgetTheWaitWhenTheSessionCloses` asserts the wait right after `close()` and the delay, and `ForgetTheSequencesWhenTheSessionCloses` asserts the header on its own.
+- ❌ **Before (wrong)**: `HeadphonesScreen` tested on its first frame, once faded in, and on when it leaves; dropping its fade out left the ten tests green, and the notice would have cut to black.
+- ✅ **After (right)**: `FadesOutIntoTheInk` reads the ink at 2896 ms, 296 ms into the fade out of 600 ms: alpha 126.
