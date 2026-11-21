@@ -21,7 +21,7 @@ namespace {
  * has none. */
 std::optional<std::size_t> bayOfPlayer(int playerNumber) {
   const int bay = pilotColorOfPlayerNumber(playerNumber);
-  if (bay < 0 || bay >= PLAYER_COLOR_COUNT) {
+  if (!isPilotColor(bay)) {
     return std::nullopt;
   }
   return static_cast<std::size_t>(bay);

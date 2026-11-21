@@ -1,8 +1,8 @@
 #pragma once
 
 #include <cstdint>
-#include "EnemyKilled.hpp"
 #include "ExtraLifeKeeperParts.hpp"
+#include "ScoreChanged.hpp"
 #include "SubscriptionHandle.hpp"
 
 namespace rtype::server {
@@ -15,10 +15,8 @@ struct ConnectedPlayer;
  * announces it with an ExtraLifeWon; a player who already holds that many
  * wins none, and nothing is announced.
  *
- * It reads the score a kill left, so it must subscribe to EnemyKilled after
- * the ScoreKeeper of the game, which adds the points first: the ScoreKeeper
- * lives as long as the game, and a keeper is built with each world, after it.
- * Only a player who still holds a life wins one: a player out of lives keeps
+ * It follows the ScoreChanged the ScoreKeeper of the game publishes. Only a
+ * player who still holds a life wins one: a player out of lives keeps
  * watching, whatever its missiles still in flight score. The life goes to
  * ConnectedPlayer::livesWithoutShip and to the Lives of its ship while it
  * flies one, which hold the same count.
@@ -36,7 +34,7 @@ class ExtraLifeKeeper {
   ExtraLifeKeeper& operator=(ExtraLifeKeeper&&) = delete;
 
  private:
-  void onEnemyKilled(const game::EnemyKilled& kill);
+  void onScoreChanged(const game::ScoreChanged& change);
   /** @brief Gives @p player @p won lives, up to identifiers::HIGHEST_LIVES.
    * @returns Whether it holds more lives than before. */
   bool giveLives(ConnectedPlayer& player, std::uint32_t won);

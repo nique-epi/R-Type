@@ -5,6 +5,7 @@
 #include "EventBus.hpp"
 #include "PlayerRoster.hpp"
 #include "ProtocolConstants.hpp"
+#include "ScoreChanged.hpp"
 #include "ScoreKeeper.hpp"
 #include "ScoreKeeperFixture.hpp"
 #include "ScoreKeeperTestConstants.hpp"
@@ -83,6 +84,22 @@ TEST(ScoreKeeper, StopsListeningOnceDestroyed) {
   events.dispatch();
 
   EXPECT_EQ(player->score, 0U);
+}
+
+/**
+ * Given a player with a score of a Drifter
+ * When the player kills another Drifter
+ * Then the keeper publishes its score before and after the kill
+ */
+TEST_F(ScoreKeeperFixture, PublishesTheScoreBeforeAndAfter) {
+  kill(FIRST_NUMBER, DRIFTER_WORTH);
+
+  kill(FIRST_NUMBER, DRIFTER_WORTH);
+
+  EXPECT_EQ(changes().back(),
+            (game::ScoreChanged{.playerNumber = FIRST_NUMBER,
+                                .before = DRIFTER_WORTH,
+                                .after = DRIFTER_WORTH + DRIFTER_WORTH}));
 }
 
 }  // namespace rtype::server::testing

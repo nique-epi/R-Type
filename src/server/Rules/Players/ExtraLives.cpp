@@ -1,7 +1,7 @@
 #include "ExtraLives.hpp"
 #include <cstdint>
 #include "LifeKeeperConstants.hpp"
-#include "ScoreChange.hpp"
+#include "ScoreChanged.hpp"
 
 namespace rtype::server {
 
@@ -17,7 +17,7 @@ std::uint32_t stepsReachedBy(std::uint32_t score) {
 
 }  // namespace
 
-std::uint32_t extraLivesWonBy(ScoreChange change) {
+std::uint32_t extraLivesWonBy(const game::ScoreChanged& change) {
   if (change.after <= change.before) {
     return 0;
   }

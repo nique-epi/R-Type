@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include "ExtraLives.hpp"
 #include "ExtraLivesTestConstants.hpp"
-#include "ScoreChange.hpp"
+#include "ScoreChanged.hpp"
 
 namespace rtype::server::testing {
 
@@ -11,9 +11,10 @@ namespace rtype::server::testing {
  * Then it wins one: the first step is reached
  */
 TEST(ExtraLives, ReachingTheFirstStepWinsALife) {
-  EXPECT_EQ(extraLivesWonBy(ScoreChange{.before = JUST_UNDER_THE_FIRST_STEP,
-                                        .after = AT_THE_FIRST_STEP}),
-            1U);
+  EXPECT_EQ(
+      extraLivesWonBy(game::ScoreChanged{.before = JUST_UNDER_THE_FIRST_STEP,
+                                         .after = AT_THE_FIRST_STEP}),
+      1U);
 }
 
 /**
@@ -22,8 +23,8 @@ TEST(ExtraLives, ReachingTheFirstStepWinsALife) {
  * Then it wins none
  */
 TEST(ExtraLives, AScoreUnderTheFirstStepWinsNothing) {
-  EXPECT_EQ(extraLivesWonBy(ScoreChange{.before = NO_SCORE,
-                                        .after = JUST_UNDER_THE_FIRST_STEP}),
+  EXPECT_EQ(extraLivesWonBy(game::ScoreChanged{
+                .before = NO_SCORE, .after = JUST_UNDER_THE_FIRST_STEP}),
             0U);
 }
 
@@ -33,8 +34,8 @@ TEST(ExtraLives, AScoreUnderTheFirstStepWinsNothing) {
  * Then it wins none: the first step was won before
  */
 TEST(ExtraLives, AStepIsWonOnce) {
-  EXPECT_EQ(extraLivesWonBy(ScoreChange{.before = AT_THE_FIRST_STEP,
-                                        .after = PAST_THE_FIRST_STEP}),
+  EXPECT_EQ(extraLivesWonBy(game::ScoreChanged{.before = AT_THE_FIRST_STEP,
+                                               .after = PAST_THE_FIRST_STEP}),
             0U);
 }
 
@@ -44,9 +45,10 @@ TEST(ExtraLives, AStepIsWonOnce) {
  * Then it wins three: 30000, 90000 and 150000
  */
 TEST(ExtraLives, OneKillCanPassSeveralSteps) {
-  EXPECT_EQ(extraLivesWonBy(ScoreChange{.before = JUST_UNDER_THE_FIRST_STEP,
-                                        .after = PAST_THE_THIRD_STEP}),
-            3U);
+  EXPECT_EQ(
+      extraLivesWonBy(game::ScoreChanged{.before = JUST_UNDER_THE_FIRST_STEP,
+                                         .after = PAST_THE_THIRD_STEP}),
+      3U);
 }
 
 /**
@@ -55,8 +57,8 @@ TEST(ExtraLives, OneKillCanPassSeveralSteps) {
  * Then it wins the second step only
  */
 TEST(ExtraLives, TheStepsComeEverySixtyThousand) {
-  EXPECT_EQ(extraLivesWonBy(ScoreChange{.before = PAST_THE_FIRST_STEP,
-                                        .after = AT_THE_SECOND_STEP}),
+  EXPECT_EQ(extraLivesWonBy(game::ScoreChanged{.before = PAST_THE_FIRST_STEP,
+                                               .after = AT_THE_SECOND_STEP}),
             1U);
 }
 
@@ -66,8 +68,8 @@ TEST(ExtraLives, TheStepsComeEverySixtyThousand) {
  * Then it wins none
  */
 TEST(ExtraLives, AScoreThatDidNotGrowWinsNothing) {
-  EXPECT_EQ(extraLivesWonBy(ScoreChange{.before = AT_THE_SECOND_STEP,
-                                        .after = AT_THE_FIRST_STEP}),
+  EXPECT_EQ(extraLivesWonBy(game::ScoreChanged{.before = AT_THE_SECOND_STEP,
+                                               .after = AT_THE_FIRST_STEP}),
             0U);
 }
 

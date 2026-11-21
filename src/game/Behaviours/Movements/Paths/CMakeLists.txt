@@ -1,6 +1,7 @@
 add_library(rtype_game_behaviours_paths STATIC
   AimedBehaviour.cpp
   AimedHeading.cpp
+  UnitHeading.cpp
   ScatterBehaviour.cpp
   SineOffset.cpp
   StraightBehaviour.cpp

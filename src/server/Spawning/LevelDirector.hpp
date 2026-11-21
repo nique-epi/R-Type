@@ -107,7 +107,11 @@ class LevelDirector {
   void spawnDuePlacements();
   void advanceTransition();
   void announceChange();
-  void removeEveryBodyButTheShips() const;
+  /** @brief Puts the level back at its last checkpoint, as
+   * restartFromCheckpoint() says, without spending a continue: a game started
+   * at a stage gets there this way.
+   * @returns Whether the level had reached a checkpoint and has not failed. */
+  bool returnToCheckpoint();
 
   LevelDirectorParts parts_;
   /** What the scripts registered as the level, found once. */

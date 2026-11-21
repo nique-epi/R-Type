@@ -13,7 +13,6 @@
 #include "EntityDestruction.hpp"
 #include "EntityType.hpp"
 #include "EventBus.hpp"
-#include "GameRuleConstants.hpp"
 #include "LevelChange.hpp"
 #include "LevelCheckpoint.hpp"
 #include "LevelDirectorConstants.hpp"
@@ -56,6 +55,25 @@ std::uint16_t transitionLeftOf(const game::LevelProgress& progress) {
   return static_cast<std::uint16_t>(left.count());
 }
 
+/** @brief Destroys every body of the world of @p parts but the ships of the
+ * players, each announced with an EntityDestruction (Removed). */
+void removeEveryBodyButTheShips(const LevelDirectorParts& parts) {
+  engine::ComponentRegistry& components = parts.world.get().components();
+  engine::EventBus& events = parts.events.get();
+  components.forEach<game::NetworkIdentity, game::EntityType>(
+      [&components, &events](engine::Entity body,
+                             const game::NetworkIdentity& identity,
+                             const game::EntityType& type) {
+        if (type == game::EntityType::Player) {
+          return;
+        }
+        events.publish(
+            game::EntityDestruction{.networkId = identity.networkId,
+                                    .cause = game::DestructionCause::Removed});
+        components.destroy(body);
+      });
+}
+
 }  // namespace
 
 const game::LuauLevelEntry& entryOfLevel(const game::LuauLevels& levels,
@@ -94,8 +112,7 @@ LevelDirector::LevelDirector(LevelDirectorParts parts)
   progress_.checkpoint =
       startOfStage(entry_, parts_.level, parts_.startingStage);
   if (progress_.checkpoint.has_value()) {
-    restartFromCheckpoint();
-    progress_.continuesLeft = identifiers::TEAM_CONTINUES;
+    returnToCheckpoint();
   } else {
     openInBiome(progress_, entry_);
   }
@@ -126,11 +143,18 @@ bool LevelDirector::failed() const {
 }
 
 bool LevelDirector::restartFromCheckpoint() {
-  if (progress_.continuesLeft == 0 || !run_.restartFromCheckpoint()) {
+  if (progress_.continuesLeft == 0 || !returnToCheckpoint()) {
     return false;
   }
   --progress_.continuesLeft;
-  removeEveryBodyButTheShips();
+  return true;
+}
+
+bool LevelDirector::returnToCheckpoint() {
+  if (!run_.restartFromCheckpoint()) {
+    return false;
+  }
+  removeEveryBodyButTheShips(parts_);
   placer_.restartAt(progress_.scroll.position());
   progress_.biomeSince = std::min(
       progress_.biomeSince, progress_.scroll.position() - OPENING_BIOME_LEAD);
@@ -188,23 +212,6 @@ void LevelDirector::announceChange() {
                         .transitionLeft = transitionLeftOf(progress_),
                         .band = band(),
                         .continuesLeft = progress_.continuesLeft});
-}
-
-void LevelDirector::removeEveryBodyButTheShips() const {
-  engine::ComponentRegistry& components = parts_.world.get().components();
-  engine::EventBus& events = parts_.events.get();
-  components.forEach<game::NetworkIdentity, game::EntityType>(
-      [&components, &events](engine::Entity body,
-                             const game::NetworkIdentity& identity,
-                             const game::EntityType& type) {
-        if (type == game::EntityType::Player) {
-          return;
-        }
-        events.publish(
-            game::EntityDestruction{.networkId = identity.networkId,
-                                    .cause = game::DestructionCause::Removed});
-        components.destroy(body);
-      });
 }
 
 }  // namespace rtype::server

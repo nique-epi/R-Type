@@ -20,7 +20,7 @@ class PlayerRoster;
 
 /**
  * @brief Adds the points of each enemy destroyed to the score of the player
- * who fired the missile.
+ * who fired the missile, and publishes a ScoreChanged when that score grew.
  *
  * Subscribes to EnemyKilled on construction and unsubscribes on destruction.
  * Only a player connected under the number of the event is credited: a kill

@@ -21,6 +21,7 @@
 #include "NetworkIdentity.hpp"
 #include "PlayerElimination.hpp"
 #include "PlayerHit.hpp"
+#include "PlayerLives.hpp"
 #include "PlayerRoster.hpp"
 #include "ShipContact.hpp"
 #include "SurvivesContact.hpp"
@@ -198,13 +199,10 @@ void LifeKeeper::onTick() {
 
 void LifeKeeper::reviveTheTeam(std::uint8_t lives) {
   for (ConnectedPlayer* const player : roster_.connected()) {
-    auto* const kept =
-        world_.shipComponentOf<game::Lives>(player->shipEntityId);
-    if (kept != nullptr) {
-      kept->count = lives;
+    setLivesOf(world_, *player, lives);
+    if (world_.shipComponentOf<game::Lives>(player->shipEntityId) != nullptr) {
       continue;
     }
-    player->livesWithoutShip = lives;
     player->ticksUntilRespawn = 0;
     respawn(*player);
   }
