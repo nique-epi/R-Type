@@ -36,7 +36,7 @@ points = 200
 [gameplay.gun]
 interval_ms = 1500
 first_shot_ms = 1500
-projectile = "enemy_missile"
+projectile = "weaver_bolt"
 
 [gameplay.mask]
 file = "masks/weaver.txt"

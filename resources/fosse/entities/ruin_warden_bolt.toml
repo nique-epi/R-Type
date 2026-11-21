@@ -8,7 +8,7 @@
 side = "enemy_missile"
 layer = "enemy_missile"
 hits = ["player"]
-pilot = "straight"
+pilot = "aimed"
 
 [gameplay.hitbox]
 width = 32
@@ -17,9 +17,6 @@ height = 32
 [gameplay.motion]
 kind = "steady"
 top_speed = 360
-
-[gameplay.behaviour]
-heading = -1
 
 [appearance]
 sheet = "sprites/fosse/ruin_warden_bolt.png"

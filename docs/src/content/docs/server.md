@@ -1138,7 +1138,8 @@ A game that plays a level is never vanilla (see [Vanilla games](#vanilla-games-v
 | Body | Fires | Interval | First shot |
 |---|---|---|---|
 | Ship (`ship.toml`) | `player_missile` | 333 ms, 20 ticks (**provisional**) | at once: `first_shot_ms` is 0 |
-| Bydo (`drifter.toml`, `weaver.toml`) | `enemy_missile` | 1500 ms, 90 ticks (**provisional**) | after 1500 ms, a whole interval |
+| Drifter (`drifter.toml`) | `enemy_missile`, along its row | 1500 ms, 90 ticks (**provisional**) | after 1500 ms, a whole interval |
+| Weaver (`weaver.toml`) | `weaver_bolt`, aimed at the nearest ship | 1500 ms, 90 ticks (**provisional**) | after 1500 ms, a whole interval |
 | Bydomancer (`bydomancer.toml`) | `rune_orb` | 1000 ms, 60 ticks (**provisional**); its behaviour wants to shoot during the cast of an orb only, so it fires one orb a cast | at its first cast: `first_shot_ms` is 0 |
 | Diver of the Bydo Tyrant (`tyrant_diver.toml`) | `enemy_missile` | 1800 ms, 108 ticks (**provisional**) | after 800 ms, counted once its summoning is over (see [Volleys](#volleys-volleysystem)) |
 
