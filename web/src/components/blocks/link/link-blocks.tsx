@@ -1,9 +1,9 @@
 import { redirect } from 'next/navigation';
 import { LinkSection } from '@/components/accounts/link-section';
+import { UserCodeField } from '@/components/accounts/user-code-field';
 import { PageBody } from '@/components/layout/page-body';
 import { PageHero } from '@/components/layout/page-hero';
 import { Button } from '@/components/primitives/actions/button';
-import { TextField } from '@/components/primitives/inputs/text-field';
 import { Notice } from '@/components/primitives/status/notice';
 import { StarLayers } from '@/components/sky/star-layers';
 import { getDictionary } from '@/i18n/get-dictionary';
@@ -81,7 +81,7 @@ export async function LinkBlocks({
                   : copy.unreachable}
               </Notice>
             ) : null}
-            <TextField
+            <UserCodeField
               label={copy.codeForm.label}
               name="code"
               placeholder={copy.codeForm.placeholder}
