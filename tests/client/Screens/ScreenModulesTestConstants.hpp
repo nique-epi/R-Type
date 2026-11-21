@@ -5,9 +5,10 @@
 #include "LobbyScreenIdConstants.hpp"
 #include "MenuScreenIdConstants.hpp"
 #include "ScreenId.hpp"
+#include "SignInScreenIdConstants.hpp"
 
 /** @brief The screens the menus module registers. */
-constexpr std::array<rtype::client::ScreenId, 15> MENU_SCREENS{
+constexpr std::array<rtype::client::ScreenId, 19> MENU_SCREENS{
     rtype::client::HEADPHONES_SCREEN,
     rtype::client::INTRO_SCREEN,
     rtype::client::TITLE_SCREEN,
@@ -15,6 +16,7 @@ constexpr std::array<rtype::client::ScreenId, 15> MENU_SCREENS{
     rtype::client::OPTIONS_SCREEN,
     rtype::client::GAME_OPTIONS_SCREEN,
     rtype::client::QUIT_CONFIRMATION_SCREEN,
+    rtype::client::LEAVE_GAME_CONFIRMATION_SCREEN,
     rtype::client::CONNECTION_SCREEN,
     rtype::client::CONNECTION_FOR_LEADERBOARD_SCREEN,
     rtype::client::CONNECTION_TO_CHOSEN_SERVER_SCREEN,
@@ -22,7 +24,10 @@ constexpr std::array<rtype::client::ScreenId, 15> MENU_SCREENS{
     rtype::client::CONNECTION_AGAIN_SCREEN,
     rtype::client::CONNECTION_LOST_SCREEN,
     rtype::client::SERVER_MAP_SCREEN,
-    rtype::client::LEADERBOARD_SCREEN};
+    rtype::client::NEW_GAME_SCREEN,
+    rtype::client::LEADERBOARD_SCREEN,
+    rtype::client::SIGN_IN_NEEDED_SCREEN,
+    rtype::client::SIGN_IN_SCREEN};
 
 /** @brief The screens the lobby module registers. */
 constexpr std::array<rtype::client::ScreenId, 2> LOBBY_SCREENS{
