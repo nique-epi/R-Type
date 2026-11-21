@@ -47,7 +47,7 @@ A release published while a LAN is open still deploys the master. The game machi
 
 1. It narrows the ports the system gives to 40000 to 40999 (`net.ipv4.ip_local_port_range`): a game listens on a port the system picks, and the network rules open that range only.
 2. It reads its own public address from the metadata service of AWS, installs the AWS CLI and reads the key of the master of each port in Parameter Store.
-3. It writes one `server.cfg` per server in `/var/lib/rtype-servers/<port>/`, which `install.sh` then makes readable by the user `rtype` only, with `master-url`, `master-key`, `public-address` and `server-name` (`LAN 1` to `LAN 6`).
+3. It writes one `server.cfg` per server in `/var/lib/rtype-servers/<port>/`, which `install.sh` then makes readable by the user `rtype` only, with `master-url`, `master-key`, `public-address`, `server-name` (`LAN 1` to `LAN 6`) and one `ensure` line for each resource the repository ships (`crimson-drifter`, `fosse`, `ashlands`, `deseret` and `training-run`), so the waiting room votes between every map. The server package holds those resources, in `resources/` beside `assets/`.
 4. It downloads the scripts of `infra/` at the commit the workflow ran on, and runs `install.sh` with the version of the latest release and the ports of the pool.
 
 The ports of the pool and the range of the games are written once, in `infra/terraform/`, which opens them and writes them as tags of the security group `rtype-game`; `infra/terraform-game/` reads the tags, so the machine never uses a port the rules do not open.
@@ -69,7 +69,7 @@ A member of the team does this once, after the master is set up (see [Deploying 
 1. Apply `infra/terraform/` again, with `state_bucket` set to the bucket of the Terraform state: it creates the network rules and the role of the game machine, and the role `rtype-lan` of the two workflows. `infra/bootstrap.sh` does it and sets the two variables of step 2.
 2. Set the variables `AWS_LAN_ROLE_ARN` (the `lan_role_arn` output) and `TERRAFORM_STATE_BUCKET` in the repository.
 3. Create the keys of the pool: `infra/game-servers/create-keys.sh <url of the master> 4242 4243 4244 4245 4246 4247`. It asks the master for one server per port and keeps each key encrypted in Parameter Store under `/rtype/game/<port>/master-key`, without printing it. The master creates 5 servers an hour for one address: the script stops at the sixth and names the ports left; run it again an hour later.
-4. Deploy a release to the master with `deploy-master`, so the service of the test game server exists, and write the `server.cfg` of the test server once in `/var/lib/rtype/test-server/` on the master machine, with its own key.
+4. Deploy a release to the master with `deploy-master`, so the service of the test game server exists, and write the `server.cfg` of the test server once in `/var/lib/rtype/test-server/` on the master machine, with its own key and the same `ensure` lines as the pool.
 5. Open a LAN once before the real one, join a game on one of its servers, then close it.
 
 ## Limits

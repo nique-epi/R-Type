@@ -43,6 +43,11 @@ set master-url $MASTER_URL
 set master-key "$key"
 set public-address $address
 set server-name "LAN $number"
+ensure crimson-drifter
+ensure fosse
+ensure ashlands
+ensure deseret
+ensure training-run
 CFG
   done
   umask 022
