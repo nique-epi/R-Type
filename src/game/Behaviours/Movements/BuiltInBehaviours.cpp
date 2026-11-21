@@ -1,5 +1,6 @@
 #include "BuiltInBehaviours.hpp"
 #include <memory>
+#include "AimedBehaviour.hpp"
 #include "BehaviourRegistry.hpp"
 #include "BydoTyrantBehaviour.hpp"
 #include "BydomancerBehaviour.hpp"
@@ -16,6 +17,7 @@ BehaviourRegistry builtInBehaviours() {
   behaviours.add(std::make_unique<StraightBehaviour>());
   behaviours.add(std::make_unique<WeaveBehaviour>());
   behaviours.add(std::make_unique<ScatterBehaviour>());
+  behaviours.add(std::make_unique<AimedBehaviour>());
   behaviours.add(std::make_unique<ReaperBehaviour>());
   behaviours.add(std::make_unique<DrillbackBehaviour>());
   behaviours.add(std::make_unique<BydomancerBehaviour>());
