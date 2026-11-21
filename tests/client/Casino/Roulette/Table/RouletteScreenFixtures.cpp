@@ -65,11 +65,16 @@ network::CasinoRoomState spinningRoom() {
   return room;
 }
 
-network::CasinoRoomState resultRoom(std::uint32_t acePayout) {
+network::CasinoRoomState drawnSpinningRoom(std::uint32_t acePayout) {
   network::CasinoRoomState room = spinningRoom();
+  room.players = playersOfTheRoom(STAKE_OF_ACE, acePayout);
+  return room;
+}
+
+network::CasinoRoomState resultRoom(std::uint32_t acePayout) {
+  network::CasinoRoomState room = drawnSpinningRoom(acePayout);
   room.phase = network::RoulettePhase::Result;
   room.serverTime = room.resultAt + A_SECOND_INTO_THE_PHASE;
-  room.players = playersOfTheRoom(STAKE_OF_ACE, acePayout);
   return room;
 }
 

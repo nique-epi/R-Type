@@ -100,12 +100,21 @@ sf::Color valueColorOf(const CasinoPlayer& player, bool paid) {
   return player.payout.value_or(0) > 0 ? GAIN_GREEN : PALE_BLUE;
 }
 
+/** @returns Whether @p reading shows the result of its round, the wheel
+ * stopped: the master sends the payouts as soon as it draws, while the wheel
+ * still turns, and a gain shown then would give the number away. */
+bool resultShown(const RouletteReading& reading) {
+  return reading.room.has_value() &&
+         reading.room->phase == RoulettePhase::Result;
+}
+
 /** @returns The row of @p player, seated at @p place in the room, from 0. */
 TableRosterRow rowOf(const RouletteReading& reading, const CasinoPlayer& player,
                      std::size_t place) {
   const bool own = player.nickname == reading.ownNickname;
   const std::string gain = gainOf(player.stake, player.payout.value_or(0));
-  const bool paid = player.payout.has_value() && !gain.empty();
+  const bool paid =
+      resultShown(reading) && player.payout.has_value() && !gain.empty();
   return TableRosterRow{
       .colors = reading.palette.at(place % reading.palette.size()),
       .name = own ? player.nickname + OWN_NAME_END : player.nickname,
