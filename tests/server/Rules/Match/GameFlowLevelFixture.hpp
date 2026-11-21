@@ -2,9 +2,9 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <string_view>
 #include "ConnectedPlayer.hpp"
 #include "GameFlowFixture.hpp"
+#include "PlayedLevel.hpp"
 
 namespace rtype::server::testing {
 
@@ -15,12 +15,14 @@ namespace rtype::server::testing {
 class GameFlowLevelFixture : public GameFlowFixture {
  public:
   /** @brief A game that plays the level @p level. */
-  explicit GameFlowLevelFixture(std::string_view level);
+  explicit GameFlowLevelFixture(PlayedLevel level);
 
  protected:
   /** @brief Destroys the ship of @p player and leaves it no life, as the hit
    * that takes its last life does. */
   void destroyTheLastShipOf(ConnectedPlayer& player);
+  /** @brief Takes every life of the first player, FIRST_PLAYER. */
+  void takeEveryLifeOfTheFirstPlayer();
   /** @returns The lives @p player has left, its ship in play included. */
   [[nodiscard]] std::uint8_t livesLeftTo(const ConnectedPlayer& player);
   /** @returns How many enemies the world of the game holds. */
@@ -31,6 +33,25 @@ class GameFlowLevelFixture : public GameFlowFixture {
 class GameFlowTwoStagesFixture : public GameFlowLevelFixture {
  public:
   GameFlowTwoStagesFixture();
+};
+
+/** @brief A game that plays `two_stages` with one continue. */
+class GameFlowOneContinueFixture : public GameFlowLevelFixture {
+ public:
+  GameFlowOneContinueFixture();
+};
+
+/** @brief A game that plays `two_stages` without any continue. */
+class GameFlowNoContinueFixture : public GameFlowLevelFixture {
+ public:
+  GameFlowNoContinueFixture();
+};
+
+/** @brief A game that plays `starts_at_two` from its second stage, with one
+ * continue. */
+class GameFlowDeclaredStartFixture : public GameFlowLevelFixture {
+ public:
+  GameFlowDeclaredStartFixture();
 };
 
 /** @brief A game that plays `one_stage`. */

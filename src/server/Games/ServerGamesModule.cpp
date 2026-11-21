@@ -233,6 +233,39 @@ std::size_t startingStageOf(const engine::SettingValue& setting) {
       setting.integer().value_or(static_cast<std::int64_t>(FIRST_LEVEL_STAGE)));
 }
 
+/** @returns The setting CONTINUES_SETTING_NAME, declared in @p configuration:
+ * how many times the team of a game that plays a level may restart from a
+ * checkpoint, DEFAULT_CONTINUES by default. */
+const engine::SettingValue& declareContinues(
+    engine::ConfigurationRegistry& configuration) {
+  return configuration.declareInteger(engine::IntegerSettingDefinition{
+      .name = std::string{CONTINUES_SETTING_NAME},
+      .defaultValue = DEFAULT_CONTINUES,
+      .lowest = LOWEST_CONTINUES,
+      .highest = HIGHEST_CONTINUES,
+      .help = "Times a team without a life restarts from a checkpoint"});
+}
+
+/** @returns The continues @p setting, CONTINUES_SETTING_NAME, gives. */
+std::uint8_t continuesOf(const engine::SettingValue& setting) {
+  return static_cast<std::uint8_t>(
+      setting.integer().value_or(DEFAULT_CONTINUES));
+}
+
+/** @returns The rules a game set up as @p game is hosted with, its waves
+ * read from @p catalog and its draws started from @p seed, if any. */
+HostedRules hostedRulesOf(const GameSettings& game, const WaveCatalog& catalog,
+                          std::optional<std::uint32_t> seed) {
+  return HostedRules{
+      .wavesFingerprint = catalog.fingerprint(),
+      .sheetsFingerprint = entitySheetsFingerprint(game.types),
+      .seed = seed,
+      .inputDelayTicks = game.inputDelayTicks,
+      .gameRules = game.rules,
+      .startsAtBoss = game.startsAtBoss,
+      .playsALevel = game.level.has_value() || !game.maps.empty()};
+}
+
 /** @returns The setting LEVEL_SETTING_NAME, declared in @p configuration:
  * the level every game plays, or nothing (the default) to play the waves. */
 const engine::SettingValue& declareLevel(
@@ -309,6 +342,7 @@ void ServerGamesModule::declareSettings(
   startAtBossSetting_ = &declareStartAtBoss(configuration);
   startAtStageSetting_ = &declareStartAtStage(configuration);
   levelSetting_ = &declareLevel(configuration);
+  continuesSetting_ = &declareContinues(configuration);
 }
 
 void ServerGamesModule::start() {
@@ -341,36 +375,28 @@ GameSettings ServerGamesModule::settingsOf(const WaveCatalog& catalog,
                                            const game::EntitySheets& types,
                                            std::optional<std::uint32_t> seed) {
   const network::GameRules rules = ruleSettings_.rules();
-  const std::size_t inputDelayTicks =
-      sizeSettingOr(*inputDelaySetting_, settings_.inputDelayTicks);
-  const bool startsAtBoss = startAtBossSetting_->integer().value_or(0) != 0;
   const std::string& level = levelSetting_->text();
-  std::vector<MapChoice> maps =
-      level.empty() ? mapsOf(scripts_.get()) : std::vector<MapChoice>{};
-  const std::vector<std::string_view> breaches = vanillaBreaches(
-      HostedRules{.wavesFingerprint = catalog.fingerprint(),
-                  .sheetsFingerprint = entitySheetsFingerprint(types),
-                  .seed = seed,
-                  .inputDelayTicks = inputDelayTicks,
-                  .gameRules = rules,
-                  .startsAtBoss = startsAtBoss,
-                  .playsALevel = !level.empty() || !maps.empty()});
-  logHowGamesPlay(logger_, rules, breaches);
-  return GameSettings{
+  GameSettings game{
       .seed = seed.has_value() ? *seed : std::random_device{}(),
       .waves = catalog.planOf(rules.difficulty),
       .types = types,
       .statesPerSecond =
           sizeSettingOr(*stateRateSetting_, settings_.statesPerSecond),
       .stateEncoding = stateEncodingOf(*stateEncodingSetting_),
-      .inputDelayTicks = inputDelayTicks,
+      .inputDelayTicks =
+          sizeSettingOr(*inputDelaySetting_, settings_.inputDelayTicks),
       .rules = rules,
-      .vanilla = breaches.empty(),
-      .startsAtBoss = startsAtBoss,
+      .startsAtBoss = startAtBossSetting_->integer().value_or(0) != 0,
       .level = level.empty() ? std::nullopt : std::optional{level},
-      .maps = std::move(maps),
+      .maps = level.empty() ? mapsOf(scripts_.get()) : std::vector<MapChoice>{},
       .startingStage = startingStageOf(*startAtStageSetting_),
+      .continues = continuesOf(*continuesSetting_),
       .scripts = scripts_.get()};
+  const std::vector<std::string_view> breaches =
+      vanillaBreaches(hostedRulesOf(game, catalog, seed));
+  logHowGamesPlay(logger_, rules, breaches);
+  game.vanilla = breaches.empty();
+  return game;
 }
 
 void ServerGamesModule::stop() {

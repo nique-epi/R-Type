@@ -44,6 +44,18 @@ constexpr std::size_t FIRST_LEVEL_STAGE = 1;
  * registered with `level.register`; empty (the default) plays the waves of
  * the difficulty of the game, the survival mode. */
 constexpr std::string_view LEVEL_SETTING_NAME = "level";
+/** @brief The setting that says how many times the team of a game that plays
+ * a level may go back to the last checkpoint of the level once no player has
+ * a life left, from LOWEST_CONTINUES to HIGHEST_CONTINUES; with none left,
+ * the game is lost. */
+constexpr std::string_view CONTINUES_SETTING_NAME = "continues";
+/** @brief The continues a game gives its team unless CONTINUES_SETTING_NAME
+ * says otherwise: provisional, until gameplay tunes it. */
+constexpr std::uint8_t DEFAULT_CONTINUES = 3;
+/** @brief The fewest and the most continues a game may give: none makes the
+ * first team without a life lose, and the most still reads as one digit. */
+constexpr std::uint8_t LOWEST_CONTINUES = 0;
+constexpr std::uint8_t HIGHEST_CONTINUES = 9;
 constexpr std::string_view DATABASE_SETTING_NAME = "database";
 constexpr std::string_view MASTER_URL_SETTING_NAME = "master-url";
 constexpr std::string_view MASTER_KEY_SETTING_NAME = "master-key";
@@ -64,9 +76,9 @@ constexpr std::array SERVER_SETTING_NAMES{
     STATE_RATE_SETTING_NAME,     STATE_ENCODING_SETTING_NAME,
     INPUT_DELAY_SETTING_NAME,    START_AT_BOSS_SETTING_NAME,
     START_AT_STAGE_SETTING_NAME, LEVEL_SETTING_NAME,
-    DATABASE_SETTING_NAME,       MASTER_URL_SETTING_NAME,
-    MASTER_KEY_SETTING_NAME,     PUBLIC_ADDRESS_SETTING_NAME,
-    SERVER_NAME_SETTING_NAME};
+    CONTINUES_SETTING_NAME,      DATABASE_SETTING_NAME,
+    MASTER_URL_SETTING_NAME,     MASTER_KEY_SETTING_NAME,
+    PUBLIC_ADDRESS_SETTING_NAME, SERVER_NAME_SETTING_NAME};
 
 /**
  * @brief The highest seed: the seed of a game is 32 bits.

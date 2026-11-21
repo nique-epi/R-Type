@@ -13,7 +13,8 @@ namespace rtype::game {
  * far the level scrolled, in logical units, and the speed of the scroll, in
  * logical units per second, 0 while paused, how far the level had scrolled
  * when the biome began, the milliseconds left of the transition it plays,
- * 0 when it plays none, and the rows the ships fly between in that biome.
+ * 0 when it plays none, the rows the ships fly between in that biome, and how
+ * many times the team may still restart from a checkpoint.
  */
 struct LevelChange {
   std::string biome;
@@ -22,6 +23,7 @@ struct LevelChange {
   float biomeSince{};
   std::uint16_t transitionLeft{};
   PlayBand band{};
+  std::uint8_t continuesLeft{};
 
   bool operator==(const LevelChange&) const = default;
 };

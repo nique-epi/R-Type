@@ -55,6 +55,24 @@ std::uint16_t transitionLeftOf(const game::LevelProgress& progress) {
   return static_cast<std::uint16_t>(left.count());
 }
 
+/** @brief Removes every body of @p components but the ships of the players,
+ * each with an EntityDestruction Removed published on @p events. */
+void removeEveryBodyButTheShips(engine::ComponentRegistry& components,
+                                engine::EventBus& events) {
+  components.forEach<game::NetworkIdentity, game::EntityType>(
+      [&components, &events](engine::Entity body,
+                             const game::NetworkIdentity& identity,
+                             const game::EntityType& type) {
+        if (type == game::EntityType::Player) {
+          return;
+        }
+        events.publish(
+            game::EntityDestruction{.networkId = identity.networkId,
+                                    .cause = game::DestructionCause::Removed});
+        components.destroy(body);
+      });
+}
+
 }  // namespace
 
 const game::LuauLevelEntry& entryOfLevel(const game::LuauLevels& levels,
@@ -89,11 +107,12 @@ LevelDirector::LevelDirector(LevelDirectorParts parts)
           .progress = progress_,
           .components = parts_.world.get().components()}),
       placer_(entry_.get().placements),
-      logger_(std::string{LEVEL_DIRECTOR_LOGGER_NAME}) {
+      logger_(std::string{LEVEL_DIRECTOR_LOGGER_NAME}),
+      continuesLeft_(parts_.continues) {
   progress_.checkpoint =
       startOfStage(entry_, parts_.level, parts_.startingStage);
   if (progress_.checkpoint.has_value()) {
-    restartFromCheckpoint();
+    returnToCheckpoint();
   } else {
     openInBiome(progress_, entry_);
   }
@@ -124,18 +143,12 @@ bool LevelDirector::failed() const {
 }
 
 bool LevelDirector::restartFromCheckpoint() {
-  if (!run_.restartFromCheckpoint()) {
+  if (continuesLeft_ == 0 || !returnToCheckpoint()) {
     return false;
   }
-  removeEveryBodyButTheShips();
-  placer_.restartAt(progress_.scroll.position());
-  progress_.biomeSince = std::min(
-      progress_.biomeSince, progress_.scroll.position() - OPENING_BIOME_LEAD);
-  progress_.transition.reset();
-  announcedBiome_.reset();
-  logger_.info("the level ", parts_.level,
-               " restarts from its last checkpoint, at ",
-               progress_.scroll.position(), " units of scroll");
+  --continuesLeft_;
+  logger_.info("the level ", parts_.level, " has ",
+               static_cast<unsigned int>(continuesLeft_), " continues left");
   return true;
 }
 
@@ -171,36 +184,39 @@ void LevelDirector::announceChange() {
   const bool moving = progress_.scroll.speed() > 0.0F;
   const bool transitioning = progress_.transition.has_value();
   if (announcedBiome_.has_value() && *announcedBiome_ == progress_.biome &&
-      announcedMoving_ == moving && announcedTransitioning_ == transitioning) {
+      announcedMoving_ == moving && announcedTransitioning_ == transitioning &&
+      announcedContinues_ == continuesLeft_) {
     return;
   }
   announcedBiome_ = progress_.biome;
   announcedMoving_ = moving;
   announcedTransitioning_ = transitioning;
+  announcedContinues_ = continuesLeft_;
   parts_.events.get().publish(
       game::LevelChange{.biome = progress_.biome,
                         .scrollPosition = progress_.scroll.position(),
                         .scrollSpeed = progress_.scroll.speed(),
                         .biomeSince = progress_.biomeSince,
                         .transitionLeft = transitionLeftOf(progress_),
-                        .band = band()});
+                        .band = band(),
+                        .continuesLeft = continuesLeft_});
 }
 
-void LevelDirector::removeEveryBodyButTheShips() const {
-  engine::ComponentRegistry& components = parts_.world.get().components();
-  engine::EventBus& events = parts_.events.get();
-  components.forEach<game::NetworkIdentity, game::EntityType>(
-      [&components, &events](engine::Entity body,
-                             const game::NetworkIdentity& identity,
-                             const game::EntityType& type) {
-        if (type == game::EntityType::Player) {
-          return;
-        }
-        events.publish(
-            game::EntityDestruction{.networkId = identity.networkId,
-                                    .cause = game::DestructionCause::Removed});
-        components.destroy(body);
-      });
+bool LevelDirector::returnToCheckpoint() {
+  if (!run_.restartFromCheckpoint()) {
+    return false;
+  }
+  removeEveryBodyButTheShips(parts_.world.get().components(),
+                             parts_.events.get());
+  placer_.restartAt(progress_.scroll.position());
+  progress_.biomeSince = std::min(
+      progress_.biomeSince, progress_.scroll.position() - OPENING_BIOME_LEAD);
+  progress_.transition.reset();
+  announcedBiome_.reset();
+  logger_.info("the level ", parts_.level,
+               " restarts from its last checkpoint, at ",
+               progress_.scroll.position(), " units of scroll");
+  return true;
 }
 
 }  // namespace rtype::server

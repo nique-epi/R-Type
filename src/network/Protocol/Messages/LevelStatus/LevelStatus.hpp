@@ -29,7 +29,9 @@ namespace rtype::network {
  * the cinematic of the transition from it. The band is the rows the ships fly
  * between in that biome, in logical units from the top of the playfield: its
  * top lies above its bottom, and a bottom of OPEN_BAND_BOTTOM closes nothing,
- * the ships flying down to the bottom of the play area.
+ * the ships flying down to the bottom of the play area. The continues left
+ * are how many times the team may still restart from a checkpoint once no
+ * player has a life left: with none, the game is lost then.
  */
 struct LevelStatus {
   static constexpr MessageType TYPE = MessageType::LevelStatus;
@@ -41,6 +43,7 @@ struct LevelStatus {
   std::uint16_t transitionLeft{};
   std::uint16_t bandTop{};
   std::uint16_t bandBottom{OPEN_BAND_BOTTOM};
+  std::uint8_t continuesLeft{};
 
   bool operator==(const LevelStatus&) const = default;
 };
@@ -48,7 +51,7 @@ struct LevelStatus {
 /**
  * @brief Writes the biome, as a short string, then the scroll position, the
  * scroll speed, the position the biome began at, the time left of the
- * transition and the top and the bottom of the band.
+ * transition, the top and the bottom of the band and the continues left.
  * @throws InvalidFieldValueException when the status breaks a rule of
  * LevelStatus; nothing is written then.
  */
@@ -56,9 +59,9 @@ void encodePayload(ByteWriter& writer, const LevelStatus& message);
 
 /**
  * @brief Reads a LevelStatus from the whole of @p payload.
- * @throws BufferUnderflowException when @p payload ends before the bottom of
- * the band.
- * @throws TrailingBytesException when bytes follow that bottom.
+ * @throws BufferUnderflowException when @p payload ends before the continues
+ * left.
+ * @throws TrailingBytesException when bytes follow them.
  * @throws InvalidFieldValueException when the status breaks a rule of
  * LevelStatus.
  */

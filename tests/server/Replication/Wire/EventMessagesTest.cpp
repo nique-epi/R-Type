@@ -271,16 +271,18 @@ TEST(EventMessagesTest, EncodesADeadBossAsDefeated) {
 
 /**
  * Given the biome wreck, scrolled 240 units, its scroll paused, closed from
- * row 192 to row 848
+ * row 192 to row 848, its team with 2 continues left
  * When the change of the level is encoded
- * Then it is a guaranteed LevelStatus of that biome, that scroll and that band
+ * Then it is a guaranteed LevelStatus of that biome, that scroll, that band
+ * and those continues
  */
 TEST(EventMessagesTest, EncodesAChangeOfTheLevel) {
   const EventMessage message =
       eventMessageOf(game::LevelChange{.biome = std::string{LEVEL_BIOME},
                                        .scrollPosition = LEVEL_SCROLL_POSITION,
                                        .scrollSpeed = PAUSED_LEVEL_SCROLL_SPEED,
-                                       .band = LEVEL_BAND});
+                                       .band = LEVEL_BAND,
+                                       .continuesLeft = LEVEL_CONTINUES_LEFT});
 
   EXPECT_EQ(message.message.type, network::MessageType::LevelStatus);
   EXPECT_TRUE(message.guaranteed);
@@ -290,7 +292,8 @@ TEST(EventMessagesTest, EncodesAChangeOfTheLevel) {
                             .scrollPosition = LEVEL_SCROLL_POSITION,
                             .scrollSpeed = PAUSED_LEVEL_SCROLL_SPEED,
                             .bandTop = WIRE_LEVEL_BAND_TOP,
-                            .bandBottom = WIRE_LEVEL_BAND_BOTTOM}));
+                            .bandBottom = WIRE_LEVEL_BAND_BOTTOM,
+                            .continuesLeft = LEVEL_CONTINUES_LEFT}));
 }
 
 /**

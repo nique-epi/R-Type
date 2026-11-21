@@ -47,6 +47,11 @@ set start-at-stage 1
 # waves of its difficulty, the survival mode.
 set level ""
 
+# [games] How many times the team of a game that plays a level restarts from
+# the last checkpoint of the level once no player has a life left, from 0 to 9.
+# Each restart takes one; with none left, the game is lost. 0 gives none.
+set continues 3
+
 # [supervisor] The SQLite file the leaderboard of this server is kept in, on a local disk;
 # a name with a space goes in quotes. Empty: r-type_server_<port>.db next to
 # the executable, with the port above.

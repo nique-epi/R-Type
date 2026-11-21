@@ -9,6 +9,8 @@ namespace rtype::server::testing {
 /** @brief The levels of the game flow tests. `two_stages` waits 50 ms
  * (3 ticks) in its first stage, which ends at the fourth tick of the game,
  * where its checkpoint is, then waits for a long time in its second.
+ * `starts_at_two` waits for a long time in each of its two stages and
+ * declares where its second starts, so a game may start there.
  * `one_stage` ends at once, `broken` fails at once, `sends_a_bydo` creates
  * a Drifter at its first tick, then waits for a long time, and
  * `fights_a_bydo` creates a Drifter, waits 50 ms, then ends once no enemy is
@@ -22,6 +24,10 @@ level.register("two_stages", {
     level.wait(60000)
   end,
 })
+level.register("starts_at_two", {
+  function() level.wait(60000) end,
+  function() level.wait(60000) end,
+}, { starts = { [2] = { scroll = 600 } } })
 level.register("one_stage", { function() end })
 level.register("broken", { function() error("broken") end })
 level.register("sends_a_bydo", { function()
@@ -37,6 +43,7 @@ level.register("fights_a_bydo", { function()
 end })
 )";
 constexpr std::string_view LEVEL_OF_TWO_STAGES_NAME = "two_stages";
+constexpr std::string_view LEVEL_WITH_A_DECLARED_START_NAME = "starts_at_two";
 constexpr std::string_view LEVEL_OF_ONE_STAGE_NAME = "one_stage";
 constexpr std::string_view BROKEN_LEVEL_NAME = "broken";
 constexpr std::string_view LEVEL_THAT_SENDS_A_BYDO_NAME = "sends_a_bydo";
@@ -53,6 +60,13 @@ constexpr std::string_view FLOW_LEVELS_SCRIPT_NAME = "flow_levels.luau";
  * `two_stages`, reached at its fourth tick. */
 constexpr std::size_t TICKS_BEFORE_THE_CHECKPOINT = 2;
 constexpr std::size_t TICKS_PAST_THE_CHECKPOINT = 6;
+
+/** @brief The stage a game of `starts_at_two` starts at, from 1. */
+constexpr std::size_t SECOND_STAGE_OF_THE_LEVEL = 2;
+
+/** @brief Continues a game may give its team: one, and none. */
+constexpr std::uint8_t ONE_CONTINUE = 1;
+constexpr std::uint8_t NO_CONTINUE = 0;
 
 /** @brief The lives the rules of a game give each player by default. */
 constexpr std::uint8_t LIVES_OF_THE_RULES = 3;

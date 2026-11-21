@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <string>
 #include "BehaviourScripts.hpp"
@@ -28,6 +29,8 @@ struct LevelDirectorParts {
   std::string level;
   /** @brief The stage the level starts at, from FIRST_LEVEL_STAGE. */
   std::size_t startingStage{FIRST_LEVEL_STAGE};
+  /** @brief How many times the team may restart from a checkpoint. */
+  std::uint8_t continues{DEFAULT_CONTINUES};
 };
 
 }  // namespace rtype::server

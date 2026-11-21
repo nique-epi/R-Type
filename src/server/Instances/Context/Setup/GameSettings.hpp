@@ -27,7 +27,7 @@ namespace rtype::server {
  * the world states it sends per second and how it writes them, the ticks it
  * holds each input, its rules (the name of its difficulty, the lives of each
  * player, friendly fire), whether it is vanilla, and the level it plays
- * instead of its waves, if any.
+ * instead of its waves, if any, with the continues of its team.
  */
 // NOLINTNEXTLINE(cppcoreguidelines-pro-type-member-init,hicpp-member-init)
 struct GameSettings {
@@ -63,6 +63,9 @@ struct GameSettings {
   /** @brief The stage of that level the game starts at, from
    * FIRST_LEVEL_STAGE, where the script of the level declares it starts. */
   std::size_t startingStage{FIRST_LEVEL_STAGE};
+  /** @brief How many times its team may go back to the last checkpoint of
+   * that level once no player has a life left; the game is lost after. */
+  std::uint8_t continues{DEFAULT_CONTINUES};
   /** @brief The scripts its bodies run on, which outlive it; nullptr in a game
    * built without any. */
   game::BehaviourScripts* scripts{nullptr};

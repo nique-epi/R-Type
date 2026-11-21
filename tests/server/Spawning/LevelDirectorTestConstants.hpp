@@ -215,6 +215,11 @@ level.register("directed", {
   function() level.wait(60000) end,
 }, { starts = { [2] = { scroll = 600, biome = "caves" } } })
 )";
+/** @brief The continues a level has unless its game says otherwise, and what
+ * is left of them after one restart. */
+constexpr std::uint8_t CONTINUES_OF_A_NEW_LEVEL = 3;
+constexpr std::uint8_t CONTINUES_AFTER_ONE_RESTART = 2;
+
 constexpr std::size_t FIRST_STAGE = 1;
 constexpr std::size_t SECOND_STAGE = 2;
 constexpr std::size_t SECOND_STAGE_FROM_ZERO = 1;

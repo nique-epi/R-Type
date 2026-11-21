@@ -3,7 +3,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <string>
-#include <string_view>
 #include <vector>
 #include "BehaviourScripts.hpp"
 #include "ConnectedPlayer.hpp"
@@ -13,8 +12,11 @@
 #include "GameFlowLevelTestConstants.hpp"
 #include "GameSettings.hpp"
 #include "Instances/GameInstanceTestConstants.hpp"
+#include "PlayedLevel.hpp"
 #include "PlayerLives.hpp"
+#include "PlayerRoster.hpp"
 #include "ScriptSource.hpp"
+#include "SentDatagrams.hpp"
 #include "ShippedEntitySheets.hpp"
 #include "Spawning/WavePlanFixtures.hpp"
 
@@ -39,19 +41,25 @@ game::BehaviourScripts& scriptsOfTheFlowLevels() {
 
 }  // namespace
 
-GameFlowLevelFixture::GameFlowLevelFixture(std::string_view level)
+GameFlowLevelFixture::GameFlowLevelFixture(PlayedLevel level)
     : GameFlowFixture(
           GameSettings{.seed = SOME_SEED,
                        .waves = testWavePlan(),
                        .types = game::testing::shippedEntitySheets(),
-                       .level = std::string{level},
+                       .level = std::string{level.name},
                        .maps = {},
+                       .startingStage = level.startingStage,
+                       .continues = level.continues,
                        .scripts = &scriptsOfTheFlowLevels()}) {}
 
 void GameFlowLevelFixture::destroyTheLastShipOf(ConnectedPlayer& player) {
   ASSERT_TRUE(flow().world().removePlayer(player.shipEntityId));
   player.shipEntityId = identifiers::NO_ENTITY_ID;
   player.livesWithoutShip = 0;
+}
+
+void GameFlowLevelFixture::takeEveryLifeOfTheFirstPlayer() {
+  takeEveryLifeOf(*roster().find(playerEndpoint(FIRST_PLAYER)));
 }
 
 std::uint8_t GameFlowLevelFixture::livesLeftTo(const ConnectedPlayer& player) {
@@ -63,18 +71,33 @@ std::size_t GameFlowLevelFixture::enemiesInPlay() {
 }
 
 GameFlowTwoStagesFixture::GameFlowTwoStagesFixture()
-    : GameFlowLevelFixture(LEVEL_OF_TWO_STAGES_NAME) {}
+    : GameFlowLevelFixture(PlayedLevel{.name = LEVEL_OF_TWO_STAGES_NAME}) {}
+
+GameFlowOneContinueFixture::GameFlowOneContinueFixture()
+    : GameFlowLevelFixture(PlayedLevel{.name = LEVEL_OF_TWO_STAGES_NAME,
+                                       .continues = ONE_CONTINUE}) {}
+
+GameFlowNoContinueFixture::GameFlowNoContinueFixture()
+    : GameFlowLevelFixture(PlayedLevel{.name = LEVEL_OF_TWO_STAGES_NAME,
+                                       .continues = NO_CONTINUE}) {}
+
+GameFlowDeclaredStartFixture::GameFlowDeclaredStartFixture()
+    : GameFlowLevelFixture(
+          PlayedLevel{.name = LEVEL_WITH_A_DECLARED_START_NAME,
+                      .continues = ONE_CONTINUE,
+                      .startingStage = SECOND_STAGE_OF_THE_LEVEL}) {}
 
 GameFlowOneStageFixture::GameFlowOneStageFixture()
-    : GameFlowLevelFixture(LEVEL_OF_ONE_STAGE_NAME) {}
+    : GameFlowLevelFixture(PlayedLevel{.name = LEVEL_OF_ONE_STAGE_NAME}) {}
 
 GameFlowBrokenLevelFixture::GameFlowBrokenLevelFixture()
-    : GameFlowLevelFixture(BROKEN_LEVEL_NAME) {}
+    : GameFlowLevelFixture(PlayedLevel{.name = BROKEN_LEVEL_NAME}) {}
 
 GameFlowFightingLevelFixture::GameFlowFightingLevelFixture()
-    : GameFlowLevelFixture(LEVEL_THAT_FIGHTS_A_BYDO_NAME) {}
+    : GameFlowLevelFixture(PlayedLevel{.name = LEVEL_THAT_FIGHTS_A_BYDO_NAME}) {
+}
 
 GameFlowSendingLevelFixture::GameFlowSendingLevelFixture()
-    : GameFlowLevelFixture(LEVEL_THAT_SENDS_A_BYDO_NAME) {}
+    : GameFlowLevelFixture(PlayedLevel{.name = LEVEL_THAT_SENDS_A_BYDO_NAME}) {}
 
 }  // namespace rtype::server::testing
