@@ -1349,7 +1349,7 @@ Every game that ends leaves a row per player in the SQLite file of its server, a
 
 - A row goes to each player connected when the game started. A player who leaves keeps a row, with the score and the deaths it had when it left, so leaving does not erase a bad game. A player who leaves during `Starting` was never counted.
 - The score is read when the bus delivers the end, in the tick of the end, so it is the score `GameEnded` tells the players.
-- Deaths are the lives of the rules (`GameSettings::lives`) minus `ConnectedPlayer::livesWithoutShip`, which holds the lives left even while the player has a ship.
+- Deaths are the ships the player lost, `ConnectedPlayer::deaths`, which `LifeKeeper` counts one by one each time it takes a life and a new world starts from 0: a checkpoint that gives the lives back, or an extra life won with the score, takes none away.
 - A game ended by `finish()` or left by all its players is recorded like the others. A game with no row to write leaves nothing. A game the server stops in the middle has no end, so it leaves nothing either.
 
 ### Vanilla games: `vanillaBreaches`

@@ -118,11 +118,12 @@ bool destroyContacted(game::World& world, const CostlyContact& contact) {
 }
 
 /** @brief Takes a life and the ship from the player of @p ship, who keeps the
- * lives the ship had, one less, for its next ship, and makes a player with a
- * life left wait RESPAWN_DELAY_TICKS ticks for it. */
+ * lives the ship had, one less, for its next ship, counts a death, and makes
+ * a player with a life left wait RESPAWN_DELAY_TICKS ticks for it. */
 void takeLifeFrom(const DoomedShip& ship) {
   ConnectedPlayer& player = *ship.player;
   player.livesWithoutShip = static_cast<std::uint8_t>(ship.livesBefore - 1);
+  ++player.deaths;
   player.shipEntityId = identifiers::NO_ENTITY_ID;
   player.ticksUntilRespawn =
       player.livesWithoutShip > 0 ? RESPAWN_DELAY_TICKS : 0;

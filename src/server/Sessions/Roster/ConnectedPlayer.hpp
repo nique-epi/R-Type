@@ -64,6 +64,10 @@ struct ConnectedPlayer {
    * ship holds the lives instead, and this field keeps the value the ship was
    * given. */
   std::uint8_t livesWithoutShip{game::STARTING_LIVES};
+  /** @brief The ships the player lost in the game in progress, one each time
+   * LifeKeeper takes a life, whatever gave lives back since (a checkpoint, a
+   * score); a new world starts it again from 0. */
+  std::uint32_t deaths{0};
   /** @brief Whether the player declared itself ready to start; cleared when the
    * game waits for players again. */
   bool ready{false};
