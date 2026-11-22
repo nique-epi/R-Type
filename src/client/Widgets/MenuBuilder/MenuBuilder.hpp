@@ -57,8 +57,7 @@ class ISoundPlayer;
  * bottom-right corner of the safe margin, showing the keycap of
  * MENU_CANCEL_KEY. A room writes no description: one given is left out.
  *
- * The cancel button is the one MENU_CANCEL_KEY activates; backButton() adds
- * the one button that closes the screen on top, the same in every menu.
+ * The cancel button is the one MENU_CANCEL_KEY activates.
  */
 class MenuBuilder {
  public:
@@ -112,13 +111,6 @@ class MenuBuilder {
   /** @brief Adds a button that MENU_CANCEL_KEY activates too; the last one
    * asked for is the cancel button. */
   MenuBuilder& cancelButton(Button::Text text, std::function<void()> action);
-
-  /**
-   * @brief Adds BACK, cancel button that closes the screen on top.
-   *
-   * @param navigator Screens around the menu, which must outlive it.
-   */
-  MenuBuilder& backButton(IScreenNavigator& navigator);
 
   /** @brief Reserves an area of this size, in pixels, for a picture its
    * screen paints: against the right side of a page, or from where the

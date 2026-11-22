@@ -321,10 +321,6 @@ MenuBuilder& MenuBuilder::cancelButton(Button::Text text,
   return button(std::move(text), std::move(action));
 }
 
-MenuBuilder& MenuBuilder::backButton(IScreenNavigator& navigator) {
-  return cancelButton({.label = BACK_LABEL}, [&navigator] { navigator.pop(); });
-}
-
 MenuBuilder& MenuBuilder::illustration(sf::Vector2i size) {
   illustration_ = size;
   return *this;

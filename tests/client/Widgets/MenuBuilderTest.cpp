@@ -16,7 +16,6 @@
 #include "MenuBuilder.hpp"
 #include "MenuPainting.hpp"
 #include "RecordingInterfaceCanvas.hpp"
-#include "RecordingNavigator.hpp"
 #include "RecordingRowControl.hpp"
 #include "TextField.hpp"
 #include "TextStyle.hpp"
@@ -32,7 +31,6 @@ using rtype::client::TextAlignment;
 using rtype::client::TextField;
 using rtype::client::TextFont;
 using ::testing::Contains;
-using ::testing::ElementsAre;
 using ::testing::Field;
 using ::testing::Not;
 
@@ -391,38 +389,6 @@ TEST(MenuBuilder, FormLeavesTheScreensBelowAsTheyAre) {
   EXPECT_THAT(painted.fills,
               Not(Contains(RecordedFill{.area = INTERFACE_AREA,
                                         .color = DIM_LAYER_COLOR})));
-}
-
-/**
- * Given a menu with the back button
- * When Escape is pressed and released
- * Then the screen on top is asked to close
- */
-TEST(MenuBuilder, BackButtonClosesTheScreenOnTop) {
-  RecordingNavigator navigator;
-  Menu menu =
-      MenuBuilder(MenuBuilder::Frame::Page).backButton(navigator).build();
-
-  menu.handleEvent(keyPress(sf::Keyboard::Key::Escape), {});
-  menu.handleEvent(keyRelease(sf::Keyboard::Key::Escape), {});
-
-  EXPECT_THAT(navigator.calls(),
-              ElementsAre(NavigatorCall{.request = NavigatorRequest::Pop,
-                                        .screen = std::nullopt}));
-}
-
-/**
- * Given a menu with the back button
- * When it is painted
- * Then the button is labelled BACK
- */
-TEST(MenuBuilder, BackButtonIsLabelledBack) {
-  RecordingNavigator navigator;
-
-  const InterfaceCanvasRecord painted = paintingOf(
-      MenuBuilder(MenuBuilder::Frame::Page).backButton(navigator).build());
-
-  EXPECT_NE(writingOf(painted, "BACK"), nullptr);
 }
 
 namespace {
