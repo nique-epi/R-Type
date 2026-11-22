@@ -153,9 +153,10 @@ class MenuBuilder {
   /** @brief Small line in the top-right corner of a tabbed panel. */
   MenuBuilder& notice(std::string text);
 
-  /** @brief Places every part and hands them to a menu; call it once, since
-   * the actions move into the menu. */
-  [[nodiscard]] Menu build();
+  /** @brief Places every part and hands them to a menu, which selects
+   * @p selected first when it can (see Menu::Content::selected); call it
+   * once, since the actions move into the menu. */
+  [[nodiscard]] Menu build(std::optional<std::size_t> selected = std::nullopt);
 
   /**
    * @returns Where the chip of a room lies: as wide as its label and its keycap

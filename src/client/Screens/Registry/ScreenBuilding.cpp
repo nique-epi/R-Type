@@ -39,7 +39,11 @@ ISoundPlayer& soundsOf(const ScreenContext& context) {
 
 std::unique_ptr<IInterfaceCanvas> interfaceCanvasOf(
     const ScreenContext& context) {
-  return std::make_unique<InterfaceCanvas>(context.services.assets.get());
+  return std::make_unique<InterfaceCanvas>(
+      context.services.assets.get(),
+      [&settings = context.services.settings.get()] {
+        return settings.language;
+      });
 }
 
 PlayfieldMapping playfieldMappingOf(const ScreenContext& context) {

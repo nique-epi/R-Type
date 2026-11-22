@@ -104,6 +104,7 @@ void OptionsScreen::leaveGame() {
 }
 
 void OptionsScreen::refresh() {
+  tabs_.followLanguage();
   tabs_.refreshDescriptions();
   tabs_.openMenu().setStatus(stamp_.text());
 }

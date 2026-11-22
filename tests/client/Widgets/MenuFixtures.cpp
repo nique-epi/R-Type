@@ -1,8 +1,11 @@
 #include "MenuFixtures.hpp"
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
+#include <cstddef>
+#include <optional>
 #include <string>
 #include "Menu.hpp"
+#include "MenuBuilder.hpp"
 #include "MenuPainting.hpp"
 #include "MenuTestConstants.hpp"
 #include "PointerEvents.hpp"
@@ -21,6 +24,15 @@ sf::Vector2i barCornerOf(const rtype::client::Menu& menu,
              ? sf::Vector2i()
              : (writing->anchor - rtype::client::BUTTON_TEXT_OFFSET) *
                    INTERFACE_PIXEL;
+}
+
+rtype::client::Menu threeButtonsSelecting(std::optional<std::size_t> selected) {
+  using rtype::client::MenuBuilder;
+  return MenuBuilder(MenuBuilder::Frame::Page, nullptr)
+      .button({.label = "A"}, [] {})
+      .button({.label = "B"}, [] {})
+      .cancelButton({.label = "C"}, [] {})
+      .build(selected);
 }
 
 sf::IntRect caretAfter(sf::Vector2i textAnchor, int characters) {

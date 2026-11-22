@@ -52,6 +52,7 @@ using rtype::client::testing::LAST_TAB;
 using rtype::client::testing::LINK_ROW;
 using rtype::client::testing::ONE_PIXEL_LOWER;
 using rtype::client::testing::ONE_UNIT_LEFT;
+using rtype::client::testing::PAST_THE_LAST;
 using rtype::client::testing::SECOND;
 using rtype::client::testing::SECOND_TAB;
 using rtype::client::testing::THIN_CARET_SIZE;
@@ -69,6 +70,25 @@ using ::testing::Not;
  */
 TEST_F(MenuFixture, SelectsItsFirstButtonAtFirst) {
   EXPECT_EQ(menu().selectedButton(), FIRST);
+}
+
+/**
+ * Given a page of three buttons built to select the second first
+ * When nothing happened yet
+ * Then its second button is selected, as a menu built again in another
+ * language keeps the row the player was on
+ */
+TEST(MenuTest, SelectsTheButtonItWasBuiltToSelect) {
+  EXPECT_EQ(threeButtonsSelecting(SECOND).selectedButton(), SECOND);
+}
+
+/**
+ * Given a page of three buttons built to select a button past its last
+ * When nothing happened yet
+ * Then its first button is selected
+ */
+TEST(MenuTest, AButtonPastTheLastSelectsTheFirst) {
+  EXPECT_EQ(threeButtonsSelecting(PAST_THE_LAST).selectedButton(), FIRST);
 }
 
 /**

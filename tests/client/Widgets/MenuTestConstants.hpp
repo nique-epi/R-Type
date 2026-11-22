@@ -13,6 +13,8 @@ namespace rtype::client::testing {
 constexpr std::size_t FIRST = 0;
 constexpr std::size_t SECOND = 1;
 constexpr std::size_t LAST = 2;
+/** @brief A button past the three of the page. */
+constexpr std::size_t PAST_THE_LAST = 5;
 
 /** @brief The keys that press and cancel. */
 constexpr sf::Keyboard::Key ENTER = sf::Keyboard::Key::Enter;

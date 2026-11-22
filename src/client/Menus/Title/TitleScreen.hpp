@@ -1,6 +1,8 @@
 #pragma once
 
+#include <cstddef>
 #include <memory>
+#include <optional>
 #include "IAccountSession.hpp"
 #include "IDeviceLinkFlow.hpp"
 #include "IInterfaceCanvas.hpp"
@@ -8,6 +10,7 @@
 #include "IScreenNavigator.hpp"
 #include "ISoundPlayer.hpp"
 #include "IUpdateNotice.hpp"
+#include "Language.hpp"
 #include "Menu.hpp"
 #include "PlayStart.hpp"
 #include "PlayfieldMapping.hpp"
@@ -53,7 +56,14 @@ class TitleScreen : public IScreen {
   [[nodiscard]] bool hidesScreensBelow() const override;
 
  private:
-  [[nodiscard]] Menu buildMenu(ISoundPlayer& sounds, PlayStart playStart);
+  /** @returns The menu of the title, selecting @p selected first when it
+   * can. */
+  [[nodiscard]] Menu buildMenu(std::optional<std::size_t> selected) const;
+
+  /** @brief Builds the menu again in the language now picked, when it is not
+   * the one it was built in: the options, opened over the title, may change
+   * it. The selected button stays. */
+  void followLanguage();
 
   /** @brief Opens SIGN_IN_SCREEN over the title, once its controls dropped
    * what they held. */
@@ -74,6 +84,9 @@ class TitleScreen : public IScreen {
   IDeviceLinkFlow* deviceLinks_;
   SignInReturn* signInReturn_;
   const IUpdateNotice* notice_;
+  ISoundPlayer* sounds_;
+  PlayStart playStart_;
+  Language builtIn_;
   bool updateAsked_{};
   bool notesAsked_{};
   Menu menu_;

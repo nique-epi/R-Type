@@ -1,11 +1,14 @@
 #pragma once
 
 #include <cstddef>
+#include <optional>
 #include <vector>
 #include "ISizableWindow.hpp"
+#include "Language.hpp"
 #include "Menu.hpp"
 #include "OptionsRowHandles.hpp"
 #include "OptionsTabsParts.hpp"
+#include "SelectedRow.hpp"
 #include "SettingsService.hpp"
 
 namespace rtype::client {
@@ -38,9 +41,19 @@ class OptionsTabs {
    * of the rows, on every tab. */
   void refreshDescriptions();
 
+  /** @brief Builds every tab again in the language now picked, when it is
+   * not the one they were built in; the open tab and its selected row stay.
+   * Called between two events, never while a menu handles one. */
+  void followLanguage();
+
  private:
+  /** @returns The row selected in the open tab, or nothing. */
+  [[nodiscard]] std::optional<SelectedRow> selectedRow() const;
+
+  OptionsTabsParts parts_;
   SettingsService* service_;
   ISizableWindow* window_;
+  Language builtIn_;
   /** @brief Set while tabs_ is built, so declared, and initialized, before
    * it. */
   OptionsRowHandles handles_;

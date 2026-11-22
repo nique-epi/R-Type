@@ -363,8 +363,9 @@ MenuBuilder& MenuBuilder::notice(std::string text) {
   return *this;
 }
 
-Menu MenuBuilder::build() {
+Menu MenuBuilder::build(std::optional<std::size_t> selected) {
   Menu::Content content;
+  content.selected = selected;
   content.cancelButton = cancelButton_;
   content.dimmed = dimmed_;
   switch (frame_) {

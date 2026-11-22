@@ -12,15 +12,18 @@
 #include <SFML/Graphics/VertexArray.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <array>
+#include <functional>
 #include <optional>
 #include <span>
 #include <string>
 #include <string_view>
+#include <utility>
 #include "AssetLibrary.hpp"
 #include "ColoredPixel.hpp"
 #include "FragmentShader.hpp"
 #include "ImagePlacement.hpp"
 #include "InterfaceConstants.hpp"
+#include "Language.hpp"
 #include "PlayerColors.hpp"
 #include "ShadeSwap.hpp"
 #include "ShadeSwapShaderConstants.hpp"
@@ -92,11 +95,13 @@ sf::RenderStates statesFor(const std::optional<ShadeSwap>& recolor,
 
 }  // namespace
 
-InterfaceCanvas::InterfaceCanvas(const AssetLibrary& library)
+InterfaceCanvas::InterfaceCanvas(const AssetLibrary& library,
+                                 std::function<Language()> language)
     : textures_(library),
       writer_(library),
       logger_(std::string(INTERFACE_LOGGER_NAME)),
-      shadeSwap_(loadFragmentShader(SHADE_SWAP_SHADER, logger_)) {}
+      shadeSwap_(loadFragmentShader(SHADE_SWAP_SHADER, logger_)),
+      language_(std::move(language)) {}
 
 void InterfaceCanvas::clear() {
   canvas_.canvas().clear(sf::Color::Transparent);
@@ -168,6 +173,8 @@ void InterfaceCanvas::drawSmoothImage(std::string_view assetId,
 int InterfaceCanvas::textWidth(std::string_view text, TextFont font) const {
   return writer_.width(text, font);
 }
+
+Language InterfaceCanvas::language() const { return language_(); }
 
 void InterfaceCanvas::display() {
   canvas_.canvas().display();

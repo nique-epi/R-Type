@@ -127,10 +127,15 @@ class Menu {
     /** @brief How the status line is written: in gold under a form; small,
      * outlined, at the end of the rule of a tabbed panel. */
     TextStyle statusStyle = STATUS_STYLE;
+    /** @brief The button selected first when it is enabled; otherwise, and
+     * without one, the first enabled button after it. A screen built again
+     * in another language keeps the row the player was on. */
+    std::optional<std::size_t> selected;
   };
 
   /**
-   * @brief Selects the first enabled button, if any.
+   * @brief Selects Content::selected when it is enabled, else the first
+   * enabled button after it, if any.
    *
    * @param sounds Plays the click of the menu, and must outlive it; a menu
    * without one is silent.

@@ -2,6 +2,7 @@
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Window/Event.hpp>
+#include <cstddef>
 #include <memory>
 #include <optional>
 #include <utility>
@@ -13,6 +14,7 @@
 #include "MenuScreenIdConstants.hpp"
 #include "PlayStart.hpp"
 #include "PlayerPreferences.hpp"
+#include "PlayerSettings.hpp"
 #include "ScreenConstants.hpp"
 #include "ScreenId.hpp"
 #include "SignInReturn.hpp"
@@ -47,7 +49,10 @@ TitleScreen::TitleScreen(TitleScreenParts parts,
       deviceLinks_(&parts.deviceLinks.get()),
       signInReturn_(&parts.signInReturn.get()),
       notice_(parts.notice),
-      menu_(buildMenu(parts.sounds.get(), parts.playStart)),
+      sounds_(&parts.sounds.get()),
+      playStart_(parts.playStart),
+      builtIn_(settings_->language),
+      menu_(buildMenu(std::nullopt)),
       accountChips_(TitleAccountChipsParts{.account = parts.account.get(),
                                            .wallet = parts.wallet,
                                            .sounds = parts.sounds,
@@ -65,6 +70,7 @@ void TitleScreen::handleEvent(const sf::Event& event) {
 }
 
 void TitleScreen::update(engine::Duration elapsed) {
+  followLanguage();
   menu_.advance(elapsed);
   squadron_.advance(elapsed);
   askForNotice();
@@ -77,10 +83,10 @@ void TitleScreen::draw(sf::RenderTarget& target) const {
 
 bool TitleScreen::hidesScreensBelow() const { return true; }
 
-Menu TitleScreen::buildMenu(ISoundPlayer& sounds, PlayStart playStart) {
+Menu TitleScreen::buildMenu(std::optional<std::size_t> selected) const {
   IScreenNavigator& navigator = *navigator_;
-  const ScreenId playScreen = playScreenOf(playStart);
-  return MenuBuilder(MenuBuilder::Frame::Page, &sounds)
+  const ScreenId playScreen = playScreenOf(playStart_);
+  return MenuBuilder(MenuBuilder::Frame::Page, sounds_)
       .version(GAME_VERSION_TEXT)
       .logo(LOGO_ID, LOGO_SIZE)
       .subtitle(TITLE_SUBTITLE)
@@ -95,7 +101,15 @@ Menu TitleScreen::buildMenu(ISoundPlayer& sounds, PlayStart playStart) {
                     [&navigator] { navigator.push(QUIT_CONFIRMATION_SCREEN); })
       .illustration(SQUADRON_BOX_SIZE)
       .footer(COPYRIGHT_TEXT)
-      .build();
+      .build(selected);
+}
+
+void TitleScreen::followLanguage() {
+  if (settings_->language == builtIn_) {
+    return;
+  }
+  menu_ = buildMenu(menu_.selectedButton());
+  builtIn_ = settings_->language;
 }
 
 void TitleScreen::signIn() {

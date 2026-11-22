@@ -15,6 +15,7 @@
 #include "DrawJournal.hpp"
 #include "ImagePlacement.hpp"
 #include "InterfaceConstants.hpp"
+#include "Language.hpp"
 #include "RecordingInterfaceCanvasConstants.hpp"
 #include "TextStyle.hpp"
 #include "TextureArea.hpp"
@@ -73,6 +74,10 @@ int RecordingInterfaceCanvas::textWidth(std::string_view text,
                           ? rtype::client::REGULAR_FONT_ADVANCE
                           : RECORDED_SMALL_ADVANCE;
   return static_cast<int>(sf::Utf8::count(text.begin(), text.end())) * advance;
+}
+
+rtype::client::Language RecordingInterfaceCanvas::language() const {
+  return record_->language;
 }
 
 void RecordingInterfaceCanvas::display() { ++record_->displayCount; }

@@ -2,6 +2,7 @@
 #include <cstddef>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -22,6 +23,7 @@
 #include "PlayerSettings.hpp"
 #include "RowControl.hpp"
 #include "ScreenConstants.hpp"
+#include "SelectedRow.hpp"
 #include "SettingDefinitionConstants.hpp"
 #include "SettingsConstants.hpp"
 #include "SettingsService.hpp"
@@ -49,16 +51,27 @@ MenuBuilder tabbedPanel(const OptionsTabsParts& parts, std::size_t tab) {
   return builder;
 }
 
+/** @returns The row to select first in @p tab: the one @p kept names when it
+ * is in that tab, nothing otherwise. */
+std::optional<std::size_t> rowIn(std::optional<SelectedRow> kept,
+                                 std::size_t tab) {
+  if (!kept.has_value() || kept->tab != tab) {
+    return std::nullopt;
+  }
+  return kept->row;
+}
+
 /** @returns The menu of @p builder with BACK under its rows and, over a game,
- * QUIT at the right end of the row of BACK. */
-Menu withBack(const OptionsTabsParts& parts, MenuBuilder& builder) {
+ * QUIT at the right end of the row of BACK; it selects @p selected first. */
+Menu withBack(const OptionsTabsParts& parts, MenuBuilder& builder,
+              std::optional<std::size_t> selected) {
   builder.cancelButton({.label = BACK_LABEL, .description = BACK_DESCRIPTION},
                        parts.close);
   if (parts.place == OptionsPlace::OverGame) {
     builder.button({.label = QUIT_LABEL, .description = QUIT_GAME_DESCRIPTION},
                    parts.leaveGame);
   }
-  return builder.build();
+  return builder.build(selected);
 }
 
 /** @returns The link that asks @p question and runs @p reset on YES. */
@@ -70,7 +83,8 @@ std::unique_ptr<RowControl> resetLink(const OptionsTabsParts& parts,
                    reset = std::move(reset)] { ask(question, reset); });
 }
 
-Menu soundTab(const OptionsTabsParts& parts) {
+Menu soundTab(const OptionsTabsParts& parts,
+              std::optional<std::size_t> selected) {
   SettingsService& service = parts.service.get();
   MenuBuilder builder = tabbedPanel(parts, SOUND_TAB);
   builder
@@ -85,10 +99,11 @@ Menu soundTab(const OptionsTabsParts& parts) {
             .description = DEFAULT_SOUND_DESCRIPTION},
            resetLink(parts, DEFAULT_SOUND_QUESTION,
                      [&service] { service.resetSound(); }));
-  return withBack(parts, builder);
+  return withBack(parts, builder, selected);
 }
 
-Menu controlsTab(const OptionsTabsParts& parts, OptionsRowHandles& handles) {
+Menu controlsTab(const OptionsTabsParts& parts, OptionsRowHandles& handles,
+                 std::optional<std::size_t> selected) {
   SettingsService& service = parts.service.get();
   MenuBuilder builder = tabbedPanel(parts, CONTROLS_TAB);
   for (std::size_t row = 0; row < OPEN_CHAT_ACTION; ++row) {
@@ -102,10 +117,11 @@ Menu controlsTab(const OptionsTabsParts& parts, OptionsRowHandles& handles) {
       {.label = DEFAULT_KEYS_LABEL, .description = DEFAULT_KEYS_DESCRIPTION},
       resetLink(parts, DEFAULT_KEYS_QUESTION,
                 [&service] { service.resetKeys(); }));
-  return withBack(parts, builder);
+  return withBack(parts, builder, selected);
 }
 
-Menu displayTab(const OptionsTabsParts& parts, OptionsRowHandles& handles) {
+Menu displayTab(const OptionsTabsParts& parts, OptionsRowHandles& handles,
+                std::optional<std::size_t> selected) {
   std::unique_ptr<Dropdown> modes =
       displayModeList(parts.window.get(), parts.service.get());
   handles.displayModes = modes.get();
@@ -120,10 +136,11 @@ Menu displayTab(const OptionsTabsParts& parts, OptionsRowHandles& handles) {
             .description = std::string(LANGUAGE_DESCRIPTION.in(language))},
            languageSelector(parts.service.get()))
       .illustration(WINDOW_SIZE_CHART_SIZE);
-  return withBack(parts, builder);
+  return withBack(parts, builder, selected);
 }
 
-Menu accessTab(const OptionsTabsParts& parts) {
+Menu accessTab(const OptionsTabsParts& parts,
+               std::optional<std::size_t> selected) {
   SettingsService& service = parts.service.get();
   MenuBuilder builder = tabbedPanel(parts, ACCESS_TAB);
   builder
@@ -146,10 +163,11 @@ Menu accessTab(const OptionsTabsParts& parts) {
             .description = LAGOMETER_BACKGROUND_DESCRIPTION},
            settingSlider(service, LAGOMETER_BACKGROUND_SETTING,
                          LAGOMETER_BACKGROUND_LOOK));
-  return withBack(parts, builder);
+  return withBack(parts, builder, selected);
 }
 
-Menu chatTab(const OptionsTabsParts& parts, OptionsRowHandles& handles) {
+Menu chatTab(const OptionsTabsParts& parts, OptionsRowHandles& handles,
+             std::optional<std::size_t> selected) {
   SettingsService& service = parts.service.get();
   std::unique_ptr<KeySlot> slot =
       keySlot(service, parts.keyName, BoundAction::OpenChat);
@@ -175,30 +193,33 @@ Menu chatTab(const OptionsTabsParts& parts, OptionsRowHandles& handles) {
       .row({.label = CHAT_BACKGROUND_LABEL,
             .description = CHAT_BACKGROUND_DESCRIPTION},
            chatSlider(service, CHAT_BACKGROUND_SETTING, CHAT_BACKGROUND_LOOK));
-  return withBack(parts, builder);
+  return withBack(parts, builder, selected);
 }
 
 /** @returns The tabs, in the order of SOUND_TAB, CONTROLS_TAB, DISPLAY_TAB,
- * ACCESS_TAB and CHAT_TAB, and fills @p handles with the rows whose state the
- * descriptions follow. */
+ * ACCESS_TAB and CHAT_TAB, the row @p kept names selected, and fills
+ * @p handles with the rows whose state the descriptions follow. */
 std::vector<Menu> buildTabs(const OptionsTabsParts& parts,
-                            OptionsRowHandles& handles) {
+                            OptionsRowHandles& handles,
+                            std::optional<SelectedRow> kept) {
   std::vector<Menu> tabs;
   tabs.reserve(OPTIONS_TAB_COUNT);
-  tabs.push_back(soundTab(parts));
-  tabs.push_back(controlsTab(parts, handles));
-  tabs.push_back(displayTab(parts, handles));
-  tabs.push_back(accessTab(parts));
-  tabs.push_back(chatTab(parts, handles));
+  tabs.push_back(soundTab(parts, rowIn(kept, SOUND_TAB)));
+  tabs.push_back(controlsTab(parts, handles, rowIn(kept, CONTROLS_TAB)));
+  tabs.push_back(displayTab(parts, handles, rowIn(kept, DISPLAY_TAB)));
+  tabs.push_back(accessTab(parts, rowIn(kept, ACCESS_TAB)));
+  tabs.push_back(chatTab(parts, handles, rowIn(kept, CHAT_TAB)));
   return tabs;
 }
 
 }  // namespace
 
 OptionsTabs::OptionsTabs(const OptionsTabsParts& parts)
-    : service_(&parts.service.get()),
+    : parts_(parts),
+      service_(&parts.service.get()),
       window_(&parts.window.get()),
-      tabs_(buildTabs(parts, handles_)) {}
+      builtIn_(parts.service.get().settings().language),
+      tabs_(buildTabs(parts_, handles_, std::nullopt)) {}
 
 void OptionsTabs::openTab(std::size_t tab) {
   if (tab < tabs_.size()) {
@@ -209,6 +230,23 @@ void OptionsTabs::openTab(std::size_t tab) {
 Menu& OptionsTabs::openMenu() { return tabs_[openTab_]; }
 
 const Menu& OptionsTabs::openMenu() const { return tabs_[openTab_]; }
+
+void OptionsTabs::followLanguage() {
+  const Language language = service_->settings().language;
+  if (language == builtIn_) {
+    return;
+  }
+  tabs_ = buildTabs(parts_, handles_, selectedRow());
+  builtIn_ = language;
+}
+
+std::optional<SelectedRow> OptionsTabs::selectedRow() const {
+  const std::optional<std::size_t> row = tabs_[openTab_].selectedButton();
+  if (!row.has_value()) {
+    return std::nullopt;
+  }
+  return SelectedRow{.tab = openTab_, .row = *row};
+}
 
 const Dropdown& OptionsTabs::windowSizes() const {
   return *handles_.windowSizes;

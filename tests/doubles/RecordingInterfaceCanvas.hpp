@@ -14,6 +14,7 @@
 #include "DrawJournal.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "ImagePlacement.hpp"
+#include "Language.hpp"
 #include "ShadeSwap.hpp"
 #include "TextStyle.hpp"
 #include "TextureArea.hpp"
@@ -70,6 +71,9 @@ struct InterfaceCanvasRecord {
   /** @brief Where the canvas writes INTERFACE_CANVAS_LAID each time it is
    * shown, when a test shares one with other doubles. */
   DrawJournal* drawJournal = nullptr;
+  /** @brief The language the canvas tells its painters, English until a test
+   * picks another. */
+  rtype::client::Language language = rtype::client::Language::English;
 };
 
 /** @brief Interface canvas double that writes down what it is asked; it needs
@@ -94,6 +98,7 @@ class RecordingInterfaceCanvas : public rtype::client::IInterfaceCanvas {
                        sf::Color tint) override;
   [[nodiscard]] int textWidth(std::string_view text,
                               rtype::client::TextFont font) const override;
+  [[nodiscard]] rtype::client::Language language() const override;
   void display() override;
   void show(sf::RenderTarget& target) const override;
 
