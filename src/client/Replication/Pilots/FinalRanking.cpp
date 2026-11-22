@@ -40,6 +40,7 @@ std::vector<FinalPilot> finalPilotsOf(std::span<const PilotStatus> pilots,
         FinalPilot{.playerNumber = player.playerNumber,
                    .nickname = listed ? status->nickname : std::string{},
                    .score = player.score,
+                   .bounty = player.bounty,
                    .isLocalPlayer = listed && status->isLocalPlayer});
   }
   return finalPilots;

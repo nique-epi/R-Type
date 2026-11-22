@@ -34,11 +34,11 @@ constexpr std::array CATALOGUE_PRICES{
     NamedPrice{.name = "glasses_3d", .price = 150},
     NamedPrice{.name = "monocle", .price = 500},
     NamedPrice{.name = "long_beard", .price = 350},
-    NamedPrice{.name = "war_shark", .price = 2000},
-    NamedPrice{.name = "vostok", .price = 2500},
-    NamedPrice{.name = "bydo_husk", .price = 3000},
-    NamedPrice{.name = "golden_ace", .price = 5000},
-    NamedPrice{.name = "golden_bydo", .price = 10000},
+    NamedPrice{.name = "war_shark", .price = 4000},
+    NamedPrice{.name = "vostok", .price = 5000},
+    NamedPrice{.name = "bydo_husk", .price = 6000},
+    NamedPrice{.name = "golden_ace", .price = 10000},
+    NamedPrice{.name = "golden_bydo", .price = 20000},
 };
 
 constexpr std::string_view CROWN_NAME = "crown";

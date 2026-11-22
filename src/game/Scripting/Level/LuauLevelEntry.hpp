@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <map>
 #include <optional>
@@ -42,6 +43,9 @@ struct LuauLevelEntry {
                      * whose LDtk project holds one, once readLevelGrounds()
                      * read it, by biome name. */
   std::map<std::string, BiomeGround, std::less<>> grounds;
+  /** @brief The kopecks every pilot present earns once the level is cleared
+   * (see LEVEL_REWARD_KEY); 0 for a level that pays none. */
+  std::uint32_t reward{0};
 };
 
 }  // namespace rtype::game

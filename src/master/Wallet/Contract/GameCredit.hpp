@@ -12,8 +12,7 @@ struct GameCredit {
   /** @brief The game ticket the player joined with, as a game server reports
    * it: it names the account to pay, which only the master knows. */
   std::string ticket;
-  /** @brief The kopecks it pays (network::kopecksFor() and
-   * network::withVictoryBonus()); the balance stops at
+  /** @brief The kopecks it pays (network::kopecksFor()); the balance stops at
    * network::MAXIMUM_KOPECKS. */
   std::uint32_t kopecks{};
   /** @brief The looks the player won in the game, by their names in

@@ -37,6 +37,7 @@ void encodePayload(ByteWriter& writer, const GameEnded& message) {
   for (const PlayerScore& player : message.players) {
     writer.writeUint8(player.playerNumber);
     writer.writeUint32(player.score);
+    writer.writeUint32(player.bounty);
   }
 }
 
@@ -50,7 +51,8 @@ GameEnded decodePayload(std::span<const std::byte> payload,
   message.players.reserve(playerCount);
   for (std::uint8_t index = 0; index < playerCount; ++index) {
     message.players.push_back(PlayerScore{.playerNumber = reader.readUint8(),
-                                          .score = reader.readUint32()});
+                                          .score = reader.readUint32(),
+                                          .bounty = reader.readUint32()});
   }
   requireFullyRead(reader);
   requireValidPlayers(std::span<const PlayerScore>{message.players});

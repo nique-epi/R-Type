@@ -40,7 +40,7 @@ FinishedGame gameOfAceWith(const std::string& ticket, std::uint32_t score) {
  * Given ACE, whose wallet holds no kopeck, and a ticket it was given
  * When "Paris 1" sends a vanilla game where ACE, with that ticket, scored
  * 1234, then sends it again
- * Then ACE gets 123 kopecks, once
+ * Then ACE gets 24 kopecks, once
  */
 TEST_F(GameCreditRoutesFixture, AGameIsCreditedOnce) {
   const FinishedGame game =
@@ -56,17 +56,35 @@ TEST_F(GameCreditRoutesFixture, AGameIsCreditedOnce) {
  * Given ACE, whose wallet holds no kopeck
  * When a won game where ACE, with a ticket, scored 1000 and won the party hat
  * comes
- * Then ACE gets 100 kopecks and a quarter more, 125, and owns the hat
+ * Then ACE gets the 20 kopecks of its score, no more for the victory, and
+ * owns the hat
  */
-TEST_F(GameCreditRoutesFixture, AVictoryPaysABonusAndItsLooks) {
+TEST_F(GameCreditRoutesFixture, AVictoryPaysItsScoreAndItsLooks) {
   FinishedGame game = gameOfAceWith(aceTicket(), A_THOUSAND_POINTS);
   game.players.at(0).wonLooks = {std::string{WON_PARTY_HAT}};
   game.victory = true;
 
   ASSERT_EQ(sendResult(FIRST_GAME_ID, game)->status, EXPECTED_NO_CONTENT);
 
-  EXPECT_EQ(kopecksOfAce(), std::optional{KOPECKS_OF_A_THOUSAND_POINTS_WON});
+  EXPECT_EQ(kopecksOfAce(), std::optional{KOPECKS_OF_A_THOUSAND_POINTS});
   EXPECT_EQ(looksOfAce(), std::optional{LOOKS_WITH_THE_PARTY_HAT});
+}
+
+/**
+ * Given ACE, whose wallet holds no kopeck
+ * When a game comes where ACE, with a ticket, scored 1234 and earned the
+ * bounty of the Necromancer, 350
+ * Then ACE gets both: 24 kopecks of its score and 350, 374
+ */
+TEST_F(GameCreditRoutesFixture, TheBountyIsPaidWithTheScore) {
+  FinishedGame game =
+      gameOfAceWith(aceTicket(), TWELVE_HUNDRED_THIRTY_FOUR_POINTS);
+  game.players.at(0).bounty = NECROMANCER_BOUNTY;
+
+  ASSERT_EQ(sendResult(FIRST_GAME_ID, game)->status, EXPECTED_NO_CONTENT);
+
+  EXPECT_EQ(kopecksOfAce(),
+            std::optional{KOPECKS_OF_1234_POINTS_AND_THE_NECROMANCER});
 }
 
 /**

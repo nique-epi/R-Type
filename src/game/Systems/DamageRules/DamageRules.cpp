@@ -1,5 +1,6 @@
 #include "DamageRules.hpp"
 #include <algorithm>
+#include <array>
 #include <cstdint>
 #include <optional>
 #include "AppliedHit.hpp"
@@ -7,12 +8,14 @@
 #include "ComponentRegistry.hpp"
 #include "CurrentAction.hpp"
 #include "DamageConstants.hpp"
+#include "DamageTally.hpp"
 #include "EnemyKilled.hpp"
 #include "Entity.hpp"
 #include "EntityDamage.hpp"
 #include "EntityDestruction.hpp"
 #include "EventBus.hpp"
 #include "Fragile.hpp"
+#include "GameRuleConstants.hpp"
 #include "Health.hpp"
 #include "HitReaction.hpp"
 #include "IHitHandler.hpp"
@@ -54,6 +57,26 @@ std::optional<std::uint8_t> shooterOf(engine::ComponentRegistry& components,
     return std::nullopt;
   }
   return owner->playerNumber;
+}
+
+/** @brief Adds @p taken to @p tally for @p shooter: nothing for a body that
+ * keeps no tally, nor for a missile of no pilot. */
+void tallyDamage(DamageTally* tally, std::optional<std::uint8_t> shooter,
+                 int taken) {
+  if (tally == nullptr || !shooter.has_value() ||
+      *shooter < identifiers::FIRST_PLAYER_NUMBER ||
+      *shooter >=
+          identifiers::FIRST_PLAYER_NUMBER + identifiers::MAXIMUM_PLAYERS ||
+      taken <= 0) {
+    return;
+  }
+  tally->byPilot.at(*shooter - identifiers::FIRST_PLAYER_NUMBER) +=
+      static_cast<std::uint32_t>(taken);
+}
+
+/** @returns What @p score is worth; nothing for a body worth nothing. */
+ScoreValue valueOf(const ScoreValue* score) {
+  return score == nullptr ? ScoreValue{} : *score;
 }
 
 /** @returns Whether @p target is Armored and in any phase of the attack it
@@ -147,6 +170,8 @@ void DamageRules::hurtTarget(engine::Entity target,
   if (applied.damage == 0) {
     return;
   }
+  tallyDamage(components_.get<DamageTally>(target), shooter,
+              applied.damage + std::min(health->points, 0));
   if (health->points > 0) {
     events_.publish(EntityDamage{.networkId = applied.targetNetworkId});
     return;
@@ -164,13 +189,17 @@ void DamageRules::removeMissile(engine::Entity missile,
 
 void DamageRules::killTarget(engine::Entity target, std::uint32_t networkId,
                              std::optional<std::uint8_t> shooter) {
-  const ScoreValue* const score = components_.get<ScoreValue>(target);
-  const std::uint32_t points = score == nullptr ? 0 : score->points;
+  const ScoreValue worth = valueOf(components_.get<ScoreValue>(target));
+  const DamageTally* const tally = components_.get<DamageTally>(target);
+  const DamageTally damage = tally == nullptr ? DamageTally{} : *tally;
   components_.destroy(target);
   events_.publish(EntityDestruction{.networkId = networkId,
                                     .cause = DestructionCause::Killed});
-  if (shooter.has_value() && points > 0) {
-    events_.publish(EnemyKilled{.playerNumber = *shooter, .points = points});
+  if (shooter.has_value() && (worth.points > 0 || worth.bounty > 0)) {
+    events_.publish(EnemyKilled{.playerNumber = *shooter,
+                                .points = worth.points,
+                                .damageByPilot = damage.byPilot,
+                                .bounty = worth.bounty});
   }
 }
 

@@ -55,6 +55,7 @@ network::FinishedGame finishedGameOf(const GameResult& result) {
     players.push_back(network::FinishedGamePlayer{.nickname = player.nickname,
                                                   .accountId = std::nullopt,
                                                   .score = player.score,
+                                                  .bounty = player.bounty,
                                                   .wonLooks = player.wonLooks,
                                                   .ticket = player.ticket});
   }

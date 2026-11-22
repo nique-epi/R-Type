@@ -22,8 +22,4 @@ betsByPlayerOf(const std::vector<PlayerBet>& bets);
 [[nodiscard]] std::map<std::int64_t, std::uint32_t> payoutsOf(
     const std::vector<PlayerBet>& bets, std::uint8_t drawn);
 
-/** @returns What @p bets of one account return when @p drawn comes out. */
-[[nodiscard]] std::uint32_t payoutOfBets(
-    const std::vector<network::RouletteBet>& bets, std::uint8_t drawn);
-
 }  // namespace rtype::master

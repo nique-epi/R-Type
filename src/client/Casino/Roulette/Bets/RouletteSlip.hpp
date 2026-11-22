@@ -11,8 +11,9 @@ namespace rtype::client {
  * place, as the client sends them whole (ICasinoChannel::placeBets()).
  *
  * It takes no bet the server would refuse for its size: the stake never
- * passes MAXIMUM_ROUND_STAKE nor the chips the player holds, and the stacks
- * never pass MAXIMUM_ROULETTE_BETS.
+ * passes MAXIMUM_ROUND_STAKE nor the chips the player holds, the bets never
+ * return more than MAXIMUM_ROUND_PAYOUT, and the stacks never pass
+ * MAXIMUM_ROULETTE_BETS.
  */
 class RouletteSlip {
  public:
@@ -27,7 +28,8 @@ class RouletteSlip {
    * @param chipsHeld The chips the player holds, the stake laid before
    * included.
    * @returns Whether it was laid: not when the stake would pass @p chipsHeld
-   * or MAXIMUM_ROUND_STAKE, nor when a new stack would pass
+   * or MAXIMUM_ROUND_STAKE, nor when the bets could return more than
+   * MAXIMUM_ROUND_PAYOUT, nor when a new stack would pass
    * MAXIMUM_ROULETTE_BETS; the slip is unchanged then.
    */
   bool lay(const network::RouletteBet& bet, std::uint32_t chipsHeld);

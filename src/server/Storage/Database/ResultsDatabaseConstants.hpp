@@ -75,6 +75,15 @@ ALTER TABLE game_results ADD COLUMN victory INTEGER NOT NULL DEFAULT 0;
 ALTER TABLE game_results ADD COLUMN ticket TEXT;
 )sql";
 
+/**
+ * @brief The sixth version: bounty, the kopecks the bosses destroyed and the
+ * level cleared while the player was there paid it, which the server reports
+ * to the master with the game. A row written before this version reads as no
+ * bounty.
+ */
+constexpr std::string_view RESULTS_WITH_THE_BOUNTIES_MIGRATION =
+    "ALTER TABLE game_results ADD COLUMN bounty INTEGER NOT NULL DEFAULT 0;";
+
 /** @brief What separates two names of won_looks: a name of
  * identifiers::SHIP_LOOK_ITEM_NAMES holds none. */
 constexpr char WON_LOOKS_SEPARATOR = ' ';
@@ -86,11 +95,11 @@ constexpr std::string_view NEW_GAME_ID_QUERY =
 
 constexpr std::string_view INSERT_RESULT_STATEMENT = R"sql(
 INSERT INTO game_results
-  (game_id, nickname, ticket, score, deaths, played_at, difficulty,
+  (game_id, nickname, ticket, score, bounty, deaths, played_at, difficulty,
    player_count, vanilla, won_looks, victory)
 VALUES
-  (:game_id, :nickname, :ticket, :score, :deaths, :played_at, :difficulty,
-   :player_count, :vanilla, :won_looks, :victory)
+  (:game_id, :nickname, :ticket, :score, :bounty, :deaths, :played_at,
+   :difficulty, :player_count, :vanilla, :won_looks, :victory)
 )sql";
 
 /**
@@ -140,7 +149,7 @@ WITH waiting AS (
   LIMIT :game_limit
 )
 SELECT results.game_id, results.nickname, results.ticket, results.score,
-       results.deaths, results.played_at, results.difficulty,
+       results.bounty, results.deaths, results.played_at, results.difficulty,
        results.player_count, results.won_looks, results.victory
 FROM waiting
 JOIN game_results AS results ON results.game_id = waiting.game_id
@@ -158,6 +167,7 @@ constexpr std::string_view MARK_REFUSED_STATEMENT =
 constexpr const char* GAME_ID_PARAMETER = ":game_id";
 constexpr const char* NICKNAME_PARAMETER = ":nickname";
 constexpr const char* SCORE_PARAMETER = ":score";
+constexpr const char* BOUNTY_PARAMETER = ":bounty";
 constexpr const char* DEATHS_PARAMETER = ":deaths";
 constexpr const char* PLAYED_AT_PARAMETER = ":played_at";
 constexpr const char* DIFFICULTY_PARAMETER = ":difficulty";
@@ -181,6 +191,7 @@ constexpr const char* IS_ASKER_COLUMN = "is_asker";
 /** @brief The columns UNSENT_GAMES_QUERY gives besides those above. */
 constexpr const char* GAME_ID_COLUMN = "game_id";
 constexpr const char* DEATHS_COLUMN = "deaths";
+constexpr const char* BOUNTY_COLUMN = "bounty";
 constexpr const char* DIFFICULTY_COLUMN = "difficulty";
 constexpr const char* PLAYER_COUNT_COLUMN = "player_count";
 constexpr const char* TICKET_COLUMN = "ticket";

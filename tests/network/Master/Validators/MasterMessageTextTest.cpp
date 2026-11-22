@@ -75,6 +75,7 @@ using rtype::network::testing::ADDRESS_POINTER;
 using rtype::network::testing::anExchange;
 using rtype::network::testing::AVERAGE_PING_POINTER;
 using rtype::network::testing::aWallet;
+using rtype::network::testing::BOUNTY_PAST_THE_LARGEST;
 using rtype::network::testing::CONFLICT_DETAIL;
 using rtype::network::testing::CONFLICT_PROBLEM;
 using rtype::network::testing::CPU_ABOVE_ALL;
@@ -210,6 +211,7 @@ using rtype::network::testing::SECOND_GAME_NUMBER_POINTER;
 using rtype::network::testing::SECOND_ITEM_POINTER;
 using rtype::network::testing::SECOND_PILOT;
 using rtype::network::testing::SECOND_PLAYER_ACCOUNT_POINTER;
+using rtype::network::testing::SECOND_PLAYER_BOUNTY_POINTER;
 using rtype::network::testing::SECOND_PLAYER_FIRST_LOOK_POINTER;
 using rtype::network::testing::SECOND_PLAYER_NICKNAME_POINTER;
 using rtype::network::testing::SECOND_PLAYER_WON_LOOKS_POINTER;
@@ -1035,6 +1037,31 @@ TEST(MasterMessageText, ReadsAPlayerThatDoesNotSayWhatItWonAsWinningNothing) {
                   finishedGameTextWithout(SECOND_PLAYER_WON_LOOKS_POINTER))
                   .players.at(1)
                   .wonLooks.empty());
+}
+
+/**
+ * Given a player with a bounty, written without its bounty member, as a
+ * server older than the member writes it
+ * When the game is read
+ * Then that player reads as one who earned no bounty
+ */
+TEST(MasterMessageText, ReadsAPlayerThatDoesNotSayItsBountyAsEarningNone) {
+  EXPECT_EQ(finishedGameFromText(
+                finishedGameTextWithout(SECOND_PLAYER_BOUNTY_POINTER))
+                .players.at(1)
+                .bounty,
+            0U);
+}
+
+/**
+ * Given a player whose bounty is one past the largest a server keeps
+ * When the game is read
+ * Then the refusal names that bounty
+ */
+TEST(MasterMessageText, RefusesABountyPastTheLargest) {
+  EXPECT_THAT(finishedGameRefusal(finishedGameTextWith(
+                  SECOND_PLAYER_BOUNTY_POINTER, BOUNTY_PAST_THE_LARGEST)),
+              HasSubstr(quoted(SECOND_PLAYER_BOUNTY_POINTER)));
 }
 
 /**

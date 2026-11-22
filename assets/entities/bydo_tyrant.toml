@@ -81,6 +81,8 @@ points = 10000
 rage_below_percent = 50
 rage_attack = 9
 arrival_attack = 0
+# The kopecks every pilot present earns when it is destroyed.
+bounty = 300
 
 # Its charge takes it past the left edge and back: leaving never removes it.
 [gameplay.stays_outside]

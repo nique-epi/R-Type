@@ -41,6 +41,7 @@ PlayerResult resultOf(const ConnectedPlayer& player, std::uint8_t lives) {
   return PlayerResult{
       .nickname = player.nickname,
       .score = player.score,
+      .bounty = player.bounty,
       .deaths = static_cast<std::uint32_t>(lives - player.livesWithoutShip),
       .wonLooks = wonLooksOf(player),
       .ticket = network::gameTicketText(player.ticket)};

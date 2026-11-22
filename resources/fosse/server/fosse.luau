@@ -134,7 +134,7 @@ level.register("space", {
 		level.wait_scroll(END_OF_THE_OPEN_SPACE)
 		fight("bydo_tyrant", BOSS_ENTRY)
 	end,
-}, { map = "OPEN SPACE", preview = "open_space" })
+}, { map = "OPEN SPACE", preview = "open_space", reward = 180 })
 
 level.register("fosse", {
 	function()
@@ -150,6 +150,7 @@ level.register("fosse", {
 	end,
 }, {
 	map = "THE PIT",
+	reward = 300,
 	preview = "the_pit",
 	biome = "fosse",
 	starts = {

@@ -334,6 +334,7 @@ level.register("deseret", {
 	end,
 }, {
 	map = "DESERET",
+	reward = 500,
 	preview = "deseret",
 	biome = "deseret",
 	starts = {

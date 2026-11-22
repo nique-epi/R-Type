@@ -29,8 +29,14 @@ namespace rtype::network {
  * overflows it. */
 [[nodiscard]] std::uint64_t stakeOf(const std::vector<RouletteBet>& bets);
 
+/** @returns What @p bets return together when @p drawn comes out
+ * (payoutOf()), summed on 64 bits. */
+[[nodiscard]] std::uint64_t payoutOfBets(const std::vector<RouletteBet>& bets,
+                                         std::uint8_t drawn);
+
 /** @returns Whether @p bets keep to the limits of one round: at most
- * MAXIMUM_ROULETTE_BETS bets, holding MAXIMUM_ROUND_STAKE chips at most. */
+ * MAXIMUM_ROULETTE_BETS bets, holding MAXIMUM_ROUND_STAKE chips at most, and
+ * returning MAXIMUM_ROUND_PAYOUT chips at most whatever number comes out. */
 [[nodiscard]] bool fitsRoundCaps(const std::vector<RouletteBet>& bets);
 
 }  // namespace rtype::network

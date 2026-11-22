@@ -6,6 +6,7 @@
 #include <string_view>
 #include "EnemyPhase.hpp"
 #include "EntityType.hpp"
+#include "GameRuleConstants.hpp"
 #include "MotionKind.hpp"
 #include "ObstacleContact.hpp"
 #include "TimeConstants.hpp"
@@ -247,13 +248,18 @@ constexpr engine::WholeNumberRange VOLLEY_DISTANCE_RANGE{.lowest = 0,
                                                          .highest = 1024};
 constexpr engine::WholeNumberRange VOLLEY_GAP_RANGE{.lowest = 0, .highest = 15};
 
-/** @brief The keys of `[gameplay.boss]`, all required: the percentage of its
- * full health it enrages below, and the attacks of its rage and its arrival. */
+/** @brief The keys of `[gameplay.boss]`: the percentage of its full health
+ * it enrages below, and the attacks of its rage and its arrival, required;
+ * the kopecks every pilot present earns when it is destroyed, 0 when left
+ * out. */
 constexpr std::string_view RAGE_BELOW_PERCENT_KEY = "rage_below_percent";
 constexpr std::string_view RAGE_ATTACK_KEY = "rage_attack";
 constexpr std::string_view ARRIVAL_ATTACK_KEY = "arrival_attack";
+constexpr std::string_view BOUNTY_KEY = "bounty";
 constexpr std::array BOSS_KEYS{RAGE_BELOW_PERCENT_KEY, RAGE_ATTACK_KEY,
-                               ARRIVAL_ATTACK_KEY};
+                               ARRIVAL_ATTACK_KEY, BOUNTY_KEY};
+constexpr engine::WholeNumberRange BOUNTY_RANGE{
+    .lowest = 0, .highest = identifiers::MOST_BOUNTY};
 constexpr engine::WholeNumberRange RAGE_PERCENT_RANGE{.lowest = 1,
                                                       .highest = 99};
 

@@ -23,6 +23,10 @@ constexpr std::uint8_t SECOND_JOINED_NUMBER = 2;
  * different so that a swap shows.
  */
 constexpr std::uint32_t FIRST_PLAYER_FINAL_SCORE = 1200;
+/** @brief The bounties of the two players: the Pit cleared with its boss,
+ * and its boss alone, for a player that joined after the fight. */
+constexpr std::uint32_t FIRST_PLAYER_BOUNTY = 650;
+constexpr std::uint32_t SECOND_PLAYER_BOUNTY = 300;
 constexpr std::uint32_t SECOND_PLAYER_FINAL_SCORE = 300;
 
 /** @brief Points a player is credited after its game ended. */

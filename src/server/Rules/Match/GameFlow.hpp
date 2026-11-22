@@ -167,7 +167,9 @@ class GameFlow final : public IGameFlow {
    * with its level cleared or failed, then tells the replication how it
    * ended, which tells the players the result. A team without a life whose
    * level reached a checkpoint restarts from it instead, while the level has
-   * a continue left (see LevelDirector).
+   * a continue left (see LevelDirector). A won game first pays every player
+   * the reward of its level (MatchSystems::clearReward()), before the result
+   * is recorded and told.
    */
   void finishIfOver();
 

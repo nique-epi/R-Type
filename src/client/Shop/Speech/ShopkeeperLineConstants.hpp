@@ -156,9 +156,9 @@ constexpr std::array<Translation, identifiers::SHIP_HULL_COUNT>
                       "RICHE."},
         Translation{
             .english =
-                "TEN THOUSAND KOPECKS. EVEN MY MOTHER CANNOT AFFORD THIS ONE.",
+                "TWENTY THOUSAND KOPECKS. EVEN MY MOTHER CANNOT AFFORD IT.",
             .french =
-                "DIX MILLE KOPECKS. MÊME MA MÈRE PAS POUVOIR PAYER CELUI-LÀ."}};
+                "VINGT MILLE KOPECKS. MÊME MA MÈRE PAS POUVOIR PAYER ÇA."}};
 constexpr Translation SHOPKEEPER_ALREADY_YOURS_LINE{
     .english = "YOU HAVE THIS ALREADY. TWO HATS, ONE HEAD? NYET.",
     .french = "TOI AVOIR DÉJÀ ÇA. DEUX CHAPEAUX, UNE TÊTE ? NYET."};

@@ -183,9 +183,26 @@ std::uint64_t stakeOf(const std::vector<RouletteBet>& bets) {
   return stake;
 }
 
+std::uint64_t payoutOfBets(const std::vector<RouletteBet>& bets,
+                           std::uint8_t drawn) {
+  std::uint64_t payout = 0;
+  for (const RouletteBet& bet : bets) {
+    payout += payoutOf(bet, drawn);
+  }
+  return payout;
+}
+
 bool fitsRoundCaps(const std::vector<RouletteBet>& bets) {
-  return bets.size() <= MAXIMUM_ROULETTE_BETS &&
-         stakeOf(bets) <= MAXIMUM_ROUND_STAKE;
+  if (bets.size() > MAXIMUM_ROULETTE_BETS ||
+      stakeOf(bets) > MAXIMUM_ROUND_STAKE) {
+    return false;
+  }
+  for (std::uint8_t drawn = 0; drawn <= HIGHEST_ROULETTE_NUMBER; ++drawn) {
+    if (payoutOfBets(bets, drawn) > MAXIMUM_ROUND_PAYOUT) {
+      return false;
+    }
+  }
+  return true;
 }
 
 }  // namespace rtype::network

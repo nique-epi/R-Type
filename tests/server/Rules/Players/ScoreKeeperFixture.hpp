@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 #include <cstdint>
 #include "ConnectedPlayer.hpp"
+#include "EnemyKilled.hpp"
 #include "EventBus.hpp"
 #include "PlayerRoster.hpp"
 #include "ScoreKeeper.hpp"
@@ -15,9 +16,14 @@ class ScoreKeeperFixture : public ::testing::Test {
   ScoreKeeperFixture();
 
   void kill(std::uint8_t playerNumber, std::uint32_t points);
+  /** @brief Publishes @p kill, a boss with its tally or its bounty, and
+   * delivers it. */
+  void publish(const game::EnemyKilled& kill);
 
   [[nodiscard]] std::uint32_t firstScore() const;
   [[nodiscard]] std::uint32_t secondScore() const;
+  [[nodiscard]] std::uint32_t firstBounty() const;
+  [[nodiscard]] std::uint32_t secondBounty() const;
   void giveFirstPlayerScore(std::uint32_t score);
 
  private:

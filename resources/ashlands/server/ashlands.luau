@@ -287,6 +287,7 @@ level.register("ashlands", {
 	end,
 }, {
 	map = "THE ASHLANDS",
+	reward = 500,
 	preview = "the_ashlands",
 	biome = "cendres",
 	starts = {

@@ -6,6 +6,7 @@
 #include "GameEndAnnouncerFixture.hpp"
 #include "GameEndAnnouncerTestConstants.hpp"
 #include "GameEnded.hpp"
+#include "GameOutcome.hpp"
 #include "Instances/GameInstanceTestConstants.hpp"
 #include "OutgoingDatagram.hpp"
 #include "SentDatagrams.hpp"
@@ -112,6 +113,26 @@ TEST_F(GameEndAnnouncerFixture, KeepsTheScoresTheGameEndedWith) {
   ASSERT_EQ(received.size(), 2U);
   EXPECT_EQ(onlyMessageIn<network::GameEnded>(received.back()),
             resultOfBothPlayers());
+}
+
+/**
+ * Given two connected players whose game ended, with bounties of 650 and 300
+ * When the first tick of the finished game passes
+ * Then the result carries the bounty of each player
+ */
+TEST_F(GameEndAnnouncerFixture, SendsTheBountyOfEachPlayer) {
+  join(FIRST_PLAYER).bounty = FIRST_PLAYER_BOUNTY;
+  join(SECOND_PLAYER).bounty = SECOND_PLAYER_BOUNTY;
+  endTheGame();
+
+  runFinishedTicks(1);
+
+  const std::vector<network::OutgoingDatagram> received = sentTo(FIRST_PLAYER);
+  ASSERT_EQ(received.size(), 1U);
+  const auto ended = onlyMessageIn<network::GameEnded>(received.front());
+  ASSERT_EQ(ended.players.size(), 2U);
+  EXPECT_EQ(ended.players.front().bounty, FIRST_PLAYER_BOUNTY);
+  EXPECT_EQ(ended.players.back().bounty, SECOND_PLAYER_BOUNTY);
 }
 
 }  // namespace rtype::server::testing

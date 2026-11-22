@@ -7,6 +7,7 @@
 #include <string_view>
 #include "ContentPackConstants.hpp"
 #include "EntityTypeConstants.hpp"
+#include "GameRuleConstants.hpp"
 #include "NetworkConstants.hpp"
 #include "SerializationConstants.hpp"
 
@@ -20,8 +21,10 @@ constexpr std::size_t INT16_WIRE_SIZE = sizeof(std::int16_t);
 constexpr std::uint32_t PROTOCOL_ID = 0x52545950;
 
 /**
- * @brief The version of the protocol this code speaks. Version 20 adds the
- * continues left of the team to LevelStatus, see the Version 20 section;
+ * @brief The version of the protocol this code speaks. Version 21 adds the
+ * bounty of each player to GameEnded, see the Version 21 section; version 20
+ * adds the continues left of the team to LevelStatus, see the Version 20
+ * section;
  * version 19 adds the
  * time left of a transition and the band of a biome to LevelStatus, and the
  * vote for a map of the waiting room (MapVote, the maps and the votes of
@@ -56,7 +59,7 @@ constexpr std::uint32_t PROTOCOL_ID = 0x52545950;
  * frame, see the Compression section; version 3 adds the outcome of a game to
  * GameEnded, see the Version 3 section.
  */
-constexpr std::uint8_t PROTOCOL_VERSION = 20;
+constexpr std::uint8_t PROTOCOL_VERSION = 21;
 
 /**
  * @brief The session token of a datagram sent before the connection is
@@ -146,13 +149,13 @@ static_assert(MESSAGE_PAYLOAD_LIMIT <=
 /**
  * @brief Players a game holds, so the most a WorldState lists.
  */
-constexpr std::size_t MAXIMUM_PLAYERS = 4;
+constexpr std::size_t MAXIMUM_PLAYERS = identifiers::MAXIMUM_PLAYERS;
 
 /**
  * @brief The number of the first player of a game; the last is
  * MAXIMUM_PLAYERS.
  */
-constexpr std::uint8_t FIRST_PLAYER_NUMBER = 1;
+constexpr std::uint8_t FIRST_PLAYER_NUMBER = identifiers::FIRST_PLAYER_NUMBER;
 
 /**
  * @brief The player number of a GameEvent that names no player.

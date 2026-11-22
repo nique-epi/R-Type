@@ -20,11 +20,14 @@ enum class WireGameOutcome : std::uint8_t {
 };
 
 /**
- * @brief The score of one player at the end of a game.
+ * @brief The score of one player at the end of a game, and its bounty: the
+ * kopecks the bosses destroyed and the level cleared while it was there pay
+ * it.
  */
 struct PlayerScore {
-  std::uint8_t playerNumber;
-  std::uint32_t score;
+  std::uint8_t playerNumber{};
+  std::uint32_t score{};
+  std::uint32_t bounty{0};
 
   bool operator==(const PlayerScore&) const = default;
 };
@@ -44,8 +47,8 @@ struct GameEnded {
 };
 
 /**
- * @brief Writes the outcome, the number of players, then each number and
- * score.
+ * @brief Writes the outcome, the number of players, then each number, score
+ * and bounty.
  * @throws InvalidFieldValueException when the outcome is not one of
  * WireGameOutcome.
  * @throws TooManyPlayersException when there are more than MAXIMUM_PLAYERS.

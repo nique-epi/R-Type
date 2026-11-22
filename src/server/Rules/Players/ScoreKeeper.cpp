@@ -1,12 +1,44 @@
 #include "ScoreKeeper.hpp"
+#include <array>
+#include <cstddef>
 #include <cstdint>
-#include <limits>
+#include "Bounties.hpp"
 #include "ConnectedPlayer.hpp"
 #include "EnemyKilled.hpp"
 #include "EventBus.hpp"
+#include "GameRuleConstants.hpp"
 #include "PlayerRoster.hpp"
+#include "SeatIndex.hpp"
 
 namespace rtype::server {
+
+namespace {
+
+using PilotPoints = std::array<std::uint32_t, identifiers::MAXIMUM_PLAYERS>;
+
+/** @returns The points of @p kill each pilot earns, by seat (seatIndexOf()),
+ * as ScoreKeeper says. */
+PilotPoints sharesOf(const game::EnemyKilled& kill) {
+  std::uint64_t total = 0;
+  for (const std::uint32_t damage : kill.damageByPilot) {
+    total += damage;
+  }
+  PilotPoints shares{};
+  std::uint64_t given = 0;
+  for (std::size_t pilot = 0; pilot < shares.size() && total > 0; ++pilot) {
+    shares.at(pilot) = static_cast<std::uint32_t>(
+        (std::uint64_t{kill.points} * kill.damageByPilot.at(pilot)) / total);
+    given += shares.at(pilot);
+  }
+  const std::size_t killer =
+      std::size_t{kill.playerNumber} - identifiers::FIRST_PLAYER_NUMBER;
+  if (killer < shares.size()) {
+    shares.at(killer) += static_cast<std::uint32_t>(kill.points - given);
+  }
+  return shares;
+}
+
+}  // namespace
 
 ScoreKeeper::ScoreKeeper(engine::EventBus& events, PlayerRoster& roster)
     : events_(events),
@@ -17,13 +49,12 @@ ScoreKeeper::ScoreKeeper(engine::EventBus& events, PlayerRoster& roster)
 ScoreKeeper::~ScoreKeeper() { events_.unsubscribe(subscription_); }
 
 void ScoreKeeper::onEnemyKilled(const game::EnemyKilled& kill) {
-  ConnectedPlayer* const player = roster_.findByNumber(kill.playerNumber);
-  if (player == nullptr) {
-    return;
+  const PilotPoints shares = sharesOf(kill);
+  for (ConnectedPlayer* const player : roster_.connected()) {
+    player->score = saturatedCount(std::uint64_t{player->score} +
+                                   shares.at(seatIndexOf(*player)));
   }
-  const std::uint32_t room =
-      std::numeric_limits<std::uint32_t>::max() - player->score;
-  player->score += kill.points < room ? kill.points : room;
+  payEveryPlayer(roster_, kill.bounty);
 }
 
 }  // namespace rtype::server

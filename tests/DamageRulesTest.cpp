@@ -18,6 +18,7 @@
 #include "MissileOwner.hpp"
 #include "NetworkIdentity.hpp"
 #include "RecordingHitHandler.hpp"
+#include "ScoreValue.hpp"
 #include "WorldTestConstants.hpp"
 
 using rtype::engine::Entity;
@@ -31,10 +32,13 @@ using rtype::game::Health;
 using rtype::game::MissileDamage;
 using rtype::game::MissileHit;
 using rtype::game::NetworkIdentity;
+using rtype::game::ScoreValue;
 using rtype::game::testing::Announcement;
 using rtype::game::testing::ARMORED_ATTACK;
 using rtype::game::testing::ARMORED_SIGNAL;
 using rtype::game::testing::ARMORED_STRIKE;
+using rtype::game::testing::ASH_MOTHER_BOUNTY;
+using rtype::game::testing::ASH_MOTHER_POINTS;
 using rtype::game::testing::BYDO_ID;
 using rtype::game::testing::BYDO_POINTS;
 using rtype::game::testing::CHARGING;
@@ -49,6 +53,8 @@ using rtype::game::testing::killed;
 using rtype::game::testing::MISSILE_ID;
 using rtype::game::testing::NO_POINT_LEFT;
 using rtype::game::testing::ONE_HEALTH_POINT;
+using rtype::game::testing::ONE_OF_THE_FIRST;
+using rtype::game::testing::ONE_THEN_TWO;
 using rtype::game::testing::OTHER_BYDO_ID;
 using rtype::game::testing::OTHER_MISSILE_ID;
 using rtype::game::testing::RecordingHitHandler;
@@ -57,6 +63,7 @@ using rtype::game::testing::SECOND_PLAYER;
 using rtype::game::testing::SECOND_PLAYER_NUMBER;
 using rtype::game::testing::SHIP_ID;
 using rtype::game::testing::STUNNED;
+using rtype::game::testing::THIRD_MISSILE_ID;
 using rtype::game::testing::THREE_HEALTH_POINTS;
 using rtype::game::testing::TWO_HEALTH_POINTS;
 using rtype::game::testing::TWO_HEALTH_POINTS_LEFT;
@@ -581,4 +588,68 @@ TEST(DamageRules, ABodyThatNamesNoOnHitTellsNoHandler) {
   damage.hit(damage.missile(MISSILE_ID), bydo);
 
   EXPECT_TRUE(handler.told().empty());
+}
+
+/**
+ * Given a boss of three health points, worth points
+ * When a missile of the first player hits it, then two of the second
+ * Then the second player is announced as having killed it, with one damage
+ * of the first pilot and two of the second
+ */
+TEST(DamageRules, ABossTellsTheDamageEachPilotDealtIt) {
+  DamageScene damage;
+  const Entity boss = damage.bossWorth(
+      BYDO_ID, Health{.points = THREE_HEALTH_POINTS}, BYDO_POINTS);
+
+  damage.hit(damage.missileOf(MISSILE_ID, FIRST_PLAYER), boss);
+  damage.hit(damage.missileOf(OTHER_MISSILE_ID, SECOND_PLAYER), boss);
+  damage.hit(damage.missileOf(THIRD_MISSILE_ID, SECOND_PLAYER), boss);
+
+  const std::vector<EnemyKilled> expected{
+      EnemyKilled{.playerNumber = SECOND_PLAYER_NUMBER,
+                  .points = BYDO_POINTS,
+                  .damageByPilot = ONE_THEN_TWO}};
+  EXPECT_EQ(damage.kills, expected);
+}
+
+/**
+ * Given a body of one health point worth 20000 points that pays a bounty of
+ * 550
+ * When a missile of the first player destroys it
+ * Then its kill names the bounty
+ */
+TEST(DamageRules, AKillCarriesTheBountyOfTheBody) {
+  DamageScene damage;
+  const Entity body = damage.bydo(BYDO_ID, Health{.points = ONE_HEALTH_POINT});
+  damage.scene.components.add(body, ScoreValue{.points = ASH_MOTHER_POINTS,
+                                               .bounty = ASH_MOTHER_BOUNTY});
+
+  damage.hit(damage.missileOf(MISSILE_ID, FIRST_PLAYER), body);
+
+  const std::vector<EnemyKilled> expected{
+      EnemyKilled{.playerNumber = FIRST_PLAYER.playerNumber,
+                  .points = ASH_MOTHER_POINTS,
+                  .damageByPilot = {},
+                  .bounty = ASH_MOTHER_BOUNTY}};
+  EXPECT_EQ(damage.kills, expected);
+}
+
+/**
+ * Given a boss of two health points, worth points
+ * When a missile of no player hits it, then one of the first player
+ * Then its tally holds the damage of the first pilot alone
+ */
+TEST(DamageRules, AMissileOfNoPilotLeavesTheTallyOfABoss) {
+  DamageScene damage;
+  const Entity boss = damage.bossWorth(
+      BYDO_ID, Health{.points = TWO_HEALTH_POINTS}, BYDO_POINTS);
+
+  damage.hit(damage.missile(MISSILE_ID), boss);
+  damage.hit(damage.missileOf(OTHER_MISSILE_ID, FIRST_PLAYER), boss);
+
+  const std::vector<EnemyKilled> expected{
+      EnemyKilled{.playerNumber = FIRST_PLAYER.playerNumber,
+                  .points = BYDO_POINTS,
+                  .damageByPilot = ONE_OF_THE_FIRST}};
+  EXPECT_EQ(damage.kills, expected);
 }

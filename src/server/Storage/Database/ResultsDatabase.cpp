@@ -84,6 +84,7 @@ void bindPlayer(SQLite::Statement& insert, const PlayerResult& player) {
   insert.bind(NICKNAME_PARAMETER, player.nickname);
   bindTicket(insert, player.ticket);
   insert.bind(SCORE_PARAMETER, player.score);
+  insert.bind(BOUNTY_PARAMETER, player.bounty);
   insert.bind(DEATHS_PARAMETER, player.deaths);
   insert.bind(WON_LOOKS_PARAMETER, joinedLooks(player.wonLooks));
 }
@@ -130,6 +131,7 @@ PlayerResult playerOf(const SQLite::Statement& query) {
   return PlayerResult{
       .nickname = query.getColumn(NICKNAME_COLUMN).getString(),
       .score = query.getColumn(SCORE_COLUMN).getUInt(),
+      .bounty = query.getColumn(BOUNTY_COLUMN).getUInt(),
       .deaths = query.getColumn(DEATHS_COLUMN).getUInt(),
       .wonLooks = splitLooks(query.getColumn(WON_LOOKS_COLUMN).getString()),
       .ticket = ticketOf(query.getColumn(TICKET_COLUMN))};

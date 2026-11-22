@@ -10,6 +10,7 @@ namespace rtype::server::testing {
 constexpr std::array<std::string_view, 4> NICKNAMES{"ACE", "BOB", "CID", "DEE"};
 constexpr std::string_view KEEPER_DIFFICULTY = "normal";
 constexpr std::uint32_t KEEPER_SCORE = 1200;
+constexpr std::uint32_t KEEPER_BOUNTY = 650;
 constexpr std::uint8_t NO_LIFE = 0;
 constexpr std::uint32_t EVERY_LIFE_LOST = 3;
 constexpr std::uint8_t THREE_AT_THE_START = 3;

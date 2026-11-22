@@ -229,7 +229,8 @@ network::RoundBets CasinoService::betsOf(network::RoomRound place,
         .winningNumber = CasinoRoundRepository{connection}.numberOf(place)};
     answer.stake = static_cast<std::uint32_t>(network::stakeOf(answer.bets));
     if (answer.winningNumber.has_value()) {
-      answer.payout = payoutOfBets(answer.bets, *answer.winningNumber);
+      answer.payout = static_cast<std::uint32_t>(
+          network::payoutOfBets(answer.bets, *answer.winningNumber));
     }
     return answer;
   });
