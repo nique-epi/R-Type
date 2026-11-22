@@ -10,16 +10,15 @@
 #include <SFML/System/Vector2.hpp>
 #include <functional>
 #include <optional>
-#include <set>
 #include <span>
 #include <string>
 #include <string_view>
-#include "AssetTextureSource.hpp"
 #include "ColoredPixel.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "ImagePlacement.hpp"
 #include "Logger.hpp"
 #include "PixelCanvas.hpp"
+#include "ReportedTextures.hpp"
 #include "SmoothImageLayer.hpp"
 #include "TextStyle.hpp"
 #include "TextWriter.hpp"
@@ -76,18 +75,13 @@ class InterfaceCanvas : public IInterfaceCanvas {
   void show(sf::RenderTarget& target) const override;
 
  private:
-  /** @returns The loaded texture of an id, or nullptr once the log says it is
-   * missing; a missing id is reported once. */
-  [[nodiscard]] const sf::Texture* foundTexture(std::string_view assetId);
-
-  AssetTextureSource textures_;
+  ReportedTextures textures_;
   TextWriter writer_;
   PixelCanvas canvas_;
   logging::Logger logger_;
   /** @brief The shade swap shader, none where the graphics card has none or
    * it did not compile. */
   std::optional<sf::Shader> shadeSwap_;
-  std::set<std::string, std::less<>> reportedMissingIds_;
   SmoothImageLayer smoothImages_;
   /** @brief The triangles of the last pixels plotted, kept between two plots
    * so a room of the casino that plots its lights each frame grows its list
