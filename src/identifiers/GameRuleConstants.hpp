@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <string_view>
 
@@ -37,5 +38,20 @@ constexpr std::uint8_t HIGHEST_LIVES = 9;
 
 static_assert(DEFAULT_LIVES >= LOWEST_LIVES && DEFAULT_LIVES <= HIGHEST_LIVES,
               "the default lives must be a count the rules accept");
+
+/**
+ * @brief The players a game holds, numbered from FIRST_PLAYER_NUMBER to
+ * MAXIMUM_PLAYERS: the wire carries these numbers, and the game keeps a tally
+ * per player (game::DamageTally).
+ */
+constexpr std::size_t MAXIMUM_PLAYERS = 4;
+constexpr std::uint8_t FIRST_PLAYER_NUMBER = 1;
+
+/**
+ * @brief The most kopecks a boss pays every pilot present when it is
+ * destroyed, and a level once it is cleared: the cap of the `bounty` of a
+ * sheet and of the `reward` of a level.
+ */
+constexpr std::uint32_t MOST_BOUNTY = 10000;
 
 }  // namespace rtype::identifiers

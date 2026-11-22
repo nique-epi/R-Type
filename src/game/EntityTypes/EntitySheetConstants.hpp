@@ -6,6 +6,7 @@
 #include <string_view>
 #include "EnemyPhase.hpp"
 #include "EntityType.hpp"
+#include "GameRuleConstants.hpp"
 #include "MotionKind.hpp"
 #include "ObstacleContact.hpp"
 #include "TimeConstants.hpp"
@@ -257,7 +258,8 @@ constexpr std::string_view ARRIVAL_ATTACK_KEY = "arrival_attack";
 constexpr std::string_view BOUNTY_KEY = "bounty";
 constexpr std::array BOSS_KEYS{RAGE_BELOW_PERCENT_KEY, RAGE_ATTACK_KEY,
                                ARRIVAL_ATTACK_KEY, BOUNTY_KEY};
-constexpr engine::WholeNumberRange BOUNTY_RANGE{.lowest = 0, .highest = 10000};
+constexpr engine::WholeNumberRange BOUNTY_RANGE{
+    .lowest = 0, .highest = identifiers::MOST_BOUNTY};
 constexpr engine::WholeNumberRange RAGE_PERCENT_RANGE{.lowest = 1,
                                                       .highest = 99};
 

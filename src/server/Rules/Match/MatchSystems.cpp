@@ -262,7 +262,7 @@ bool MatchSystems::levelFailed() const {
 
 std::uint32_t MatchSystems::clearReward() const {
   const GameSettings& settings = game_.get().settings;
-  if (!settings.level.has_value() || settings.scripts == nullptr) {
+  if (levelDirector_ == nullptr || !settings.level.has_value()) {
     return 0;
   }
   return entryOfLevel(settings.scripts->levels(), *settings.level).reward;

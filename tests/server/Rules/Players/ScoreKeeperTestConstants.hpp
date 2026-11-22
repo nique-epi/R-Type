@@ -3,7 +3,7 @@
 #include <array>
 #include <cstdint>
 #include <limits>
-#include "PilotCountConstants.hpp"
+#include "GameRuleConstants.hpp"
 #include "ProtocolConstants.hpp"
 
 namespace rtype::server::testing {
@@ -26,8 +26,8 @@ constexpr std::uint32_t TEN_POINTS = 10;
 /** @brief A boss worth 3 000 points, three damage of the first pilot and one
  * of the second: 2 250 and 750. */
 constexpr std::uint32_t BOSS_WORTH = 3'000;
-constexpr std::array<std::uint32_t, game::MOST_PILOTS> THREE_THEN_ONE{3, 1, 0,
-                                                                      0};
+constexpr std::array<std::uint32_t, identifiers::MAXIMUM_PLAYERS>
+    THREE_THEN_ONE{3, 1, 0, 0};
 constexpr std::uint32_t THREE_QUARTERS_OF_THE_BOSS = 2'250;
 constexpr std::uint32_t A_QUARTER_OF_THE_BOSS = 750;
 
@@ -35,14 +35,15 @@ constexpr std::uint32_t A_QUARTER_OF_THE_BOSS = 750;
  * 333 and 666 by the damage, and the 1 left over to the first, who destroyed
  * it. */
 constexpr std::uint32_t THOUSAND_POINTS = 1'000;
-constexpr std::array<std::uint32_t, game::MOST_PILOTS> ONE_THEN_TWO{1, 2, 0, 0};
+constexpr std::array<std::uint32_t, identifiers::MAXIMUM_PLAYERS> ONE_THEN_TWO{
+    1, 2, 0, 0};
 constexpr std::uint32_t A_THIRD_AND_THE_REST = 334;
 constexpr std::uint32_t TWO_THIRDS = 666;
 
 /** @brief One damage of each of three pilots, the third of whom is not in
  * the roster: a third of the boss each, 1 000. */
-constexpr std::array<std::uint32_t, game::MOST_PILOTS> ONE_EACH_OF_THREE{1, 1,
-                                                                         1, 0};
+constexpr std::array<std::uint32_t, identifiers::MAXIMUM_PLAYERS>
+    ONE_EACH_OF_THREE{1, 1, 1, 0};
 constexpr std::uint32_t A_THIRD_OF_THE_BOSS = 1'000;
 
 /** @brief The bounty of the Ash Mother, the largest bounty a player holds,

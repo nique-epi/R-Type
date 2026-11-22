@@ -1,6 +1,6 @@
 #include "DamageScene.hpp"
 #include <cstdint>
-#include "Boss.hpp"
+#include "DamageTally.hpp"
 #include "EnemyKilled.hpp"
 #include "Entity.hpp"
 #include "EntityDamage.hpp"
@@ -46,7 +46,7 @@ engine::Entity DamageScene::bydoWorth(std::uint32_t networkId, Health health,
 engine::Entity DamageScene::bossWorth(std::uint32_t networkId, Health health,
                                       std::uint32_t points) {
   const engine::Entity entity = bydoWorth(networkId, health, points);
-  scene.components.add(entity, Boss{});
+  scene.components.add(entity, DamageTally{});
   return entity;
 }
 

@@ -2,28 +2,22 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
-#include <limits>
 #include "Bounties.hpp"
 #include "ConnectedPlayer.hpp"
 #include "EnemyKilled.hpp"
 #include "EventBus.hpp"
-#include "PilotCountConstants.hpp"
+#include "GameRuleConstants.hpp"
 #include "PlayerRoster.hpp"
-#include "ProtocolConstants.hpp"
+#include "SeatIndex.hpp"
 
 namespace rtype::server {
 
-static_assert(game::MOST_PILOTS == network::MAXIMUM_PLAYERS,
-              "the tally of a boss holds a place for every player");
-static_assert(game::FIRST_PILOT_NUMBER == network::FIRST_PLAYER_NUMBER,
-              "pilot n of a tally is player n");
-
 namespace {
 
-using PilotPoints = std::array<std::uint32_t, game::MOST_PILOTS>;
+using PilotPoints = std::array<std::uint32_t, identifiers::MAXIMUM_PLAYERS>;
 
-/** @returns The points of @p kill each pilot earns, pilot
- * game::FIRST_PILOT_NUMBER first, as ScoreKeeper says. */
+/** @returns The points of @p kill each pilot earns, by seat (seatIndexOf()),
+ * as ScoreKeeper says. */
 PilotPoints sharesOf(const game::EnemyKilled& kill) {
   std::uint64_t total = 0;
   for (const std::uint32_t damage : kill.damageByPilot) {
@@ -36,22 +30,12 @@ PilotPoints sharesOf(const game::EnemyKilled& kill) {
         (std::uint64_t{kill.points} * kill.damageByPilot.at(pilot)) / total);
     given += shares.at(pilot);
   }
-  const std::size_t killer = kill.playerNumber - game::FIRST_PILOT_NUMBER;
+  const std::size_t killer =
+      std::size_t{kill.playerNumber} - identifiers::FIRST_PLAYER_NUMBER;
   if (killer < shares.size()) {
     shares.at(killer) += static_cast<std::uint32_t>(kill.points - given);
   }
   return shares;
-}
-
-/** @brief Adds @p points to the score of @p player, stopping at its largest
- * value; nothing for no player. */
-void addScore(ConnectedPlayer* player, std::uint32_t points) {
-  if (player == nullptr) {
-    return;
-  }
-  const std::uint32_t room =
-      std::numeric_limits<std::uint32_t>::max() - player->score;
-  player->score += points < room ? points : room;
 }
 
 }  // namespace
@@ -66,14 +50,11 @@ ScoreKeeper::~ScoreKeeper() { events_.unsubscribe(subscription_); }
 
 void ScoreKeeper::onEnemyKilled(const game::EnemyKilled& kill) {
   const PilotPoints shares = sharesOf(kill);
-  for (std::size_t pilot = 0; pilot < shares.size(); ++pilot) {
-    addScore(roster_.findByNumber(
-                 static_cast<std::uint8_t>(game::FIRST_PILOT_NUMBER + pilot)),
-             shares.at(pilot));
+  for (ConnectedPlayer* const player : roster_.connected()) {
+    player->score = saturatedCount(std::uint64_t{player->score} +
+                                   shares.at(seatIndexOf(*player)));
   }
-  if (kill.bounty > 0) {
-    payEveryPlayer(roster_, kill.bounty);
-  }
+  payEveryPlayer(roster_, kill.bounty);
 }
 
 }  // namespace rtype::server

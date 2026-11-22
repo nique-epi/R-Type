@@ -3,6 +3,7 @@
 #include <array>
 #include <cstddef>
 #include <string_view>
+#include "GameRuleConstants.hpp"
 
 namespace rtype::game {
 
@@ -79,7 +80,8 @@ constexpr const char* LEVEL_MAP_PREVIEW_KEY = "preview";
 /** @brief The option that gives the kopecks every pilot present earns once
  * the level is cleared: a whole number from 0 to MOST_LEVEL_REWARD. */
 constexpr const char* LEVEL_REWARD_KEY = "reward";
-constexpr double MOST_LEVEL_REWARD = 10000.0;
+constexpr double MOST_LEVEL_REWARD =
+    static_cast<double>(identifiers::MOST_BOUNTY);
 
 /** @brief Every option of a level; any other key is refused. */
 constexpr std::array<std::string_view, 7> LEVEL_OPTION_KEYS{

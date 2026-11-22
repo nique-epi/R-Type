@@ -32,9 +32,10 @@ struct MissileHit;
  * with an EntityDestruction Killed. An Armored enemy in the attack it is
  * armored in loses nothing: the missile is removed, nothing else is announced.
  * When the missile has a MissileOwner and the target that dies has a ScoreValue
- * or a bounty above 0, an EnemyKilled follows the destruction, naming the
- * owner, the points and the bounty. A Boss keeps the damage each pilot's
- * missiles took from it, and its EnemyKilled carries that tally. A hit naming
+ * whose points or bounty are above 0, an EnemyKilled follows the destruction,
+ * naming the owner, the points and the bounty. A target with a DamageTally
+ * keeps the damage each pilot's missiles took from it, and its EnemyKilled
+ * carries that tally. A hit naming
  * an entity that is gone or has no NetworkIdentity is ignored, so two missiles
  * reaching the same target in one dispatch never destroy it twice. Once a hit
  * is applied and its announcements published, the HitReaction of the target,

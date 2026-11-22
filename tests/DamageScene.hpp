@@ -32,7 +32,8 @@ struct DamageScene {
   /** @returns A Bydo with @p health, worth @p points. */
   engine::Entity bydoWorth(std::uint32_t networkId, Health health,
                            std::uint32_t points);
-  /** @returns A Boss with @p health, worth @p points. */
+  /** @returns A boss with @p health, worth @p points, which keeps the damage
+   * of each pilot (DamageTally). */
   engine::Entity bossWorth(std::uint32_t networkId, Health health,
                            std::uint32_t points);
   /** @returns A missile of no player. */

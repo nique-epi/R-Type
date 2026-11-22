@@ -3,7 +3,6 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
-#include <limits>
 
 namespace rtype::network {
 
@@ -59,8 +58,5 @@ constexpr std::uint32_t CORNER_RETURN = 9;
 constexpr std::uint32_t SIX_LINE_RETURN = 6;
 constexpr std::uint32_t DOZEN_RETURN = 3;
 constexpr std::uint32_t EVEN_CHANCE_RETURN = 2;
-
-static_assert(MAXIMUM_ROUND_PAYOUT <= std::numeric_limits<std::uint32_t>::max(),
-              "the payout of a round fits the four bytes of a CasinoPlayer");
 
 }  // namespace rtype::network

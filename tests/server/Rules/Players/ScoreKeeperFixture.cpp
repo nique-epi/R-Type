@@ -1,9 +1,7 @@
 #include "ScoreKeeperFixture.hpp"
-#include <array>
 #include <cstdint>
 #include <string>
 #include "EnemyKilled.hpp"
-#include "PilotCountConstants.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
 
@@ -22,21 +20,8 @@ void ScoreKeeperFixture::kill(std::uint8_t playerNumber, std::uint32_t points) {
   events_.dispatch();
 }
 
-void ScoreKeeperFixture::killBoss(
-    std::uint8_t playerNumber, std::uint32_t points,
-    const std::array<std::uint32_t, game::MOST_PILOTS>& damageByPilot) {
-  events_.publish(game::EnemyKilled{.playerNumber = playerNumber,
-                                    .points = points,
-                                    .damageByPilot = damageByPilot});
-  events_.dispatch();
-}
-
-void ScoreKeeperFixture::killPaying(std::uint8_t playerNumber,
-                                    std::uint32_t bounty) {
-  events_.publish(game::EnemyKilled{.playerNumber = playerNumber,
-                                    .points = 0,
-                                    .damageByPilot = {},
-                                    .bounty = bounty});
+void ScoreKeeperFixture::publish(const game::EnemyKilled& kill) {
+  events_.publish(kill);
   events_.dispatch();
 }
 

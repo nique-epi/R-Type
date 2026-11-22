@@ -275,10 +275,10 @@ constexpr std::uint64_t LOWEST_SCORE = 0;
 constexpr std::uint64_t HIGHEST_SCORE =
     std::numeric_limits<std::uint32_t>::max();
 
-/** @brief The bounds of a bounty, what a server keeps of one (32 bits). */
-constexpr std::uint64_t LOWEST_BOUNTY = 0;
-constexpr std::uint64_t HIGHEST_BOUNTY =
-    std::numeric_limits<std::uint32_t>::max();
+/** @brief The bounds of a bounty, what a server keeps of one: 32 bits, as a
+ * score. */
+constexpr std::uint64_t LOWEST_BOUNTY = LOWEST_SCORE;
+constexpr std::uint64_t HIGHEST_BOUNTY = HIGHEST_SCORE;
 
 /** @brief The bounds of the date a game ended, in seconds since 1970 UTC: what
  * a column INTEGER of SQLite holds. */

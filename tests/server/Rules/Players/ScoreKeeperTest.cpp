@@ -71,7 +71,9 @@ TEST_F(ScoreKeeperFixture, StopsTheScoreAtItsLargestValue) {
  * Then the first has 2 250 points and the second 750
  */
 TEST_F(ScoreKeeperFixture, ABossSharesItsPointsByTheDamageOfEachPilot) {
-  killBoss(SECOND_NUMBER, BOSS_WORTH, THREE_THEN_ONE);
+  publish(game::EnemyKilled{.playerNumber = SECOND_NUMBER,
+                            .points = BOSS_WORTH,
+                            .damageByPilot = THREE_THEN_ONE});
 
   EXPECT_EQ(firstScore(), THREE_QUARTERS_OF_THE_BOSS);
   EXPECT_EQ(secondScore(), A_QUARTER_OF_THE_BOSS);
@@ -85,7 +87,9 @@ TEST_F(ScoreKeeperFixture, ABossSharesItsPointsByTheDamageOfEachPilot) {
  * and the second 666
  */
 TEST_F(ScoreKeeperFixture, TheRestOfTheDivisionGoesToThePilotWhoDestroyedIt) {
-  killBoss(FIRST_NUMBER, THOUSAND_POINTS, ONE_THEN_TWO);
+  publish(game::EnemyKilled{.playerNumber = FIRST_NUMBER,
+                            .points = THOUSAND_POINTS,
+                            .damageByPilot = ONE_THEN_TWO});
 
   EXPECT_EQ(firstScore(), A_THIRD_AND_THE_REST);
   EXPECT_EQ(secondScore(), TWO_THIRDS);
@@ -98,7 +102,9 @@ TEST_F(ScoreKeeperFixture, TheRestOfTheDivisionGoesToThePilotWhoDestroyedIt) {
  * Then the first and the second have 1 000 points each
  */
 TEST_F(ScoreKeeperFixture, TheShareOfAPilotWhoLeftIsLost) {
-  killBoss(FIRST_NUMBER, BOSS_WORTH, ONE_EACH_OF_THREE);
+  publish(game::EnemyKilled{.playerNumber = FIRST_NUMBER,
+                            .points = BOSS_WORTH,
+                            .damageByPilot = ONE_EACH_OF_THREE});
 
   EXPECT_EQ(firstScore(), A_THIRD_OF_THE_BOSS);
   EXPECT_EQ(secondScore(), A_THIRD_OF_THE_BOSS);
@@ -110,7 +116,10 @@ TEST_F(ScoreKeeperFixture, TheShareOfAPilotWhoLeftIsLost) {
  * Then both earn 550 kopecks of bounty, whoever fired
  */
 TEST_F(ScoreKeeperFixture, ABossPaysItsBountyToEveryPlayer) {
-  killPaying(FIRST_NUMBER, ASH_MOTHER_BOUNTY);
+  publish(game::EnemyKilled{.playerNumber = FIRST_NUMBER,
+                            .points = 0,
+                            .damageByPilot = {},
+                            .bounty = ASH_MOTHER_BOUNTY});
 
   EXPECT_EQ(firstBounty(), ASH_MOTHER_BOUNTY);
   EXPECT_EQ(secondBounty(), ASH_MOTHER_BOUNTY);

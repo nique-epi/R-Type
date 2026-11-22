@@ -7,6 +7,7 @@
 #include <string_view>
 #include "ContentPackConstants.hpp"
 #include "EntityTypeConstants.hpp"
+#include "GameRuleConstants.hpp"
 #include "NetworkConstants.hpp"
 #include "SerializationConstants.hpp"
 
@@ -148,13 +149,13 @@ static_assert(MESSAGE_PAYLOAD_LIMIT <=
 /**
  * @brief Players a game holds, so the most a WorldState lists.
  */
-constexpr std::size_t MAXIMUM_PLAYERS = 4;
+constexpr std::size_t MAXIMUM_PLAYERS = identifiers::MAXIMUM_PLAYERS;
 
 /**
  * @brief The number of the first player of a game; the last is
  * MAXIMUM_PLAYERS.
  */
-constexpr std::uint8_t FIRST_PLAYER_NUMBER = 1;
+constexpr std::uint8_t FIRST_PLAYER_NUMBER = identifiers::FIRST_PLAYER_NUMBER;
 
 /**
  * @brief The player number of a GameEvent that names no player.

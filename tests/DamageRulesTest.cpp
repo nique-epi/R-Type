@@ -18,6 +18,7 @@
 #include "MissileOwner.hpp"
 #include "NetworkIdentity.hpp"
 #include "RecordingHitHandler.hpp"
+#include "ScoreValue.hpp"
 #include "WorldTestConstants.hpp"
 
 using rtype::engine::Entity;
@@ -31,10 +32,13 @@ using rtype::game::Health;
 using rtype::game::MissileDamage;
 using rtype::game::MissileHit;
 using rtype::game::NetworkIdentity;
+using rtype::game::ScoreValue;
 using rtype::game::testing::Announcement;
 using rtype::game::testing::ARMORED_ATTACK;
 using rtype::game::testing::ARMORED_SIGNAL;
 using rtype::game::testing::ARMORED_STRIKE;
+using rtype::game::testing::ASH_MOTHER_BOUNTY;
+using rtype::game::testing::ASH_MOTHER_POINTS;
 using rtype::game::testing::BYDO_ID;
 using rtype::game::testing::BYDO_POINTS;
 using rtype::game::testing::CHARGING;
@@ -605,6 +609,28 @@ TEST(DamageRules, ABossTellsTheDamageEachPilotDealtIt) {
       EnemyKilled{.playerNumber = SECOND_PLAYER_NUMBER,
                   .points = BYDO_POINTS,
                   .damageByPilot = ONE_THEN_TWO}};
+  EXPECT_EQ(damage.kills, expected);
+}
+
+/**
+ * Given a body of one health point worth 20000 points that pays a bounty of
+ * 550
+ * When a missile of the first player destroys it
+ * Then its kill names the bounty
+ */
+TEST(DamageRules, AKillCarriesTheBountyOfTheBody) {
+  DamageScene damage;
+  const Entity body = damage.bydo(BYDO_ID, Health{.points = ONE_HEALTH_POINT});
+  damage.scene.components.add(body, ScoreValue{.points = ASH_MOTHER_POINTS,
+                                               .bounty = ASH_MOTHER_BOUNTY});
+
+  damage.hit(damage.missileOf(MISSILE_ID, FIRST_PLAYER), body);
+
+  const std::vector<EnemyKilled> expected{
+      EnemyKilled{.playerNumber = FIRST_PLAYER.playerNumber,
+                  .points = ASH_MOTHER_POINTS,
+                  .damageByPilot = {},
+                  .bounty = ASH_MOTHER_BOUNTY}};
   EXPECT_EQ(damage.kills, expected);
 }
 
