@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include "Language.hpp"
 #include "RouletteReading.hpp"
 #include "TableRosterRow.hpp"
 #include "TimeConstants.hpp"
@@ -27,7 +28,8 @@ namespace rtype::client {
  * color, then, two spaces after, + and the payout of the player when it won,
  * - and its stake when it lost, once the master answered its bets.
  */
-[[nodiscard]] std::string statusLineOf(const RouletteReading& reading);
+[[nodiscard]] std::string statusLineOf(const RouletteReading& reading,
+                                       Language language = Language::English);
 
 /**
  * @returns A row per player seated in the room of @p reading, the player
@@ -38,6 +40,6 @@ namespace rtype::client {
  * never while the wheel turns, though the master already sent the payouts.
  */
 [[nodiscard]] std::vector<TableRosterRow> rosterRowsOf(
-    const RouletteReading& reading);
+    const RouletteReading& reading, Language language = Language::English);
 
 }  // namespace rtype::client

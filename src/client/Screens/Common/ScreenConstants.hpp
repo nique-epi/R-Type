@@ -3,8 +3,11 @@
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <chrono>
+#include <cstddef>
 #include <string_view>
+#include "LetterCounts.hpp"
 #include "TimeConstants.hpp"
+#include "Translation.hpp"
 #include "WidgetConstants.hpp"
 
 namespace rtype::client {
@@ -34,46 +37,87 @@ constexpr std::string_view INTRO_LOGGER_NAME = "Intro";
  * GAME_VERSION_TEXT, which CMake writes from project() into
  * ClientVersionConstants.hpp.
  */
-constexpr const char* TITLE_SUBTITLE = "4-PLAYER ONLINE CO-OP";
-constexpr const char* PLAY_LABEL = "PLAY";
-constexpr const char* PLAY_DESCRIPTION = "> JOIN A SERVER, FIGHT";
-constexpr const char* SETTINGS_LABEL = "SETTINGS";
-constexpr const char* SETTINGS_DESCRIPTION = "> SOUND, KEYS, ACCESS";
-constexpr const char* QUIT_LABEL = "QUIT";
-constexpr const char* QUIT_DESCRIPTION = "> LEAVE THE GAME";
+constexpr Translation TITLE_SUBTITLE{.english = "4-PLAYER ONLINE CO-OP",
+                                     .french = "COOP EN LIGNE À 4"};
+constexpr Translation PLAY_LABEL{.english = "PLAY", .french = "JOUER"};
+constexpr Translation PLAY_DESCRIPTION{
+    .english = "> JOIN A SERVER, FIGHT",
+    .french = "> REJOINDRE UN SERVEUR, COMBATTRE"};
+constexpr Translation SETTINGS_LABEL{.english = "SETTINGS",
+                                     .french = "OPTIONS"};
+constexpr Translation SETTINGS_DESCRIPTION{.english = "> SOUND, KEYS, ACCESS",
+                                           .french = "> SON, TOUCHES, ACCÈS"};
+constexpr Translation QUIT_LABEL{.english = "QUIT", .french = "QUITTER"};
+constexpr Translation QUIT_DESCRIPTION{.english = "> LEAVE THE GAME",
+                                       .french = "> QUITTER LE JEU"};
 /** @brief Label of the entry on the title and in the waiting room, title of the
  * screen it opens, and the line under the bar of the title. */
-constexpr const char* LEADERBOARD_LABEL = "RANKING";
-constexpr const char* LEADERBOARD_DESCRIPTION = "> THE BEST SCORES OF A SERVER";
+constexpr Translation LEADERBOARD_LABEL{.english = "RANKING",
+                                        .french = "CLASSEMENT"};
+constexpr Translation LEADERBOARD_DESCRIPTION{
+    .english = "> THE BEST SCORES OF A SERVER",
+    .french = "> LES MEILLEURS SCORES D'UN SERVEUR"};
 constexpr const char* COPYRIGHT_TEXT = "\xC2\xA9 2026 R-TYPE TEAM";
 
 /** @brief Texts of the quit confirmation. */
-constexpr const char* CONFIRM_HEADING = "CONFIRM";
-constexpr const char* QUIT_QUESTION = "ARE YOU SURE YOU WANT TO QUIT?";
-constexpr const char* NO_LABEL = "NO";
-constexpr const char* YES_LABEL = "YES";
+constexpr Translation CONFIRM_HEADING{.english = "CONFIRM",
+                                      .french = "CONFIRMER"};
+constexpr Translation QUIT_QUESTION{.english = "ARE YOU SURE YOU WANT TO QUIT?",
+                                    .french = "QUITTER POUR DE BON ?"};
+constexpr Translation NO_LABEL{.english = "NO", .french = "NON"};
+constexpr Translation YES_LABEL{.english = "YES", .french = "OUI"};
 
 /** @brief Texts of the dialog shown once the session with the server ended. */
-constexpr const char* CONNECTION_LOST_HEADING = "CONNECTION LOST";
-constexpr const char* SILENT_SERVER_MESSAGE = "THE SERVER STOPPED ANSWERING.";
-constexpr const char* CLOSED_SERVER_MESSAGE = "THE SERVER SHUT DOWN.";
-constexpr const char* EXPELLED_MESSAGE = "THE HOST EXPELLED YOU.";
-constexpr const char* RETRY_LABEL = "RETRY";
-constexpr const char* OK_LABEL = "OK";
+constexpr Translation CONNECTION_LOST_HEADING{.english = "CONNECTION LOST",
+                                              .french = "CONNEXION PERDUE"};
+constexpr Translation SILENT_SERVER_MESSAGE{
+    .english = "THE SERVER STOPPED ANSWERING.",
+    .french = "LE SERVEUR NE RÉPOND PLUS."};
+constexpr Translation CLOSED_SERVER_MESSAGE{
+    .english = "THE SERVER SHUT DOWN.", .french = "LE SERVEUR S'EST ARRÊTÉ."};
+constexpr Translation EXPELLED_MESSAGE{.english = "THE HOST EXPELLED YOU.",
+                                       .french = "L'HÔTE VOUS A EXPULSÉ."};
+constexpr Translation RETRY_LABEL{.english = "RETRY", .french = "RÉESSAYER"};
+constexpr Translation OK_LABEL{.english = "OK", .french = "OK"};
 
 /** @brief Texts of the dialog that tells a guest the kopecks, the chips and
  * the looks live on an account of the master. */
-constexpr const char* SIGN_IN_HEADING = "SIGN IN NEEDED";
-constexpr const char* SIGN_IN_MESSAGE = "SIGN IN TO SPEND KOPECKS.";
+constexpr Translation SIGN_IN_HEADING{.english = "SIGN IN NEEDED",
+                                      .french = "CONNEXION REQUISE"};
+constexpr Translation SIGN_IN_MESSAGE{
+    .english = "SIGN IN TO SPEND KOPECKS.",
+    .french = "SE CONNECTER POUR LES KOPECKS."};
 /** @brief The button of that dialog that opens SIGN_IN_SCREEN. */
-constexpr const char* SIGN_IN_LABEL = "SIGN IN";
+constexpr Translation SIGN_IN_LABEL{.english = "SIGN IN",
+                                    .french = "CONNEXION"};
+
+/** @brief The letters of the longest message of a dialog, the English
+ * question of QUIT, which the dialog shows whole: every other message, in
+ * every language, holds no more. */
+constexpr std::size_t LONGEST_DIALOG_MESSAGE_LETTERS =
+    lettersIn(QUIT_QUESTION.english);
+static_assert(longestLettersIn(QUIT_QUESTION) <= LONGEST_DIALOG_MESSAGE_LETTERS,
+              "the question of QUIT fits its dialog");
+static_assert(longestLettersIn(SILENT_SERVER_MESSAGE) <=
+                  LONGEST_DIALOG_MESSAGE_LETTERS,
+              "a silent server is told in one line");
+static_assert(longestLettersIn(CLOSED_SERVER_MESSAGE) <=
+                  LONGEST_DIALOG_MESSAGE_LETTERS,
+              "a closed server is told in one line");
+static_assert(longestLettersIn(EXPELLED_MESSAGE) <=
+                  LONGEST_DIALOG_MESSAGE_LETTERS,
+              "an expulsion is told in one line");
+static_assert(longestLettersIn(SIGN_IN_MESSAGE) <=
+                  LONGEST_DIALOG_MESSAGE_LETTERS,
+              "the sign in needed is told in one line");
 
 /**
  * @brief The word after a number of pilots, as the waiting room counts its
  * players and the leaderboard names a number of players at the start.
  */
-constexpr const char* ONE_PILOT_TEXT = " PILOT";
-constexpr const char* SEVERAL_PILOTS_TEXT = " PILOTS";
+constexpr Translation ONE_PILOT_TEXT{.english = " PILOT", .french = " PILOTE"};
+constexpr Translation SEVERAL_PILOTS_TEXT{.english = " PILOTS",
+                                          .french = " PILOTES"};
 
 /**
  * @brief Size of the progress bar of the loading screen, centered in the

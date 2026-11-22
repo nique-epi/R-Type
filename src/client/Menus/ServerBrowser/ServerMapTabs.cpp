@@ -4,11 +4,13 @@
 #include <SFML/Window/Mouse.hpp>
 #include <cstddef>
 #include <optional>
+#include <string>
 #include <vector>
 #include "IInterfaceCanvas.hpp"
 #include "IScreenNavigator.hpp"
 #include "ISoundPlayer.hpp"
 #include "InterfacePixel.hpp"
+#include "Language.hpp"
 #include "PlayfieldMapping.hpp"
 #include "ScreenId.hpp"
 #include "ServerMapScreenConstants.hpp"
@@ -31,22 +33,26 @@ std::optional<std::size_t> tabOfKey(sf::Keyboard::Key key) {
   return std::nullopt;
 }
 
-/** @returns How the rail shows each tab of the map, in their order. */
-std::vector<TabRailTab> railTabsOfTheMap() {
+/** @returns How the rail shows each tab of the map, in their order, written
+ * in @p language. */
+std::vector<TabRailTab> railTabsOfTheMap(Language language) {
   std::vector<TabRailTab> tabs;
   tabs.reserve(SERVER_MAP_TABS.size());
   for (const ServerMapTab& entry : SERVER_MAP_TABS) {
-    tabs.push_back(entry.tab);
+    tabs.push_back(TabRailTab{.label = std::string(entry.label.in(language)),
+                              .locked = entry.locked});
   }
   return tabs;
 }
 
 }  // namespace
 
-ServerMapTabs::ServerMapTabs(IScreenNavigator& navigator, ISoundPlayer& sounds)
+ServerMapTabs::ServerMapTabs(IScreenNavigator& navigator, ISoundPlayer& sounds,
+                             Language language)
     : navigator_(&navigator),
       sounds_(&sounds),
-      rail_(railTabsOfTheMap(), SECTORS_TAB, SERVER_MAP_TABS_TOP_MIDDLE) {}
+      rail_(railTabsOfTheMap(language), SECTORS_TAB,
+            SERVER_MAP_TABS_TOP_MIDDLE) {}
 
 void ServerMapTabs::handleEvent(const sf::Event& event,
                                 const PlayfieldMapping& playfieldPointAt) {

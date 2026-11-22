@@ -4,9 +4,12 @@
 #include "GameRulesLine.hpp"
 #include "GameRulesLineTestConstants.hpp"
 #include "GameRulesTestConstants.hpp"
+#include "Language.hpp"
 
+using rtype::client::Language;
 using rtype::client::rulesLineOf;
 using rtype::client::upperCased;
+using rtype::client::testing::FRENCH_HARD_RULES_LINE;
 using rtype::client::testing::LAST_LIFE_LINE;
 using rtype::client::testing::LOWER_NAME;
 using rtype::client::testing::ONE_LIFE;
@@ -25,8 +28,23 @@ using rtype::testing::HARD_RULES_LINE;
 TEST(GameRulesLine, NamesEveryRule) {
   EXPECT_EQ(rulesLineOf(GameRules{.difficulty = std::string(CHOSEN_DIFFICULTY),
                                   .lives = CHOSEN_LIVES,
-                                  .friendlyFire = true}),
+                                  .friendlyFire = true},
+                        Language::English),
             HARD_RULES_LINE);
+}
+
+/**
+ * Given the client in French and a game played hard, with five lives and
+ * friendly fire on
+ * When its rules are written
+ * Then the line names the difficulty, the lives and the fire in French
+ */
+TEST(GameRulesLine, NamesEveryRuleInFrench) {
+  EXPECT_EQ(rulesLineOf(GameRules{.difficulty = std::string(CHOSEN_DIFFICULTY),
+                                  .lives = CHOSEN_LIVES,
+                                  .friendlyFire = true},
+                        Language::French),
+            FRENCH_HARD_RULES_LINE);
 }
 
 /**
@@ -38,7 +56,7 @@ TEST(GameRulesLine, WritesOneLifeInTheSingular) {
   GameRules lastLife = defaultGameRules();
   lastLife.lives = ONE_LIFE;
 
-  EXPECT_EQ(rulesLineOf(lastLife), LAST_LIFE_LINE);
+  EXPECT_EQ(rulesLineOf(lastLife, Language::English), LAST_LIFE_LINE);
 }
 
 /**

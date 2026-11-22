@@ -3,6 +3,7 @@
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <chrono>
+#include "Translation.hpp"
 
 namespace rtype::client {
 
@@ -38,7 +39,7 @@ constexpr int BLUEPRINT_DRAWING_TOP = 13;
 constexpr int BLUEPRINT_DRAWING_SCALE = 2;
 constexpr int BLUEPRINT_RULE_GAP = 3;
 constexpr sf::Vector2i BLUEPRINT_LABEL_OFFSET{4, 4};
-constexpr const char* BLUEPRINT_LABEL = "REF";
+constexpr Translation BLUEPRINT_LABEL{.english = "REF", .french = "RÉF"};
 constexpr const char* BLUEPRINT_SIZE_JOIN = "X";
 
 /** @brief The sparks of an item placed or taken off: SPARK_COUNT squares on

@@ -12,6 +12,7 @@
 #include "IInterfaceCanvas.hpp"
 #include "InterfaceColorConstants.hpp"
 #include "InterfaceConstants.hpp"
+#include "Language.hpp"
 #include "TextStyle.hpp"
 #include "TimeConstants.hpp"
 #include "Typing.hpp"
@@ -71,14 +72,15 @@ int tearAt(engine::Duration intoWarning, FlashPreference flashes) {
   return WARNING_TEAR_OFFSETS.at(step);
 }
 
-std::size_t wordLettersAt(engine::Duration intoWarning,
-                          FlashPreference flashes) {
-  const std::size_t typed = lettersTypedAt(
-      intoWarning, WARNING_WORD_LETTER_TIME, WARNING_WORD.size());
+std::size_t wordLettersAt(engine::Duration intoWarning, FlashPreference flashes,
+                          Language language) {
+  const std::size_t wordLength = letterCountOf(WARNING_WORD.in(language));
+  const std::size_t typed =
+      lettersTypedAt(intoWarning, WARNING_WORD_LETTER_TIME, wordLength);
   const engine::Duration intoBlinking =
-      intoWarning -
-      typingTimeOf(WARNING_WORD_LETTER_TIME, WARNING_WORD.size()) -
-      typingTimeOf(WARNING_SUBTITLE_LETTER_TIME, WARNING_SUBTITLE.size());
+      intoWarning - typingTimeOf(WARNING_WORD_LETTER_TIME, wordLength) -
+      typingTimeOf(WARNING_SUBTITLE_LETTER_TIME,
+                   letterCountOf(WARNING_SUBTITLE.in(language)));
   if (flashes == FlashPreference::Reduced ||
       intoBlinking < engine::Duration::zero()) {
     return typed;
@@ -159,9 +161,10 @@ void paintWord(IInterfaceCanvas& canvas, const WarningBannerLook& look) {
   if (look.wordLetters == 0) {
     return;
   }
-  const std::string_view shown = WARNING_WORD.substr(0, look.wordLetters);
+  const std::string_view word = WARNING_WORD.in(canvas.language());
+  const std::string_view shown = typedPrefix(word, look.wordLetters);
   const int wholeWidth =
-      canvas.textWidth(WARNING_WORD, TextFont::Regular) * WARNING_WORD_SCALE;
+      canvas.textWidth(word, TextFont::Regular) * WARNING_WORD_SCALE;
   const sf::Vector2i anchor(
       (ALERT_PLAYFIELD_AREA.size.x - wholeWidth) / SIDES_PER_AXIS,
       WARNING_WORD_TOP);
@@ -187,8 +190,9 @@ void paintSubtitle(IInterfaceCanvas& canvas, std::size_t letters) {
   if (letters == 0) {
     return;
   }
-  const int width = canvas.textWidth(WARNING_SUBTITLE, TextFont::Small);
-  canvas.write(WARNING_SUBTITLE.substr(0, letters),
+  const std::string_view subtitle = WARNING_SUBTITLE.in(canvas.language());
+  const int width = canvas.textWidth(subtitle, TextFont::Small);
+  canvas.write(typedPrefix(subtitle, letters),
                {(ALERT_PLAYFIELD_AREA.size.x - width) / SIDES_PER_AXIS,
                 WARNING_SUBTITLE_TOP},
                TextStyle{.font = TextFont::Small,
@@ -200,23 +204,26 @@ void paintSubtitle(IInterfaceCanvas& canvas, std::size_t letters) {
 }  // namespace
 
 WarningBannerLook warningBannerAt(engine::Duration sinceArrival,
-                                  FlashPreference flashes) {
+                                  FlashPreference flashes, Language language) {
   const engine::Duration intoWarning = sinceArrival - WARNING_START;
   if (intoWarning < engine::Duration::zero() || sinceArrival >= WARNING_END) {
     return {};
   }
   const bool closing = sinceArrival >= WARNING_END - WARNING_BAND_CLOSING;
   const engine::Duration intoSubtitle =
-      intoWarning - typingTimeOf(WARNING_WORD_LETTER_TIME, WARNING_WORD.size());
+      intoWarning - typingTimeOf(WARNING_WORD_LETTER_TIME,
+                                 letterCountOf(WARNING_WORD.in(language)));
   return WarningBannerLook{
       .bandHalfHeight = bandHalfHeightAt(sinceArrival),
       .tapeShift = tapeShiftAt(intoWarning),
       .stripeScroll = stripeScrollAt(intoWarning),
-      .wordLetters = closing ? 0 : wordLettersAt(intoWarning, flashes),
+      .wordLetters =
+          closing ? 0 : wordLettersAt(intoWarning, flashes, language),
       .subtitleLetters =
-          closing ? 0
-                  : lettersTypedAt(intoSubtitle, WARNING_SUBTITLE_LETTER_TIME,
-                                   WARNING_SUBTITLE.size()),
+          closing
+              ? 0
+              : lettersTypedAt(intoSubtitle, WARNING_SUBTITLE_LETTER_TIME,
+                               letterCountOf(WARNING_SUBTITLE.in(language))),
       .tear = tearAt(intoWarning, flashes)};
 }
 

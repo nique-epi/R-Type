@@ -10,6 +10,8 @@
 #include "IInterfaceCanvas.hpp"
 #include "InterfaceColorConstants.hpp"
 #include "InterfaceConstants.hpp"
+#include "Language.hpp"
+#include "TextMarks.hpp"
 #include "TimeConstants.hpp"
 #include "UpdateConstants.hpp"
 #include "UpdatePanelConstants.hpp"
@@ -47,17 +49,18 @@ void paintBar(IInterfaceCanvas& canvas, sf::Vector2i topLeft,
 }
 
 /** @returns The line under the bar for @p progress. */
-std::string statusLineOf(const UpdateProgress& progress) {
+std::string statusLineOf(const UpdateProgress& progress, Language language) {
   switch (progress.phase) {
     case UpdatePhase::Downloading:
-      return std::string{DOWNLOADING_TEXT} + std::to_string(progress.percent) +
-             std::string{PERCENT_SIGN};
+      return withMark(DOWNLOADING_LINE.in(language),
+                      {.mark = DOWNLOAD_PERCENT_MARK,
+                       .value = std::to_string(progress.percent)});
     case UpdatePhase::Installing:
-      return std::string{INSTALLING_TEXT};
+      return std::string(INSTALLING_TEXT.in(language));
     case UpdatePhase::ReadyToRestart:
-      return std::string{RESTARTING_TEXT};
+      return std::string(RESTARTING_TEXT.in(language));
     case UpdatePhase::Failed:
-      return std::string{UPDATE_FAILED_TEXT};
+      return std::string(UPDATE_FAILED_TEXT.in(language));
   }
   return {};
 }
@@ -111,13 +114,13 @@ void UpdateScreen::repaint(const UpdateProgress& progress) {
   CutCornerBox(panel,
                {.border = PANEL_BORDER_COLOR, .inside = PANEL_INSIDE_COLOR})
       .paint(*canvas_);
-  canvas_->write(UPDATE_HEADING, panel.position + DIALOG_HEADING_OFFSET,
-                 DIALOG_HEADING_STYLE);
+  canvas_->write(UPDATE_HEADING.in(canvas_->language()),
+                 panel.position + DIALOG_HEADING_OFFSET, DIALOG_HEADING_STYLE);
   canvas_->write(versionLine_, panel.position + DIALOG_MESSAGE_OFFSET,
                  DIALOG_MESSAGE_STYLE);
   paintBar(*canvas_, panel.position + UPDATE_BAR_OFFSET, progress);
-  canvas_->write(statusLineOf(progress), panel.position + UPDATE_STATUS_OFFSET,
-                 STATUS_STYLE);
+  canvas_->write(statusLineOf(progress, canvas_->language()),
+                 panel.position + UPDATE_STATUS_OFFSET, STATUS_STYLE);
   canvas_->display();
 }
 

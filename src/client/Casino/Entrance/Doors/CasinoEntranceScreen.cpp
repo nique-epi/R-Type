@@ -7,6 +7,7 @@
 #include "Ambience.hpp"
 #include "ButlerMotion.hpp"
 #include "CasinoBarChip.hpp"
+#include "CasinoChipWiring.hpp"
 #include "CasinoEntranceConstants.hpp"
 #include "CasinoEntrancePainting.hpp"
 #include "CasinoEntranceScreenParts.hpp"
@@ -49,11 +50,16 @@ CasinoEntranceScreen::CasinoEntranceScreen(
                                   .tail = BUTLER_SPOKEN_LINE_TAIL,
                                   .motion = parts.motion,
                                   .stays = true}),
-      enterChip_(chipOf(
-          ENTER_BAR, [this] { enter(); }, parts.sounds)),
+      enterChip_(
+          chipOf(ENTER_BAR, CasinoChipWiring{.action = [this] { enter(); },
+                                             .sounds = parts.sounds,
+                                             .language = canvas_->language()})),
       doorsBackChip_(
-          chipOf(DOORS_BACK_BAR, [this] { navigator_->pop(); }, parts.sounds)) {
-  butlerLine_.say(WELCOME_SPEECH);
+          chipOf(DOORS_BACK_BAR,
+                 CasinoChipWiring{.action = [this] { navigator_->pop(); },
+                                  .sounds = parts.sounds,
+                                  .language = canvas_->language()})) {
+  butlerLine_.say(WELCOME_SPEECH.in(canvas_->language()));
   repaint();
 }
 

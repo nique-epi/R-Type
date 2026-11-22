@@ -1,7 +1,7 @@
 #pragma once
 
-#include <string_view>
 #include "TauntCondition.hpp"
+#include "Translation.hpp"
 
 namespace rtype::client {
 
@@ -9,7 +9,7 @@ namespace rtype::client {
  * where BEST_PILOT_MARK, LAST_PILOT_MARK and ZERO_PILOT_MARK stand for a
  * name, and when it may show. */
 struct Taunt {
-  std::string_view text;
+  Translation text;
   TauntCondition condition{};
 };
 

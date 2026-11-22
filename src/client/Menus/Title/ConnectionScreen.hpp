@@ -1,8 +1,8 @@
 #pragma once
 
 #include <memory>
+#include <optional>
 #include <string>
-#include <string_view>
 #include "ConnectionGoal.hpp"
 #include "ConnectionScreenParts.hpp"
 #include "ConnectionStart.hpp"
@@ -18,6 +18,7 @@
 #include "PlayfieldMapping.hpp"
 #include "ServerChoice.hpp"
 #include "TimeConstants.hpp"
+#include "Translation.hpp"
 
 namespace rtype::client {
 
@@ -110,7 +111,7 @@ class ConnectionScreen : public IScreen {
   ConnectionStart start_{};
   std::unique_ptr<IInterfaceCanvas> canvas_;
   PlayfieldMapping playfieldPointAt_;
-  std::string_view fieldProblem_;
+  std::optional<Translation> fieldProblem_;
   engine::Duration acceptedFor_{};
   bool goalReached_ = false;
   JoinTicketWait ticketWait_;

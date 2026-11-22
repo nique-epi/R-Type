@@ -6,6 +6,7 @@
 #include "InkTagConstants.hpp"
 #include "ItemListConstants.hpp"
 #include "ItemRow.hpp"
+#include "Language.hpp"
 #include "LeaderboardMessage.hpp"
 #include "LeaderboardPage.hpp"
 #include "LeaderboardPhase.hpp"
@@ -25,6 +26,7 @@ using rtype::client::INK_TAG_PADDING;
 using rtype::client::ITEM_TAG_GAP;
 using rtype::client::ItemRow;
 using rtype::client::itemRowsOf;
+using rtype::client::Language;
 using rtype::client::LEADERBOARD_BRONZE;
 using rtype::client::LEADERBOARD_COLUMNS;
 using rtype::client::LEADERBOARD_LIST;
@@ -41,6 +43,7 @@ using rtype::client::STAR_WHITE;
 using rtype::client::testing::EVERY_GAME;
 using rtype::client::testing::FIRST_SECOND;
 using rtype::client::testing::FIRST_SECOND_TEXT;
+using rtype::client::testing::FRENCH_HARD_ONE_PILOT_SUMMARY;
 using rtype::client::testing::HARD_ONE_PILOT;
 using rtype::client::testing::LAST_SECOND;
 using rtype::client::testing::LAST_SECOND_TEXT;
@@ -215,8 +218,8 @@ TEST(LeaderboardPresentation, AnEmptyAnswerSaysSo) {
   const std::optional message = messageOf(answeredPage({}, std::nullopt));
 
   ASSERT_TRUE(message.has_value());
-  EXPECT_STREQ(message.value_or(LeaderboardMessage{}).line,
-               EMPTY_LEADERBOARD_MESSAGE.line);
+  EXPECT_EQ(message.value_or(LeaderboardMessage{}).line.english,
+            EMPTY_LEADERBOARD_MESSAGE.line.english);
 }
 
 /**
@@ -229,8 +232,8 @@ TEST(LeaderboardPresentation, NoAnswerSaysHowToAskAgain) {
       messageOf(pageIn(LeaderboardPhase::NoAnswer))
           .value_or(LeaderboardMessage{});
 
-  EXPECT_STREQ(message.line, "NO ANSWER FROM THE SERVER");
-  EXPECT_STREQ(message.detail, "APPLY A FILTER TO ASK AGAIN");
+  EXPECT_EQ(message.line.english, "NO ANSWER FROM THE SERVER");
+  EXPECT_EQ(message.detail.english, "APPLY A FILTER TO ASK AGAIN");
 }
 
 /**
@@ -239,10 +242,10 @@ TEST(LeaderboardPresentation, NoAnswerSaysHowToAskAgain) {
  * Then it says the player is on no server
  */
 TEST(LeaderboardPresentation, NoSessionSaysSo) {
-  EXPECT_STREQ(messageOf(pageIn(LeaderboardPhase::NotOnServer))
-                   .value_or(LeaderboardMessage{})
-                   .line,
-               "NOT ON A SERVER");
+  EXPECT_EQ(messageOf(pageIn(LeaderboardPhase::NotOnServer))
+                .value_or(LeaderboardMessage{})
+                .line.english,
+            "NOT ON A SERVER");
 }
 
 /**
@@ -314,6 +317,16 @@ TEST(LeaderboardPresentation, AChoiceNamesItsDifficultyAndItsPilots) {
  */
 TEST(LeaderboardPresentation, OnePilotReadsInTheSingular) {
   EXPECT_EQ(filterSummaryOf(HARD_ONE_PILOT), "HARD GAMES, 1 PILOT");
+}
+
+/**
+ * Given the client in French and a choice of hard games of one pilot
+ * When it is summed up
+ * Then it reads in French, the difficulty translated, in the singular
+ */
+TEST(LeaderboardPresentation, AChoiceReadsInFrench) {
+  EXPECT_EQ(filterSummaryOf(HARD_ONE_PILOT, Language::French),
+            FRENCH_HARD_ONE_PILOT_SUMMARY);
 }
 
 /**

@@ -4,6 +4,7 @@ target_include_directories(rtype_client_interface INTERFACE ${CMAKE_CURRENT_SOUR
 
 target_link_libraries(rtype_client_interface
   INTERFACE
+    rtype_client_language
     rtype_client_rendering_interfaces
     rtype_client_settings_values
     rtype_client_sprites
@@ -12,6 +13,7 @@ target_link_libraries(rtype_client_interface
 add_subdirectory(TextWriter)
 add_subdirectory(InterfacePixel)
 add_subdirectory(SmoothImageLayer)
+add_subdirectory(ReportedTextures)
 add_subdirectory(InterfaceCanvas)
 add_subdirectory(PlayerNumberLabel)
 add_subdirectory(PlayerShading)

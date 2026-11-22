@@ -10,7 +10,6 @@
 #include <string>
 #include <vector>
 #include "Button.hpp"
-#include "IScreenNavigator.hpp"
 #include "Menu.hpp"
 #include "PanelCursor.hpp"
 #include "PendingButton.hpp"
@@ -57,8 +56,7 @@ class ISoundPlayer;
  * bottom-right corner of the safe margin, showing the keycap of
  * MENU_CANCEL_KEY. A room writes no description: one given is left out.
  *
- * The cancel button is the one MENU_CANCEL_KEY activates; backButton() adds
- * the one button that closes the screen on top, the same in every menu.
+ * The cancel button is the one MENU_CANCEL_KEY activates.
  */
 class MenuBuilder {
  public:
@@ -113,13 +111,6 @@ class MenuBuilder {
    * asked for is the cancel button. */
   MenuBuilder& cancelButton(Button::Text text, std::function<void()> action);
 
-  /**
-   * @brief Adds BACK, cancel button that closes the screen on top.
-   *
-   * @param navigator Screens around the menu, which must outlive it.
-   */
-  MenuBuilder& backButton(IScreenNavigator& navigator);
-
   /** @brief Reserves an area of this size, in pixels, for a picture its
    * screen paints: against the right side of a page, or from where the
    * heading of a dialog goes, the dialog growing to hold it. */
@@ -153,9 +144,10 @@ class MenuBuilder {
   /** @brief Small line in the top-right corner of a tabbed panel. */
   MenuBuilder& notice(std::string text);
 
-  /** @brief Places every part and hands them to a menu; call it once, since
-   * the actions move into the menu. */
-  [[nodiscard]] Menu build();
+  /** @brief Places every part and hands them to a menu, which selects
+   * @p selected first when it can (see Menu::Content::selected); call it
+   * once, since the actions move into the menu. */
+  [[nodiscard]] Menu build(std::optional<std::size_t> selected = std::nullopt);
 
   /**
    * @returns Where the chip of a room lies: as wide as its label and its keycap

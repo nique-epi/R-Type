@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include "IInterfaceCanvas.hpp"
+#include "Language.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -22,7 +23,8 @@ struct MissionBannerLook {
  * letters; whole for MISSION_BANNER_HOLD once every letter is written; then
  * nothing.
  */
-[[nodiscard]] MissionBannerLook missionBannerAt(engine::Duration sinceStart);
+[[nodiscard]] MissionBannerLook missionBannerAt(
+    engine::Duration sinceStart, Language language = Language::English);
 
 /**
  * @brief Paints the banner centered in MISSION_BANNER_AREA: the letters shown

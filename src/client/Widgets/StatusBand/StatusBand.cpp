@@ -28,6 +28,7 @@
 #include "StatusBandConstants.hpp"
 #include "TextStyle.hpp"
 #include "TextureArea.hpp"
+#include "Translation.hpp"
 #include "WidgetConstants.hpp"
 
 namespace rtype::client {
@@ -36,7 +37,7 @@ namespace {
 
 /** @brief The word of the first row of a bay, in its font and color. */
 struct StatusWord {
-  const char* text{};
+  Translation text;
   TextFont font{};
   sf::Color color;
 };
@@ -183,7 +184,8 @@ int nameRoom(const IInterfaceCanvas& canvas,
   if (!word.has_value()) {
     return row;
   }
-  return row - canvas.textWidth(word->text, word->font) - STATUS_WORD_GAP;
+  return row - canvas.textWidth(word->text.in(canvas.language()), word->font) -
+         STATUS_WORD_GAP;
 }
 
 /** @brief Paints the panel of the band and the rules between its bays. */
@@ -218,7 +220,8 @@ void paintChip(IInterfaceCanvas& canvas, const PilotStatus& pilot,
 void paintWord(IInterfaceCanvas& canvas, const StatusWord& word,
                sf::Vector2i bay) {
   const int drop = word.font == TextFont::Small ? SMALL_WORD_DROP : 0;
-  canvas.write(word.text, bay + STATUS_WORD_END + sf::Vector2i(0, drop),
+  canvas.write(word.text.in(canvas.language()),
+               bay + STATUS_WORD_END + sf::Vector2i(0, drop),
                {.font = word.font,
                 .color = word.color,
                 .alignment = TextAlignment::Right});

@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <optional>
 #include <string>
+#include <string_view>
 #include "Easing.hpp"
 #include "EntitySprites.hpp"
 #include "FinalPilot.hpp"
@@ -19,6 +20,7 @@
 #include "ImagePlacement.hpp"
 #include "InkTag.hpp"
 #include "InterfaceConstants.hpp"
+#include "LetterCounts.hpp"
 #include "MotionPreference.hpp"
 #include "Outline.hpp"
 #include "PaddedScore.hpp"
@@ -49,7 +51,8 @@ struct RowPlace {
 
 /** @returns How wide the ink behind YOU is. */
 int youTagWidthOf(const IInterfaceCanvas& canvas) {
-  return inkTagWidth(canvas, LOCAL_PLAYER_TAG);
+  return inkTagWidth(canvas,
+                     std::string(LOCAL_PLAYER_TAG.in(canvas.language())));
 }
 
 /** @returns Where the leader of the row of @p pilot starts: after its marker,
@@ -63,14 +66,15 @@ int leaderLeftOf(const IInterfaceCanvas& canvas, const FinalPilot& pilot) {
 
 void paintHeading(IInterfaceCanvas& canvas, engine::Duration sinceOpen,
                   sf::Vector2i page) {
-  canvas.write(
-      typedPrefix(RANKING_TEXT,
-                  lettersTypedAt(sinceOpen - RANKING_DELAY, RANKING_LETTER_TIME,
-                                 RANKING_TEXT.size())),
-      page + RANKING_HEADING_TOP_LEFT,
-      {.font = TextFont::Regular, .color = PAPER_INK});
+  const std::string_view heading = RANKING_TEXT.in(canvas.language());
+  canvas.write(typedPrefix(heading, lettersTypedAt(sinceOpen - RANKING_DELAY,
+                                                   RANKING_LETTER_TIME,
+                                                   letterCountOf(heading))),
+               page + RANKING_HEADING_TOP_LEFT,
+               {.font = TextFont::Regular, .color = PAPER_INK});
   const engine::Duration ruleStart =
-      RANKING_DELAY + typingTimeOf(RANKING_LETTER_TIME, RANKING_TEXT.size());
+      RANKING_DELAY +
+      typingTimeOf(RANKING_LETTER_TIME, lettersIn(RANKING_TEXT.english));
   const float drawn =
       easeOutCubic(progressBetween(sinceOpen, ruleStart, RULE_DRAW_TIME));
   canvas.fill(sf::IntRect(page + RANKING_RULE_TOP_LEFT,
@@ -80,9 +84,11 @@ void paintHeading(IInterfaceCanvas& canvas, engine::Duration sinceOpen,
 
 /** @brief YOU on ink, in the row whose top-left corner is @p rowTopLeft. */
 void paintYouTag(IInterfaceCanvas& canvas, sf::Vector2i rowTopLeft) {
-  paintInkTag(canvas, InkTag{.word = LOCAL_PLAYER_TAG,
-                             .topLeft = rowTopLeft + YOU_TAG_OFFSET,
-                             .wordColor = YOU_TAG_TEXT_COLOR});
+  paintInkTag(
+      canvas,
+      InkTag{.word = std::string(LOCAL_PLAYER_TAG.in(canvas.language())),
+             .topLeft = rowTopLeft + YOU_TAG_OFFSET,
+             .wordColor = YOU_TAG_TEXT_COLOR});
 }
 
 /** @brief The rank, slamming in at one scale more for DIGIT_SLAM_TIME, the

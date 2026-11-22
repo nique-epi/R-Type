@@ -3,6 +3,7 @@
 #include <SFML/System/Vector2.hpp>
 #include <algorithm>
 #include <cstddef>
+#include <string_view>
 #include <vector>
 #include "BackgroundColorConstants.hpp"
 #include "BayerThreshold.hpp"
@@ -81,7 +82,8 @@ void paintBody(IInterfaceCanvas& canvas, sf::IntRect body) {
 sf::IntRect nameplateArea(const IInterfaceCanvas& canvas, sf::IntRect body) {
   const int width = std::max(
       NAMEPLATE_MINIMUM_WIDTH,
-      canvas.textWidth(LOCKER_TITLE, TextFont::Small) + NAMEPLATE_MARGIN);
+      canvas.textWidth(LOCKER_TITLE.in(canvas.language()), TextFont::Small) +
+          NAMEPLATE_MARGIN);
   return {{body.position.x + ((body.size.x - width) / HALF_DIVISOR),
            body.position.y + NAMEPLATE_TOP},
           {width, NAMEPLATE_HEIGHT}};
@@ -122,11 +124,12 @@ void paintNameplateMetal(IInterfaceCanvas& canvas, sf::IntRect plate) {
 void paintNameplateName(IInterfaceCanvas& canvas, sf::IntRect plate) {
   const sf::Vector2i anchor(plate.position.x + (plate.size.x / HALF_DIVISOR),
                             plate.position.y + NAMEPLATE_TEXT_TOP);
-  canvas.write(LOCKER_TITLE, anchor + sf::Vector2i(1, 1),
+  const std::string_view title = LOCKER_TITLE.in(canvas.language());
+  canvas.write(title, anchor + sf::Vector2i(1, 1),
                {.font = TextFont::Small,
                 .color = STAR_WHITE,
                 .alignment = TextAlignment::Center});
-  canvas.write(LOCKER_TITLE, anchor,
+  canvas.write(title, anchor,
                {.font = TextFont::Small,
                 .color = INK,
                 .alignment = TextAlignment::Center});

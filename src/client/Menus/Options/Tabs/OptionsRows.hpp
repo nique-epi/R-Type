@@ -54,6 +54,11 @@ template <std::size_t Count>
 [[nodiscard]] std::unique_ptr<RowControl> colorModeSelector(
     SettingsService& service);
 
+/** @returns The selector of the language, which reads and changes it through
+ * @p service. */
+[[nodiscard]] std::unique_ptr<RowControl> languageSelector(
+    SettingsService& service);
+
 /** @returns The slot of the key of @p action, which reads and binds it through
  * @p service and names keys with @p naming. */
 [[nodiscard]] std::unique_ptr<KeySlot> keySlot(SettingsService& service,

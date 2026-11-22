@@ -12,7 +12,6 @@
 #include <vector>
 #include "BarRowWidth.hpp"
 #include "Button.hpp"
-#include "IScreenNavigator.hpp"
 #include "InterfaceConstants.hpp"
 #include "KeyCap.hpp"
 #include "Menu.hpp"
@@ -321,10 +320,6 @@ MenuBuilder& MenuBuilder::cancelButton(Button::Text text,
   return button(std::move(text), std::move(action));
 }
 
-MenuBuilder& MenuBuilder::backButton(IScreenNavigator& navigator) {
-  return cancelButton({.label = BACK_LABEL}, [&navigator] { navigator.pop(); });
-}
-
 MenuBuilder& MenuBuilder::illustration(sf::Vector2i size) {
   illustration_ = size;
   return *this;
@@ -363,8 +358,9 @@ MenuBuilder& MenuBuilder::notice(std::string text) {
   return *this;
 }
 
-Menu MenuBuilder::build() {
+Menu MenuBuilder::build(std::optional<std::size_t> selected) {
   Menu::Content content;
+  content.selected = selected;
   content.cancelButton = cancelButton_;
   content.dimmed = dimmed_;
   switch (frame_) {

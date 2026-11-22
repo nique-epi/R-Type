@@ -57,6 +57,10 @@ bool isOneOf(sf::Keyboard::Key key, std::span<const sf::Keyboard::Key> keys) {
 
 Menu::Menu(Content content, ISoundPlayer* sounds)
     : content_(std::move(content)), sounds_(sounds) {
+  const std::size_t asked = content_.selected.value_or(0);
+  if (asked > 0 && asked < content_.buttons.size()) {
+    selected_ = asked - 1;
+  }
   selectNeighbour(Direction::Next);
 }
 

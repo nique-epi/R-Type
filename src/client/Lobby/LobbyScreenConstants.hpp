@@ -4,6 +4,7 @@
 #include <SFML/Window/Keyboard.hpp>
 #include <cstddef>
 #include <cstdint>
+#include <string_view>
 #include "BarRowWidth.hpp"
 #include "EntitySpriteConstants.hpp"
 #include "HangarBayConstants.hpp"
@@ -11,6 +12,7 @@
 #include "InterfaceConstants.hpp"
 #include "ProtocolConstants.hpp"
 #include "TextStyle.hpp"
+#include "Translation.hpp"
 #include "WidgetColors.hpp"
 #include "WidgetConstants.hpp"
 
@@ -18,9 +20,11 @@ namespace rtype::client {
 
 /** @brief Heading of the waiting room, and the label of its main bar before
  * the player asked to be ready, then once asked. */
-constexpr const char* LOBBY_HEADING = "WAITING ROOM";
-constexpr const char* READY_LABEL = "READY";
-constexpr const char* CANCEL_READY_LABEL = "CANCEL READY";
+constexpr Translation LOBBY_HEADING{.english = "WAITING ROOM",
+                                    .french = "SALLE D'ATTENTE"};
+constexpr Translation READY_LABEL{.english = "READY", .french = "PRÊT"};
+constexpr Translation CANCEL_READY_LABEL{.english = "CANCEL READY",
+                                         .french = "ANNULER PRÊT"};
 
 /** @brief The key of the chip of the leaderboard, and what its keycap says. */
 constexpr sf::Keyboard::Key LEADERBOARD_KEY = sf::Keyboard::Key::L;
@@ -43,12 +47,16 @@ constexpr int LOBBY_BARS_WIDTH =
  */
 constexpr sf::Keyboard::Key MAP_KEY = sf::Keyboard::Key::M;
 constexpr const char* MAP_KEY_NAME = "M";
-constexpr const char* MAP_BAR_PREFIX = "MAP: ";
-constexpr const char* MAP_BAR_CLOSED = "MAP: FIXED";
+constexpr std::string_view MAP_MARK = "{MAP}";
+constexpr Translation MAP_BAR{.english = "MAP: {MAP}",
+                              .french = "CARTE : {MAP}"};
+constexpr Translation MAP_BAR_CLOSED{.english = "MAP: FIXED",
+                                     .french = "CARTE : FIXE"};
 
 /** @brief The vote of a pilot, written in its bay before the name of the
  * map. */
-constexpr const char* BAY_VOTE_PREFIX = "VOTE: ";
+constexpr Translation BAY_VOTE{.english = "VOTE: {MAP}",
+                               .french = "VOTE : {MAP}"};
 
 /**
  * @brief The card of the map, painted over the MAP bar: MAP_CARD_RISE above
@@ -75,14 +83,15 @@ constexpr int MAP_CARD_INSET = 3;
  * MAP_CARD_INSET before its right edge. */
 constexpr int MAP_NAME_WIDTH =
     BUTTON_SIZE.x - MAP_CARD_TEXT_LEFT - MAP_CARD_INSET;
-constexpr const char* MAP_CARD_LABEL = "MAP";
+constexpr Translation MAP_CARD_LABEL{.english = "MAP", .french = "CARTE"};
 constexpr int MAP_NAME_TOP = 15;
 constexpr int MAP_NAME_LINE_STEP = 10;
 constexpr int MAP_NAME_LINES = 3;
 constexpr int VOTE_PIP_SIZE = 4;
 constexpr int VOTE_PIP_STEP = 6;
 constexpr const char* NO_PREVIEW_MARK = "?";
-constexpr const char* NO_MAP_CHOSEN_NAME = "RANDOM";
+constexpr Translation NO_MAP_CHOSEN_NAME{.english = "RANDOM",
+                                         .french = "AU HASARD"};
 constexpr const char* MAP_NAME_WORD_SEPARATOR = " ";
 
 /** @brief The number of the first map the room lists: votes count them from
@@ -137,10 +146,17 @@ constexpr TextStyle GAME_RULES_STYLE{.font = TextFont::Small,
  * nickname; several pilots not ready, after their number. It never counts
  * places still open: a game starts with whoever is listed.
  */
-constexpr const char* ALL_READY_STATUS = "ALL READY: LAUNCHING";
-constexpr const char* YOU_NOT_READY_STATUS = "YOU ARE NOT READY";
-constexpr const char* PILOT_NOT_READY_STATUS = " IS NOT READY";
-constexpr const char* PILOTS_NOT_READY_STATUS = " PILOTS NOT READY";
+constexpr Translation ALL_READY_STATUS{.english = "ALL READY: LAUNCHING",
+                                       .french = "TOUS PRÊTS : DÉCOLLAGE"};
+constexpr Translation YOU_NOT_READY_STATUS{.english = "YOU ARE NOT READY",
+                                           .french = "VOUS N'ÊTES PAS PRÊT"};
+constexpr std::string_view PILOT_MARK = "{PILOT}";
+constexpr std::string_view NOT_READY_COUNT_MARK = "{COUNT}";
+constexpr Translation PILOT_NOT_READY_STATUS{
+    .english = "{PILOT} IS NOT READY", .french = "{PILOT} N'EST PAS PRÊT"};
+constexpr Translation PILOTS_NOT_READY_STATUS{
+    .english = "{COUNT} PILOTS NOT READY",
+    .french = "{COUNT} PILOTES PAS PRÊTS"};
 
 /** @brief The row the lines of the chat end on: the bottom of the HELP and
  * BACK chips, SAFE_MARGIN above the bottom of the picture. */

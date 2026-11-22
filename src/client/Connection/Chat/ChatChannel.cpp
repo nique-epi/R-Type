@@ -15,18 +15,22 @@
 #include "MessageOrigin.hpp"
 #include "PlayerChatLine.hpp"
 #include "TimeConstants.hpp"
+#include "Translation.hpp"
 #include "WireTypes.hpp"
 
 namespace rtype::client {
 
 namespace {
 
-/** @returns A line the client writes itself, saying @p text. */
-ChatEntry clientLine(std::string_view text) {
+/** @returns A line the client writes itself, saying @p text: its English
+ * as its text, both languages as its wording, which the chat window writes in
+ * the language the player picked. */
+ChatEntry clientLine(const Translation& text) {
   return ChatEntry{.playerNumber = CLIENT_WRITER,
                    .nickname = {},
-                   .text = std::string{text},
-                   .age = {}};
+                   .text = std::string{text.english},
+                   .age = {},
+                   .wording = text};
 }
 
 }  // namespace

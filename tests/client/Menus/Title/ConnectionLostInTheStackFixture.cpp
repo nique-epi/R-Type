@@ -5,6 +5,7 @@
 #include "ConnectionPhase.hpp"
 #include "DialogMenus.hpp"
 #include "DialogScreen.hpp"
+#include "DialogTools.hpp"
 #include "IScreen.hpp"
 #include "KeyPress.hpp"
 #include "MenuScreenIdConstants.hpp"
@@ -19,6 +20,7 @@ using rtype::client::CONNECTION_LOST_SCREEN;
 using rtype::client::connectionLostMenu;
 using rtype::client::ConnectionPhase;
 using rtype::client::DialogScreen;
+using rtype::client::DialogTools;
 using rtype::client::IScreen;
 using rtype::client::PRESS_DURATION;
 using rtype::client::ScreenId;
@@ -59,7 +61,9 @@ std::unique_ptr<IScreen> ConnectionLostInTheStackFixture::build(
     ScreenId screen) {
   if (screen == CONNECTION_LOST_SCREEN) {
     return std::make_unique<DialogScreen>(
-        connectionLostMenu(screens_, sounds_, ConnectionPhase::Lost),
+        connectionLostMenu(
+            DialogTools{.navigator = screens_, .sounds = sounds_},
+            ConnectionPhase::Lost),
         samePlayfieldPoint,
         std::make_unique<RecordingInterfaceCanvas>(dialogCanvas_));
   }

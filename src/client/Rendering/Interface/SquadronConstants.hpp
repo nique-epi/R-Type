@@ -2,10 +2,10 @@
 
 #include <SFML/System/Vector2.hpp>
 #include <array>
-#include <string_view>
 #include "InterfaceColorConstants.hpp"
 #include "SquadronShip.hpp"
 #include "TextStyle.hpp"
+#include "Translation.hpp"
 
 namespace rtype::client {
 
@@ -33,7 +33,8 @@ constexpr float SQUADRON_FIRE_START = 2.4F;
 constexpr int SQUADRON_OPENING_STEP = 4;
 
 /** @brief Title written in the top-left corner of the box, outlined. */
-constexpr std::string_view SQUADRON_TITLE = "SQUADRON";
+constexpr Translation SQUADRON_TITLE{.english = "SQUADRON",
+                                     .french = "ESCADRILLE"};
 constexpr sf::Vector2i SQUADRON_TITLE_POSITION(8, 8);
 constexpr TextStyle SQUADRON_TITLE_STYLE{
     .font = TextFont::Regular, .color = HUD_CYAN, .outlined = true};

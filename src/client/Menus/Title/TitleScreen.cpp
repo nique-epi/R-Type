@@ -2,17 +2,20 @@
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Window/Event.hpp>
+#include <cstddef>
 #include <memory>
 #include <optional>
 #include <utility>
 #include "ClientVersionConstants.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "IScreenNavigator.hpp"
+#include "Language.hpp"
 #include "Menu.hpp"
 #include "MenuBuilder.hpp"
 #include "MenuScreenIdConstants.hpp"
 #include "PlayStart.hpp"
 #include "PlayerPreferences.hpp"
+#include "PlayerSettings.hpp"
 #include "ScreenConstants.hpp"
 #include "ScreenId.hpp"
 #include "SignInReturn.hpp"
@@ -47,12 +50,16 @@ TitleScreen::TitleScreen(TitleScreenParts parts,
       deviceLinks_(&parts.deviceLinks.get()),
       signInReturn_(&parts.signInReturn.get()),
       notice_(parts.notice),
-      menu_(buildMenu(parts.sounds.get(), parts.playStart)),
+      sounds_(&parts.sounds.get()),
+      playStart_(parts.playStart),
+      builtIn_(settings_->language),
+      menu_(buildMenu(std::nullopt)),
       accountChips_(TitleAccountChipsParts{.account = parts.account.get(),
                                            .wallet = parts.wallet,
                                            .sounds = parts.sounds,
                                            .signIn = [this] { signIn(); },
-                                           .signOut = [this] { signOut(); }}),
+                                           .signOut = [this] { signOut(); },
+                                           .language = settings_->language}),
       squadron_(parts.motion, parts.seed, parts.squadronStart) {
   repaint();
 }
@@ -65,6 +72,7 @@ void TitleScreen::handleEvent(const sf::Event& event) {
 }
 
 void TitleScreen::update(engine::Duration elapsed) {
+  followLanguage();
   menu_.advance(elapsed);
   squadron_.advance(elapsed);
   askForNotice();
@@ -77,25 +85,39 @@ void TitleScreen::draw(sf::RenderTarget& target) const {
 
 bool TitleScreen::hidesScreensBelow() const { return true; }
 
-Menu TitleScreen::buildMenu(ISoundPlayer& sounds, PlayStart playStart) {
+Menu TitleScreen::buildMenu(std::optional<std::size_t> selected) const {
   IScreenNavigator& navigator = *navigator_;
-  const ScreenId playScreen = playScreenOf(playStart);
-  return MenuBuilder(MenuBuilder::Frame::Page, &sounds)
+  const Language language = settings_->language;
+  const ScreenId playScreen = playScreenOf(playStart_);
+  return MenuBuilder(MenuBuilder::Frame::Page, sounds_)
       .version(GAME_VERSION_TEXT)
       .logo(LOGO_ID, LOGO_SIZE)
-      .subtitle(TITLE_SUBTITLE)
-      .button({.label = PLAY_LABEL, .description = PLAY_DESCRIPTION},
+      .subtitle(std::string(TITLE_SUBTITLE.in(language)))
+      .button({.label = std::string(PLAY_LABEL.in(language)),
+               .description = std::string(PLAY_DESCRIPTION.in(language))},
               [&navigator, playScreen] { navigator.push(playScreen); })
       .button(
-          {.label = LEADERBOARD_LABEL, .description = LEADERBOARD_DESCRIPTION},
+          {.label = std::string(LEADERBOARD_LABEL.in(language)),
+           .description = std::string(LEADERBOARD_DESCRIPTION.in(language))},
           [&navigator] { navigator.push(LEADERBOARD_SCREEN); })
-      .button({.label = SETTINGS_LABEL, .description = SETTINGS_DESCRIPTION},
+      .button({.label = std::string(SETTINGS_LABEL.in(language)),
+               .description = std::string(SETTINGS_DESCRIPTION.in(language))},
               [&navigator] { navigator.push(OPTIONS_SCREEN); })
-      .cancelButton({.label = QUIT_LABEL, .description = QUIT_DESCRIPTION},
+      .cancelButton({.label = std::string(QUIT_LABEL.in(language)),
+                     .description = std::string(QUIT_DESCRIPTION.in(language))},
                     [&navigator] { navigator.push(QUIT_CONFIRMATION_SCREEN); })
       .illustration(SQUADRON_BOX_SIZE)
       .footer(COPYRIGHT_TEXT)
-      .build();
+      .build(selected);
+}
+
+void TitleScreen::followLanguage() {
+  if (settings_->language == builtIn_) {
+    return;
+  }
+  menu_ = buildMenu(menu_.selectedButton());
+  accountChips_.followLanguage(settings_->language);
+  builtIn_ = settings_->language;
 }
 
 void TitleScreen::signIn() {

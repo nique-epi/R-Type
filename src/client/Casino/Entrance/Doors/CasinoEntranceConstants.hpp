@@ -7,6 +7,7 @@
 #include "CasinoSpriteConstants.hpp"
 #include "SpokenLineConstants.hpp"
 #include "TimeConstants.hpp"
+#include "Translation.hpp"
 #include "WidgetConstants.hpp"
 
 namespace rtype::client {
@@ -48,8 +49,9 @@ constexpr const char* BUTLER_NAME = "BALTHAZAR";
 
 /** @brief What the butler says before the doors, cut in two lines by the
  * width of his panel. */
-constexpr const char* WELCOME_SPEECH =
-    "WELCOME TO THE BYDO PALACE, PILOT. THE TABLES ARE OPEN.";
+constexpr Translation WELCOME_SPEECH{
+    .english = "WELCOME TO THE BYDO PALACE, PILOT. THE TABLES ARE OPEN.",
+    .french = "BIENVENUE AU BYDO PALACE, PILOTE. LES TABLES SONT OUVERTES."};
 
 /** @brief How wide the SpokenLine of the butler is: the width of his text
  * and the padding a SpokenLine takes off it on each side; its tail, at the
@@ -60,14 +62,14 @@ constexpr int BUTLER_SPOKEN_LINE_WIDTH =
 
 /** @brief The two bars before the doors, on the bottom edge of the panel of
  * the butler: ENTER, which opens them, and BACK, to the map. */
-constexpr CasinoBar ENTER_BAR{.label = "ENTER",
+constexpr CasinoBar ENTER_BAR{.label = {.english = "ENTER", .french = "ENTRE"},
                               .keyName = CONFIRM_KEY_NAME,
                               .area = sf::IntRect({172, 254}, {104, 14}),
                               .key = MENU_CONFIRM_KEY,
                               .restState = BarState::Selected};
 constexpr CasinoBar DOORS_BACK_BAR{.label = BACK_LABEL,
                                    .keyName = CANCEL_KEY_NAME,
-                                   .area = sf::IntRect({280, 254}, {88, 14}),
+                                   .area = sf::IntRect({280, 254}, {98, 14}),
                                    .key = MENU_CANCEL_KEY};
 
 }  // namespace rtype::client

@@ -91,6 +91,8 @@ bool SettingsService::apply(const Setting<Value>& setting, const Value& value) {
 
 template bool SettingsService::apply<int>(const Setting<int>&, const int&);
 template bool SettingsService::apply<bool>(const Setting<bool>&, const bool&);
+template bool SettingsService::apply<Language>(const Setting<Language>&,
+                                               const Language&);
 template bool SettingsService::apply<ColorMode>(const Setting<ColorMode>&,
                                                 const ColorMode&);
 template bool SettingsService::apply<DisplayMode>(const Setting<DisplayMode>&,

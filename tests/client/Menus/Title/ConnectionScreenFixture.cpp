@@ -8,6 +8,7 @@
 #include "ConnectionScreenFixtures.hpp"
 #include "ConnectionScreenParts.hpp"
 #include "ConnectionStatus.hpp"
+#include "Language.hpp"
 #include "PointerEvents.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
@@ -21,10 +22,13 @@ using rtype::client::ConnectionGoal;
 using rtype::client::ConnectionScreen;
 using rtype::client::ConnectionScreenParts;
 using rtype::client::ConnectionStatus;
+using rtype::client::Language;
 using rtype::client::PRESS_DURATION;
 
-ConnectionScreenFixture::ConnectionScreenFixture(ConnectionGoal goal)
-    : choice_(launchChoice()),
+ConnectionScreenFixture::ConnectionScreenFixture(ConnectionGoal goal,
+                                                 Language language)
+    : canvas_(recordIn(language)),
+      choice_(launchChoice()),
       screen_(ConnectionScreenParts{.navigator = navigator_,
                                     .sounds = sounds_,
                                     .connection = connection_,
@@ -34,6 +38,9 @@ ConnectionScreenFixture::ConnectionScreenFixture(ConnectionGoal goal)
                                     .choice = choice_,
                                     .goal = goal},
               std::make_unique<RecordingInterfaceCanvas>(canvas_)) {}
+
+FrenchConnectionScreenFixture::FrenchConnectionScreenFixture()
+    : ConnectionScreenFixture(ConnectionGoal::WaitingRoom, Language::French) {}
 
 ConnectionForTheScreenBelowFixture::ConnectionForTheScreenBelowFixture()
     : ConnectionScreenFixture(ConnectionGoal::ScreenBelow) {}

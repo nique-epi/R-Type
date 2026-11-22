@@ -19,6 +19,7 @@
 #include "RouletteView.hpp"
 #include "SpinCountdown.hpp"
 #include "TableRosterPainting.hpp"
+#include "TextMarks.hpp"
 #include "TextStyle.hpp"
 #include "TextureArea.hpp"
 #include "WheelPicture.hpp"
@@ -84,7 +85,9 @@ void paintSpinCountdown(IInterfaceCanvas& canvas,
   canvas.fill(SPIN_PLAQUE_AREA, CASINO_PANEL_INSIDE_COLOR);
   paintEdges(canvas, SPIN_PLAQUE_AREA, CASINO_GOLD);
   canvas.write(
-      SPIN_IN_START + std::to_string(countdown.seconds),
+      withMark(SPIN_IN_LINE.in(canvas.language()),
+               {.mark = ROULETTE_SECONDS_MARK,
+                .value = std::to_string(countdown.seconds)}),
       SPIN_PLAQUE_TEXT_TOP_LEFT,
       TextStyle{.font = TextFont::Regular,
                 .color = countdown.hurry ? CASINO_NEON_RED : STAR_WHITE});
@@ -101,14 +104,16 @@ void paintBigWin(IInterfaceCanvas& canvas, const BigWin& bigWin) {
   paintEdges(canvas, BIG_WIN_AREA, CASINO_GOLD);
   paintEdges(canvas, insetOf(BIG_WIN_AREA, BIG_WIN_LINING_INSET),
              CASINO_NEON_RED);
-  canvas.write(BIG_WIN_TITLE, BIG_WIN_TITLE_TOP_MIDDLE,
+  canvas.write(BIG_WIN_TITLE.in(canvas.language()), BIG_WIN_TITLE_TOP_MIDDLE,
                TextStyle{.font = TextFont::Regular,
                          .color = STAR_GOLD,
                          .outlined = true,
                          .alignment = TextAlignment::Center,
                          .scale = BIG_WIN_TITLE_SCALE});
-  canvas.write(bigWin.nickname + BIG_WIN_WON + std::to_string(bigWin.gain) +
-                   BIG_WIN_CHIPS,
+  canvas.write(withMark(withMark(BIG_WIN_LINE.in(canvas.language()),
+                                 {.mark = BIG_WIN_GAIN_MARK,
+                                  .value = std::to_string(bigWin.gain)}),
+                        {.mark = BIG_WIN_PILOT_MARK, .value = bigWin.nickname}),
                BIG_WIN_LINE_TOP_MIDDLE,
                TextStyle{.font = TextFont::Regular,
                          .color = STAR_WHITE,

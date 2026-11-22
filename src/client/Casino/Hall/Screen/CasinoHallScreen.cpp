@@ -11,6 +11,7 @@
 #include <utility>
 #include "Ambience.hpp"
 #include "CasinoBarChip.hpp"
+#include "CasinoChipWiring.hpp"
 #include "CasinoHallConstants.hpp"
 #include "CasinoHallScreenParts.hpp"
 #include "CasinoLighting.hpp"
@@ -88,12 +89,19 @@ CasinoHallScreen::CasinoHallScreen(CasinoHallScreenParts parts,
       motion_(parts.motion),
       painter_(std::move(parts.picture)),
       cashierChip_(chipOf(
-          HALL_CASHIER_BAR, [this] { walkTo(HallExit::Cashier); },
-          parts.sounds)),
+          HALL_CASHIER_BAR,
+          CasinoChipWiring{.action = [this] { walkTo(HallExit::Cashier); },
+                           .sounds = parts.sounds,
+                           .language = canvas_->language()})),
       rouletteChip_(chipOf(
-          HALL_ROULETTE_BAR, [this] { walkTo(HallExit::Roulette); },
-          parts.sounds)),
-      backChip_(chipOf(HALL_BACK_BAR, [this] { leave(); }, parts.sounds)) {
+          HALL_ROULETTE_BAR,
+          CasinoChipWiring{.action = [this] { walkTo(HallExit::Roulette); },
+                           .sounds = parts.sounds,
+                           .language = canvas_->language()})),
+      backChip_(chipOf(HALL_BACK_BAR,
+                       CasinoChipWiring{.action = [this] { leave(); },
+                                        .sounds = parts.sounds,
+                                        .language = canvas_->language()})) {
   casino_->askRooms();
   repaint();
 }

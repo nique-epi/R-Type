@@ -5,7 +5,9 @@
 #include <cstddef>
 #include <cstdint>
 #include <string>
+#include <string_view>
 #include "BackgroundColorConstants.hpp"
+#include "CashierAttempt.hpp"
 #include "CashierConstants.hpp"
 #include "CashierNotice.hpp"
 #include "CashierRules.hpp"
@@ -19,8 +21,10 @@
 #include "ImagePlacement.hpp"
 #include "InterfaceConstants.hpp"
 #include "Kopecks.hpp"
+#include "TextMarks.hpp"
 #include "TextStyle.hpp"
 #include "TextureArea.hpp"
+#include "Translation.hpp"
 #include "WidgetConstants.hpp"
 
 namespace rtype::client {
@@ -35,10 +39,16 @@ TextStyle regularStyle(sf::Color color, TextAlignment alignment) {
   return {.font = TextFont::Regular, .color = color, .alignment = alignment};
 }
 
+/** @returns Whether the balance @p way takes from, or the one it gives to,
+ * as @p source says, is the kopecks. */
+bool isKopecks(CashierWay way, bool source) {
+  return (way == CashierWay::BuyChips) == source;
+}
+
 /** @returns The name of the balance @p way takes from, then of the one it
  * gives to, as @p source says. */
-const char* balanceWordOf(CashierWay way, bool source) {
-  return (way == CashierWay::BuyChips) == source ? KOPECKS_WORD : CHIPS_WORD;
+Translation balanceWordOf(CashierWay way, bool source) {
+  return isKopecks(way, source) ? CASINO_KOPECKS_CAPTION : CASINO_CHIPS_CAPTION;
 }
 
 /** @brief Writes the balance @p view takes from, on the left, when
@@ -46,15 +56,15 @@ const char* balanceWordOf(CashierWay way, bool source) {
  * over its amount, gold for the kopecks, white for the chips. */
 void paintBalance(IInterfaceCanvas& canvas, const CashierView& view,
                   bool source) {
-  const char* word = balanceWordOf(view.way, source);
+  const std::string_view word =
+      balanceWordOf(view.way, source).in(canvas.language());
   const std::uint32_t amount = source
                                    ? sourceOf(view.tried.wallet, view.way)
                                    : destinationOf(view.tried.wallet, view.way);
   const TextAlignment alignment =
       source ? TextAlignment::Left : TextAlignment::Right;
   const int column = source ? CASHIER_LEFT : CASHIER_RIGHT;
-  const sf::Color color =
-      std::string(word) == KOPECKS_WORD ? STAR_GOLD : STAR_WHITE;
+  const sf::Color color = isKopecks(view.way, source) ? STAR_GOLD : STAR_WHITE;
   canvas.write(word, {column, CASHIER_CAPTION_TOP},
                smallStyle(PALE_BLUE, alignment));
   canvas.write(kopecksText(amount), {column, CASHIER_BALANCE_TOP},
@@ -74,7 +84,8 @@ void paintExchangedBalances(IInterfaceCanvas& canvas, const CashierView& view) {
 /** @brief Paints the amount in its box between its marks, its name on the
  * left and the step on the right. */
 void paintAmount(IInterfaceCanvas& canvas, const CashierView& view) {
-  canvas.write(CASHIER_AMOUNT_CAPTION, {CASHIER_LEFT, CASHIER_AMOUNT_TOP},
+  canvas.write(CASHIER_AMOUNT_CAPTION.in(canvas.language()),
+               {CASHIER_LEFT, CASHIER_AMOUNT_TOP},
                smallStyle(PALE_BLUE, TextAlignment::Left));
   const sf::Vector2i border(CASHIER_AMOUNT_BORDER, CASHIER_AMOUNT_BORDER);
   canvas.fill(CASHIER_AMOUNT_BOX, CASINO_GOLD);
@@ -90,7 +101,9 @@ void paintAmount(IInterfaceCanvas& canvas, const CashierView& view) {
   canvas.write(CASHIER_RAISE_MARK,
                {CASHIER_RAISE_MARK_LEFT, CASHIER_AMOUNT_TEXT_TOP},
                regularStyle(CASINO_LIGHT_GOLD, TextAlignment::Left));
-  canvas.write(CASHIER_STEP_CAPTION + std::to_string(CHIP_VALUES.at(view.step)),
+  canvas.write(withMark(CASHIER_STEP_LINE.in(canvas.language()),
+                        {.mark = CASHIER_STEP_MARK,
+                         .value = std::to_string(CHIP_VALUES.at(view.step))}),
                {CASHIER_RIGHT, CASHIER_AMOUNT_TOP},
                smallStyle(PALE_BLUE, TextAlignment::Right));
 }
@@ -125,11 +138,12 @@ void paintBalancesAfter(IInterfaceCanvas& canvas, const CashierView& view) {
     const std::uint32_t after =
         source ? sourceOf(view.tried.wallet, view.way)
                : destinationOf(view.tried.wallet, view.way);
-    canvas.write(kopecksText(after) + CASHIER_AMOUNT_WORD_GAP +
-                     balanceWordOf(view.way, source),
-                 {source ? CASHIER_LEFT : CASHIER_RIGHT, CASHIER_RESULT_TOP},
-                 regularStyle(STAR_WHITE, source ? TextAlignment::Left
-                                                 : TextAlignment::Right));
+    canvas.write(
+        kopecksText(after) + CASHIER_AMOUNT_WORD_GAP +
+            std::string(balanceWordOf(view.way, source).in(canvas.language())),
+        {source ? CASHIER_LEFT : CASHIER_RIGHT, CASHIER_RESULT_TOP},
+        regularStyle(STAR_WHITE,
+                     source ? TextAlignment::Left : TextAlignment::Right));
   }
 }
 
@@ -138,19 +152,24 @@ void paintBalancesAfter(IInterfaceCanvas& canvas, const CashierView& view) {
  * place. */
 void paintAfter(IInterfaceCanvas& canvas, const CashierView& view) {
   canvas.fill(CASHIER_LOWER_RULE, CASINO_DARK_GOLD);
-  canvas.write(CASHIER_AFTER_CAPTION, {CASHIER_LEFT, CASHIER_AFTER_TOP},
+  canvas.write(CASHIER_AFTER_CAPTION.in(canvas.language()),
+               {CASHIER_LEFT, CASHIER_AFTER_TOP},
                smallStyle(PALE_BLUE, TextAlignment::Left));
   canvas.write(
-      view.way == CashierWay::BuyChips ? BUY_CHIPS_RATE : CASH_OUT_RATE,
+      (view.way == CashierWay::BuyChips ? BUY_CHIPS_RATE : CASH_OUT_RATE)
+          .in(canvas.language()),
       {CASHIER_RIGHT, CASHIER_AFTER_TOP},
       smallStyle(PALE_BLUE, TextAlignment::Right));
   if (!view.notice.has_value() && !view.tried.refusal.has_value()) {
     paintBalancesAfter(canvas, view);
     return;
   }
-  const CashierNotice notice = view.notice.value_or(
-      CashierNotice{.text = cashierLineOf(view.tried, view.way, view.amount),
-                    .refusal = true});
+  const CashierNotice notice = view.notice.value_or(CashierNotice{
+      .text = cashierLineOf(
+          CashierAttempt{
+              .tried = view.tried, .way = view.way, .amount = view.amount},
+          canvas.language()),
+      .refusal = true});
   canvas.write(notice.text, {CASHIER_MIDDLE, CASHIER_NOTICE_TOP},
                smallStyle(notice.refusal ? CASINO_NEON_RED : STAR_GOLD,
                           TextAlignment::Center));
@@ -162,7 +181,8 @@ void paintCashierPanel(IInterfaceCanvas& canvas, const CashierView& view) {
   paintGoldPanel(canvas, CASHIER_PANEL_AREA);
   paintNameTag(
       canvas, CASHIER_TAG_TOP_LEFT,
-      view.way == CashierWay::BuyChips ? BUY_CHIPS_TITLE : CASH_OUT_TITLE);
+      (view.way == CashierWay::BuyChips ? BUY_CHIPS_TITLE : CASH_OUT_TITLE)
+          .in(canvas.language()));
   paintExchangedBalances(canvas, view);
   paintAmount(canvas, view);
   paintChips(canvas, view.step);

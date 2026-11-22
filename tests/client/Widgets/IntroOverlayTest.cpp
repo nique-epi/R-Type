@@ -132,7 +132,7 @@ TEST(IntroOverlay, TheBandsAreGoneOnceOpen) {
  * Then it is not written yet
  */
 TEST(IntroOverlay, PressAnyKeyWaitsForItsMoment) {
-  EXPECT_EQ(writingOf(overlayAt(BEFORE_THE_HINT), INTRO_HINT), nullptr);
+  EXPECT_EQ(writingOf(overlayAt(BEFORE_THE_HINT), INTRO_HINT.english), nullptr);
 }
 
 /**
@@ -141,7 +141,7 @@ TEST(IntroOverlay, PressAnyKeyWaitsForItsMoment) {
  * Then it lies on the bottom band, right-aligned at the safe margin
  */
 TEST(IntroOverlay, PressAnyKeyLiesOnTheBottomBand) {
-  EXPECT_EQ(anchorOf(overlayAt(DURING_THE_BANDS), INTRO_HINT),
+  EXPECT_EQ(anchorOf(overlayAt(DURING_THE_BANDS), INTRO_HINT.english),
             HINT_ON_THE_BAND);
 }
 
@@ -153,7 +153,7 @@ TEST(IntroOverlay, PressAnyKeyLiesOnTheBottomBand) {
  */
 TEST(IntroOverlay, PressAnyKeyMovesToTheFooterOnceTheBandsOpen) {
   EXPECT_EQ(anchorOf(overlayAt(INTRO_SLAM + INTRO_BAND_OPENING + A_MOMENT),
-                     INTRO_HINT),
+                     INTRO_HINT.english),
             HINT_ON_THE_FOOTER);
 }
 

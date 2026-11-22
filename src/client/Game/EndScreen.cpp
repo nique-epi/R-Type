@@ -92,7 +92,8 @@ EndScreen::EndScreen(EndScreenParts parts,
       pilots_(parts.result.get().pilots),
       outcome_(parts.result.get().outcome),
       kopecksGained_(parts.result.get().kopecksGained) {
-  taunt_ = tauntLinesOf(coverTauntOf(parts, pilots_), pilots_);
+  taunt_ =
+      tauntLinesOf(coverTauntOf(parts, pilots_), pilots_, canvas_->language());
   schedule_ = flightLogScheduleOf(pilots_, taunt_);
   if (motion_ == MotionPreference::Reduced) {
     sinceStart_ = schedule_.ready;

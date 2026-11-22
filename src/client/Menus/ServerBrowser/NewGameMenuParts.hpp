@@ -6,6 +6,7 @@
 #include "Endpoint.hpp"
 #include "IScreenNavigator.hpp"
 #include "ISoundPlayer.hpp"
+#include "Language.hpp"
 #include "ServerChoice.hpp"
 
 namespace rtype::client {
@@ -29,6 +30,7 @@ struct NewGameMenuParts {
   network::Endpoint server;
   /** @brief The difficulties of the server, as the master lists them. */
   std::vector<std::string> difficulties;
+  Language language = Language::English;
 };
 
 }  // namespace rtype::client

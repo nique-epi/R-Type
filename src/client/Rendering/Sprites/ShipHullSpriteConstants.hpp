@@ -2,11 +2,11 @@
 
 #include <array>
 #include <cstddef>
-#include <string_view>
 #include "EntitySpriteConstants.hpp"
 #include "SheetRow.hpp"
 #include "ShipLookConstants.hpp"
 #include "SpriteFrame.hpp"
+#include "Translation.hpp"
 
 namespace rtype::client {
 
@@ -31,9 +31,13 @@ constexpr std::array SHIP_HULL_ROWS =
 
 /** @brief The name each hull is shown under, in the order of the hulls of
  * SHIP_LOOK_ITEM_NAMES. */
-constexpr std::array<std::string_view, identifiers::SHIP_HULL_COUNT>
-    SHIP_HULL_LABELS{"WAR SHARK", "VOSTOK", "BYDO HUSK", "GOLDEN ACE",
-                     "GOLDEN BYDO"};
+constexpr std::array<Translation, identifiers::SHIP_HULL_COUNT>
+    SHIP_HULL_LABELS{
+        Translation{.english = "WAR SHARK", .french = "REQUIN DE GUERRE"},
+        Translation{.english = "VOSTOK", .french = "VOSTOK"},
+        Translation{.english = "BYDO HUSK", .french = "CARCASSE BYDO"},
+        Translation{.english = "GOLDEN ACE", .french = "AS EN OR"},
+        Translation{.english = "GOLDEN BYDO", .french = "BYDO EN OR"}};
 
 /** @brief The pilot color a hull shows in a catalogue, where no pilot
  * flies it yet: the first. */

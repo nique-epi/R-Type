@@ -4,6 +4,7 @@
 #include "ConnectionPhase.hpp"
 #include "DialogMenus.hpp"
 #include "DialogScreen.hpp"
+#include "DialogTools.hpp"
 #include "KeyPress.hpp"
 #include "PointerEvents.hpp"
 #include "RecordingInterfaceCanvas.hpp"
@@ -16,25 +17,29 @@
 using rtype::client::connectionLostMenu;
 using rtype::client::ConnectionPhase;
 using rtype::client::DialogScreen;
+using rtype::client::DialogTools;
 using rtype::client::leaveGameConfirmationMenu;
 using rtype::client::PRESS_DURATION;
 using rtype::client::quitConfirmationMenu;
 
 void DialogMenusFixture::openQuitConfirmation() {
   dialog_ = std::make_unique<DialogScreen>(
-      quitConfirmationMenu(navigator_, sounds_), samePlayfieldPoint,
-      std::make_unique<RecordingInterfaceCanvas>(canvas_));
+      quitConfirmationMenu(
+          DialogTools{.navigator = navigator_, .sounds = sounds_}),
+      samePlayfieldPoint, std::make_unique<RecordingInterfaceCanvas>(canvas_));
 }
 
 void DialogMenusFixture::openConnectionLost(ConnectionPhase ending) {
   dialog_ = std::make_unique<DialogScreen>(
-      connectionLostMenu(navigator_, sounds_, ending), samePlayfieldPoint,
-      std::make_unique<RecordingInterfaceCanvas>(canvas_));
+      connectionLostMenu(
+          DialogTools{.navigator = navigator_, .sounds = sounds_}, ending),
+      samePlayfieldPoint, std::make_unique<RecordingInterfaceCanvas>(canvas_));
 }
 
 void DialogMenusFixture::openLeaveGameConfirmation() {
   dialog_ = std::make_unique<DialogScreen>(
-      leaveGameConfirmationMenu(navigator_, sounds_, connection_),
+      leaveGameConfirmationMenu(
+          DialogTools{.navigator = navigator_, .sounds = sounds_}, connection_),
       samePlayfieldPoint, std::make_unique<RecordingInterfaceCanvas>(canvas_));
 }
 

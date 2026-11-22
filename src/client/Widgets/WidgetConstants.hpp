@@ -7,6 +7,7 @@
 #include <cstddef>
 #include "InterfaceConstants.hpp"
 #include "TimeConstants.hpp"
+#include "Translation.hpp"
 
 namespace rtype::client {
 
@@ -191,14 +192,15 @@ constexpr int SPACE_BELOW_DESCRIPTION = BUTTON_GAP;
 
 /** @brief How the local player is named on screen, where the others are named
  * by PLAYER_NUMBER_PREFIX and their number. */
-constexpr const char* LOCAL_PLAYER_TAG = "YOU";
+constexpr Translation LOCAL_PLAYER_TAG{.english = "YOU", .french = "MOI"};
 
 /** @brief Label of the button that closes a menu, the same in every menu. */
-constexpr const char* BACK_LABEL = "BACK";
+constexpr Translation BACK_LABEL{.english = "BACK", .french = "RETOUR"};
 
 /** @brief Label of the row that picks the difficulty of a game, in the filter
  * of the leaderboard and in the new game dialog. */
-constexpr const char* DIFFICULTY_ROW_LABEL = "DIFFICULTY";
+constexpr Translation DIFFICULTY_ROW_LABEL{.english = "DIFFICULTY",
+                                           .french = "DIFFICULTÉ"};
 
 /**
  * @brief Tabbed panel: the heading and its rule as on a page, a strip of tabs

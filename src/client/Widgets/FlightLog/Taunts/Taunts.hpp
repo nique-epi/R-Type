@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 #include "FinalPilot.hpp"
+#include "Language.hpp"
 #include "Taunt.hpp"
 
 namespace rtype::client {
@@ -24,6 +25,6 @@ namespace rtype::client {
 /** @returns The lines of a taunt, the marks of a name replaced by the name
  * of the best, the last or the first pilot at 0. */
 [[nodiscard]] std::vector<std::string> tauntLinesOf(
-    const Taunt& taunt, std::span<const FinalPilot> pilots);
+    const Taunt& taunt, std::span<const FinalPilot> pilots, Language language);
 
 }  // namespace rtype::client

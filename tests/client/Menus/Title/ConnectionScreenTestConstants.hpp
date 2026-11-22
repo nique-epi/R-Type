@@ -77,6 +77,11 @@ constexpr std::size_t HALF_RECEIVED = 75'000;
 constexpr std::string_view BAD_DIFFICULTY_REFUSAL = "REFUSED: BAD DIFFICULTY";
 constexpr std::string_view LIVES_BOUNDS_REFUSAL = "REFUSED: LIVES 1 TO 9";
 
+/** @brief The refusals of a version and of lives, in French: the numbers
+ * stand where French grammar puts them. */
+constexpr std::string_view FRENCH_VERSION_REFUSAL = "VERSION V21, SERVEUR V22";
+constexpr std::string_view FRENCH_LIVES_REFUSAL = "REFUSÉ : VIES 1 À 9";
+
 /**
  * @brief Just under the wait for a ticket: confirm() lets PRESS_DURATION go
  * by, so PRESS_DURATION and JUST_UNDER_THE_TICKET_WAIT make TICKET_WAIT, 2 s,

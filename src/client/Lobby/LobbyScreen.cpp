@@ -34,6 +34,7 @@
 #include "InterfacePixel.hpp"
 #include "KeyChipParts.hpp"
 #include "KeyDown.hpp"
+#include "Language.hpp"
 #include "LobbyMap.hpp"
 #include "LobbyPartAreas.hpp"
 #include "LobbyPlace.hpp"
@@ -52,6 +53,8 @@
 #include "ScreenId.hpp"
 #include "ShipLook.hpp"
 #include "SoundConstants.hpp"
+#include "TextMark.hpp"
+#include "TextMarks.hpp"
 #include "TextStyle.hpp"
 #include "TimeConstants.hpp"
 #include "WidgetConstants.hpp"
@@ -85,24 +88,27 @@ BayReadiness readinessOf(const network::LobbyPlayer& player,
 /** @returns The status line: none without players; who is not ready, by name
  * when a single pilot is not; or that every listed pilot is ready. */
 std::string statusLine(std::span<const network::LobbyPlayer> players,
-                       std::uint8_t ownNumber) {
+                       std::uint8_t ownNumber, Language language) {
   if (players.empty()) {
     return {};
   }
   const auto notReady =
       std::ranges::count(players, false, &network::LobbyPlayer::ready);
   if (notReady == 0) {
-    return ALL_READY_STATUS;
+    return std::string(ALL_READY_STATUS.in(language));
   }
   if (notReady > 1) {
-    return std::to_string(notReady) + PILOTS_NOT_READY_STATUS;
+    const std::string count = std::to_string(notReady);
+    return withMark(PILOTS_NOT_READY_STATUS.in(language),
+                    TextMark{.mark = NOT_READY_COUNT_MARK, .value = count});
   }
   const auto waiting =
       std::ranges::find(players, false, &network::LobbyPlayer::ready);
   if (waiting->playerNumber == ownNumber) {
-    return YOU_NOT_READY_STATUS;
+    return std::string(YOU_NOT_READY_STATUS.in(language));
   }
-  return waiting->nickname + PILOT_NOT_READY_STATUS;
+  return withMark(PILOT_NOT_READY_STATUS.in(language),
+                  TextMark{.mark = PILOT_MARK, .value = waiting->nickname});
 }
 
 /** @brief Tells each of @p widgets that the events stop reaching it, so none
@@ -113,14 +119,15 @@ void dropHeldInput(const PlayfieldMapping& pointAt, Widgets&... widgets) {
    ...);
 }
 
-/** @returns The line of @p rules, written once when the room is built;
+/** @returns The line of @p rules in @p language, written once when the room
+ * is built;
  * nothing when the client does not know the rules. */
 std::optional<std::string> rulesLineIfKnown(
-    const std::optional<network::GameRules>& rules) {
+    const std::optional<network::GameRules>& rules, Language language) {
   if (!rules.has_value()) {
     return std::nullopt;
   }
-  return rulesLineOf(*rules);
+  return rulesLineOf(*rules, language);
 }
 
 /** @returns Where the rules of the game are written: centered between the end
@@ -129,16 +136,19 @@ std::optional<std::string> rulesLineIfKnown(
 sf::Vector2i rulesAnchorOf(const IInterfaceCanvas& canvas,
                            const std::string& pilots) {
   const int headingEnd =
-      SAFE_MARGIN + canvas.textWidth(LOBBY_HEADING, TextFont::Regular);
+      SAFE_MARGIN +
+      canvas.textWidth(LOBBY_HEADING.in(canvas.language()), TextFont::Regular);
   const int pilotsStart =
       PILOT_COUNT_ANCHOR.x - canvas.textWidth(pilots, PILOT_COUNT_STYLE.font);
   return {(headingEnd + pilotsStart) / SIDES_PER_AXIS, GAME_RULES_TOP};
 }
 
-/** @returns How many pilots the waiting room lists, in words. */
-std::string pilotCount(std::size_t count) {
+/** @returns How many pilots the waiting room lists, in words of
+ * @p language. */
+std::string pilotCount(std::size_t count, Language language) {
   return std::to_string(count) +
-         (count == 1 ? ONE_PILOT_TEXT : SEVERAL_PILOTS_TEXT);
+         std::string(
+             (count == 1 ? ONE_PILOT_TEXT : SEVERAL_PILOTS_TEXT).in(language));
 }
 
 /** @returns Where the bay of a slot starts: the bays stand side by side from
@@ -149,30 +159,35 @@ sf::Vector2i bayTopLeft(sf::IntRect area, int slot) {
 }
 
 /** @returns Where the room paints BACK, its cancel chip. */
-sf::IntRect backChipArea() {
-  return MenuBuilder::chipArea(
-      {.label = BACK_LABEL, .keyName = CANCEL_KEY_NAME});
+sf::IntRect backChipArea(Language language) {
+  return MenuBuilder::chipArea({.label = std::string(BACK_LABEL.in(language)),
+                                .keyName = CANCEL_KEY_NAME});
 }
 
-/** @returns Where the room paints HELP, BUTTON_GAP to the left of BACK. */
-sf::IntRect helpChipArea() {
-  return MenuBuilder::chipArea({.label = HELP_LABEL, .keyName = HELP_KEY_NAME},
-                               backChipArea().position.x - BUTTON_GAP);
+/** @returns Where the room paints HELP, written in @p language, BUTTON_GAP
+ * to the left of BACK. */
+sf::IntRect helpChipArea(Language language) {
+  return MenuBuilder::chipArea(
+      {.label = std::string(HELP_LABEL.in(language)), .keyName = HELP_KEY_NAME},
+      backChipArea(language).position.x - BUTTON_GAP);
 }
 
-/** @returns Where the room paints RANKING, BUTTON_GAP to the left of HELP. */
-sf::IntRect leaderboardChipArea() {
+/** @returns Where the room paints RANKING, written in @p language,
+ * BUTTON_GAP to the left of HELP. */
+sf::IntRect leaderboardChipArea(Language language) {
   return MenuBuilder::chipArea(
-      {.label = LEADERBOARD_LABEL, .keyName = LEADERBOARD_KEY_NAME},
-      helpChipArea().position.x - BUTTON_GAP);
+      {.label = std::string(LEADERBOARD_LABEL.in(language)),
+       .keyName = LEADERBOARD_KEY_NAME},
+      helpChipArea(language).position.x - BUTTON_GAP);
 }
 
-/** @returns Where the room paints HANGAR, BUTTON_GAP to the left of
- * RANKING. */
-sf::IntRect hangarChipArea() {
+/** @returns Where the room paints HANGAR, written in @p language,
+ * BUTTON_GAP to the left of RANKING. */
+sf::IntRect hangarChipArea(Language language) {
   return MenuBuilder::chipArea(
-      {.label = HANGAR_LABEL, .keyName = HANGAR_KEY_NAME},
-      leaderboardChipArea().position.x - BUTTON_GAP);
+      {.label = std::string(HANGAR_LABEL.in(language)),
+       .keyName = HANGAR_KEY_NAME},
+      leaderboardChipArea(language).position.x - BUTTON_GAP);
 }
 
 /** @returns Whether @p event presses the left button inside @p area, read on
@@ -223,7 +238,8 @@ std::optional<sf::IntRect> ownBayAreaIn(const Menu& menu,
  * MAP_CARD_HEIGHT tall; the status line BUTTON_GAP under READY, as wide; then
  * BACK. Menu gives no area of a bar, so READY is placed by the same arithmetic
  * as MenuBuilder::placeRoom. */
-LobbyPartAreas partAreasOf(sf::IntRect bays, std::optional<int> ownSlot) {
+LobbyPartAreas partAreasOf(sf::IntRect bays, std::optional<int> ownSlot,
+                           Language language) {
   const sf::IntRect ready(
       {(INTERFACE_AREA.size.x - LOBBY_BARS_WIDTH) / SIDES_PER_AXIS,
        bays.position.y + bays.size.y + SPACE_ABOVE_ROOM_BARS},
@@ -238,7 +254,7 @@ LobbyPartAreas partAreasOf(sf::IntRect bays, std::optional<int> ownSlot) {
           .status = sf::IntRect(
               {ready.position.x, ready.position.y + ready.size.y + BUTTON_GAP},
               {ready.size.x, TEXT_LINE_HEIGHT}),
-          .back = backChipArea()};
+          .back = backChipArea(language)};
 }
 
 /** @brief Writes @p status centered in @p area, in the font of
@@ -259,12 +275,16 @@ void paintStatus(IInterfaceCanvas& canvas, sf::IntRect area,
 /** @returns The line of a bay that says the map numbered @p vote among
  * @p maps; empty without a vote, or for a vote past the last map. */
 std::string mapVoteLineOf(std::span<const network::LobbyMap> maps,
-                          std::uint8_t vote) {
+                          std::uint8_t vote, Language language) {
   if (vote == network::NO_MAP_VOTE || vote > maps.size()) {
     return {};
   }
-  return BAY_VOTE_PREFIX +
-         maps[static_cast<std::size_t>(vote - FIRST_MAP_NUMBER)].name;
+  return withMark(
+      BAY_VOTE.in(language),
+      TextMark{
+          .mark = MAP_MARK,
+          .value =
+              maps[static_cast<std::size_t>(vote - FIRST_MAP_NUMBER)].name});
 }
 
 /** @returns The look @p looks shows on the player numbered @p number; nothing
@@ -291,17 +311,21 @@ LobbyScreen::LobbyScreen(LobbyScreenParts parts,
       palette_(parts.palette),
       motion_(parts.motion),
       place_(parts.place),
-      rulesLine_(rulesLineIfKnown(parts.rules)),
+      rulesLine_(rulesLineIfKnown(parts.rules, canvas_->language())),
       menu_(buildMenu(parts.keyName(readyKey_))),
-      help_(HelpWalkthroughParts{.sounds = parts.sounds,
-                                 .keys = parts.keys,
-                                 .keyName = parts.keyName,
-                                 .palette = parts.palette,
-                                 .motion = parts.motion,
-                                 .chipArea = helpChipArea()}),
+      help_(
+          HelpWalkthroughParts{.sounds = parts.sounds,
+                               .keys = parts.keys,
+                               .keyName = parts.keyName,
+                               .language = canvas_->language(),
+                               .palette = parts.palette,
+                               .motion = parts.motion,
+                               .chipArea = helpChipArea(canvas_->language())}),
       leaderboardChip_(KeyChipParts{
-          .text = {.label = LEADERBOARD_LABEL, .keyName = LEADERBOARD_KEY_NAME},
-          .area = leaderboardChipArea(),
+          .text = {.label =
+                       std::string(LEADERBOARD_LABEL.in(canvas_->language())),
+                   .keyName = LEADERBOARD_KEY_NAME},
+          .area = leaderboardChipArea(canvas_->language()),
           .key = LEADERBOARD_KEY,
           .action =
               [this] {
@@ -311,8 +335,9 @@ LobbyScreen::LobbyScreen(LobbyScreenParts parts,
           .sounds = parts.sounds}),
       look_(&parts.look.get()),
       hangarChip_(KeyChipParts{
-          .text = {.label = HANGAR_LABEL, .keyName = HANGAR_KEY_NAME},
-          .area = hangarChipArea(),
+          .text = {.label = std::string(HANGAR_LABEL.in(canvas_->language())),
+                   .keyName = HANGAR_KEY_NAME},
+          .area = hangarChipArea(canvas_->language()),
           .key = HANGAR_KEY,
           .action =
               [this] {
@@ -329,7 +354,7 @@ LobbyScreen::LobbyScreen(LobbyScreenParts parts,
           .previews = *previews_,
           .palette = parts.palette,
           .area = partAreasOf(menu_.illustrationArea().value_or(sf::IntRect()),
-                              std::nullopt)
+                              std::nullopt, canvas_->language())
                       .map,
           .playfieldPointAt = playfieldPointAt_}) {
   repaint();
@@ -389,14 +414,18 @@ void LobbyScreen::draw(sf::RenderTarget& target) const {
 bool LobbyScreen::hidesScreensBelow() const { return true; }
 
 Menu LobbyScreen::buildMenu(std::string readyKeyName) {
+  const Language language = canvas_->language();
   return MenuBuilder(MenuBuilder::Frame::Room, sounds_)
-      .heading(LOBBY_HEADING)
+      .heading(std::string(LOBBY_HEADING.in(language)))
       .illustration(LOBBY_BAYS_SIZE)
-      .button({.label = READY_LABEL, .keyName = std::move(readyKeyName)},
+      .button({.label = std::string(READY_LABEL.in(language)),
+               .keyName = std::move(readyKeyName)},
               [this] { toggleReady(); })
-      .button({.label = MAP_BAR_CLOSED, .keyName = MAP_KEY_NAME},
+      .button({.label = std::string(MAP_BAR_CLOSED.in(language)),
+               .keyName = MAP_KEY_NAME},
               [this] { mapVoteCard_.press(); })
-      .cancelButton({.label = BACK_LABEL}, [this] { leave(); })
+      .cancelButton({.label = std::string(BACK_LABEL.in(language))},
+                    [this] { leave(); })
       .build();
 }
 
@@ -425,12 +454,16 @@ void LobbyScreen::repaint() {
   const std::span<const network::LobbyPlayer> players =
       waitingRoom_->lobbyPlayers();
   const std::uint8_t ownNumber = connection_->status().playerNumber;
-  const std::string status = statusLine(players, ownNumber);
+  const Language language = canvas_->language();
+  const std::string status = statusLine(players, ownNumber, language);
   const LobbyPartAreas parts =
       partAreasOf(menu_.illustrationArea().value_or(sf::IntRect()),
-                  ownSlotOf(players, ownNumber));
-  menu_.setLabel(READY_BUTTON, wantsReady() ? CANCEL_READY_LABEL : READY_LABEL);
-  menu_.setLabel(MAP_BUTTON, mapVoteCard_.label());
+                  ownSlotOf(players, ownNumber), language);
+  menu_.setLabel(
+      READY_BUTTON,
+      std::string(
+          (wantsReady() ? CANCEL_READY_LABEL : READY_LABEL).in(language)));
+  menu_.setLabel(MAP_BUTTON, mapVoteCard_.label(language));
   menu_.setEnabled(MAP_BUTTON, mapVoteCard_.isOpen());
   canvas_->clear();
   if (!help_.showsGame()) {
@@ -438,7 +471,7 @@ void LobbyScreen::repaint() {
     mapVoteCard_.paint(*canvas_, menu_.selectedButton() == MAP_BUTTON);
     paintStatus(*canvas_, parts.status, status);
     paintBays();
-    const std::string pilots = pilotCount(players.size());
+    const std::string pilots = pilotCount(players.size(), canvas_->language());
     canvas_->write(pilots, PILOT_COUNT_ANCHOR, PILOT_COUNT_STYLE);
     if (rulesLine_.has_value()) {
       canvas_->write(*rulesLine_, rulesAnchorOf(*canvas_, pilots),
@@ -489,7 +522,8 @@ BayPilot LobbyScreen::pilotOf(const network::LobbyPlayer& player) const {
           .look = isLocalPlayer
                       ? *look_
                       : lookOf(shipLooks_->playerLooks(), player.playerNumber),
-          .mapVote = mapVoteLineOf(waitingRoom_->lobbyMaps(), player.mapVote)};
+          .mapVote = mapVoteLineOf(waitingRoom_->lobbyMaps(), player.mapVote,
+                                   canvas_->language())};
 }
 
 }  // namespace rtype::client

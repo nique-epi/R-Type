@@ -115,7 +115,7 @@ RouletteScreen::RouletteScreen(RouletteScreenParts parts,
                                    }
                                  },
                              .back = [this] { navigator_->pop(); }},
-          parts.sounds) {
+          parts.sounds, canvas_->language()) {
   const std::optional<network::CasinoRoomState> room = casino_->room();
   const std::optional<BetsReading>& bets = casino_->lastBets();
   memory_->follow(room, bets);
@@ -221,7 +221,7 @@ RouletteReading RouletteScreen::readTable(
 void RouletteScreen::repaint(const RouletteReading& reading) {
   bars_.show(barStatesOf(reading));
   canvas_->clear();
-  paintRoulette(*canvas_, rouletteViewOf(reading));
+  paintRoulette(*canvas_, rouletteViewOf(reading, canvas_->language()));
   bars_.paint(*canvas_);
   canvas_->display();
 }

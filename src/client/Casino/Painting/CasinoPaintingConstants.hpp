@@ -6,6 +6,7 @@
 #include "BackgroundColorConstants.hpp"
 #include "InterfaceColorConstants.hpp"
 #include "TextStyle.hpp"
+#include "Translation.hpp"
 
 namespace rtype::client {
 
@@ -65,8 +66,10 @@ constexpr int CASINO_KOPECKS_TOP = 4;
 constexpr int CASINO_KOPECKS_CAPTION_TOP = 12;
 constexpr int CASINO_CHIPS_TOP = 23;
 constexpr int CASINO_CHIPS_CAPTION_TOP = 31;
-constexpr const char* CASINO_KOPECKS_CAPTION = "KOPECKS";
-constexpr const char* CASINO_CHIPS_CAPTION = "CHIPS";
+constexpr Translation CASINO_KOPECKS_CAPTION{.english = "KOPECKS",
+                                             .french = "KOPECKS"};
+constexpr Translation CASINO_CHIPS_CAPTION{.english = "CHIPS",
+                                           .french = "JETONS"};
 constexpr sf::Color CASINO_BALANCES_BORDER_COLOR = EDGE_BLUE;
 constexpr TextStyle CASINO_KOPECKS_STYLE{.font = TextFont::Regular,
                                          .color = STAR_GOLD,

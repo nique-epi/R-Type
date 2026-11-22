@@ -220,6 +220,7 @@ TEST_F(SettingsServiceFixture, RestoringTakesTheSettingsAndTellsEveryOne) {
                                     SettingId::Muted,
                                     SettingId::WindowSize,
                                     SettingId::DisplayMode,
+                                    SettingId::Language,
                                     SettingId::Keys,
                                     SettingId::ColorMode,
                                     SettingId::ReduceFlashes,

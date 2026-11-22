@@ -2,6 +2,7 @@
 
 #include <optional>
 #include "BigWin.hpp"
+#include "Language.hpp"
 #include "RouletteBarStates.hpp"
 #include "RouletteReading.hpp"
 #include "RouletteView.hpp"
@@ -19,7 +20,8 @@ namespace rtype::client {
  * turns, and those of the wallet at the result; as stake, the stake laid
  * while the bets are open, then the one the master took.
  */
-[[nodiscard]] RouletteView rouletteViewOf(const RouletteReading& reading);
+[[nodiscard]] RouletteView rouletteViewOf(
+    const RouletteReading& reading, Language language = Language::English);
 
 /** @returns The biggest win of the round of @p reading at its result: the
  * player seated whose payout passes its stake by BIG_WIN_GAIN chips or more,

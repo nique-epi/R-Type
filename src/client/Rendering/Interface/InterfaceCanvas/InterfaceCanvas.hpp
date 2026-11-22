@@ -5,21 +5,19 @@
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Graphics/Shader.hpp>
-#include <SFML/Graphics/Texture.hpp>
 #include <SFML/Graphics/VertexArray.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <functional>
 #include <optional>
-#include <set>
 #include <span>
-#include <string>
 #include <string_view>
-#include "AssetTextureSource.hpp"
 #include "ColoredPixel.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "ImagePlacement.hpp"
+#include "Language.hpp"
 #include "Logger.hpp"
 #include "PixelCanvas.hpp"
+#include "ReportedTextures.hpp"
 #include "SmoothImageLayer.hpp"
 #include "TextStyle.hpp"
 #include "TextWriter.hpp"
@@ -51,8 +49,11 @@ class InterfaceCanvas : public IInterfaceCanvas {
    * loaded.
    * @throws RenderTextureNotCreatedException when the canvas cannot get its
    * render texture.
+   * @param language Reads the language the player picked, each time a
+   * painter asks for it.
    */
-  explicit InterfaceCanvas(const AssetLibrary& library);
+  InterfaceCanvas(const AssetLibrary& library,
+                  std::function<Language()> language);
 
   InterfaceCanvas(const InterfaceCanvas&) = delete;
   InterfaceCanvas& operator=(const InterfaceCanvas&) = delete;
@@ -72,22 +73,19 @@ class InterfaceCanvas : public IInterfaceCanvas {
                        sf::Color tint) override;
   [[nodiscard]] int textWidth(std::string_view text,
                               TextFont font) const override;
+  [[nodiscard]] Language language() const override;
   void display() override;
   void show(sf::RenderTarget& target) const override;
 
  private:
-  /** @returns The loaded texture of an id, or nullptr once the log says it is
-   * missing; a missing id is reported once. */
-  [[nodiscard]] const sf::Texture* foundTexture(std::string_view assetId);
-
-  AssetTextureSource textures_;
+  ReportedTextures textures_;
   TextWriter writer_;
   PixelCanvas canvas_;
   logging::Logger logger_;
   /** @brief The shade swap shader, none where the graphics card has none or
    * it did not compile. */
   std::optional<sf::Shader> shadeSwap_;
-  std::set<std::string, std::less<>> reportedMissingIds_;
+  std::function<Language()> language_;
   SmoothImageLayer smoothImages_;
   /** @brief The triangles of the last pixels plotted, kept between two plots
    * so a room of the casino that plots its lights each frame grows its list

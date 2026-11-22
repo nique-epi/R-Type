@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <optional>
 #include <span>
+#include <string_view>
 #include "BackgroundColorConstants.hpp"
 #include "CashierConstants.hpp"
 #include "CashierRoom.hpp"
@@ -40,8 +41,10 @@ bool onEvenStep(engine::Duration since, engine::Duration step) {
 void paintBoardRow(IInterfaceCanvas& canvas, int row, bool lit) {
   const int top =
       CASHIER_BOARD_FIRST_ROW_TOP + (row * CASHIER_BOARD_ROW_SPACING);
-  const char* title = row == 0 ? BUY_CHIPS_TITLE : CASH_OUT_TITLE;
-  const char* rate = row == 0 ? BUY_CHIPS_RATE : CASH_OUT_RATE;
+  const std::string_view title =
+      (row == 0 ? BUY_CHIPS_TITLE : CASH_OUT_TITLE).in(canvas.language());
+  const std::string_view rate =
+      (row == 0 ? BUY_CHIPS_RATE : CASH_OUT_RATE).in(canvas.language());
   canvas.write(title, {CASHIER_BOARD_MIDDLE, top},
                TextStyle{.font = TextFont::Small,
                          .color = lit ? CASINO_LIGHT_GOLD : CASINO_DARK_GOLD,
@@ -55,7 +58,7 @@ void paintBoardRow(IInterfaceCanvas& canvas, int row, bool lit) {
 /** @brief Paints the rate board: EXCHANGE, then both ways, the way of the
  * panel lit. */
 void paintRateBoard(IInterfaceCanvas& canvas, CashierWay way) {
-  canvas.write(CASHIER_BOARD_TITLE,
+  canvas.write(CASHIER_BOARD_TITLE.in(canvas.language()),
                {CASHIER_BOARD_MIDDLE, CASHIER_BOARD_TITLE_TOP},
                TextStyle{.font = TextFont::Regular,
                          .color = STAR_GOLD,

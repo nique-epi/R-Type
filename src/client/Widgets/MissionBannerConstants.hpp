@@ -2,10 +2,10 @@
 
 #include <SFML/Graphics/Rect.hpp>
 #include <chrono>
-#include <string_view>
 #include "InterfaceConstants.hpp"
 #include "StatusBandConstants.hpp"
 #include "TimeConstants.hpp"
+#include "Translation.hpp"
 
 namespace rtype::client {
 
@@ -15,7 +15,8 @@ namespace rtype::client {
  * MISSION_BANNER_LETTER_TIME like the title of the title screen, then kept
  * whole MISSION_BANNER_HOLD.
  */
-constexpr std::string_view MISSION_BANNER_TEXT = "MISSION START";
+constexpr Translation MISSION_BANNER_TEXT{.english = "MISSION START",
+                                          .french = "DÉBUT DE MISSION"};
 constexpr engine::Duration MISSION_BANNER_DELAY =
     std::chrono::milliseconds(1000);
 constexpr engine::Duration MISSION_BANNER_LETTER_TIME =

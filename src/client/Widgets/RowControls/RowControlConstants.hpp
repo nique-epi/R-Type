@@ -4,6 +4,8 @@
 #include <SFML/Window/Keyboard.hpp>
 #include <string_view>
 #include "InterfaceConstants.hpp"
+#include "LetterCounts.hpp"
+#include "Translation.hpp"
 #include "WidgetConstants.hpp"
 
 namespace rtype::client {
@@ -38,7 +40,10 @@ constexpr int SLIDER_THUMB_TOP = 1;
 constexpr std::string_view WIDEST_SLIDER_VALUE = "100%";
 constexpr int SLIDER_VALUE_WIDTH =
     static_cast<int>(WIDEST_SLIDER_VALUE.size()) * REGULAR_FONT_ADVANCE;
-constexpr const char* SLIDER_INACTIVE_TEXT = "OFF";
+constexpr Translation SLIDER_INACTIVE_TEXT{.english = "OFF", .french = "MUET"};
+static_assert(lettersIn(SLIDER_INACTIVE_TEXT.french) <=
+                  lettersIn(WIDEST_SLIDER_VALUE),
+              "a muted slider writes its French word in the room of its value");
 
 /** @brief Divides a doubled quotient into the quotient rounded to the nearest
  * whole number, as the step under the pointer is found. */
@@ -47,8 +52,8 @@ constexpr int ROUNDING_DIVISOR = 2;
 /** @brief Switch: two cells in a sunk box, the current one filled. */
 constexpr sf::Vector2i SWITCH_CELL_SIZE(30, 10);
 constexpr int SWITCH_CELL_INSET = 1;
-constexpr const char* SWITCH_OFF_TEXT = "OFF";
-constexpr const char* SWITCH_ON_TEXT = "ON";
+constexpr Translation SWITCH_OFF_TEXT{.english = "OFF", .french = "NON"};
+constexpr Translation SWITCH_ON_TEXT{.english = "ON", .french = "OUI"};
 
 /** @brief Selector: an arrow on each side of a sunk box as wide as the
  * longest choice plus SELECTOR_BOX_PADDING. */
@@ -77,7 +82,8 @@ constexpr const char* LINK_SUFFIX = " >";
 
 /** @brief The text of a slot waiting for a key, in a sunk box, and its
  * padding. */
-constexpr const char* KEY_LISTENING_TEXT = "PRESS A KEY";
+constexpr Translation KEY_LISTENING_TEXT{.english = "PRESS A KEY",
+                                         .french = "UNE TOUCHE ?"};
 constexpr int KEY_LISTENING_PADDING = 4;
 constexpr const char* KEY_CONFLICT_FLAG = "!";
 

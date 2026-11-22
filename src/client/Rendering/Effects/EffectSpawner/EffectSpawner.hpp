@@ -10,6 +10,7 @@
 #include "GainFigures.hpp"
 #include "HitEffects.hpp"
 #include "KillEffects.hpp"
+#include "Language.hpp"
 #include "PilotEffects.hpp"
 #include "PilotShades.hpp"
 #include "PixelEffects.hpp"
@@ -142,6 +143,7 @@ class EffectSpawner {
   PilotEffects pilots_;
   SoundCues cues_;
   bool soundCues_{false};
+  Language language_{Language::English};
 };
 
 }  // namespace rtype::client

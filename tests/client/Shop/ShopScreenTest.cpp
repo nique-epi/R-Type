@@ -432,6 +432,6 @@ TEST_F(ShopScreenFixture, APurchaseTheMasterDidNotMakeSaysWhy) {
                           .refusal = WalletRefusal::MasterUnreachable};
   wait(ONE_FRAME);
 
-  EXPECT_NE(writingOf(painting(), MASTER_SILENT_STATUS), nullptr);
+  EXPECT_NE(writingOf(painting(), MASTER_SILENT_STATUS.english), nullptr);
   EXPECT_THAT(sounds().played(), Not(Contains(std::string{PURCHASE_SOUND_ID})));
 }

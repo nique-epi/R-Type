@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstdint>
+#include <string_view>
+#include "Language.hpp"
 #include "PocketShades.hpp"
 
 namespace rtype::client {
@@ -11,6 +13,7 @@ namespace rtype::client {
 
 /** @returns The color of the pocket of @p number as the result says it: RED,
  * BLACK or GREEN. */
-[[nodiscard]] const char* pocketColorWordOf(std::uint8_t number);
+[[nodiscard]] std::string_view pocketColorWordOf(std::uint8_t number,
+                                                 Language language);
 
 }  // namespace rtype::client

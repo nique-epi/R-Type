@@ -2,6 +2,7 @@
 #include <SFML/System/Vector2.hpp>
 #include <memory>
 #include <optional>
+#include <string>
 #include <utility>
 #include "AssetLibrary.hpp"
 #include "AssetList.hpp"
@@ -12,6 +13,7 @@
 #include "IScreenNavigator.hpp"
 #include "ISoundPlayer.hpp"
 #include "InterfaceCanvas.hpp"
+#include "Language.hpp"
 #include "LoadingScreen.hpp"
 #include "LoadingScreenParts.hpp"
 #include "Menu.hpp"
@@ -39,7 +41,11 @@ ISoundPlayer& soundsOf(const ScreenContext& context) {
 
 std::unique_ptr<IInterfaceCanvas> interfaceCanvasOf(
     const ScreenContext& context) {
-  return std::make_unique<InterfaceCanvas>(context.services.assets.get());
+  return std::make_unique<InterfaceCanvas>(
+      context.services.assets.get(),
+      [&settings = context.services.settings.get()] {
+        return settings.language;
+      });
 }
 
 PlayfieldMapping playfieldMappingOf(const ScreenContext& context) {
@@ -58,19 +64,20 @@ std::unique_ptr<IScreen> signInNeededScreenOf(const ScreenContext& context,
                                               std::optional<ScreenId> asking) {
   IScreenNavigator& navigator = context.navigator.get();
   SignInReturn& signInReturn = context.services.signInReturn.get();
+  const Language language = context.services.settings.get().language;
   return dialogScreenOf(
-      context,
-      MenuBuilder(MenuBuilder::Frame::Dialog, &soundsOf(context))
-          .heading(SIGN_IN_HEADING)
-          .message(SIGN_IN_MESSAGE)
-          .button({.label = SIGN_IN_LABEL},
-                  [&navigator, &signInReturn, asking] {
-                    signInReturn =
-                        SignInReturn{.closesAsking = true, .screen = asking};
-                    navigator.push(SIGN_IN_SCREEN);
-                  })
-          .cancelButton({.label = OK_LABEL}, [&navigator] { navigator.pop(); })
-          .build());
+      context, MenuBuilder(MenuBuilder::Frame::Dialog, &soundsOf(context))
+                   .heading(std::string(SIGN_IN_HEADING.in(language)))
+                   .message(std::string(SIGN_IN_MESSAGE.in(language)))
+                   .button({.label = std::string(SIGN_IN_LABEL.in(language))},
+                           [&navigator, &signInReturn, asking] {
+                             signInReturn = SignInReturn{.closesAsking = true,
+                                                         .screen = asking};
+                             navigator.push(SIGN_IN_SCREEN);
+                           })
+                   .cancelButton({.label = std::string(OK_LABEL.in(language))},
+                                 [&navigator] { navigator.pop(); })
+                   .build());
 }
 
 ScreenRegistry::Builder signedInOnly(ScreenRegistry::Builder builder,

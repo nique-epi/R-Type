@@ -59,7 +59,8 @@ void ClientDebugModule::install(engine::InstallContext& context) {
 }
 
 void ClientDebugModule::start() {
-  canvas_ = std::make_unique<InterfaceCanvas>(*assets_);
+  canvas_ = std::make_unique<InterfaceCanvas>(
+      *assets_, [settings = settings_] { return settings->language; });
   listening_ = listeners_->add(
       [this](const sf::Event& event) { return toggle_.handle(event); });
 }

@@ -47,7 +47,7 @@ OptionsScreen::OptionsScreen(OptionsScreenParts parts,
           .askToReset =
               [this](const std::string& question,
                      const std::function<void()>& reset) {
-                dialog_.ask(question, reset);
+                dialog_.ask(question, reset, service_->settings().language);
               }}) {
   refresh();
   repaint();
@@ -104,8 +104,9 @@ void OptionsScreen::leaveGame() {
 }
 
 void OptionsScreen::refresh() {
+  tabs_.followLanguage();
   tabs_.refreshDescriptions();
-  tabs_.openMenu().setStatus(stamp_.text());
+  tabs_.openMenu().setStatus(stamp_.text(service_->settings().language));
 }
 
 void OptionsScreen::repaint() {

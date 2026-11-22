@@ -4,6 +4,7 @@
 #include <SFML/System/Vector2.hpp>
 #include "BackgroundColorConstants.hpp"
 #include "InterfaceColorConstants.hpp"
+#include "Translation.hpp"
 #include "WindowConstants.hpp"
 
 namespace rtype::client {
@@ -28,9 +29,12 @@ constexpr sf::Vector2i WINDOW_SIZE_LEGEND_OFFSET(WINDOW_SIZE_CHART_SIZE.x +
                                                      WINDOW_SIZE_LEGEND_GAP,
                                                  8);
 constexpr int WINDOW_SIZE_LEGEND_LINE_HEIGHT = 12;
-constexpr const char* CURRENT_SIZE_TAG = "NOW  ";
-constexpr const char* CANDIDATE_SIZE_TAG = "NEW  ";
-constexpr const char* TOO_LARGE_SIZE_TAG = "TOO LARGE  ";
+constexpr Translation CURRENT_SIZE_TAG{.english = "NOW  ",
+                                       .french = "ACTUEL  "};
+constexpr Translation CANDIDATE_SIZE_TAG{.english = "NEW  ",
+                                         .french = "NOUVEAU  "};
+constexpr Translation TOO_LARGE_SIZE_TAG{.english = "TOO LARGE  ",
+                                         .french = "TROP GRAND  "};
 
 /**
  * @brief Outlines of the sizes: any size, the size of the window, a size

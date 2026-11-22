@@ -16,6 +16,7 @@
 #include "ChipsAtHand.hpp"
 #include "ClothPlace.hpp"
 #include "DurationConversion.hpp"
+#include "Language.hpp"
 #include "MotionPreference.hpp"
 #include "OtherPlayerBets.hpp"
 #include "RouletteBand.hpp"
@@ -226,7 +227,7 @@ RouletteBarStates barStatesOf(const RouletteReading& reading) {
                        chipsAtHandOf(reading.walletChips, reading.accepted)};
 }
 
-RouletteView rouletteViewOf(const RouletteReading& reading) {
+RouletteView rouletteViewOf(const RouletteReading& reading, Language language) {
   return RouletteView{
       .croupier = croupierFrameOf(reading),
       .countdown = countdownOf(reading),
@@ -237,7 +238,7 @@ RouletteView rouletteViewOf(const RouletteReading& reading) {
                                   : std::nullopt,
       .drawn = drawnOf(reading),
       .roomName = roomNameOf(reading),
-      .roster = rosterRowsOf(reading),
+      .roster = rosterRowsOf(reading, language),
       .lastNumbers = lastNumbersOf(reading),
       .bigWin = bigWinBannerOf(reading),
       .band = RouletteBand{.chips = chipsShownOf(reading),
@@ -245,7 +246,7 @@ RouletteView rouletteViewOf(const RouletteReading& reading) {
                                         ? static_cast<std::uint32_t>(
                                               network::stakeOf(reading.bets))
                                         : acceptedStakeOf(reading),
-                           .status = statusLineOf(reading),
+                           .status = statusLineOf(reading, language),
                            .chosenChip = reading.chosenChip}};
 }
 

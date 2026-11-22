@@ -6,19 +6,25 @@
 #include <string_view>
 #include "InterfaceColorConstants.hpp"
 #include "TimeConstants.hpp"
+#include "Translation.hpp"
 #include "WidgetColors.hpp"
 
 namespace rtype::client {
 
 /** @brief Texts of the update panel. */
-constexpr std::string_view UPDATE_HEADING = "UPDATE AVAILABLE";
+constexpr Translation UPDATE_HEADING{.english = "UPDATE AVAILABLE",
+                                     .french = "MISE À JOUR DISPONIBLE"};
 constexpr std::string_view VERSION_PREFIX = "VER ";
 constexpr std::string_view VERSION_ARROW = " > VER ";
-constexpr std::string_view DOWNLOADING_TEXT = "DOWNLOADING ";
-constexpr std::string_view PERCENT_SIGN = "%";
-constexpr std::string_view INSTALLING_TEXT = "INSTALLING";
-constexpr std::string_view RESTARTING_TEXT = "RESTARTING";
-constexpr std::string_view UPDATE_FAILED_TEXT = "UPDATE FAILED";
+constexpr Translation DOWNLOADING_LINE{.english = "DOWNLOADING {PERCENT}%",
+                                       .french = "TÉLÉCHARGEMENT {PERCENT}%"};
+constexpr std::string_view DOWNLOAD_PERCENT_MARK = "{PERCENT}";
+constexpr Translation INSTALLING_TEXT{.english = "INSTALLING",
+                                      .french = "INSTALLATION"};
+constexpr Translation RESTARTING_TEXT{.english = "RESTARTING",
+                                      .french = "REDÉMARRAGE"};
+constexpr Translation UPDATE_FAILED_TEXT{.english = "UPDATE FAILED",
+                                         .french = "ÉCHEC DE LA MISE À JOUR"};
 
 /** @brief The bar of the panel, from its top-left corner: as wide as the
  * panel less its margins of 16 pixels, a border of PANEL_BORDER_COLOR around a

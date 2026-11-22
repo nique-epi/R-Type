@@ -11,6 +11,7 @@
 #include "ConnectionScreenParts.hpp"
 #include "ConnectionStart.hpp"
 #include "DialogMenus.hpp"
+#include "DialogTools.hpp"
 #include "GameListSnapshot.hpp"
 #include "HeadphonesScreen.hpp"
 #include "HeadphonesScreenParts.hpp"
@@ -19,6 +20,7 @@
 #include "InstallContext.hpp"
 #include "IntroScreen.hpp"
 #include "IntroScreenParts.hpp"
+#include "Language.hpp"
 #include "LeaderboardScreen.hpp"
 #include "LeaderboardScreenConstants.hpp"
 #include "LeaderboardScreenParts.hpp"
@@ -114,24 +116,30 @@ std::unique_ptr<IScreen> buildOptionsScreen(const ScreenContext& context,
       interfaceCanvasOf(context));
 }
 
+/** @returns What a dialog of @p context is built with. */
+DialogTools dialogToolsOf(const ScreenContext& context) {
+  return DialogTools{.navigator = context.navigator.get(),
+                     .sounds = soundsOf(context),
+                     .language = context.services.settings.get().language};
+}
+
 std::unique_ptr<IScreen> buildQuitConfirmationScreen(
     const ScreenContext& context) {
-  return dialogScreenOf(context, quitConfirmationMenu(context.navigator.get(),
-                                                      soundsOf(context)));
+  return dialogScreenOf(context, quitConfirmationMenu(dialogToolsOf(context)));
 }
 
 std::unique_ptr<IScreen> buildLeaveGameConfirmationScreen(
     const ScreenContext& context) {
-  return dialogScreenOf(context, leaveGameConfirmationMenu(
-                                     context.navigator.get(), soundsOf(context),
-                                     context.services.connection.get()));
+  return dialogScreenOf(
+      context, leaveGameConfirmationMenu(dialogToolsOf(context),
+                                         context.services.connection.get()));
 }
 
 std::unique_ptr<IScreen> buildConnectionLostScreen(
     const ScreenContext& context) {
   return dialogScreenOf(
       context,
-      connectionLostMenu(context.navigator.get(), soundsOf(context),
+      connectionLostMenu(dialogToolsOf(context),
                          context.services.connection.get().status().phase));
 }
 
@@ -170,12 +178,14 @@ std::unique_ptr<IScreen> buildServerMapScreen(const ScreenContext& context) {
  * whose games the map listed last. */
 std::unique_ptr<IScreen> buildNewGameScreen(const ScreenContext& context) {
   const GameListSnapshot& games = context.services.gameCatalog.get().snapshot();
-  return dialogScreenOf(context, newGameMenu(NewGameMenuParts{
-                                     .navigator = context.navigator.get(),
-                                     .sounds = soundsOf(context),
-                                     .choice = context.serverChoice.get(),
-                                     .server = games.server,
-                                     .difficulties = games.difficulties}));
+  return dialogScreenOf(
+      context, newGameMenu(NewGameMenuParts{
+                   .navigator = context.navigator.get(),
+                   .sounds = soundsOf(context),
+                   .choice = context.serverChoice.get(),
+                   .server = games.server,
+                   .difficulties = games.difficulties,
+                   .language = context.services.settings.get().language}));
 }
 
 /** @returns The leaderboard, opened on the filter the waiting room calls for;
@@ -184,16 +194,18 @@ std::unique_ptr<IScreen> buildNewGameScreen(const ScreenContext& context) {
 std::unique_ptr<IScreen> buildLeaderboardScreen(const ScreenContext& context) {
   MasterLeaderboard& global = context.services.globalLeaderboard.get();
   global.namePlayer(context.serverChoice.get().nickname);
+  const Language language = context.services.settings.get().language;
   return std::make_unique<LeaderboardScreen>(
       LeaderboardScreenParts{
           .navigator = context.navigator.get(),
           .sounds = soundsOf(context),
           .connection = context.services.connection.get(),
           .tabs = {LeaderboardTab{
-                       .label = SERVER_TAB_LABEL,
+                       .label = std::string(SERVER_TAB_LABEL.in(language)),
                        .source = &context.services.leaderboard.get()},
-                   LeaderboardTab{.label = GLOBAL_TAB_LABEL,
-                                  .source = &global}},
+                   LeaderboardTab{
+                       .label = std::string(GLOBAL_TAB_LABEL.in(language)),
+                       .source = &global}},
           .choice = OPENING_LEADERBOARD_CHOICE,
           .playfieldPointAt = playfieldMappingOf(context),
           .keyName = localizedKeyName,

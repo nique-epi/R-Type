@@ -10,6 +10,7 @@
 #include "FakeSizableWindow.hpp"
 #include "GameOptionsScreenFixture.hpp"
 #include "InterfaceColorConstants.hpp"
+#include "Language.hpp"
 #include "MenuScreenIdConstants.hpp"
 #include "OptionsScreen.hpp"
 #include "OptionsScreenFixture.hpp"
@@ -33,6 +34,7 @@ using rtype::client::CLICK_SOUND_ID;
 using rtype::client::DIM_LAYER_COLOR;
 using rtype::client::DISABLED_BAR_TEXT_COLOR;
 using rtype::client::DisplayMode;
+using rtype::client::Language;
 using rtype::client::PRESS_DURATION;
 using rtype::client::regularTextWidth;
 using rtype::client::testing::ALONG_THE_TRACK;
@@ -43,7 +45,10 @@ using rtype::client::testing::DESCRIPTION_LEFT;
 using rtype::client::testing::DESCRIPTION_RIGHT;
 using rtype::client::testing::DESKTOP_SIZE_TEXT;
 using rtype::client::testing::DOWN_PRESSES_TO_DEFAULT_SOUND;
+using rtype::client::testing::DOWN_PRESSES_TO_LANGUAGE;
 using rtype::client::testing::DOWN_PRESSES_TO_QUIT;
+using rtype::client::testing::FRENCH_LANGUAGE_DESCRIPTION;
+using rtype::client::testing::FRENCH_LANGUAGE_LABEL;
 using rtype::client::testing::INDEX_OF_1280_BY_720;
 using rtype::client::testing::LARGEST_FIT;
 using rtype::client::testing::LINE_WIDTH_LABEL_TEXT;
@@ -397,11 +402,81 @@ TEST_F(OptionsScreenFixture, BorderlessHidesTheChartOfTheSizes) {
 }
 
 /**
+ * Given the DISPLAY tab, the client in English
+ * When Down selects LANGUAGE and Right picks the next language
+ * Then the settings saved hold French
+ */
+TEST_F(OptionsScreenFixture, FrenchPickedIsSaved) {
+  openNextTab();
+  openNextTab();
+  for (int press = 0; press < DOWN_PRESSES_TO_LANGUAGE; ++press) {
+    tap(Key::Down);
+  }
+  tap(Key::Right);
+  ASSERT_FALSE(storage().saves().empty());
+  EXPECT_EQ(storage().saves().back().language, Language::French);
+}
+
+/**
+ * Given the DISPLAY tab in English, LANGUAGE selected
+ * When Right picks French and a frame passes
+ * Then the row reads LANGUE at once, without the options opened again
+ */
+TEST_F(OptionsScreenFixture, FrenchPickedRelabelsTheRowAtOnce) {
+  openNextTab();
+  openNextTab();
+  for (int press = 0; press < DOWN_PRESSES_TO_LANGUAGE; ++press) {
+    tap(Key::Down);
+  }
+  tap(Key::Right);
+  EXPECT_NE(writingOf(canvas(), FRENCH_LANGUAGE_LABEL), nullptr);
+}
+
+/**
+ * Given the DISPLAY tab in English, LANGUAGE selected
+ * When Right picks French and the tabs are built again in French
+ * Then LANGUAGE stays selected: its French description is written
+ */
+TEST_F(OptionsScreenFixture, FrenchPickedKeepsTheLanguageRowSelected) {
+  openNextTab();
+  openNextTab();
+  for (int press = 0; press < DOWN_PRESSES_TO_LANGUAGE; ++press) {
+    tap(Key::Down);
+  }
+  tap(Key::Right);
+  const RecordedWriting* description = descriptionOf(canvas());
+  ASSERT_NE(description, nullptr);
+  EXPECT_EQ(description->text, FRENCH_LANGUAGE_DESCRIPTION);
+}
+
+/**
  * Given every row of every tab
  * When each is selected in turn
  * Then its description fits between BACK and the safe margin
  */
 TEST_F(OptionsScreenFixture, EveryDescriptionFitsBesideBack) {
+  for (int tab = 0; tab < TABS; ++tab) {
+    for (std::size_t row = 0; row < ROWS_IN_THE_LONGEST_TAB; ++row) {
+      const RecordedWriting* line = descriptionOf(canvas());
+      if (line != nullptr) {
+        EXPECT_LE(DESCRIPTION_LEFT + regularTextWidth(line->text),
+                  DESCRIPTION_RIGHT)
+            << line->text;
+      }
+      tap(Key::Down);
+    }
+    openNextTab();
+  }
+}
+
+/**
+ * Given every row of every tab, the client in French
+ * When each is selected in turn
+ * Then its French description fits between BACK and the safe margin
+ */
+TEST_F(OptionsScreenFixture, EveryFrenchDescriptionFitsBesideBack) {
+  settings().language = Language::French;
+  screen().update(PRESS_DURATION);
   for (int tab = 0; tab < TABS; ++tab) {
     for (std::size_t row = 0; row < ROWS_IN_THE_LONGEST_TAB; ++row) {
       const RecordedWriting* line = descriptionOf(canvas());

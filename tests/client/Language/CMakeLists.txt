@@ -1,0 +1,2 @@
+rtype_add_test(NAME client_language_tests SOURCES TranslationTest.cpp TextMarksTest.cpp LetterCountsTest.cpp LIBS rtype_client_language)
+target_include_directories(client_language_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

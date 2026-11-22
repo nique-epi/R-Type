@@ -100,4 +100,10 @@ constexpr sf::Vector2i LEFT_OF_THE_PREVIEW =
     sf::Vector2i(249, 184) * INTERFACE_PIXEL;
 constexpr sf::Vector2i VOTE_PIP = sf::Vector2i(4, 4);
 
+/** @brief The status of two pilots not ready, in French. */
+constexpr std::string_view FRENCH_TWO_PILOTS_NOT_READY = "2 PILOTES PAS PRÊTS";
+
+/** @brief The help chip of the waiting room, in French. */
+constexpr std::string_view FRENCH_HELP_LABEL = "AIDE";
+
 }  // namespace rtype::client::testing

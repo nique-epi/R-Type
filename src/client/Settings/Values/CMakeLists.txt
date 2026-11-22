@@ -5,6 +5,7 @@ target_include_directories(rtype_client_settings_values INTERFACE ${CMAKE_CURREN
 target_link_libraries(rtype_client_settings_values
   INTERFACE
     rtype_client_input_keys
+    rtype_client_language
     rtype_identifiers
     rtype_network_master_economy
 )

@@ -6,6 +6,7 @@
 #include <string_view>
 #include <vector>
 #include "IInterfaceCanvas.hpp"
+#include "Language.hpp"
 #include "ShipLook.hpp"
 #include "ShipLookSlot.hpp"
 #include "ShipPlacement.hpp"
@@ -50,6 +51,7 @@ void paintLookIcon(IInterfaceCanvas& canvas, std::size_t item,
 
 /** @returns The name @p item, a position in SHIP_LOOK_ITEM_NAMES, is shown
  * under: the label of its drawing for an accessory, of its hull for a hull. */
-[[nodiscard]] std::string_view lookItemLabelOf(std::size_t item);
+[[nodiscard]] std::string_view lookItemLabelOf(std::size_t item,
+                                               Language language);
 
 }  // namespace rtype::client

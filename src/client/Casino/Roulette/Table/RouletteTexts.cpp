@@ -12,6 +12,7 @@
 #include "CasinoRoomState.hpp"
 #include "ChipsAtHand.hpp"
 #include "Kopecks.hpp"
+#include "Language.hpp"
 #include "MillisecondDate.hpp"
 #include "PocketColors.hpp"
 #include "RouletteColorConstants.hpp"
@@ -20,7 +21,9 @@
 #include "RouletteScreenConstants.hpp"
 #include "RoundBets.hpp"
 #include "TableRosterRow.hpp"
+#include "TextMarks.hpp"
 #include "TimeConstants.hpp"
+#include "Translation.hpp"
 
 namespace rtype::client {
 
@@ -29,8 +32,15 @@ namespace {
 using network::CasinoPlayer;
 using network::RoulettePhase;
 
+/** @brief Where a player sits in the room, from 0, and the language its row
+ * is written in. */
+struct RosterPlace {
+  std::size_t seat{};
+  Language language{};
+};
+
 /** @returns What the status line says of @p refusal. */
-std::string refusalLineOf(CasinoRefusal refusal) {
+Translation refusalLineOf(CasinoRefusal refusal) {
   switch (refusal) {
     case CasinoRefusal::BetsClosed:
       return BETS_CLOSED_LINE;
@@ -52,17 +62,26 @@ std::string refusalLineOf(CasinoRefusal refusal) {
   return CASINO_SILENT_LINE;
 }
 
+/** @returns @p line in @p language, the seconds left of the phase of
+ * @p reading in its mark. */
+std::string withSecondsLeft(Translation line, const RouletteReading& reading,
+                            Language language) {
+  return withMark(
+      line.in(language),
+      {.mark = ROULETTE_SECONDS_MARK,
+       .value = std::to_string(secondsBegunIn(phaseTimeLeft(reading)))});
+}
+
 /** @returns What the status line says while the bets are open. */
-std::string bettingLineOf(const RouletteReading& reading) {
+std::string bettingLineOf(const RouletteReading& reading, Language language) {
   if (reading.refusal.has_value()) {
-    return refusalLineOf(*reading.refusal);
+    return std::string(refusalLineOf(*reading.refusal).in(language));
   }
   if (chipsAtHandOf(reading.walletChips, reading.accepted) == 0 &&
       reading.bets.empty()) {
-    return NO_CHIPS_LINE;
+    return std::string(NO_CHIPS_LINE.in(language));
   }
-  return BETS_CLOSE_IN_START +
-         std::to_string(secondsBegunIn(phaseTimeLeft(reading)));
+  return withSecondsLeft(BETS_CLOSE_IN_LINE, reading, language);
 }
 
 /** @returns What a stake of @p stake that paid @p payout won or lost, after
@@ -78,9 +97,10 @@ std::string gainOf(std::uint32_t stake, std::uint32_t payout) {
 }
 
 /** @returns What the status line says at the result, @p number drawn. */
-std::string resultLineOf(const RouletteReading& reading, std::uint8_t number) {
-  std::string line =
-      std::to_string(number) + RESULT_GAP + pocketColorWordOf(number);
+std::string resultLineOf(const RouletteReading& reading, std::uint8_t number,
+                         Language language) {
+  std::string line = std::to_string(number) + RESULT_GAP +
+                     std::string(pocketColorWordOf(number, language));
   if (reading.ownBets.has_value() && reading.ownBets->payout.has_value()) {
     const std::string gain =
         gainOf(reading.ownBets->stake, *reading.ownBets->payout);
@@ -108,16 +128,18 @@ bool resultShown(const RouletteReading& reading) {
          reading.room->phase == RoulettePhase::Result;
 }
 
-/** @returns The row of @p player, seated at @p place in the room, from 0. */
+/** @returns The row of @p player, seated at @p place in the room. */
 TableRosterRow rowOf(const RouletteReading& reading, const CasinoPlayer& player,
-                     std::size_t place) {
+                     RosterPlace place) {
   const bool own = player.nickname == reading.ownNickname;
   const std::string gain = gainOf(player.stake, player.payout.value_or(0));
   const bool paid =
       resultShown(reading) && player.payout.has_value() && !gain.empty();
   return TableRosterRow{
-      .colors = reading.palette.at(place % reading.palette.size()),
-      .name = own ? player.nickname + OWN_NAME_END : player.nickname,
+      .colors = reading.palette.at(place.seat % reading.palette.size()),
+      .name =
+          own ? player.nickname + std::string(OWN_NAME_END.in(place.language))
+              : player.nickname,
       .value = paid ? gain : kopecksText(player.stake),
       .valueColor = valueColorOf(player, paid)};
 }
@@ -149,33 +171,34 @@ engine::Duration phaseTimeLeft(const RouletteReading& reading) {
                                : engine::Duration::zero();
 }
 
-std::string statusLineOf(const RouletteReading& reading) {
+std::string statusLineOf(const RouletteReading& reading, Language language) {
   if (!reading.room.has_value()) {
-    return TABLE_CLOSED_LINE;
+    return std::string(TABLE_CLOSED_LINE.in(language));
   }
   switch (reading.room->phase) {
     case RoulettePhase::Betting:
-      return bettingLineOf(reading);
+      return bettingLineOf(reading, language);
     case RoulettePhase::Spinning:
-      return RESULT_IN_START +
-             std::to_string(secondsBegunIn(phaseTimeLeft(reading)));
+      return withSecondsLeft(RESULT_IN_LINE, reading, language);
     case RoulettePhase::Result:
       break;
   }
   if (!reading.room->winningNumber.has_value()) {
-    return NO_MORE_BETS_LINE;
+    return std::string(NO_MORE_BETS_LINE.in(language));
   }
-  return resultLineOf(reading, *reading.room->winningNumber);
+  return resultLineOf(reading, *reading.room->winningNumber, language);
 }
 
-std::vector<TableRosterRow> rosterRowsOf(const RouletteReading& reading) {
+std::vector<TableRosterRow> rosterRowsOf(const RouletteReading& reading,
+                                         Language language) {
   std::vector<TableRosterRow> own;
   std::vector<TableRosterRow> others;
   if (reading.room.has_value()) {
     const std::vector<CasinoPlayer>& players = reading.room->players;
     for (std::size_t place = 0; place < players.size(); ++place) {
       (players.at(place).nickname == reading.ownNickname ? own : others)
-          .push_back(rowOf(reading, players.at(place), place));
+          .push_back(rowOf(reading, players.at(place),
+                           RosterPlace{.seat = place, .language = language}));
     }
   }
   own.insert(own.end(), others.begin(), others.end());

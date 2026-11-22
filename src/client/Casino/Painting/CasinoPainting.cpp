@@ -100,12 +100,12 @@ void paintCasinoBalances(IInterfaceCanvas& canvas, CasinoBalances balances) {
   const int top = area.position.y;
   canvas.write(balanceText(balances.kopecks), {right, top + CASINO_KOPECKS_TOP},
                CASINO_KOPECKS_STYLE);
-  canvas.write(CASINO_KOPECKS_CAPTION,
+  canvas.write(CASINO_KOPECKS_CAPTION.in(canvas.language()),
                {right, top + CASINO_KOPECKS_CAPTION_TOP}, CASINO_CAPTION_STYLE);
   canvas.write(balanceText(balances.chips), {right, top + CASINO_CHIPS_TOP},
                CASINO_CHIPS_STYLE);
-  canvas.write(CASINO_CHIPS_CAPTION, {right, top + CASINO_CHIPS_CAPTION_TOP},
-               CASINO_CAPTION_STYLE);
+  canvas.write(CASINO_CHIPS_CAPTION.in(canvas.language()),
+               {right, top + CASINO_CHIPS_CAPTION_TOP}, CASINO_CAPTION_STYLE);
 }
 
 }  // namespace rtype::client

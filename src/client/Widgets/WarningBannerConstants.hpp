@@ -6,13 +6,13 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
-#include <string_view>
 #include "BackgroundColorConstants.hpp"
 #include "FireColorConstants.hpp"
 #include "InterfaceColorConstants.hpp"
 #include "InterfaceConstants.hpp"
 #include "StatusBandConstants.hpp"
 #include "TimeConstants.hpp"
+#include "Translation.hpp"
 
 namespace rtype::client {
 
@@ -68,7 +68,7 @@ static_assert(WARNING_BAND_MIDDLE_ROW - WARNING_BAND_HALF_HEIGHT -
  * of the font, from yellow to red, each band torn sideways the other way from
  * the one above for the first WARNING_TEAR_STEP times
  * WARNING_TEAR_OFFSETS.size(); one row in WARNING_SCANLINE_STEP darkened. */
-constexpr std::string_view WARNING_WORD = "WARNING";
+constexpr Translation WARNING_WORD{.english = "WARNING", .french = "ALERTE"};
 constexpr int WARNING_WORD_SCALE = 4;
 constexpr engine::Duration WARNING_WORD_LETTER_TIME =
     std::chrono::milliseconds(60);
@@ -92,8 +92,9 @@ constexpr std::size_t WARNING_TEAR_DIRECTIONS = 2;
 
 /** @brief The line under the word, in Silkscreen, one more letter every
  * WARNING_SUBTITLE_LETTER_TIME once the word is written. */
-constexpr std::string_view WARNING_SUBTITLE =
-    "A HUGE BYDO LIFE FORM IS APPROACHING FAST";
+constexpr Translation WARNING_SUBTITLE{
+    .english = "A HUGE BYDO LIFE FORM IS APPROACHING FAST",
+    .french = "UNE ÉNORME FORME DE VIE BYDO APPROCHE VITE"};
 constexpr engine::Duration WARNING_SUBTITLE_LETTER_TIME =
     std::chrono::milliseconds(30);
 constexpr int WARNING_SUBTITLE_TOP = 128;

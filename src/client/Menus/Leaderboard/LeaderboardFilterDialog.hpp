@@ -5,6 +5,7 @@
 #include <optional>
 #include "IInterfaceCanvas.hpp"
 #include "ISoundPlayer.hpp"
+#include "Language.hpp"
 #include "LeaderboardFilterChoice.hpp"
 #include "Menu.hpp"
 #include "PlayfieldMapping.hpp"
@@ -35,7 +36,8 @@ class LeaderboardFilterDialog {
   /** @brief Opens the dialog on @p choice; APPLY runs @p apply with what the
    * player picked and closes it; BACK closes it. */
   void open(LeaderboardFilterChoice choice,
-            const std::function<void(LeaderboardFilterChoice)>& apply);
+            const std::function<void(LeaderboardFilterChoice)>& apply,
+            Language language);
 
   [[nodiscard]] bool isOpen() const;
 

@@ -1,21 +1,21 @@
 #include "CasinoBarChip.hpp"
-#include <functional>
+#include <string>
 #include <utility>
 #include "CasinoBar.hpp"
-#include "ISoundPlayer.hpp"
+#include "CasinoChipWiring.hpp"
 #include "KeyChip.hpp"
 #include "KeyChipParts.hpp"
 
 namespace rtype::client {
 
-KeyChip chipOf(const CasinoBar& bar, std::function<void()> action,
-               ISoundPlayer& sounds) {
+KeyChip chipOf(const CasinoBar& bar, CasinoChipWiring wiring) {
   return KeyChip(
-      KeyChipParts{.text = {.label = bar.label, .keyName = bar.keyName},
+      KeyChipParts{.text = {.label = std::string(bar.label.in(wiring.language)),
+                            .keyName = bar.keyName},
                    .area = bar.area,
                    .key = bar.key,
-                   .action = std::move(action),
-                   .sounds = sounds,
+                   .action = std::move(wiring.action),
+                   .sounds = wiring.sounds,
                    .restState = bar.restState});
 }
 

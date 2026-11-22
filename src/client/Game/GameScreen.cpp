@@ -248,7 +248,8 @@ void advanceEffects(EffectSpawner& effects, const PlayerSettings& settings,
   effects.advance(sinceTheWorld,
                   EffectPreferences{.flashes = flashPreferenceOf(settings),
                                     .shades = pilotShadesOf(settings),
-                                    .soundCues = settings.soundCues});
+                                    .soundCues = settings.soundCues,
+                                    .language = settings.language});
 }
 
 /** @brief Puts the other entities at the tick @p clock shows, with the
@@ -313,7 +314,7 @@ GameScreen::GameScreen(GameScreenParts parts,
       *sky_, effects_,
       skySpeedFactorOf(effects_, transition_, flashPreferenceOf(*settings_)));
   entityLayer_->paint(components_, cameraOffsetOf(effects_));
-  repaintStatus(boss_.look(flashPreferenceOf(*settings_)));
+  repaintStatus(boss_.look(flashPreferenceOf(*settings_), settings_->language));
 }
 
 GameScreen::~GameScreen() {
@@ -445,9 +446,12 @@ void GameScreen::askForTheEndWhenDue() {
 }
 
 void GameScreen::repaintStatusWhenChanged() {
-  const BossLook boss = boss_.look(flashPreferenceOf(*settings_));
+  const BossLook boss =
+      boss_.look(flashPreferenceOf(*settings_), settings_->language);
   if (scoreBoard_.revision() != paintedStatusRevision_ ||
-      missionBannerAt(effects_.sinceStart()) != paintedBanner_ ||
+      missionBannerAt(effects_.sinceStart(), settings_->language) !=
+          paintedBanner_ ||
+      settings_->language != paintedLanguage_ ||
       paintedPalette_ != playerPaletteOf(*settings_) ||
       departures_.revision() != paintedDepartures_ ||
       silence_.isShown() != paintedSilence_ || boss != paintedBoss_ ||
@@ -458,7 +462,9 @@ void GameScreen::repaintStatusWhenChanged() {
 }
 
 void GameScreen::repaintStatus(const BossLook& boss) {
-  const MissionBannerLook banner = missionBannerAt(effects_.sinceStart());
+  const MissionBannerLook banner =
+      missionBannerAt(effects_.sinceStart(), settings_->language);
+  paintedLanguage_ = settings_->language;
   const PlayerPalette& palette = playerPaletteOf(*settings_);
   statusCanvas_->clear();
   paintBossAlert(*statusCanvas_, boss);

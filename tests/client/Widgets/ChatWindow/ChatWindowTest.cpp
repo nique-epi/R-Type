@@ -273,12 +273,12 @@ TEST_F(ChatWindowFixture, PageUpShowsOlderLines) {
 TEST_F(ChatWindowFixture, ALineOfTheClientIsPaleAndNameless) {
   channel().receive(ChatEntry{.playerNumber = CLIENT_WRITER,
                               .nickname = {},
-                              .text = std::string{UNANSWERED_CHAT_TEXT},
+                              .text = std::string{UNANSWERED_CHAT_TEXT.english},
                               .age = {}});
 
   const InterfaceCanvasRecord& record = painted();
 
   ASSERT_EQ(record.writings.size(), 1U);
-  EXPECT_EQ(record.writings.front().text, UNANSWERED_CHAT_TEXT);
+  EXPECT_EQ(record.writings.front().text, UNANSWERED_CHAT_TEXT.english);
   EXPECT_EQ(record.writings.front().style.color, CHAT_NOTICE_COLOR);
 }

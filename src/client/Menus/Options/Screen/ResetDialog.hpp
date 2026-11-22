@@ -6,6 +6,7 @@
 #include <string>
 #include "IInterfaceCanvas.hpp"
 #include "ISoundPlayer.hpp"
+#include "Language.hpp"
 #include "Menu.hpp"
 #include "PlayfieldMapping.hpp"
 #include "TimeConstants.hpp"
@@ -31,8 +32,9 @@ class ResetDialog {
   ~ResetDialog() = default;
 
   /** @brief Opens the dialog on @p question; YES runs @p reset and closes it,
-   * NO closes it. */
-  void ask(const std::string& question, const std::function<void()>& reset);
+   * NO closes it. Its heading and its buttons are written in @p language. */
+  void ask(const std::string& question, const std::function<void()>& reset,
+           Language language);
 
   [[nodiscard]] bool isOpen() const;
 

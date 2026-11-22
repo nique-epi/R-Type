@@ -8,6 +8,7 @@
 #include "InterfaceColorConstants.hpp"
 #include "InterfaceConstants.hpp"
 #include "TextStyle.hpp"
+#include "Translation.hpp"
 #include "WidgetConstants.hpp"
 
 namespace rtype::client {
@@ -21,8 +22,11 @@ constexpr std::chrono::milliseconds HEADPHONES_FADE_OUT{600};
 constexpr std::chrono::milliseconds HEADPHONES_INK_BEFORE_NEXT{400};
 
 /** @brief The line under the logo, and the small line under it. */
-constexpr std::string_view HEADPHONES_LINE = "HEADPHONES RECOMMENDED";
-constexpr std::string_view HEADPHONES_SMALL_LINE = "FOR THE BEST EXPERIENCE";
+constexpr Translation HEADPHONES_LINE{.english = "HEADPHONES RECOMMENDED",
+                                      .french = "CASQUE RECOMMANDÉ"};
+constexpr Translation HEADPHONES_SMALL_LINE{
+    .english = "FOR THE BEST EXPERIENCE",
+    .french = "POUR UNE MEILLEURE EXPÉRIENCE"};
 
 /** @brief The letters of HEADPHONES_LOGO and the color each one paints; any
  * other letter, '.', leaves its pixel clear. */

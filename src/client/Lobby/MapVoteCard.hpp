@@ -12,6 +12,7 @@
 #include "IMapPreviews.hpp"
 #include "ISoundPlayer.hpp"
 #include "IWaitingRoom.hpp"
+#include "Language.hpp"
 #include "MapVoteCardParts.hpp"
 #include "PlayerPalette.hpp"
 #include "PlayfieldMapping.hpp"
@@ -59,7 +60,7 @@ class MapVoteCard {
 
   /** @returns MAP_BAR_PREFIX and the name of the map shown, or
    * NO_MAP_CHOSEN_NAME; MAP_BAR_CLOSED while the card is closed. */
-  [[nodiscard]] std::string label() const;
+  [[nodiscard]] std::string label(Language language) const;
 
   /** @brief Paints the open card on @p canvas, its edge lit while
    * @p selected; nothing while it is closed. */
@@ -67,7 +68,7 @@ class MapVoteCard {
 
  private:
   /** @returns The name of the map shown, or NO_MAP_CHOSEN_NAME. */
-  [[nodiscard]] std::string shownName() const;
+  [[nodiscard]] std::string shownName(Language language) const;
 
   /** @returns The map shown, numbered from 1: the one voted for, or else the
    * one leading the vote; nothing while nobody voted, or once the player

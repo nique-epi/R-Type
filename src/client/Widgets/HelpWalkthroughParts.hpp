@@ -5,6 +5,7 @@
 #include "ISoundPlayer.hpp"
 #include "KeyBindings.hpp"
 #include "KeyNames.hpp"
+#include "Language.hpp"
 #include "MotionPreference.hpp"
 #include "PlayerPalette.hpp"
 
@@ -25,6 +26,8 @@ struct HelpWalkthroughParts {
   std::reference_wrapper<const KeyBindings> keys;
   /** @brief Gives the name a keycap shows for a key. */
   KeyNaming keyName;
+  /** @brief The language of the sentences and of the chip. */
+  Language language = Language::English;
   /** @brief The palette of the ships of its moment of a game: a constant, so
    * it outlives the help. */
   std::reference_wrapper<const PlayerPalette> palette;

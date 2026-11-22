@@ -23,6 +23,7 @@
 #include "TextStyle.hpp"
 #include "TextureArea.hpp"
 #include "TimeConstants.hpp"
+#include "Translation.hpp"
 #include "Typing.hpp"
 
 namespace rtype::client {
@@ -37,7 +38,7 @@ struct LinePlace {
 
 /** @returns The words after the name of a pilot who left in @p state: SIGNAL
  * LOST, WAS EXPELLED, or LEFT THE GAME. */
-const char* departureWordsOf(PilotState state) {
+const Translation& departureWordsOf(PilotState state) {
   switch (state) {
     case PilotState::SignalLost:
       return SIGNAL_LOST_TEXT;
@@ -79,7 +80,7 @@ void paintLine(IInterfaceCanvas& canvas, const DepartureLine& line,
       name, nameTopLeft,
       {.font = TextFont::Regular, .color = place.nameColor, .outlined = true});
   canvas.write(
-      departureWordsOf(line.state),
+      departureWordsOf(line.state).in(canvas.language()),
       nameTopLeft + sf::Vector2i(canvas.textWidth(name, TextFont::Regular) +
                                      DEPARTURE_WORD_GAP,
                                  0),

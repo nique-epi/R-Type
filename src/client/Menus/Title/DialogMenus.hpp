@@ -1,9 +1,8 @@
 #pragma once
 
 #include "ConnectionPhase.hpp"
-#include "IScreenNavigator.hpp"
+#include "DialogTools.hpp"
 #include "IServerConnection.hpp"
-#include "ISoundPlayer.hpp"
 #include "Menu.hpp"
 
 namespace rtype::client {
@@ -16,8 +15,7 @@ namespace rtype::client {
  * @param navigator Screens around the dialog, which must outlive it.
  * @param sounds Plays the click of its buttons, and must outlive it.
  */
-[[nodiscard]] Menu quitConfirmationMenu(IScreenNavigator& navigator,
-                                        ISoundPlayer& sounds);
+[[nodiscard]] Menu quitConfirmationMenu(const DialogTools& tools);
 
 /**
  * @returns The question asked before leaving a game for the title, for a
@@ -30,8 +28,7 @@ namespace rtype::client {
  * @param sounds Plays the click of its buttons, and must outlive it.
  * @param connection The session left, which must outlive the dialog.
  */
-[[nodiscard]] Menu leaveGameConfirmationMenu(IScreenNavigator& navigator,
-                                             ISoundPlayer& sounds,
+[[nodiscard]] Menu leaveGameConfirmationMenu(const DialogTools& tools,
                                              IServerConnection& connection);
 
 /**
@@ -46,8 +43,7 @@ namespace rtype::client {
  * @param ending How the session ended: Closed when the server said it shut
  * down; any other phase reads as a server that went silent.
  */
-[[nodiscard]] Menu connectionLostMenu(IScreenNavigator& navigator,
-                                      ISoundPlayer& sounds,
+[[nodiscard]] Menu connectionLostMenu(const DialogTools& tools,
                                       ConnectionPhase ending);
 
 }  // namespace rtype::client

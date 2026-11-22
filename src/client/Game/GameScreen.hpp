@@ -34,6 +34,7 @@
 #include "ISky.hpp"
 #include "InterpolationClock.hpp"
 #include "InterpolationTally.hpp"
+#include "Language.hpp"
 #include "LevelTransitionScene.hpp"
 #include "Logger.hpp"
 #include "MissionBanner.hpp"
@@ -229,6 +230,9 @@ class GameScreen : public IScreen {
   ISky* sky_;
   IAudioService* audio_;
   MissionBannerLook paintedBanner_;
+  /** @brief The language the status canvas was last painted in: a language
+   * picked in the options over the game repaints it. */
+  Language paintedLanguage_{Language::English};
   std::optional<PlayerPalette> paintedPalette_;
   DepartureFeed departures_;
   SilenceWarning silence_;

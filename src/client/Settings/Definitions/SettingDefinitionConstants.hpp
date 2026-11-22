@@ -4,6 +4,7 @@
 #include <optional>
 #include "ColorMode.hpp"
 #include "DisplayMode.hpp"
+#include "Language.hpp"
 #include "PixelSize.hpp"
 #include "PlayerSettings.hpp"
 #include "Setting.hpp"
@@ -39,6 +40,10 @@ constexpr Setting<std::optional<PixelSize>> WINDOW_SIZE_SETTING{
 constexpr Setting<DisplayMode> DISPLAY_MODE_SETTING{
     .member = &PlayerSettings::displayMode,
     .id = SettingId::DisplayMode,
+    .range = std::nullopt};
+constexpr Setting<Language> LANGUAGE_SETTING{
+    .member = &PlayerSettings::language,
+    .id = SettingId::Language,
     .range = std::nullopt};
 constexpr Setting<ColorMode> COLOR_MODE_SETTING{
     .member = &PlayerSettings::colorMode,
@@ -122,6 +127,7 @@ constexpr std::array ALL_SETTING_IDS{
     SettingId::Muted,
     SettingId::WindowSize,
     SettingId::DisplayMode,
+    SettingId::Language,
     SettingId::Keys,
     SettingId::ColorMode,
     SettingId::ReduceFlashes,

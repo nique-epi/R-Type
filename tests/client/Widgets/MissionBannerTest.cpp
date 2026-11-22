@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include "EffectTestConstants.hpp"
 #include "InterfaceColorConstants.hpp"
+#include "Language.hpp"
 #include "MissionBanner.hpp"
 #include "MissionBannerTestConstants.hpp"
 #include "RecordingInterfaceCanvas.hpp"
@@ -8,6 +9,7 @@
 #include "TimeConstants.hpp"
 
 using rtype::client::EDGE_BLUE;
+using rtype::client::Language;
 using rtype::client::missionBannerAt;
 using rtype::client::MissionBannerLook;
 using rtype::client::paintMissionBanner;
@@ -97,4 +99,21 @@ TEST(MissionBanner, NothingIsPaintedBeforeTheBanner) {
 
   EXPECT_TRUE(record.fills.empty());
   EXPECT_TRUE(record.writings.empty());
+}
+
+/**
+ * Given the client in French and the banner after two letters, the second
+ * the accented E of DEBUT
+ * When it is painted
+ * Then both letters are written whole, the accent never cut in two
+ */
+TEST(MissionBanner, AnAccentedLetterIsTypedWhole) {
+  InterfaceCanvasRecord record = recordIn(Language::French);
+  RecordingInterfaceCanvas canvas(record);
+
+  paintMissionBanner(
+      canvas, MissionBannerLook{.letters = TWO_LETTERS, .ruleHalfWidth = 0});
+
+  ASSERT_EQ(record.writings.size(), 1U);
+  EXPECT_EQ(record.writings.front().text, FRENCH_FIRST_TWO_LETTERS);
 }

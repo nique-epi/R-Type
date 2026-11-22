@@ -30,7 +30,7 @@ void SilenceWarning::paint(IInterfaceCanvas& canvas) const {
                                .rectangle = rectangleOf(WEAK_SIGNAL_FRAME)},
                    ImagePlacement{.topLeft = WEAK_SIGNAL_TOP_LEFT},
                    INTERFACE_AREA);
-  canvas.write(SILENCE_WARNING_TEXT,
+  canvas.write(SILENCE_WARNING_TEXT.in(canvas.language()),
                WEAK_SIGNAL_TOP_LEFT +
                    sf::Vector2i(-SILENCE_WARNING_GAP, SILENCE_WARNING_DROP),
                {.font = TextFont::Small,

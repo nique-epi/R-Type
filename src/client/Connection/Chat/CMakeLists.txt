@@ -4,6 +4,7 @@ target_include_directories(rtype_client_connection_chat PUBLIC ${CMAKE_CURRENT_S
 
 target_link_libraries(rtype_client_connection_chat
   PUBLIC
+    rtype_client_language
     rtype_client_session
     rtype_client_waiting_room
     rtype_engine_time

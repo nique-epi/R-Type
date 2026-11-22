@@ -60,7 +60,7 @@ void paintWatchOut(IInterfaceCanvas& canvas, const WatchOutLook& look) {
   }
   paintLane(canvas, look);
   if (look.lit) {
-    canvas.write(WATCH_OUT_TEXT,
+    canvas.write(WATCH_OUT_TEXT.in(canvas.language()),
                  {WATCH_OUT_TEXT_LEFT, look.row - WATCH_OUT_TEXT_RISE},
                  TextStyle{.font = TextFont::Small,
                            .color = WATCH_OUT_TEXT_COLOR,

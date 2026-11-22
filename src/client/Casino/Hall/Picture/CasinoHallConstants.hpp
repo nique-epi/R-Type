@@ -15,6 +15,7 @@
 #include "CasinoPaintingConstants.hpp"
 #include "LightBeam.hpp"
 #include "TimeConstants.hpp"
+#include "Translation.hpp"
 #include "TwinkleBeats.hpp"
 #include "WidgetConstants.hpp"
 
@@ -35,12 +36,13 @@ constexpr engine::Duration HALL_FADE_TIME = std::chrono::milliseconds(360);
  */
 constexpr sf::Keyboard::Key HALL_LEFT_KEY = sf::Keyboard::Key::Left;
 constexpr sf::Keyboard::Key HALL_RIGHT_KEY = sf::Keyboard::Key::Right;
-constexpr CasinoBar HALL_CASHIER_BAR{.label = "CASHIER",
-                                     .keyName = "<",
-                                     .area = sf::IntRect({8, 252}, {92, 14}),
-                                     .key = HALL_LEFT_KEY};
+constexpr CasinoBar HALL_CASHIER_BAR{
+    .label = {.english = "CASHIER", .french = "CAISSE"},
+    .keyName = "<",
+    .area = sf::IntRect({8, 252}, {92, 14}),
+    .key = HALL_LEFT_KEY};
 constexpr CasinoBar HALL_ROULETTE_BAR{
-    .label = "ROULETTE",
+    .label = {.english = "ROULETTE", .french = "ROULETTE"},
     .keyName = ">",
     .area = sf::IntRect({372, 252}, {100, 14}),
     .key = HALL_RIGHT_KEY,
@@ -58,7 +60,8 @@ constexpr sf::IntRect HALL_RIGHT_ARCH({406, 62}, {60, 80});
 /** @brief The cartouche of the title, centered at the top of the picture. */
 constexpr sf::IntRect HALL_TITLE_AREA({180, 4}, {120, 13});
 constexpr sf::Vector2i HALL_TITLE_TOP_MIDDLE(240, 7);
-constexpr const char* HALL_TITLE = "MAIN HALL";
+constexpr Translation HALL_TITLE{.english = "MAIN HALL",
+                                 .french = "GRAND HALL"};
 
 /**
  * @brief The bulbs of the hall, lit in its picture: the pixels brighter than

@@ -9,6 +9,7 @@
 #include <cstdint>
 #include "CasinoPaintingConstants.hpp"
 #include "TimeConstants.hpp"
+#include "Translation.hpp"
 
 namespace rtype::client {
 
@@ -36,9 +37,13 @@ constexpr int CASHIER_COUNTER_TOP = 182;
 constexpr int TELLER_BUBBLE_WIDTH = 132;
 constexpr int TELLER_BUBBLE_TAIL = 30;
 constexpr sf::Vector2i TELLER_BUBBLE_BOTTOM_LEFT(110, 108);
-constexpr const char* TELLER_GREETING = "BUY OR CASH OUT, PILOT?";
-constexpr const char* TELLER_SERVED_LINE = "THERE YOU GO, PILOT.";
-constexpr const char* TELLER_REFUSED_LINE = "SORRY, PILOT. NO DEAL.";
+constexpr Translation TELLER_GREETING{.english = "BUY OR CASH OUT, PILOT?",
+                                      .french = "ACHAT OU RETRAIT, PILOTE ?"};
+constexpr Translation TELLER_SERVED_LINE{.english = "THERE YOU GO, PILOT.",
+                                         .french = "ET VOILÀ, PILOTE."};
+constexpr Translation TELLER_REFUSED_LINE{
+    .english = "SORRY, PILOT. NO DEAL.",
+    .french = "DÉSOLÉ, PILOTE. PAS D'ACCORD."};
 
 /**
  * @brief The brass grille in front of the teller, read once from the
@@ -117,6 +122,7 @@ constexpr int CASHIER_BOARD_TITLE_TOP = 48;
 constexpr int CASHIER_BOARD_FIRST_ROW_TOP = 66;
 constexpr int CASHIER_BOARD_ROW_SPACING = 24;
 constexpr int CASHIER_BOARD_RATE_DROP = 10;
-constexpr const char* CASHIER_BOARD_TITLE = "EXCHANGE";
+constexpr Translation CASHIER_BOARD_TITLE{.english = "EXCHANGE",
+                                          .french = "CHANGE"};
 
 }  // namespace rtype::client

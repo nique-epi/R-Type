@@ -5,13 +5,13 @@
 #include <SFML/Window/Event.hpp>
 #include <cstddef>
 #include <memory>
-#include <string>
 #include <utility>
 #include "CutCornerBox.hpp"
 #include "HeldKey.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "InterfaceColorConstants.hpp"
 #include "InterfaceConstants.hpp"
+#include "TextMarks.hpp"
 #include "TimeConstants.hpp"
 #include "WhatsNewConstants.hpp"
 #include "WhatsNewScreenParts.hpp"
@@ -70,8 +70,10 @@ void WhatsNewScreen::paint() {
   CutCornerBox(panel,
                {.border = PANEL_BORDER_COLOR, .inside = PANEL_INSIDE_COLOR})
       .paint(*canvas_);
-  canvas_->write(std::string{WHATS_NEW_HEADING} + notes_.versionText,
-                 panel.position + DIALOG_HEADING_OFFSET, DIALOG_HEADING_STYLE);
+  canvas_->write(
+      withMark(WHATS_NEW_HEADING.in(canvas_->language()),
+               {.mark = NOTES_VERSION_MARK, .value = notes_.versionText}),
+      panel.position + DIALOG_HEADING_OFFSET, DIALOG_HEADING_STYLE);
   canvas_->fill({panel.position + WHATS_NEW_RULE_OFFSET, WHATS_NEW_RULE_SIZE},
                 RULE_COLOR);
   for (std::size_t line = 0; line < notes_.lines.size(); ++line) {
@@ -82,8 +84,8 @@ void WhatsNewScreen::paint() {
                    panel.position + WHATS_NEW_LINE_OFFSET + down,
                    NOTE_LINE_STYLE);
   }
-  canvas_->write(WHATS_NEW_HINT, panel.position + WHATS_NEW_HINT_OFFSET,
-                 WHATS_NEW_HINT_STYLE);
+  canvas_->write(WHATS_NEW_HINT.in(canvas_->language()),
+                 panel.position + WHATS_NEW_HINT_OFFSET, WHATS_NEW_HINT_STYLE);
   canvas_->display();
 }
 

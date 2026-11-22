@@ -2,7 +2,9 @@
 
 #include <optional>
 #include <string>
+#include "Language.hpp"
 #include "TimeConstants.hpp"
+#include "Translation.hpp"
 
 namespace rtype::client {
 
@@ -22,11 +24,12 @@ class SavedStamp {
    * SAVED_STAMP_DURATION. */
   void age(engine::Duration elapsed);
 
-  /** @returns The stamp to write, empty when there is none. */
-  [[nodiscard]] const std::string& text() const;
+  /** @returns The stamp to write in @p language, empty when there is
+   * none. */
+  [[nodiscard]] std::string text(Language language) const;
 
  private:
-  std::string text_;
+  std::optional<Translation> stamp_;
   /** @brief How long SAVED has been written; nothing while no stamp fades. */
   std::optional<engine::Duration> age_;
 };

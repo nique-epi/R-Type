@@ -2,9 +2,9 @@
 
 #include <SFML/Graphics/Color.hpp>
 #include <chrono>
-#include <string_view>
 #include "InterfaceColorConstants.hpp"
 #include "TimeConstants.hpp"
+#include "Translation.hpp"
 #include "WarningBannerConstants.hpp"
 
 namespace rtype::client {
@@ -13,7 +13,8 @@ namespace rtype::client {
  * dashed lane on the row it charges along, for WATCH_OUT_TIME from the
  * signal of its charge; the text blinks every WATCH_OUT_BLINK_STEP, or stays
  * lit for a player who reduced flashes. */
-constexpr std::string_view WATCH_OUT_TEXT = "WATCH OUT";
+constexpr Translation WATCH_OUT_TEXT{.english = "WATCH OUT",
+                                     .french = "ATTENTION"};
 constexpr engine::Duration WATCH_OUT_TIME = std::chrono::milliseconds(1000);
 constexpr engine::Duration WATCH_OUT_BLINK_STEP =
     std::chrono::milliseconds(150);

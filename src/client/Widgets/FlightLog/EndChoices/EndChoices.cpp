@@ -3,6 +3,7 @@
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <optional>
+#include <string_view>
 #include "BarState.hpp"
 #include "CutCornerBox.hpp"
 #include "EndChoice.hpp"
@@ -23,6 +24,7 @@
 #include "TextureArea.hpp"
 #include "TimeConstants.hpp"
 #include "WidgetConstants.hpp"
+#include "WidgetText.hpp"
 
 namespace rtype::client {
 
@@ -59,7 +61,8 @@ void paintQuitButton(IInterfaceCanvas& canvas, BarState state) {
       ImagePlacement{.topLeft = QUIT_BUTTON.position + QUIT_CROSS_OFFSET + drop,
                      .tint = colors.ink},
       INTERFACE_AREA);
-  canvas.write(QUIT_TEXT, QUIT_BUTTON.position + QUIT_LABEL_OFFSET + drop,
+  canvas.write(QUIT_TEXT.in(canvas.language()),
+               QUIT_BUTTON.position + QUIT_LABEL_OFFSET + drop,
                {.font = TextFont::Regular, .color = colors.ink});
 }
 
@@ -72,9 +75,11 @@ void paintEndChoices(IInterfaceCanvas& canvas, const FlightLogLook& look) {
     return;
   }
   paintQuitButton(canvas, look.quit);
+  const std::string_view prompt = PROMPT_TEXT.in(canvas.language());
   paintGlowingCall(
-      canvas, GlowingCall{.text = PROMPT_TEXT,
-                          .topLeft = {PROMPT_LEFT, PROMPT_TOP},
+      canvas, GlowingCall{.text = prompt,
+                          .topLeft = {centeredTextLeft(INTERFACE_AREA, prompt),
+                                      PROMPT_TOP},
                           .sinceTyping = intoPrompt,
                           .state = look.replay,
                           .steady = look.motion == MotionPreference::Reduced ||

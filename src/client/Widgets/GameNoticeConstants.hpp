@@ -4,11 +4,11 @@
 #include <SFML/System/Vector2.hpp>
 #include <chrono>
 #include <cstddef>
-#include <string_view>
 #include "HudSpriteConstants.hpp"
 #include "InterfaceConstants.hpp"
 #include "StatusBandConstants.hpp"
 #include "TimeConstants.hpp"
+#include "Translation.hpp"
 
 namespace rtype::client {
 
@@ -48,8 +48,10 @@ constexpr sf::Vector2i DEPARTURE_PLUG_OFFSET(DEPARTURE_ICON_COLUMN -
                                              DEPARTURE_TEXT_DROP);
 constexpr std::size_t DEPARTURE_NAME_LETTERS = 10;
 constexpr int DEPARTURE_WORD_GAP = 6;
-constexpr const char* LEFT_THE_GAME_TEXT = "LEFT THE GAME";
-constexpr const char* WAS_EXPELLED_TEXT = "WAS EXPELLED";
+constexpr Translation LEFT_THE_GAME_TEXT{.english = "LEFT THE GAME",
+                                         .french = "A QUITTÉ LA PARTIE"};
+constexpr Translation WAS_EXPELLED_TEXT{.english = "WAS EXPELLED",
+                                        .french = "A ÉTÉ EXPULSÉ"};
 constexpr sf::Color DEPARTURE_WORD_COLOR = GONE_TEXT_COLOR;
 
 /**
@@ -60,7 +62,8 @@ constexpr sf::Color DEPARTURE_WORD_COLOR = GONE_TEXT_COLOR;
  * bars, SILENCE_WARNING_DROP lower than their top.
  */
 constexpr engine::Duration SILENCE_WARNING_DELAY = std::chrono::seconds(1);
-constexpr std::string_view SILENCE_WARNING_TEXT = "WAITING FOR THE SERVER";
+constexpr Translation SILENCE_WARNING_TEXT{.english = "WAITING FOR THE SERVER",
+                                           .french = "EN ATTENTE DU SERVEUR"};
 constexpr sf::Vector2i WEAK_SIGNAL_TOP_LEFT(
     INTERFACE_AREA.size.x - NOTICE_EDGE - WEAK_SIGNAL_FRAME.width, NOTICE_EDGE);
 constexpr int SILENCE_WARNING_GAP = 4;

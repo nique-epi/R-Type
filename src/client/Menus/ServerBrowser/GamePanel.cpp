@@ -14,21 +14,24 @@
 #include "GameListSnapshot.hpp"
 #include "GameRow.hpp"
 #include "GameRulesLine.hpp"
-#include "GameRulesLineConstants.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "InkTag.hpp"
 #include "InterfaceColorConstants.hpp"
+#include "Language.hpp"
 #include "ListedGameState.hpp"
 #include "SectorMapConstants.hpp"
 #include "ServerListPhase.hpp"
 #include "ServerMapScreenConstants.hpp"
+#include "TextMark.hpp"
+#include "TextMarks.hpp"
 #include "TextStyle.hpp"
+#include "Translation.hpp"
 
 namespace rtype::client {
 
 namespace {
 
-const char* stateWordOf(network::ListedGameState state) {
+const Translation& stateWordOf(network::ListedGameState state) {
   switch (state) {
     case network::ListedGameState::Waiting:
       return WAITING_WORD;
@@ -40,16 +43,20 @@ const char* stateWordOf(network::ListedGameState state) {
   return FULL_WORD;
 }
 
-/** @returns The line that says what ENTER does with @p game: a waiting game
- * names its rules before ENTER joins it. */
-std::string descriptionOf(const GameRow& game) {
+/** @returns The line that says what ENTER does with @p game, in
+ * @p language: a waiting game names its rules before ENTER joins it. */
+std::string descriptionOf(const GameRow& game, Language language) {
   if (isJoinable(game)) {
-    return game.name + RULES_SEPARATOR + rulesLineOf(game.rules) +
-           JOINABLE_DESCRIPTION;
+    const std::string rules = rulesLineOf(game.rules, language);
+    return withMark(withMark(JOINABLE_DESCRIPTION.in(language),
+                             TextMark{.mark = GAME_MARK, .value = game.name}),
+                    TextMark{.mark = RULES_MARK, .value = rules});
   }
-  return game.name + (game.state == network::ListedGameState::InGame
-                          ? IN_GAME_DESCRIPTION
-                          : FULL_DESCRIPTION);
+  const Translation& refusal = game.state == network::ListedGameState::InGame
+                                   ? IN_GAME_DESCRIPTION
+                                   : FULL_DESCRIPTION;
+  return withMark(refusal.in(language),
+                  TextMark{.mark = GAME_MARK, .value = game.name});
 }
 
 /** @returns The rows + NEW GAME takes before the games of @p games: one once
@@ -84,7 +91,7 @@ sf::IntRect rowBandOf(std::size_t shown) {
 
 /** @returns The words the panel shows in place of its games, or nothing when
  * it has games to show. */
-std::optional<const char*> messageOf(ServerListPhase phase) {
+std::optional<Translation> messageOf(ServerListPhase phase) {
   switch (phase) {
     case ServerListPhase::Searching:
       return SEARCHING_GAMES_TITLE;
@@ -100,11 +107,12 @@ std::optional<const char*> messageOf(ServerListPhase phase) {
 
 void paintColumnHeadings(IInterfaceCanvas& canvas) {
   const TextStyle heading{.font = TextFont::Small, .color = BLUE};
-  canvas.write(GAME_COLUMN_LABEL,
+  const Language language = canvas.language();
+  canvas.write(GAME_COLUMN_LABEL.in(language),
                inPanel(GAME_NAME_COLUMN, GAME_PANEL_COLUMNS_TOP), heading);
-  canvas.write(PILOTS_COLUMN_LABEL,
+  canvas.write(PILOTS_COLUMN_LABEL.in(language),
                inPanel(GAME_PILOTS_COLUMN, GAME_PANEL_COLUMNS_TOP), heading);
-  canvas.write(STATE_COLUMN_LABEL,
+  canvas.write(STATE_COLUMN_LABEL.in(language),
                inPanel(GAME_STATE_COLUMN, GAME_PANEL_COLUMNS_TOP), heading);
 }
 
@@ -138,10 +146,11 @@ void paintGameRow(IInterfaceCanvas& canvas, const GameRow& game,
                inPanel(GAME_PILOTS_COLUMN, place.top),
                TextStyle{.font = TextFont::Regular,
                          .color = place.chosen ? INK : STAR_WHITE});
-  paintInkTag(canvas,
-              InkTag{.word = stateWordOf(game.state),
-                     .topLeft = inPanel(GAME_STATE_COLUMN, place.top),
-                     .wordColor = isJoinable(game) ? HUD_CYAN : STAR_GOLD});
+  paintInkTag(
+      canvas,
+      InkTag{.word = std::string(stateWordOf(game.state).in(canvas.language())),
+             .topLeft = inPanel(GAME_STATE_COLUMN, place.top),
+             .wordColor = isJoinable(game) ? HUD_CYAN : STAR_GOLD});
 }
 
 /** @brief Paints + NEW GAME on its row, in cyan, or in ink on the highlight
@@ -150,7 +159,8 @@ void paintNewGameRow(IInterfaceCanvas& canvas, GameRowPlace place) {
   if (place.chosen) {
     paintRowHighlight(canvas, place.top);
   }
-  canvas.write(NEW_GAME_ROW_LABEL, inPanel(GAME_NAME_COLUMN, place.top),
+  canvas.write(NEW_GAME_ROW_LABEL.in(canvas.language()),
+               inPanel(GAME_NAME_COLUMN, place.top),
                TextStyle{.font = TextFont::Regular,
                          .color = place.chosen ? INK : HUD_CYAN});
 }
@@ -228,8 +238,8 @@ void GamePanel::paint(IInterfaceCanvas& canvas) const {
     paintRows(canvas);
     paintDescription(canvas);
   }
-  if (const std::optional<const char*> message = messageOf(games_.phase)) {
-    canvas.write(*message,
+  if (const std::optional<Translation> message = messageOf(games_.phase)) {
+    canvas.write(message->in(canvas.language()),
                  inPanel(GAME_PANEL_AREA.size.x / 2,
                          offersNewGame ? GAME_PANEL_EMPTY_MESSAGE_ROW
                                        : GAME_PANEL_FIRST_ROW),
@@ -256,7 +266,9 @@ void GamePanel::paintRows(IInterfaceCanvas& canvas) const {
 void GamePanel::paintDescription(IInterfaceCanvas& canvas) const {
   const GameRow* game = gameAt(chosen_);
   const bool enterActs = game == nullptr || isJoinable(*game);
-  canvas.write(game != nullptr ? descriptionOf(*game) : NEW_GAME_DESCRIPTION,
+  const Language language = canvas.language();
+  canvas.write(game != nullptr ? descriptionOf(*game, language)
+                               : std::string(NEW_GAME_DESCRIPTION.in(language)),
                inPanel(GAME_PANEL_PADDING, GAME_PANEL_DESCRIPTION_TOP),
                TextStyle{.font = TextFont::Small,
                          .color = enterActs ? HUD_CYAN : PALE_BLUE});

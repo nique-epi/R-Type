@@ -7,6 +7,7 @@
 #include <string_view>
 #include "ColoredPixel.hpp"
 #include "ImagePlacement.hpp"
+#include "Language.hpp"
 #include "TextStyle.hpp"
 #include "TextureArea.hpp"
 
@@ -86,6 +87,11 @@ class IInterfaceCanvas {
    * write() places it. */
   [[nodiscard]] virtual int textWidth(std::string_view text,
                                       TextFont font) const = 0;
+
+  /** @returns The language the texts of the interface are written in now. A
+   * painter asks it each time it paints, so a language picked in the options
+   * shows at the next frame. */
+  [[nodiscard]] virtual Language language() const = 0;
 
   /** @brief Ends the picture started by clear(): show() lays it until the
    * next display(). */

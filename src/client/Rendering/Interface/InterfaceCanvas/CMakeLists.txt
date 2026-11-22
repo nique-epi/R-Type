@@ -4,8 +4,9 @@ target_include_directories(rtype_client_interface_canvas PUBLIC ${CMAKE_CURRENT_
 
 target_link_libraries(rtype_client_interface_canvas
   PUBLIC
-    rtype_client_asset_texture_source
+    rtype_client_language
     rtype_client_pixel_canvas
+    rtype_client_reported_textures
     rtype_client_interface
     rtype_client_smooth_image_layer
     rtype_client_text_writer

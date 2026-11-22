@@ -10,6 +10,7 @@
 #include "SheetRow.hpp"
 #include "SpriteFrame.hpp"
 #include "TimeConstants.hpp"
+#include "Translation.hpp"
 
 namespace rtype::client {
 
@@ -201,7 +202,7 @@ constexpr const char* PILOT_LABEL_SEPARATOR = " ";
  * the sprite it is over.
  */
 constexpr const char* SHOT_CUE_TEXT = "!";
-constexpr const char* HIT_CUE_TEXT = "HIT";
+constexpr Translation HIT_CUE_TEXT{.english = "HIT", .french = "TOUCHÉ"};
 constexpr engine::Duration SHOT_CUE_LIFE = std::chrono::milliseconds(500);
 constexpr engine::Duration HIT_CUE_LIFE = std::chrono::milliseconds(1000);
 constexpr int CUE_GAP = 2;

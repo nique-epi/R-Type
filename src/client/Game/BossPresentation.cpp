@@ -23,6 +23,7 @@
 #include "IInterfaceCanvas.hpp"
 #include "ISoundPlayer.hpp"
 #include "InterfacePixel.hpp"
+#include "Language.hpp"
 #include "Position.hpp"
 #include "SoundConstants.hpp"
 #include "TimeConstants.hpp"
@@ -157,7 +158,8 @@ void BossPresentation::endGame() {
   followMusic();
 }
 
-BossLook BossPresentation::look(FlashPreference preference) const {
+BossLook BossPresentation::look(FlashPreference preference,
+                                Language language) const {
   BossLook look{
       .warning = {},
       .edges = {},
@@ -174,7 +176,7 @@ BossLook BossPresentation::look(FlashPreference preference) const {
   look.bar.name = bossName_.value_or(std::string{});
   const std::optional<engine::Duration> since = tracker_.sinceArrival(now_);
   if (since.has_value()) {
-    look.warning = warningBannerAt(*since, preference);
+    look.warning = warningBannerAt(*since, preference, language);
     look.edges = edgePulseAt(*since, sinceRoar(), preference);
   }
   return look;

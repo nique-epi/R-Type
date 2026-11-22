@@ -26,59 +26,109 @@ constexpr std::array SHIP_LOOK_CELLS =
  * column 16, their last row on row 2. The shades cover the canopy, columns 17
  * to 25 of rows 6 to 8; the mustache hangs under the nose. */
 constexpr ShipLookSprite TOP_HAT_SPRITE{
-    .label = "TOP HAT", .size = {14, 10}, .mount = {9, -7}};
+    .label = {.english = "TOP HAT", .french = "HAUT-DE-FORME"},
+    .size = {14, 10},
+    .mount = {9, -7}};
 constexpr ShipLookSprite PARTY_HAT_SPRITE{
-    .label = "PARTY HAT", .size = {12, 11}, .mount = {10, -8}};
+    .label = {.english = "PARTY HAT", .french = "CHAPEAU DE FÊTE"},
+    .size = {12, 11},
+    .mount = {10, -8}};
 constexpr ShipLookSprite CROWN_SPRITE{
-    .label = "CROWN", .size = {12, 8}, .mount = {10, -5}};
+    .label = {.english = "CROWN", .french = "COURONNE"},
+    .size = {12, 8},
+    .mount = {10, -5}};
 constexpr ShipLookSprite PROPELLER_CAP_SPRITE{
-    .label = "PROPELLER CAP", .size = {12, 8}, .mount = {10, -5}};
+    .label = {.english = "PROPELLER CAP", .french = "CASQUETTE HÉLICE"},
+    .size = {12, 8},
+    .mount = {10, -5}};
 constexpr ShipLookSprite COWBOY_HAT_SPRITE{
-    .label = "COWBOY HAT", .size = {14, 8}, .mount = {9, -5}};
+    .label = {.english = "COWBOY HAT", .french = "CHAPEAU COW-BOY"},
+    .size = {14, 8},
+    .mount = {9, -5}};
 constexpr ShipLookSprite VIKING_HELMET_SPRITE{
-    .label = "VIKING HELMET", .size = {14, 9}, .mount = {9, -6}};
+    .label = {.english = "VIKING HELMET", .french = "CASQUE VIKING"},
+    .size = {14, 9},
+    .mount = {9, -6}};
 constexpr ShipLookSprite WIZARD_HAT_SPRITE{
-    .label = "WIZARD HAT", .size = {12, 12}, .mount = {10, -9}};
+    .label = {.english = "WIZARD HAT", .french = "CHAPEAU SORCIER"},
+    .size = {12, 12},
+    .mount = {10, -9}};
 constexpr ShipLookSprite CHEF_TOQUE_SPRITE{
-    .label = "CHEF TOQUE", .size = {12, 9}, .mount = {10, -6}};
+    .label = {.english = "CHEF TOQUE", .french = "TOQUE DE CHEF"},
+    .size = {12, 9},
+    .mount = {10, -6}};
 constexpr ShipLookSprite COOL_SHADES_SPRITE{
-    .label = "COOL SHADES", .size = {10, 3}, .mount = {17, 5}};
+    .label = {.english = "COOL SHADES", .french = "LUNETTES CLASSE"},
+    .size = {10, 3},
+    .mount = {17, 5}};
 constexpr ShipLookSprite MUSTACHE_SPRITE{
-    .label = "MUSTACHE", .size = {12, 5}, .mount = {20, 9}};
+    .label = {.english = "MUSTACHE", .french = "MOUSTACHE"},
+    .size = {12, 5},
+    .mount = {20, 9}};
 
 /** @brief The second set of hats sits like the first, centred on column 16;
  * the 3D glasses and the monocle cover the canopy; the long beard hangs
  * under the nose like the mustache. */
 constexpr ShipLookSprite CHAPKA_SPRITE{
-    .label = "CHAPKA", .size = {14, 9}, .mount = {9, -4}};
+    .label = {.english = "CHAPKA", .french = "CHAPKA"},
+    .size = {14, 9},
+    .mount = {9, -4}};
 constexpr ShipLookSprite TRICORN_SPRITE{
-    .label = "TRICORN", .size = {14, 8}, .mount = {9, -5}};
+    .label = {.english = "TRICORN", .french = "TRICORNE"},
+    .size = {14, 8},
+    .mount = {9, -5}};
 constexpr ShipLookSprite SANTA_HAT_SPRITE{
-    .label = "SANTA HAT", .size = {13, 9}, .mount = {10, -6}};
+    .label = {.english = "SANTA HAT", .french = "BONNET DE NOËL"},
+    .size = {13, 9},
+    .mount = {10, -6}};
 constexpr ShipLookSprite HALO_SPRITE{
-    .label = "HALO", .size = {12, 6}, .mount = {10, -5}};
+    .label = {.english = "HALO", .french = "AURÉOLE"},
+    .size = {12, 6},
+    .mount = {10, -5}};
 constexpr ShipLookSprite DEVIL_HORNS_SPRITE{
-    .label = "DEVIL HORNS", .size = {13, 7}, .mount = {10, -1}};
+    .label = {.english = "DEVIL HORNS", .french = "CORNES DU DIABLE"},
+    .size = {13, 7},
+    .mount = {10, -1}};
 constexpr ShipLookSprite SOMBRERO_SPRITE{
-    .label = "SOMBRERO", .size = {16, 7}, .mount = {8, -4}};
+    .label = {.english = "SOMBRERO", .french = "SOMBRERO"},
+    .size = {16, 7},
+    .mount = {8, -4}};
 constexpr ShipLookSprite TRAFFIC_CONE_SPRITE{
-    .label = "TRAFFIC CONE", .size = {10, 9}, .mount = {11, -6}};
+    .label = {.english = "TRAFFIC CONE", .french = "CÔNE DE CHANTIER"},
+    .size = {10, 9},
+    .mount = {11, -6}};
 constexpr ShipLookSprite FEZ_SPRITE{
-    .label = "FEZ", .size = {12, 8}, .mount = {11, -5}};
+    .label = {.english = "FEZ", .french = "FEZ"},
+    .size = {12, 8},
+    .mount = {11, -5}};
 constexpr ShipLookSprite GRAD_CAP_SPRITE{
-    .label = "GRAD CAP", .size = {14, 9}, .mount = {9, -6}};
+    .label = {.english = "GRAD CAP", .french = "TOQUE DE DIPLÔMÉ"},
+    .size = {14, 9},
+    .mount = {9, -6}};
 constexpr ShipLookSprite ANTENNAE_SPRITE{
-    .label = "ANTENNAE", .size = {12, 8}, .mount = {10, -5}};
+    .label = {.english = "ANTENNAE", .french = "ANTENNES"},
+    .size = {12, 8},
+    .mount = {10, -5}};
 constexpr ShipLookSprite KABUTO_SPRITE{
-    .label = "KABUTO", .size = {12, 10}, .mount = {10, -5}};
+    .label = {.english = "KABUTO", .french = "KABUTO"},
+    .size = {12, 10},
+    .mount = {10, -5}};
 constexpr ShipLookSprite MOHAWK_SPRITE{
-    .label = "MOHAWK", .size = {12, 7}, .mount = {10, -3}};
+    .label = {.english = "MOHAWK", .french = "CRÊTE IROQUOISE"},
+    .size = {12, 7},
+    .mount = {10, -3}};
 constexpr ShipLookSprite GLASSES_3D_SPRITE{
-    .label = "3D GLASSES", .size = {11, 4}, .mount = {17, 5}};
+    .label = {.english = "3D GLASSES", .french = "LUNETTES 3D"},
+    .size = {11, 4},
+    .mount = {17, 5}};
 constexpr ShipLookSprite MONOCLE_SPRITE{
-    .label = "MONOCLE", .size = {6, 8}, .mount = {20, 5}};
+    .label = {.english = "MONOCLE", .french = "MONOCLE"},
+    .size = {6, 8},
+    .mount = {20, 5}};
 constexpr ShipLookSprite LONG_BEARD_SPRITE{
-    .label = "LONG BEARD", .size = {12, 9}, .mount = {20, 9}};
+    .label = {.english = "LONG BEARD", .french = "LONGUE BARBE"},
+    .size = {12, 9},
+    .mount = {20, 9}};
 
 constexpr std::array SHIP_LOOK_SPRITES{
     TOP_HAT_SPRITE,       PARTY_HAT_SPRITE,    CROWN_SPRITE,

@@ -7,6 +7,7 @@
 #include <string_view>
 #include "InterfaceConstants.hpp"
 #include "TimeConstants.hpp"
+#include "Translation.hpp"
 
 namespace rtype::client {
 
@@ -90,16 +91,23 @@ constexpr sf::Color TICKET_CANCEL_FACE(232, 214, 166);
 constexpr sf::Color TICKET_CHOSEN_CANCEL_FACE(243, 230, 196);
 constexpr sf::Color TICKET_BUTTON_LIGHT(255, 255, 255, 110);
 
-constexpr std::string_view TICKET_STORE_LABEL = "STORE No 7";
+constexpr Translation TICKET_STORE_LABEL{.english = "STORE No 7",
+                                         .french = "MAGASIN N° 7"};
 constexpr std::string_view TICKET_SERIES_LABEL = "СЕРИЯ АБ 011";
-constexpr std::string_view TICKET_HEADING = "SALES SLIP";
-constexpr std::string_view TICKET_QUANTITY_LABEL = "QTY 1";
-constexpr std::string_view TICKET_PRICE_LABEL = "PRICE";
+constexpr Translation TICKET_HEADING{.english = "SALES SLIP",
+                                     .french = "TICKET DE CAISSE"};
+constexpr Translation TICKET_QUANTITY_LABEL{.english = "QTY 1",
+                                            .french = "QTÉ 1"};
+constexpr Translation TICKET_PRICE_LABEL{.english = "PRICE", .french = "PRIX"};
 constexpr std::string_view TICKET_PRICE_SUFFIX = " K.";
-constexpr std::string_view TICKET_CONTROL_LABEL = "CONTROL";
-constexpr std::string_view TICKET_CANCEL_LABEL = "CANCEL";
-constexpr std::string_view TICKET_CANCEL_KEY = "[ESC]";
-constexpr std::string_view TICKET_BUY_LABEL = "BUY";
-constexpr std::string_view TICKET_BUY_KEY = "[ENTER]";
+constexpr Translation TICKET_CONTROL_LABEL{.english = "CONTROL",
+                                           .french = "CONTRÔLE"};
+constexpr Translation TICKET_CANCEL_LABEL{.english = "CANCEL",
+                                          .french = "ANNULER"};
+constexpr Translation TICKET_CANCEL_KEY{.english = "[ESC]",
+                                        .french = "[ÉCHAP]"};
+constexpr Translation TICKET_BUY_LABEL{.english = "BUY", .french = "ACHETER"};
+constexpr Translation TICKET_BUY_KEY{.english = "[ENTER]",
+                                     .french = "[ENTRÉE]"};
 
 }  // namespace rtype::client

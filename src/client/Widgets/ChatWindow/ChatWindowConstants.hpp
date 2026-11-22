@@ -6,6 +6,7 @@
 #include <string_view>
 #include "InterfaceConstants.hpp"
 #include "TimeConstants.hpp"
+#include "Translation.hpp"
 #include "WidgetConstants.hpp"
 
 namespace rtype::client {
@@ -23,15 +24,17 @@ constexpr int CHAT_LINE_PITCH =
  * CHAT_HINT_GAP at least after SAY. */
 constexpr int CHAT_FIELD_HEIGHT =
     TEXT_LINE_HEIGHT + (SIDES_PER_AXIS * FIELD_TEXT_PADDING);
-constexpr const char* CHAT_FIELD_LABEL = "SAY";
-constexpr const char* CHAT_FIELD_HINT = "ENTER SENDS  ESC CLOSES";
+constexpr Translation CHAT_FIELD_LABEL{.english = "SAY", .french = "DIRE"};
+constexpr Translation CHAT_FIELD_HINT{.english = "ENTER SENDS  ESC CLOSES",
+                                      .french = "ENTRÉE ENVOIE  ÉCHAP FERME"};
 constexpr int CHAT_HINT_GAP = 8;
 
 /** @brief What a line starts with, after the name of its pilot; and what
  * says how many lines lie above the open chat. */
 constexpr std::string_view CHAT_NAME_SEPARATOR = ": ";
-constexpr std::string_view MORE_LINES_START = "PGUP: ";
-constexpr std::string_view MORE_LINES_END = " MORE LINES";
+constexpr std::string_view LINE_COUNT_MARK = "{LINES}";
+constexpr Translation MORE_LINES{.english = "PGUP: {LINES} MORE LINES",
+                                 .french = "PGUP : {LINES} LIGNES DE PLUS"};
 
 /** @brief Keys of the open chat: send, close, and show older or newer lines
  * by CHAT_SCROLLED_LINES. */

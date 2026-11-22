@@ -6,6 +6,7 @@
 #include "BackgroundColorConstants.hpp"
 #include "InterfaceColorConstants.hpp"
 #include "InterfaceConstants.hpp"
+#include "Translation.hpp"
 
 namespace rtype::client {
 
@@ -38,7 +39,8 @@ constexpr sf::Color TAB_RAIL_INDICATOR_COLOR = HUD_CYAN;
  * small print, ink on orange, in a box TAB_RAIL_BADGE_SIZE large,
  * TAB_RAIL_BADGE_GAP after the label and TAB_RAIL_BADGE_RISE above its top,
  * the text TAB_RAIL_BADGE_TEXT_DROP under the top of the box. */
-constexpr const char* TAB_RAIL_BADGE_TEXT = "SOON";
+constexpr Translation TAB_RAIL_BADGE_TEXT{.english = "SOON",
+                                          .french = "BIENTÔT"};
 constexpr sf::Vector2i TAB_RAIL_BADGE_SIZE{28, 9};
 constexpr int TAB_RAIL_BADGE_GAP = 4;
 constexpr int TAB_RAIL_BADGE_RISE = 1;

@@ -58,7 +58,7 @@ void paintBadge(IInterfaceCanvas& canvas, int left, int labelTop) {
   const sf::IntRect box{{left, labelTop - TAB_RAIL_BADGE_RISE},
                         TAB_RAIL_BADGE_SIZE};
   canvas.fill(box, TAB_RAIL_BADGE_COLOR);
-  canvas.write(TAB_RAIL_BADGE_TEXT,
+  canvas.write(TAB_RAIL_BADGE_TEXT.in(canvas.language()),
                {box.position.x + (box.size.x / 2),
                 box.position.y + TAB_RAIL_BADGE_TEXT_DROP},
                {.font = TextFont::Small,

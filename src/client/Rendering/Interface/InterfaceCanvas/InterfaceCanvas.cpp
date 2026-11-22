@@ -12,15 +12,18 @@
 #include <SFML/Graphics/VertexArray.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <array>
+#include <functional>
 #include <optional>
 #include <span>
 #include <string>
 #include <string_view>
+#include <utility>
 #include "AssetLibrary.hpp"
 #include "ColoredPixel.hpp"
 #include "FragmentShader.hpp"
 #include "ImagePlacement.hpp"
 #include "InterfaceConstants.hpp"
+#include "Language.hpp"
 #include "PlayerColors.hpp"
 #include "ShadeSwap.hpp"
 #include "ShadeSwapShaderConstants.hpp"
@@ -92,11 +95,13 @@ sf::RenderStates statesFor(const std::optional<ShadeSwap>& recolor,
 
 }  // namespace
 
-InterfaceCanvas::InterfaceCanvas(const AssetLibrary& library)
+InterfaceCanvas::InterfaceCanvas(const AssetLibrary& library,
+                                 std::function<Language()> language)
     : textures_(library),
       writer_(library),
       logger_(std::string(INTERFACE_LOGGER_NAME)),
-      shadeSwap_(loadFragmentShader(SHADE_SWAP_SHADER, logger_)) {}
+      shadeSwap_(loadFragmentShader(SHADE_SWAP_SHADER, logger_)),
+      language_(std::move(language)) {}
 
 void InterfaceCanvas::clear() {
   canvas_.canvas().clear(sf::Color::Transparent);
@@ -138,7 +143,7 @@ void InterfaceCanvas::write(std::string_view text, sf::Vector2i anchor,
 
 void InterfaceCanvas::drawImage(TextureArea image, ImagePlacement placement,
                                 sf::IntRect visibleArea) {
-  const sf::Texture* texture = foundTexture(image.assetId);
+  const sf::Texture* texture = textures_.found(image.assetId);
   const std::optional<sf::IntRect> visible =
       visiblePixelsOf(image, placement, visibleArea);
   if (texture == nullptr || !visible.has_value()) {
@@ -157,7 +162,7 @@ void InterfaceCanvas::drawImage(TextureArea image, ImagePlacement placement,
 
 void InterfaceCanvas::drawSmoothImage(std::string_view assetId,
                                       sf::IntRect area, sf::Color tint) {
-  const sf::Texture* texture = foundTexture(assetId);
+  const sf::Texture* texture = textures_.found(assetId);
   if (texture == nullptr) {
     return;
   }
@@ -169,6 +174,8 @@ int InterfaceCanvas::textWidth(std::string_view text, TextFont font) const {
   return writer_.width(text, font);
 }
 
+Language InterfaceCanvas::language() const { return language_(); }
+
 void InterfaceCanvas::display() {
   canvas_.canvas().display();
   smoothImages_.display();
@@ -177,15 +184,6 @@ void InterfaceCanvas::display() {
 void InterfaceCanvas::show(sf::RenderTarget& target) const {
   canvas_.show(target);
   smoothImages_.show(target);
-}
-
-const sf::Texture* InterfaceCanvas::foundTexture(std::string_view assetId) {
-  const sf::Texture* texture = textures_.texture(assetId);
-  if (texture == nullptr && !reportedMissingIds_.contains(assetId)) {
-    reportedMissingIds_.emplace(assetId);
-    logger_.warn("no texture for asset id ", assetId);
-  }
-  return texture;
 }
 
 }  // namespace rtype::client

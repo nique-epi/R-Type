@@ -4,6 +4,7 @@
 #include "InterfaceConstants.hpp"
 #include "SquadronConstants.hpp"
 #include "TextStyle.hpp"
+#include "Translation.hpp"
 #include "WidgetColors.hpp"
 #include "WidgetConstants.hpp"
 
@@ -23,7 +24,8 @@ constexpr sf::Keyboard::Key SIGN_IN_KEY = sf::Keyboard::Key::I;
 constexpr const char* SIGN_IN_KEY_NAME = "I";
 constexpr sf::Keyboard::Key SIGN_OUT_KEY = sf::Keyboard::Key::O;
 constexpr const char* SIGN_OUT_KEY_NAME = "O";
-constexpr const char* SIGN_OUT_LABEL = "SIGN OUT";
+constexpr Translation SIGN_OUT_LABEL{.english = "SIGN OUT",
+                                     .french = "DÉCONNEXION"};
 constexpr int TITLE_SIGN_OUT_FOOTER_GAP = 5;
 constexpr int TITLE_NICKNAME_GAP = 2;
 constexpr int TITLE_SIGN_OUT_TOP =

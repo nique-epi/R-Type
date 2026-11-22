@@ -24,6 +24,7 @@
 #include "InterfaceColorConstants.hpp"
 #include "InterfacePixel.hpp"
 #include "KeyChipParts.hpp"
+#include "Language.hpp"
 #include "LockerChoice.hpp"
 #include "LockerConstants.hpp"
 #include "LockerPainting.hpp"
@@ -58,23 +59,28 @@ std::optional<std::size_t> itemUnder(sf::Vector2i position,
   return lockerItemAt(interfacePixelAt(playfieldPointAt(position)), firstRow);
 }
 
-Button::Text backText() {
-  return {.label = BACK_LABEL, .keyName = CANCEL_KEY_NAME};
+Button::Text backText(Language language) {
+  return {.label = std::string(BACK_LABEL.in(language)),
+          .keyName = CANCEL_KEY_NAME};
 }
 
 /** @returns The status line of the chosen item of @p view: how to get it
  * when the locker does not hold it, else its name, then what Enter does with
  * it, or that an arm is fitting an item. */
-std::string statusOf(const LockerView& view, bool fitting) {
+std::string statusOf(const LockerView& view, bool fitting, Language language) {
   if (!view.locker.items.test(view.chosen)) {
-    return identifiers::isHullItem(view.chosen) ? LOCKED_HULL_STATUS
-                                                : LOCKED_STATUS;
+    return std::string((identifiers::isHullItem(view.chosen)
+                            ? LOCKED_HULL_STATUS
+                            : LOCKED_STATUS)
+                           .in(language));
   }
-  const std::string status(lookItemLabelOf(view.chosen));
+  const std::string status(lookItemLabelOf(view.chosen, language));
   if (fitting) {
-    return status + FITTING_HINT;
+    return status + std::string(FITTING_HINT.in(language));
   }
-  return status + (wears(view.worn, view.chosen) ? TAKE_OFF_HINT : WEAR_HINT);
+  return status +
+         std::string((wears(view.worn, view.chosen) ? TAKE_OFF_HINT : WEAR_HINT)
+                         .in(language));
 }
 
 /** @returns The looks the player may wear, once known: the starter kit for a
@@ -113,11 +119,12 @@ HangarScreen::HangarScreen(HangarScreenParts parts,
       palette_(parts.palette),
       shipColor_(parts.shipColor),
       motion_(parts.motion),
-      backChip_(KeyChipParts{.text = backText(),
-                             .area = MenuBuilder::chipArea(backText()),
-                             .key = MENU_CANCEL_KEY,
-                             .action = [this] { navigator_->pop(); },
-                             .sounds = parts.sounds}),
+      backChip_(KeyChipParts{
+          .text = backText(canvas_->language()),
+          .area = MenuBuilder::chipArea(backText(canvas_->language())),
+          .key = MENU_CANCEL_KEY,
+          .action = [this] { navigator_->pop(); },
+          .sounds = parts.sounds}),
       rows_(LOCKER_ROWS_AT_OPENING) {
   wallet_->askWallet();
   repaint();
@@ -235,7 +242,8 @@ void HangarScreen::repaint() {
   const LockerView view{
       .chosen = chosen_, .worn = worn, .locker = locker, .rows = rows_};
   canvas_->clear();
-  canvas_->write(HANGAR_LABEL, HANGAR_TITLE_ANCHOR, HANGAR_TITLE_STYLE);
+  canvas_->write(HANGAR_LABEL.in(canvas_->language()), HANGAR_TITLE_ANCHOR,
+                 HANGAR_TITLE_STYLE);
   canvas_->fill(HANGAR_RULE, EDGE_BLUE);
   paintLocker(*canvas_, view);
   paintDockWall(*canvas_, litBeaconOf(elapsed_, motion_));
@@ -246,8 +254,8 @@ void HangarScreen::repaint() {
                                 .fitting = fitting_,
                                 .elapsed = elapsed_,
                                 .motion = motion_});
-  canvas_->write(statusOf(view, fitting_.has_value()), HANGAR_STATUS_ANCHOR,
-                 HANGAR_STATUS_STYLE);
+  canvas_->write(statusOf(view, fitting_.has_value(), canvas_->language()),
+                 HANGAR_STATUS_ANCHOR, HANGAR_STATUS_STYLE);
   backChip_.paint(*canvas_);
   canvas_->display();
 }

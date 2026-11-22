@@ -20,6 +20,7 @@
 #include "StatusBandConstants.hpp"
 #include "TextStyle.hpp"
 #include "TimeConstants.hpp"
+#include "Translation.hpp"
 #include "WidgetConstants.hpp"
 
 namespace rtype::client {
@@ -27,7 +28,7 @@ namespace rtype::client {
 /** @brief The chip that opens the help, beside BACK, and its key: a fixed
  * key, like MENU_CANCEL_KEY. A binding the player gives the same key loses to
  * the help in the waiting room, which hands the help every event first. */
-constexpr const char* HELP_LABEL = "HELP";
+constexpr Translation HELP_LABEL{.english = "HELP", .french = "AIDE"};
 constexpr sf::Keyboard::Key HELP_KEY = sf::Keyboard::Key::H;
 constexpr const char* HELP_KEY_NAME = "H";
 
@@ -47,62 +48,116 @@ constexpr std::array<std::string_view, BOUND_ACTION_COUNT> HELP_KEY_TOKENS{
 /** @brief The steps of the help, in order: the parts of the waiting room, a
  * moment of a game, then the HELP chip again. */
 constexpr std::array HELP_STEPS{
-    HelpStep{.scene = HelpScene::Lobby,
-             .part = HelpPart::None,
-             .text = "HELLO, PILOT! I AM PROFESSOR BYDO. I WILL SHOW YOU THE "
-                     "*WAITING* *ROOM*, THEN A GAME."},
-    HelpStep{.scene = HelpScene::Lobby,
-             .part = HelpPart::Bays,
-             .text = "EACH *BAY* IS ONE PILOT. UP TO 4 PILOTS FLY TOGETHER."},
-    HelpStep{.scene = HelpScene::Lobby,
-             .part = HelpPart::OwnBay,
-             .text = "THIS BAY SAYS *YOU*: IT IS YOURS. YOUR SHIP HAS YOUR "
-                     "COLOR."},
+    HelpStep{
+        .scene = HelpScene::Lobby,
+        .part = HelpPart::None,
+        .text = {.english =
+                     "HELLO, PILOT! I AM PROFESSOR BYDO. I WILL SHOW YOU THE "
+                     "*WAITING* *ROOM*, THEN A GAME.",
+                 .french =
+                     "SALUT, PILOTE ! JE SUIS LE PROFESSEUR BYDO. JE VAIS VOUS "
+                     "MONTRER LA *SALLE* *D'ATTENTE*, PUIS UNE PARTIE."}},
+    HelpStep{
+        .scene = HelpScene::Lobby,
+        .part = HelpPart::Bays,
+        .text = {.english =
+                     "EACH *BAY* IS ONE PILOT. UP TO 4 PILOTS FLY TOGETHER.",
+                 .french = "CHAQUE *BAIE* EST UN PILOTE. JUSQU'À 4 PILOTES "
+                           "VOLENT ENSEMBLE."}},
+    HelpStep{
+        .scene = HelpScene::Lobby,
+        .part = HelpPart::OwnBay,
+        .text = {.english =
+                     "THIS BAY SAYS *YOU*: IT IS YOURS. YOUR SHIP HAS YOUR "
+                     "COLOR.",
+                 .french = "CETTE BAIE DIT *VOUS* : C'EST LA VÔTRE. VOTRE "
+                           "VAISSEAU A VOTRE COULEUR."}},
     HelpStep{.scene = HelpScene::Lobby,
              .part = HelpPart::Ready,
-             .text = "PRESS {READY} OR *READY* WHEN YOU ARE READY TO FLY."},
-    HelpStep{.scene = HelpScene::Lobby,
-             .part = HelpPart::Map,
-             .text = "{M} OR A CLICK ON THE *MAP* VOTES FOR A MAP. THE MAP "
-                     "WITH THE MOST VOTES IS PLAYED."},
-    HelpStep{.scene = HelpScene::Lobby,
-             .part = HelpPart::Status,
-             .text = "THIS LINE SAYS WHO IS *NOT* *READY*. THE GAME STARTS "
-                     "WHEN ALL ARE READY."},
+             .text = {.english =
+                          "PRESS {READY} OR *READY* WHEN YOU ARE READY TO FLY.",
+                      .french = "APPUYEZ SUR {READY} OU *PRÊT* QUAND VOUS ÊTES "
+                                "PRÊT À VOLER."}},
+    HelpStep{
+        .scene = HelpScene::Lobby,
+        .part = HelpPart::Map,
+        .text = {.english =
+                     "{M} OR A CLICK ON THE *MAP* VOTES FOR A MAP. THE MAP "
+                     "WITH THE MOST VOTES IS PLAYED.",
+                 .french = "{M} OU UN CLIC SUR LA *CARTE* VOTE POUR UNE CARTE. "
+                           "LA CARTE LA PLUS VOTÉE EST JOUÉE."}},
+    HelpStep{
+        .scene = HelpScene::Lobby,
+        .part = HelpPart::Status,
+        .text = {.english =
+                     "THIS LINE SAYS WHO IS *NOT* *READY*. THE GAME STARTS "
+                     "WHEN ALL ARE READY.",
+                 .french = "CETTE LIGNE DIT QUI N'EST *PAS* *PRÊT*. LA PARTIE "
+                           "COMMENCE QUAND TOUS SONT PRÊTS."}},
     HelpStep{.scene = HelpScene::Lobby,
              .part = HelpPart::Back,
-             .text = "{ESC} OR *BACK* LEAVES THE SERVER."},
+             .text = {.english = "{ESC} OR *BACK* LEAVES THE SERVER.",
+                      .french = "{ESC} OU *RETOUR* QUITTE LE SERVEUR."}},
     HelpStep{.scene = HelpScene::Lobby,
              .part = HelpPart::Help,
-             .text = "{H} OR *HELP* SHOWS ME AGAIN."},
-    HelpStep{.scene = HelpScene::Game,
-             .part = HelpPart::None,
-             .text = "NOW, A GAME! YOU FLY TO THE RIGHT. THE BYDOS COME TO "
-                     "MEET YOU."},
-    HelpStep{.scene = HelpScene::Game,
-             .part = HelpPart::Ship,
-             .text = "THIS IS *YOUR* *SHIP*. MOVE IT WITH {UP} {DOWN} {LEFT} "
-                     "{RIGHT}."},
+             .text = {.english = "{H} OR *HELP* SHOWS ME AGAIN.",
+                      .french = "{H} OU *AIDE* ME FAIT REVENIR."}},
+    HelpStep{
+        .scene = HelpScene::Game,
+        .part = HelpPart::None,
+        .text = {.english =
+                     "NOW, A GAME! YOU FLY TO THE RIGHT. THE BYDOS COME TO "
+                     "MEET YOU.",
+                 .french = "MAINTENANT, UNE PARTIE ! VOUS VOLEZ VERS LA "
+                           "DROITE. LES BYDOS VIENNENT À VOTRE RENCONTRE."}},
+    HelpStep{
+        .scene = HelpScene::Game,
+        .part = HelpPart::Ship,
+        .text = {.english =
+                     "THIS IS *YOUR* *SHIP*. MOVE IT WITH {UP} {DOWN} {LEFT} "
+                     "{RIGHT}.",
+                 .french = "VOICI *VOTRE* *VAISSEAU*. DÉPLACEZ-LE AVEC {UP} "
+                           "{DOWN} {LEFT} {RIGHT}."}},
     HelpStep{.scene = HelpScene::Game,
              .part = HelpPart::Shots,
-             .text = "PRESS {SHOOT} TO *SHOOT*. HOLD IT TO KEEP SHOOTING."},
-    HelpStep{.scene = HelpScene::Game,
-             .part = HelpPart::Bydos,
-             .text = "SHOOT THE *BYDOS* FOR POINTS. NOT ME, PLEASE!"},
-    HelpStep{.scene = HelpScene::Game,
-             .part = HelpPart::EnemyShots,
-             .text = "DODGE THEIR *ROUND* *MISSILES*. A HIT COSTS ONE LIFE."},
-    HelpStep{.scene = HelpScene::Game,
-             .part = HelpPart::OwnBand,
-             .text = "YOUR *LIVES* AND *SCORE* ARE HERE. *OUT* MEANS NO LIFE "
-                     "LEFT."},
-    HelpStep{.scene = HelpScene::Game,
-             .part = HelpPart::None,
-             .text = "THE GOAL: STAY ALIVE AND SHOOT BYDOS. THE BEST SCORE "
-                     "WINS."},
-    HelpStep{.scene = HelpScene::Lobby,
-             .part = HelpPart::Help,
-             .text = "THAT IS ALL! {H} BRINGS ME BACK ANY TIME."},
+             .text = {.english =
+                          "PRESS {SHOOT} TO *SHOOT*. HOLD IT TO KEEP SHOOTING.",
+                      .french = "APPUYEZ SUR {SHOOT} POUR *TIRER*. MAINTENEZ "
+                                "POUR TIRER SANS ARRÊT."}},
+    HelpStep{
+        .scene = HelpScene::Game,
+        .part = HelpPart::Bydos,
+        .text = {.english = "SHOOT THE *BYDOS* FOR POINTS. NOT ME, PLEASE!",
+                 .french = "TIREZ SUR LES *BYDOS* POUR DES POINTS. PAS SUR "
+                           "MOI, S'IL VOUS PLAÎT !"}},
+    HelpStep{
+        .scene = HelpScene::Game,
+        .part = HelpPart::EnemyShots,
+        .text =
+            {.english = "DODGE THEIR *ROUND* *MISSILES*. A HIT COSTS ONE LIFE.",
+             .french =
+                 "ÉVITEZ LEURS *MISSILES* *RONDS*. UN COUP COÛTE UNE VIE."}},
+    HelpStep{
+        .scene = HelpScene::Game,
+        .part = HelpPart::OwnBand,
+        .text = {.english =
+                     "YOUR *LIVES* AND *SCORE* ARE HERE. *OUT* MEANS NO LIFE "
+                     "LEFT.",
+                 .french = "VOS *VIES* ET VOTRE *SCORE* SONT ICI. *K.O.* VEUT "
+                           "DIRE PLUS DE VIE."}},
+    HelpStep{
+        .scene = HelpScene::Game,
+        .part = HelpPart::None,
+        .text = {.english =
+                     "THE GOAL: STAY ALIVE AND SHOOT BYDOS. THE BEST SCORE "
+                     "WINS.",
+                 .french = "LE BUT : RESTER EN VIE ET ABATTRE DES BYDOS. LE "
+                           "MEILLEUR SCORE GAGNE."}},
+    HelpStep{
+        .scene = HelpScene::Lobby,
+        .part = HelpPart::Help,
+        .text = {.english = "THAT IS ALL! {H} BRINGS ME BACK ANY TIME.",
+                 .french = "C'EST TOUT ! {H} ME RAMÈNE QUAND VOUS VOULEZ."}},
 };
 
 /**
@@ -156,9 +211,9 @@ constexpr int HELP_COUNT_GAP = 4;
 constexpr int HELP_KEY_WORD_GAP = 3;
 constexpr int HELP_FOOTER_GROUP_GAP = 10;
 constexpr const char* HELP_COUNT_SEPARATOR = "/";
-constexpr std::string_view NEXT_WORD = "NEXT";
-constexpr std::string_view CLOSE_WORD = "CLOSE";
-constexpr std::string_view SKIP_WORD = "SKIP";
+constexpr Translation NEXT_WORD{.english = "NEXT", .french = "SUIVANT"};
+constexpr Translation CLOSE_WORD{.english = "CLOSE", .french = "FERMER"};
+constexpr Translation SKIP_WORD{.english = "SKIP", .french = "PASSER"};
 
 /** @brief Colors of the help, its sentences being written in the styles of
  * a dialog: its footer and pips, and the corners of the lit part. */

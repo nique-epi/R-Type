@@ -13,6 +13,7 @@
 #include "ImagePlacement.hpp"
 #include "InterfaceColorConstants.hpp"
 #include "InterfaceConstants.hpp"
+#include "Language.hpp"
 #include "LookItemDescriptionConstants.hpp"
 #include "LookItems.hpp"
 #include "PurchaseTicketConstants.hpp"
@@ -26,6 +27,7 @@
 #include "TextureArea.hpp"
 #include "TicketButton.hpp"
 #include "TicketView.hpp"
+#include "Translation.hpp"
 
 namespace rtype::client {
 
@@ -96,14 +98,17 @@ void paintForm(IInterfaceCanvas& canvas) {
     paintRule(canvas, row, false);
   }
   paintRule(canvas, TICKET_DOTTED_RULE_ROW, true);
-  writeOnTicket(canvas, TICKET_STORE_LABEL, {TICKET_MARGIN, TICKET_FORM_ROW},
+  const Language language = canvas.language();
+  writeOnTicket(canvas, TICKET_STORE_LABEL.in(language),
+                {TICKET_MARGIN, TICKET_FORM_ROW},
                 {.font = TextFont::Small, .color = TICKET_RED});
   writeOnTicket(canvas, TICKET_SERIES_LABEL,
                 {TICKET_SIZE.x - TICKET_MARGIN, TICKET_FORM_ROW},
                 {.font = TextFont::Regular,
                  .color = TICKET_RED,
                  .alignment = TextAlignment::Right});
-  writeOnTicket(canvas, TICKET_HEADING, {TICKET_MIDDLE, TICKET_HEADING_ROW},
+  writeOnTicket(canvas, TICKET_HEADING.in(language),
+                {TICKET_MIDDLE, TICKET_HEADING_ROW},
                 {.font = TextFont::Regular,
                  .color = TICKET_DARK_RED,
                  .alignment = TextAlignment::Center});
@@ -136,11 +141,12 @@ void paintWords(IInterfaceCanvas& canvas, std::size_t item) {
   const TextStyle typed{.font = TextFont::Regular,
                         .color = TICKET_INK,
                         .alignment = TextAlignment::Center};
-  writeOnTicket(canvas, lookItemLabelOf(item), {TICKET_MIDDLE, TICKET_NAME_ROW},
-                typed);
+  const Language language = canvas.language();
+  writeOnTicket(canvas, lookItemLabelOf(item, language),
+                {TICKET_MIDDLE, TICKET_NAME_ROW}, typed);
   int row = TICKET_DESCRIPTION_ROW;
-  for (const std::string_view line : LOOK_ITEM_DESCRIPTIONS.at(item)) {
-    writeOnTicket(canvas, line, {TICKET_MIDDLE, row}, typed);
+  for (const Translation& line : LOOK_ITEM_DESCRIPTIONS.at(item)) {
+    writeOnTicket(canvas, line.in(language), {TICKET_MIDDLE, row}, typed);
     row += TICKET_DESCRIPTION_LINE_HEIGHT;
   }
 }
@@ -154,9 +160,10 @@ std::string priceTextOf(std::size_t item) {
 /** @brief Types the quantity and the price of @p item. */
 void paintPrice(IInterfaceCanvas& canvas, std::size_t item) {
   const TextStyle label{.font = TextFont::Small, .color = TICKET_RED};
-  writeOnTicket(canvas, TICKET_QUANTITY_LABEL,
+  const Language language = canvas.language();
+  writeOnTicket(canvas, TICKET_QUANTITY_LABEL.in(language),
                 {TICKET_MARGIN, TICKET_LABEL_ROW}, label);
-  writeOnTicket(canvas, TICKET_PRICE_LABEL,
+  writeOnTicket(canvas, TICKET_PRICE_LABEL.in(language),
                 {TICKET_PRICE_LABEL_LEFT, TICKET_LABEL_ROW}, label);
   writeOnTicket(canvas, priceTextOf(item),
                 {TICKET_SIZE.x - TICKET_MARGIN, TICKET_PRICE_ROW},
@@ -235,18 +242,19 @@ void paintButton(IInterfaceCanvas& canvas, const TicketButtonLook& look) {
  * that the purchase tears off. */
 void paintButtonsAndStub(IInterfaceCanvas& canvas, TicketButton chosen,
                          std::size_t item) {
+  const Language language = canvas.language();
   paintButton(canvas, {.area = TICKET_CANCEL_AREA,
-                       .label = TICKET_CANCEL_LABEL,
-                       .key = TICKET_CANCEL_KEY,
+                       .label = TICKET_CANCEL_LABEL.in(language),
+                       .key = TICKET_CANCEL_KEY.in(language),
                        .full = false,
                        .chosen = chosen == TicketButton::Cancel});
   paintButton(canvas, {.area = TICKET_BUY_AREA,
-                       .label = TICKET_BUY_LABEL,
-                       .key = TICKET_BUY_KEY,
+                       .label = TICKET_BUY_LABEL.in(language),
+                       .key = TICKET_BUY_KEY.in(language),
                        .full = true,
                        .chosen = chosen == TicketButton::Buy});
   const TextStyle stub{.font = TextFont::Small, .color = TICKET_RED};
-  writeOnTicket(canvas, TICKET_CONTROL_LABEL,
+  writeOnTicket(canvas, TICKET_CONTROL_LABEL.in(language),
                 {TICKET_MARGIN, TICKET_CONTROL_ROW}, stub);
   writeOnTicket(canvas, priceTextOf(item),
                 {TICKET_MARGIN, TICKET_STUB_PRICE_ROW},

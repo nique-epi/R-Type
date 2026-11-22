@@ -49,7 +49,7 @@ TEST(FlightLogTimeline, TheRankingWaitsForAllPilotsDown) {
   const auto downWritten =
       DOWN_DELAY +
       (DOWN_LETTER_TIME *
-       static_cast<rtype::engine::Duration::rep>(DOWN_TEXT.size()));
+       static_cast<rtype::engine::Duration::rep>(DOWN_TEXT.english.size()));
   EXPECT_LE(downWritten, RANKING_DELAY);
 }
 

@@ -10,6 +10,7 @@
 #include "IInterfaceCanvas.hpp"
 #include "ImagePlacement.hpp"
 #include "InterfaceConstants.hpp"
+#include "Language.hpp"
 #include "RenderingConstants.hpp"
 #include "ShipHullSpriteConstants.hpp"
 #include "ShipLook.hpp"
@@ -125,11 +126,11 @@ void paintLookIcon(IInterfaceCanvas& canvas, std::size_t item,
       cell);
 }
 
-std::string_view lookItemLabelOf(std::size_t item) {
+std::string_view lookItemLabelOf(std::size_t item, Language language) {
   if (identifiers::isHullItem(item)) {
-    return SHIP_HULL_LABELS.at(item - SHIP_LOOK_ACCESSORY_COUNT);
+    return SHIP_HULL_LABELS.at(item - SHIP_LOOK_ACCESSORY_COUNT).in(language);
   }
-  return SHIP_LOOK_SPRITES.at(item).label;
+  return SHIP_LOOK_SPRITES.at(item).label.in(language);
 }
 
 }  // namespace rtype::client

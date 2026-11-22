@@ -35,6 +35,7 @@ void EffectSpawner::advance(engine::Duration elapsed,
   gate_.advance(elapsed, preferences.flashes);
   shades_ = preferences.shades;
   soundCues_ = preferences.soundCues;
+  language_ = preferences.language;
   kills_.advance(elapsed);
   gains_.advance(elapsed);
   camera_.advance(elapsed);
@@ -62,7 +63,7 @@ void EffectSpawner::playExplosion(game::EntityType type, game::Position center,
 
 void EffectSpawner::playShipDown(engine::Entity ship) {
   if (soundCues_) {
-    cues_.showPilotHit(ship);
+    cues_.showPilotHit(ship, language_);
   }
   kills_.playShipDown(ship);
 }

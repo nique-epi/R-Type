@@ -4,6 +4,7 @@
 #include <string>
 #include "IInterfaceCanvas.hpp"
 #include "ISoundPlayer.hpp"
+#include "Language.hpp"
 #include "Menu.hpp"
 #include "MenuBuilder.hpp"
 #include "PlayfieldMapping.hpp"
@@ -15,12 +16,13 @@ namespace rtype::client {
 ResetDialog::ResetDialog(ISoundPlayer& sounds) : sounds_(&sounds) {}
 
 void ResetDialog::ask(const std::string& question,
-                      const std::function<void()>& reset) {
+                      const std::function<void()>& reset, Language language) {
   dialog_ = MenuBuilder(MenuBuilder::Frame::Dialog, sounds_)
-                .heading(CONFIRM_HEADING)
+                .heading(std::string(CONFIRM_HEADING.in(language)))
                 .message(question)
-                .cancelButton({.label = NO_LABEL}, [this] { answered_ = true; })
-                .button({.label = YES_LABEL},
+                .cancelButton({.label = std::string(NO_LABEL.in(language))},
+                              [this] { answered_ = true; })
+                .button({.label = std::string(YES_LABEL.in(language))},
                         [this, reset] {
                           reset();
                           answered_ = true;

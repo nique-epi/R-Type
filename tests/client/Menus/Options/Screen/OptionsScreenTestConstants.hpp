@@ -46,6 +46,15 @@ constexpr int DOWN_PRESSES_TO_QUIT = 6;
  * SOUND: 4 presses. */
 constexpr int DOWN_PRESSES_TO_DEFAULT_SOUND = 4;
 
+/** @brief Down from DISPLAY MODE passes WINDOW SIZE before LANGUAGE: 2
+ * presses. */
+constexpr int DOWN_PRESSES_TO_LANGUAGE = 2;
+
+/** @brief The label and the description of the LANGUAGE row, in French. */
+constexpr std::string_view FRENCH_LANGUAGE_LABEL = "LANGUE";
+constexpr std::string_view FRENCH_LANGUAGE_DESCRIPTION =
+    "> LA LANGUE DE TOUS LES TEXTES";
+
 /** @brief The MUSIC volume of a first launch, one step of 5 above it, and a
  * quiet volume away from it. */
 constexpr int MUSIC_DEFAULT = 70;

@@ -44,7 +44,8 @@ void paintWindowSizeChart(IInterfaceCanvas& canvas, sf::Vector2i topLeft,
   const std::size_t current = selection.selectedIndex();
   int line = 0;
   writeLegendLine(canvas, topLeft, line,
-                  CURRENT_SIZE_TAG + windowSizeText(WINDOW_SIZES[current]),
+                  std::string(CURRENT_SIZE_TAG.in(canvas.language())) +
+                      windowSizeText(WINDOW_SIZES[current]),
                   CURRENT_SIZE_COLOR);
   ++line;
   for (std::size_t index = 0; index < WINDOW_SIZES.size(); ++index) {
@@ -52,15 +53,19 @@ void paintWindowSizeChart(IInterfaceCanvas& canvas, sf::Vector2i topLeft,
     const std::string size = windowSizeText(WINDOW_SIZES[index]);
     if (!selection.isAvailable(index)) {
       Outline(area, Outline::Line::Dashed).paint(canvas, TOO_LARGE_SIZE_COLOR);
-      writeLegendLine(canvas, topLeft, line, TOO_LARGE_SIZE_TAG + size,
-                      TOO_LARGE_LEGEND_COLOR);
+      writeLegendLine(
+          canvas, topLeft, line,
+          std::string(TOO_LARGE_SIZE_TAG.in(canvas.language())) + size,
+          TOO_LARGE_LEGEND_COLOR);
       ++line;
     } else if (index == current) {
       Outline(area, Outline::Line::Solid).paint(canvas, CURRENT_SIZE_COLOR);
     } else if (candidate == index) {
       Outline(area, Outline::Line::Solid).paint(canvas, CANDIDATE_SIZE_COLOR);
-      writeLegendLine(canvas, topLeft, line, CANDIDATE_SIZE_TAG + size,
-                      CANDIDATE_SIZE_COLOR);
+      writeLegendLine(
+          canvas, topLeft, line,
+          std::string(CANDIDATE_SIZE_TAG.in(canvas.language())) + size,
+          CANDIDATE_SIZE_COLOR);
       ++line;
     } else {
       Outline(area, Outline::Line::Solid).paint(canvas, SIZE_OUTLINE_COLOR);

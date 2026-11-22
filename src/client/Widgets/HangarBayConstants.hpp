@@ -7,6 +7,7 @@
 #include "BackgroundColorConstants.hpp"
 #include "InterfaceColorConstants.hpp"
 #include "TimeConstants.hpp"
+#include "Translation.hpp"
 
 namespace rtype::client {
 
@@ -56,10 +57,14 @@ constexpr sf::Color CLAMP_COLOR = BLUE;
 /** @brief Texts of a bay: an open bay, and what the cell of a pilot says.
  * The player number and the tag of the local player are written as
  * PLAYER_NUMBER_PREFIX and LOCAL_PLAYER_TAG say. */
-constexpr const char* OPEN_BAY_TEXT = "OPEN BAY";
-constexpr const char* READY_TEXT = "READY";
-constexpr const char* READY_ASKED_TEXT = "READY...";
-constexpr const char* NOT_READY_TEXT = "NOT READY";
-constexpr const char* NOT_READY_ASKED_TEXT = "CANCEL...";
+constexpr Translation OPEN_BAY_TEXT{.english = "OPEN BAY",
+                                    .french = "BAIE LIBRE"};
+constexpr Translation READY_TEXT{.english = "READY", .french = "PRÊT"};
+constexpr Translation READY_ASKED_TEXT{.english = "READY...",
+                                       .french = "PRÊT..."};
+constexpr Translation NOT_READY_TEXT{.english = "NOT READY",
+                                     .french = "PAS PRÊT"};
+constexpr Translation NOT_READY_ASKED_TEXT{.english = "CANCEL...",
+                                           .french = "ANNULE..."};
 
 }  // namespace rtype::client

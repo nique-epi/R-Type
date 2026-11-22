@@ -1,9 +1,8 @@
 #pragma once
 
-#include "IAccountSession.hpp"
 #include "IInterfaceCanvas.hpp"
-#include "IWallet.hpp"
 #include "KeyChip.hpp"
+#include "Language.hpp"
 #include "PlayfieldMapping.hpp"
 #include "TitleAccountChipsParts.hpp"
 
@@ -37,9 +36,12 @@ class TitleAccountChips {
    * nickname. */
   void paint(IInterfaceCanvas& canvas) const;
 
+  /** @brief Writes the chips again in @p language, when it is not the one
+   * they read. */
+  void followLanguage(Language language);
+
  private:
-  const IAccountSession* account_;
-  const IWallet* wallet_;
+  TitleAccountChipsParts parts_;
   KeyChip signIn_;
   KeyChip signOut_;
 };

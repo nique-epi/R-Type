@@ -12,6 +12,7 @@
 #include "EffectTools.hpp"
 #include "Entity.hpp"
 #include "InterfaceColorConstants.hpp"
+#include "Language.hpp"
 #include "Layer.hpp"
 #include "Lifetime.hpp"
 #include "PilotShades.hpp"
@@ -68,7 +69,7 @@ void SoundCues::showEnemyShot(game::Position missile) const {
                              .offset = {0.0F, place.y - bydo->center.y}});
 }
 
-void SoundCues::showPilotHit(engine::Entity ship) const {
+void SoundCues::showPilotHit(engine::Entity ship, Language language) const {
   const std::optional<DownedShip> downed =
       downedShipOf(tools_.components, ship);
   if (!downed.has_value()) {
@@ -76,7 +77,8 @@ void SoundCues::showPilotHit(engine::Entity ship) const {
   }
   const PilotShades& shades = tools_.shades;
   static_cast<void>(
-      addCue(cueCaption(pilotLabelOf(downed->pilotColor) + HIT_CUE_TEXT,
+      addCue(cueCaption(pilotLabelOf(downed->pilotColor) +
+                            std::string(HIT_CUE_TEXT.in(language)),
                         pilotLightOf(shades.palette, downed->pilotColor)),
              cuePlaceOver(downed->center, downed->sprite.frame), HIT_CUE_LIFE));
 }

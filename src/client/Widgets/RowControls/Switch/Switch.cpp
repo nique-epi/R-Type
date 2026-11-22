@@ -2,6 +2,7 @@
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Event.hpp>
+#include <string_view>
 #include <utility>
 #include "BarState.hpp"
 #include "IInterfaceCanvas.hpp"
@@ -28,7 +29,8 @@ void Switch::paint(IInterfaceCanvas& canvas, sf::IntRect area,
   const bool current = value_.read();
   for (const bool onSide : {false, true}) {
     const sf::IntRect cell = cellOf(onSide, area);
-    const char* const word = onSide ? SWITCH_ON_TEXT : SWITCH_OFF_TEXT;
+    const std::string_view word =
+        (onSide ? SWITCH_ON_TEXT : SWITCH_OFF_TEXT).in(canvas.language());
     const bool filled = onSide == current;
     if (filled) {
       canvas.fill(cell, row == BarState::Selected ? SELECTED_CURRENT_CELL_COLOR

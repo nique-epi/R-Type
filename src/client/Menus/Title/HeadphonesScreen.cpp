@@ -128,10 +128,10 @@ void HeadphonesScreen::repaint() {
   canvas_->clear();
   canvas_->fill(INTERFACE_AREA, INK);
   canvas_->plot(logo_);
-  canvas_->write(HEADPHONES_LINE, HEADPHONES_LINE_ANCHOR,
-                 HEADPHONES_LINE_STYLE);
-  canvas_->write(HEADPHONES_SMALL_LINE, HEADPHONES_SMALL_LINE_ANCHOR,
-                 HEADPHONES_SMALL_LINE_STYLE);
+  canvas_->write(HEADPHONES_LINE.in(canvas_->language()),
+                 HEADPHONES_LINE_ANCHOR, HEADPHONES_LINE_STYLE);
+  canvas_->write(HEADPHONES_SMALL_LINE.in(canvas_->language()),
+                 HEADPHONES_SMALL_LINE_ANCHOR, HEADPHONES_SMALL_LINE_STYLE);
   paintInkCover(*canvas_, 1.0F - paintedShare_);
   canvas_->display();
 }

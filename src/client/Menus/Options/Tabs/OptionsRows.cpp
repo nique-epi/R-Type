@@ -4,10 +4,10 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 #include "BoundAction.hpp"
 #include "ChoiceSelector.hpp"
-#include "ColorMode.hpp"
 #include "Dropdown.hpp"
 #include "DropdownParts.hpp"
 #include "ISizableWindow.hpp"
@@ -24,6 +24,7 @@
 #include "Slider.hpp"
 #include "SliderLook.hpp"
 #include "Switch.hpp"
+#include "TranslatedTexts.hpp"
 #include "ValueBinding.hpp"
 #include "WindowConstants.hpp"
 #include "WindowLayout.hpp"
@@ -76,6 +77,27 @@ Slider::Range sliderRangeOf(const Setting<int>& setting,
                        .pageSteps = CHAT_PAGE_STEPS};
 }
 
+/** @returns The selector of the choices of @p setting, labelled @p labels.
+ * The labels follow the order of the values of the enumeration, so the n-th
+ * label stands for the value n. */
+template <typename Choice>
+std::unique_ptr<RowControl> choiceSelectorOf(SettingsService& service,
+                                             const Setting<Choice>& setting,
+                                             std::vector<std::string> labels) {
+  return std::make_unique<ChoiceSelector>(
+      std::move(labels),
+      ValueBinding<std::size_t>{.read =
+                                    [&service, &setting] {
+                                      return static_cast<std::size_t>(
+                                          service.settings().*setting.member);
+                                    },
+                                .write =
+                                    [&service, &setting](std::size_t choice) {
+                                      service.apply(
+                                          setting, static_cast<Choice>(choice));
+                                    }});
+}
+
 }  // namespace
 
 std::unique_ptr<RowControl> volumeSlider(SettingsService& service,
@@ -107,17 +129,14 @@ std::unique_ptr<RowControl> settingSlider(SettingsService& service,
 }
 
 std::unique_ptr<RowControl> colorModeSelector(SettingsService& service) {
-  return std::make_unique<ChoiceSelector>(
-      textsOf(COLOR_MODE_LABELS),
-      ValueBinding<std::size_t>{
-          .read =
-              [&service] {
-                return static_cast<std::size_t>(service.settings().colorMode);
-              },
-          .write =
-              [&service](std::size_t mode) {
-                service.apply(COLOR_MODE_SETTING, COLOR_MODES[mode]);
-              }});
+  return choiceSelectorOf(
+      service, COLOR_MODE_SETTING,
+      textsIn(COLOR_MODE_LABELS, service.settings().language));
+}
+
+std::unique_ptr<RowControl> languageSelector(SettingsService& service) {
+  return choiceSelectorOf(service, LANGUAGE_SETTING,
+                          textsOf(LANGUAGE_CHOICE_LABELS));
 }
 
 std::unique_ptr<KeySlot> keySlot(SettingsService& service,
@@ -145,7 +164,7 @@ std::unique_ptr<KeySlot> keySlot(SettingsService& service,
 std::unique_ptr<Dropdown> displayModeList(ISizableWindow& window,
                                           SettingsService& service) {
   return std::make_unique<Dropdown>(DropdownParts{
-      .choices = textsOf(DISPLAY_MODE_LABELS),
+      .choices = textsIn(DISPLAY_MODE_LABELS, service.settings().language),
       .available = [](std::size_t) { return true; },
       .value = ValueBinding<std::size_t>{
           .read =
