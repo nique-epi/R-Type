@@ -8,6 +8,7 @@ target_link_libraries(rtype_client_update_panel
   PUBLIC
     rtype_client_application
     rtype_client_interface
+    rtype_client_language
     rtype_client_widgets
     rtype_engine_time
     rtype_client_update_run
