@@ -7,12 +7,15 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 #include "FinalPilot.hpp"
 #include "PilotName.hpp"
 #include "Taunt.hpp"
 #include "TauntCondition.hpp"
 #include "TauntConstants.hpp"
+#include "TextMark.hpp"
+#include "TextMarks.hpp"
 
 namespace rtype::client {
 
@@ -20,30 +23,26 @@ namespace {
 
 bool scoredZero(const FinalPilot& pilot) { return pilot.score == 0; }
 
-/** @brief Replaces the first @p mark of @p line, if any, by @p name. */
-void replaceMark(std::string& line, std::string_view mark,
-                 const std::string& name) {
-  const std::size_t found = line.find(mark);
-  if (found != std::string::npos) {
-    line.replace(found, mark.size(), name);
-  }
-}
-
 /** @returns A line of a taunt, its marks replaced by the names of the
  * pilots. */
 std::string withNames(std::string line, std::span<const FinalPilot> pilots) {
   if (pilots.empty()) {
     return line;
   }
-  replaceMark(
-      line, BEST_PILOT_MARK,
-      pilotNameOf(pilots.front().nickname, pilots.front().playerNumber));
-  replaceMark(line, LAST_PILOT_MARK,
-              pilotNameOf(pilots.back().nickname, pilots.back().playerNumber));
+  line = withMark(std::move(line),
+                  TextMark{.mark = BEST_PILOT_MARK,
+                           .value = pilotNameOf(pilots.front().nickname,
+                                                pilots.front().playerNumber)});
+  line = withMark(std::move(line),
+                  TextMark{.mark = LAST_PILOT_MARK,
+                           .value = pilotNameOf(pilots.back().nickname,
+                                                pilots.back().playerNumber)});
   const auto zero = std::ranges::find_if(pilots, scoredZero);
   if (zero != pilots.end()) {
-    replaceMark(line, ZERO_PILOT_MARK,
-                pilotNameOf(zero->nickname, zero->playerNumber));
+    line = withMark(
+        std::move(line),
+        TextMark{.mark = ZERO_PILOT_MARK,
+                 .value = pilotNameOf(zero->nickname, zero->playerNumber)});
   }
   return line;
 }

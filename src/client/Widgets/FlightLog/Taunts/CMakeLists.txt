@@ -6,6 +6,7 @@ target_link_libraries(rtype_client_taunts
   PUBLIC
     rtype_client_flight_log_interfaces
   PRIVATE
+    rtype_client_language
     rtype_client_pilot_name
 )
 
