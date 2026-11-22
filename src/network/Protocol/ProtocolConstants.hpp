@@ -20,7 +20,9 @@ constexpr std::size_t INT16_WIRE_SIZE = sizeof(std::int16_t);
 constexpr std::uint32_t PROTOCOL_ID = 0x52545950;
 
 /**
- * @brief The version of the protocol this code speaks. Version 19 adds the
+ * @brief The version of the protocol this code speaks. Version 20 adds the
+ * continues left of the team to LevelStatus, see the Version 20 section;
+ * version 19 adds the
  * time left of a transition and the band of a biome to LevelStatus, and the
  * vote for a map of the waiting room (MapVote, the maps and the votes of
  * LobbyState), see the Version 19 section;
@@ -54,7 +56,7 @@ constexpr std::uint32_t PROTOCOL_ID = 0x52545950;
  * frame, see the Compression section; version 3 adds the outcome of a game to
  * GameEnded, see the Version 3 section.
  */
-constexpr std::uint8_t PROTOCOL_VERSION = 19;
+constexpr std::uint8_t PROTOCOL_VERSION = 20;
 
 /**
  * @brief The session token of a datagram sent before the connection is

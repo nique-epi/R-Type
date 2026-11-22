@@ -15,23 +15,26 @@ namespace rtype::network::testing {
  * When its status is encoded
  * Then the payload is the length 5 and the letters of the biome, then 240,
  * 120 and 96 as big-endian floats, then 2500 ms of transition, 09 C4, then
- * the band from row 192 to row 848, 00 C0 03 50
+ * the band from row 192 to row 848, 00 C0 03 50, then the 2 continues left, 02
  */
-TEST(LevelStatus, EncodesTheBiomeThenTheScrollThenTheTransitionThenTheBand) {
+TEST(LevelStatus,
+     EncodesTheBiomeTheScrollTheTransitionTheBandThenTheContinues) {
   EXPECT_EQ(encodeMessage(LevelStatus{.biome = std::string{STATUS_BIOME},
                                       .scrollPosition = STATUS_SCROLL_POSITION,
                                       .scrollSpeed = STATUS_SCROLL_SPEED,
                                       .biomeSince = STATUS_BIOME_SINCE,
                                       .transitionLeft = STATUS_TRANSITION_LEFT,
                                       .bandTop = STATUS_BAND_TOP,
-                                      .bandBottom = STATUS_BAND_BOTTOM}),
-            byteSequence({0x05, 0x77, 0x72, 0x65, 0x63, 0x6B, 0x43, 0x70,
-                          0x00, 0x00, 0x42, 0xF0, 0x00, 0x00, 0x42, 0xC0,
-                          0x00, 0x00, 0x09, 0xC4, 0x00, 0xC0, 0x03, 0x50}));
+                                      .bandBottom = STATUS_BAND_BOTTOM,
+                                      .continuesLeft = STATUS_CONTINUES_LEFT}),
+            byteSequence({0x05, 0x77, 0x72, 0x65, 0x63, 0x6B, 0x43, 0x70, 0x00,
+                          0x00, 0x42, 0xF0, 0x00, 0x00, 0x42, 0xC0, 0x00, 0x00,
+                          0x09, 0xC4, 0x00, 0xC0, 0x03, 0x50, 0x02}));
 }
 
 /**
- * Given a status with a biome, a moving scroll, a transition and a band
+ * Given a status with a biome, a moving scroll, a transition, a band and
+ * continues left
  * When it is encoded then decoded
  * Then the decoded status equals the original
  */
@@ -42,7 +45,8 @@ TEST(LevelStatus, DecodesWhatItEncoded) {
                            .biomeSince = STATUS_BIOME_SINCE,
                            .transitionLeft = STATUS_TRANSITION_LEFT,
                            .bandTop = STATUS_BAND_TOP,
-                           .bandBottom = STATUS_BAND_BOTTOM};
+                           .bandBottom = STATUS_BAND_BOTTOM,
+                           .continuesLeft = STATUS_CONTINUES_LEFT};
 
   EXPECT_EQ(decodeMessage<LevelStatus>(encodeMessage(status)), status);
 }
@@ -65,9 +69,9 @@ TEST(LevelStatus, CarriesALevelWithoutBiomeWhoseScrollIsPaused) {
  */
 TEST(LevelStatus, RefusesABiomeThatIsNoBiomeName) {
   EXPECT_THROW(static_cast<void>(decodeMessage<LevelStatus>(byteSequence(
-                   {0x05, 0x57, 0x72, 0x65, 0x63, 0x6B, 0x43, 0x70,
-                    0x00, 0x00, 0x42, 0xF0, 0x00, 0x00, 0x42, 0xC0,
-                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF}))),
+                   {0x05, 0x57, 0x72, 0x65, 0x63, 0x6B, 0x43, 0x70, 0x00,
+                    0x00, 0x42, 0xF0, 0x00, 0x00, 0x42, 0xC0, 0x00, 0x00,
+                    0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x00}))),
                InvalidFieldValueException);
 }
 
@@ -111,35 +115,36 @@ TEST(LevelStatus, RefusesAScrollSpeedThatIsNoNumber) {
  */
 TEST(LevelStatus, RefusesANegativeScrollSpeedReceived) {
   EXPECT_THROW(static_cast<void>(decodeMessage<LevelStatus>(byteSequence(
-                   {0x05, 0x77, 0x72, 0x65, 0x63, 0x6B, 0x43, 0x70,
-                    0x00, 0x00, 0xBF, 0x80, 0x00, 0x00, 0x42, 0xC0,
-                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF}))),
+                   {0x05, 0x77, 0x72, 0x65, 0x63, 0x6B, 0x43, 0x70, 0x00,
+                    0x00, 0xBF, 0x80, 0x00, 0x00, 0x42, 0xC0, 0x00, 0x00,
+                    0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x00}))),
                InvalidFieldValueException);
 }
 
 /**
- * Given a payload that ends one byte before the end of the bottom of the band
+ * Given a payload that ends after the bottom of the band, before the
+ * continues left
  * When it is decoded
  * Then it is refused as too short
  */
 TEST(LevelStatus, RefusesAPayloadThatEndsTooSoon) {
-  EXPECT_THROW(static_cast<void>(decodeMessage<LevelStatus>(
-                   byteSequence({0x05, 0x77, 0x72, 0x65, 0x63, 0x6B, 0x43, 0x70,
-                                 0x00, 0x00, 0x42, 0xF0, 0x00, 0x00, 0x42, 0xC0,
-                                 0x00, 0x00, 0x09, 0xC4, 0x00, 0xC0, 0x03}))),
+  EXPECT_THROW(static_cast<void>(decodeMessage<LevelStatus>(byteSequence(
+                   {0x05, 0x77, 0x72, 0x65, 0x63, 0x6B, 0x43, 0x70,
+                    0x00, 0x00, 0x42, 0xF0, 0x00, 0x00, 0x42, 0xC0,
+                    0x00, 0x00, 0x09, 0xC4, 0x00, 0xC0, 0x03, 0x50}))),
                BufferUnderflowException);
 }
 
 /**
- * Given a payload with one byte after the bottom of the band
+ * Given a payload with one byte after the continues left
  * When it is decoded
  * Then it is refused for its trailing byte
  */
-TEST(LevelStatus, RefusesBytesAfterTheBottomOfTheBand) {
+TEST(LevelStatus, RefusesBytesAfterTheContinuesLeft) {
   EXPECT_THROW(static_cast<void>(decodeMessage<LevelStatus>(byteSequence(
                    {0x05, 0x77, 0x72, 0x65, 0x63, 0x6B, 0x43, 0x70, 0x00,
                     0x00, 0x42, 0xF0, 0x00, 0x00, 0x42, 0xC0, 0x00, 0x00,
-                    0x09, 0xC4, 0x00, 0xC0, 0x03, 0x50, 0x00}))),
+                    0x09, 0xC4, 0x00, 0xC0, 0x03, 0x50, 0x02, 0x00}))),
                TrailingBytesException);
 }
 
@@ -164,9 +169,9 @@ TEST(LevelStatus, RefusesABandWhoseTopIsItsBottom) {
  */
 TEST(LevelStatus, RefusesABandReceivedUpsideDown) {
   EXPECT_THROW(static_cast<void>(decodeMessage<LevelStatus>(byteSequence(
-                   {0x05, 0x77, 0x72, 0x65, 0x63, 0x6B, 0x43, 0x70,
-                    0x00, 0x00, 0x42, 0xF0, 0x00, 0x00, 0x42, 0xC0,
-                    0x00, 0x00, 0x09, 0xC4, 0x03, 0x50, 0x00, 0xC0}))),
+                   {0x05, 0x77, 0x72, 0x65, 0x63, 0x6B, 0x43, 0x70, 0x00,
+                    0x00, 0x42, 0xF0, 0x00, 0x00, 0x42, 0xC0, 0x00, 0x00,
+                    0x09, 0xC4, 0x03, 0x50, 0x00, 0xC0, 0x00}))),
                InvalidFieldValueException);
 }
 
@@ -205,9 +210,9 @@ TEST(LevelStatus, CarriesABiomeThatBeganBeforeTheScroll) {
  */
 TEST(LevelStatus, RefusesAPositionTheBiomeBeganAtThatIsNoNumber) {
   EXPECT_THROW(static_cast<void>(decodeMessage<LevelStatus>(byteSequence(
-                   {0x05, 0x77, 0x72, 0x65, 0x63, 0x6B, 0x43, 0x70,
-                    0x00, 0x00, 0x42, 0xF0, 0x00, 0x00, 0x7F, 0xC0,
-                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF}))),
+                   {0x05, 0x77, 0x72, 0x65, 0x63, 0x6B, 0x43, 0x70, 0x00,
+                    0x00, 0x42, 0xF0, 0x00, 0x00, 0x7F, 0xC0, 0x00, 0x00,
+                    0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x00}))),
                InvalidFieldValueException);
 }
 

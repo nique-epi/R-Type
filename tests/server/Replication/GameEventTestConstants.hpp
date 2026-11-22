@@ -56,6 +56,8 @@ constexpr float PAUSED_LEVEL_SCROLL_SPEED = 0.0F;
 /** @brief The band of that level, its ceiling on row 192 and its floor on row
  * 848, as the level holds it and as the wire writes it. */
 constexpr game::PlayBand LEVEL_BAND{.top = 192.0F, .bottom = 848.0F};
+/** @brief The continues the team of that level has left. */
+constexpr std::uint8_t LEVEL_CONTINUES_LEFT = 2;
 constexpr std::uint16_t WIRE_LEVEL_BAND_TOP = 192;
 constexpr std::uint16_t WIRE_LEVEL_BAND_BOTTOM = 848;
 

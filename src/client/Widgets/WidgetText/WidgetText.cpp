@@ -24,6 +24,11 @@ int centeredTextTop(sf::IntRect box) {
   return box.position.y + ((box.size.y - TEXT_LINE_HEIGHT) / SIDES_PER_AXIS);
 }
 
+sf::IntRect centeredRule(sf::IntRect box, int row, int halfWidth) {
+  const int middle = box.position.x + (box.size.x / SIDES_PER_AXIS);
+  return {{middle - halfWidth, row}, {SIDES_PER_AXIS * halfWidth, 1}};
+}
+
 sf::Color barTextColor(BarState state) {
   switch (state) {
     case BarState::Selected:

@@ -102,6 +102,7 @@ class ServerGamesModule final : public engine::IModule {
   const engine::SettingValue* startAtBossSetting_{nullptr};
   const engine::SettingValue* startAtStageSetting_{nullptr};
   const engine::SettingValue* levelSetting_{nullptr};
+  const engine::SettingValue* continuesSetting_{nullptr};
   logging::Logger logger_;
   engine::SystemClock clock_;
   /** Declared before types_: the behaviours of the sheets call its scripts. */

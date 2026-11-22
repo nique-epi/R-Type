@@ -22,6 +22,7 @@ target_link_libraries(rtype_client_game_module
     rtype_client_chat_window
     rtype_client_connection_module
     rtype_client_departure_feed
+    rtype_client_continue_banner
     rtype_client_drawing
     rtype_client_edge_pulse
     rtype_client_flight_log_interfaces

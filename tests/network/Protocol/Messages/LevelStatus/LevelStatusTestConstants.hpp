@@ -24,6 +24,9 @@ constexpr std::uint16_t LONGEST_TRANSITION_LEFT =
 constexpr std::uint16_t STATUS_BAND_TOP = 192;
 constexpr std::uint16_t STATUS_BAND_BOTTOM = 848;
 
+/** @brief The continues left of the status tests, the byte 02. */
+constexpr std::uint8_t STATUS_CONTINUES_LEFT = 2;
+
 /** @brief A scroll that is paused, and values no scroll can have. */
 constexpr float PAUSED_SCROLL_SPEED = 0.0F;
 constexpr float NEGATIVE_SCROLL = -1.0F;

@@ -10,6 +10,7 @@
 #include "BossPresentation.hpp"
 #include "ChatWindow.hpp"
 #include "ComponentRegistry.hpp"
+#include "ContinueBanner.hpp"
 #include "DepartureFeed.hpp"
 #include "EffectPlayer.hpp"
 #include "EffectSpawner.hpp"
@@ -96,7 +97,10 @@ struct PlayerSettings;
  * SILENCE_WARNING_DELAY without any message of the server, until the next
  * one, WAITING FOR THE SERVER shows in the top-right corner (see
  * SilenceWarning); never once the game ended. Both are painted with the band,
- * only when they change.
+ * only when they change. So is the banner of a continue: CONTINUE and the
+ * continues left, for CONTINUE_BANNER_TIME once a LevelStatus tells fewer
+ * continues than the one before it, the team having restarted from a
+ * checkpoint (see ContinueBanner).
  *
  * Releasing OPTIONS_KEY releases every action held, then puts the options over
  * the game, which goes on running behind them, dimmed. The release, not the
@@ -228,9 +232,11 @@ class GameScreen : public IScreen {
   std::optional<PlayerPalette> paintedPalette_;
   DepartureFeed departures_;
   SilenceWarning silence_;
+  ContinueBanner continueBanner_;
   ChatWindow chat_;
   std::uint32_t paintedDepartures_{};
   bool paintedSilence_ = false;
+  std::optional<std::uint8_t> paintedContinues_;
   bool paintedChat_ = false;
   BossLook paintedBoss_;
   bool worldSeen_ = false;

@@ -27,3 +27,12 @@ The change was checked by the targets it built and a server run, not by the test
 
 - ❌ **Before (wrong)**: `PROTOCOL_VERSION = 18` with `DEFAULT_HEADER_BYTES` still holding `0x11` and `SOME_OTHER_VERSION = 18` → `DatagramCodec.*` and `AVersionRefusalNamesBothVersions` red.
 - ✅ **After (right)**: the search of point 1 lists the three, the header holds `0x12`, the text `V18, SERVER V19`, and `SOME_OTHER_VERSION = PROTOCOL_VERSION + 1`.
+
+## Update (2026-11-21) — a constant that holds the old version as a number
+
+While `LevelStatus` gained the continues left of a team, the protocol went from 19 to 20. The search of point 1 was run with the header bytes, `V19` and `version 19`; a wider search then showed `PROTOCOL_PAGE_VERSION = 19`, which was changed, and `ANNOUNCED_PROTOCOL_VERSION = 19` of the master message tests, which was judged a sample value without reading the assertion that compares it with the registration the server builds from `PROTOCOL_VERSION`. The full suite failed on `MasterMessages.TheRegistrationTellsWhatTheServerIs` (20 against 19), before any commit.
+
+Root cause: the pattern of point 1 holds the new version as a literal constant only, and a hit was dismissed from its name instead of from the assertion that reads it.
+
+Added to the rule: the search for the old version as a literal constant, with its calibration on `1d156870`, the reading of the assertion before a hit is left, and the master suite among the suites run.
+

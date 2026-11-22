@@ -20,6 +20,8 @@ using rtype::server::testing::CAVES_BAND;
 using rtype::server::testing::CAVES_BEGAN_BEFORE_THE_CHECKPOINT;
 using rtype::server::testing::CAVES_BEGAN_BEFORE_THE_START;
 using rtype::server::testing::CAVES_BIOME;
+using rtype::server::testing::CONTINUES_AFTER_ONE_RESTART;
+using rtype::server::testing::CONTINUES_OF_A_NEW_LEVEL;
 using rtype::server::testing::DIRECTED_LEVEL;
 using rtype::server::testing::FIRST_STAGE;
 using rtype::server::testing::LEVEL_ENEMY_SHEET;
@@ -314,6 +316,57 @@ TEST_F(LevelDirectorFixture, ARestartTellsItsBiomeAlreadyIn) {
   EXPECT_EQ(changes().back().biome, CAVES_BIOME);
   EXPECT_NEAR(changes().back().biomeSince, CAVES_BEGAN_BEFORE_THE_CHECKPOINT,
               SCROLL_TOLERANCE);
+}
+
+/**
+ * Given a level its game gave no other count of continues
+ * When its first tick passes
+ * Then the game is told the 3 continues a level has by default
+ */
+TEST_F(LevelDirectorFixture, TellsTheContinuesOfTheLevelAtItsFirstTick) {
+  direct(LEVEL_OF_TWO_STAGES);
+
+  tick(1);
+
+  ASSERT_THAT(changes(), Not(IsEmpty()));
+  EXPECT_EQ(changes().front().continuesLeft, CONTINUES_OF_A_NEW_LEVEL);
+}
+
+/**
+ * Given a level of 3 continues past its checkpoint
+ * When it restarts from its checkpoint and a tick passes
+ * Then the game is told 2 continues are left
+ */
+TEST_F(LevelDirectorFixture, ARestartTakesAContinue) {
+  direct(LEVEL_OF_TWO_STAGES);
+  tick(TICKS_INTO_THE_SECOND_STAGE);
+  static_cast<void>(director().restartFromCheckpoint());
+
+  tick(1);
+
+  ASSERT_THAT(changes(), Not(IsEmpty()));
+  EXPECT_EQ(changes().back().continuesLeft, CONTINUES_AFTER_ONE_RESTART);
+}
+
+/**
+ * Given a level of 3 continues past its checkpoint, restarted three times,
+ * then an enemy in the world
+ * When it is asked to restart a fourth time
+ * Then it refuses and removes nothing: its continues are spent
+ */
+TEST_F(LevelDirectorFixture, RestartsNoMoreOnceItsContinuesAreSpent) {
+  direct(LEVEL_OF_TWO_STAGES);
+  tick(TICKS_INTO_THE_SECOND_STAGE);
+  ASSERT_TRUE(director().restartFromCheckpoint());
+  ASSERT_TRUE(director().restartFromCheckpoint());
+  ASSERT_TRUE(director().restartFromCheckpoint());
+  place(LEVEL_ENEMY_SHEET, WHERE_THE_ENEMY_IS);
+
+  const bool restarted = director().restartFromCheckpoint();
+  tick(1);
+
+  EXPECT_FALSE(restarted);
+  EXPECT_THAT(removed(), IsEmpty());
 }
 
 /**

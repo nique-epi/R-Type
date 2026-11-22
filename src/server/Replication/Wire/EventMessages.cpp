@@ -121,14 +121,14 @@ EventMessage eventMessageOf(const game::EffectStarted& event) {
 }
 
 EventMessage eventMessageOf(const game::LevelChange& event) {
-  const network::LevelStatus message{
-      .biome = event.biome,
-      .scrollPosition = event.scrollPosition,
-      .scrollSpeed = event.scrollSpeed,
-      .biomeSince = event.biomeSince,
-      .transitionLeft = event.transitionLeft,
-      .bandTop = wireRowOf(event.band.top),
-      .bandBottom = wireRowOf(event.band.bottom)};
+  const network::LevelStatus message{.biome = event.biome,
+                                     .scrollPosition = event.scrollPosition,
+                                     .scrollSpeed = event.scrollSpeed,
+                                     .biomeSince = event.biomeSince,
+                                     .transitionLeft = event.transitionLeft,
+                                     .bandTop = wireRowOf(event.band.top),
+                                     .bandBottom = wireRowOf(event.band.bottom),
+                                     .continuesLeft = event.continuesLeft};
   return EventMessage{.message = network::encodedMessage(message),
                       .guaranteed = true};
 }

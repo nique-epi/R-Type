@@ -17,7 +17,10 @@ using rtype::server::ConnectedPlayer;
 using rtype::server::GameState;
 using rtype::server::testing::FIRST_PLAYER;
 using rtype::server::testing::GameFlowBrokenLevelFixture;
+using rtype::server::testing::GameFlowDeclaredStartFixture;
 using rtype::server::testing::GameFlowFightingLevelFixture;
+using rtype::server::testing::GameFlowNoContinueFixture;
+using rtype::server::testing::GameFlowOneContinueFixture;
 using rtype::server::testing::GameFlowOneStageFixture;
 using rtype::server::testing::GameFlowSendingLevelFixture;
 using rtype::server::testing::GameFlowTwoStagesFixture;
@@ -35,7 +38,7 @@ using rtype::server::testing::TICKS_WHILE_THE_BYDO_LIVES;
 TEST_F(GameFlowTwoStagesFixture, IsLostBeforeTheFirstCheckpoint) {
   startGameWith({FIRST_PLAYER});
   runTicks(TICKS_BEFORE_THE_CHECKPOINT);
-  takeEveryLifeOf(*roster().find(playerEndpoint(FIRST_PLAYER)));
+  takeEveryLifeOfTheFirstPlayer();
 
   tick();
 
@@ -50,7 +53,7 @@ TEST_F(GameFlowTwoStagesFixture, IsLostBeforeTheFirstCheckpoint) {
 TEST_F(GameFlowTwoStagesFixture, GoesOnFromTheCheckpointWhenTheTeamIsLost) {
   startGameWith({FIRST_PLAYER});
   runTicks(TICKS_PAST_THE_CHECKPOINT);
-  takeEveryLifeOf(*roster().find(playerEndpoint(FIRST_PLAYER)));
+  takeEveryLifeOfTheFirstPlayer();
 
   tick();
 
@@ -66,7 +69,7 @@ TEST_F(GameFlowTwoStagesFixture, GivesTheLivesBackAtTheCheckpoint) {
   startGameWith({FIRST_PLAYER});
   runTicks(TICKS_PAST_THE_CHECKPOINT);
   const ConnectedPlayer& player = *roster().find(playerEndpoint(FIRST_PLAYER));
-  takeEveryLifeOf(*roster().find(playerEndpoint(FIRST_PLAYER)));
+  takeEveryLifeOfTheFirstPlayer();
 
   tick();
 
@@ -88,6 +91,77 @@ TEST_F(GameFlowTwoStagesFixture, GivesANewShipAtTheCheckpoint) {
 
   EXPECT_NE(flow().world().shipPositionOf(player.shipEntityId), nullptr);
   EXPECT_EQ(livesLeftTo(player), LIVES_OF_THE_RULES);
+}
+
+/**
+ * Given a game that plays a level with one continue, past its first
+ * checkpoint, whose only player lost every life once and went on from the
+ * checkpoint
+ * When that player loses every life again
+ * Then the game is lost: its continue is spent
+ */
+TEST_F(GameFlowOneContinueFixture, IsLostOnceItsContinuesAreSpent) {
+  startGameWith({FIRST_PLAYER});
+  runTicks(TICKS_PAST_THE_CHECKPOINT);
+  takeEveryLifeOfTheFirstPlayer();
+  tick();
+  ASSERT_EQ(flow().state(), GameState::InProgress);
+  takeEveryLifeOfTheFirstPlayer();
+
+  tick();
+
+  EXPECT_EQ(flow().state(), GameState::Finished);
+}
+
+/**
+ * Given a game that plays a level with one continue, spent at its checkpoint
+ * When its only player loses every life again
+ * Then that player is told the game is lost
+ */
+TEST_F(GameFlowOneContinueFixture, TellsTheDefeatOnceItsContinuesAreSpent) {
+  startGameWith({FIRST_PLAYER});
+  runTicks(TICKS_PAST_THE_CHECKPOINT);
+  takeEveryLifeOfTheFirstPlayer();
+  tick();
+  takeEveryLifeOfTheFirstPlayer();
+
+  tick();
+
+  const std::vector<GameEnded> ends = endsSentTo(FIRST_PLAYER);
+  ASSERT_FALSE(ends.empty());
+  EXPECT_EQ(ends.front().outcome, WireGameOutcome::Defeat);
+}
+
+/**
+ * Given a game that plays a level without any continue, past its first
+ * checkpoint
+ * When its only player loses every life
+ * Then the game is lost, as before the checkpoint
+ */
+TEST_F(GameFlowNoContinueFixture, IsLostAtACheckpointWithoutAContinue) {
+  startGameWith({FIRST_PLAYER});
+  runTicks(TICKS_PAST_THE_CHECKPOINT);
+  takeEveryLifeOfTheFirstPlayer();
+
+  tick();
+
+  EXPECT_EQ(flow().state(), GameState::Finished);
+}
+
+/**
+ * Given a game with one continue that starts at the second stage of its
+ * level, where the script declares that stage starts
+ * When its only player loses every life
+ * Then the game goes on from that start: starting there took no continue
+ */
+TEST_F(GameFlowDeclaredStartFixture, StartingAtAStageTakesNoContinue) {
+  startGameWith({FIRST_PLAYER});
+  runTicks(TICKS_PAST_THE_CHECKPOINT);
+  takeEveryLifeOfTheFirstPlayer();
+
+  tick();
+
+  EXPECT_EQ(flow().state(), GameState::InProgress);
 }
 
 /**

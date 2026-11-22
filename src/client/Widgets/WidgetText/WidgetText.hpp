@@ -19,6 +19,10 @@ namespace rtype::client {
  * pixels. */
 [[nodiscard]] int centeredTextTop(sf::IntRect box);
 
+/** @returns A rule one pixel tall on @p row, centered in @p box, reaching
+ * @p halfWidth pixels on each side of its middle column. */
+[[nodiscard]] sf::IntRect centeredRule(sf::IntRect box, int row, int halfWidth);
+
 /** @returns The color of the label of a bar in a state, also the color of
  * text laid on a row outside any box. */
 [[nodiscard]] sf::Color barTextColor(BarState state);

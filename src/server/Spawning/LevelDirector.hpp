@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <optional>
 #include <string>
@@ -50,18 +51,21 @@ namespace rtype::server {
  * collisions. A game::LevelChange is published on the bus of the game at the
  * first tick, then each time the biome changes, the scroll stops or starts
  * again, a transition starts or ends, or the level restarts from a checkpoint,
- * which forgets the transition it played.
+ * which forgets the transition it played, or the continues left change.
  *
  * The level is cleared once its last stage returned and no enemy is left in
  * the world. A stage that fails makes the level failed, for good, which the
  * journal says once. restartFromCheckpoint() puts the level back at the last
  * checkpoint it reached and removes every body but the ships of the players,
  * each with an EntityDestruction Removed; the enemies placed after that
- * checkpoint then come in again.
+ * checkpoint then come in again. Each restart takes one of the continues the
+ * level was built with (LevelDirectorParts::continues), and a level without
+ * one left restarts no more; every LevelChange tells how many are left.
  *
  * A director built for a stage after the first starts the level there, as
  * restartFromCheckpoint() would from the start the script declares for it,
- * which then stays the checkpoint of the level.
+ * which then stays the checkpoint of the level; that start takes no
+ * continue.
  *
  * It works on one world: the game builds a new one with each new world. Not
  * thread-safe: use it from the simulation thread only.
@@ -83,12 +87,12 @@ class LevelDirector {
 
   /**
    * @brief Puts the level back at its last checkpoint, without any body but
-   * the ships of the players. Its biome is told begun OPENING_BIOME_LEAD
-   * before the checkpoint at the latest, as a level that opens in a biome:
-   * nothing is left behind the entrance of a background after a restart, so
-   * the players start inside it.
-   * @returns Whether the level had reached a checkpoint and has not failed;
-   * nothing changes otherwise.
+   * the ships of the players, for one of its continues. Its biome is told
+   * begun OPENING_BIOME_LEAD before the checkpoint at the latest, as a level
+   * that opens in a biome: nothing is left behind the entrance of a
+   * background after a restart, so the players start inside it.
+   * @returns Whether the level had a continue left, had reached a checkpoint
+   * and has not failed; nothing changes otherwise.
    */
   bool restartFromCheckpoint();
 
@@ -104,7 +108,10 @@ class LevelDirector {
   void spawnDuePlacements();
   void advanceTransition();
   void announceChange();
-  void removeEveryBodyButTheShips() const;
+  /** @brief Puts the level back at its last checkpoint, as
+   * restartFromCheckpoint() does, whatever its continues.
+   * @returns Whether the level had reached one and has not failed. */
+  bool returnToCheckpoint();
 
   LevelDirectorParts parts_;
   /** What the scripts registered as the level, found once. */
@@ -118,6 +125,10 @@ class LevelDirector {
   std::optional<std::string> announcedBiome_;
   bool announcedMoving_{false};
   bool announcedTransitioning_{false};
+  /** How many times the team may still restart from a checkpoint. */
+  std::uint8_t continuesLeft_;
+  /** The continues of the last LevelChange published. */
+  std::uint8_t announcedContinues_{0};
 };
 
 }  // namespace rtype::server
