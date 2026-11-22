@@ -33,6 +33,9 @@ constexpr std::string_view ONE_KOPECK_MISSING_LINE =
     "NOT ENOUGH KOPECKS: 1 MISSING";
 constexpr std::string_view ALREADY_YOURS_LINE = "ALREADY YOURS";
 constexpr std::uint32_t KOPECKS_MISSING = 150;
+/** @brief The line of 150 kopecks missing, in French. */
+constexpr std::string_view FRENCH_NOT_ENOUGH_LINE =
+    "KOPECKS INSUFFISANTS : IL MANQUE 150";
 constexpr std::string_view NOT_ENOUGH_LINE = "NOT ENOUGH KOPECKS: 150 MISSING";
 
 /** @brief Pixels of the interface: the middle of the second cell of the

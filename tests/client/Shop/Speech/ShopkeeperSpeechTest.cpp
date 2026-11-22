@@ -3,6 +3,8 @@
 #include <cstddef>
 #include <span>
 #include <string_view>
+#include "Language.hpp"
+#include "LanguageConstants.hpp"
 #include "MotionPreference.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingSoundPlayer.hpp"
@@ -12,8 +14,11 @@
 #include "ShopkeeperSpeechTestConstants.hpp"
 #include "SpeechLines.hpp"
 #include "SpokenLineConstants.hpp"
+#include "Translation.hpp"
 #include "WidgetConstants.hpp"
 
+using rtype::client::Language;
+using rtype::client::LANGUAGES;
 using rtype::client::MotionPreference;
 using rtype::client::SHOPKEEPER_ALREADY_YOURS_LINE;
 using rtype::client::SHOPKEEPER_BORDER_RADIO_LINES;
@@ -33,20 +38,21 @@ using rtype::client::ShopkeeperSpeech;
 using rtype::client::SIDES_PER_AXIS;
 using rtype::client::speechLinesOf;
 using rtype::client::SPOKEN_BUBBLE_PADDING;
+using rtype::client::Translation;
 using rtype::client::testing::FIRST_GREETING_WORD;
 using rtype::client::testing::FOUR_ITEMS;
 using rtype::client::testing::NO_ITEM;
 using rtype::client::testing::SECOND_GREETING_WORD;
 
 /**
- * Given every line the shopkeeper says
+ * Given every line the shopkeeper says, in every language
  * When each is cut to the text of his bubble
  * Then none takes more lines than his bubble holds
  */
 TEST(ShopkeeperSpeechTest, EveryLineFitsHisBubble) {
   const int textWidth =
       SHOPKEEPER_BUBBLE_WIDTH - (SIDES_PER_AXIS * SPOKEN_BUBBLE_PADDING);
-  const std::array<std::span<const std::string_view>, 12> lists{
+  const std::array<std::span<const Translation>, 12> lists{
       SHOPKEEPER_GREETINGS,
       SHOPKEEPER_BOUGHT_LINES,
       SHOPKEEPER_TOO_EXPENSIVE_LINES,
@@ -59,11 +65,13 @@ TEST(ShopkeeperSpeechTest, EveryLineFitsHisBubble) {
       std::span(&SHOPKEEPER_NOT_FOR_SALE_LINE, 1),
       std::span(&SHOPKEEPER_DANCE_RADIO_LINE, 1),
       std::span(&SHOPKEEPER_SHOP_MUSIC_LINE, 1)};
-  for (const std::span<const std::string_view> list : lists) {
-    for (const std::string_view line : list) {
-      EXPECT_LE(speechLinesOf(line, {}, textWidth).size(),
-                static_cast<std::size_t>(SHOPKEEPER_MAX_LINES))
-          << line;
+  for (const Language language : LANGUAGES) {
+    for (const std::span<const Translation> list : lists) {
+      for (const Translation& line : list) {
+        EXPECT_LE(speechLinesOf(line.in(language), {}, textWidth).size(),
+                  static_cast<std::size_t>(SHOPKEEPER_MAX_LINES))
+            << line.in(language);
+      }
     }
   }
 }

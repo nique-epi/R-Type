@@ -5,6 +5,7 @@ target_include_directories(rtype_client_sprites INTERFACE ${CMAKE_CURRENT_SOURCE
 target_link_libraries(rtype_client_sprites
   INTERFACE
     rtype_client_animation
+    rtype_client_language
     rtype_client_rendering_interfaces
     rtype_engine_exceptions
     rtype_identifiers

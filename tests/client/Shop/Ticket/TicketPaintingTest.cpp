@@ -2,6 +2,8 @@
 #include <algorithm>
 #include <cstddef>
 #include <string_view>
+#include "Language.hpp"
+#include "LanguageConstants.hpp"
 #include "LookItemDescriptionConstants.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "ShipLookConstants.hpp"
@@ -10,8 +12,11 @@
 #include "TicketPainting.hpp"
 #include "TicketTestConstants.hpp"
 #include "TicketView.hpp"
+#include "Translation.hpp"
 #include "WidgetText.hpp"
 
+using rtype::client::Language;
+using rtype::client::LANGUAGES;
 using rtype::client::LOOK_ITEM_DESCRIPTIONS;
 using rtype::client::lookItemLabelOf;
 using rtype::client::paintTicket;
@@ -20,6 +25,7 @@ using rtype::client::TextAlignment;
 using rtype::client::TextFont;
 using rtype::client::TicketDescription;
 using rtype::client::TicketView;
+using rtype::client::Translation;
 using rtype::client::testing::BUY_WORD;
 using rtype::client::testing::CHAPKA_DESCRIPTION;
 using rtype::client::testing::CHAPKA_ITEM;
@@ -129,20 +135,25 @@ TEST(TicketPaintingTest, APaidTicketShowsItsStampInsteadOfItsButtons) {
 }
 
 /**
- * Given the name and the description of every ware of the catalogue
+ * Given the name and the description of every ware of the catalogue, in
+ * every language
  * When their widths are measured in the regular font
  * Then each fits the 152 pixels of text of the ticket, and each ware has a
  * description
  */
 TEST(TicketPaintingTest, EveryWareFitsItsTicket) {
-  for (std::size_t item = 0; item < SHIP_LOOK_ITEM_COUNT; ++item) {
-    const TicketDescription& description = LOOK_ITEM_DESCRIPTIONS.at(item);
-    EXPECT_FALSE(description.front().empty()) << item;
-    EXPECT_LE(regularTextWidth(lookItemLabelOf(item)),
-              TICKET_TEXT_WIDTH_ON_PAPER)
-        << item;
-    for (const std::string_view line : description) {
-      EXPECT_LE(regularTextWidth(line), TICKET_TEXT_WIDTH_ON_PAPER) << line;
+  for (const Language language : LANGUAGES) {
+    for (std::size_t item = 0; item < SHIP_LOOK_ITEM_COUNT; ++item) {
+      const TicketDescription& description = LOOK_ITEM_DESCRIPTIONS.at(item);
+      EXPECT_FALSE(description.front().in(language).empty()) << item;
+      EXPECT_LE(regularTextWidth(lookItemLabelOf(item, language)),
+                TICKET_TEXT_WIDTH_ON_PAPER)
+          << item;
+      for (const Translation& line : description) {
+        EXPECT_LE(regularTextWidth(line.in(language)),
+                  TICKET_TEXT_WIDTH_ON_PAPER)
+            << line.in(language);
+      }
     }
   }
 }

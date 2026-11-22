@@ -24,6 +24,7 @@
 #include "InterfaceColorConstants.hpp"
 #include "InterfacePixel.hpp"
 #include "KeyChipParts.hpp"
+#include "Language.hpp"
 #include "LockerChoice.hpp"
 #include "LockerConstants.hpp"
 #include "LockerPainting.hpp"
@@ -65,12 +66,12 @@ Button::Text backText() {
 /** @returns The status line of the chosen item of @p view: how to get it
  * when the locker does not hold it, else its name, then what Enter does with
  * it, or that an arm is fitting an item. */
-std::string statusOf(const LockerView& view, bool fitting) {
+std::string statusOf(const LockerView& view, bool fitting, Language language) {
   if (!view.locker.items.test(view.chosen)) {
     return identifiers::isHullItem(view.chosen) ? LOCKED_HULL_STATUS
                                                 : LOCKED_STATUS;
   }
-  const std::string status(lookItemLabelOf(view.chosen));
+  const std::string status(lookItemLabelOf(view.chosen, language));
   if (fitting) {
     return status + FITTING_HINT;
   }
@@ -247,8 +248,8 @@ void HangarScreen::repaint() {
                                 .fitting = fitting_,
                                 .elapsed = elapsed_,
                                 .motion = motion_});
-  canvas_->write(statusOf(view, fitting_.has_value()), HANGAR_STATUS_ANCHOR,
-                 HANGAR_STATUS_STYLE);
+  canvas_->write(statusOf(view, fitting_.has_value(), canvas_->language()),
+                 HANGAR_STATUS_ANCHOR, HANGAR_STATUS_STYLE);
   backChip_.paint(*canvas_);
   canvas_->display();
 }

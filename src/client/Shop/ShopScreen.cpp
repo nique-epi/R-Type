@@ -18,6 +18,7 @@
 #include "IWallet.hpp"
 #include "InterfacePixel.hpp"
 #include "KeyChipParts.hpp"
+#include "Language.hpp"
 #include "LookItemPurchase.hpp"
 #include "LookItems.hpp"
 #include "MenuBuilder.hpp"
@@ -118,7 +119,7 @@ ShopScreen::ShopScreen(ShopScreenParts parts,
       music_(parts.audio.get(), Ambience::Shop),
       wallet_(&parts.wallet.get()),
       motion_(parts.motion),
-      speech_(parts.sounds.get(), parts.motion),
+      speech_(parts.sounds.get(), parts.motion, canvas->language()),
       canvas_(std::move(canvas)),
       playfieldPointAt_(std::move(parts.playfieldPointAt)),
       backChip_(KeyChipParts{.text = backText(),
@@ -236,7 +237,7 @@ void ShopScreen::offer() {
   const std::size_t item = chosenItemOf(wares_, selection_);
   const std::optional<Purse> purse = walletPurse(*wallet_);
   if (!purse.has_value()) {
-    message_ = std::string{READING_WALLET_STATUS};
+    message_ = std::string(READING_WALLET_STATUS.in(canvas_->language()));
     return;
   }
   const std::optional<PurchaseRefusal> refusal = lookRefusalOf(*purse, item);
@@ -251,21 +252,23 @@ bool ShopScreen::buy() {
   const std::size_t item = chosenItemOf(wares_, selection_);
   const std::optional<Purse> purse = walletPurse(*wallet_);
   if (!purse.has_value()) {
-    message_ = std::string{READING_WALLET_STATUS};
+    message_ = std::string(READING_WALLET_STATUS.in(canvas_->language()));
     return false;
   }
   if (const std::optional<PurchaseRefusal> refusal =
           lookRefusalOf(*purse, item)) {
     const std::uint32_t price = network::lookItemPrice(item);
     message_ = refusalLineOf(
-        *refusal, price > purse->kopecks ? price - purse->kopecks : 0);
+        *refusal, price > purse->kopecks ? price - purse->kopecks : 0,
+        canvas_->language());
     speech_.refused(*refusal, item);
     return false;
   }
   purchaseAsk_ = wallet_->buy(item);
   purchaseItem_ = item;
-  message_ = std::string{purchaseAsk_ == NO_ACCOUNT_ASK ? SESSION_ENDED_STATUS
-                                                        : BUYING_STATUS};
+  message_ = std::string(
+      (purchaseAsk_ == NO_ACCOUNT_ASK ? SESSION_ENDED_STATUS : BUYING_STATUS)
+          .in(canvas_->language()));
   return purchaseAsk_ != NO_ACCOUNT_ASK;
 }
 
@@ -280,7 +283,7 @@ void ShopScreen::settle() {
   }
   purchaseAsk_ = NO_ACCOUNT_ASK;
   if (answer->refusal.has_value()) {
-    message_ = masterRefusalLineOf(*answer->refusal);
+    message_ = masterRefusalLineOf(*answer->refusal, canvas_->language());
     if (const std::optional<PurchaseRefusal> refusal =
             purchaseRefusalOf(*answer->refusal)) {
       speech_.refused(*refusal, purchaseItem_);
@@ -289,7 +292,7 @@ void ShopScreen::settle() {
     return;
   }
   sounds_->play(PURCHASE_SOUND_ID);
-  message_ = boughtLineOf(purchaseItem_);
+  message_ = boughtLineOf(purchaseItem_, canvas_->language());
   speech_.bought(purchaseItem_);
   ticket_.paid();
 }
@@ -298,10 +301,11 @@ void ShopScreen::repaint() {
   const std::optional<Purse> purse = walletPurse(*wallet_);
   const ShipLocker owned = ownedLooksOf(*wallet_);
   const std::string status =
-      radioPointed_ ? std::string(SHOP_RADIO_HINT)
+      radioPointed_ ? std::string(SHOP_RADIO_HINT.in(canvas_->language()))
                     : message_.value_or(wareLineOf(
                           chosenItemOf(wares_, selection_),
-                          Purse{.kopecks = 0, .chips = 0, .locker = owned}));
+                          Purse{.kopecks = 0, .chips = 0, .locker = owned},
+                          canvas_->language()));
   canvas_->clear();
   paintShop(
       *canvas_, wares_,

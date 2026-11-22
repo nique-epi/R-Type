@@ -3,6 +3,7 @@
 #include <SFML/Window/Keyboard.hpp>
 #include <string_view>
 #include "SoundConstants.hpp"
+#include "Translation.hpp"
 
 namespace rtype::client {
 
@@ -14,27 +15,46 @@ constexpr const char* PURCHASE_SOUND_ID = LOGO_IMPACT_SOUND_ID;
  * SHOP_RADIO_KEY, changes the music between the music of the shop and the
  * music of the radio; under the pointer, the status line says so. */
 constexpr sf::Keyboard::Key SHOP_RADIO_KEY = sf::Keyboard::Key::R;
-constexpr std::string_view SHOP_RADIO_HINT =
-    "RADIO - CLICK OR R: CHANGE THE MUSIC";
+constexpr Translation SHOP_RADIO_HINT{
+    .english = "RADIO - CLICK OR R: CHANGE THE MUSIC",
+    .french = "RADIO - CLIC OU R : CHANGER LA MUSIQUE"};
 
 /** @brief The status line of the shop: a ware and its price, a ware the
  * player owns, a purchase, and why one was refused. */
-constexpr std::string_view BUY_HINT_START = " - ENTER: BUY FOR ";
-constexpr std::string_view BUY_HINT_END = " KOPECKS";
-constexpr std::string_view OWNED_HINT = " - ALREADY YOURS";
-constexpr std::string_view BOUGHT_STATUS_START = "BOUGHT: ";
-constexpr std::string_view ALREADY_YOURS_STATUS = "ALREADY YOURS";
-constexpr std::string_view NOT_FOR_SALE_STATUS = "NOT FOR SALE";
-constexpr std::string_view NOT_ENOUGH_STATUS_START = "NOT ENOUGH KOPECKS: ";
-constexpr std::string_view NOT_ENOUGH_STATUS_END = " MISSING";
+constexpr std::string_view ITEM_MARK = "{ITEM}";
+constexpr std::string_view PRICE_MARK = "{PRICE}";
+constexpr std::string_view MISSING_MARK = "{MISSING}";
+constexpr Translation BUY_HINT{
+    .english = "{ITEM} - ENTER: BUY FOR {PRICE} KOPECKS",
+    .french = "{ITEM} - ENTRÉE : ACHETER {PRICE} KOPECKS"};
+constexpr Translation OWNED_HINT{.english = "{ITEM} - ALREADY YOURS",
+                                 .french = "{ITEM} - DÉJÀ À VOUS"};
+constexpr Translation BOUGHT_STATUS{.english = "BOUGHT: {ITEM}",
+                                    .french = "ACHETÉ : {ITEM}"};
+constexpr Translation ALREADY_YOURS_STATUS{.english = "ALREADY YOURS",
+                                           .french = "DÉJÀ À VOUS"};
+constexpr Translation NOT_FOR_SALE_STATUS{.english = "NOT FOR SALE",
+                                          .french = "PAS À VENDRE"};
+constexpr Translation NOT_ENOUGH_STATUS{
+    .english = "NOT ENOUGH KOPECKS: {MISSING} MISSING",
+    .french = "KOPECKS INSUFFISANTS : IL MANQUE {MISSING}"};
 /** @brief What the status line says while the master is asked: the wallet
  * not read yet, a purchase not answered yet; and what the master answered
  * when it made no purchase for another reason than the price. */
-constexpr std::string_view READING_WALLET_STATUS = "READING YOUR WALLET...";
-constexpr std::string_view BUYING_STATUS = "BUYING...";
-constexpr std::string_view NOT_ENOUGH_KOPECKS_STATUS = "NOT ENOUGH KOPECKS";
-constexpr std::string_view MASTER_SILENT_STATUS = "NO ANSWER FROM THE MASTER";
-constexpr std::string_view MASTER_REFUSED_STATUS = "THE MASTER REFUSED";
-constexpr std::string_view SESSION_ENDED_STATUS = "SIGN IN AGAIN TO BUY";
+constexpr Translation READING_WALLET_STATUS{
+    .english = "READING YOUR WALLET...",
+    .french = "LECTURE DE VOTRE PORTEFEUILLE..."};
+constexpr Translation BUYING_STATUS{.english = "BUYING...",
+                                    .french = "ACHAT..."};
+constexpr Translation NOT_ENOUGH_KOPECKS_STATUS{
+    .english = "NOT ENOUGH KOPECKS", .french = "KOPECKS INSUFFISANTS"};
+constexpr Translation MASTER_SILENT_STATUS{
+    .english = "NO ANSWER FROM THE MASTER",
+    .french = "PAS DE RÉPONSE DU MAÎTRE"};
+constexpr Translation MASTER_REFUSED_STATUS{.english = "THE MASTER REFUSED",
+                                            .french = "LE MAÎTRE A REFUSÉ"};
+constexpr Translation SESSION_ENDED_STATUS{
+    .english = "SIGN IN AGAIN TO BUY",
+    .french = "RECONNECTEZ-VOUS POUR ACHETER"};
 
 }  // namespace rtype::client
