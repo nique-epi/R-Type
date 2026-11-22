@@ -28,18 +28,6 @@ template <std::size_t Count>
   return {labels.begin(), labels.end()};
 }
 
-/** @returns The texts of a list of labels, in @p language. */
-template <std::size_t Count>
-[[nodiscard]] std::vector<std::string> textsOf(
-    const std::array<Translation, Count>& labels, Language language) {
-  std::vector<std::string> texts;
-  texts.reserve(Count);
-  for (const Translation& label : labels) {
-    texts.emplace_back(label.in(language));
-  }
-  return texts;
-}
-
 /** @returns The slider of a volume, dimmed while the sound is muted; it reads
  * and changes @p volume through @p service. */
 [[nodiscard]] std::unique_ptr<RowControl> volumeSlider(

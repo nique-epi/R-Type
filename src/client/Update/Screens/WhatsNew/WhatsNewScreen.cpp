@@ -72,7 +72,7 @@ void WhatsNewScreen::paint() {
                {.border = PANEL_BORDER_COLOR, .inside = PANEL_INSIDE_COLOR})
       .paint(*canvas_);
   canvas_->write(
-      withMark(std::string(WHATS_NEW_HEADING.in(canvas_->language())),
+      withMark(WHATS_NEW_HEADING.in(canvas_->language()),
                {.mark = NOTES_VERSION_MARK, .value = notes_.versionText}),
       panel.position + DIALOG_HEADING_OFFSET, DIALOG_HEADING_STYLE);
   canvas_->fill({panel.position + WHATS_NEW_RULE_OFFSET, WHATS_NEW_RULE_SIZE},

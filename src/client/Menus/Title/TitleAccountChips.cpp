@@ -61,8 +61,6 @@ KeyChip signOutChipOf(const TitleAccountChipsParts& parts) {
 
 TitleAccountChips::TitleAccountChips(TitleAccountChipsParts parts)
     : parts_(std::move(parts)),
-      account_(&parts_.account.get()),
-      wallet_(&parts_.wallet.get()),
       signIn_(signInChipOf(parts_)),
       signOut_(signOutChipOf(parts_)) {}
 
@@ -77,7 +75,7 @@ void TitleAccountChips::followLanguage(Language language) {
 
 bool TitleAccountChips::handleEvent(const sf::Event& event,
                                     const PlayfieldMapping& playfieldPointAt) {
-  const bool signedIn = account_->signedIn();
+  const bool signedIn = parts_.account.get().signedIn();
   KeyChip& shown = signedIn ? signOut_ : signIn_;
   KeyChip& hidden = signedIn ? signIn_ : signOut_;
   hidden.handleEvent(sf::Event::FocusLost{}, playfieldPointAt);
@@ -85,14 +83,14 @@ bool TitleAccountChips::handleEvent(const sf::Event& event,
 }
 
 void TitleAccountChips::paint(IInterfaceCanvas& canvas) const {
-  if (!account_->signedIn()) {
+  if (!parts_.account.get().signedIn()) {
     signIn_.paint(canvas);
     return;
   }
   paintKopecksBalance(canvas, KOPECKS_BALANCE_TOP_RIGHT,
-                      walletKopecks(*wallet_));
+                      walletKopecks(parts_.wallet.get()));
   signOut_.paint(canvas);
-  canvas.write(account_->nickname(),
+  canvas.write(parts_.account.get().nickname(),
                {KOPECKS_BALANCE_TOP_RIGHT.x, TITLE_NICKNAME_TOP},
                TITLE_NICKNAME_STYLE);
 }

@@ -6,6 +6,7 @@
 #include "CashierConstants.hpp"
 #include "CashierExchange.hpp"
 #include "CashierWay.hpp"
+#include "CasinoPaintingConstants.hpp"
 #include "Currency.hpp"
 #include "ExchangeRequest.hpp"
 #include "Kopecks.hpp"
@@ -23,20 +24,21 @@ namespace {
 
 /** @returns The name of the balance @p way takes from. */
 Translation sourceWordOf(CashierWay way) {
-  return way == CashierWay::BuyChips ? KOPECKS_WORD : CHIPS_WORD;
+  return way == CashierWay::BuyChips ? CASINO_KOPECKS_CAPTION
+                                     : CASINO_CHIPS_CAPTION;
 }
 
 /** @returns The name of the balance @p way gives to. */
 Translation destinationWordOf(CashierWay way) {
-  return way == CashierWay::BuyChips ? CHIPS_WORD : KOPECKS_WORD;
+  return way == CashierWay::BuyChips ? CASINO_CHIPS_CAPTION
+                                     : CASINO_KOPECKS_CAPTION;
 }
 
 /** @returns @p line in @p language, the name of @p currency in its mark. */
 std::string withCurrency(Translation line, Translation currency,
                          Language language) {
-  return withMark(
-      std::string(line.in(language)),
-      {.mark = CASHIER_CURRENCY_MARK, .value = currency.in(language)});
+  return withMark(line.in(language), {.mark = CASHIER_CURRENCY_MARK,
+                                      .value = currency.in(language)});
 }
 
 /** @returns Why the master did not make an exchange, in both languages. */

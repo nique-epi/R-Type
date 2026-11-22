@@ -95,15 +95,17 @@ sf::Color nameColorOf(const ChatEntry& entry, const PlayerPalette& palette) {
 
 /** @returns What @p entry says in @p language: the wording of a line the
  * client writes, the text of a pilot. */
-std::string textOf(const ChatEntry& entry, Language language) {
-  return entry.wording.has_value() ? std::string(entry.wording->in(language))
-                                   : entry.text;
+std::string_view textOf(const ChatEntry& entry, Language language) {
+  return entry.wording.has_value() ? entry.wording->in(language)
+                                   : std::string_view(entry.text);
 }
 
 /** @returns The whole line of @p entry in @p language: its head, then its
  * text. */
 std::string lineOf(const ChatEntry& entry, Language language) {
-  return headOf(entry) + textOf(entry, language);
+  std::string line = headOf(entry);
+  line += textOf(entry, language);
+  return line;
 }
 
 /** @brief Adds the lines of @p entry on screen to @p rows, its name split off
@@ -111,7 +113,8 @@ std::string lineOf(const ChatEntry& entry, Language language) {
 void addRowsOf(const ChatEntry& entry, const ChatView& view,
                std::vector<ChatRow>& rows) {
   const std::string head = headOf(entry);
-  const std::string line = head + textOf(entry, view.settings.get().language);
+  std::string line = head;
+  line += textOf(entry, view.settings.get().language);
   const sf::Color name = nameColorOf(entry, view.palette);
   const sf::Color body =
       entry.playerNumber == CLIENT_WRITER ? CHAT_NOTICE_COLOR : CHAT_TEXT_COLOR;
@@ -196,7 +199,7 @@ void paintClosed(IInterfaceCanvas& canvas, const ChatView& view) {
  * @p language. */
 std::string moreLinesText(int lines, Language language) {
   const std::string count = std::to_string(lines);
-  return withMark(std::string(MORE_LINES.in(language)),
+  return withMark(MORE_LINES.in(language),
                   TextMark{.mark = LINE_COUNT_MARK, .value = count});
 }
 

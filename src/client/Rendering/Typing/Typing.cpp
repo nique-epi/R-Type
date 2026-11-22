@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <string_view>
+#include "LetterCounts.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -21,9 +22,7 @@ engine::Duration typingTimeOf(engine::Duration letterTime,
   return letterTime * static_cast<engine::Duration::rep>(letters);
 }
 
-std::size_t letterCountOf(std::string_view text) {
-  return sf::Utf8::count(text.begin(), text.end());
-}
+std::size_t letterCountOf(std::string_view text) { return lettersIn(text); }
 
 std::string_view typedPrefix(std::string_view text, std::size_t letters) {
   std::string_view::const_iterator end = text.begin();

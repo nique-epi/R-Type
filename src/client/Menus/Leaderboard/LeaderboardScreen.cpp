@@ -38,7 +38,6 @@
 #include "LeaderboardScreenParts.hpp"
 #include "LeaderboardSpriteConstants.hpp"
 #include "LeaderboardTab.hpp"
-#include "LetterCounts.hpp"
 #include "MenuBuilder.hpp"
 #include "MenuScreenIdConstants.hpp"
 #include "MotionPreference.hpp"
@@ -194,9 +193,8 @@ void paintAsking(IInterfaceCanvas& canvas, engine::Duration time) {
   const auto dots =
       static_cast<std::size_t>((time / ASKING_DOT_TIME) % ASKING_DOT_STEPS);
   const std::string_view asking = ASKING_TEXT.in(canvas.language());
-  const int widest =
-      static_cast<int>(lettersIn(asking) + ASKING_DOT_STEPS - 1) *
-      REGULAR_FONT_ADVANCE;
+  const int widest = canvas.textWidth(
+      std::string(asking).append(ASKING_DOT_STEPS - 1, '.'), TextFont::Regular);
   canvas.write(std::string(asking).append(dots, '.'),
                {MESSAGE_LINE_ANCHOR.x - (widest / 2), ASKING_TOP},
                {.font = TextFont::Regular, .color = MESSAGE_LINE_COLOR});

@@ -53,7 +53,7 @@ std::string versionRefusalLine(std::uint8_t serverVersion, Language language) {
   const std::string server =
       std::to_string(static_cast<unsigned int>(serverVersion));
   return withMark(
-      withMark(std::string(INCOMPATIBLE_VERSION_STATUS.in(language)),
+      withMark(INCOMPATIBLE_VERSION_STATUS.in(language),
                TextMark{.mark = CLIENT_VERSION_MARK, .value = client}),
       TextMark{.mark = SERVER_VERSION_MARK, .value = server});
 }
@@ -63,7 +63,7 @@ std::string versionRefusalLine(std::uint8_t serverVersion, Language language) {
 std::string livesRefusalLine(Language language) {
   const std::string lowest = std::to_string(identifiers::LOWEST_LIVES);
   const std::string highest = std::to_string(identifiers::HIGHEST_LIVES);
-  return withMark(withMark(std::string(LIVES_REFUSED_STATUS.in(language)),
+  return withMark(withMark(LIVES_REFUSED_STATUS.in(language),
                            TextMark{.mark = LOWEST_MARK, .value = lowest}),
                   TextMark{.mark = HIGHEST_MARK, .value = highest});
 }
@@ -97,7 +97,7 @@ std::string refusalLine(const ConnectionStatus& status, Language language) {
 std::string acceptedLine(std::uint8_t playerNumber, Language language) {
   const std::string number =
       std::to_string(static_cast<unsigned int>(playerNumber));
-  return withMark(std::string(ACCEPTED_STATUS.in(language)),
+  return withMark(ACCEPTED_STATUS.in(language),
                   TextMark{.mark = NUMBER_MARK, .value = number});
 }
 
@@ -111,7 +111,7 @@ std::string loadingContentLine(const ConnectionStatus& status,
           ? 0
           : (status.contentReceived * WHOLE_PERCENT) / status.contentSize;
   const std::string share = std::to_string(percent);
-  return withMark(std::string(LOADING_CONTENT_STATUS.in(language)),
+  return withMark(LOADING_CONTENT_STATUS.in(language),
                   TextMark{.mark = PERCENT_MARK, .value = share});
 }
 

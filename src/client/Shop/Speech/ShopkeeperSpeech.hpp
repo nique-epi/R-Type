@@ -22,8 +22,10 @@ namespace rtype::client {
  */
 class ShopkeeperSpeech {
  public:
-  /** @param sounds Plays his voice; it must outlive him. */
-  /** @param language The language of his lines, English when left out. */
+  /**
+   * @param sounds Plays his voice; it must outlive him.
+   * @param language The language of his lines, English when left out.
+   */
   ShopkeeperSpeech(ISoundPlayer& sounds, MotionPreference motion,
                    Language language = Language::English);
 

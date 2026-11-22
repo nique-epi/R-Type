@@ -18,6 +18,7 @@
 #include "PlayfieldMapping.hpp"
 #include "RowControl.hpp"
 #include "TimeConstants.hpp"
+#include "TranslatedTexts.hpp"
 #include "Translation.hpp"
 #include "ValueBinding.hpp"
 #include "WidgetConstants.hpp"
@@ -31,13 +32,8 @@ namespace {
 std::unique_ptr<RowControl> selectorOver(std::span<const Translation> labels,
                                          std::size_t& value,
                                          Language language) {
-  std::vector<std::string> texts;
-  texts.reserve(labels.size());
-  for (const Translation& label : labels) {
-    texts.emplace_back(label.in(language));
-  }
   return std::make_unique<ChoiceSelector>(
-      std::move(texts),
+      textsIn(labels, language),
       ValueBinding<std::size_t>{
           .read = [&value] { return value; },
           .write = [&value](std::size_t chosen) { value = chosen; }});

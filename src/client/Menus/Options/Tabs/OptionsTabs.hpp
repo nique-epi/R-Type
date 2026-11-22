@@ -51,8 +51,6 @@ class OptionsTabs {
   [[nodiscard]] std::optional<SelectedRow> selectedRow() const;
 
   OptionsTabsParts parts_;
-  SettingsService* service_;
-  ISizableWindow* window_;
   Language builtIn_;
   /** @brief Set while tabs_ is built, so declared, and initialized, before
    * it. */

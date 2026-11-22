@@ -48,7 +48,7 @@ bool isKopecks(CashierWay way, bool source) {
 /** @returns The name of the balance @p way takes from, then of the one it
  * gives to, as @p source says. */
 Translation balanceWordOf(CashierWay way, bool source) {
-  return isKopecks(way, source) ? KOPECKS_WORD : CHIPS_WORD;
+  return isKopecks(way, source) ? CASINO_KOPECKS_CAPTION : CASINO_CHIPS_CAPTION;
 }
 
 /** @brief Writes the balance @p view takes from, on the left, when
@@ -101,7 +101,7 @@ void paintAmount(IInterfaceCanvas& canvas, const CashierView& view) {
   canvas.write(CASHIER_RAISE_MARK,
                {CASHIER_RAISE_MARK_LEFT, CASHIER_AMOUNT_TEXT_TOP},
                regularStyle(CASINO_LIGHT_GOLD, TextAlignment::Left));
-  canvas.write(withMark(std::string(CASHIER_STEP_LINE.in(canvas.language())),
+  canvas.write(withMark(CASHIER_STEP_LINE.in(canvas.language()),
                         {.mark = CASHIER_STEP_MARK,
                          .value = std::to_string(CHIP_VALUES.at(view.step))}),
                {CASHIER_RIGHT, CASHIER_AMOUNT_TOP},

@@ -8,6 +8,7 @@ target_link_libraries(rtype_client_typing
     rtype_engine_time
   PRIVATE
     SFML::System
+    rtype_client_language
 )
 
 rtype_enable_warnings(rtype_client_typing)

@@ -110,8 +110,6 @@ constexpr Translation BUY_CHIPS_RATE{.english = "1 KOPECK = 1 CHIP",
                                      .french = "1 KOPECK = 1 JETON"};
 constexpr Translation CASH_OUT_RATE{.english = "1 CHIP = 1 KOPECK",
                                     .french = "1 JETON = 1 KOPECK"};
-constexpr Translation KOPECKS_WORD{.english = "KOPECKS", .french = "KOPECKS"};
-constexpr Translation CHIPS_WORD{.english = "CHIPS", .french = "JETONS"};
 constexpr const char* CASHIER_AMOUNT_WORD_GAP = " ";
 
 /** @brief Why the cashier refuses: no amount, a balance short of it, after

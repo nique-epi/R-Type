@@ -76,7 +76,7 @@ std::string pilotsAndGamesOf(const ServerRow& server, Language language) {
                              PILOTS_SEPARATOR +
                              std::to_string(server.maximumPlayers);
   const std::string games = std::to_string(server.gameCount);
-  return withMark(withMark(std::string(PILOTS_AND_GAMES.in(language)),
+  return withMark(withMark(PILOTS_AND_GAMES.in(language),
                            TextMark{.mark = PILOTS_MARK, .value = pilots}),
                   TextMark{.mark = GAMES_MARK, .value = games});
 }

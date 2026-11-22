@@ -136,7 +136,7 @@ std::string filterSummaryOf(LeaderboardFilterChoice choice, Language language) {
       std::string(LEADERBOARD_PILOT_LABELS.at(choice.pilots).in(language)) +
       std::string((choice.pilots == 1 ? ONE_PILOT_TEXT : SEVERAL_PILOTS_TEXT)
                       .in(language));
-  return withMark(withMark(std::string(FILTER_SUMMARY.in(language)),
+  return withMark(withMark(FILTER_SUMMARY.in(language),
                            TextMark{.mark = DIFFICULTY_MARK,
                                     .value = LEADERBOARD_DIFFICULTY_LABELS
                                                  .at(choice.difficulty)

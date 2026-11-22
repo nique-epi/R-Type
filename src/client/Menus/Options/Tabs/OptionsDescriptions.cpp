@@ -40,7 +40,7 @@ std::string volumeDescription(int defaultVolume, bool muted,
   }
   const std::string step = std::to_string(VOLUME_STEP);
   const std::string byDefault = std::to_string(defaultVolume);
-  return withMark(withMark(std::string(VOLUME_DESCRIPTION.in(language)),
+  return withMark(withMark(VOLUME_DESCRIPTION.in(language),
                            TextMark{.mark = STEP_MARK, .value = step}),
                   TextMark{.mark = DEFAULT_MARK, .value = byDefault});
 }
@@ -55,7 +55,7 @@ std::string keyDescription(const KeySlot& slot,
   }
   if (sharing.has_value()) {
     return withMark(
-        std::string(CONFLICT_DESCRIPTION.in(language)),
+        CONFLICT_DESCRIPTION.in(language),
         TextMark{
             .mark = ACTION_MARK,
             .value = BOUND_ACTION_LABELS[static_cast<std::size_t>(*sharing)].in(

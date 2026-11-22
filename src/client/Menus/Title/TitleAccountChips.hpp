@@ -43,8 +43,6 @@ class TitleAccountChips {
 
  private:
   TitleAccountChipsParts parts_;
-  const IAccountSession* account_;
-  const IWallet* wallet_;
   KeyChip signIn_;
   KeyChip signOut_;
 };

@@ -50,7 +50,7 @@ BannerLine secondLineOf(std::uint8_t continuesLeft, Language language) {
   }
   const std::string count = std::to_string(continuesLeft);
   return BannerLine{
-      .text = withMark(std::string(CONTINUES_LEFT.in(language)),
+      .text = withMark(CONTINUES_LEFT.in(language),
                        TextMark{.mark = CONTINUE_COUNT_MARK, .value = count}),
       .font = TextFont::Small,
       .color = CONTINUES_LEFT_COLOR};

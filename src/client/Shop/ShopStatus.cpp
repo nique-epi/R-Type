@@ -21,18 +21,18 @@ std::string wareLineOf(std::size_t item, const Purse& purse,
                        Language language) {
   const std::string_view name = lookItemLabelOf(item, language);
   if (purse.locker.items.test(item)) {
-    return withMark(std::string(OWNED_HINT.in(language)),
+    return withMark(OWNED_HINT.in(language),
                     TextMark{.mark = ITEM_MARK, .value = name});
   }
   const std::string price = kopecksText(network::lookItemPrice(item));
-  return withMark(withMark(std::string(BUY_HINT.in(language)),
+  return withMark(withMark(BUY_HINT.in(language),
                            TextMark{.mark = ITEM_MARK, .value = name}),
                   TextMark{.mark = PRICE_MARK, .value = price});
 }
 
 std::string boughtLineOf(std::size_t item, Language language) {
   return withMark(
-      std::string(BOUGHT_STATUS.in(language)),
+      BOUGHT_STATUS.in(language),
       TextMark{.mark = ITEM_MARK, .value = lookItemLabelOf(item, language)});
 }
 
@@ -47,7 +47,7 @@ std::string refusalLineOf(PurchaseRefusal refusal, std::uint32_t missing,
       break;
   }
   const std::string short_ = kopecksText(missing);
-  return withMark(std::string(NOT_ENOUGH_STATUS.in(language)),
+  return withMark(NOT_ENOUGH_STATUS.in(language),
                   TextMark{.mark = MISSING_MARK, .value = short_});
 }
 

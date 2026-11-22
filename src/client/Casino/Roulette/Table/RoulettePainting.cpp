@@ -85,7 +85,7 @@ void paintSpinCountdown(IInterfaceCanvas& canvas,
   canvas.fill(SPIN_PLAQUE_AREA, CASINO_PANEL_INSIDE_COLOR);
   paintEdges(canvas, SPIN_PLAQUE_AREA, CASINO_GOLD);
   canvas.write(
-      withMark(std::string(SPIN_IN_LINE.in(canvas.language())),
+      withMark(SPIN_IN_LINE.in(canvas.language()),
                {.mark = ROULETTE_SECONDS_MARK,
                 .value = std::to_string(countdown.seconds)}),
       SPIN_PLAQUE_TEXT_TOP_LEFT,
@@ -110,15 +110,14 @@ void paintBigWin(IInterfaceCanvas& canvas, const BigWin& bigWin) {
                          .outlined = true,
                          .alignment = TextAlignment::Center,
                          .scale = BIG_WIN_TITLE_SCALE});
-  canvas.write(
-      withMark(withMark(std::string(BIG_WIN_LINE.in(canvas.language())),
-                        {.mark = BIG_WIN_GAIN_MARK,
-                         .value = std::to_string(bigWin.gain)}),
-               {.mark = BIG_WIN_PILOT_MARK, .value = bigWin.nickname}),
-      BIG_WIN_LINE_TOP_MIDDLE,
-      TextStyle{.font = TextFont::Regular,
-                .color = STAR_WHITE,
-                .alignment = TextAlignment::Center});
+  canvas.write(withMark(withMark(BIG_WIN_LINE.in(canvas.language()),
+                                 {.mark = BIG_WIN_GAIN_MARK,
+                                  .value = std::to_string(bigWin.gain)}),
+                        {.mark = BIG_WIN_PILOT_MARK, .value = bigWin.nickname}),
+               BIG_WIN_LINE_TOP_MIDDLE,
+               TextStyle{.font = TextFont::Regular,
+                         .color = STAR_WHITE,
+                         .alignment = TextAlignment::Center});
 }
 
 }  // namespace

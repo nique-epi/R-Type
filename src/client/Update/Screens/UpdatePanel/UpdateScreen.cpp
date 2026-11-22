@@ -52,7 +52,7 @@ void paintBar(IInterfaceCanvas& canvas, sf::Vector2i topLeft,
 std::string statusLineOf(const UpdateProgress& progress, Language language) {
   switch (progress.phase) {
     case UpdatePhase::Downloading:
-      return withMark(std::string(DOWNLOADING_LINE.in(language)),
+      return withMark(DOWNLOADING_LINE.in(language),
                       {.mark = DOWNLOAD_PERCENT_MARK,
                        .value = std::to_string(progress.percent)});
     case UpdatePhase::Installing:

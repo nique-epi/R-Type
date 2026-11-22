@@ -49,14 +49,14 @@ const Translation& stateWordOf(network::ListedGameState state) {
 std::string descriptionOf(const GameRow& game, Language language) {
   if (isJoinable(game)) {
     const std::string rules = rulesLineOf(game.rules, language);
-    return withMark(withMark(std::string(JOINABLE_DESCRIPTION.in(language)),
+    return withMark(withMark(JOINABLE_DESCRIPTION.in(language),
                              TextMark{.mark = GAME_MARK, .value = game.name}),
                     TextMark{.mark = RULES_MARK, .value = rules});
   }
   const Translation& refusal = game.state == network::ListedGameState::InGame
                                    ? IN_GAME_DESCRIPTION
                                    : FULL_DESCRIPTION;
-  return withMark(std::string(refusal.in(language)),
+  return withMark(refusal.in(language),
                   TextMark{.mark = GAME_MARK, .value = game.name});
 }
 

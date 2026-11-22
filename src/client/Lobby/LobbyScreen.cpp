@@ -99,7 +99,7 @@ std::string statusLine(std::span<const network::LobbyPlayer> players,
   }
   if (notReady > 1) {
     const std::string count = std::to_string(notReady);
-    return withMark(std::string(PILOTS_NOT_READY_STATUS.in(language)),
+    return withMark(PILOTS_NOT_READY_STATUS.in(language),
                     TextMark{.mark = NOT_READY_COUNT_MARK, .value = count});
   }
   const auto waiting =
@@ -107,7 +107,7 @@ std::string statusLine(std::span<const network::LobbyPlayer> players,
   if (waiting->playerNumber == ownNumber) {
     return std::string(YOU_NOT_READY_STATUS.in(language));
   }
-  return withMark(std::string(PILOT_NOT_READY_STATUS.in(language)),
+  return withMark(PILOT_NOT_READY_STATUS.in(language),
                   TextMark{.mark = PILOT_MARK, .value = waiting->nickname});
 }
 
@@ -280,7 +280,7 @@ std::string mapVoteLineOf(std::span<const network::LobbyMap> maps,
     return {};
   }
   return withMark(
-      std::string(BAY_VOTE.in(language)),
+      BAY_VOTE.in(language),
       TextMark{
           .mark = MAP_MARK,
           .value =

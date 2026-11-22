@@ -30,7 +30,7 @@ std::string validityOf(const DeviceLinkReading& reading,
     return std::string(LAST_MINUTE_TEXT.in(standing.language));
   }
   const std::string minutes = std::to_string(units);
-  return withMark(std::string(VALID_FOR.in(standing.language)),
+  return withMark(VALID_FOR.in(standing.language),
                   TextMark{.mark = MINUTES_MARK, .value = minutes});
 }
 
@@ -39,7 +39,7 @@ SignInLines waitingLines(const DeviceLinkReading& reading,
   const std::string page = pageShownOf(reading.verificationUri);
   return SignInLines{
       .title = reading.userCode,
-      .line = withMark(std::string(ENTER_CODE_AT.in(standing.language)),
+      .line = withMark(ENTER_CODE_AT.in(standing.language),
                        TextMark{.mark = PAGE_MARK, .value = page}),
       .validity = validityOf(reading, standing),
       .offersNewCode = false};

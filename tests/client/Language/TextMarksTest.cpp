@@ -11,8 +11,7 @@ using rtype::client::withMark;
  * Then the value stands where the mark stood
  */
 TEST(TextMarksTest, PutsTheValueWhereTheMarkStands) {
-  EXPECT_EQ(withMark(std::string(MARK_IN_THE_MIDDLE), THREE_AS_COUNT),
-            MIDDLE_FILLED);
+  EXPECT_EQ(withMark(MARK_IN_THE_MIDDLE, THREE_AS_COUNT), MIDDLE_FILLED);
 }
 
 /**
@@ -21,8 +20,7 @@ TEST(TextMarksTest, PutsTheValueWhereTheMarkStands) {
  * Then only the first mark is replaced
  */
 TEST(TextMarksTest, ReplacesTheFirstMarkOnly) {
-  EXPECT_EQ(withMark(std::string(MARK_TWICE), THREE_AS_COUNT),
-            FIRST_OF_TWO_FILLED);
+  EXPECT_EQ(withMark(MARK_TWICE, THREE_AS_COUNT), FIRST_OF_TWO_FILLED);
 }
 
 /**
@@ -31,5 +29,5 @@ TEST(TextMarksTest, ReplacesTheFirstMarkOnly) {
  * Then the sentence is unchanged
  */
 TEST(TextMarksTest, LeavesASentenceWithoutTheMark) {
-  EXPECT_EQ(withMark(std::string(NO_MARK), THREE_AS_COUNT), NO_MARK);
+  EXPECT_EQ(withMark(NO_MARK, THREE_AS_COUNT), NO_MARK);
 }

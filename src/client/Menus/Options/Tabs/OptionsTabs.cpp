@@ -27,6 +27,7 @@
 #include "SettingDefinitionConstants.hpp"
 #include "SettingsConstants.hpp"
 #include "SettingsService.hpp"
+#include "TranslatedTexts.hpp"
 #include "Translation.hpp"
 #include "WidgetConstants.hpp"
 #include "WindowLayout.hpp"
@@ -52,7 +53,7 @@ std::string inLanguage(const OptionsTabsParts& parts, const Translation& text) {
 MenuBuilder tabbedPanel(const OptionsTabsParts& parts, std::size_t tab) {
   MenuBuilder builder(MenuBuilder::Frame::TabbedPanel, &parts.sounds.get());
   builder.heading(inLanguage(parts, SETTINGS_HEADING))
-      .tabs(textsOf(OPTIONS_TAB_LABELS, languageOf(parts)), tab,
+      .tabs(textsIn(OPTIONS_TAB_LABELS, languageOf(parts)), tab,
             {.previous = parts.keyName(PREVIOUS_TAB_KEY),
              .next = parts.keyName(NEXT_TAB_KEY)},
             parts.openTab);
@@ -237,8 +238,6 @@ std::vector<Menu> buildTabs(const OptionsTabsParts& parts,
 
 OptionsTabs::OptionsTabs(const OptionsTabsParts& parts)
     : parts_(parts),
-      service_(&parts.service.get()),
-      window_(&parts.window.get()),
       builtIn_(parts.service.get().settings().language),
       tabs_(buildTabs(parts_, handles_, std::nullopt)) {}
 
@@ -253,7 +252,7 @@ Menu& OptionsTabs::openMenu() { return tabs_[openTab_]; }
 const Menu& OptionsTabs::openMenu() const { return tabs_[openTab_]; }
 
 void OptionsTabs::followLanguage() {
-  const Language language = service_->settings().language;
+  const Language language = parts_.service.get().settings().language;
   if (language == builtIn_) {
     return;
   }
@@ -274,7 +273,7 @@ const Dropdown& OptionsTabs::windowSizes() const {
 }
 
 void OptionsTabs::refreshDescriptions() {
-  const PlayerSettings& settings = service_->settings();
+  const PlayerSettings& settings = parts_.service.get().settings();
   Menu& sound = tabs_[SOUND_TAB];
   sound.setDescription(MUSIC_ROW,
                        volumeDescription(DEFAULT_MUSIC_VOLUME, settings.muted,
@@ -293,7 +292,7 @@ void OptionsTabs::refreshDescriptions() {
                        settings.keys.otherActionWithKeyOf(BOUND_ACTIONS[row]),
                        settings.language));
   }
-  const WindowLayout& layout = window_->windowLayout();
+  const WindowLayout& layout = parts_.window.get().windowLayout();
   Menu& display = tabs_[DISPLAY_TAB];
   display.setDescription(
       DISPLAY_MODE_ROW,

@@ -39,7 +39,7 @@ std::string rulesLineOf(const network::GameRules& rules, Language language) {
   const Translation& livesWords =
       rules.lives == 1 ? ONE_LIFE_WORDS : LIVES_WORDS;
   return difficultyNameOf(rules.difficulty, language) + RULES_SEPARATOR +
-         withMark(std::string(livesWords.in(language)),
+         withMark(livesWords.in(language),
                   TextMark{.mark = LIVES_MARK, .value = lives}) +
          RULES_SEPARATOR +
          std::string((rules.friendlyFire ? FRIENDLY_FIRE_ON_WORDS

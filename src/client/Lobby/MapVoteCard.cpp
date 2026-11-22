@@ -244,7 +244,7 @@ std::string MapVoteCard::label(Language language) const {
     return std::string(MAP_BAR_CLOSED.in(language));
   }
   const std::string name = shownName(language);
-  return withMark(std::string(MAP_BAR.in(language)),
+  return withMark(MAP_BAR.in(language),
                   TextMark{.mark = MAP_MARK, .value = name});
 }
 

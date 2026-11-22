@@ -67,7 +67,7 @@ Translation refusalLineOf(CasinoRefusal refusal) {
 std::string withSecondsLeft(Translation line, const RouletteReading& reading,
                             Language language) {
   return withMark(
-      std::string(line.in(language)),
+      line.in(language),
       {.mark = ROULETTE_SECONDS_MARK,
        .value = std::to_string(secondsBegunIn(phaseTimeLeft(reading)))});
 }

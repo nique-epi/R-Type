@@ -117,8 +117,6 @@ constexpr sf::Vector2i BAND_STAKE_CAPTION(70, 235);
 constexpr sf::Vector2i BAND_STAKE_VALUE(70, 245);
 constexpr sf::Vector2i BAND_STATUS(10, 258);
 constexpr sf::Vector2i BAND_FIRST_CHIP(150, 235);
-constexpr Translation BAND_CHIPS_CAPTION_TEXT{.english = "CHIPS",
-                                              .french = "JETONS"};
 constexpr Translation BAND_STAKE_CAPTION_TEXT{.english = "STAKE",
                                               .french = "MISE"};
 
