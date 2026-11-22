@@ -4,6 +4,7 @@
 #include <SFML/Window/Keyboard.hpp>
 #include <string_view>
 #include "InterfaceConstants.hpp"
+#include "LetterCounts.hpp"
 #include "Translation.hpp"
 #include "WidgetConstants.hpp"
 
@@ -39,7 +40,10 @@ constexpr int SLIDER_THUMB_TOP = 1;
 constexpr std::string_view WIDEST_SLIDER_VALUE = "100%";
 constexpr int SLIDER_VALUE_WIDTH =
     static_cast<int>(WIDEST_SLIDER_VALUE.size()) * REGULAR_FONT_ADVANCE;
-constexpr const char* SLIDER_INACTIVE_TEXT = "OFF";
+constexpr Translation SLIDER_INACTIVE_TEXT{.english = "OFF", .french = "MUET"};
+static_assert(lettersIn(SLIDER_INACTIVE_TEXT.french) <=
+                  lettersIn(WIDEST_SLIDER_VALUE),
+              "a muted slider writes its French word in the room of its value");
 
 /** @brief Divides a doubled quotient into the quotient rounded to the nearest
  * whole number, as the step under the pointer is found. */

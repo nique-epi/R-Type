@@ -76,9 +76,9 @@ std::optional<std::size_t> rowIn(std::optional<SelectedRow> kept,
  * QUIT at the right end of the row of BACK; it selects @p selected first. */
 Menu withBack(const OptionsTabsParts& parts, MenuBuilder& builder,
               std::optional<std::size_t> selected) {
-  builder.cancelButton(
-      {.label = BACK_LABEL, .description = inLanguage(parts, BACK_DESCRIPTION)},
-      parts.close);
+  builder.cancelButton({.label = inLanguage(parts, BACK_LABEL),
+                        .description = inLanguage(parts, BACK_DESCRIPTION)},
+                       parts.close);
   if (parts.place == OptionsPlace::OverGame) {
     builder.button({.label = inLanguage(parts, QUIT_LABEL),
                     .description = inLanguage(parts, QUIT_GAME_DESCRIPTION)},

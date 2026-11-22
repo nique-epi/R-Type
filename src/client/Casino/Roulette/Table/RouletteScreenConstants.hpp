@@ -115,17 +115,17 @@ constexpr const char* BAND_STAKE_CAPTION_TEXT = "STAKE";
 
 /** @brief The bars of the band: CLEAR and REBET side by side, BACK under
  * REBET. */
-constexpr CasinoBar CLEAR_BAR{.label = "CLEAR",
+constexpr CasinoBar CLEAR_BAR{.label = {.english = "CLEAR", .french = "VIDER"},
                               .keyName = "C",
                               .area = sf::IntRect({312, 234}, {78, 16}),
                               .key = sf::Keyboard::Key::C};
-constexpr CasinoBar REBET_BAR{.label = "REBET",
+constexpr CasinoBar REBET_BAR{.label = {.english = "REBET", .french = "IDEM"},
                               .keyName = "R",
                               .area = sf::IntRect({396, 234}, {78, 16}),
                               .key = sf::Keyboard::Key::R};
 constexpr CasinoBar TABLE_BACK_BAR{.label = BACK_LABEL,
                                    .keyName = CANCEL_KEY_NAME,
-                                   .area = sf::IntRect({396, 253}, {78, 14}),
+                                   .area = sf::IntRect({376, 253}, {98, 14}),
                                    .key = MENU_CANCEL_KEY};
 
 /**

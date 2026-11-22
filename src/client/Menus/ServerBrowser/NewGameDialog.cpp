@@ -124,12 +124,14 @@ Menu newGameMenu(NewGameMenuParts parts) {
   const Language language = parts.language;
   return MenuBuilder(MenuBuilder::Frame::Dialog, &parts.sounds.get())
       .heading(std::string(NEW_GAME_HEADING.in(language)))
-      .row({.label = DIFFICULTY_ROW_LABEL}, difficultySelector(draft, language))
+      .row({.label = std::string(DIFFICULTY_ROW_LABEL.in(language))},
+           difficultySelector(draft, language))
       .row({.label = std::string(NEW_GAME_LIVES_LABEL.in(language))},
            livesSelector(draft))
       .row({.label = std::string(NEW_GAME_FRIENDLY_FIRE_LABEL.in(language))},
            friendlyFireSwitch(draft))
-      .cancelButton({.label = BACK_LABEL}, [&navigator] { navigator.pop(); })
+      .cancelButton({.label = std::string(BACK_LABEL.in(language))},
+                    [&navigator] { navigator.pop(); })
       .button({.label = std::string(CREATE_LABEL.in(language))},
               [draft, server = parts.server, &choice, &navigator] {
                 navigator.pop();

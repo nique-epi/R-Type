@@ -1,15 +1,13 @@
 #pragma once
 
-#include <functional>
 #include "CasinoBar.hpp"
-#include "ISoundPlayer.hpp"
+#include "CasinoChipWiring.hpp"
 #include "KeyChip.hpp"
 
 namespace rtype::client {
 
-/** @returns The chip of @p bar, which runs @p action and plays its click
- * through @p sounds, which must outlive it. */
-[[nodiscard]] KeyChip chipOf(const CasinoBar& bar, std::function<void()> action,
-                             ISoundPlayer& sounds);
+/** @returns The chip of @p bar, labelled in the language of @p wiring, which
+ * runs its action and plays its click through its sounds. */
+[[nodiscard]] KeyChip chipOf(const CasinoBar& bar, CasinoChipWiring wiring);
 
 }  // namespace rtype::client

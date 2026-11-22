@@ -53,8 +53,9 @@ namespace rtype::client {
 
 namespace {
 
-Button::Text backText() {
-  return {.label = BACK_LABEL, .keyName = CANCEL_KEY_NAME};
+Button::Text backText(Language language) {
+  return {.label = std::string(BACK_LABEL.in(language)),
+          .keyName = CANCEL_KEY_NAME};
 }
 
 /** @returns The music the radio plays after @p playing: the theme of
@@ -122,11 +123,12 @@ ShopScreen::ShopScreen(ShopScreenParts parts,
       speech_(parts.sounds.get(), parts.motion, canvas->language()),
       canvas_(std::move(canvas)),
       playfieldPointAt_(std::move(parts.playfieldPointAt)),
-      backChip_(KeyChipParts{.text = backText(),
-                             .area = MenuBuilder::chipArea(backText()),
-                             .key = MENU_CANCEL_KEY,
-                             .action = [this] { navigator_->pop(); },
-                             .sounds = parts.sounds}),
+      backChip_(KeyChipParts{
+          .text = backText(canvas_->language()),
+          .area = MenuBuilder::chipArea(backText(canvas_->language())),
+          .key = MENU_CANCEL_KEY,
+          .action = [this] { navigator_->pop(); },
+          .sounds = parts.sounds}),
       wares_(waresForSale()),
       selection_(ShelfSizes{.looks = wares_.looks.size(),
                             .hulls = wares_.hulls.size()}),

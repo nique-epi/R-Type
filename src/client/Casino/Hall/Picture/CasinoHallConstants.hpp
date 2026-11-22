@@ -35,12 +35,13 @@ constexpr engine::Duration HALL_FADE_TIME = std::chrono::milliseconds(360);
  */
 constexpr sf::Keyboard::Key HALL_LEFT_KEY = sf::Keyboard::Key::Left;
 constexpr sf::Keyboard::Key HALL_RIGHT_KEY = sf::Keyboard::Key::Right;
-constexpr CasinoBar HALL_CASHIER_BAR{.label = "CASHIER",
-                                     .keyName = "<",
-                                     .area = sf::IntRect({8, 252}, {92, 14}),
-                                     .key = HALL_LEFT_KEY};
+constexpr CasinoBar HALL_CASHIER_BAR{
+    .label = {.english = "CASHIER", .french = "CAISSE"},
+    .keyName = "<",
+    .area = sf::IntRect({8, 252}, {92, 14}),
+    .key = HALL_LEFT_KEY};
 constexpr CasinoBar HALL_ROULETTE_BAR{
-    .label = "ROULETTE",
+    .label = {.english = "ROULETTE", .french = "ROULETTE"},
     .keyName = ">",
     .area = sf::IntRect({372, 252}, {100, 14}),
     .key = HALL_RIGHT_KEY,

@@ -159,9 +159,9 @@ sf::Vector2i bayTopLeft(sf::IntRect area, int slot) {
 }
 
 /** @returns Where the room paints BACK, its cancel chip. */
-sf::IntRect backChipArea() {
-  return MenuBuilder::chipArea(
-      {.label = BACK_LABEL, .keyName = CANCEL_KEY_NAME});
+sf::IntRect backChipArea(Language language) {
+  return MenuBuilder::chipArea({.label = std::string(BACK_LABEL.in(language)),
+                                .keyName = CANCEL_KEY_NAME});
 }
 
 /** @returns Where the room paints HELP, written in @p language, BUTTON_GAP
@@ -169,7 +169,7 @@ sf::IntRect backChipArea() {
 sf::IntRect helpChipArea(Language language) {
   return MenuBuilder::chipArea(
       {.label = std::string(HELP_LABEL.in(language)), .keyName = HELP_KEY_NAME},
-      backChipArea().position.x - BUTTON_GAP);
+      backChipArea(language).position.x - BUTTON_GAP);
 }
 
 /** @returns Where the room paints RANKING, written in @p language,
@@ -238,7 +238,8 @@ std::optional<sf::IntRect> ownBayAreaIn(const Menu& menu,
  * MAP_CARD_HEIGHT tall; the status line BUTTON_GAP under READY, as wide; then
  * BACK. Menu gives no area of a bar, so READY is placed by the same arithmetic
  * as MenuBuilder::placeRoom. */
-LobbyPartAreas partAreasOf(sf::IntRect bays, std::optional<int> ownSlot) {
+LobbyPartAreas partAreasOf(sf::IntRect bays, std::optional<int> ownSlot,
+                           Language language) {
   const sf::IntRect ready(
       {(INTERFACE_AREA.size.x - LOBBY_BARS_WIDTH) / SIDES_PER_AXIS,
        bays.position.y + bays.size.y + SPACE_ABOVE_ROOM_BARS},
@@ -253,7 +254,7 @@ LobbyPartAreas partAreasOf(sf::IntRect bays, std::optional<int> ownSlot) {
           .status = sf::IntRect(
               {ready.position.x, ready.position.y + ready.size.y + BUTTON_GAP},
               {ready.size.x, TEXT_LINE_HEIGHT}),
-          .back = backChipArea()};
+          .back = backChipArea(language)};
 }
 
 /** @brief Writes @p status centered in @p area, in the font of
@@ -353,7 +354,7 @@ LobbyScreen::LobbyScreen(LobbyScreenParts parts,
           .previews = *previews_,
           .palette = parts.palette,
           .area = partAreasOf(menu_.illustrationArea().value_or(sf::IntRect()),
-                              std::nullopt)
+                              std::nullopt, canvas_->language())
                       .map,
           .playfieldPointAt = playfieldPointAt_}) {
   repaint();
@@ -423,7 +424,8 @@ Menu LobbyScreen::buildMenu(std::string readyKeyName) {
       .button({.label = std::string(MAP_BAR_CLOSED.in(language)),
                .keyName = MAP_KEY_NAME},
               [this] { mapVoteCard_.press(); })
-      .cancelButton({.label = BACK_LABEL}, [this] { leave(); })
+      .cancelButton({.label = std::string(BACK_LABEL.in(language))},
+                    [this] { leave(); })
       .build();
 }
 
@@ -456,7 +458,7 @@ void LobbyScreen::repaint() {
   const std::string status = statusLine(players, ownNumber, language);
   const LobbyPartAreas parts =
       partAreasOf(menu_.illustrationArea().value_or(sf::IntRect()),
-                  ownSlotOf(players, ownNumber));
+                  ownSlotOf(players, ownNumber), language);
   menu_.setLabel(
       READY_BUTTON,
       std::string(

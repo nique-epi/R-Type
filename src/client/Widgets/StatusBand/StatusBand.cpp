@@ -150,10 +150,9 @@ std::optional<StatusWord> flyingWordOf(const PilotStatus& pilot) {
                       .color = STATUS_LABEL_COLOR};
   }
   if (pilot.isLocalPlayer) {
-    return StatusWord{
-        .text = {.english = LOCAL_PLAYER_TAG, .french = LOCAL_PLAYER_TAG},
-        .font = TextFont::Regular,
-        .color = STATUS_LABEL_COLOR};
+    return StatusWord{.text = LOCAL_PLAYER_TAG,
+                      .font = TextFont::Regular,
+                      .color = STATUS_LABEL_COLOR};
   }
   return std::nullopt;
 }

@@ -63,20 +63,23 @@ sf::IntRect chipAreaEndingAt(const Button::Text& text, int right) {
   return MenuBuilder::chipArea(text, right, LEADERBOARD_CHIPS_TOP);
 }
 
-sf::IntRect backChipArea() {
-  return chipAreaEndingAt({.label = BACK_LABEL, .keyName = CANCEL_KEY_NAME},
+sf::IntRect backChipArea(Language language) {
+  return chipAreaEndingAt({.label = std::string(BACK_LABEL.in(language)),
+                           .keyName = CANCEL_KEY_NAME},
                           LEADERBOARD_CHIPS_RIGHT);
 }
 
 sf::IntRect filterChipArea(Language language) {
   return chipAreaEndingAt({.label = std::string(FILTER_LABEL.in(language)),
                            .keyName = FILTER_KEY_NAME},
-                          backChipArea().position.x - BUTTON_GAP);
+                          backChipArea(language).position.x - BUTTON_GAP);
 }
 
-KeyChipParts backChipParts(std::function<void()> action, ISoundPlayer& sounds) {
-  return KeyChipParts{.text = {.label = BACK_LABEL, .keyName = CANCEL_KEY_NAME},
-                      .area = backChipArea(),
+KeyChipParts backChipParts(std::function<void()> action, ISoundPlayer& sounds,
+                           Language language) {
+  return KeyChipParts{.text = {.label = std::string(BACK_LABEL.in(language)),
+                               .keyName = CANCEL_KEY_NAME},
+                      .area = backChipArea(language),
                       .key = MENU_CANCEL_KEY,
                       .action = std::move(action),
                       .sounds = sounds};
@@ -234,7 +237,7 @@ LeaderboardScreen::LeaderboardScreen(LeaderboardScreenParts parts,
             }
             navigator_->pop();
           },
-          parts.sounds)),
+          parts.sounds, canvas_->language())),
       filterChip_(filterChipParts([this] { openFilter(); }, parts.sounds,
                                   canvas_->language())),
       joinChip_(joinBarParts(

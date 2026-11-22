@@ -3,6 +3,7 @@
 #include "IInterfaceCanvas.hpp"
 #include "ISoundPlayer.hpp"
 #include "KeyChip.hpp"
+#include "Language.hpp"
 #include "PlayfieldMapping.hpp"
 #include "RouletteBarActions.hpp"
 #include "RouletteBarStates.hpp"
@@ -21,7 +22,8 @@ namespace rtype::client {
 class RouletteBars {
  public:
   /** @param sounds Plays the clicks; it must outlive the bars. */
-  RouletteBars(const RouletteBarActions& actions, ISoundPlayer& sounds);
+  RouletteBars(const RouletteBarActions& actions, ISoundPlayer& sounds,
+               Language language);
 
   /** @returns Whether one of the bars took @p event. */
   bool handleEvent(const sf::Event& event,

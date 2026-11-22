@@ -230,8 +230,9 @@ void paintPolaroid(IInterfaceCanvas& canvas, const FinalPilot& pilot,
                    ImagePlacement{.topLeft = topLeft + POLAROID_MARKER,
                                   .recolor = polaroid.recolor},
                    INTERFACE_AREA);
-  canvas.write(pilot.isLocalPlayer ? std::string{LOCAL_PLAYER_TAG}
-                                   : playerNumberLabel(pilot.playerNumber),
+  canvas.write(pilot.isLocalPlayer
+                   ? std::string{LOCAL_PLAYER_TAG.in(canvas.language())}
+                   : playerNumberLabel(pilot.playerNumber),
                topLeft + POLAROID_CAPTION,
                {.font = TextFont::Small, .color = PAPER_INK});
   canvas.fill(sf::IntRect(topLeft + POLAROID_TAPE.position, POLAROID_TAPE.size),

@@ -249,7 +249,8 @@ Menu ConnectionScreen::buildMenu(ISoundPlayer& sounds,
       .button({.label = std::string(CONNECT_LABEL.in(language)),
                .description = std::string(CONNECT_DESCRIPTION.in(language))},
               connectAction)
-      .cancelButton({.label = BACK_LABEL}, [this] { leave(); })
+      .cancelButton({.label = std::string(BACK_LABEL.in(language))},
+                    [this] { leave(); })
       .build();
 }
 

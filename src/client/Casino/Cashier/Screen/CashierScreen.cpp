@@ -24,6 +24,7 @@
 #include "CashierView.hpp"
 #include "CashierWay.hpp"
 #include "CasinoBarChip.hpp"
+#include "CasinoChipWiring.hpp"
 #include "CasinoSpriteConstants.hpp"
 #include "ChipSelector.hpp"
 #include "ChipSelectorConstants.hpp"
@@ -100,13 +101,22 @@ CashierScreen::CashierScreen(CashierScreenParts parts,
                                   .tail = TELLER_BUBBLE_TAIL,
                                   .motion = parts.motion,
                                   .stays = false}),
-      buyChip_(chipOf(
-          BUY_CHIPS_CONFIRM_BAR, [this] { confirm(); }, parts.sounds)),
-      cashOutChip_(chipOf(
-          CASH_OUT_CONFIRM_BAR, [this] { confirm(); }, parts.sounds)),
-      backChip_(chipOf(
-          CASHIER_BACK_BAR, [this] { navigator_->pop(); }, parts.sounds)),
-      wayChip_(chipOf(CASHIER_WAY_BAR, [this] { switchWay(); }, parts.sounds)) {
+      buyChip_(chipOf(BUY_CHIPS_CONFIRM_BAR,
+                      CasinoChipWiring{.action = [this] { confirm(); },
+                                       .sounds = parts.sounds,
+                                       .language = canvas_->language()})),
+      cashOutChip_(chipOf(CASH_OUT_CONFIRM_BAR,
+                          CasinoChipWiring{.action = [this] { confirm(); },
+                                           .sounds = parts.sounds,
+                                           .language = canvas_->language()})),
+      backChip_(chipOf(CASHIER_BACK_BAR,
+                       CasinoChipWiring{.action = [this] { navigator_->pop(); },
+                                        .sounds = parts.sounds,
+                                        .language = canvas_->language()})),
+      wayChip_(chipOf(CASHIER_WAY_BAR,
+                      CasinoChipWiring{.action = [this] { switchWay(); },
+                                       .sounds = parts.sounds,
+                                       .language = canvas_->language()})) {
   wallet_->askWallet();
   tellerLine_.say(TELLER_GREETING);
   repaint();

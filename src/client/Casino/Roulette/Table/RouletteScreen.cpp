@@ -115,7 +115,7 @@ RouletteScreen::RouletteScreen(RouletteScreenParts parts,
                                    }
                                  },
                              .back = [this] { navigator_->pop(); }},
-          parts.sounds) {
+          parts.sounds, canvas_->language()) {
   const std::optional<network::CasinoRoomState> room = casino_->room();
   const std::optional<BetsReading>& bets = casino_->lastBets();
   memory_->follow(room, bets);

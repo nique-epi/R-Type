@@ -60,14 +60,14 @@ constexpr int BUTLER_SPOKEN_LINE_WIDTH =
 
 /** @brief The two bars before the doors, on the bottom edge of the panel of
  * the butler: ENTER, which opens them, and BACK, to the map. */
-constexpr CasinoBar ENTER_BAR{.label = "ENTER",
+constexpr CasinoBar ENTER_BAR{.label = {.english = "ENTER", .french = "ENTRE"},
                               .keyName = CONFIRM_KEY_NAME,
                               .area = sf::IntRect({172, 254}, {104, 14}),
                               .key = MENU_CONFIRM_KEY,
                               .restState = BarState::Selected};
 constexpr CasinoBar DOORS_BACK_BAR{.label = BACK_LABEL,
                                    .keyName = CANCEL_KEY_NAME,
-                                   .area = sf::IntRect({280, 254}, {88, 14}),
+                                   .area = sf::IntRect({280, 254}, {98, 14}),
                                    .key = MENU_CANCEL_KEY};
 
 }  // namespace rtype::client

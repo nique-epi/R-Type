@@ -114,8 +114,11 @@ void SignInScreen::show(const SignInLines& lines) {
         {.label = std::string(NEW_CODE_LABEL.in(canvas_->language()))},
         [this] { askNewCode(); });
   }
-  menu_ =
-      builder.cancelButton({.label = BACK_LABEL}, [this] { back(); }).build();
+  menu_ = builder
+              .cancelButton(
+                  {.label = std::string(BACK_LABEL.in(canvas_->language()))},
+                  [this] { back(); })
+              .build();
 }
 
 void SignInScreen::askNewCode() {

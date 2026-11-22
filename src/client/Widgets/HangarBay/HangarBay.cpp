@@ -130,7 +130,7 @@ void paintPlayerNumber(IInterfaceCanvas& canvas, const HangarBay& bay) {
 void paintLocalPlayerTag(IInterfaceCanvas& canvas, sf::Vector2i topLeft) {
   const sf::Vector2i tagEnd(topLeft.x + HANGAR_BAY_SIZE.x - BAY_NUMBER_OFFSET.x,
                             topLeft.y + BAY_NUMBER_OFFSET.y);
-  canvas.write(LOCAL_PLAYER_TAG, tagEnd,
+  canvas.write(LOCAL_PLAYER_TAG.in(canvas.language()), tagEnd,
                {.font = TextFont::Regular,
                 .color = PAGE_TEXT_COLOR,
                 .alignment = TextAlignment::Right});

@@ -60,8 +60,9 @@ Button::Text addressText(Language language) {
           .keyName = ADDRESS_KEY_NAME};
 }
 
-Button::Text backText() {
-  return {.label = BACK_LABEL, .keyName = CANCEL_KEY_NAME};
+Button::Text backText(Language language) {
+  return {.label = std::string(BACK_LABEL.in(language)),
+          .keyName = CANCEL_KEY_NAME};
 }
 
 /** @returns Where a chip with @p text lies, ending at @p right on the row of
@@ -76,12 +77,12 @@ sf::IntRect chipAreaLeftOf(const Button::Text& text,
   return chipAreaEndingAt(text, rightNeighbour.position.x - BUTTON_GAP);
 }
 
-sf::IntRect backChipArea() {
-  return chipAreaEndingAt(backText(), SERVER_MAP_CHIPS_RIGHT);
+sf::IntRect backChipArea(Language language) {
+  return chipAreaEndingAt(backText(language), SERVER_MAP_CHIPS_RIGHT);
 }
 
 sf::IntRect addressChipArea(Language language) {
-  return chipAreaLeftOf(addressText(language), backChipArea());
+  return chipAreaLeftOf(addressText(language), backChipArea(language));
 }
 
 /** @returns Where QUICK PLAY lies: alone on the left, the main action. */
@@ -205,9 +206,10 @@ KeyChipParts addressChipParts(std::function<void()> action,
                       .sounds = sounds};
 }
 
-KeyChipParts backChipParts(std::function<void()> action, ISoundPlayer& sounds) {
-  return KeyChipParts{.text = backText(),
-                      .area = backChipArea(),
+KeyChipParts backChipParts(std::function<void()> action, ISoundPlayer& sounds,
+                           Language language) {
+  return KeyChipParts{.text = backText(language),
+                      .area = backChipArea(language),
                       .key = MENU_CANCEL_KEY,
                       .action = std::move(action),
                       .sounds = sounds};
@@ -240,7 +242,8 @@ ServerMapScreen::ServerMapScreen(ServerMapScreenParts parts,
       addressChip_(
           addressChipParts([this] { navigator_->push(CONNECTION_SCREEN); },
                            parts.sounds, canvas_->language())),
-      backChip_(backChipParts([this] { stepBack(); }, parts.sounds)) {
+      backChip_(backChipParts([this] { stepBack(); }, parts.sounds,
+                              canvas_->language())) {
   servers_->refresh();
   wallet_->askWallet();
   repaint();

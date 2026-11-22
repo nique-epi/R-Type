@@ -46,11 +46,11 @@ ItemRow rowOf(const network::LeaderboardRow& entry, bool isOwn,
   return ItemRow{
       .cells = {ItemCell{.text = std::to_string(entry.rank),
                          .color = isOwn ? text : rankColorOf(entry.rank)},
-                ItemCell{
-                    .text = entry.nickname,
-                    .color = text,
-                    .tag = isOwn ? std::optional<std::string>(LOCAL_PLAYER_TAG)
-                                 : std::nullopt},
+                ItemCell{.text = entry.nickname,
+                         .color = text,
+                         .tag = isOwn ? std::optional<std::string>(
+                                            LOCAL_PLAYER_TAG.in(language))
+                                      : std::nullopt},
                 ItemCell{.text = std::to_string(entry.score), .color = text},
                 ItemCell{.text = dateTextOf(entry.playedAt, language),
                          .color = isOwn ? LEADERBOARD_OWN_DATE_COLOR

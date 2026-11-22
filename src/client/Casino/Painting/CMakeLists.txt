@@ -15,6 +15,7 @@ target_link_libraries(rtype_client_casino_painting
     SFML::Window
     rtype_client_interface
     rtype_client_key_chip
+    rtype_client_language
     rtype_client_pixels
     rtype_client_widgets
     rtype_engine_time

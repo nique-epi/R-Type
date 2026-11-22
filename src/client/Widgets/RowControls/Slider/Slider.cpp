@@ -42,7 +42,7 @@ void Slider::paint(IInterfaceCanvas& canvas, sf::IntRect area,
   paintTrack(canvas, groove, thumbCenter, look.fill);
   paintThumb(canvas, groove, thumbCenter, look.thumb);
   writeValue(canvas, area, row,
-             dimmed ? std::string(SLIDER_INACTIVE_TEXT)
+             dimmed ? std::string(SLIDER_INACTIVE_TEXT.in(canvas.language()))
                     : std::to_string(value) + unit_);
 }
 

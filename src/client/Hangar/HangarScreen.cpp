@@ -59,8 +59,9 @@ std::optional<std::size_t> itemUnder(sf::Vector2i position,
   return lockerItemAt(interfacePixelAt(playfieldPointAt(position)), firstRow);
 }
 
-Button::Text backText() {
-  return {.label = BACK_LABEL, .keyName = CANCEL_KEY_NAME};
+Button::Text backText(Language language) {
+  return {.label = std::string(BACK_LABEL.in(language)),
+          .keyName = CANCEL_KEY_NAME};
 }
 
 /** @returns The status line of the chosen item of @p view: how to get it
@@ -118,11 +119,12 @@ HangarScreen::HangarScreen(HangarScreenParts parts,
       palette_(parts.palette),
       shipColor_(parts.shipColor),
       motion_(parts.motion),
-      backChip_(KeyChipParts{.text = backText(),
-                             .area = MenuBuilder::chipArea(backText()),
-                             .key = MENU_CANCEL_KEY,
-                             .action = [this] { navigator_->pop(); },
-                             .sounds = parts.sounds}),
+      backChip_(KeyChipParts{
+          .text = backText(canvas_->language()),
+          .area = MenuBuilder::chipArea(backText(canvas_->language())),
+          .key = MENU_CANCEL_KEY,
+          .action = [this] { navigator_->pop(); },
+          .sounds = parts.sounds}),
       rows_(LOCKER_ROWS_AT_OPENING) {
   wallet_->askWallet();
   repaint();

@@ -124,7 +124,7 @@ constexpr const char* FULL_START = "NO ROOM LEFT FOR MORE ";
 /** @brief The bars of the cashier, on the bottom row of the panel: the
  * exchange, named after its way, on the left, and BACK, to the hall, on the
  * right. */
-constexpr sf::Vector2i CASHIER_BAR_SIZE(104, 14);
+constexpr sf::Vector2i CASHIER_BAR_SIZE(106, 14);
 constexpr int CASHIER_BARS_TOP = 247;
 constexpr sf::IntRect CASHIER_CONFIRM_AREA({CASHIER_LEFT, CASHIER_BARS_TOP},
                                            CASHIER_BAR_SIZE);
@@ -134,18 +134,20 @@ constexpr CasinoBar CASHIER_BACK_BAR{
     .area = sf::IntRect({CASHIER_RIGHT - CASHIER_BAR_SIZE.x, CASHIER_BARS_TOP},
                         CASHIER_BAR_SIZE),
     .key = MENU_CANCEL_KEY};
-constexpr CasinoBar BUY_CHIPS_CONFIRM_BAR{.label = "BUY",
-                                          .keyName = CONFIRM_KEY_NAME,
-                                          .area = CASHIER_CONFIRM_AREA,
-                                          .key = MENU_CONFIRM_KEY,
-                                          .restState = BarState::Selected};
-constexpr CasinoBar CASH_OUT_CONFIRM_BAR{.label = "CASH OUT",
-                                         .keyName = CONFIRM_KEY_NAME,
-                                         .area = CASHIER_CONFIRM_AREA,
-                                         .key = MENU_CONFIRM_KEY,
-                                         .restState = BarState::Selected};
+constexpr CasinoBar BUY_CHIPS_CONFIRM_BAR{
+    .label = {.english = "BUY", .french = "ACHAT"},
+    .keyName = CONFIRM_KEY_NAME,
+    .area = CASHIER_CONFIRM_AREA,
+    .key = MENU_CONFIRM_KEY,
+    .restState = BarState::Selected};
+constexpr CasinoBar CASH_OUT_CONFIRM_BAR{
+    .label = {.english = "CASH OUT", .french = "RETIRER"},
+    .keyName = CONFIRM_KEY_NAME,
+    .area = CASHIER_CONFIRM_AREA,
+    .key = MENU_CONFIRM_KEY,
+    .restState = BarState::Selected};
 /** @brief The key that switches the way, never drawn: TAB. */
-constexpr CasinoBar CASHIER_WAY_BAR{.label = "",
+constexpr CasinoBar CASHIER_WAY_BAR{.label = {.english = "", .french = ""},
                                     .keyName = CASHIER_WAY_KEY_NAME,
                                     .area = sf::IntRect{},
                                     .key = CASHIER_WAY_KEY};

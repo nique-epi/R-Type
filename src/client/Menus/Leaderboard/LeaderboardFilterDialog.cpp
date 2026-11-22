@@ -56,12 +56,13 @@ void LeaderboardFilterDialog::open(
   dialog_ =
       MenuBuilder(MenuBuilder::Frame::Dialog, sounds_)
           .heading(std::string(FILTER_LABEL.in(language)))
-          .row({.label = DIFFICULTY_ROW_LABEL},
+          .row({.label = std::string(DIFFICULTY_ROW_LABEL.in(language))},
                selectorOver(LEADERBOARD_DIFFICULTY_LABELS, draft_.difficulty,
                             language))
           .row({.label = std::string(PILOTS_ROW_LABEL.in(language))},
                selectorOver(LEADERBOARD_PILOT_LABELS, draft_.pilots, language))
-          .cancelButton({.label = BACK_LABEL}, [this] { answered_ = true; })
+          .cancelButton({.label = std::string(BACK_LABEL.in(language))},
+                        [this] { answered_ = true; })
           .button({.label = std::string(APPLY_LABEL.in(language))},
                   [this, apply] {
                     apply(draft_);

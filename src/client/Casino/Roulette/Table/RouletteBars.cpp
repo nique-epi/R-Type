@@ -1,6 +1,7 @@
 #include "RouletteBars.hpp"
 #include <SFML/Window/Event.hpp>
 #include "CasinoBarChip.hpp"
+#include "CasinoChipWiring.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "ISoundPlayer.hpp"
 #include "KeyChip.hpp"
@@ -12,10 +13,17 @@
 namespace rtype::client {
 
 RouletteBars::RouletteBars(const RouletteBarActions& actions,
-                           ISoundPlayer& sounds)
-    : clearChip_(chipOf(CLEAR_BAR, actions.clear, sounds)),
-      rebetChip_(chipOf(REBET_BAR, actions.rebet, sounds)),
-      backChip_(chipOf(TABLE_BACK_BAR, actions.back, sounds)) {}
+                           ISoundPlayer& sounds, Language language)
+    : clearChip_(chipOf(CLEAR_BAR, CasinoChipWiring{.action = actions.clear,
+                                                    .sounds = sounds,
+                                                    .language = language})),
+      rebetChip_(chipOf(REBET_BAR, CasinoChipWiring{.action = actions.rebet,
+                                                    .sounds = sounds,
+                                                    .language = language})),
+      backChip_(
+          chipOf(TABLE_BACK_BAR, CasinoChipWiring{.action = actions.back,
+                                                  .sounds = sounds,
+                                                  .language = language})) {}
 
 bool RouletteBars::handleEvent(const sf::Event& event,
                                const PlayfieldMapping& playfieldPointAt) {

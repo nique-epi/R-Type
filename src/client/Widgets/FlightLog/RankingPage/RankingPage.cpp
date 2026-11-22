@@ -51,7 +51,8 @@ struct RowPlace {
 
 /** @returns How wide the ink behind YOU is. */
 int youTagWidthOf(const IInterfaceCanvas& canvas) {
-  return inkTagWidth(canvas, LOCAL_PLAYER_TAG);
+  return inkTagWidth(canvas,
+                     std::string(LOCAL_PLAYER_TAG.in(canvas.language())));
 }
 
 /** @returns Where the leader of the row of @p pilot starts: after its marker,
@@ -83,9 +84,11 @@ void paintHeading(IInterfaceCanvas& canvas, engine::Duration sinceOpen,
 
 /** @brief YOU on ink, in the row whose top-left corner is @p rowTopLeft. */
 void paintYouTag(IInterfaceCanvas& canvas, sf::Vector2i rowTopLeft) {
-  paintInkTag(canvas, InkTag{.word = LOCAL_PLAYER_TAG,
-                             .topLeft = rowTopLeft + YOU_TAG_OFFSET,
-                             .wordColor = YOU_TAG_TEXT_COLOR});
+  paintInkTag(
+      canvas,
+      InkTag{.word = std::string(LOCAL_PLAYER_TAG.in(canvas.language())),
+             .topLeft = rowTopLeft + YOU_TAG_OFFSET,
+             .wordColor = YOU_TAG_TEXT_COLOR});
 }
 
 /** @brief The rank, slamming in at one scale more for DIGIT_SLAM_TIME, the
