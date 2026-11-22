@@ -25,6 +25,7 @@ using rtype::server::testing::GameFlowOneStageFixture;
 using rtype::server::testing::GameFlowSendingLevelFixture;
 using rtype::server::testing::GameFlowTwoStagesFixture;
 using rtype::server::testing::LIVES_OF_THE_RULES;
+using rtype::server::testing::ONE_STAGE_REWARD;
 using rtype::server::testing::playerEndpoint;
 using rtype::server::testing::TICKS_BEFORE_THE_CHECKPOINT;
 using rtype::server::testing::TICKS_PAST_THE_CHECKPOINT;
@@ -221,6 +222,22 @@ TEST_F(GameFlowOneStageFixture, IsWonOnceTheLevelIsCleared) {
 }
 
 /**
+ * Given a game that plays a level of one stage, which pays a reward of 300
+ * When the level is cleared
+ * Then its player is told it earned the reward as its bounty
+ */
+TEST_F(GameFlowOneStageFixture, PaysTheRewardOfTheLevelItCleared) {
+  startGameWith({FIRST_PLAYER});
+
+  runTicks(2);
+
+  const std::vector<GameEnded> ends = endsSentTo(FIRST_PLAYER);
+  ASSERT_FALSE(ends.empty());
+  ASSERT_EQ(ends.front().players.size(), 1U);
+  EXPECT_EQ(ends.front().players.front().bounty, ONE_STAGE_REWARD);
+}
+
+/**
  * Given a game that plays a level whose script fails
  * When the stage that fails runs
  * Then the game is lost, and its player is told so
@@ -233,4 +250,6 @@ TEST_F(GameFlowBrokenLevelFixture, IsLostOnceTheLevelFailed) {
   const std::vector<GameEnded> ends = endsSentTo(FIRST_PLAYER);
   ASSERT_FALSE(ends.empty());
   EXPECT_EQ(ends.front().outcome, WireGameOutcome::Defeat);
+  ASSERT_EQ(ends.front().players.size(), 1U);
+  EXPECT_EQ(ends.front().players.front().bounty, 0U);
 }

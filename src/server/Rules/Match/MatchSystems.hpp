@@ -57,6 +57,11 @@ class MatchSystems {
   /** @returns Whether the script of the level the game plays failed. */
   [[nodiscard]] bool levelFailed() const;
 
+  /** @returns The kopecks every pilot present earns once the game is won:
+   * the reward of the level its script directs, 0 in a game that plays its
+   * waves. */
+  [[nodiscard]] std::uint32_t clearReward() const;
+
   /**
    * @brief Puts a team that lost every life back at the last checkpoint of
    * its level: the level restarts there (see LevelDirector), and every

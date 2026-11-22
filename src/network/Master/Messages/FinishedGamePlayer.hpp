@@ -16,6 +16,10 @@ struct FinishedGamePlayer {
    * a server cannot know an account, only the ticket a player hands it. */
   std::optional<std::string> accountId = std::nullopt;
   std::uint32_t score{};
+  /** @brief The kopecks the bosses destroyed and the level cleared while the
+   * player was there paid it; 0 when a server older than the member does not
+   * say. */
+  std::uint32_t bounty{};
   /** @brief The names of the look items the player won in the game, from
    * identifiers::SHIP_LOOK_ITEM_NAMES; empty when it won none, or when a
    * server older than the member does not say. */

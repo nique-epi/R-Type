@@ -36,13 +36,4 @@ std::map<std::int64_t, std::uint32_t> payoutsOf(
   return payouts;
 }
 
-std::uint32_t payoutOfBets(const std::vector<network::RouletteBet>& bets,
-                           std::uint8_t drawn) {
-  std::uint32_t payout = 0;
-  for (const network::RouletteBet& bet : bets) {
-    payout += static_cast<std::uint32_t>(network::payoutOf(bet, drawn));
-  }
-  return payout;
-}
-
 }  // namespace rtype::master

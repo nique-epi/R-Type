@@ -20,9 +20,20 @@ void ScoreKeeperFixture::kill(std::uint8_t playerNumber, std::uint32_t points) {
   events_.dispatch();
 }
 
+void ScoreKeeperFixture::publish(const game::EnemyKilled& kill) {
+  events_.publish(kill);
+  events_.dispatch();
+}
+
 std::uint32_t ScoreKeeperFixture::firstScore() const { return first_->score; }
 
 std::uint32_t ScoreKeeperFixture::secondScore() const { return second_->score; }
+
+std::uint32_t ScoreKeeperFixture::firstBounty() const { return first_->bounty; }
+
+std::uint32_t ScoreKeeperFixture::secondBounty() const {
+  return second_->bounty;
+}
 
 void ScoreKeeperFixture::giveFirstPlayerScore(std::uint32_t score) {
   first_->score = score;

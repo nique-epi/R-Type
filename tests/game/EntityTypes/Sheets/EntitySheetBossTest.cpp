@@ -21,13 +21,17 @@ using rtype::game::HurtBeam;
 using rtype::game::HurtZone;
 using rtype::game::VolleySheet;
 using rtype::game::testing::APPEARANCE;
+using rtype::game::testing::BOSS_BOUNTY;
 using rtype::game::testing::BOSS_DOTTED_KEY;
 using rtype::game::testing::BOSS_HEALTH_RULE_TEXT;
 using rtype::game::testing::BOSS_RAGE_BELOW_PERCENT;
 using rtype::game::testing::BOSS_SIDE_RULE_TEXT;
 using rtype::game::testing::BOSS_TABLE;
 using rtype::game::testing::BOSS_TABLE_ARRIVAL_ATTACK;
+using rtype::game::testing::BOSS_TABLE_PAST_THE_LARGEST_BOUNTY;
 using rtype::game::testing::BOSS_TABLE_RAGE_ATTACK;
+using rtype::game::testing::BOSS_TABLE_WITH_A_BOUNTY;
+using rtype::game::testing::BOUNTY_RANGE_TEXT;
 using rtype::game::testing::BYDO_HITBOX;
 using rtype::game::testing::ENEMY_GAMEPLAY;
 using rtype::game::testing::ENEMY_MISSILE_GAMEPLAY;
@@ -247,6 +251,34 @@ TEST_F(EntitySheetReaderFixture, ReadsTheBossTable) {
   EXPECT_EQ(boss.rageBelowPercent, BOSS_RAGE_BELOW_PERCENT);
   EXPECT_EQ(boss.rageAttack, BOSS_TABLE_RAGE_ATTACK);
   EXPECT_EQ(boss.arrivalAttack, BOSS_TABLE_ARRIVAL_ATTACK);
+  EXPECT_EQ(boss.bounty, 0U);
+}
+
+/**
+ * Given the sheet of a boss whose table pays a bounty of 550
+ * When its gameplay is read
+ * Then the boss pays every pilot 550 kopecks
+ */
+TEST_F(EntitySheetReaderFixture, ReadsTheBountyOfABoss) {
+  const EntitySheet sheet =
+      read({ENEMY_GAMEPLAY, BYDO_HITBOX, STEADY_MOTION, LEFT_HEADING_TABLE,
+            HEALTH_TABLE, BOSS_TABLE_WITH_A_BOUNTY, APPEARANCE});
+
+  ASSERT_TRUE(sheet.boss.has_value());
+  EXPECT_EQ(sheet.boss.value_or(BossSheet{}).bounty, BOSS_BOUNTY);
+}
+
+/**
+ * Given the sheet of a boss whose bounty is 10001
+ * When its gameplay is read
+ * Then it is refused at the bounty: a boss pays 10000 kopecks at most
+ */
+TEST_F(EntitySheetReaderFixture, RefusesABountyPastTheLargest) {
+  const std::string message =
+      refusalOf({ENEMY_GAMEPLAY, BYDO_HITBOX, STEADY_MOTION, LEFT_HEADING_TABLE,
+                 HEALTH_TABLE, BOSS_TABLE_PAST_THE_LARGEST_BOUNTY, APPEARANCE});
+
+  EXPECT_THAT(message, HasSubstr(BOUNTY_RANGE_TEXT));
 }
 
 /**

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include "GameGain.hpp"
 
 namespace rtype::network {
 
@@ -8,12 +9,8 @@ namespace rtype::network {
  * boundedKopecks(std::uint64_t{balance} + gain). */
 [[nodiscard]] std::uint32_t boundedKopecks(std::uint64_t amount);
 
-/** @returns What a final score of @p score pays: one kopeck per
- * SCORE_POINTS_PER_KOPECK points, MAXIMUM_KOPECKS at most. */
-[[nodiscard]] std::uint32_t kopecksFor(std::uint32_t score);
-
-/** @returns @p kopecks and VICTORY_BONUS_PERCENT percent of it more, rounded
- * down, MAXIMUM_KOPECKS at most. */
-[[nodiscard]] std::uint32_t withVictoryBonus(std::uint32_t kopecks);
+/** @returns What @p gain pays: its bounty, and one kopeck per
+ * SCORE_POINTS_PER_KOPECK points of its score, MAXIMUM_KOPECKS at most. */
+[[nodiscard]] std::uint32_t kopecksFor(GameGain gain);
 
 }  // namespace rtype::network

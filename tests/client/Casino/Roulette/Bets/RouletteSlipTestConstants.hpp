@@ -23,12 +23,28 @@ constexpr network::RouletteBet TWENTY_FIVE_ON_RED{
 constexpr std::uint32_t PLENTY_OF_CHIPS = 100'000;
 constexpr std::uint32_t CHIPS_FOR_ONE_CHIP = 40;
 
-/** @brief A chip of 500, ten of which make the 5 000 the server takes in a
+/** @brief A chip of 500, four of which make the 2 000 the server takes in a
  * round at most. */
 constexpr network::RouletteBet FIVE_HUNDRED_ON_RED{
     .kind = network::RouletteBetKind::Red, .firstNumber = 0, .amount = 500};
-constexpr std::size_t CHIPS_OF_500_IN_THE_CAP = 10;
-constexpr std::uint32_t ROUND_CAP = 5'000;
+constexpr std::size_t CHIPS_OF_500_IN_THE_CAP = 4;
+constexpr std::uint32_t ROUND_CAP = 2'000;
+
+/** @brief A chip of 500 on 17, which returns 36 times 500, the 18 000 a
+ * round returns at most; a chip of 1 more on 17, which would make it 18 036;
+ * and a chip of 500 on 18, a number the chip on 17 does not cover. */
+constexpr network::RouletteBet FIVE_HUNDRED_ON_SEVENTEEN{
+    .kind = network::RouletteBetKind::Straight,
+    .firstNumber = 17,
+    .amount = 500};
+constexpr network::RouletteBet ONE_ON_SEVENTEEN{
+    .kind = network::RouletteBetKind::Straight, .firstNumber = 17, .amount = 1};
+constexpr network::RouletteBet FIVE_HUNDRED_ON_EIGHTEEN{
+    .kind = network::RouletteBetKind::Straight,
+    .firstNumber = 18,
+    .amount = 500};
+constexpr std::uint32_t ONE_CHIP_OF_500 = 500;
+constexpr std::uint32_t TWO_CHIPS_OF_500 = 1'000;
 
 /** @brief The stacks the server takes in a round at most, 32: a chip of 1 on
  * each number from 1 to 32; then one more on 33. */

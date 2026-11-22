@@ -16,7 +16,7 @@ constexpr std::string_view INVALID_BET_DETAIL =
 constexpr std::string_view TOO_MANY_BETS_DETAIL =
     "a round takes 32 bets at most";
 constexpr std::string_view OVER_THE_CAP_DETAIL =
-    "the bets of a round hold 5000 chips at most";
+    "the bets of a round hold 2000 chips and return 18000 at most";
 
 /** @brief The rounds a path may name: any whole number of 64 signed bits from
  * 0. */

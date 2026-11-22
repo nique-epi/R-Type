@@ -1,9 +1,11 @@
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <string_view>
 #include "ActionKey.hpp"
 #include "EnemyPhase.hpp"
+#include "GameRuleConstants.hpp"
 #include "MissileOwner.hpp"
 #include "WorldTestConstants.hpp"
 
@@ -57,5 +59,19 @@ constexpr ActionKey ARMORED_SIGNAL{.attack = ARMORED_ATTACK,
                                    .phase = EnemyPhase::Signal};
 constexpr ActionKey ARMORED_STRIKE{.attack = ARMORED_ATTACK,
                                    .phase = EnemyPhase::Strike};
+
+/** @brief A third missile of the boss tests, and the tallies a boss names:
+ * one damage of the first pilot and two of the second, then one of the first
+ * pilot alone. */
+constexpr std::uint32_t THIRD_MISSILE_ID = 9;
+constexpr std::array<std::uint32_t, identifiers::MAXIMUM_PLAYERS> ONE_THEN_TWO{
+    1, 2, 0, 0};
+constexpr std::array<std::uint32_t, identifiers::MAXIMUM_PLAYERS>
+    ONE_OF_THE_FIRST{1, 0, 0, 0};
+
+/** @brief The points and the bounty of the Ash Mother, the body of the test
+ * of a bounty. */
+constexpr std::uint32_t ASH_MOTHER_POINTS = 20000;
+constexpr std::uint32_t ASH_MOTHER_BOUNTY = 550;
 
 }  // namespace rtype::game::testing

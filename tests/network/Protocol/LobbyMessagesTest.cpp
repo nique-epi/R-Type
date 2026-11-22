@@ -31,6 +31,7 @@ using testing::ONE_BYTE_NICKNAME;
 using testing::PLAYER_NUMBER_ABOVE_THE_LAST;
 using testing::PREVIEW_OUTSIDE_THE_PACK;
 using testing::SECOND_MAP;
+using testing::SOME_BOUNTY_OF_DISTINCT_BYTES;
 using testing::SOME_SCORE_OF_DISTINCT_BYTES;
 
 /**
@@ -435,14 +436,15 @@ TEST(GameLoaded, RefusesAnyByteInThePayload) {
  * Given the lost game where player 1 scored 0x01020304
  * When it is encoded
  * Then the payload is the outcome 2, the count 1, the number 1, then the score
- * on four bytes
+ * and the bounty on four bytes each
  */
-TEST(GameEnded, EncodesTheOutcomeAndTheScores) {
-  const GameEnded ended{
-      .outcome = WireGameOutcome::Defeat,
-      .players = {{.playerNumber = 1, .score = SOME_SCORE_OF_DISTINCT_BYTES}}};
-  const auto expected =
-      byteSequence({0x02, 0x01, 0x01, 0x01, 0x02, 0x03, 0x04});
+TEST(GameEnded, EncodesTheOutcomeTheScoresAndTheBounties) {
+  const GameEnded ended{.outcome = WireGameOutcome::Defeat,
+                        .players = {{.playerNumber = 1,
+                                     .score = SOME_SCORE_OF_DISTINCT_BYTES,
+                                     .bounty = SOME_BOUNTY_OF_DISTINCT_BYTES}}};
+  const auto expected = byteSequence(
+      {0x02, 0x01, 0x01, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08});
 
   EXPECT_EQ(encodeMessage(ended), expected);
 }
@@ -456,8 +458,8 @@ TEST(GameEnded, EncodesAVictoryAsOne) {
   const GameEnded ended{
       .outcome = WireGameOutcome::Victory,
       .players = {{.playerNumber = 1, .score = SOME_SCORE_OF_DISTINCT_BYTES}}};
-  const auto expected =
-      byteSequence({0x01, 0x01, 0x01, 0x01, 0x02, 0x03, 0x04});
+  const auto expected = byteSequence(
+      {0x01, 0x01, 0x01, 0x01, 0x02, 0x03, 0x04, 0x00, 0x00, 0x00, 0x00});
 
   EXPECT_EQ(encodeMessage(ended), expected);
 }
@@ -470,7 +472,9 @@ TEST(GameEnded, EncodesAVictoryAsOne) {
 TEST(GameEnded, DecodesWhatItEncoded) {
   const GameEnded ended{
       .outcome = WireGameOutcome::Victory,
-      .players = {{.playerNumber = 4, .score = SOME_SCORE_OF_DISTINCT_BYTES},
+      .players = {{.playerNumber = 4,
+                   .score = SOME_SCORE_OF_DISTINCT_BYTES,
+                   .bounty = SOME_BOUNTY_OF_DISTINCT_BYTES},
                   {.playerNumber = 3, .score = 0},
                   {.playerNumber = 2, .score = 1},
                   {.playerNumber = 1, .score = SOME_SCORE_OF_DISTINCT_BYTES}}};
@@ -495,8 +499,9 @@ TEST(GameEnded, RefusesToReadFivePlayersBeforeReadingThem) {
  * Then a DuplicatePlayerNumberException is raised
  */
 TEST(GameEnded, RefusesToReadTheSamePlayerTwice) {
-  const auto bytes = byteSequence(
-      {0x01, 0x02, 0x03, 0x00, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00});
+  const auto bytes = byteSequence({0x01, 0x02, 0x03, 0x00, 0x00, 0x00, 0x00,
+                                   0x00, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00,
+                                   0x00, 0x00, 0x00, 0x00, 0x00, 0x00});
 
   EXPECT_THROW((void)decodeMessage<GameEnded>(bytes),
                DuplicatePlayerNumberException);
@@ -528,13 +533,26 @@ TEST(GameEnded, RefusesAScoreCutShort) {
 }
 
 /**
+ * Given a payload announcing one player and holding its score and only three
+ * bytes of its bounty
+ * When it is decoded
+ * Then a BufferUnderflowException is raised
+ */
+TEST(GameEnded, RefusesABountyCutShort) {
+  const auto bytes = byteSequence(
+      {0x02, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00});
+
+  EXPECT_THROW((void)decodeMessage<GameEnded>(bytes), BufferUnderflowException);
+}
+
+/**
  * Given a whole end of game followed by one more byte
  * When it is decoded
  * Then a TrailingBytesException is raised
  */
 TEST(GameEnded, RefusesBytesAfterTheLastPlayer) {
-  const auto bytes =
-      byteSequence({0x02, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00});
+  const auto bytes = byteSequence(
+      {0x02, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00});
 
   EXPECT_THROW((void)decodeMessage<GameEnded>(bytes), TrailingBytesException);
 }

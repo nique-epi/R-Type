@@ -51,6 +51,10 @@ struct ConnectedPlayer {
   /** @brief The points the player earned in the current game; back to 0 when a
    * new world is built. */
   std::uint32_t score{0};
+  /** @brief The kopecks the player earned in the current game from the bosses
+   * destroyed and the level cleared while it was there (payEveryPlayer());
+   * back to 0 when a new world is built. */
+  std::uint32_t bounty{0};
   /** @brief The look items the player won in the current game, each once, as
    * the numbers LookItemWon carries (see identifiers::lookIndexOf()), in the
    * order it won them. LookItemKeeper fills it; emptied when a new world is

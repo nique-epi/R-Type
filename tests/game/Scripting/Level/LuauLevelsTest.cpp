@@ -248,6 +248,47 @@ TEST(LuauLevels, ReadsThePreviewOfAMap) {
 }
 
 /**
+ * Given a script that pays 300 kopecks for the level caves cleared
+ * When it runs
+ * Then the level pays that reward, and a level without the option none
+ */
+TEST(LuauLevels, ReadsTheRewardOfALevel) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+  BehaviourScripts unpaid{reportInto(log)};
+
+  scripts.run(scriptsOf(REGISTERS_A_REWARD));
+  unpaid.run(scriptsOf(REGISTERS_A_MAP));
+
+  const LuauLevelEntry* const entry = scripts.levels().entryOf(CAVES_LEVEL);
+  const LuauLevelEntry* const unpaidEntry =
+      unpaid.levels().entryOf(CAVES_LEVEL);
+  ASSERT_NE(entry, nullptr);
+  ASSERT_NE(unpaidEntry, nullptr);
+  EXPECT_EQ(entry->reward, CAVES_REWARD);
+  EXPECT_EQ(unpaidEntry->reward, 0U);
+}
+
+/**
+ * Given a script that pays 2.5 kopecks, then one that pays 10001
+ * When each runs
+ * Then it fails, saying what the option is
+ */
+TEST(LuauLevels, RefusesARewardThatIsNoWholeNumberOfItsRange) {
+  FailureLog log;
+  BehaviourScripts parted{reportInto(log)};
+  BehaviourScripts tooLarge{reportInto(log)};
+
+  EXPECT_THAT([&] { parted.run(scriptsOf(REGISTERS_A_PART_OF_A_KOPECK)); },
+              ThrowsMessage<ScriptException>(
+                  HasSubstr(rtype::game::WRONG_LEVEL_REWARD_MESSAGE)));
+  EXPECT_THAT(
+      [&] { tooLarge.run(scriptsOf(REGISTERS_A_REWARD_PAST_THE_LARGEST)); },
+      ThrowsMessage<ScriptException>(
+          HasSubstr(rtype::game::WRONG_LEVEL_REWARD_MESSAGE)));
+}
+
+/**
  * Given a script whose preview names a file outside the previews folder
  * When it runs
  * Then it fails, saying what the option is

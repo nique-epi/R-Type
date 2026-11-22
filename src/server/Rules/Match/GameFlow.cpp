@@ -8,6 +8,7 @@
 #include <string_view>
 #include <utility>
 #include <vector>
+#include "Bounties.hpp"
 #include "ConnectedPlayer.hpp"
 #include "ConnectedPlayers.hpp"
 #include "EntityIdConstants.hpp"
@@ -239,6 +240,9 @@ void GameFlow::finishIfOver() {
     return;
   }
   logger_.info("game finished: ", ending->reason);
+  if (ending->outcome == GameOutcome::Victory) {
+    payEveryPlayer(game_.roster.get(), systems_->clearReward());
+  }
   game_.events.get().publish(
       finishing(state_, finishedTicks_, ending->outcome));
   replication_.onGameFinished(ending->outcome);
@@ -265,6 +269,7 @@ void GameFlow::startNewWorld() {
   for (ConnectedPlayer* const player : game_.roster.get().connected()) {
     player->ready = false;
     player->score = 0;
+    player->bounty = 0;
     player->wonLookNumbers.clear();
     player->livesWithoutShip = game_.settings.rules.lives;
     player->ticksUntilRespawn = 0;

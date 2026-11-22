@@ -5,11 +5,15 @@
 #include <string_view>
 
 /** @brief Scores of the games of the tests, and what each pays: one kopeck
- * per 10 points, and a quarter more for a victory. */
+ * per 50 points, a part of a kopeck lost, and nothing more for a victory. */
 constexpr std::uint32_t TWELVE_HUNDRED_THIRTY_FOUR_POINTS = 1'234;
-constexpr std::int64_t KOPECKS_OF_1234_POINTS = 123;
+constexpr std::int64_t KOPECKS_OF_1234_POINTS = 24;
 constexpr std::uint32_t A_THOUSAND_POINTS = 1'000;
-constexpr std::int64_t KOPECKS_OF_A_THOUSAND_POINTS_WON = 125;
+constexpr std::int64_t KOPECKS_OF_A_THOUSAND_POINTS = 20;
+/** @brief The bounty of the Necromancer, and what it pays with 1234 points:
+ * 350 and 24, 374. */
+constexpr std::uint32_t NECROMANCER_BOUNTY = 350;
+constexpr std::int64_t KOPECKS_OF_1234_POINTS_AND_THE_NECROMANCER = 374;
 constexpr std::int64_t NO_KOPECK = 0;
 
 /** @brief A ticket of the shape the master gives, which it never gave. */

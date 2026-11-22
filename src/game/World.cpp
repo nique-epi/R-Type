@@ -13,6 +13,7 @@
 #include "CollisionMask.hpp"
 #include "ComponentRegistry.hpp"
 #include "CurrentAction.hpp"
+#include "DamageTally.hpp"
 #include "Entity.hpp"
 #include "EntitySheet.hpp"
 #include "EntitySheetConstants.hpp"
@@ -151,8 +152,10 @@ void addCombat(engine::ComponentRegistry& components, const BodyStart& start) {
     const int health = healthOf(start, *sheet.health);
     components.add(start.body, Health{.points = health, .full = health});
   }
-  if (sheet.points.has_value()) {
-    components.add(start.body, ScoreValue{.points = *sheet.points});
+  const std::uint32_t bounty = sheet.boss.has_value() ? sheet.boss->bounty : 0;
+  if (sheet.points.has_value() || bounty > 0) {
+    components.add(start.body, ScoreValue{.points = sheet.points.value_or(0),
+                                          .bounty = bounty});
   }
   if (sheet.gun.has_value()) {
     components.add(start.body,
@@ -219,7 +222,8 @@ void addContactParts(engine::ComponentRegistry& components,
   }
 }
 
-/** @brief Gives @p start its Boss when its sheet makes it one. */
+/** @brief Gives @p start its Boss and its DamageTally when its sheet makes
+ * it one. */
 void addBoss(engine::ComponentRegistry& components, const BodyStart& start) {
   const EntitySheet& sheet = start.sheet.get();
   if (!sheet.boss.has_value() || !sheet.health.has_value()) {
@@ -229,6 +233,7 @@ void addBoss(engine::ComponentRegistry& components, const BodyStart& start) {
                  Boss{.rageBelowPercent = sheet.boss->rageBelowPercent,
                       .rageAttack = sheet.boss->rageAttack,
                       .arrivalAttack = sheet.boss->arrivalAttack});
+  components.add(start.body, DamageTally{});
 }
 
 /** @brief Gives the ship of a player its lives, no protection yet and, with

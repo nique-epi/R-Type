@@ -66,6 +66,8 @@ points = 3000
 rage_below_percent = 50
 rage_attack = 1
 arrival_attack = 2
+# The kopecks every pilot present earns when it is destroyed.
+bounty = 180
 
 [gameplay.stays_outside]
 

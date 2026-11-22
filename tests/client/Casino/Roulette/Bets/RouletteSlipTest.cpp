@@ -12,14 +12,19 @@ using rtype::client::RouletteSlip;
 using rtype::client::testing::CHIPS_FOR_ONE_CHIP;
 using rtype::client::testing::CHIPS_OF_500_IN_THE_CAP;
 using rtype::client::testing::FIFTY_ON_SEVENTEEN;
+using rtype::client::testing::FIVE_HUNDRED_ON_EIGHTEEN;
 using rtype::client::testing::FIVE_HUNDRED_ON_RED;
+using rtype::client::testing::FIVE_HUNDRED_ON_SEVENTEEN;
 using rtype::client::testing::LAST_NUMBER_OF_THE_STACKS;
 using rtype::client::testing::MOST_STACKS;
+using rtype::client::testing::ONE_CHIP_OF_500;
+using rtype::client::testing::ONE_ON_SEVENTEEN;
 using rtype::client::testing::ONE_ON_THIRTY_THREE;
 using rtype::client::testing::PLENTY_OF_CHIPS;
 using rtype::client::testing::ROUND_CAP;
 using rtype::client::testing::TWENTY_FIVE_ON_RED;
 using rtype::client::testing::TWENTY_FIVE_ON_SEVENTEEN;
+using rtype::client::testing::TWO_CHIPS_OF_500;
 using rtype::network::RouletteBet;
 using rtype::network::RouletteBetKind;
 using ::testing::ElementsAre;
@@ -54,9 +59,9 @@ TEST(RouletteSlip, NoChipPastTheChipsHeld) {
 }
 
 /**
- * Given a slip holding the 5 000 chips a round takes at most
+ * Given a slip holding the 2 000 chips a round takes at most
  * When one more chip is laid, the player holding plenty
- * Then it is refused and the stake stays 5 000
+ * Then it is refused and the stake stays 2 000
  */
 TEST(RouletteSlip, NoChipPastTheCapOfARound) {
   RouletteSlip slip;
@@ -67,6 +72,36 @@ TEST(RouletteSlip, NoChipPastTheCapOfARound) {
   EXPECT_FALSE(slip.lay(TWENTY_FIVE_ON_SEVENTEEN, PLENTY_OF_CHIPS));
 
   EXPECT_EQ(slip.stake(), ROUND_CAP);
+}
+
+/**
+ * Given a slip holding 500 on 17, which returns the 18 000 a round returns at
+ * most
+ * When a chip of 1 more is laid on 17, the player holding plenty
+ * Then it is refused and the stake stays 500
+ */
+TEST(RouletteSlip, NoChipPastTheMostARoundReturns) {
+  RouletteSlip slip;
+  ASSERT_TRUE(slip.lay(FIVE_HUNDRED_ON_SEVENTEEN, PLENTY_OF_CHIPS));
+
+  EXPECT_FALSE(slip.lay(ONE_ON_SEVENTEEN, PLENTY_OF_CHIPS));
+
+  EXPECT_EQ(slip.stake(), ONE_CHIP_OF_500);
+}
+
+/**
+ * Given a slip holding 500 on 17
+ * When 500 is laid on 18, which 17 does not cover
+ * Then it is laid: whatever number comes out, the round returns 18 000 at
+ * most
+ */
+TEST(RouletteSlip, TwoNumbersEachReturnTheMostARoundReturns) {
+  RouletteSlip slip;
+  ASSERT_TRUE(slip.lay(FIVE_HUNDRED_ON_SEVENTEEN, PLENTY_OF_CHIPS));
+
+  EXPECT_TRUE(slip.lay(FIVE_HUNDRED_ON_EIGHTEEN, PLENTY_OF_CHIPS));
+
+  EXPECT_EQ(slip.stake(), TWO_CHIPS_OF_500);
 }
 
 /**

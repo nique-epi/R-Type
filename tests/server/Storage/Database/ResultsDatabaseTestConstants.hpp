@@ -39,6 +39,8 @@ constexpr std::string_view SAVED_TICKET =
 constexpr std::string_view OTHER_SAVED_TICKET =
     "rtt_ffeeddccbbaa99887766554433221100ffeeddccbbaa99887766554433221100";
 constexpr std::string_view WON_CROWN = "crown";
+/** @brief The bounty ACE earned: the Pit cleared with its boss. */
+constexpr std::uint32_t SAVED_BOUNTY = 650;
 constexpr std::string_view WON_HALO = "halo";
 constexpr std::size_t PLAYERS_ON_A_FULL_BOARD = 11;
 constexpr std::uint32_t LAST_RANK_ON_A_FULL_BOARD = 11;

@@ -375,6 +375,38 @@ std::optional<std::string> mapPreviewOf(lua_State* state,
   return preview;
 }
 
+/** @returns The number the options at LEVEL_OPTIONS_ARGUMENT give under
+ * @p key, NaN for a value that is no number; nothing without options or
+ * without that key. */
+std::optional<double> numberOptionOf(lua_State* state, const char* key) {
+  if (lua_isnoneornil(state, LEVEL_OPTIONS_ARGUMENT)) {
+    return std::nullopt;
+  }
+  lua_rawgetfield(state, LEVEL_OPTIONS_ARGUMENT, key);
+  const int type = lua_type(state, -1);
+  const double value = type == LUA_TNUMBER
+                           ? lua_tonumber(state, -1)
+                           : std::numeric_limits<double>::quiet_NaN();
+  lua_pop(state, 1);
+  if (type == LUA_TNIL) {
+    return std::nullopt;
+  }
+  return value;
+}
+
+/** @returns The kopecks the options give under LEVEL_REWARD_KEY, 0 without
+ * options or without that key.
+ * @throws engine::ScriptException unless it is a whole number from 0 to
+ * MOST_LEVEL_REWARD. */
+std::uint32_t rewardOf(lua_State* state) {
+  const double reward = numberOptionOf(state, LEVEL_REWARD_KEY).value_or(0.0);
+  if (!std::isfinite(reward) || reward < 0.0 || reward > MOST_LEVEL_REWARD ||
+      std::floor(reward) != reward) {
+    throw engine::ScriptException(WRONG_LEVEL_REWARD_MESSAGE);
+  }
+  return static_cast<std::uint32_t>(reward);
+}
+
 /** @brief `level.register(name, stages, options)`: an exception that leaves
  * it is an error of the script, as Luau makes of any exception a C function
  * throws. */
@@ -396,7 +428,8 @@ int registerLevel(lua_State* state) {
                        .mapName = mapNameOf(state),
                        .openingBiome = openingBiomeOf(state),
                        .mapPreview = std::nullopt,
-                       .grounds = {}};
+                       .grounds = {},
+                       .reward = rewardOf(state)};
   entry.mapPreview = mapPreviewOf(state, entry.mapName);
   levels.declare(std::move(name), std::move(entry));
   return 0;
