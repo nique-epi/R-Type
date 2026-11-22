@@ -17,6 +17,15 @@ Why: clang-format picks the language from the extension and falls back to C++ fo
 1. **A folder glob such as `<folder>/*` or `<folder>/Boss*` handed to `clang-format -i` takes the `CMakeLists.txt` of that folder with it.** Write the extensions in the glob itself: `<folder>/*.cpp <folder>/*.hpp`, or `<folder>/*.?pp`, never a bare `*`.
 2. **Read the command before sending it**: each glob that ends in `*` with no extension after it is the defect, whatever the folder holds today.
 
+### The files to format come from git, never from a list typed by hand
+
+1. **Format a change with one command that asks git for its C++ files**, never with paths or globs typed for the occasion:
+   ```bash
+   { git diff --name-only -z -- '*.cpp' '*.hpp'; git ls-files -z -o --exclude-standard -- '*.cpp' '*.hpp'; } | xargs -0 clang-format -i
+   ```
+   It takes the changed and the new C++ files of the whole tree, and nothing else.
+2. **A path list written by hand for `clang-format` is the symptom**, whatever it holds: the second time the rule was broken, `InterfaceCanvas/*` sat among `.?pp` globs in the same command.
+
 ## Example
 
 - ❌ **Before (wrong)**: `git ls-files -o --exclude-standard -- src tests | xargs clang-format -i` → the new `src/client/Screens/LobbyScreen/CMakeLists.txt` rewritten with `${` and `CMAKE_CURRENT_SOURCE_DIR}` on two lines and every line indented as code.

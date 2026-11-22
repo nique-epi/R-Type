@@ -30,3 +30,7 @@ The filter was applied to one of the two lists and not the other, on the belief 
 ## Update (2026-11-07) — a folder glob took the CMakeLists of a new test folder
 
 A new test folder `tests/network/Protocol/Messages/BossStatus/` held a `CMakeLists.txt`, a test and its constants; `clang-format -i tests/network/Protocol/Messages/BossStatus/*` rewrote the `CMakeLists.txt` as C++, and the next configure stopped on "Syntax error in cmake code". Point 1 was known, but a glob over one folder did not read as "a list of files". The rule now names the folder glob and asks for the extensions in the glob.
+
+## Update (2026-11-22) — a folder glob among extension globs
+
+While the canvas of the interface gained the language, one command formatted `src/client/Rendering/Interface/InterfaceCanvas/*` next to `ReportedTextures/*.?pp` and `tests/doubles/RecordingInterfaceCanvas.?pp`. The bare glob took `InterfaceCanvas/CMakeLists.txt`, which was rewritten as C++, and the configure stopped on "Syntax error in cmake code". The subsection on folder globs was known; the paths were typed by hand under time pressure and one glob lost its extension. The rule now asks git for the files to format, so no path is typed at all.
