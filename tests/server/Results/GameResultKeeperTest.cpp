@@ -25,12 +25,13 @@ namespace rtype::server::testing {
 /**
  * Given a game of one player with a score, who lost every life
  * When it finishes
- * Then one result is recorded, with its nickname, score and deaths
+ * Then one result is recorded, with its nickname, score, bounty and deaths
  */
 TEST_F(GameResultKeeperFixture, RecordsThePlayersWhenTheGameFinishes) {
   ConnectedPlayer& player = seat(FIRST_PLAYER);
   startTheGame();
   player.score = KEEPER_SCORE;
+  player.bounty = KEEPER_BOUNTY;
   player.livesWithoutShip = NO_LIFE;
 
   finishTheGame();
@@ -40,6 +41,7 @@ TEST_F(GameResultKeeperFixture, RecordsThePlayersWhenTheGameFinishes) {
   EXPECT_EQ(result.players.at(0),
             (PlayerResult{.nickname = std::string{NICKNAMES.at(FIRST_PLAYER)},
                           .score = KEEPER_SCORE,
+                          .bounty = KEEPER_BOUNTY,
                           .deaths = EVERY_LIFE_LOST,
                           .wonLooks = {}}));
 }

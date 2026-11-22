@@ -58,17 +58,18 @@ TEST_F(ResultsDatabaseFixture, ReadsAVanillaGameTheMasterHasNotAnswered) {
 }
 
 /**
- * Given a won vanilla game of a player who joined with a game ticket and won
- * two look items, saved
+ * Given a won vanilla game of a player who joined with a game ticket, earned
+ * a bounty and won two look items, saved
  * When the games the master has not answered are read
- * Then the game says it was won, and its row keeps the ticket and both items
- * in their order
+ * Then the game says it was won, and its row keeps the ticket, the bounty and
+ * both items in their order
  */
 TEST_F(ResultsDatabaseFixture, ReadsTheTicketTheLooksAndTheVictoryOfAGame) {
   ResultsDatabase database{file()};
   GameResult won = vanillaGame(
       {PlayerResult{.nickname = std::string{ACE},
                     .score = HIGH_SCORE,
+                    .bounty = SAVED_BOUNTY,
                     .deaths = TWO_DEATHS,
                     .wonLooks = {std::string{WON_HALO}, std::string{WON_CROWN}},
                     .ticket = std::string{SAVED_TICKET}}},
@@ -211,7 +212,7 @@ TEST_F(ResultsDatabaseFixture, ReadsTheGamesOfAFileOfTheFirstVersion) {
  * Given a file of the fourth version holding a vanilla game, as a server built
  * before the accounts left it
  * When it is opened and the games the master has not answered are read
- * Then that game reads as lost, by a guest who won no item
+ * Then that game reads as lost, by a guest who won no item and no bounty
  */
 TEST_F(ResultsDatabaseFixture, ReadsAGameOfTheFourthVersionAsLostByAGuest) {
   {
@@ -230,6 +231,7 @@ TEST_F(ResultsDatabaseFixture, ReadsAGameOfTheFourthVersionAsLostByAGuest) {
   EXPECT_FALSE(games[0].result.victory);
   EXPECT_EQ(games[0].result.players.at(0).ticket, std::nullopt);
   EXPECT_TRUE(games[0].result.players.at(0).wonLooks.empty());
+  EXPECT_EQ(games[0].result.players.at(0).bounty, 0U);
 }
 
 }  // namespace rtype::server::testing

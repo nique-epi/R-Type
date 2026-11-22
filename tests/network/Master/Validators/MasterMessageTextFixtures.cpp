@@ -274,6 +274,7 @@ FinishedGame parisFinishedGame() {
                       .nickname = std::string{SECOND_PILOT},
                       .accountId = std::string{SECOND_PILOT_ACCOUNT},
                       .score = SECOND_PILOT_SCORE,
+                      .bounty = SECOND_PILOT_BOUNTY,
                       .wonLooks = {std::string{SECOND_PILOT_FIRST_LOOK},
                                    std::string{SECOND_PILOT_SECOND_LOOK}}}},
       .victory = PARIS_GAME_WON};

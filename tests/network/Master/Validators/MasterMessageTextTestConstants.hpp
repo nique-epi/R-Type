@@ -249,6 +249,8 @@ constexpr std::chrono::sys_seconds FINISHED_GAME_DATE{
     std::chrono::seconds{1'800'000'100}};
 constexpr std::uint32_t FIRST_PILOT_SCORE = 12'000;
 constexpr std::uint32_t SECOND_PILOT_SCORE = 800;
+/** @brief The bounty BYDO_HUNTER earned: the Pit cleared with its boss. */
+constexpr std::uint32_t SECOND_PILOT_BOUNTY = 650;
 constexpr std::string_view SECOND_PILOT_ACCOUNT = "account-42";
 
 /** @brief The game "Paris 1" reports was won, and BYDO_HUNTER won two items
@@ -305,6 +307,10 @@ constexpr std::string_view FIRST_PLAYER_SCORE_POINTER = "/players/0/score";
 constexpr std::string_view SECOND_PLAYER_ACCOUNT_POINTER =
     "/players/1/accountId";
 constexpr std::string_view VICTORY_POINTER = "/victory";
+/** @brief The bounty of the second player, and one past the largest a
+ * server keeps (32 bits). */
+constexpr std::string_view SECOND_PLAYER_BOUNTY_POINTER = "/players/1/bounty";
+constexpr std::uint64_t BOUNTY_PAST_THE_LARGEST = 4'294'967'296;
 constexpr std::string_view SECOND_PLAYER_WON_LOOKS_POINTER =
     "/players/1/wonLooks";
 constexpr std::string_view SECOND_PLAYER_FIRST_LOOK_POINTER =

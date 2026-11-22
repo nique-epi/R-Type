@@ -72,6 +72,23 @@ TEST_F(GameCreditRoutesFixture, AVictoryPaysItsScoreAndItsLooks) {
 
 /**
  * Given ACE, whose wallet holds no kopeck
+ * When a game comes where ACE, with a ticket, scored 1234 and earned the
+ * bounty of the Necromancer, 350
+ * Then ACE gets both: 24 kopecks of its score and 350, 374
+ */
+TEST_F(GameCreditRoutesFixture, TheBountyIsPaidWithTheScore) {
+  FinishedGame game =
+      gameOfAceWith(aceTicket(), TWELVE_HUNDRED_THIRTY_FOUR_POINTS);
+  game.players.at(0).bounty = NECROMANCER_BOUNTY;
+
+  ASSERT_EQ(sendResult(FIRST_GAME_ID, game)->status, EXPECTED_NO_CONTENT);
+
+  EXPECT_EQ(kopecksOfAce(),
+            std::optional{KOPECKS_OF_1234_POINTS_AND_THE_NECROMANCER});
+}
+
+/**
+ * Given ACE, whose wallet holds no kopeck
  * When a game comes whose player names the account id of ACE, and no ticket
  * Then the result is kept, and ACE gets nothing: an id names no one
  */

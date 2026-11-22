@@ -146,6 +146,7 @@ constexpr std::string_view VANILLA_MEMBER = "vanilla";
 constexpr std::string_view NICKNAME_MEMBER = "nickname";
 constexpr std::string_view ACCOUNT_ID_MEMBER = "accountId";
 constexpr std::string_view SCORE_MEMBER = "score";
+constexpr std::string_view BOUNTY_MEMBER = "bounty";
 constexpr std::string_view VICTORY_MEMBER = "victory";
 constexpr std::string_view WON_LOOKS_MEMBER = "wonLooks";
 
@@ -272,6 +273,11 @@ constexpr std::uint64_t MAXIMUM_DEVICE_LINK_INTERVAL = 60;
 /** @brief The bounds of a score, what a server keeps of one (32 bits). */
 constexpr std::uint64_t LOWEST_SCORE = 0;
 constexpr std::uint64_t HIGHEST_SCORE =
+    std::numeric_limits<std::uint32_t>::max();
+
+/** @brief The bounds of a bounty, what a server keeps of one (32 bits). */
+constexpr std::uint64_t LOWEST_BOUNTY = 0;
+constexpr std::uint64_t HIGHEST_BOUNTY =
     std::numeric_limits<std::uint32_t>::max();
 
 /** @brief The bounds of the date a game ended, in seconds since 1970 UTC: what

@@ -12,6 +12,9 @@ namespace rtype::server {
 struct PlayerResult {
   std::string nickname;
   std::uint32_t score{};
+  /** @brief The kopecks the bosses destroyed and the level cleared while the
+   * player was there paid it (ConnectedPlayer::bounty). */
+  std::uint32_t bounty{};
   /** @brief The lives the player lost in the game. */
   std::uint32_t deaths{};
   /** @brief The names of the look items the player won in the game, from

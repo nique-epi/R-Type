@@ -38,6 +38,7 @@ constexpr std::uint32_t LEADING_PILOT_DEATHS = 1;
 constexpr std::string_view TRAILING_PILOT = "R9";
 constexpr std::uint32_t TRAILING_PILOT_SCORE = 800;
 constexpr std::uint32_t TRAILING_PILOT_DEATHS = 3;
+constexpr std::uint32_t TRAILING_PILOT_BOUNTY = 650;
 
 /** @brief The game ticket R9 joined with, as the master writes it; and the
  * item it won. */

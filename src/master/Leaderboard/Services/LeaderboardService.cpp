@@ -34,7 +34,7 @@ std::optional<GameCredit> creditOf(const ServerGameResult& result,
   return GameCredit{
       .ticket = *player.ticket,
       .kopecks = network::kopecksFor(
-          network::GameGain{.score = player.score, .bounty = 0}),
+          network::GameGain{.score = player.score, .bounty = player.bounty}),
       .wonLooks = player.wonLooks,
       .reference = std::string{GAME_REFERENCE_PREFIX} +
                    std::to_string(result.serverId) +

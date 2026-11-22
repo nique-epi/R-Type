@@ -183,11 +183,12 @@ namespace rtype::network {
  * FEWEST_FINISHED_GAME_PLAYERS or more than MAXIMUM_PLAYERS players, more
  * players than its playerCount, one nickname twice (nicknameKey()), an
  * accountId that is empty, longer than MAXIMUM_ACCOUNT_ID_SIZE or not printable
- * UTF-8, a score above HIGHEST_SCORE, a victory that is no boolean, a wonLooks
+ * UTF-8, a score above HIGHEST_SCORE, a bounty above HIGHEST_BOUNTY, a
+ * victory that is no boolean, a wonLooks
  * that is no array or holds more than MAXIMUM_WON_LOOKS names, a name that is
  * not one of identifiers::SHIP_LOOK_ITEM_NAMES, a ticket that is not well
  * formed (isWellFormedGameTicket()). A player without a ticket reads as a
- * guest.
+ * guest, one without a bounty as a bounty of 0.
  */
 [[nodiscard]] FinishedGame finishedGameFromText(std::string_view text);
 

@@ -43,6 +43,7 @@ using rtype::server::testing::PROBE_SECRET_CEILING;
 using rtype::server::testing::PROBE_SECRET_FLOOR;
 using rtype::server::testing::PROBE_TOKEN_OF_A_HEARTBEAT;
 using rtype::server::testing::TRAILING_PILOT;
+using rtype::server::testing::TRAILING_PILOT_BOUNTY;
 using rtype::server::testing::TRAILING_PILOT_DEATHS;
 using rtype::server::testing::TRAILING_PILOT_SCORE;
 using rtype::server::testing::TRAILING_PILOT_TICKET;
@@ -162,7 +163,8 @@ TEST(MasterMessages, AHeartbeatCarriesTheTokenItIsGiven) {
  * When its result is written for the master
  * Then it carries its date, difficulty, players at the start, that it was
  * vanilla and won, the guest without a ticket, the other pilot with its ticket
- * and the crown, each with its score, without the deaths, and no account
+ * and the crown, each with its score and its bounty, without the deaths,
+ * and no account
  */
 TEST(MasterMessages, TheResultOfAGameIsWhatTheMasterKeeps) {
   const FinishedGame game = finishedGameOf(GameResult{
@@ -176,6 +178,7 @@ TEST(MasterMessages, TheResultOfAGameIsWhatTheMasterKeeps) {
                   PlayerResult{
                       .nickname = std::string{TRAILING_PILOT},
                       .score = TRAILING_PILOT_SCORE,
+                      .bounty = TRAILING_PILOT_BOUNTY,
                       .deaths = TRAILING_PILOT_DEATHS,
                       .wonLooks = {std::string{TRAILING_PILOT_WON_LOOK}},
                       .ticket = std::string{TRAILING_PILOT_TICKET}}},
@@ -197,6 +200,7 @@ TEST(MasterMessages, TheResultOfAGameIsWhatTheMasterKeeps) {
                           .nickname = std::string{TRAILING_PILOT},
                           .accountId = std::nullopt,
                           .score = TRAILING_PILOT_SCORE,
+                          .bounty = TRAILING_PILOT_BOUNTY,
                           .wonLooks = {std::string{TRAILING_PILOT_WON_LOOK}},
                           .ticket = std::string{TRAILING_PILOT_TICKET}}},
           .victory = true}));

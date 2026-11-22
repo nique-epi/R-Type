@@ -719,6 +719,19 @@ std::optional<std::string> ticketOf(const JsonField& player) {
   return text;
 }
 
+/** @returns The bounty of @p player; 0 when a server older than the member
+ * does not say. */
+std::uint32_t bountyOf(const JsonField& player) {
+  const std::optional<JsonField> bounty =
+      optionalMemberOf(player, BOUNTY_MEMBER);
+  if (!bounty.has_value()) {
+    return 0;
+  }
+  return static_cast<std::uint32_t>(integerOf(
+      *bounty,
+      IntegerBounds{.lowest = LOWEST_BOUNTY, .highest = HIGHEST_BOUNTY}));
+}
+
 FinishedGamePlayer finishedGamePlayerOf(const JsonField& player) {
   requireObject(player);
   return FinishedGamePlayer{
@@ -727,6 +740,7 @@ FinishedGamePlayer finishedGamePlayerOf(const JsonField& player) {
       .score = static_cast<std::uint32_t>(integerOf(
           memberOf(player, SCORE_MEMBER),
           IntegerBounds{.lowest = LOWEST_SCORE, .highest = HIGHEST_SCORE})),
+      .bounty = bountyOf(player),
       .wonLooks = wonLooksOf(player),
       .ticket = ticketOf(player)};
 }
@@ -772,6 +786,7 @@ nlohmann::json finishedGamePlayerDocument(const FinishedGamePlayer& player) {
     document[ACCOUNT_ID_MEMBER] = *player.accountId;
   }
   document[SCORE_MEMBER] = player.score;
+  document[BOUNTY_MEMBER] = player.bounty;
   document[WON_LOOKS_MEMBER] = player.wonLooks;
   if (player.ticket.has_value()) {
     document[TICKET_MEMBER] = *player.ticket;
