@@ -324,7 +324,8 @@ void paintBlueprintPaper(IInterfaceCanvas& canvas) {
   }
   canvas.plot(grid);
   Outline(card, Outline::Line::Solid).paint(canvas, PALE_BLUE);
-  canvas.write(BLUEPRINT_LABEL, card.position + BLUEPRINT_LABEL_OFFSET,
+  canvas.write(BLUEPRINT_LABEL.in(canvas.language()),
+               card.position + BLUEPRINT_LABEL_OFFSET,
                {.font = TextFont::Small, .color = HUD_CYAN});
 }
 

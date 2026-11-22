@@ -3,6 +3,7 @@
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
 #include "TextStyle.hpp"
+#include "Translation.hpp"
 #include "WidgetColors.hpp"
 
 namespace rtype::client {
@@ -18,13 +19,20 @@ constexpr sf::IntRect HANGAR_RULE{{24, 26}, {432, 1}};
 constexpr sf::Vector2i HANGAR_STATUS_ANCHOR{24, 230};
 constexpr TextStyle HANGAR_STATUS_STYLE{.font = TextFont::Small,
                                         .color = PAGE_TEXT_COLOR};
-constexpr const char* WEAR_HINT = " - ENTER: WEAR";
-constexpr const char* TAKE_OFF_HINT = " - ENTER: TAKE OFF";
+constexpr Translation WEAR_HINT{.english = " - ENTER: WEAR",
+                                .french = " - ENTRÉE : PORTER"};
+constexpr Translation TAKE_OFF_HINT{.english = " - ENTER: TAKE OFF",
+                                    .french = " - ENTRÉE : RETIRER"};
 
 /** @brief The status line of an item the player does not hold yet: a look
  * item is won in a mission or bought, a hull is only bought. */
-constexpr const char* LOCKED_STATUS = "LOCKED: WIN IT IN A MISSION OR BUY IT";
-constexpr const char* LOCKED_HULL_STATUS = "LOCKED: BUY IT AT THE SHOP";
-constexpr const char* FITTING_HINT = " - FITTING...";
+constexpr Translation LOCKED_STATUS{
+    .english = "LOCKED: WIN IT IN A MISSION OR BUY IT",
+    .french = "VERROUILLÉ : À GAGNER EN MISSION OU À ACHETER"};
+constexpr Translation LOCKED_HULL_STATUS{
+    .english = "LOCKED: BUY IT AT THE SHOP",
+    .french = "VERROUILLÉ : À ACHETER AU MAGASIN"};
+constexpr Translation FITTING_HINT{.english = " - FITTING...",
+                                   .french = " - MONTAGE..."};
 
 }  // namespace rtype::client

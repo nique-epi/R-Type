@@ -68,14 +68,18 @@ Button::Text backText() {
  * it, or that an arm is fitting an item. */
 std::string statusOf(const LockerView& view, bool fitting, Language language) {
   if (!view.locker.items.test(view.chosen)) {
-    return identifiers::isHullItem(view.chosen) ? LOCKED_HULL_STATUS
-                                                : LOCKED_STATUS;
+    return std::string((identifiers::isHullItem(view.chosen)
+                            ? LOCKED_HULL_STATUS
+                            : LOCKED_STATUS)
+                           .in(language));
   }
   const std::string status(lookItemLabelOf(view.chosen, language));
   if (fitting) {
-    return status + FITTING_HINT;
+    return status + std::string(FITTING_HINT.in(language));
   }
-  return status + (wears(view.worn, view.chosen) ? TAKE_OFF_HINT : WEAR_HINT);
+  return status +
+         std::string((wears(view.worn, view.chosen) ? TAKE_OFF_HINT : WEAR_HINT)
+                         .in(language));
 }
 
 /** @returns The looks the player may wear, once known: the starter kit for a

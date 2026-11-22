@@ -8,6 +8,7 @@
 #include "GlassStreak.hpp"
 #include "RowWindow.hpp"
 #include "ShipLookConstants.hpp"
+#include "Translation.hpp"
 
 namespace rtype::client {
 
@@ -63,7 +64,7 @@ constexpr std::uint32_t NAMEPLATE_SEED = 401;
 /** @brief The name plate of the locker: its name, its width beyond its name,
  * its height, where it and its name sit, its two brackets, and how far its
  * shade darkens its bottom row. */
-constexpr const char* LOCKER_TITLE = "LOCKER";
+constexpr Translation LOCKER_TITLE{.english = "LOCKER", .french = "CASIER"};
 constexpr int NAMEPLATE_MARGIN = 26;
 constexpr int NAMEPLATE_MINIMUM_WIDTH = 70;
 constexpr int NAMEPLATE_HEIGHT = 14;
