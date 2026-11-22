@@ -127,6 +127,72 @@ TEST(EntityAppearances, ASheetWithoutBossNameHasNone) {
 }
 
 /**
+ * Given a sheet whose appearance holds the table hurt_beams
+ * When its appearance is read
+ * Then the client paints its hurt beams
+ */
+TEST(EntityAppearances, ReadsThatASheetPaintsItsHurtBeams) {
+  const EntityAppearances appearances =
+      appearancesReading(SHEET_PAINTING_HURT_BEAMS);
+  const EntityAppearance* const read = appearances.named(READ_TYPE_NAME);
+  ASSERT_NE(read, nullptr);
+
+  EXPECT_TRUE(read->paintsHurtBeams);
+}
+
+/**
+ * Given a sheet whose appearance holds no table hurt_beams
+ * When its appearance is read
+ * Then the client paints none of its hurt beams
+ */
+TEST(EntityAppearances, ASheetPaintsNoHurtBeamByDefault) {
+  const EntityAppearances appearances = appearancesReading(READ_SHEET_TEXT);
+  const EntityAppearance* const read = appearances.named(READ_TYPE_NAME);
+  ASSERT_NE(read, nullptr);
+
+  EXPECT_FALSE(read->paintsHurtBeams);
+}
+
+/**
+ * Given a sheet whose table hurt_beams holds a key
+ * When its appearance is read
+ * Then it is refused at that key: the table holds none
+ */
+TEST(EntityAppearances, RefusesAKeyInTheTableOfHurtBeams) {
+  EXPECT_THROW(
+      static_cast<void>(appearancesReading(SHEET_WITH_A_KEY_IN_HURT_BEAMS)),
+      UnknownDataFileKeyException);
+}
+
+/**
+ * Given the shipped sheet of the Bydo Tyrant, whose frames draw none of its
+ * beams
+ * When a client reads its appearance
+ * Then the client paints its hurt beams
+ */
+TEST(EntityAppearances, TheTyrantPaintsItsHurtBeams) {
+  const EntityAppearances appearances = shippedAppearances();
+  const EntityAppearance* const read = appearances.named(BYDO_TYRANT_SHEET);
+  ASSERT_NE(read, nullptr);
+
+  EXPECT_TRUE(read->paintsHurtBeams);
+}
+
+/**
+ * Given the sheet of the Necromancer the resource fosse brings, whose frames
+ * draw its beam
+ * When a client reads its appearance
+ * Then the client paints none of its hurt beams
+ */
+TEST(EntityAppearances, TheNecromancerPaintsNoHurtBeam) {
+  const EntityAppearances appearances = fosseAppearances();
+  const EntityAppearance* const read = appearances.named(NECROMANCER_SHEET);
+  ASSERT_NE(read, nullptr);
+
+  EXPECT_FALSE(read->paintsHurtBeams);
+}
+
+/**
  * Given the sheet of the Necromancer the resource fosse brings
  * When a client reads its appearance
  * Then its boss name is NECROMANCER, the name its bar writes

@@ -1,4 +1,4 @@
-add_library(rtype_game_entity_sheet_texts STATIC SheetTextReading.cpp)
+add_library(rtype_game_entity_sheet_texts STATIC SheetActionReading.cpp SheetTextReading.cpp)
 
 target_include_directories(rtype_game_entity_sheet_texts PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 

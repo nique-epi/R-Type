@@ -6,6 +6,9 @@ add_library(rtype_client_entities STATIC
   EntityReplicator.cpp
   EntityTypeLooks.cpp
   EntityWithAppearance.cpp
+  PaintedBeamAnnouncer.cpp
+  PaintedBeamTimeline.cpp
+  SheetPhase.cpp
   LastListedTicks.cpp
   PositionHistory.cpp
   ShownLooks.cpp

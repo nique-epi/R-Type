@@ -30,6 +30,7 @@
 #include "NetworkEntityTable.hpp"
 #include "NetworkIdentity.hpp"
 #include "Obstacle.hpp"
+#include "PaintedBeams.hpp"
 #include "PilotShip.hpp"
 #include "PixelEffects.hpp"
 #include "Position.hpp"
@@ -283,6 +284,12 @@ std::optional<engine::Entity> EntityReplicator::create(
   }
   if (look->obstacle.has_value()) {
     components_->add(entity, game::Obstacle{.contact = *look->obstacle});
+  }
+  if (look->hurtZone != nullptr && look->appearance.get().paintsHurtBeams) {
+    components_->add(entity, PaintedBeams{.zone = *look->hurtZone,
+                                          .announced = {},
+                                          .shown = {},
+                                          .shownTick = 0.0});
   }
   components_->add(entity, AppearanceReference{&look->appearance.get()});
   entityByNetworkId_.bind(announced.entityId, entity);

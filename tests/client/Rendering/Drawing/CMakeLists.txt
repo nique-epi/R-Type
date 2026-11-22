@@ -1,1 +1,1 @@
-target_sources(client_rendering_tests PRIVATE RenderSystemTest.cpp Scene.cpp RenderSystemFixtures.cpp)
+target_sources(client_rendering_tests PRIVATE RenderSystemTest.cpp Scene.cpp RenderSystemFixtures.cpp HurtBeamPainterTest.cpp HurtBeamPainterFixtures.cpp ${RTYPE_TEST_SOURCE_DIR}/doubles/RecordingPixelSurface.cpp)

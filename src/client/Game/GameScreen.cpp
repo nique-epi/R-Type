@@ -63,6 +63,8 @@
 #include "OwnMissilesParts.hpp"
 #include "OwnPrediction.hpp"
 #include "OwnShip.hpp"
+#include "PaintedBeamAnnouncer.hpp"
+#include "PaintedBeamTimeline.hpp"
 #include "PilotNameTags.hpp"
 #include "PilotShipLooks.hpp"
 #include "PilotShips.hpp"
@@ -148,6 +150,7 @@ void traceHeldActions(const logging::Logger& logger, const ActionSet& held,
 struct EntityMessageRoutes {
   std::reference_wrapper<EntityReplicator> replicator;
   std::reference_wrapper<EnemyActionPlayer> enemyActions;
+  std::reference_wrapper<PaintedBeamAnnouncer> paintedBeams;
   std::reference_wrapper<EffectPlayer> namedEffects;
   std::reference_wrapper<BossPresentation> boss;
   std::reference_wrapper<ScoreBoard> scoreBoard;
@@ -187,7 +190,8 @@ game::PlayBand bandOf(const network::LevelStatus& status) {
 }
 
 /** @brief Hands an entity message to whoever it goes to: a PlayerLeft to the
- * board and the feed, an EnemyAction to the enemy it animates and to the boss,
+ * board and the feed, an EnemyAction to the enemy it animates, to the beams it
+ * paints and to the boss,
  * an EffectPlayed to the player of the named effects, a BossStatus to the
  * boss, an EntityDestroyed to the boss and to the replicator, a LevelStatus to
  * the sky and its music, to the transition, to the boss and to the prediction,
@@ -203,6 +207,7 @@ void routeEntityMessage(const EntityMessageRoutes& routes,
           routes.departures.get().follow(routes.scoreBoard.get().pilots());
         } else if constexpr (std::is_same_v<Announced, network::EnemyAction>) {
           routes.enemyActions.get().apply(announced);
+          routes.paintedBeams.get().apply(announced);
           routes.boss.get().apply(announced);
         } else if constexpr (std::is_same_v<Announced, network::EffectPlayed>) {
           routes.namedEffects.get().apply(announced);
@@ -235,13 +240,15 @@ void advanceEffects(EffectSpawner& effects, const PlayerSettings& settings,
                                     .soundCues = settings.soundCues});
 }
 
-/** @brief Puts the other entities at the tick @p clock shows, then reveals
- * those that arrived (see placeInterpolatedPositions() and
+/** @brief Puts the other entities at the tick @p clock shows, with the
+ * actions whose beams they paint, then reveals those that arrived (see
+ * placeInterpolatedPositions(), showPaintedBeams() and
  * revealArrivedEntities()). */
 void showOtherEntities(const InterpolationClock& clock,
                        engine::ComponentRegistry& components,
                        const EntityFeedback& feedback) {
   placeInterpolatedPositions(clock, components);
+  showPaintedBeams(components, clock.renderTick());
   revealArrivedEntities(clock, components, feedback);
 }
 
@@ -269,6 +276,7 @@ GameScreen::GameScreen(GameScreenParts parts,
           .ownPlayerNumber = parts.connection.get().status().playerNumber,
           .ownMissiles = &prediction_.missiles()}),
       enemyActions_(components_, parts.sounds),
+      paintedBeams_(components_),
       namedEffects_(effects_.tools()),
       boss_(effects_.tools(), parts.sounds, parts.audio),
       playerCommands_(true, parts.settings.get().keys),
@@ -343,6 +351,7 @@ void GameScreen::update(engine::Duration elapsed) {
   silence_.advance(sinceTheWorld);
   boss_.advance(elapsed);
   transition_.advance(elapsed);
+  paintedBeams_.followServerTick(serverTick);
   applyEntityMessages();
   showOtherEntities(interpolationClock_, components_, feedback_);
   interpolationTally_->countFrame(interpolationClock_.renderTick(), serverTick);
@@ -365,6 +374,7 @@ void GameScreen::applyEntityMessages() {
   }
   const EntityMessageRoutes routes{.replicator = replicator_,
                                    .enemyActions = enemyActions_,
+                                   .paintedBeams = paintedBeams_,
                                    .namedEffects = namedEffects_,
                                    .boss = boss_,
                                    .scoreBoard = scoreBoard_,

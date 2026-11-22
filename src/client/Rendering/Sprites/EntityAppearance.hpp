@@ -62,6 +62,10 @@ struct EntityAppearance {
   /** @brief The sounds the sheet names, `[appearance.sounds]`; each empty
    * when left out. */
   EntitySounds sounds;
+  /** @brief Whether the client paints the hurt beams of the type while they
+   * hurt (`[appearance.hurt_beams]`), for a sheet whose frames do not draw
+   * them. */
+  bool paintsHurtBeams{false};
 };
 
 }  // namespace rtype::client
