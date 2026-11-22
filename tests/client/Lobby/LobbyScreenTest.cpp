@@ -51,6 +51,8 @@ using rtype::client::testing::FIRST_BAY_CELL_INSIDE;
 using rtype::client::testing::FIRST_BAY_LOCAL_TAG;
 using rtype::client::testing::FIRST_BAY_NICKNAME;
 using rtype::client::testing::FIRST_STEP_WORD;
+using rtype::client::testing::FRENCH_HELP_LABEL;
+using rtype::client::testing::FRENCH_TWO_PILOTS_NOT_READY;
 using rtype::client::testing::HELP_CHIP_MIDDLE;
 using rtype::client::testing::LEADERBOARD_CHIP_MIDDLE;
 using rtype::client::testing::LOOK_SHEET;
@@ -143,6 +145,29 @@ TEST_F(LobbyScreenFixture, SeveralPilotsNotReadyAreCounted) {
         pilot(OTHER_NUMBER, OTHER_NICKNAME, false)});
 
   EXPECT_NE(writingOf(canvas(), "2 PILOTS NOT READY"), nullptr);
+}
+
+/**
+ * Given the client in French, two listed pilots, neither ready
+ * When a frame goes by
+ * Then the status counts them in French
+ */
+TEST_F(FrenchLobbyScreenFixture, SeveralPilotsNotReadyAreCountedInFrench) {
+  list({pilot(OWN_NUMBER, OWN_NICKNAME, false),
+        pilot(OTHER_NUMBER, OTHER_NICKNAME, false)});
+
+  EXPECT_NE(writingOf(canvas(), FRENCH_TWO_PILOTS_NOT_READY), nullptr);
+}
+
+/**
+ * Given the client in French
+ * When the waiting room is painted
+ * Then its help chip reads AIDE
+ */
+TEST_F(FrenchLobbyScreenFixture, TheHelpChipReadsInFrench) {
+  list({pilot(OWN_NUMBER, OWN_NICKNAME, false)});
+
+  EXPECT_NE(writingOf(canvas(), FRENCH_HELP_LABEL), nullptr);
 }
 
 /**

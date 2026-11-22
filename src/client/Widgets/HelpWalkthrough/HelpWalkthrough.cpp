@@ -34,6 +34,7 @@
 #include "KeyBindings.hpp"
 #include "KeyCap.hpp"
 #include "KeyNames.hpp"
+#include "Language.hpp"
 #include "LobbyPartAreas.hpp"
 #include "MotionPreference.hpp"
 #include "PilotColor.hpp"
@@ -73,15 +74,17 @@ std::array<SpeechKeyName, BOUND_ACTION_COUNT> keyNamesOf(
 }
 
 /** @returns The lines of every step, the keys named as the player bound
- * them: built once, since the keys do not change while the help lives. */
-std::array<SpeechLines, HELP_STEPS.size()> stepLinesOf(
-    const KeyBindings& keys, const KeyNaming& keyName) {
+ * them, in @p language: built once, since neither changes while the help
+ * lives, the help belonging to a waiting room built after the options. */
+std::array<SpeechLines, HELP_STEPS.size()> stepLinesOf(const KeyBindings& keys,
+                                                       const KeyNaming& keyName,
+                                                       Language language) {
   const std::array<SpeechKeyName, BOUND_ACTION_COUNT> keyNames =
       keyNamesOf(keys, keyName);
   std::array<SpeechLines, HELP_STEPS.size()> lines;
   for (std::size_t step = 0; step < lines.size(); ++step) {
-    lines.at(step) =
-        speechLinesOf(HELP_STEPS.at(step).text, keyNames, HELP_TEXT_WIDTH);
+    lines.at(step) = speechLinesOf(HELP_STEPS.at(step).text.in(language),
+                                   keyNames, HELP_TEXT_WIDTH);
   }
   return lines;
 }
@@ -309,10 +312,11 @@ void paintFooter(IInterfaceCanvas& canvas, sf::IntRect bubble,
   const bool lastStep = step + 1 == HELP_STEPS.size();
   const int nextLeft =
       paintKeyHint(canvas, {right, top},
-                   {CONFIRM_KEY_NAME, lastStep ? CLOSE_WORD : NEXT_WORD});
+                   {CONFIRM_KEY_NAME,
+                    (lastStep ? CLOSE_WORD : NEXT_WORD).in(canvas.language())});
   if (!lastStep) {
     paintKeyHint(canvas, {nextLeft - HELP_FOOTER_GROUP_GAP, top},
-                 {CANCEL_KEY_NAME, SKIP_WORD});
+                 {CANCEL_KEY_NAME, SKIP_WORD.in(canvas.language())});
   }
 }
 
@@ -408,11 +412,12 @@ bool endsAnInput(const sf::Event& event) {
 
 HelpWalkthrough::HelpWalkthrough(const HelpWalkthroughParts& parts)
     : sounds_(&parts.sounds.get()),
-      stepLines_(stepLinesOf(parts.keys.get(), parts.keyName)),
+      stepLines_(stepLinesOf(parts.keys.get(), parts.keyName, parts.language)),
       palette_(parts.palette),
       motion_(parts.motion),
       chipArea_(parts.chipArea),
-      chip_(Button::Text{.label = HELP_LABEL, .keyName = HELP_KEY_NAME},
+      chip_(Button::Text{.label = std::string(HELP_LABEL.in(parts.language)),
+                         .keyName = HELP_KEY_NAME},
             parts.chipArea, nullptr, std::nullopt) {}
 
 bool HelpWalkthrough::handleEvent(const sf::Event& event,

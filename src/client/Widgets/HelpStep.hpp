@@ -1,8 +1,8 @@
 #pragma once
 
-#include <string_view>
 #include "HelpPart.hpp"
 #include "HelpScene.hpp"
+#include "Translation.hpp"
 
 namespace rtype::client {
 
@@ -18,7 +18,7 @@ namespace rtype::client {
 struct HelpStep {
   HelpScene scene{};
   HelpPart part{};
-  std::string_view text;
+  Translation text;
 };
 
 }  // namespace rtype::client

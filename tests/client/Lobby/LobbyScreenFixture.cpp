@@ -26,6 +26,7 @@
 #include "ShipLook.hpp"
 
 using rtype::client::ConnectionPhase;
+using rtype::client::Language;
 using rtype::client::LobbyPlace;
 using rtype::client::LobbyScreen;
 using rtype::client::LobbyScreenParts;
@@ -34,8 +35,9 @@ using rtype::client::PLAYER_COLORS;
 using rtype::client::testing::OWN_NUMBER;
 using rtype::network::LobbyPlayer;
 
-LobbyScreenFixture::LobbyScreenFixture(LobbyPlace place)
-    : screen_(LobbyScreenParts{.navigator = navigator_,
+LobbyScreenFixture::LobbyScreenFixture(LobbyPlace place, Language language)
+    : canvas_(recordIn(language)),
+      screen_(LobbyScreenParts{.navigator = navigator_,
                                .sounds = sounds_,
                                .connection = connection_,
                                .waitingRoom = waitingRoom_,
@@ -70,6 +72,9 @@ void LobbyScreenFixture::tap(sf::Keyboard::Key key,
 const std::vector<bool>& LobbyScreenFixture::readyRequests() const {
   return waitingRoom_.readyRequests();
 }
+
+FrenchLobbyScreenFixture::FrenchLobbyScreenFixture()
+    : LobbyScreenFixture(LobbyPlace::AfterConnection, Language::French) {}
 
 const RecordingNavigator& LobbyScreenFixture::navigator() const {
   return navigator_;

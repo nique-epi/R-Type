@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 #include <SFML/Window/Keyboard.hpp>
 #include <vector>
+#include "Language.hpp"
 #include "LobbyPlace.hpp"
 #include "LobbyScreen.hpp"
 #include "LobbyState.hpp"
@@ -22,8 +23,10 @@
  * launch, which bind READY to READY_KEY. */
 class LobbyScreenFixture : public ::testing::Test {
  protected:
-  explicit LobbyScreenFixture(rtype::client::LobbyPlace place =
-                                  rtype::client::LobbyPlace::AfterConnection);
+  explicit LobbyScreenFixture(
+      rtype::client::LobbyPlace place =
+          rtype::client::LobbyPlace::AfterConnection,
+      rtype::client::Language language = rtype::client::Language::English);
 
   /** @brief The server lists these players, and a frame goes by. */
   void list(std::vector<rtype::network::LobbyPlayer> players);
@@ -62,4 +65,10 @@ class LobbyScreenFixture : public ::testing::Test {
   RecordingChatChannel chat_;
   rtype::identifiers::ShipLook look_{};
   rtype::client::LobbyScreen screen_;
+};
+
+/** @brief The same waiting room, the client in French. */
+class FrenchLobbyScreenFixture : public LobbyScreenFixture {
+ protected:
+  FrenchLobbyScreenFixture();
 };

@@ -53,6 +53,8 @@
 #include "ScreenId.hpp"
 #include "ShipLook.hpp"
 #include "SoundConstants.hpp"
+#include "TextMark.hpp"
+#include "TextMarks.hpp"
 #include "TextStyle.hpp"
 #include "TimeConstants.hpp"
 #include "WidgetConstants.hpp"
@@ -86,24 +88,27 @@ BayReadiness readinessOf(const network::LobbyPlayer& player,
 /** @returns The status line: none without players; who is not ready, by name
  * when a single pilot is not; or that every listed pilot is ready. */
 std::string statusLine(std::span<const network::LobbyPlayer> players,
-                       std::uint8_t ownNumber) {
+                       std::uint8_t ownNumber, Language language) {
   if (players.empty()) {
     return {};
   }
   const auto notReady =
       std::ranges::count(players, false, &network::LobbyPlayer::ready);
   if (notReady == 0) {
-    return ALL_READY_STATUS;
+    return std::string(ALL_READY_STATUS.in(language));
   }
   if (notReady > 1) {
-    return std::to_string(notReady) + PILOTS_NOT_READY_STATUS;
+    const std::string count = std::to_string(notReady);
+    return withMark(std::string(PILOTS_NOT_READY_STATUS.in(language)),
+                    TextMark{.mark = NOT_READY_COUNT_MARK, .value = count});
   }
   const auto waiting =
       std::ranges::find(players, false, &network::LobbyPlayer::ready);
   if (waiting->playerNumber == ownNumber) {
-    return YOU_NOT_READY_STATUS;
+    return std::string(YOU_NOT_READY_STATUS.in(language));
   }
-  return waiting->nickname + PILOT_NOT_READY_STATUS;
+  return withMark(std::string(PILOT_NOT_READY_STATUS.in(language)),
+                  TextMark{.mark = PILOT_MARK, .value = waiting->nickname});
 }
 
 /** @brief Tells each of @p widgets that the events stop reaching it, so none
@@ -131,7 +136,8 @@ std::optional<std::string> rulesLineIfKnown(
 sf::Vector2i rulesAnchorOf(const IInterfaceCanvas& canvas,
                            const std::string& pilots) {
   const int headingEnd =
-      SAFE_MARGIN + canvas.textWidth(LOBBY_HEADING, TextFont::Regular);
+      SAFE_MARGIN +
+      canvas.textWidth(LOBBY_HEADING.in(canvas.language()), TextFont::Regular);
   const int pilotsStart =
       PILOT_COUNT_ANCHOR.x - canvas.textWidth(pilots, PILOT_COUNT_STYLE.font);
   return {(headingEnd + pilotsStart) / SIDES_PER_AXIS, GAME_RULES_TOP};
@@ -158,10 +164,12 @@ sf::IntRect backChipArea() {
       {.label = BACK_LABEL, .keyName = CANCEL_KEY_NAME});
 }
 
-/** @returns Where the room paints HELP, BUTTON_GAP to the left of BACK. */
-sf::IntRect helpChipArea() {
-  return MenuBuilder::chipArea({.label = HELP_LABEL, .keyName = HELP_KEY_NAME},
-                               backChipArea().position.x - BUTTON_GAP);
+/** @returns Where the room paints HELP, written in @p language, BUTTON_GAP
+ * to the left of BACK. */
+sf::IntRect helpChipArea(Language language) {
+  return MenuBuilder::chipArea(
+      {.label = std::string(HELP_LABEL.in(language)), .keyName = HELP_KEY_NAME},
+      backChipArea().position.x - BUTTON_GAP);
 }
 
 /** @returns Where the room paints RANKING, written in @p language,
@@ -170,7 +178,7 @@ sf::IntRect leaderboardChipArea(Language language) {
   return MenuBuilder::chipArea(
       {.label = std::string(LEADERBOARD_LABEL.in(language)),
        .keyName = LEADERBOARD_KEY_NAME},
-      helpChipArea().position.x - BUTTON_GAP);
+      helpChipArea(language).position.x - BUTTON_GAP);
 }
 
 /** @returns Where the room paints HANGAR, written in @p language,
@@ -266,12 +274,16 @@ void paintStatus(IInterfaceCanvas& canvas, sf::IntRect area,
 /** @returns The line of a bay that says the map numbered @p vote among
  * @p maps; empty without a vote, or for a vote past the last map. */
 std::string mapVoteLineOf(std::span<const network::LobbyMap> maps,
-                          std::uint8_t vote) {
+                          std::uint8_t vote, Language language) {
   if (vote == network::NO_MAP_VOTE || vote > maps.size()) {
     return {};
   }
-  return BAY_VOTE_PREFIX +
-         maps[static_cast<std::size_t>(vote - FIRST_MAP_NUMBER)].name;
+  return withMark(
+      std::string(BAY_VOTE.in(language)),
+      TextMark{
+          .mark = MAP_MARK,
+          .value =
+              maps[static_cast<std::size_t>(vote - FIRST_MAP_NUMBER)].name});
 }
 
 /** @returns The look @p looks shows on the player numbered @p number; nothing
@@ -300,12 +312,14 @@ LobbyScreen::LobbyScreen(LobbyScreenParts parts,
       place_(parts.place),
       rulesLine_(rulesLineIfKnown(parts.rules, canvas_->language())),
       menu_(buildMenu(parts.keyName(readyKey_))),
-      help_(HelpWalkthroughParts{.sounds = parts.sounds,
-                                 .keys = parts.keys,
-                                 .keyName = parts.keyName,
-                                 .palette = parts.palette,
-                                 .motion = parts.motion,
-                                 .chipArea = helpChipArea()}),
+      help_(
+          HelpWalkthroughParts{.sounds = parts.sounds,
+                               .keys = parts.keys,
+                               .keyName = parts.keyName,
+                               .language = canvas_->language(),
+                               .palette = parts.palette,
+                               .motion = parts.motion,
+                               .chipArea = helpChipArea(canvas_->language())}),
       leaderboardChip_(KeyChipParts{
           .text = {.label =
                        std::string(LEADERBOARD_LABEL.in(canvas_->language())),
@@ -399,12 +413,15 @@ void LobbyScreen::draw(sf::RenderTarget& target) const {
 bool LobbyScreen::hidesScreensBelow() const { return true; }
 
 Menu LobbyScreen::buildMenu(std::string readyKeyName) {
+  const Language language = canvas_->language();
   return MenuBuilder(MenuBuilder::Frame::Room, sounds_)
-      .heading(LOBBY_HEADING)
+      .heading(std::string(LOBBY_HEADING.in(language)))
       .illustration(LOBBY_BAYS_SIZE)
-      .button({.label = READY_LABEL, .keyName = std::move(readyKeyName)},
+      .button({.label = std::string(READY_LABEL.in(language)),
+               .keyName = std::move(readyKeyName)},
               [this] { toggleReady(); })
-      .button({.label = MAP_BAR_CLOSED, .keyName = MAP_KEY_NAME},
+      .button({.label = std::string(MAP_BAR_CLOSED.in(language)),
+               .keyName = MAP_KEY_NAME},
               [this] { mapVoteCard_.press(); })
       .cancelButton({.label = BACK_LABEL}, [this] { leave(); })
       .build();
@@ -435,12 +452,16 @@ void LobbyScreen::repaint() {
   const std::span<const network::LobbyPlayer> players =
       waitingRoom_->lobbyPlayers();
   const std::uint8_t ownNumber = connection_->status().playerNumber;
-  const std::string status = statusLine(players, ownNumber);
+  const Language language = canvas_->language();
+  const std::string status = statusLine(players, ownNumber, language);
   const LobbyPartAreas parts =
       partAreasOf(menu_.illustrationArea().value_or(sf::IntRect()),
                   ownSlotOf(players, ownNumber));
-  menu_.setLabel(READY_BUTTON, wantsReady() ? CANCEL_READY_LABEL : READY_LABEL);
-  menu_.setLabel(MAP_BUTTON, mapVoteCard_.label());
+  menu_.setLabel(
+      READY_BUTTON,
+      std::string(
+          (wantsReady() ? CANCEL_READY_LABEL : READY_LABEL).in(language)));
+  menu_.setLabel(MAP_BUTTON, mapVoteCard_.label(language));
   menu_.setEnabled(MAP_BUTTON, mapVoteCard_.isOpen());
   canvas_->clear();
   if (!help_.showsGame()) {
@@ -499,7 +520,8 @@ BayPilot LobbyScreen::pilotOf(const network::LobbyPlayer& player) const {
           .look = isLocalPlayer
                       ? *look_
                       : lookOf(shipLooks_->playerLooks(), player.playerNumber),
-          .mapVote = mapVoteLineOf(waitingRoom_->lobbyMaps(), player.mapVote)};
+          .mapVote = mapVoteLineOf(waitingRoom_->lobbyMaps(), player.mapVote,
+                                   canvas_->language())};
 }
 
 }  // namespace rtype::client

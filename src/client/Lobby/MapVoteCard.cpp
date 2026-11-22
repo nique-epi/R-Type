@@ -21,6 +21,7 @@
 #include "InterfacePixel.hpp"
 #include "KeyCap.hpp"
 #include "KeyDown.hpp"
+#include "Language.hpp"
 #include "LobbyScreenConstants.hpp"
 #include "LobbyState.hpp"
 #include "MapVoteCardParts.hpp"
@@ -28,6 +29,8 @@
 #include "PlayfieldMapping.hpp"
 #include "ProtocolConstants.hpp"
 #include "SoundConstants.hpp"
+#include "TextMark.hpp"
+#include "TextMarks.hpp"
 #include "TextStyle.hpp"
 #include "TextureArea.hpp"
 #include "WidgetColors.hpp"
@@ -236,11 +239,13 @@ void MapVoteCard::pressBack() {
 
 bool MapVoteCard::isOpen() const { return !room_->lobbyMaps().empty(); }
 
-std::string MapVoteCard::label() const {
+std::string MapVoteCard::label(Language language) const {
   if (!isOpen()) {
-    return MAP_BAR_CLOSED;
+    return std::string(MAP_BAR_CLOSED.in(language));
   }
-  return MAP_BAR_PREFIX + shownName();
+  const std::string name = shownName(language);
+  return withMark(std::string(MAP_BAR.in(language)),
+                  TextMark{.mark = MAP_MARK, .value = name});
 }
 
 void MapVoteCard::paint(IInterfaceCanvas& canvas, bool selected) {
@@ -262,9 +267,11 @@ void MapVoteCard::paint(IInterfaceCanvas& canvas, bool selected) {
                    : std::nullopt);
   paintArrows(canvas, preview);
   const int textLeft = area_.position.x + MAP_CARD_TEXT_LEFT;
-  canvas.write(MAP_CARD_LABEL, {textLeft, preview.position.y},
+  canvas.write(MAP_CARD_LABEL.in(canvas.language()),
+               {textLeft, preview.position.y},
                {.font = TextFont::Small, .color = PAGE_TEXT_COLOR});
-  paintName(canvas, {textLeft, area_.position.y + MAP_NAME_TOP}, shownName());
+  paintName(canvas, {textLeft, area_.position.y + MAP_NAME_TOP},
+            shownName(canvas.language()));
   const sf::Vector2i bottomRight = area_.position + area_.size -
                                    sf::Vector2i(MAP_CARD_INSET, MAP_CARD_INSET);
   paintPips(
@@ -276,10 +283,10 @@ void MapVoteCard::paint(IInterfaceCanvas& canvas, bool selected) {
   paintKey(canvas, bottomRight, selected);
 }
 
-std::string MapVoteCard::shownName() const {
+std::string MapVoteCard::shownName(Language language) const {
   const std::optional<std::uint8_t> shown = shownMap();
   return shown.has_value() ? room_->lobbyMaps()[*shown - FIRST_MAP_NUMBER].name
-                           : std::string{NO_MAP_CHOSEN_NAME};
+                           : std::string(NO_MAP_CHOSEN_NAME.in(language));
 }
 
 std::optional<std::uint8_t> MapVoteCard::shownMap() const {
