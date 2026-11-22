@@ -232,7 +232,7 @@ TEST_F(CasinoRoutesFixture, BetsNeedASeat) {
 /**
  * Given ACE seated, with 500 chips, and the bets of the round open
  * When ACE sends 33 bets, a split that crosses a street, a bet of no chip,
- * 5001 chips on one number, or 501 chips on one number
+ * 2001 chips on red, or 501 chips on red
  * Then the master answers 422 to each, and no chip moves
  */
 TEST_F(CasinoRoutesFixture, BetsTheRulesRefuseMoveNoChip) {

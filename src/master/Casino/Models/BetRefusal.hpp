@@ -14,7 +14,8 @@ enum class BetRefusal : std::uint8_t {
   InvalidBet,
   /** @brief More than network::MAXIMUM_ROULETTE_BETS bets. */
   TooManyBets,
-  /** @brief The bets hold more than network::MAXIMUM_ROUND_STAKE chips. */
+  /** @brief The bets hold more than network::MAXIMUM_ROUND_STAKE chips, or
+   * could return more than network::MAXIMUM_ROUND_PAYOUT. */
   OverTheCap,
   /** @brief The wallet holds fewer chips than the bets, once the bets they
    * replace are handed back. */

@@ -70,9 +70,9 @@ constexpr std::string_view CROSSING_SPLIT_BODY =
 constexpr std::string_view NO_CHIP_BODY =
     R"({"bets":[{"kind":"straight","firstNumber":7,"amount":0}]})";
 constexpr std::string_view OVER_THE_CAP_BODY =
-    R"({"bets":[{"kind":"straight","firstNumber":7,"amount":5001}]})";
+    R"({"bets":[{"kind":"red","firstNumber":0,"amount":2001}]})";
 constexpr std::string_view MORE_THAN_THE_WALLET_BODY =
-    R"({"bets":[{"kind":"straight","firstNumber":7,"amount":501}]})";
+    R"({"bets":[{"kind":"red","firstNumber":0,"amount":501}]})";
 constexpr std::string_view UNKNOWN_KIND_BET_BODY =
     R"({"bets":[{"kind":"triple","firstNumber":7,"amount":10}]})";
 constexpr std::size_t ONE_BET_MORE_THAN_A_ROUND_TAKES = 33;

@@ -22,7 +22,16 @@ constexpr std::size_t MAXIMUM_ROULETTE_BETS = 32;
  * @brief The most chips one player may lay on the cloth in one round: bets
  * that add up to more are refused whole.
  */
-constexpr std::uint32_t MAXIMUM_ROUND_STAKE = 5000;
+constexpr std::uint32_t MAXIMUM_ROUND_STAKE = 2000;
+
+/**
+ * @brief The most chips the bets of one player may return in one round,
+ * whatever number comes out, their stakes included: bets that could return
+ * more are refused whole. The largest chip, 500, still fits a straight alone
+ * (18000), so the luck of a round stays a shortcut to the shop without
+ * buying the whole of it at once.
+ */
+constexpr std::uint32_t MAXIMUM_ROUND_PAYOUT = 18000;
 
 /** @brief The lowest number of the cloth after the zero. */
 constexpr std::uint8_t LOWEST_CLOTH_NUMBER = 1;
@@ -51,9 +60,7 @@ constexpr std::uint32_t SIX_LINE_RETURN = 6;
 constexpr std::uint32_t DOZEN_RETURN = 3;
 constexpr std::uint32_t EVEN_CHANCE_RETURN = 2;
 
-static_assert(static_cast<std::uint64_t>(MAXIMUM_ROUND_STAKE) *
-                      STRAIGHT_RETURN <=
-                  std::numeric_limits<std::uint32_t>::max(),
+static_assert(MAXIMUM_ROUND_PAYOUT <= std::numeric_limits<std::uint32_t>::max(),
               "the payout of a round fits the four bytes of a CasinoPlayer");
 
 }  // namespace rtype::network

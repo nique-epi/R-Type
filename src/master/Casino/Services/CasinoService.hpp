@@ -57,8 +57,9 @@ class CasinoService {
    * written: the round is not the one whose bets are open, or was drawn
    * already (BetsClosed); the account is not seated (NotSeated); a bet off the
    * cloth or of no chip, more than network::MAXIMUM_ROULETTE_BETS bets, more
-   * than network::MAXIMUM_ROUND_STAKE chips, or more chips than the wallet
-   * holds once the old bets are handed back.
+   * than network::MAXIMUM_ROUND_STAKE chips, bets that could return more
+   * than network::MAXIMUM_ROUND_PAYOUT, or more chips than the wallet holds
+   * once the old bets are handed back.
    */
   [[nodiscard]] std::variant<network::BetsReceipt, BetRefusal> placeBets(
       const BetOrder& order);

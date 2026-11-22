@@ -41,9 +41,9 @@ namespace rtype::client {
  * While the bets are open, the arrows move a cursor over every place of the
  * cloth (placeAfter()), and LAY_CHIP_KEY lays there a chip of the value
  * chosen, by its key 1 to 5 or a click on it; the table takes no chip past
- * the chips at hand, MAXIMUM_ROUND_STAKE or MAXIMUM_ROULETTE_BETS
- * (RouletteSlip). CLEAR takes the bets of the round off, REBET lays again
- * those of the round before; each change sends every bet
+ * the chips at hand, MAXIMUM_ROUND_STAKE, MAXIMUM_ROUND_PAYOUT or
+ * MAXIMUM_ROULETTE_BETS (RouletteSlip). CLEAR takes the bets of the round off,
+ * REBET lays again those of the round before; each change sends every bet
  * (ICasinoChannel::placeBets()), and bets the master refuses leave the cloth
  * as it holds it, the status line saying why. The chips are staked and paid
  * by the master, never here.
