@@ -6,10 +6,12 @@
 #include <string_view>
 #include "BoundAction.hpp"
 #include "ColorMode.hpp"
+#include "LanguageConstants.hpp"
 #include "SettingsConstants.hpp"
 #include "Slider.hpp"
 #include "SliderLook.hpp"
 #include "TimeConstants.hpp"
+#include "Translation.hpp"
 #include "WindowConstants.hpp"
 
 namespace rtype::client {
@@ -88,8 +90,16 @@ constexpr const char* DEFAULT_KEYS_DESCRIPTION =
     "> PUTS BACK THE KEYS OF A FIRST LAUNCH";
 constexpr const char* DEFAULT_KEYS_QUESTION = "PUT BACK THE DEFAULT KEYS?";
 
-/** @brief DISPLAY: the display mode, its choices in the order of DISPLAY_MODES,
- * and the size of the window, and what their rows say. */
+/** @brief DISPLAY: the display mode, its choices in the order of
+ * DISPLAY_MODES, the size of the window, and the language, its choices in the
+ * order of LANGUAGES, each written in its own language so a player finds
+ * theirs without reading the other; and what their rows say. */
+constexpr Translation LANGUAGE_LABEL{.english = "LANGUAGE", .french = "LANGUE"};
+constexpr Translation LANGUAGE_DESCRIPTION{
+    .english = "> THE LANGUAGE OF EVERY TEXT",
+    .french = "> LA LANGUE DE TOUS LES TEXTES"};
+constexpr std::array<std::string_view, LANGUAGE_COUNT> LANGUAGE_CHOICE_LABELS{
+    "ENGLISH", "FRANÇAIS"};
 constexpr const char* DISPLAY_MODE_LABEL = "DISPLAY MODE";
 constexpr std::array<std::string_view, DISPLAY_MODE_COUNT> DISPLAY_MODE_LABELS{
     "WINDOWED", "BORDERLESS"};

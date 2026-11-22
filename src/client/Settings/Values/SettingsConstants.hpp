@@ -5,6 +5,7 @@
 #include <string_view>
 #include "BoundAction.hpp"
 #include "ColorMode.hpp"
+#include "LanguageConstants.hpp"
 #include "WindowConstants.hpp"
 
 namespace rtype::client {
@@ -92,6 +93,7 @@ constexpr std::string_view VOICES_VOLUME_NAME = "voices_volume";
 constexpr std::string_view MUTED_NAME = "mute_all";
 constexpr std::string_view WINDOW_SIZE_NAME = "window_size";
 constexpr std::string_view DISPLAY_MODE_NAME = "display_mode";
+constexpr std::string_view LANGUAGE_NAME = "language";
 constexpr std::string_view COLOR_MODE_NAME = "color_mode";
 constexpr std::string_view REDUCE_FLASHES_NAME = "reduce_flashes";
 constexpr std::string_view SOUND_CUES_NAME = "sound_cues";
@@ -129,12 +131,15 @@ constexpr std::array<std::string_view, BOUND_ACTION_COUNT>
                            "key_open_chat"};
 
 /** @brief Values of a switch; of the display modes, in the order of
- * DISPLAY_MODES; of the color modes, in the order of COLOR_MODES; and what
+ * DISPLAY_MODES; of the languages, in the order of LANGUAGES; of the color
+ * modes, in the order of COLOR_MODES; and what
  * joins the width and height of a window size. */
 constexpr std::string_view SWITCH_ON_VALUE = "on";
 constexpr std::string_view SWITCH_OFF_VALUE = "off";
 constexpr std::array<std::string_view, DISPLAY_MODE_COUNT> DISPLAY_MODE_VALUES{
     "windowed", "borderless"};
+constexpr std::array<std::string_view, LANGUAGE_COUNT> LANGUAGE_VALUES{
+    "english", "french"};
 constexpr std::array<std::string_view, COLOR_MODE_COUNT> COLOR_MODE_VALUES{
     "off", "protanopia", "deuteranopia", "tritanopia"};
 constexpr char WINDOW_SIZE_VALUE_SEPARATOR = 'x';

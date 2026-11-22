@@ -10,6 +10,7 @@ target_link_libraries(rtype_client_options_tabs
   PUBLIC
     rtype_client_audio_contract_sounds
     rtype_client_input_keys
+    rtype_client_language
     rtype_client_menu
     rtype_client_row_control
     rtype_client_settings_module

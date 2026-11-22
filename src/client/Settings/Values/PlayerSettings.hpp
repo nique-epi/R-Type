@@ -4,6 +4,7 @@
 #include "ColorMode.hpp"
 #include "DisplayMode.hpp"
 #include "KeyBindings.hpp"
+#include "Language.hpp"
 #include "PixelSize.hpp"
 #include "SettingsConstants.hpp"
 #include "ShipLook.hpp"
@@ -28,6 +29,8 @@ namespace rtype::client {
  * layer under the open chat, in percent.
  * lagometerScale: how many times larger than its smallest the lagometer is
  * drawn. lagometerBackground: the opacity of its panel, in percent.
+ * language: the language of every text the client writes; English until
+ * the player picks another.
  * shipLook wears nothing: the player dresses the ship in the hangar, among
  * the looks the account owns on the master; the balances and those looks
  * live on the account, never in the settings.
@@ -39,6 +42,7 @@ struct PlayerSettings {
   bool muted = false;
   std::optional<PixelSize> windowSize;
   DisplayMode displayMode = DisplayMode::Windowed;
+  Language language = Language::English;
   KeyBindings keys;
   ColorMode colorMode = ColorMode::Off;
   bool reduceFlashes = false;

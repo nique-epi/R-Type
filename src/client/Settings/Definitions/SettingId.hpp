@@ -12,6 +12,7 @@ enum class SettingId : std::uint8_t {
   Muted,
   WindowSize,
   DisplayMode,
+  Language,
   Keys,
   ColorMode,
   ReduceFlashes,

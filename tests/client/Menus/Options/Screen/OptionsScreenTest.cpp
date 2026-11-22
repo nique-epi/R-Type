@@ -10,6 +10,7 @@
 #include "FakeSizableWindow.hpp"
 #include "GameOptionsScreenFixture.hpp"
 #include "InterfaceColorConstants.hpp"
+#include "Language.hpp"
 #include "MenuScreenIdConstants.hpp"
 #include "OptionsScreen.hpp"
 #include "OptionsScreenFixture.hpp"
@@ -33,6 +34,7 @@ using rtype::client::CLICK_SOUND_ID;
 using rtype::client::DIM_LAYER_COLOR;
 using rtype::client::DISABLED_BAR_TEXT_COLOR;
 using rtype::client::DisplayMode;
+using rtype::client::Language;
 using rtype::client::PRESS_DURATION;
 using rtype::client::regularTextWidth;
 using rtype::client::testing::ALONG_THE_TRACK;
@@ -43,6 +45,7 @@ using rtype::client::testing::DESCRIPTION_LEFT;
 using rtype::client::testing::DESCRIPTION_RIGHT;
 using rtype::client::testing::DESKTOP_SIZE_TEXT;
 using rtype::client::testing::DOWN_PRESSES_TO_DEFAULT_SOUND;
+using rtype::client::testing::DOWN_PRESSES_TO_LANGUAGE;
 using rtype::client::testing::DOWN_PRESSES_TO_QUIT;
 using rtype::client::testing::INDEX_OF_1280_BY_720;
 using rtype::client::testing::LARGEST_FIT;
@@ -394,6 +397,22 @@ TEST_F(OptionsScreenFixture, BorderlessHidesTheChartOfTheSizes) {
   ASSERT_NE(writingOf(canvas(), CHART_LEGEND), nullptr);
   takeBorderless();
   EXPECT_EQ(writingOf(canvas(), CHART_LEGEND), nullptr);
+}
+
+/**
+ * Given the DISPLAY tab, the client in English
+ * When Down selects LANGUAGE and Right picks the next language
+ * Then the settings saved hold French
+ */
+TEST_F(OptionsScreenFixture, FrenchPickedIsSaved) {
+  openNextTab();
+  openNextTab();
+  for (int press = 0; press < DOWN_PRESSES_TO_LANGUAGE; ++press) {
+    tap(Key::Down);
+  }
+  tap(Key::Right);
+  ASSERT_FALSE(storage().saves().empty());
+  EXPECT_EQ(storage().saves().back().language, Language::French);
 }
 
 /**

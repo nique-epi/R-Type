@@ -6,6 +6,7 @@
 #include "BoundAction.hpp"
 #include "ColorMode.hpp"
 #include "DisplayMode.hpp"
+#include "Language.hpp"
 #include "PlayerSettings.hpp"
 #include "SettingsText.hpp"
 #include "SettingsTextTestConstants.hpp"
@@ -13,6 +14,7 @@
 using rtype::client::BoundAction;
 using rtype::client::ColorMode;
 using rtype::client::DisplayMode;
+using rtype::client::Language;
 using rtype::client::PlayerSettings;
 using rtype::client::readSettingsText;
 using rtype::client::settingsText;
@@ -41,6 +43,7 @@ using rtype::client::testing::FIRST_LAUNCH_MUSIC_VOLUME;
 using rtype::client::testing::FIRST_LAUNCH_VOICES_VOLUME;
 using rtype::client::testing::FIRST_LINE_WITHOUT_SEPARATOR;
 using rtype::client::testing::FLIES_GOLDEN_ACE;
+using rtype::client::testing::FRENCH_LANGUAGE_FILE;
 using rtype::client::testing::GOLDEN_ACE_LINE;
 using rtype::client::testing::HIGHEST_VOLUME;
 using rtype::client::testing::INVALID_FIRST_LINE;
@@ -50,6 +53,7 @@ using rtype::client::testing::LOWEST_VOLUME;
 using rtype::client::testing::SHADES_ON_THE_HEAD_FILE;
 using rtype::client::testing::SMALLER_WINDOW;
 using rtype::client::testing::UNKNOWN_FIRST_LINE;
+using rtype::client::testing::UNKNOWN_LANGUAGE_FILE;
 using rtype::client::testing::WEARS_CROWN;
 using rtype::client::testing::WEARS_NOTHING;
 using rtype::client::testing::WEARS_SHADES;
@@ -76,6 +80,7 @@ TEST(SettingsTextTest, EveryChangedSettingReadsBack) {
   settings.muted = true;
   settings.windowSize = SMALLER_WINDOW;
   settings.displayMode = DisplayMode::Borderless;
+  settings.language = Language::French;
   settings.keys.bind(BoundAction::Shoot, Scan::LControl);
   settings.colorMode = ColorMode::Tritanopia;
   settings.reduceFlashes = true;
@@ -273,6 +278,29 @@ TEST(SettingsTextTest, AWindowSizeNeedsTwoPositiveWholeNumbers) {
                      .settings.windowSize.has_value())
         << text;
   }
+}
+
+/**
+ * Given a language line naming French
+ * When it is read over the settings of a first launch
+ * Then the client speaks French
+ */
+TEST(SettingsTextTest, ALanguageLineSetsTheLanguage) {
+  EXPECT_EQ(readSettingsText(FRENCH_LANGUAGE_FILE, PlayerSettings{})
+                .settings.language,
+            Language::French);
+}
+
+/**
+ * Given a language line naming a language the client does not speak
+ * When it is read
+ * Then the client keeps English, and the line is listed as invalid
+ */
+TEST(SettingsTextTest, AnUnknownLanguageKeepsEnglish) {
+  const auto reading =
+      readSettingsText(UNKNOWN_LANGUAGE_FILE, PlayerSettings{});
+  EXPECT_EQ(reading.settings.language, Language::English);
+  EXPECT_EQ(reading.ignoredLines, std::vector<std::string>{INVALID_FIRST_LINE});
 }
 
 /**

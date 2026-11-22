@@ -278,7 +278,7 @@ std::optional<LineOutcome> skipRetired(SettingLine setting) {
 }
 
 /** @brief Applies @p setting when it names a setting written as a word or a
- * pair: the window size, the display and the color modes.
+ * pair: the window size, the display mode, the language and the color mode.
  * @returns What became of the line, nothing for any other name. */
 std::optional<LineOutcome> applyValue(PlayerSettings& settings,
                                       SettingLine setting) {
@@ -289,6 +289,10 @@ std::optional<LineOutcome> applyValue(PlayerSettings& settings,
   if (name == DISPLAY_MODE_NAME) {
     return assign(valueNamed(value, DISPLAY_MODE_VALUES, DISPLAY_MODES),
                   settings.displayMode);
+  }
+  if (name == LANGUAGE_NAME) {
+    return assign(valueNamed(value, LANGUAGE_VALUES, LANGUAGES),
+                  settings.language);
   }
   if (name == COLOR_MODE_NAME) {
     return assign(valueNamed(value, COLOR_MODE_VALUES, COLOR_MODES),
@@ -389,6 +393,8 @@ std::string settingsText(const PlayerSettings& settings) {
   writeLine(
       text, DISPLAY_MODE_NAME,
       DISPLAY_MODE_VALUES[static_cast<std::size_t>(settings.displayMode)]);
+  writeLine(text, LANGUAGE_NAME,
+            LANGUAGE_VALUES[static_cast<std::size_t>(settings.language)]);
   for (std::size_t action = 0; action < BOUND_ACTION_COUNT; ++action) {
     writeLine(text, BOUND_ACTION_KEY_NAMES[action],
               keyName(settings.keys.keyOf(BOUND_ACTIONS[action]))

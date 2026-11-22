@@ -9,6 +9,7 @@
 #include "Dropdown.hpp"
 #include "ISizableWindow.hpp"
 #include "KeySlot.hpp"
+#include "Language.hpp"
 #include "LinkText.hpp"
 #include "Menu.hpp"
 #include "MenuBuilder.hpp"
@@ -111,9 +112,13 @@ Menu displayTab(const OptionsTabsParts& parts, OptionsRowHandles& handles) {
   std::unique_ptr<Dropdown> sizes =
       windowSizeList(parts.window.get(), parts.service.get());
   handles.windowSizes = sizes.get();
+  const Language language = parts.service.get().settings().language;
   MenuBuilder builder = tabbedPanel(parts, DISPLAY_TAB);
   builder.row({.label = DISPLAY_MODE_LABEL}, std::move(modes))
       .row({.label = WINDOW_SIZE_LABEL}, std::move(sizes))
+      .row({.label = std::string(LANGUAGE_LABEL.in(language)),
+            .description = std::string(LANGUAGE_DESCRIPTION.in(language))},
+           languageSelector(parts.service.get()))
       .illustration(WINDOW_SIZE_CHART_SIZE);
   return withBack(parts, builder);
 }

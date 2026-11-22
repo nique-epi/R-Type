@@ -978,6 +978,7 @@ effects_volume=80
 voices_volume=80
 mute_all=off
 display_mode=windowed
+language=english
 key_move_up=UP
 key_move_down=DOWN
 key_move_left=LEFT
