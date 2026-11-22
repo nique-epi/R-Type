@@ -5,6 +5,7 @@
 #include "EndpointReading.hpp"
 #include "Menu.hpp"
 #include "MenuBuilder.hpp"
+#include "ShownEndpoint.hpp"
 
 namespace rtype::client {
 
@@ -14,8 +15,7 @@ namespace rtype::client {
  * fields of the form: readEndpoint() reads ADDRESS_ENTRY and PORT_ENTRY.
  * @returns @p builder, to go on with the rest of the form.
  */
-MenuBuilder& addEndpointFields(MenuBuilder& builder,
-                               const network::Endpoint& shown,
+MenuBuilder& addEndpointFields(MenuBuilder& builder, const ShownEndpoint& shown,
                                const std::function<void()>& confirm);
 
 /**

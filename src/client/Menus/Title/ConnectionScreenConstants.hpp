@@ -6,9 +6,11 @@
 #include <limits>
 #include <string_view>
 #include "InterfaceConstants.hpp"
+#include "LetterCounts.hpp"
 #include "NetworkConstants.hpp"
 #include "ProtocolConstants.hpp"
 #include "TimeConstants.hpp"
+#include "Translation.hpp"
 #include "WidgetConstants.hpp"
 
 namespace rtype::client {
@@ -18,16 +20,25 @@ namespace rtype::client {
  * asks only for the nickname, then the label and the description of each bar,
  * in their order.
  */
-constexpr const char* CONNECTION_HEADING = "DIRECT CONNECT";
-constexpr const char* JOIN_SERVER_HEADING = "JOIN THE SERVER";
-constexpr const char* ADDRESS_LABEL = "ADDRESS";
-constexpr const char* ADDRESS_DESCRIPTION = "> IPV4 ADDRESS OF THE SERVER";
-constexpr const char* PORT_LABEL = "PORT";
-constexpr const char* PORT_DESCRIPTION = "> UDP PORT OF THE SERVER";
-constexpr const char* NICKNAME_LABEL = "PILOT";
-constexpr const char* NICKNAME_DESCRIPTION = "> CHOOSE YOUR CALLSIGN";
-constexpr const char* CONNECT_LABEL = "CONNECT";
-constexpr const char* CONNECT_DESCRIPTION = "> JOIN THE GAME";
+constexpr Translation CONNECTION_HEADING{.english = "DIRECT CONNECT",
+                                         .french = "CONNEXION DIRECTE"};
+constexpr Translation JOIN_SERVER_HEADING{.english = "JOIN THE SERVER",
+                                          .french = "REJOINDRE LE SERVEUR"};
+constexpr Translation ADDRESS_LABEL{.english = "ADDRESS", .french = "ADRESSE"};
+constexpr Translation ADDRESS_DESCRIPTION{
+    .english = "> IPV4 ADDRESS OF THE SERVER",
+    .french = "> ADRESSE IPV4 DU SERVEUR"};
+constexpr Translation PORT_LABEL{.english = "PORT", .french = "PORT"};
+constexpr Translation PORT_DESCRIPTION{.english = "> UDP PORT OF THE SERVER",
+                                       .french = "> PORT UDP DU SERVEUR"};
+constexpr Translation NICKNAME_LABEL{.english = "PILOT", .french = "PILOTE"};
+constexpr Translation NICKNAME_DESCRIPTION{
+    .english = "> CHOOSE YOUR CALLSIGN",
+    .french = "> CHOISISSEZ VOTRE INDICATIF"};
+constexpr Translation CONNECT_LABEL{.english = "CONNECT",
+                                    .french = "CONNEXION"};
+constexpr Translation CONNECT_DESCRIPTION{.english = "> JOIN THE GAME",
+                                          .french = "> REJOINDRE LA PARTIE"};
 
 /** @brief Order of each field in the menu of the connection screen, and of
  * the nickname in a screen that asks for it alone. */
@@ -66,35 +77,59 @@ static_assert(NICKNAME_FIELD_SIZE <= FIELD_CHARACTER_CAPACITY,
  * versions: the client's after INCOMPATIBLE_VERSION_STATUS, the server's after
  * SERVER_VERSION_STATUS.
  */
-constexpr const char* CONNECTING_STATUS = "CONNECTING...";
-constexpr const char* ACCEPTED_STATUS = "CONNECTED AS PLAYER ";
-constexpr const char* GAME_FULL_STATUS = "REFUSED: GAME FULL";
-constexpr const char* GAME_IN_PROGRESS_STATUS = "REFUSED: GAME IN PROGRESS";
-constexpr const char* NICKNAME_TAKEN_STATUS = "REFUSED: CALLSIGN TAKEN";
-constexpr const char* GAME_NOT_FOUND_STATUS = "REFUSED: NO SUCH GAME";
-constexpr const char* SERVER_FULL_STATUS = "REFUSED: SERVER FULL";
-constexpr const char* UNKNOWN_DIFFICULTY_STATUS = "REFUSED: BAD DIFFICULTY";
+constexpr Translation CONNECTING_STATUS{.english = "CONNECTING...",
+                                        .french = "CONNEXION..."};
+constexpr std::string_view NUMBER_MARK = "{NUMBER}";
+constexpr Translation ACCEPTED_STATUS{.english = "CONNECTED AS PLAYER {NUMBER}",
+                                      .french = "CONNECTÉ, JOUEUR {NUMBER}"};
+constexpr Translation GAME_FULL_STATUS{.english = "REFUSED: GAME FULL",
+                                       .french = "REFUSÉ : PARTIE PLEINE"};
+constexpr Translation GAME_IN_PROGRESS_STATUS{
+    .english = "REFUSED: GAME IN PROGRESS",
+    .french = "REFUSÉ : PARTIE EN COURS"};
+constexpr Translation NICKNAME_TAKEN_STATUS{
+    .english = "REFUSED: CALLSIGN TAKEN", .french = "REFUSÉ : INDICATIF PRIS"};
+constexpr Translation GAME_NOT_FOUND_STATUS{
+    .english = "REFUSED: NO SUCH GAME", .french = "REFUSÉ : PARTIE INCONNUE"};
+constexpr Translation SERVER_FULL_STATUS{.english = "REFUSED: SERVER FULL",
+                                         .french = "REFUSÉ : SERVEUR PLEIN"};
+constexpr Translation UNKNOWN_DIFFICULTY_STATUS{
+    .english = "REFUSED: BAD DIFFICULTY", .french = "REFUSÉ : DIFFICULTÉ"};
 /** @brief The refusal of lives out of bounds, then the fewest lives a server
  * accepts, LIVES_BOUNDS_SEPARATOR and the most it accepts. */
-constexpr const char* LIVES_REFUSED_STATUS = "REFUSED: LIVES ";
-constexpr const char* LIVES_BOUNDS_SEPARATOR = " TO ";
-constexpr const char* INCOMPATIBLE_VERSION_STATUS = "REFUSED: V";
-constexpr const char* SERVER_VERSION_STATUS = ", SERVER V";
-constexpr const char* UNREACHABLE_STATUS = "SERVER UNREACHABLE";
-constexpr const char* INVALID_ADDRESS_STATUS = "INVALID ADDRESS";
-constexpr const char* INVALID_PORT_STATUS = "INVALID PORT";
-constexpr const char* MISSING_NICKNAME_STATUS = "ENTER A CALLSIGN";
+constexpr std::string_view LOWEST_MARK = "{LOWEST}";
+constexpr std::string_view HIGHEST_MARK = "{HIGHEST}";
+constexpr Translation LIVES_REFUSED_STATUS{
+    .english = "REFUSED: LIVES {LOWEST} TO {HIGHEST}",
+    .french = "REFUSÉ : VIES {LOWEST} À {HIGHEST}"};
+constexpr std::string_view CLIENT_VERSION_MARK = "{CLIENT}";
+constexpr std::string_view SERVER_VERSION_MARK = "{SERVER}";
+constexpr Translation INCOMPATIBLE_VERSION_STATUS{
+    .english = "REFUSED: V{CLIENT}, SERVER V{SERVER}",
+    .french = "VERSION V{CLIENT}, SERVEUR V{SERVER}"};
+constexpr Translation UNREACHABLE_STATUS{.english = "SERVER UNREACHABLE",
+                                         .french = "SERVEUR INJOIGNABLE"};
+constexpr Translation INVALID_ADDRESS_STATUS{.english = "INVALID ADDRESS",
+                                             .french = "ADRESSE INVALIDE"};
+constexpr Translation INVALID_PORT_STATUS{.english = "INVALID PORT",
+                                          .french = "PORT INVALIDE"};
+constexpr Translation MISSING_NICKNAME_STATUS{.english = "ENTER A CALLSIGN",
+                                              .french = "ENTREZ UN INDICATIF"};
 
 /**
  * @brief The status lines of the content of a server: LOADING_CONTENT_STATUS
  * then the share of the pack received, in whole percents, while it downloads;
  * then, when it cannot be loaded, why.
  */
-constexpr const char* LOADING_CONTENT_STATUS = "LOADING CONTENT ";
-constexpr const char* PERCENT_SIGN = "%";
+constexpr std::string_view PERCENT_MARK = "{PERCENT}";
+constexpr Translation LOADING_CONTENT_STATUS{
+    .english = "LOADING CONTENT {PERCENT}%",
+    .french = "CHARGEMENT {PERCENT} %"};
 constexpr std::size_t WHOLE_PERCENT = 100;
-constexpr const char* PACK_DOWNLOAD_FAILED_STATUS = "PACK DOWNLOAD FAILED";
-constexpr const char* PACK_REFUSED_STATUS = "PACK REFUSED";
+constexpr Translation PACK_DOWNLOAD_FAILED_STATUS{
+    .english = "PACK DOWNLOAD FAILED", .french = "ÉCHEC DU TÉLÉCHARGEMENT"};
+constexpr Translation PACK_REFUSED_STATUS{.english = "PACK REFUSED",
+                                          .french = "CONTENU REFUSÉ"};
 
 /**
  * @brief The characters a status line of the form holds: the width of the
@@ -107,17 +142,28 @@ constexpr std::size_t STATUS_LINE_CHARACTERS = static_cast<std::size_t>(
     (FORM_WIDTH - (SIDES_PER_AXIS * FORM_HEADING_OFFSET.x)) /
     REGULAR_FONT_ADVANCE);
 
-static_assert(std::string_view(UNKNOWN_DIFFICULTY_STATUS).size() <=
+/** @brief The letters of the largest number a status line holds: a byte of
+ * three digits, a number of lives or a protocol version. */
+constexpr std::size_t LARGEST_STATUS_NUMBER_LETTERS =
+    static_cast<std::size_t>(std::numeric_limits<std::uint8_t>::digits10) + 1;
+
+static_assert(longestLettersIn(UNKNOWN_DIFFICULTY_STATUS) <=
                   STATUS_LINE_CHARACTERS,
               "the refusal of a difficulty fits its status line");
-static_assert(std::string_view(LIVES_REFUSED_STATUS).size() +
-                      std::string_view(LIVES_BOUNDS_SEPARATOR).size() +
-                      static_cast<std::size_t>(
-                          SIDES_PER_AXIS *
-                          (std::numeric_limits<std::uint8_t>::digits10 + 1)) <=
+static_assert(longestLettersIn(LIVES_REFUSED_STATUS) - LOWEST_MARK.size() -
+                      HIGHEST_MARK.size() +
+                      (static_cast<std::size_t>(SIDES_PER_AXIS) *
+                       LARGEST_STATUS_NUMBER_LETTERS) <=
                   STATUS_LINE_CHARACTERS,
               "the refusal of lives fits its status line, with two bounds of "
               "three digits");
+static_assert(longestLettersIn(INCOMPATIBLE_VERSION_STATUS) -
+                      CLIENT_VERSION_MARK.size() - SERVER_VERSION_MARK.size() +
+                      (static_cast<std::size_t>(SIDES_PER_AXIS) *
+                       LARGEST_STATUS_NUMBER_LETTERS) <=
+                  STATUS_LINE_CHARACTERS,
+              "the refusal of a version fits its status line, with two "
+              "versions of three digits");
 
 /**
  * @brief How long the connection screen shows that the server accepted the

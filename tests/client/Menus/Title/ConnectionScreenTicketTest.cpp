@@ -30,7 +30,7 @@ TEST_F(ConnectionScreenTicketFixture, AnAttemptWaitsForItsTicket) {
   EXPECT_EQ(tickets().askedTokens(),
             std::vector<std::string>{std::string{SIGNED_IN_TOKEN}});
   EXPECT_TRUE(connectAttemptsOf(connection()).empty());
-  EXPECT_NE(writingOf(canvas(), CONNECTING_STATUS), nullptr);
+  EXPECT_NE(writingOf(canvas(), CONNECTING_STATUS.english), nullptr);
 }
 
 /**

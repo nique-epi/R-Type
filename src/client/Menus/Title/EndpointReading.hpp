@@ -1,8 +1,8 @@
 #pragma once
 
 #include <optional>
-#include <string_view>
 #include "Endpoint.hpp"
+#include "Translation.hpp"
 
 namespace rtype::client {
 
@@ -10,8 +10,9 @@ namespace rtype::client {
 struct EndpointReading {
   /** @brief The server the two fields name, when both read. */
   std::optional<network::Endpoint> endpoint = std::nullopt;
-  /** @brief The status line naming the field to fix; empty when both read. */
-  std::string_view problem;
+  /** @brief The status line naming the field to fix; nothing when both
+   * read. */
+  std::optional<Translation> problem = std::nullopt;
 };
 
 }  // namespace rtype::client

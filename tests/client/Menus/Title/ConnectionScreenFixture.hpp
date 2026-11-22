@@ -9,6 +9,7 @@
 #include "ConnectionStatus.hpp"
 #include "FakeAccountSession.hpp"
 #include "FakeTicketLink.hpp"
+#include "Language.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingServerConnection.hpp"
@@ -21,7 +22,8 @@ class ConnectionScreenFixture : public ::testing::Test {
  protected:
   explicit ConnectionScreenFixture(
       rtype::client::ConnectionGoal goal =
-          rtype::client::ConnectionGoal::WaitingRoom);
+          rtype::client::ConnectionGoal::WaitingRoom,
+      rtype::client::Language language = rtype::client::Language::English);
 
   [[nodiscard]] const RecordingNavigator& navigator() const;
   RecordingServerConnection& connection();
@@ -57,6 +59,12 @@ class ConnectionScreenFixture : public ::testing::Test {
   RecordingSoundPlayer sounds_;
   rtype::client::ServerChoice choice_;
   rtype::client::ConnectionScreen screen_;
+};
+
+/** @brief The same screen, the client in French. */
+class FrenchConnectionScreenFixture : public ConnectionScreenFixture {
+ protected:
+  FrenchConnectionScreenFixture();
 };
 
 /** @brief The same screen, pushed over the screen the player came from. */

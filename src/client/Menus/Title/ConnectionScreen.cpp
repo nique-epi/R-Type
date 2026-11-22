@@ -24,6 +24,7 @@
 #include "IInterfaceCanvas.hpp"
 #include "IScreenNavigator.hpp"
 #include "IServerConnection.hpp"
+#include "Language.hpp"
 #include "LobbyScreenIdConstants.hpp"
 #include "Menu.hpp"
 #include "MenuBuilder.hpp"
@@ -32,7 +33,10 @@
 #include "ProtocolConstants.hpp"
 #include "ScreenId.hpp"
 #include "ServerChoice.hpp"
+#include "ShownEndpoint.hpp"
 #include "TextField.hpp"
+#include "TextMark.hpp"
+#include "TextMarks.hpp"
 #include "TimeConstants.hpp"
 #include "WidgetConstants.hpp"
 #include "WireTypes.hpp"
@@ -43,52 +47,72 @@ namespace {
 
 /** @returns The status line of a refusal for another version: the protocol
  * version of the client, then the one of the server. */
-std::string versionRefusalLine(std::uint8_t serverVersion) {
-  return INCOMPATIBLE_VERSION_STATUS +
-         std::to_string(static_cast<unsigned int>(network::PROTOCOL_VERSION)) +
-         SERVER_VERSION_STATUS +
-         std::to_string(static_cast<unsigned int>(serverVersion));
+std::string versionRefusalLine(std::uint8_t serverVersion, Language language) {
+  const std::string client =
+      std::to_string(static_cast<unsigned int>(network::PROTOCOL_VERSION));
+  const std::string server =
+      std::to_string(static_cast<unsigned int>(serverVersion));
+  return withMark(
+      withMark(std::string(INCOMPATIBLE_VERSION_STATUS.in(language)),
+               TextMark{.mark = CLIENT_VERSION_MARK, .value = client}),
+      TextMark{.mark = SERVER_VERSION_MARK, .value = server});
 }
 
 /** @returns The status line of a refusal of lives out of bounds: the bounds
  * a server accepts. */
-std::string livesRefusalLine() {
-  return LIVES_REFUSED_STATUS + std::to_string(identifiers::LOWEST_LIVES) +
-         LIVES_BOUNDS_SEPARATOR + std::to_string(identifiers::HIGHEST_LIVES);
+std::string livesRefusalLine(Language language) {
+  const std::string lowest = std::to_string(identifiers::LOWEST_LIVES);
+  const std::string highest = std::to_string(identifiers::HIGHEST_LIVES);
+  return withMark(withMark(std::string(LIVES_REFUSED_STATUS.in(language)),
+                           TextMark{.mark = LOWEST_MARK, .value = lowest}),
+                  TextMark{.mark = HIGHEST_MARK, .value = highest});
 }
 
-/** @returns The status line of the refusal @p status reports. */
-std::string refusalLine(const ConnectionStatus& status) {
+/** @returns The status line of the refusal @p status reports, in
+ * @p language. */
+std::string refusalLine(const ConnectionStatus& status, Language language) {
   switch (status.refusal) {
     case network::RefusalReason::GameFull:
-      return GAME_FULL_STATUS;
+      return std::string(GAME_FULL_STATUS.in(language));
     case network::RefusalReason::GameInProgress:
-      return GAME_IN_PROGRESS_STATUS;
+      return std::string(GAME_IN_PROGRESS_STATUS.in(language));
     case network::RefusalReason::NicknameTaken:
-      return NICKNAME_TAKEN_STATUS;
+      return std::string(NICKNAME_TAKEN_STATUS.in(language));
     case network::RefusalReason::GameNotFound:
-      return GAME_NOT_FOUND_STATUS;
+      return std::string(GAME_NOT_FOUND_STATUS.in(language));
     case network::RefusalReason::ServerFull:
-      return SERVER_FULL_STATUS;
+      return std::string(SERVER_FULL_STATUS.in(language));
     case network::RefusalReason::UnknownDifficulty:
-      return UNKNOWN_DIFFICULTY_STATUS;
+      return std::string(UNKNOWN_DIFFICULTY_STATUS.in(language));
     case network::RefusalReason::LivesOutOfRange:
-      return livesRefusalLine();
+      return livesRefusalLine(language);
     case network::RefusalReason::IncompatibleVersion:
       break;
   }
-  return versionRefusalLine(status.serverVersion);
+  return versionRefusalLine(status.serverVersion, language);
+}
+
+/** @returns The status line of a player the server took, with its
+ * number. */
+std::string acceptedLine(std::uint8_t playerNumber, Language language) {
+  const std::string number =
+      std::to_string(static_cast<unsigned int>(playerNumber));
+  return withMark(std::string(ACCEPTED_STATUS.in(language)),
+                  TextMark{.mark = NUMBER_MARK, .value = number});
 }
 
 /** @returns The status line of a content pack that downloads, as @p status
  * reports it: the share received in whole percents, 0 for a pack of no byte.
  */
-std::string loadingContentLine(const ConnectionStatus& status) {
+std::string loadingContentLine(const ConnectionStatus& status,
+                               Language language) {
   const std::size_t percent =
       status.contentSize == 0
           ? 0
           : (status.contentReceived * WHOLE_PERCENT) / status.contentSize;
-  return LOADING_CONTENT_STATUS + std::to_string(percent) + PERCENT_SIGN;
+  const std::string share = std::to_string(percent);
+  return withMark(std::string(LOADING_CONTENT_STATUS.in(language)),
+                  TextMark{.mark = PERCENT_MARK, .value = share});
 }
 
 /** @returns The server the fields of a screen started by @p start show: the
@@ -205,18 +229,25 @@ bool ConnectionScreen::hidesScreensBelow() const { return true; }
 Menu ConnectionScreen::buildMenu(ISoundPlayer& sounds,
                                  const network::Endpoint& shown) {
   const std::function<void()> connectAction = [this] { connect(); };
+  const Language language = canvas_->language();
   MenuBuilder builder(MenuBuilder::Frame::Form, &sounds);
-  builder.heading(asksServer(start_) ? CONNECTION_HEADING
-                                     : JOIN_SERVER_HEADING);
+  builder.heading(std::string(
+      (asksServer(start_) ? CONNECTION_HEADING : JOIN_SERVER_HEADING)
+          .in(language)));
   if (asksServer(start_)) {
-    addEndpointFields(builder, shown, connectAction);
+    addEndpointFields(builder,
+                      ShownEndpoint{.endpoint = shown, .language = language},
+                      connectAction);
   }
   return builder
-      .textField({.label = NICKNAME_LABEL, .description = NICKNAME_DESCRIPTION},
-                 TextField(choice_->nickname, NICKNAME_FIELD_SIZE,
-                           TextField::Characters::Printable),
-                 connectAction)
-      .button({.label = CONNECT_LABEL, .description = CONNECT_DESCRIPTION},
+      .textField(
+          {.label = std::string(NICKNAME_LABEL.in(language)),
+           .description = std::string(NICKNAME_DESCRIPTION.in(language))},
+          TextField(choice_->nickname, NICKNAME_FIELD_SIZE,
+                    TextField::Characters::Printable),
+          connectAction)
+      .button({.label = std::string(CONNECT_LABEL.in(language)),
+               .description = std::string(CONNECT_DESCRIPTION.in(language))},
               connectAction)
       .cancelButton({.label = BACK_LABEL}, [this] { leave(); })
       .build();
@@ -278,27 +309,28 @@ void ConnectionScreen::followConnection(const ConnectionStatus& status,
 }
 
 std::string ConnectionScreen::statusLine(const ConnectionStatus& status) const {
-  if (!fieldProblem_.empty()) {
-    return std::string(fieldProblem_);
+  const Language language = canvas_->language();
+  if (fieldProblem_.has_value()) {
+    return std::string(fieldProblem_->in(language));
   }
   if (ticketWait_.waiting()) {
-    return CONNECTING_STATUS;
+    return std::string(CONNECTING_STATUS.in(language));
   }
   switch (status.phase) {
     case ConnectionPhase::Connecting:
-      return CONNECTING_STATUS;
+      return std::string(CONNECTING_STATUS.in(language));
     case ConnectionPhase::Accepted:
-      return ACCEPTED_STATUS + std::to_string(status.playerNumber);
+      return acceptedLine(status.playerNumber, language);
     case ConnectionPhase::Refused:
-      return refusalLine(status);
+      return refusalLine(status, language);
     case ConnectionPhase::Unreachable:
-      return UNREACHABLE_STATUS;
+      return std::string(UNREACHABLE_STATUS.in(language));
     case ConnectionPhase::LoadingContent:
-      return loadingContentLine(status);
+      return loadingContentLine(status, language);
     case ConnectionPhase::ContentDownloadFailed:
-      return PACK_DOWNLOAD_FAILED_STATUS;
+      return std::string(PACK_DOWNLOAD_FAILED_STATUS.in(language));
     case ConnectionPhase::ContentRefused:
-      return PACK_REFUSED_STATUS;
+      return std::string(PACK_REFUSED_STATUS.in(language));
     case ConnectionPhase::Idle:
     case ConnectionPhase::Lost:
     case ConnectionPhase::Closed:

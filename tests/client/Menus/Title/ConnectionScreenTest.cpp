@@ -51,6 +51,8 @@ using rtype::client::testing::ACCEPTED_AS_FIRST_PLAYER;
 using rtype::client::testing::ADDRESS_FIELD_LABEL;
 using rtype::client::testing::BAD_DIFFICULTY_REFUSAL;
 using rtype::client::testing::CANCEL;
+using rtype::client::testing::FRENCH_LIVES_REFUSAL;
+using rtype::client::testing::FRENCH_VERSION_REFUSAL;
 using rtype::client::testing::HALF_RECEIVED;
 using rtype::client::testing::LAST_ADDRESS_NUMBER_TEXT;
 using rtype::client::testing::LAUNCH_ADDRESS;
@@ -151,7 +153,7 @@ TEST_F(ConnectionScreenFixture, AnAddressThatIsNotIpv4IsNamed) {
 
   choose(sf::Keyboard::Key::Enter);
 
-  EXPECT_NE(writingOf(canvas(), INVALID_ADDRESS_STATUS), nullptr);
+  EXPECT_NE(writingOf(canvas(), INVALID_ADDRESS_STATUS.english), nullptr);
 }
 
 /**
@@ -179,7 +181,7 @@ TEST_F(ConnectionScreenFixture, PortZeroIsNamed) {
 
   choose(sf::Keyboard::Key::Enter);
 
-  EXPECT_NE(writingOf(canvas(), INVALID_PORT_STATUS), nullptr);
+  EXPECT_NE(writingOf(canvas(), INVALID_PORT_STATUS.english), nullptr);
 }
 
 /**
@@ -194,7 +196,7 @@ TEST_F(ConnectionScreenFixture, AnEmptyNicknameIsNamed) {
 
   choose(sf::Keyboard::Key::Enter);
 
-  EXPECT_NE(writingOf(canvas(), MISSING_NICKNAME_STATUS), nullptr);
+  EXPECT_NE(writingOf(canvas(), MISSING_NICKNAME_STATUS.english), nullptr);
 }
 
 /**
@@ -209,7 +211,7 @@ TEST_F(ConnectionScreenFixture, AFixedFieldIsNoLongerNamed) {
 
   choose(sf::Keyboard::Key::Enter);
 
-  EXPECT_EQ(writingOf(canvas(), INVALID_ADDRESS_STATUS), nullptr);
+  EXPECT_EQ(writingOf(canvas(), INVALID_ADDRESS_STATUS.english), nullptr);
 }
 
 /**
@@ -220,7 +222,7 @@ TEST_F(ConnectionScreenFixture, AFixedFieldIsNoLongerNamed) {
 TEST_F(ConnectionScreenFixture, ConnectingIsShown) {
   show({.phase = ConnectionPhase::Connecting});
 
-  EXPECT_NE(writingOf(canvas(), CONNECTING_STATUS), nullptr);
+  EXPECT_NE(writingOf(canvas(), CONNECTING_STATUS.english), nullptr);
 }
 
 /**
@@ -242,7 +244,7 @@ TEST_F(ConnectionScreenFixture, AnAcceptedPlayerSeesItsNumber) {
 TEST_F(ConnectionScreenFixture, AnUnreachableServerIsShown) {
   show({.phase = ConnectionPhase::Unreachable});
 
-  EXPECT_NE(writingOf(canvas(), UNREACHABLE_STATUS), nullptr);
+  EXPECT_NE(writingOf(canvas(), UNREACHABLE_STATUS.english), nullptr);
 }
 
 /**
@@ -252,7 +254,8 @@ TEST_F(ConnectionScreenFixture, AnUnreachableServerIsShown) {
  */
 TEST_F(ConnectionScreenFixture, ALostSessionShowsNoStatusLine) {
   show({.phase = ConnectionPhase::Unreachable});
-  const RecordedWriting* unreachable = writingOf(canvas(), UNREACHABLE_STATUS);
+  const RecordedWriting* unreachable =
+      writingOf(canvas(), UNREACHABLE_STATUS.english);
   ASSERT_NE(unreachable, nullptr);
   const sf::Vector2i statusAnchor = unreachable->anchor;
 
@@ -269,7 +272,8 @@ TEST_F(ConnectionScreenFixture, ALostSessionShowsNoStatusLine) {
  */
 TEST_F(ConnectionScreenFixture, AClosedSessionShowsNoStatusLine) {
   show({.phase = ConnectionPhase::Unreachable});
-  const RecordedWriting* unreachable = writingOf(canvas(), UNREACHABLE_STATUS);
+  const RecordedWriting* unreachable =
+      writingOf(canvas(), UNREACHABLE_STATUS.english);
   ASSERT_NE(unreachable, nullptr);
   const sf::Vector2i statusAnchor = unreachable->anchor;
 
@@ -422,15 +426,16 @@ TEST_F(ConnectionScreenFixture, BackPlaysTheClick) {
 INSTANTIATE_TEST_SUITE_P(
     EveryReasonButTheVersion, ConnectionRefusalFixture,
     ::testing::Values(
-        std::tuple(RefusalReason::GameFull, std::string_view(GAME_FULL_STATUS)),
+        std::tuple(RefusalReason::GameFull,
+                   std::string_view(GAME_FULL_STATUS.english)),
         std::tuple(RefusalReason::GameInProgress,
-                   std::string_view(GAME_IN_PROGRESS_STATUS)),
+                   std::string_view(GAME_IN_PROGRESS_STATUS.english)),
         std::tuple(RefusalReason::NicknameTaken,
-                   std::string_view(NICKNAME_TAKEN_STATUS)),
+                   std::string_view(NICKNAME_TAKEN_STATUS.english)),
         std::tuple(RefusalReason::GameNotFound,
-                   std::string_view(GAME_NOT_FOUND_STATUS)),
+                   std::string_view(GAME_NOT_FOUND_STATUS.english)),
         std::tuple(RefusalReason::ServerFull,
-                   std::string_view(SERVER_FULL_STATUS)),
+                   std::string_view(SERVER_FULL_STATUS.english)),
         std::tuple(RefusalReason::UnknownDifficulty, BAD_DIFFICULTY_REFUSAL),
         std::tuple(RefusalReason::LivesOutOfRange, LIVES_BOUNDS_REFUSAL)));
 
@@ -446,6 +451,32 @@ TEST_F(ConnectionScreenFixture, AVersionRefusalNamesBothVersions) {
         .serverVersion = NEXT_PROTOCOL_VERSION});
 
   EXPECT_NE(writingOf(canvas(), "REFUSED: V20, SERVER V21"), nullptr);
+}
+
+/**
+ * Given the client in French, an attempt a server of protocol version 21
+ * refused as IncompatibleVersion
+ * When a frame goes by
+ * Then the French status line names both versions in their places
+ */
+TEST_F(FrenchConnectionScreenFixture, AVersionRefusalReadsInFrench) {
+  show({.phase = ConnectionPhase::Refused,
+        .refusal = RefusalReason::IncompatibleVersion,
+        .serverVersion = NEXT_PROTOCOL_VERSION});
+
+  EXPECT_NE(writingOf(canvas(), FRENCH_VERSION_REFUSAL), nullptr);
+}
+
+/**
+ * Given the client in French, an attempt refused for lives out of bounds
+ * When a frame goes by
+ * Then the French status line names both bounds in their places
+ */
+TEST_F(FrenchConnectionScreenFixture, ALivesRefusalReadsInFrench) {
+  show({.phase = ConnectionPhase::Refused,
+        .refusal = RefusalReason::LivesOutOfRange});
+
+  EXPECT_NE(writingOf(canvas(), FRENCH_LIVES_REFUSAL), nullptr);
 }
 
 /**
@@ -772,7 +803,7 @@ TEST_F(ConnectionToMapServerFixture, AnEmptyNicknameIsNamed) {
   chooseEnter();
 
   EXPECT_TRUE(connectAttemptsOf(connection()).empty());
-  EXPECT_NE(writingOf(canvas(), MISSING_NICKNAME_STATUS), nullptr);
+  EXPECT_NE(writingOf(canvas(), MISSING_NICKNAME_STATUS.english), nullptr);
 }
 
 /**
@@ -817,7 +848,7 @@ TEST_F(ConnectionToMapServerFixture, TheLastServerKeptShowsItsRefusal) {
   serverRefusesFor(RefusalReason::ServerFull);
 
   EXPECT_EQ(connectAttemptsOf(connection()).size(), 2U);
-  EXPECT_NE(writingOf(canvas(), SERVER_FULL_STATUS), nullptr);
+  EXPECT_NE(writingOf(canvas(), SERVER_FULL_STATUS.english), nullptr);
 }
 
 /**
@@ -831,7 +862,7 @@ TEST_F(ConnectionToMapServerFixture, AFullServerWithNoneKeptShowsItsRefusal) {
   serverRefusesFor(RefusalReason::ServerFull);
 
   EXPECT_EQ(connectAttemptsOf(connection()).size(), 1U);
-  EXPECT_NE(writingOf(canvas(), SERVER_FULL_STATUS), nullptr);
+  EXPECT_NE(writingOf(canvas(), SERVER_FULL_STATUS.english), nullptr);
 }
 
 /**
@@ -846,7 +877,7 @@ TEST_F(ConnectionToMapServerFixture, AnotherRefusalStaysOnItsServer) {
   serverRefusesFor(RefusalReason::NicknameTaken);
 
   EXPECT_EQ(connectAttemptsOf(connection()).size(), 1U);
-  EXPECT_NE(writingOf(canvas(), NICKNAME_TAKEN_STATUS), nullptr);
+  EXPECT_NE(writingOf(canvas(), NICKNAME_TAKEN_STATUS.english), nullptr);
 }
 
 /**

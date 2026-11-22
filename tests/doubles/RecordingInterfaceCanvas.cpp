@@ -80,6 +80,12 @@ rtype::client::Language RecordingInterfaceCanvas::language() const {
   return record_->language;
 }
 
+InterfaceCanvasRecord recordIn(rtype::client::Language language) {
+  InterfaceCanvasRecord record;
+  record.language = language;
+  return record;
+}
+
 void RecordingInterfaceCanvas::display() { ++record_->displayCount; }
 
 void RecordingInterfaceCanvas::show(

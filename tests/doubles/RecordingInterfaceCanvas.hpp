@@ -106,6 +106,9 @@ class RecordingInterfaceCanvas : public rtype::client::IInterfaceCanvas {
   InterfaceCanvasRecord* record_;
 };
 
+/** @returns An empty record whose canvas tells its painters @p language. */
+[[nodiscard]] InterfaceCanvasRecord recordIn(rtype::client::Language language);
+
 /** @returns The first line written with this text since the last clear(), or
  * nullptr. */
 [[nodiscard]] const RecordedWriting* writingOf(
