@@ -15,6 +15,7 @@
 #include "RouletteScreenTestConstants.hpp"
 #include "RouletteView.hpp"
 #include "SpinCountdown.hpp"
+#include "TableRosterRow.hpp"
 
 using rtype::client::BigWin;
 using rtype::client::MotionPreference;
@@ -23,24 +24,29 @@ using rtype::client::PLAYER_COLORS;
 using rtype::client::RouletteReading;
 using rtype::client::rouletteViewOf;
 using rtype::client::SpinCountdown;
+using rtype::client::TableRosterRow;
 using rtype::client::testing::A_ROUND;
 using rtype::client::testing::ACE_NAME;
 using rtype::client::testing::AS_THE_BANNER_LEAVES;
 using rtype::client::testing::bettingRoom;
+using rtype::client::testing::drawnSpinningRoom;
 using rtype::client::testing::FIRST_IDLE_FRAME;
 using rtype::client::testing::FIRST_OTHER_STACK_OFFSET;
 using rtype::client::testing::GAIN_AT_THE_THRESHOLD;
+using rtype::client::testing::GAIN_OF_A_STRAIGHT_TEXT;
 using rtype::client::testing::HELD_GREETING_FRAME;
 using rtype::client::testing::INTO_THE_GREETING_OF_A_CYCLE;
 using rtype::client::testing::INTO_THE_IDLE_OF_A_CYCLE;
 using rtype::client::testing::LUNA_PLACE;
 using rtype::client::testing::OTHER_STACK_ALPHA_OF_THE_DESIGN;
 using rtype::client::testing::PAYOUT_AT_THE_THRESHOLD;
+using rtype::client::testing::PAYOUT_OF_A_STRAIGHT;
 using rtype::client::testing::PAYOUT_SHORT_OF_THE_THRESHOLD;
 using rtype::client::testing::resultRoom;
 using rtype::client::testing::SECOND_GREETING_FRAME;
 using rtype::client::testing::SECOND_IDLE_FRAME;
 using rtype::client::testing::spinningRoom;
+using rtype::client::testing::STAKE_OF_ACE_TEXT;
 using rtype::client::testing::TWELVE_OF_TWENTY_SECONDS;
 using rtype::client::testing::TWELVE_SECONDS;
 using rtype::client::testing::TWENTY_FIVE_ON_17;
@@ -233,4 +239,35 @@ TEST(RouletteScene, TheBannerLeavesAfterFourSeconds) {
   reading.room->serverTime = reading.room->resultAt + AS_THE_BANNER_LEAVES;
 
   EXPECT_FALSE(rouletteViewOf(reading).bigWin.has_value());
+}
+
+/**
+ * Given a table whose wheel still turns, the master having already sent that
+ * the round paid ACE 900 chips
+ * When it is read
+ * Then the row of ACE still shows its stake of 25, not its gain
+ */
+TEST(RouletteScene, TheRosterHidesTheGainWhileTheWheelTurns) {
+  RouletteReading reading;
+  reading.room = drawnSpinningRoom(PAYOUT_OF_A_STRAIGHT);
+
+  const std::vector<TableRosterRow> roster = rouletteViewOf(reading).roster;
+
+  ASSERT_FALSE(roster.empty());
+  EXPECT_EQ(roster.at(0).value, STAKE_OF_ACE_TEXT);
+}
+
+/**
+ * Given the same round once the wheel stopped on its number
+ * When it is read
+ * Then the row of ACE shows its gain, +900
+ */
+TEST(RouletteScene, TheRosterShowsTheGainOnceTheWheelStopped) {
+  RouletteReading reading;
+  reading.room = resultRoom(PAYOUT_OF_A_STRAIGHT);
+
+  const std::vector<TableRosterRow> roster = rouletteViewOf(reading).roster;
+
+  ASSERT_FALSE(roster.empty());
+  EXPECT_EQ(roster.at(0).value, GAIN_OF_A_STRAIGHT_TEXT);
 }

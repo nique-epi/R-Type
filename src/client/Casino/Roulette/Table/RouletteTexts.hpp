@@ -33,8 +33,9 @@ namespace rtype::client {
  * @returns A row per player seated in the room of @p reading, the player
  * first, then the others in the order of the room, ROSTER_MAXIMUM_ROWS at
  * most: its color, by its place in the room, its nickname, followed by (YOU)
- * for the player, and its stake, in gold; once the round paid, its payout
- * after + in green, or its stake after - in pale blue.
+ * for the player, and its stake, in gold; at the result, once the round
+ * paid, its payout after + in green, or its stake after - in pale blue,
+ * never while the wheel turns, though the master already sent the payouts.
  */
 [[nodiscard]] std::vector<TableRosterRow> rosterRowsOf(
     const RouletteReading& reading);

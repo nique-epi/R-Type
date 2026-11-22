@@ -20,6 +20,12 @@ namespace rtype::client::testing {
  * cloth. */
 [[nodiscard]] network::CasinoRoomState spinningRoom();
 
+/** @returns spinningRoom() as the master sends it once it drew the number,
+ * the wheel still turning: ACE with STAKE_OF_ACE on the cloth already paid
+ * @p acePayout. */
+[[nodiscard]] network::CasinoRoomState drawnSpinningRoom(
+    std::uint32_t acePayout);
+
 /** @returns A_ROUND at its result, SEVENTEEN_WINS drawn, ACE with
  * STAKE_OF_ACE on the cloth handed back @p acePayout. */
 [[nodiscard]] network::CasinoRoomState resultRoom(std::uint32_t acePayout);
