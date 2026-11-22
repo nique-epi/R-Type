@@ -228,7 +228,8 @@ void addBoss(engine::ComponentRegistry& components, const BodyStart& start) {
   components.add(start.body,
                  Boss{.rageBelowPercent = sheet.boss->rageBelowPercent,
                       .rageAttack = sheet.boss->rageAttack,
-                      .arrivalAttack = sheet.boss->arrivalAttack});
+                      .arrivalAttack = sheet.boss->arrivalAttack,
+                      .bounty = sheet.boss->bounty});
 }
 
 /** @brief Gives the ship of a player its lives, no protection yet and, with

@@ -8,6 +8,7 @@
 #include "FinishedGamePlayer.hpp"
 #include "GameCredit.hpp"
 #include "GameCreditOutcome.hpp"
+#include "GameGain.hpp"
 #include "GameKopecks.hpp"
 #include "GlobalLeaderboard.hpp"
 #include "IAccountWallet.hpp"
@@ -30,11 +31,10 @@ std::optional<GameCredit> creditOf(const ServerGameResult& result,
   if (!player.ticket.has_value()) {
     return std::nullopt;
   }
-  const std::uint32_t kopecks = network::kopecksFor(player.score);
   return GameCredit{
       .ticket = *player.ticket,
-      .kopecks =
-          result.game.victory ? network::withVictoryBonus(kopecks) : kopecks,
+      .kopecks = network::kopecksFor(
+          network::GameGain{.score = player.score, .bounty = 0}),
       .wonLooks = player.wonLooks,
       .reference = std::string{GAME_REFERENCE_PREFIX} +
                    std::to_string(result.serverId) +

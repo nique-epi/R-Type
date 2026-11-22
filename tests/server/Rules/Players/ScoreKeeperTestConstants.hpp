@@ -45,4 +45,12 @@ constexpr std::array<std::uint32_t, game::MOST_PILOTS> ONE_EACH_OF_THREE{1, 1,
                                                                          1, 0};
 constexpr std::uint32_t A_THIRD_OF_THE_BOSS = 1'000;
 
+/** @brief The bounty of the Ash Mother, the largest bounty a player holds,
+ * and the kopecks below it a player starts from in the test of the largest
+ * bounty. */
+constexpr std::uint32_t ASH_MOTHER_BOUNTY = 550;
+constexpr std::uint32_t LARGEST_BOUNTY =
+    std::numeric_limits<std::uint32_t>::max();
+constexpr std::uint32_t TEN_KOPECKS = 10;
+
 }  // namespace rtype::server::testing

@@ -23,6 +23,7 @@
 #include "LifeKeeperParts.hpp"
 #include "LookItemKeeper.hpp"
 #include "LookItemKeeperParts.hpp"
+#include "LuauLevelEntry.hpp"
 #include "MatchSystemsParts.hpp"
 #include "PlayerController.hpp"
 #include "ServerException.hpp"
@@ -257,6 +258,14 @@ std::optional<std::string_view> MatchSystems::victoryReason() const {
 
 bool MatchSystems::levelFailed() const {
   return levelDirector_ != nullptr && levelDirector_->failed();
+}
+
+std::uint32_t MatchSystems::clearReward() const {
+  const GameSettings& settings = game_.get().settings;
+  if (!settings.level.has_value() || settings.scripts == nullptr) {
+    return 0;
+  }
+  return entryOfLevel(settings.scripts->levels(), *settings.level).reward;
 }
 
 bool MatchSystems::restartFromCheckpoint() {

@@ -187,13 +187,15 @@ void DamageRules::killTarget(engine::Entity target, std::uint32_t networkId,
   const std::array<std::uint32_t, MOST_PILOTS> damageByPilot =
       boss == nullptr ? std::array<std::uint32_t, MOST_PILOTS>{}
                       : boss->damageByPilot;
+  const std::uint32_t bounty = boss == nullptr ? 0 : boss->bounty;
   components_.destroy(target);
   events_.publish(EntityDestruction{.networkId = networkId,
                                     .cause = DestructionCause::Killed});
-  if (shooter.has_value() && points > 0) {
+  if (shooter.has_value() && (points > 0 || bounty > 0)) {
     events_.publish(EnemyKilled{.playerNumber = *shooter,
                                 .points = points,
-                                .damageByPilot = damageByPilot});
+                                .damageByPilot = damageByPilot,
+                                .bounty = bounty});
   }
 }
 

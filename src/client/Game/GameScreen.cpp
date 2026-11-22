@@ -422,7 +422,7 @@ void GameScreen::recordEnd(const network::GameEnded& ended) {
   std::vector<FinalPilot> pilots = rankedPilots(flyingTheirHulls(
       finalPilotsOf(scoreBoard_.pilots(), ended), shipLooks_->playerLooks()));
   if (!kopecksGained_.has_value()) {
-    kopecksGained_ = kopecksEarnedBy(pilots, ended.outcome);
+    kopecksGained_ = kopecksEarnedBy(pilots);
   }
   *result_ = GameResult{.pilots = std::move(pilots),
                         .outcome = ended.outcome,

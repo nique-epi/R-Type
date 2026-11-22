@@ -31,9 +31,24 @@ void ScoreKeeperFixture::killBoss(
   events_.dispatch();
 }
 
+void ScoreKeeperFixture::killPaying(std::uint8_t playerNumber,
+                                    std::uint32_t bounty) {
+  events_.publish(game::EnemyKilled{.playerNumber = playerNumber,
+                                    .points = 0,
+                                    .damageByPilot = {},
+                                    .bounty = bounty});
+  events_.dispatch();
+}
+
 std::uint32_t ScoreKeeperFixture::firstScore() const { return first_->score; }
 
 std::uint32_t ScoreKeeperFixture::secondScore() const { return second_->score; }
+
+std::uint32_t ScoreKeeperFixture::firstBounty() const { return first_->bounty; }
+
+std::uint32_t ScoreKeeperFixture::secondBounty() const {
+  return second_->bounty;
+}
 
 void ScoreKeeperFixture::giveFirstPlayerScore(std::uint32_t score) {
   first_->score = score;

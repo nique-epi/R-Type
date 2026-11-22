@@ -76,10 +76,16 @@ constexpr const char* LEVEL_OPENING_BIOME_KEY = "biome";
  * resource. */
 constexpr const char* LEVEL_MAP_PREVIEW_KEY = "preview";
 
+/** @brief The option that gives the kopecks every pilot present earns once
+ * the level is cleared: a whole number from 0 to MOST_LEVEL_REWARD. */
+constexpr const char* LEVEL_REWARD_KEY = "reward";
+constexpr double MOST_LEVEL_REWARD = 10000.0;
+
 /** @brief Every option of a level; any other key is refused. */
-constexpr std::array<std::string_view, 6> LEVEL_OPTION_KEYS{
-    LEVEL_LDTK_KEY, LEVEL_STARTS_KEY,        LEVEL_BANDS_KEY,
-    LEVEL_MAP_KEY,  LEVEL_OPENING_BIOME_KEY, LEVEL_MAP_PREVIEW_KEY};
+constexpr std::array<std::string_view, 7> LEVEL_OPTION_KEYS{
+    LEVEL_LDTK_KEY,  LEVEL_STARTS_KEY,        LEVEL_BANDS_KEY,
+    LEVEL_MAP_KEY,   LEVEL_OPENING_BIOME_KEY, LEVEL_MAP_PREVIEW_KEY,
+    LEVEL_REWARD_KEY};
 
 /** @brief The part of a path that leaves its folder. */
 constexpr std::string_view PARENT_FOLDER_PART = "..";
@@ -130,7 +136,9 @@ constexpr const char* LEVEL_YIELD_MESSAGE =
     "level.transition";
 constexpr const char* WRONG_LEVEL_OPTIONS_MESSAGE =
     "the options of a level are a table whose keys are ldtk, starts, bands, "
-    "map, biome and preview";
+    "map, biome, preview and reward";
+constexpr const char* WRONG_LEVEL_REWARD_MESSAGE =
+    "the reward of a level is a whole number of kopecks from 0 to 10000";
 constexpr const char* WRONG_LEVEL_STARTS_MESSAGE =
     "the starts of a level map a stage from 2 to its last to a table of a "
     "scroll, a biome and a biome_since, finite numbers from 0 and a biome name";

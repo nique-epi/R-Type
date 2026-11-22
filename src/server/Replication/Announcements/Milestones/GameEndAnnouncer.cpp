@@ -29,7 +29,7 @@ network::WireGameOutcome wireOutcomeOf(GameOutcome outcome) {
 
 /**
  * @returns The result @p players end the game with, in @p outcome: each of
- * them, in the order given, with its number and its score.
+ * them, in the order given, with its number, its score and its bounty.
  */
 network::GameEnded resultOf(const ConnectedPlayers& players,
                             GameOutcome outcome) {
@@ -37,8 +37,10 @@ network::GameEnded resultOf(const ConnectedPlayers& players,
   result.outcome = wireOutcomeOf(outcome);
   result.players.reserve(players.size());
   for (const ConnectedPlayer* const player : players) {
-    result.players.push_back(network::PlayerScore{
-        .playerNumber = player->playerNumber, .score = player->score});
+    result.players.push_back(
+        network::PlayerScore{.playerNumber = player->playerNumber,
+                             .score = player->score,
+                             .bounty = player->bounty});
   }
   return result;
 }

@@ -17,6 +17,8 @@ struct Boss {
   int rageBelowPercent{0};
   std::uint8_t rageAttack{0};
   std::uint8_t arrivalAttack{0};
+  /** @brief The kopecks every pilot present earns when it is destroyed. */
+  std::uint32_t bounty{0};
   /** @brief How far it is; moved on by BossSystem only. */
   BossProgress progress{BossProgress::Created};
   /** @brief The damage each pilot dealt to it, pilot FIRST_PILOT_NUMBER

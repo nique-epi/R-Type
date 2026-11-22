@@ -27,8 +27,7 @@ class LeaderboardService {
    * already: then nothing changes. A result kept for the first time credits,
    * at @p now, the wallet of the account the master gave the ticket of each
    * player to, when that ticket was never used and has not expired:
-   * network::kopecksFor() its score, with network::withVictoryBonus() for a
-   * victory, and the looks it won, once per reference
+   * network::kopecksFor() its score, and the looks it won, once per reference
    * `game:<server>:<game>:<nickname>`. A credit that fails is written in the
    * journal and never refuses the result.
    * @returns false, keeping nothing, when its game was not vanilla: the

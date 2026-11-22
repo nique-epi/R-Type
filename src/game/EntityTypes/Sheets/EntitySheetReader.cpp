@@ -258,7 +258,9 @@ std::optional<BossSheet> bossFrom(const engine::DataFileTable& gameplay) {
       .rageAttack = static_cast<std::uint8_t>(
           engine::wholeNumberAt(*boss, RAGE_ATTACK_KEY, ATTACK_NUMBER_RANGE)),
       .arrivalAttack = static_cast<std::uint8_t>(engine::wholeNumberAt(
-          *boss, ARRIVAL_ATTACK_KEY, ATTACK_NUMBER_RANGE))};
+          *boss, ARRIVAL_ATTACK_KEY, ATTACK_NUMBER_RANGE)),
+      .bounty = static_cast<std::uint32_t>(
+          engine::wholeNumberOrZeroAt(*boss, BOUNTY_KEY, BOUNTY_RANGE))};
 }
 
 /** @returns Whether the sheet holds the marker table @p key of `[gameplay]`,

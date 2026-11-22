@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include "Bounties.hpp"
 #include "ConnectedPlayer.hpp"
 #include "EnemyKilled.hpp"
 #include "EventBus.hpp"
@@ -69,6 +70,9 @@ void ScoreKeeper::onEnemyKilled(const game::EnemyKilled& kill) {
     addScore(roster_.findByNumber(
                  static_cast<std::uint8_t>(game::FIRST_PILOT_NUMBER + pilot)),
              shares.at(pilot));
+  }
+  if (kill.bounty > 0) {
+    payEveryPlayer(roster_, kill.bounty);
   }
 }
 

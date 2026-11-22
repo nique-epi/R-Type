@@ -23,8 +23,14 @@ class ScoreKeeperFixture : public ::testing::Test {
       std::uint8_t playerNumber, std::uint32_t points,
       const std::array<std::uint32_t, game::MOST_PILOTS>& damageByPilot);
 
+  /** @brief Publishes the kill of a boss worth no point that pays @p bounty,
+   * destroyed by @p playerNumber. */
+  void killPaying(std::uint8_t playerNumber, std::uint32_t bounty);
+
   [[nodiscard]] std::uint32_t firstScore() const;
   [[nodiscard]] std::uint32_t secondScore() const;
+  [[nodiscard]] std::uint32_t firstBounty() const;
+  [[nodiscard]] std::uint32_t secondBounty() const;
   void giveFirstPlayerScore(std::uint32_t score);
 
  private:

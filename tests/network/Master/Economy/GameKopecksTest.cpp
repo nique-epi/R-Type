@@ -1,65 +1,62 @@
 #include <gtest/gtest.h>
 #include <cstdint>
+#include "GameGain.hpp"
 #include "GameKopecks.hpp"
 #include "GameKopecksTestConstants.hpp"
 
 using rtype::network::boundedKopecks;
+using rtype::network::GameGain;
 using rtype::network::kopecksFor;
-using rtype::network::withVictoryBonus;
+using rtype::network::testing::BOUNTY_OF_THE_PIT;
 using rtype::network::testing::DESIGN_SCORE;
 using rtype::network::testing::KOPECKS_OF_THE_DESIGN_SCORE;
+using rtype::network::testing::KOPECKS_OF_THE_PIT;
 using rtype::network::testing::LARGEST_BALANCE;
+using rtype::network::testing::LARGEST_BOUNTY;
 using rtype::network::testing::LARGEST_SCORE;
-using rtype::network::testing::ODD_GAIN;
-using rtype::network::testing::ODD_GAIN_AFTER_A_VICTORY;
-using rtype::network::testing::ROUND_GAIN;
-using rtype::network::testing::ROUND_GAIN_AFTER_A_VICTORY;
 using rtype::network::testing::SCORE_UNDER_ONE_KOPECK;
 
 /**
- * Given a final score of 12450
+ * Given a final score of 12450 and no bounty
  * When its kopecks are counted
- * Then it pays one kopeck per ten points: 1245
+ * Then it pays one kopeck per fifty points: 249
  */
-TEST(GameKopecks, TenPointsOfScorePayOneKopeck) {
-  EXPECT_EQ(kopecksFor(DESIGN_SCORE), KOPECKS_OF_THE_DESIGN_SCORE);
+TEST(GameKopecks, FiftyPointsOfScorePayOneKopeck) {
+  EXPECT_EQ(kopecksFor(GameGain{.score = DESIGN_SCORE, .bounty = 0}),
+            KOPECKS_OF_THE_DESIGN_SCORE);
 }
 
 /**
- * Given a final score under ten points
+ * Given a final score under fifty points
  * When its kopecks are counted
  * Then it pays none
  */
 TEST(GameKopecks, APartOfAKopeckIsLost) {
-  EXPECT_EQ(kopecksFor(SCORE_UNDER_ONE_KOPECK), 0U);
+  EXPECT_EQ(kopecksFor(GameGain{.score = SCORE_UNDER_ONE_KOPECK, .bounty = 0}),
+            0U);
 }
 
 /**
- * Given 1000 kopecks earned by a score
- * When the squadron won
- * Then the game pays a quarter more: 1250
+ * Given a final score of 12450 and the bounty of the Pit, 650
+ * When its kopecks are counted
+ * Then it pays the bounty and the kopecks of the score: 899
  */
-TEST(GameKopecks, AVictoryPaysAQuarterMore) {
-  EXPECT_EQ(withVictoryBonus(ROUND_GAIN), ROUND_GAIN_AFTER_A_VICTORY);
+TEST(GameKopecks, TheBountyIsPaidWithTheScore) {
+  EXPECT_EQ(
+      kopecksFor(GameGain{.score = DESIGN_SCORE, .bounty = BOUNTY_OF_THE_PIT}),
+      KOPECKS_OF_THE_PIT);
 }
 
 /**
- * Given 30 kopecks, whose quarter is 7.5
- * When the squadron won
- * Then the bonus is rounded down: 37
- */
-TEST(GameKopecks, TheBonusOfAVictoryIsRoundedDown) {
-  EXPECT_EQ(withVictoryBonus(ODD_GAIN), ODD_GAIN_AFTER_A_VICTORY);
-}
-
-/**
- * Given the largest score and the largest balance
- * When they are paid, raised by a victory, or passed by one kopeck
+ * Given the largest score, the largest bounty and the largest balance
+ * When they are paid, or passed by one kopeck
  * Then no amount passes the largest balance
  */
 TEST(GameKopecks, NoAmountPassesTheLargestBalance) {
-  EXPECT_EQ(kopecksFor(LARGEST_SCORE), LARGEST_BALANCE);
-  EXPECT_EQ(withVictoryBonus(LARGEST_BALANCE), LARGEST_BALANCE);
+  EXPECT_EQ(kopecksFor(GameGain{.score = LARGEST_SCORE, .bounty = 0}),
+            LARGEST_BALANCE);
+  EXPECT_EQ(kopecksFor(GameGain{.score = 0, .bounty = LARGEST_BOUNTY}),
+            LARGEST_BALANCE);
   EXPECT_EQ(boundedKopecks(std::uint64_t{LARGEST_BALANCE} + 1),
             LARGEST_BALANCE);
 }

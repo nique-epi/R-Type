@@ -79,6 +79,19 @@ constexpr std::string_view REGISTERS_A_PREVIEW_WITHOUT_A_MAP = R"(
 level.register("caves", { function() end }, { preview = "the_caves" })
 )";
 
+/** @brief A script that pays 300 kopecks for the level caves cleared, one
+ * that pays 2.5, and one that pays one past the largest reward, 10000. */
+constexpr std::string_view REGISTERS_A_REWARD = R"(
+level.register("caves", { function() end }, { reward = 300 })
+)";
+constexpr std::uint32_t CAVES_REWARD = 300;
+constexpr std::string_view REGISTERS_A_PART_OF_A_KOPECK = R"(
+level.register("caves", { function() end }, { reward = 2.5 })
+)";
+constexpr std::string_view REGISTERS_A_REWARD_PAST_THE_LARGEST = R"(
+level.register("caves", { function() end }, { reward = 10001 })
+)";
+
 /** @brief Scripts that register a level under a map name written in small
  * letters, seventeen characters long (one past the longest), and a number. */
 constexpr std::string_view REGISTERS_A_MAP_IN_SMALL_LETTERS = R"(

@@ -28,7 +28,9 @@ class PlayerRoster;
  * damage, rounded down, the rest of the division going to the player who
  * destroyed it; a kill with no damage tallied gives all its points to that
  * player. Only a player connected under a number is credited: the share of a
- * player who left, or of a number no player holds, changes no score. A
+ * player who left, or of a number no player holds, changes no score. The
+ * bounty of a kill goes to every player connected then, whoever fired
+ * (payEveryPlayer()). A
  * score stops at its largest value instead of wrapping around. The bus and the
  * roster must outlive this object.
  */

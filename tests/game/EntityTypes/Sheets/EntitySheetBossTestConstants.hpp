@@ -109,6 +109,18 @@ constexpr int BOSS_RAGE_BELOW_PERCENT = 50;
 constexpr std::uint8_t BOSS_TABLE_RAGE_ATTACK = 9;
 constexpr std::uint8_t BOSS_TABLE_ARRIVAL_ATTACK = 0;
 constexpr std::string_view BOSS_DOTTED_KEY = "gameplay.boss";
+
+/** @brief The same table paying a bounty of 550, the most of the shipped
+ * bosses, one past the largest bounty, and what refuses it. */
+constexpr std::string_view BOSS_TABLE_WITH_A_BOUNTY =
+    "[gameplay.boss]\nrage_below_percent = 50\nrage_attack = 9\n"
+    "arrival_attack = 0\nbounty = 550\n";
+constexpr std::uint32_t BOSS_BOUNTY = 550;
+constexpr std::string_view BOSS_TABLE_PAST_THE_LARGEST_BOUNTY =
+    "[gameplay.boss]\nrage_below_percent = 50\nrage_attack = 9\n"
+    "arrival_attack = 0\nbounty = 10001\n";
+constexpr std::string_view BOUNTY_RANGE_TEXT =
+    "gameplay.boss.bounty must be an integer from 0 to 10000";
 constexpr std::string_view BOSS_SIDE_RULE_TEXT =
     "only a body of side enemy is a boss";
 constexpr std::string_view BOSS_HEALTH_RULE_TEXT = "a boss has health";

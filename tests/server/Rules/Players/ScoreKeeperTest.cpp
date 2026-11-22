@@ -105,6 +105,18 @@ TEST_F(ScoreKeeperFixture, TheShareOfAPilotWhoLeftIsLost) {
 }
 
 /**
+ * Given two connected players
+ * When the first destroys the Ash Mother, whose bounty is 550
+ * Then both earn 550 kopecks of bounty, whoever fired
+ */
+TEST_F(ScoreKeeperFixture, ABossPaysItsBountyToEveryPlayer) {
+  killPaying(FIRST_NUMBER, ASH_MOTHER_BOUNTY);
+
+  EXPECT_EQ(firstBounty(), ASH_MOTHER_BOUNTY);
+  EXPECT_EQ(secondBounty(), ASH_MOTHER_BOUNTY);
+}
+
+/**
  * Given a keeper that was destroyed
  * When a kill is published
  * Then nothing reads it
