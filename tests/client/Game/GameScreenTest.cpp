@@ -20,6 +20,7 @@
 #include "FakeEntityMessageSource.hpp"
 #include "FixedEntityTypeSourceConstants.hpp"
 #include "GameEnded.hpp"
+#include "GameEvent.hpp"
 #include "GameResult.hpp"
 #include "GameScreen.hpp"
 #include "GameScreenFixture.hpp"
@@ -1280,4 +1281,20 @@ TEST(GameScreenTallyTest, CountsTheMovesOfTheTickShown) {
   game.update(THREE_TICKS);
 
   EXPECT_EQ(doubles.interpolationTally.recalibrations().count, 1U);
+}
+
+/**
+ * Given a game in progress
+ * When the server tells the first player won an extra life
+ * Then the status canvas writes 1UP
+ */
+TEST_F(GameScreenFixture, PaintsOneUpWhenAPlayerWinsALife) {
+  entityMessages().queue(rtype::network::GameEvent{
+      .eventNumber = EXTRA_LIFE_EVENT_NUMBER,
+      .kind = rtype::network::GameEventKind::ExtraLifeWon,
+      .playerNumber = PLAYER_WHO_WON_A_LIFE});
+
+  screens().update(ONE_FRAME);
+
+  EXPECT_NE(writingOf(statusCanvas(), ONE_UP_WORD), nullptr);
 }

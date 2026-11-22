@@ -7,6 +7,10 @@
 
 namespace rtype::client {
 
+/** @returns The left column of the bay @p bay, 0 to PLAYER_COLOR_COUNT - 1
+ * from the left, in pixels of the picture. */
+[[nodiscard]] int statusBayLeft(int bay);
+
 /**
  * @brief Paints the status band over STATUS_BAND_AREA: an opaque panel cut at
  * its corners, split by thin rules into one bay per player number.

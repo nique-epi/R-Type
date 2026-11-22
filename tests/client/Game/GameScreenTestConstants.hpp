@@ -112,6 +112,12 @@ constexpr std::uint8_t CONTINUES_BEFORE_THE_RESTART = 3;
 constexpr std::uint8_t CONTINUES_AFTER_THE_RESTART = 2;
 constexpr std::string_view CONTINUE_WORD_ON_SCREEN = "CONTINUE";
 
+/** @brief The first event of a game, telling the first player won an extra
+ * life, and the word over its bay. */
+constexpr std::uint16_t EXTRA_LIFE_EVENT_NUMBER = 1;
+constexpr std::uint8_t PLAYER_WHO_WON_A_LIFE = 1;
+constexpr std::string_view ONE_UP_WORD = "1UP";
+
 /** @brief Where the server is while the tests draw a state of APPLIED_TICK:
  * some ticks ahead of it, as during a game. */
 constexpr double SERVER_TICK_AHEAD_OF_THE_STATE = 16.0;
