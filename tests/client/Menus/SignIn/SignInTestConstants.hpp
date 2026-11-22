@@ -31,6 +31,9 @@ constexpr std::string_view SIGN_IN_TOKEN =
 constexpr std::string_view PAGE_LINE = "ENTER IT AT RTYPE.APP/LINK";
 constexpr std::string_view NINE_MINUTES_VALIDITY = "VALID FOR 9 MIN";
 constexpr std::string_view LAST_MINUTE_VALIDITY = "VALID FOR UNDER A MINUTE";
+
+/** @brief The page and the validity of that code, in French. */
+constexpr std::string_view FRENCH_NINE_MINUTES_VALIDITY = "VALABLE 9\u00a0MIN";
 constexpr std::string_view PAGE_AS_SHOWN = "RTYPE.APP/LINK";
 
 /** @brief The account the token opens, and the screen that asked to sign

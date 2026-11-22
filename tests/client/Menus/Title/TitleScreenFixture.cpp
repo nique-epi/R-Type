@@ -15,6 +15,7 @@
 #include "WidgetConstants.hpp"
 
 using rtype::client::MotionPreference;
+using rtype::client::PlayerSettings;
 using rtype::client::PlayStart;
 using rtype::client::PRESS_DURATION;
 using rtype::client::TitleScreen;
@@ -66,6 +67,8 @@ const RecordingNavigator& TitleScreenFixture::navigator() const {
 const InterfaceCanvasRecord& TitleScreenFixture::canvas() const {
   return canvas_;
 }
+
+PlayerSettings& TitleScreenFixture::settings() { return settings_; }
 
 TitleScreen& TitleScreenFixture::title() { return *title_; }
 

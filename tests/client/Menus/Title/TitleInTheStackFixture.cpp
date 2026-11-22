@@ -18,6 +18,7 @@
 #include "WidgetConstants.hpp"
 
 using rtype::client::DialogScreen;
+using rtype::client::DialogTools;
 using rtype::client::IScreen;
 using rtype::client::MotionPreference;
 using rtype::client::PRESS_DURATION;
@@ -78,7 +79,9 @@ std::unique_ptr<IScreen> TitleInTheStackFixture::build(ScreenId screen) {
   }
   if (screen == QUIT_CONFIRMATION_SCREEN) {
     return std::make_unique<DialogScreen>(
-        quitConfirmationMenu(dialogNavigator_, sounds_), samePlayfieldPoint,
+        quitConfirmationMenu(
+            DialogTools{.navigator = dialogNavigator_, .sounds = sounds_}),
+        samePlayfieldPoint,
         std::make_unique<RecordingInterfaceCanvas>(dialogCanvas_));
   }
   auto options = std::make_unique<RecordingScreen>(screen, journal_);

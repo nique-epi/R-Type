@@ -23,6 +23,7 @@ class TitleScreenFixture : public ::testing::Test {
   [[nodiscard]] const RecordingNavigator& navigator() const;
   [[nodiscard]] const InterfaceCanvasRecord& canvas() const;
   rtype::client::TitleScreen& title();
+  rtype::client::PlayerSettings& settings();
 
   /** @brief Presses and releases a key, then lets the press last. */
   void choose(sf::Keyboard::Key key);

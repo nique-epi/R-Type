@@ -3,6 +3,7 @@
 #include <SFML/System/Vector2.hpp>
 #include <chrono>
 #include <cstdint>
+#include <string_view>
 #include "BackgroundConstants.hpp"
 
 namespace rtype::client::testing {
@@ -12,6 +13,9 @@ constexpr std::uint32_t TITLE_SEED = 7;
 
 /** @brief One frame of the title, at 60 frames a second. */
 constexpr std::chrono::milliseconds TITLE_FRAME{16};
+
+/** @brief PLAY, and the label of the selected bar, in French. */
+constexpr std::string_view FRENCH_PLAY_LABEL = "JOUER";
 
 /** @brief Where the logo lies on the mockup of the title screen. */
 constexpr sf::Vector2i LOGO_TOP_LEFT(24, 36);

@@ -37,7 +37,12 @@ class TitleAccountChips {
    * nickname. */
   void paint(IInterfaceCanvas& canvas) const;
 
+  /** @brief Writes the chips again in @p language, when it is not the one
+   * they read. */
+  void followLanguage(Language language);
+
  private:
+  TitleAccountChipsParts parts_;
   const IAccountSession* account_;
   const IWallet* wallet_;
   KeyChip signIn_;

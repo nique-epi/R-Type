@@ -7,8 +7,13 @@
 #include <string_view>
 #include "DeviceLinkPhase.hpp"
 #include "DeviceLinkReading.hpp"
+#include "Language.hpp"
 #include "SignInLines.hpp"
 #include "SignInScreenConstants.hpp"
+#include "SignInStanding.hpp"
+#include "TextMark.hpp"
+#include "TextMarks.hpp"
+#include "Translation.hpp"
 
 namespace rtype::client {
 
@@ -17,74 +22,81 @@ namespace {
 /** @returns How long the code of @p reading stays valid at @p now, in whole
  * units of SIGN_IN_COUNT_UNIT, as the dialog writes it. */
 std::string validityOf(const DeviceLinkReading& reading,
-                       std::chrono::sys_seconds now) {
-  const auto units =
-      std::chrono::floor<std::chrono::minutes>(reading.expiresAt - now) /
-      SIGN_IN_COUNT_UNIT;
+                       const SignInStanding& standing) {
+  const auto units = std::chrono::floor<std::chrono::minutes>(
+                         reading.expiresAt - standing.now) /
+                     SIGN_IN_COUNT_UNIT;
   if (units < 1) {
-    return std::string{LAST_MINUTE_TEXT};
+    return std::string(LAST_MINUTE_TEXT.in(standing.language));
   }
-  return std::string{VALID_FOR_START} + std::to_string(units) +
-         std::string{MINUTES_END};
+  const std::string minutes = std::to_string(units);
+  return withMark(std::string(VALID_FOR.in(standing.language)),
+                  TextMark{.mark = MINUTES_MARK, .value = minutes});
 }
 
 SignInLines waitingLines(const DeviceLinkReading& reading,
-                         std::chrono::sys_seconds now) {
-  return SignInLines{.title = reading.userCode,
-                     .line = std::string{ENTER_CODE_AT_START} +
-                             pageShownOf(reading.verificationUri),
-                     .validity = validityOf(reading, now),
-                     .offersNewCode = false};
+                         const SignInStanding& standing) {
+  const std::string page = pageShownOf(reading.verificationUri);
+  return SignInLines{
+      .title = reading.userCode,
+      .line = withMark(std::string(ENTER_CODE_AT.in(standing.language)),
+                       TextMark{.mark = PAGE_MARK, .value = page}),
+      .validity = validityOf(reading, standing),
+      .offersNewCode = false};
 }
 
-SignInLines askingLines() {
-  return SignInLines{.title = std::string{SIGN_IN_TITLE},
-                     .line = std::string{ASKING_CODE_LINE},
+SignInLines askingLines(Language language) {
+  return SignInLines{.title = std::string(SIGN_IN_TITLE.in(language)),
+                     .line = std::string(ASKING_CODE_LINE.in(language)),
                      .validity = std::nullopt,
                      .offersNewCode = false};
 }
 
-SignInLines endedLines(std::string_view title, std::string_view line) {
-  return SignInLines{.title = std::string{title},
-                     .line = std::string{line},
+SignInLines endedLines(const Translation& title, const Translation& line,
+                       Language language) {
+  return SignInLines{.title = std::string(title.in(language)),
+                     .line = std::string(line.in(language)),
                      .validity = std::nullopt,
                      .offersNewCode = true};
 }
 
-SignInLines signedInLines(bool sessionRefused) {
-  if (sessionRefused) {
-    return endedLines(SESSION_REFUSED_TITLE, SESSION_REFUSED_LINE);
+SignInLines signedInLines(const SignInStanding& standing) {
+  if (standing.sessionRefused) {
+    return endedLines(SESSION_REFUSED_TITLE, SESSION_REFUSED_LINE,
+                      standing.language);
   }
-  return SignInLines{.title = std::string{SIGNED_IN_TITLE},
-                     .line = std::string{OPENING_ACCOUNT_LINE},
-                     .validity = std::nullopt,
-                     .offersNewCode = false};
+  return SignInLines{
+      .title = std::string(SIGNED_IN_TITLE.in(standing.language)),
+      .line = std::string(OPENING_ACCOUNT_LINE.in(standing.language)),
+      .validity = std::nullopt,
+      .offersNewCode = false};
 }
 
 }  // namespace
 
 SignInLines signInLinesOf(const std::optional<DeviceLinkReading>& reading,
-                          std::chrono::sys_seconds now, bool sessionRefused) {
+                          const SignInStanding& standing) {
+  const Language language = standing.language;
   if (!reading.has_value()) {
-    return askingLines();
+    return askingLines(language);
   }
   switch (reading->phase) {
     case DeviceLinkPhase::Requesting:
       break;
     case DeviceLinkPhase::Waiting:
-      return waitingLines(*reading, now);
+      return waitingLines(*reading, standing);
     case DeviceLinkPhase::SignedIn:
-      return signedInLines(sessionRefused);
+      return signedInLines(standing);
     case DeviceLinkPhase::Denied:
-      return endedLines(DENIED_TITLE, DENIED_LINE);
+      return endedLines(DENIED_TITLE, DENIED_LINE, language);
     case DeviceLinkPhase::Expired:
-      return endedLines(EXPIRED_TITLE, EXPIRED_LINE);
+      return endedLines(EXPIRED_TITLE, EXPIRED_LINE, language);
     case DeviceLinkPhase::Refused:
-      return endedLines(REFUSED_TITLE, REFUSED_LINE);
+      return endedLines(REFUSED_TITLE, REFUSED_LINE, language);
     case DeviceLinkPhase::Unreachable:
-      return endedLines(UNREACHABLE_TITLE, UNREACHABLE_LINE);
+      return endedLines(UNREACHABLE_TITLE, UNREACHABLE_LINE, language);
   }
-  return askingLines();
+  return askingLines(language);
 }
 
 std::string pageShownOf(const std::string& page) {

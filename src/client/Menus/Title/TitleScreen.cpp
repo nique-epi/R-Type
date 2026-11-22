@@ -57,7 +57,8 @@ TitleScreen::TitleScreen(TitleScreenParts parts,
                                            .wallet = parts.wallet,
                                            .sounds = parts.sounds,
                                            .signIn = [this] { signIn(); },
-                                           .signOut = [this] { signOut(); }}),
+                                           .signOut = [this] { signOut(); },
+                                           .language = settings_->language}),
       squadron_(parts.motion, parts.seed, parts.squadronStart) {
   repaint();
 }
@@ -85,19 +86,24 @@ bool TitleScreen::hidesScreensBelow() const { return true; }
 
 Menu TitleScreen::buildMenu(std::optional<std::size_t> selected) const {
   IScreenNavigator& navigator = *navigator_;
+  const Language language = settings_->language;
   const ScreenId playScreen = playScreenOf(playStart_);
   return MenuBuilder(MenuBuilder::Frame::Page, sounds_)
       .version(GAME_VERSION_TEXT)
       .logo(LOGO_ID, LOGO_SIZE)
-      .subtitle(TITLE_SUBTITLE)
-      .button({.label = PLAY_LABEL, .description = PLAY_DESCRIPTION},
+      .subtitle(std::string(TITLE_SUBTITLE.in(language)))
+      .button({.label = std::string(PLAY_LABEL.in(language)),
+               .description = std::string(PLAY_DESCRIPTION.in(language))},
               [&navigator, playScreen] { navigator.push(playScreen); })
       .button(
-          {.label = LEADERBOARD_LABEL, .description = LEADERBOARD_DESCRIPTION},
+          {.label = LEADERBOARD_LABEL,
+           .description = std::string(LEADERBOARD_DESCRIPTION.in(language))},
           [&navigator] { navigator.push(LEADERBOARD_SCREEN); })
-      .button({.label = SETTINGS_LABEL, .description = SETTINGS_DESCRIPTION},
+      .button({.label = std::string(SETTINGS_LABEL.in(language)),
+               .description = std::string(SETTINGS_DESCRIPTION.in(language))},
               [&navigator] { navigator.push(OPTIONS_SCREEN); })
-      .cancelButton({.label = QUIT_LABEL, .description = QUIT_DESCRIPTION},
+      .cancelButton({.label = std::string(QUIT_LABEL.in(language)),
+                     .description = std::string(QUIT_DESCRIPTION.in(language))},
                     [&navigator] { navigator.push(QUIT_CONFIRMATION_SCREEN); })
       .illustration(SQUADRON_BOX_SIZE)
       .footer(COPYRIGHT_TEXT)
@@ -109,6 +115,7 @@ void TitleScreen::followLanguage() {
     return;
   }
   menu_ = buildMenu(menu_.selectedButton());
+  accountChips_.followLanguage(settings_->language);
   builtIn_ = settings_->language;
 }
 

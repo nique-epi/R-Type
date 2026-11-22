@@ -11,6 +11,7 @@
 #include "ConnectionScreenParts.hpp"
 #include "ConnectionStart.hpp"
 #include "DialogMenus.hpp"
+#include "DialogTools.hpp"
 #include "GameListSnapshot.hpp"
 #include "HeadphonesScreen.hpp"
 #include "HeadphonesScreenParts.hpp"
@@ -114,24 +115,30 @@ std::unique_ptr<IScreen> buildOptionsScreen(const ScreenContext& context,
       interfaceCanvasOf(context));
 }
 
+/** @returns What a dialog of @p context is built with. */
+DialogTools dialogToolsOf(const ScreenContext& context) {
+  return DialogTools{.navigator = context.navigator.get(),
+                     .sounds = soundsOf(context),
+                     .language = context.services.settings.get().language};
+}
+
 std::unique_ptr<IScreen> buildQuitConfirmationScreen(
     const ScreenContext& context) {
-  return dialogScreenOf(context, quitConfirmationMenu(context.navigator.get(),
-                                                      soundsOf(context)));
+  return dialogScreenOf(context, quitConfirmationMenu(dialogToolsOf(context)));
 }
 
 std::unique_ptr<IScreen> buildLeaveGameConfirmationScreen(
     const ScreenContext& context) {
-  return dialogScreenOf(context, leaveGameConfirmationMenu(
-                                     context.navigator.get(), soundsOf(context),
-                                     context.services.connection.get()));
+  return dialogScreenOf(
+      context, leaveGameConfirmationMenu(dialogToolsOf(context),
+                                         context.services.connection.get()));
 }
 
 std::unique_ptr<IScreen> buildConnectionLostScreen(
     const ScreenContext& context) {
   return dialogScreenOf(
       context,
-      connectionLostMenu(context.navigator.get(), soundsOf(context),
+      connectionLostMenu(dialogToolsOf(context),
                          context.services.connection.get().status().phase));
 }
 

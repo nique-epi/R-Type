@@ -7,36 +7,58 @@
 #include "InterfaceColorConstants.hpp"
 #include "InterfaceConstants.hpp"
 #include "TextStyle.hpp"
+#include "Translation.hpp"
 #include "WidgetConstants.hpp"
 
 namespace rtype::client {
 
 /** @brief What the sign-in dialog writes while it waits for a code, while a
  * player validates it, and once signed in. */
-constexpr std::string_view SIGN_IN_TITLE = "SIGN IN";
-constexpr std::string_view ASKING_CODE_LINE = "ASKING THE MASTER FOR A CODE...";
-constexpr std::string_view ENTER_CODE_AT_START = "ENTER IT AT ";
-constexpr std::string_view VALID_FOR_START = "VALID FOR ";
-constexpr std::string_view MINUTES_END = " MIN";
-constexpr std::string_view LAST_MINUTE_TEXT = "VALID FOR UNDER A MINUTE";
-constexpr std::string_view SIGNED_IN_TITLE = "SIGNED IN";
-constexpr std::string_view OPENING_ACCOUNT_LINE = "OPENING YOUR ACCOUNT...";
+constexpr Translation SIGN_IN_TITLE{.english = "SIGN IN",
+                                    .french = "CONNEXION"};
+constexpr Translation ASKING_CODE_LINE{
+    .english = "ASKING THE MASTER FOR A CODE...",
+    .french = "DEMANDE D'UN CODE AU MAÎTRE..."};
+constexpr std::string_view PAGE_MARK = "{PAGE}";
+constexpr std::string_view MINUTES_MARK = "{MINUTES}";
+constexpr Translation ENTER_CODE_AT{.english = "ENTER IT AT {PAGE}",
+                                    .french = "À SAISIR SUR {PAGE}"};
+constexpr Translation VALID_FOR{.english = "VALID FOR {MINUTES} MIN",
+                                .french = "VALABLE {MINUTES} MIN"};
+constexpr Translation LAST_MINUTE_TEXT{.english = "VALID FOR UNDER A MINUTE",
+                                       .french = "MOINS D'UNE MINUTE"};
+constexpr Translation SIGNED_IN_TITLE{.english = "SIGNED IN",
+                                      .french = "CONNECTÉ"};
+constexpr Translation OPENING_ACCOUNT_LINE{
+    .english = "OPENING YOUR ACCOUNT...",
+    .french = "OUVERTURE DE VOTRE COMPTE..."};
 
 /** @brief What it writes when the link ends without a session. */
-constexpr std::string_view DENIED_TITLE = "CODE REFUSED";
-constexpr std::string_view DENIED_LINE = "THE SITE REFUSED THE CODE.";
-constexpr std::string_view EXPIRED_TITLE = "CODE EXPIRED";
-constexpr std::string_view EXPIRED_LINE = "ASK FOR A NEW CODE.";
-constexpr std::string_view REFUSED_TITLE = "TOO MANY CODES";
-constexpr std::string_view REFUSED_LINE = "WAIT A WHILE, THEN ASK AGAIN.";
-constexpr std::string_view UNREACHABLE_TITLE = "NO MASTER";
-constexpr std::string_view UNREACHABLE_LINE = "THE MASTER DOES NOT ANSWER.";
-constexpr std::string_view SESSION_REFUSED_TITLE = "SIGN IN FAILED";
-constexpr std::string_view SESSION_REFUSED_LINE =
-    "THE MASTER REFUSED THE SESSION.";
+constexpr Translation DENIED_TITLE{.english = "CODE REFUSED",
+                                   .french = "CODE REFUSÉ"};
+constexpr Translation DENIED_LINE{.english = "THE SITE REFUSED THE CODE.",
+                                  .french = "LE SITE A REFUSÉ LE CODE."};
+constexpr Translation EXPIRED_TITLE{.english = "CODE EXPIRED",
+                                    .french = "CODE EXPIRÉ"};
+constexpr Translation EXPIRED_LINE{.english = "ASK FOR A NEW CODE.",
+                                   .french = "DEMANDEZ UN NOUVEAU CODE."};
+constexpr Translation REFUSED_TITLE{.english = "TOO MANY CODES",
+                                    .french = "TROP DE CODES"};
+constexpr Translation REFUSED_LINE{.english = "WAIT A WHILE, THEN ASK AGAIN.",
+                                   .french = "PATIENTEZ, PUIS REDEMANDEZ."};
+constexpr Translation UNREACHABLE_TITLE{.english = "NO MASTER",
+                                        .french = "MAÎTRE INJOIGNABLE"};
+constexpr Translation UNREACHABLE_LINE{.english = "THE MASTER DOES NOT ANSWER.",
+                                       .french = "LE MAÎTRE NE RÉPOND PAS."};
+constexpr Translation SESSION_REFUSED_TITLE{.english = "SIGN IN FAILED",
+                                            .french = "CONNEXION ÉCHOUÉE"};
+constexpr Translation SESSION_REFUSED_LINE{
+    .english = "THE MASTER REFUSED THE SESSION.",
+    .french = "LE MAÎTRE A REFUSÉ LA SESSION."};
 
 /** @brief The button that asks for another code once one ended. */
-constexpr const char* NEW_CODE_LABEL = "NEW CODE";
+constexpr Translation NEW_CODE_LABEL{.english = "NEW CODE",
+                                     .french = "NOUVEAU CODE"};
 
 /** @brief The schemes left out of the address the dialog writes, so the
  * player reads `RTYPE.APP/LINK`. */

@@ -80,7 +80,7 @@ Menu withBack(const OptionsTabsParts& parts, MenuBuilder& builder,
       {.label = BACK_LABEL, .description = inLanguage(parts, BACK_DESCRIPTION)},
       parts.close);
   if (parts.place == OptionsPlace::OverGame) {
-    builder.button({.label = QUIT_LABEL,
+    builder.button({.label = inLanguage(parts, QUIT_LABEL),
                     .description = inLanguage(parts, QUIT_GAME_DESCRIPTION)},
                    parts.leaveGame);
   }

@@ -181,7 +181,7 @@ TEST_F(DialogMenusFixture, AnsweringTheQuitConfirmationPlaysTheClick) {
 TEST_F(DialogMenusFixture, ASilentServerStoppedAnswering) {
   openConnectionLost(ConnectionPhase::Lost);
 
-  EXPECT_NE(writingOf(canvas(), CONNECTION_LOST_HEADING), nullptr);
+  EXPECT_NE(writingOf(canvas(), CONNECTION_LOST_HEADING.english), nullptr);
   EXPECT_NE(writingOf(canvas(), "THE SERVER STOPPED ANSWERING."), nullptr);
 }
 
@@ -193,7 +193,7 @@ TEST_F(DialogMenusFixture, ASilentServerStoppedAnswering) {
 TEST_F(DialogMenusFixture, AClosedServerShutDown) {
   openConnectionLost(ConnectionPhase::Closed);
 
-  EXPECT_NE(writingOf(canvas(), CONNECTION_LOST_HEADING), nullptr);
+  EXPECT_NE(writingOf(canvas(), CONNECTION_LOST_HEADING.english), nullptr);
   EXPECT_NE(writingOf(canvas(), "THE SERVER SHUT DOWN."), nullptr);
 }
 
@@ -205,7 +205,7 @@ TEST_F(DialogMenusFixture, AClosedServerShutDown) {
 TEST_F(DialogMenusFixture, AnExpelledPilotIsToldTheHostExpelledIt) {
   openConnectionLost(ConnectionPhase::Expelled);
 
-  EXPECT_NE(writingOf(canvas(), CONNECTION_LOST_HEADING), nullptr);
+  EXPECT_NE(writingOf(canvas(), CONNECTION_LOST_HEADING.english), nullptr);
   EXPECT_NE(writingOf(canvas(), "THE HOST EXPELLED YOU."), nullptr);
 }
 
@@ -218,9 +218,9 @@ TEST(DialogMenus, TheReasonsOfALostConnectionFitTheirPanel) {
   const int widestLine =
       DIALOG_SIZE.x - (SIDES_PER_AXIS * DIALOG_MESSAGE_OFFSET.x);
 
-  EXPECT_LE(regularTextWidth(SILENT_SERVER_MESSAGE), widestLine);
-  EXPECT_LE(regularTextWidth(CLOSED_SERVER_MESSAGE), widestLine);
-  EXPECT_LE(regularTextWidth(EXPELLED_MESSAGE), widestLine);
+  EXPECT_LE(regularTextWidth(SILENT_SERVER_MESSAGE.english), widestLine);
+  EXPECT_LE(regularTextWidth(CLOSED_SERVER_MESSAGE.english), widestLine);
+  EXPECT_LE(regularTextWidth(EXPELLED_MESSAGE.english), widestLine);
 }
 
 /**

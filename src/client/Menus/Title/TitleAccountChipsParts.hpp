@@ -4,6 +4,7 @@
 #include "IAccountSession.hpp"
 #include "ISoundPlayer.hpp"
 #include "IWallet.hpp"
+#include "Language.hpp"
 
 namespace rtype::client {
 
@@ -22,6 +23,7 @@ struct TitleAccountChipsParts {
   std::reference_wrapper<ISoundPlayer> sounds;
   std::function<void()> signIn;
   std::function<void()> signOut;
+  Language language = Language::English;
 };
 
 }  // namespace rtype::client

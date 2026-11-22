@@ -7,6 +7,7 @@
 #include "FakeAccountSession.hpp"
 #include "FakeWallet.hpp"
 #include "KeyPress.hpp"
+#include "Language.hpp"
 #include "MenuScreenIdConstants.hpp"
 #include "MotionPreference.hpp"
 #include "PlayStart.hpp"
@@ -31,6 +32,7 @@
 using rtype::client::CLICK_SOUND_ID;
 using rtype::client::CONNECTION_TO_CHOSEN_SERVER_SCREEN;
 using rtype::client::ENTITY_SHEET_ID;
+using rtype::client::Language;
 using rtype::client::LEADERBOARD_SCREEN;
 using rtype::client::LOGO_ID;
 using rtype::client::MotionPreference;
@@ -45,6 +47,7 @@ using rtype::client::TitleScreen;
 using rtype::client::TitleScreenParts;
 using rtype::client::UPDATE_SCREEN;
 using rtype::client::WHATS_NEW_SCREEN;
+using rtype::client::testing::FRENCH_PLAY_LABEL;
 using rtype::client::testing::LOGO_TOP_LEFT;
 using rtype::client::testing::PLAY_BAR_MIDDLE;
 using rtype::client::testing::SHIP_SIZE;
@@ -334,4 +337,16 @@ TEST_F(TitleScreenFixture, AsksNothingWithoutAnUpdateModule) {
   title().update(TITLE_FRAME);
 
   EXPECT_THAT(navigator().calls(), IsEmpty());
+}
+
+/**
+ * Given the title built in English, as the options opened over it find it
+ * When the player picks French and a frame passes
+ * Then the title writes PLAY in French, without being opened again
+ */
+TEST_F(TitleScreenFixture, ATitleUnderTheOptionsTurnsFrench) {
+  settings().language = Language::French;
+  title().update(TITLE_FRAME);
+
+  EXPECT_NE(writingOf(canvas(), FRENCH_PLAY_LABEL), nullptr);
 }

@@ -2,15 +2,19 @@
 #include <optional>
 #include <string>
 #include "DeviceLinkPhase.hpp"
+#include "Language.hpp"
 #include "SignInFixtures.hpp"
 #include "SignInLines.hpp"
 #include "SignInTestConstants.hpp"
 #include "SignInText.hpp"
 
 using rtype::client::DeviceLinkPhase;
+using rtype::client::Language;
 using rtype::client::pageShownOf;
 using rtype::client::SignInLines;
 using rtype::client::signInLinesOf;
+using rtype::client::SignInStanding;
+using rtype::client::testing::FRENCH_NINE_MINUTES_VALIDITY;
 using rtype::client::testing::HALF_A_MINUTE_LATER;
 using rtype::client::testing::LAST_MINUTE_VALIDITY;
 using rtype::client::testing::NINE_AND_A_HALF_MINUTES_LATER;
@@ -31,7 +35,8 @@ using rtype::client::testing::waitingReading;
  */
 TEST(SignInText, AWaitingCodeGivesItsPageAndItsWholeMinutes) {
   const SignInLines lines = signInLinesOf(
-      waitingReading(1, NINE_AND_A_HALF_MINUTES_LATER), SIGN_IN_NOW, false);
+      waitingReading(1, NINE_AND_A_HALF_MINUTES_LATER),
+      SignInStanding{.now = SIGN_IN_NOW, .sessionRefused = false});
 
   EXPECT_EQ(lines, (SignInLines{.title = std::string{SHOWN_CODE},
                                 .line = std::string{PAGE_LINE},
@@ -40,13 +45,31 @@ TEST(SignInText, AWaitingCodeGivesItsPageAndItsWholeMinutes) {
 }
 
 /**
+ * Given the client in French and a code that expires nine and a half
+ * minutes from now
+ * When the dialog writes it
+ * Then it says in French that nine whole minutes are left
+ */
+TEST(SignInText, AWaitingCodeTellsItsMinutesInFrench) {
+  const SignInLines lines =
+      signInLinesOf(waitingReading(1, NINE_AND_A_HALF_MINUTES_LATER),
+                    SignInStanding{.now = SIGN_IN_NOW,
+                                   .sessionRefused = false,
+                                   .language = Language::French});
+
+  EXPECT_EQ(lines.validity.value_or(std::string{}),
+            FRENCH_NINE_MINUTES_VALIDITY);
+}
+
+/**
  * Given a code that expires half a minute from now
  * When the dialog writes it
  * Then it says under a minute is left, never 0 minutes
  */
 TEST(SignInText, ACodeInItsLastMinuteSaysUnderAMinute) {
-  const SignInLines lines =
-      signInLinesOf(waitingReading(1, HALF_A_MINUTE_LATER), SIGN_IN_NOW, false);
+  const SignInLines lines = signInLinesOf(
+      waitingReading(1, HALF_A_MINUTE_LATER),
+      SignInStanding{.now = SIGN_IN_NOW, .sessionRefused = false});
 
   EXPECT_EQ(lines.validity.value_or(std::string{}), LAST_MINUTE_VALIDITY);
 }
@@ -58,7 +81,8 @@ TEST(SignInText, ACodeInItsLastMinuteSaysUnderAMinute) {
  */
 TEST(SignInText, AnExpiredCodeHasNoTimeLeft) {
   EXPECT_FALSE(
-      signInLinesOf(readingAt(1, DeviceLinkPhase::Expired), SIGN_IN_NOW, false)
+      signInLinesOf(readingAt(1, DeviceLinkPhase::Expired),
+                    SignInStanding{.now = SIGN_IN_NOW, .sessionRefused = false})
           .validity.has_value());
 }
 
@@ -71,8 +95,10 @@ TEST(SignInText, ALinkEndedWithoutASessionOffersANewCode) {
   for (const DeviceLinkPhase phase :
        {DeviceLinkPhase::Denied, DeviceLinkPhase::Expired,
         DeviceLinkPhase::Refused, DeviceLinkPhase::Unreachable}) {
-    EXPECT_TRUE(
-        signInLinesOf(readingAt(1, phase), SIGN_IN_NOW, false).offersNewCode);
+    EXPECT_TRUE(signInLinesOf(
+                    readingAt(1, phase),
+                    SignInStanding{.now = SIGN_IN_NOW, .sessionRefused = false})
+                    .offersNewCode);
   }
 }
 
@@ -83,7 +109,8 @@ TEST(SignInText, ALinkEndedWithoutASessionOffersANewCode) {
  */
 TEST(SignInText, ASessionRefusedOffersANewCode) {
   EXPECT_TRUE(
-      signInLinesOf(readingAt(1, DeviceLinkPhase::SignedIn), SIGN_IN_NOW, true)
+      signInLinesOf(readingAt(1, DeviceLinkPhase::SignedIn),
+                    SignInStanding{.now = SIGN_IN_NOW, .sessionRefused = true})
           .offersNewCode);
 }
 

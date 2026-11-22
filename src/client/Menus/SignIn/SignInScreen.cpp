@@ -15,6 +15,7 @@
 #include "SignInReturn.hpp"
 #include "SignInScreenConstants.hpp"
 #include "SignInScreenParts.hpp"
+#include "SignInStanding.hpp"
 #include "SignInText.hpp"
 #include "TimeConstants.hpp"
 #include "WaitingCodePainting.hpp"
@@ -28,7 +29,10 @@ SignInScreen::SignInScreen(SignInScreenParts parts,
       canvas_(std::move(canvas)),
       menu_(MenuBuilder(MenuBuilder::Frame::Dialog).build()),
       ask_(parts_.deviceLinks.get().askLink()) {
-  show(signInLinesOf(std::nullopt, parts_.now(), false));
+  show(signInLinesOf(std::nullopt,
+                     SignInStanding{.now = parts_.now(),
+                                    .sessionRefused = false,
+                                    .language = canvas_->language()}));
   repaint();
 }
 
@@ -42,8 +46,12 @@ void SignInScreen::update(engine::Duration elapsed) {
   if (reading.has_value() && reading->ask != ask_) {
     reading.reset();
   }
-  show(signInLinesOf(reading, parts_.now(),
-                     parts_.account.get().signInRefusal().has_value()));
+  show(signInLinesOf(
+      reading,
+      SignInStanding{
+          .now = parts_.now(),
+          .sessionRefused = parts_.account.get().signInRefusal().has_value(),
+          .language = canvas_->language()}));
   menu_.advance(elapsed);
   repaint();
 }
@@ -102,7 +110,9 @@ void SignInScreen::show(const SignInLines& lines) {
     builder.heading(lines.title).message(lines.line);
   }
   if (lines.offersNewCode) {
-    builder.button({.label = NEW_CODE_LABEL}, [this] { askNewCode(); });
+    builder.button(
+        {.label = std::string(NEW_CODE_LABEL.in(canvas_->language()))},
+        [this] { askNewCode(); });
   }
   menu_ =
       builder.cancelButton({.label = BACK_LABEL}, [this] { back(); }).build();
