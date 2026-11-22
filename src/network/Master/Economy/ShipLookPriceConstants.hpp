@@ -33,11 +33,11 @@ constexpr std::uint32_t MOHAWK_PRICE = 250;
 constexpr std::uint32_t GLASSES_3D_PRICE = 150;
 constexpr std::uint32_t MONOCLE_PRICE = 500;
 constexpr std::uint32_t LONG_BEARD_PRICE = 350;
-constexpr std::uint32_t WAR_SHARK_PRICE = 2000;
-constexpr std::uint32_t VOSTOK_PRICE = 2500;
-constexpr std::uint32_t BYDO_HUSK_PRICE = 3000;
-constexpr std::uint32_t GOLDEN_ACE_PRICE = 5000;
-constexpr std::uint32_t GOLDEN_BYDO_PRICE = 10000;
+constexpr std::uint32_t WAR_SHARK_PRICE = 4000;
+constexpr std::uint32_t VOSTOK_PRICE = 5000;
+constexpr std::uint32_t BYDO_HUSK_PRICE = 6000;
+constexpr std::uint32_t GOLDEN_ACE_PRICE = 10000;
+constexpr std::uint32_t GOLDEN_BYDO_PRICE = 20000;
 
 /** @brief The prices, in the order of identifiers::SHIP_LOOK_ITEM_NAMES. */
 constexpr std::array<std::uint32_t, identifiers::SHIP_LOOK_ITEM_COUNT>
