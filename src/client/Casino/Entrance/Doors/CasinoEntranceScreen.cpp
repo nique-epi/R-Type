@@ -59,7 +59,7 @@ CasinoEntranceScreen::CasinoEntranceScreen(
                  CasinoChipWiring{.action = [this] { navigator_->pop(); },
                                   .sounds = parts.sounds,
                                   .language = canvas_->language()})) {
-  butlerLine_.say(WELCOME_SPEECH);
+  butlerLine_.say(WELCOME_SPEECH.in(canvas_->language()));
   repaint();
 }
 

@@ -2,9 +2,11 @@
 
 #include <cstdint>
 #include <string>
+#include "CashierAttempt.hpp"
 #include "CashierExchange.hpp"
 #include "CashierWay.hpp"
 #include "ExchangeRequest.hpp"
+#include "Language.hpp"
 #include "Wallet.hpp"
 #include "WalletRefusal.hpp"
 
@@ -31,15 +33,16 @@ namespace rtype::client {
                                           CashierWay way);
 
 /**
- * @returns Why @p tried, an exchange of @p amount @p way, was refused, in
- * words: CHOOSE AN AMOUNT; NOT ENOUGH KOPECKS (or CHIPS), with how many are
- * missing; NO ROOM LEFT FOR MORE CHIPS (or KOPECKS). Nothing for an exchange
- * the cashier makes.
+ * @returns Why the exchange of @p attempt was refused, in words, in
+ * @p language: CHOOSE AN AMOUNT; NOT ENOUGH KOPECKS (or CHIPS), with how many
+ * are missing; NO ROOM LEFT FOR MORE CHIPS (or KOPECKS). Nothing for an
+ * exchange the cashier makes.
  */
-[[nodiscard]] std::string cashierLineOf(const CashierExchange& tried,
-                                        CashierWay way, std::uint32_t amount);
+[[nodiscard]] std::string cashierLineOf(const CashierAttempt& attempt,
+                                        Language language);
 
 /** @returns Why the master did not make an exchange, in words. */
-[[nodiscard]] std::string cashierRefusalLineOf(WalletRefusal refusal);
+[[nodiscard]] std::string cashierRefusalLineOf(WalletRefusal refusal,
+                                               Language language);
 
 }  // namespace rtype::client

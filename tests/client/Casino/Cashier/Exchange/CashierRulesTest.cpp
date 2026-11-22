@@ -1,16 +1,21 @@
 #include <gtest/gtest.h>
+#include "CashierAttempt.hpp"
 #include "CashierRules.hpp"
 #include "CashierRulesTestConstants.hpp"
 #include "CashierWay.hpp"
+#include "Language.hpp"
 #include "WalletRefusal.hpp"
 
+using rtype::client::CashierAttempt;
 using rtype::client::cashierLineOf;
 using rtype::client::cashierRefusalLineOf;
 using rtype::client::CashierWay;
 using rtype::client::exchangeAt;
+using rtype::client::Language;
 using rtype::client::WalletRefusal;
 using rtype::client::testing::A_WALLET;
 using rtype::client::testing::CHOOSE_AN_AMOUNT;
+using rtype::client::testing::FRENCH_TWO_HUNDRED_FIFTY_KOPECKS_MISSING;
 using rtype::client::testing::FULL_CHIPS;
 using rtype::client::testing::NO_AMOUNT;
 using rtype::client::testing::NO_ROOM_FOR_MORE_CHIPS;
@@ -26,8 +31,12 @@ using rtype::client::testing::TWO_HUNDRED_FIFTY_KOPECKS_TOO_MANY;
  * Then the cashier asks for an amount
  */
 TEST(CashierRules, NoAmountAsksForOne) {
-  EXPECT_EQ(cashierLineOf(exchangeAt(A_WALLET, CashierWay::BuyChips, NO_AMOUNT),
-                          CashierWay::BuyChips, NO_AMOUNT),
+  EXPECT_EQ(cashierLineOf(
+                CashierAttempt{.tried = exchangeAt(
+                                   A_WALLET, CashierWay::BuyChips, NO_AMOUNT),
+                               .way = CashierWay::BuyChips,
+                               .amount = NO_AMOUNT},
+                Language::English),
             CHOOSE_AN_AMOUNT);
 }
 
@@ -38,9 +47,12 @@ TEST(CashierRules, NoAmountAsksForOne) {
  */
 TEST(CashierRules, CashingOutMoreThanHeldSaysWhatIsMissing) {
   EXPECT_EQ(
-      cashierLineOf(exchangeAt(A_WALLET, CashierWay::CashOut,
-                               TWO_HUNDRED_FIFTY_CHIPS_TOO_MANY),
-                    CashierWay::CashOut, TWO_HUNDRED_FIFTY_CHIPS_TOO_MANY),
+      cashierLineOf(
+          CashierAttempt{.tried = exchangeAt(A_WALLET, CashierWay::CashOut,
+                                             TWO_HUNDRED_FIFTY_CHIPS_TOO_MANY),
+                         .way = CashierWay::CashOut,
+                         .amount = TWO_HUNDRED_FIFTY_CHIPS_TOO_MANY},
+          Language::English),
       TWO_HUNDRED_FIFTY_CHIPS_MISSING);
 }
 
@@ -50,11 +62,30 @@ TEST(CashierRules, CashingOutMoreThanHeldSaysWhatIsMissing) {
  * Then the cashier says 250 kopecks are missing
  */
 TEST(CashierRules, BuyingMoreThanHeldSaysWhatIsMissing) {
-  EXPECT_EQ(
-      cashierLineOf(exchangeAt(A_WALLET, CashierWay::BuyChips,
-                               TWO_HUNDRED_FIFTY_KOPECKS_TOO_MANY),
-                    CashierWay::BuyChips, TWO_HUNDRED_FIFTY_KOPECKS_TOO_MANY),
-      TWO_HUNDRED_FIFTY_KOPECKS_MISSING);
+  EXPECT_EQ(cashierLineOf(
+                CashierAttempt{
+                    .tried = exchangeAt(A_WALLET, CashierWay::BuyChips,
+                                        TWO_HUNDRED_FIFTY_KOPECKS_TOO_MANY),
+                    .way = CashierWay::BuyChips,
+                    .amount = TWO_HUNDRED_FIFTY_KOPECKS_TOO_MANY},
+                Language::English),
+            TWO_HUNDRED_FIFTY_KOPECKS_MISSING);
+}
+
+/**
+ * Given a wallet of 4 250 kopecks and the client in French
+ * When 4 500 chips are bought
+ * Then the cashier says in French that 250 kopecks are missing
+ */
+TEST(CashierRules, SaysWhatIsMissingInFrench) {
+  EXPECT_EQ(cashierLineOf(
+                CashierAttempt{
+                    .tried = exchangeAt(A_WALLET, CashierWay::BuyChips,
+                                        TWO_HUNDRED_FIFTY_KOPECKS_TOO_MANY),
+                    .way = CashierWay::BuyChips,
+                    .amount = TWO_HUNDRED_FIFTY_KOPECKS_TOO_MANY},
+                Language::French),
+            FRENCH_TWO_HUNDRED_FIFTY_KOPECKS_MISSING);
 }
 
 /**
@@ -75,10 +106,13 @@ TEST(CashierRules, ARefusedExchangeLeavesTheWallet) {
  * Then the cashier says the chips have no room left
  */
 TEST(CashierRules, BuyingIntoFullChipsSaysThereIsNoRoom) {
-  EXPECT_EQ(
-      cashierLineOf(exchangeAt(FULL_CHIPS, CashierWay::BuyChips, ONE_CHIP),
-                    CashierWay::BuyChips, ONE_CHIP),
-      NO_ROOM_FOR_MORE_CHIPS);
+  EXPECT_EQ(cashierLineOf(
+                CashierAttempt{.tried = exchangeAt(
+                                   FULL_CHIPS, CashierWay::BuyChips, ONE_CHIP),
+                               .way = CashierWay::BuyChips,
+                               .amount = ONE_CHIP},
+                Language::English),
+            NO_ROOM_FOR_MORE_CHIPS);
 }
 
 /**
@@ -87,10 +121,13 @@ TEST(CashierRules, BuyingIntoFullChipsSaysThereIsNoRoom) {
  * Then the cashier says nothing against it
  */
 TEST(CashierRules, AnExchangeTheCashierMakesHasNoLine) {
-  EXPECT_TRUE(
-      cashierLineOf(exchangeAt(A_WALLET, CashierWay::BuyChips, ONE_CHIP),
-                    CashierWay::BuyChips, ONE_CHIP)
-          .empty());
+  EXPECT_TRUE(cashierLineOf(
+                  CashierAttempt{.tried = exchangeAt(
+                                     A_WALLET, CashierWay::BuyChips, ONE_CHIP),
+                                 .way = CashierWay::BuyChips,
+                                 .amount = ONE_CHIP},
+                  Language::English)
+                  .empty());
 }
 
 /**
@@ -99,6 +136,7 @@ TEST(CashierRules, AnExchangeTheCashierMakesHasNoLine) {
  * Then it asks for an amount
  */
 TEST(CashierRules, AnAmountTheMasterRefusesAsksForOne) {
-  EXPECT_EQ(cashierRefusalLineOf(WalletRefusal::InvalidAmount),
-            CHOOSE_AN_AMOUNT);
+  EXPECT_EQ(
+      cashierRefusalLineOf(WalletRefusal::InvalidAmount, Language::English),
+      CHOOSE_AN_AMOUNT);
 }

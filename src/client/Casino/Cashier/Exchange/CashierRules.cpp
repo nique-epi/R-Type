@@ -2,12 +2,16 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include "CashierAttempt.hpp"
 #include "CashierConstants.hpp"
 #include "CashierExchange.hpp"
 #include "CashierWay.hpp"
 #include "Currency.hpp"
 #include "ExchangeRequest.hpp"
 #include "Kopecks.hpp"
+#include "Language.hpp"
+#include "TextMarks.hpp"
+#include "Translation.hpp"
 #include "Wallet.hpp"
 #include "WalletBalances.hpp"
 #include "WalletExchangeRefusal.hpp"
@@ -18,13 +22,40 @@ namespace rtype::client {
 namespace {
 
 /** @returns The name of the balance @p way takes from. */
-std::string sourceWordOf(CashierWay way) {
+Translation sourceWordOf(CashierWay way) {
   return way == CashierWay::BuyChips ? KOPECKS_WORD : CHIPS_WORD;
 }
 
 /** @returns The name of the balance @p way gives to. */
-std::string destinationWordOf(CashierWay way) {
+Translation destinationWordOf(CashierWay way) {
   return way == CashierWay::BuyChips ? CHIPS_WORD : KOPECKS_WORD;
+}
+
+/** @returns @p line in @p language, the name of @p currency in its mark. */
+std::string withCurrency(Translation line, Translation currency,
+                         Language language) {
+  return withMark(
+      std::string(line.in(language)),
+      {.mark = CASHIER_CURRENCY_MARK, .value = currency.in(language)});
+}
+
+/** @returns Why the master did not make an exchange, in both languages. */
+Translation refusalTextOf(WalletRefusal refusal) {
+  switch (refusal) {
+    case WalletRefusal::BalanceRefused:
+      return BALANCES_REFUSED_LINE;
+    case WalletRefusal::SignedOut:
+      return SIGN_IN_AGAIN_LINE;
+    case WalletRefusal::MasterUnreachable:
+      return MASTER_SILENT_LINE;
+    case WalletRefusal::InvalidAmount:
+      return NOTHING_TO_EXCHANGE_LINE;
+    case WalletRefusal::NotForSale:
+    case WalletRefusal::UnknownItem:
+    case WalletRefusal::MasterRefused:
+      return MASTER_REFUSED_LINE;
+  }
+  return MASTER_REFUSED_LINE;
 }
 
 /** @returns The currency @p way takes from: the kopecks to buy chips, the
@@ -62,39 +93,27 @@ std::uint32_t destinationOf(const network::Wallet& wallet, CashierWay way) {
                             network::otherCurrency(currencyTakenBy(way)));
 }
 
-std::string cashierLineOf(const CashierExchange& tried, CashierWay way,
-                          std::uint32_t amount) {
-  if (!tried.refusal.has_value()) {
+std::string cashierLineOf(const CashierAttempt& attempt, Language language) {
+  if (!attempt.tried.refusal.has_value()) {
     return {};
   }
-  switch (*tried.refusal) {
+  switch (*attempt.tried.refusal) {
     case network::WalletExchangeRefusal::InvalidAmount:
-      return NOTHING_TO_EXCHANGE_LINE;
+      return std::string(NOTHING_TO_EXCHANGE_LINE.in(language));
     case network::WalletExchangeRefusal::NotEnough:
-      return NOT_ENOUGH_START + sourceWordOf(way) + MISSING_SEPARATOR +
-             kopecksText(amount - sourceOf(tried.wallet, way)) + MISSING_END;
+      return withMark(
+          withCurrency(NOT_ENOUGH_LINE, sourceWordOf(attempt.way), language),
+          {.mark = CASHIER_MISSING_MARK,
+           .value = kopecksText(attempt.amount -
+                                sourceOf(attempt.tried.wallet, attempt.way))});
     case network::WalletExchangeRefusal::PastTheMaximum:
       break;
   }
-  return FULL_START + destinationWordOf(way);
+  return withCurrency(FULL_LINE, destinationWordOf(attempt.way), language);
 }
 
-std::string cashierRefusalLineOf(WalletRefusal refusal) {
-  switch (refusal) {
-    case WalletRefusal::BalanceRefused:
-      return BALANCES_REFUSED_LINE;
-    case WalletRefusal::SignedOut:
-      return SIGN_IN_AGAIN_LINE;
-    case WalletRefusal::MasterUnreachable:
-      return MASTER_SILENT_LINE;
-    case WalletRefusal::InvalidAmount:
-      return NOTHING_TO_EXCHANGE_LINE;
-    case WalletRefusal::NotForSale:
-    case WalletRefusal::UnknownItem:
-    case WalletRefusal::MasterRefused:
-      return MASTER_REFUSED_LINE;
-  }
-  return MASTER_REFUSED_LINE;
+std::string cashierRefusalLineOf(WalletRefusal refusal, Language language) {
+  return std::string(refusalTextOf(refusal).in(language));
 }
 
 }  // namespace rtype::client

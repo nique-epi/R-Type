@@ -15,6 +15,7 @@
 #include "CasinoPaintingConstants.hpp"
 #include "LightBeam.hpp"
 #include "TimeConstants.hpp"
+#include "Translation.hpp"
 #include "TwinkleBeats.hpp"
 #include "WidgetConstants.hpp"
 
@@ -59,7 +60,8 @@ constexpr sf::IntRect HALL_RIGHT_ARCH({406, 62}, {60, 80});
 /** @brief The cartouche of the title, centered at the top of the picture. */
 constexpr sf::IntRect HALL_TITLE_AREA({180, 4}, {120, 13});
 constexpr sf::Vector2i HALL_TITLE_TOP_MIDDLE(240, 7);
-constexpr const char* HALL_TITLE = "MAIN HALL";
+constexpr Translation HALL_TITLE{.english = "MAIN HALL",
+                                 .french = "GRAND HALL"};
 
 /**
  * @brief The bulbs of the hall, lit in its picture: the pixels brighter than

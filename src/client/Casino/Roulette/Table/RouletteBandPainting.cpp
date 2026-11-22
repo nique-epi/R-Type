@@ -21,10 +21,12 @@ void paintRouletteBand(IInterfaceCanvas& canvas, const RouletteBand& band) {
   canvas.fill({{topLeft.x, topLeft.y + 1}, {BAND_AREA.size.x, 1}},
               CASINO_DARK_GOLD);
   const TextStyle caption{.font = TextFont::Small, .color = PALE_BLUE};
-  canvas.write(BAND_CHIPS_CAPTION_TEXT, BAND_CHIPS_CAPTION, caption);
+  canvas.write(BAND_CHIPS_CAPTION_TEXT.in(canvas.language()),
+               BAND_CHIPS_CAPTION, caption);
   canvas.write(kopecksText(band.chips), BAND_CHIPS_VALUE,
                TextStyle{.font = TextFont::Regular, .color = STAR_GOLD});
-  canvas.write(BAND_STAKE_CAPTION_TEXT, BAND_STAKE_CAPTION, caption);
+  canvas.write(BAND_STAKE_CAPTION_TEXT.in(canvas.language()),
+               BAND_STAKE_CAPTION, caption);
   canvas.write(kopecksText(band.stake), BAND_STAKE_VALUE,
                TextStyle{.font = TextFont::Regular, .color = STAR_WHITE});
   canvas.write(band.status, BAND_STATUS,

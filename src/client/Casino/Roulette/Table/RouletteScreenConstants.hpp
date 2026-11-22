@@ -7,8 +7,11 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <string_view>
 #include "CasinoBar.hpp"
+#include "LetterCounts.hpp"
 #include "TimeConstants.hpp"
+#include "Translation.hpp"
 #include "WidgetConstants.hpp"
 
 namespace rtype::client {
@@ -45,7 +48,9 @@ constexpr int CROUPIER_HELD_GREETING_FRAME = 2;
 constexpr sf::IntRect SPIN_PLAQUE_AREA({210, 62}, {104, 16});
 constexpr sf::Vector2i SPIN_PLAQUE_TEXT_TOP_LEFT(216, 64);
 constexpr sf::IntRect SPIN_PLAQUE_BAR({214, 73}, {96, 2});
-constexpr const char* SPIN_IN_START = "SPIN IN ";
+constexpr Translation SPIN_IN_LINE{.english = "SPIN IN {SECONDS}",
+                                   .french = "TIRAGE {SECONDS}"};
+constexpr std::string_view ROULETTE_SECONDS_MARK = "{SECONDS}";
 constexpr engine::Duration SPIN_COUNTDOWN_SPAN = std::chrono::seconds(20);
 constexpr std::int64_t SPIN_HURRY_SECONDS = 3;
 
@@ -64,9 +69,11 @@ constexpr int BIG_WIN_LINING_INSET = 3;
 constexpr sf::Vector2i BIG_WIN_TITLE_TOP_MIDDLE(240, 114);
 constexpr int BIG_WIN_TITLE_SCALE = 2;
 constexpr sf::Vector2i BIG_WIN_LINE_TOP_MIDDLE(240, 142);
-constexpr const char* BIG_WIN_TITLE = "JACKPOT";
-constexpr const char* BIG_WIN_WON = " WON ";
-constexpr const char* BIG_WIN_CHIPS = " CHIPS";
+constexpr Translation BIG_WIN_TITLE{.english = "JACKPOT", .french = "JACKPOT"};
+constexpr Translation BIG_WIN_LINE{.english = "{PILOT} WON {GAIN} CHIPS",
+                                   .french = "{PILOT} GAGNE {GAIN} JETONS"};
+constexpr std::string_view BIG_WIN_PILOT_MARK = "{PILOT}";
+constexpr std::string_view BIG_WIN_GAIN_MARK = "{GAIN}";
 
 /** @brief The keys that move the cursor over the cloth, and the one that lays
  * a chip of the value chosen where it stands. */
@@ -110,8 +117,10 @@ constexpr sf::Vector2i BAND_STAKE_CAPTION(70, 235);
 constexpr sf::Vector2i BAND_STAKE_VALUE(70, 245);
 constexpr sf::Vector2i BAND_STATUS(10, 258);
 constexpr sf::Vector2i BAND_FIRST_CHIP(150, 235);
-constexpr const char* BAND_CHIPS_CAPTION_TEXT = "CHIPS";
-constexpr const char* BAND_STAKE_CAPTION_TEXT = "STAKE";
+constexpr Translation BAND_CHIPS_CAPTION_TEXT{.english = "CHIPS",
+                                              .french = "JETONS"};
+constexpr Translation BAND_STAKE_CAPTION_TEXT{.english = "STAKE",
+                                              .french = "MISE"};
 
 /** @brief The bars of the band: CLEAR and REBET side by side, BACK under
  * REBET. */
@@ -134,30 +143,50 @@ constexpr CasinoBar TABLE_BACK_BAR{.label = BACK_LABEL,
  * close, the wheel turning with the seconds before it stops; at the result,
  * the number and its color, then the gain or the loss of the player.
  */
-constexpr const char* TABLE_CLOSED_LINE = "THE TABLE IS CLOSED";
-constexpr const char* NO_CHIPS_LINE = "NO CHIPS - SEE THE CASHIER";
-constexpr const char* BETS_CLOSE_IN_START = "PLACE YOUR BETS - CLOSE IN ";
-constexpr const char* RESULT_IN_START = "NO MORE BETS - RESULT IN ";
-constexpr const char* NO_MORE_BETS_LINE = "NO MORE BETS";
+constexpr Translation TABLE_CLOSED_LINE{.english = "THE TABLE IS CLOSED",
+                                        .french = "LA TABLE EST FERMÉE"};
+constexpr Translation NO_CHIPS_LINE{.english = "NO CHIPS - SEE THE CASHIER",
+                                    .french = "AUCUN JETON - VOIR LA CAISSE"};
+constexpr Translation BETS_CLOSE_IN_LINE{
+    .english = "PLACE YOUR BETS - CLOSE IN {SECONDS}",
+    .french = "FAITES VOS JEUX - FIN DANS {SECONDS}"};
+constexpr Translation RESULT_IN_LINE{
+    .english = "NO MORE BETS - RESULT IN {SECONDS}",
+    .french = "RIEN NE VA PLUS - RÉSULTAT DANS {SECONDS}"};
+constexpr Translation NO_MORE_BETS_LINE{.english = "NO MORE BETS",
+                                        .french = "RIEN NE VA PLUS"};
 constexpr const char* RESULT_GAP = " ";
 constexpr const char* GAIN_GAP = "  ";
 constexpr const char* GAIN_SIGN = "+";
 constexpr const char* LOSS_SIGN = "-";
-constexpr const char* RED_WORD = "RED";
-constexpr const char* BLACK_WORD = "BLACK";
-constexpr const char* GREEN_WORD = "GREEN";
+constexpr Translation RED_WORD{.english = "RED", .french = "ROUGE"};
+constexpr Translation BLACK_WORD{.english = "BLACK", .french = "NOIR"};
+constexpr Translation GREEN_WORD{.english = "GREEN", .french = "VERT"};
 
 /** @brief What the status line says while the bets are open when the master
  * refused the newest bets or the seat, by CasinoRefusal. */
-constexpr const char* BETS_CLOSED_LINE = "TOO LATE - THE BETS ARE CLOSED";
-constexpr const char* NOT_SEATED_LINE = "NO SEAT AT THIS TABLE YET";
-constexpr const char* RULE_BROKEN_LINE = "THE TABLE REFUSES THESE BETS";
-constexpr const char* NOT_ENOUGH_CHIPS_LINE =
-    "NOT ENOUGH CHIPS - SEE THE CASHIER";
-constexpr const char* ROOM_FULL_LINE = "THE TABLE IS FULL";
-constexpr const char* SIGNED_OUT_LINE = "SIGN IN TO PLAY";
-constexpr const char* CASINO_REFUSED_LINE = "THE CASINO REFUSED THE BETS";
-constexpr const char* CASINO_SILENT_LINE = "THE CASINO DOES NOT ANSWER";
+constexpr Translation BETS_CLOSED_LINE{
+    .english = "TOO LATE - THE BETS ARE CLOSED",
+    .french = "TROP TARD - LES JEUX SONT FAITS"};
+constexpr Translation NOT_SEATED_LINE{
+    .english = "NO SEAT AT THIS TABLE YET",
+    .french = "PAS ENCORE DE PLACE À CETTE TABLE"};
+constexpr Translation RULE_BROKEN_LINE{
+    .english = "THE TABLE REFUSES THESE BETS",
+    .french = "LA TABLE REFUSE CES MISES"};
+constexpr Translation NOT_ENOUGH_CHIPS_LINE{
+    .english = "NOT ENOUGH CHIPS - SEE THE CASHIER",
+    .french = "MANQUE DE JETONS - VOIR LA CAISSE"};
+constexpr Translation ROOM_FULL_LINE{.english = "THE TABLE IS FULL",
+                                     .french = "LA TABLE EST PLEINE"};
+constexpr Translation SIGNED_OUT_LINE{.english = "SIGN IN TO PLAY",
+                                      .french = "CONNECTEZ-VOUS POUR JOUER"};
+constexpr Translation CASINO_REFUSED_LINE{
+    .english = "THE CASINO REFUSED THE BETS",
+    .french = "LE CASINO A REFUSÉ LES MISES"};
+constexpr Translation CASINO_SILENT_LINE{
+    .english = "THE CASINO DOES NOT ANSWER",
+    .french = "LE CASINO NE RÉPOND PAS"};
 
 /**
  * @brief The players seated in the room, in a gold panel its name tags: a row
@@ -176,7 +205,7 @@ constexpr int ROSTER_SQUARE_LEFT = 8;
 constexpr int ROSTER_SQUARE_SIZE = 6;
 constexpr int ROSTER_NAME_LEFT = 18;
 constexpr int ROSTER_VALUE_MARGIN = 8;
-constexpr const char* OWN_NAME_END = " (YOU)";
+constexpr Translation OWN_NAME_END{.english = " (YOU)", .french = " (MOI)"};
 constexpr std::size_t ROSTER_MAXIMUM_ROWS = static_cast<std::size_t>(
     (ROULETTE_TABLE_TOP_LEFT.y - ROSTER_TOP_LEFT.y - ROSTER_EMPTY_HEIGHT) /
     ROSTER_ROW_HEIGHT);
@@ -189,14 +218,14 @@ constexpr int RESULT_NUMBER_TOP = 3;
 constexpr int RESULT_NUMBER_SCALE = 2;
 constexpr sf::Vector2i RESULT_COLOR_WORD(206, 193);
 constexpr sf::Vector2i RESULT_WINS_WORD(206, 204);
-constexpr const char* WINS_WORD = "WINS";
+constexpr Translation WINS_WORD{.english = "WINS", .french = "GAGNE"};
 
 /** @brief The numbers drawn, newest first, LAST_NUMBERS_KEPT at most: LAST,
  * then a box per number, LAST_NUMBER_STEP apart from LAST_FIRST_BOX, the
  * newest framed in gold. */
 constexpr std::size_t LAST_NUMBERS_KEPT = 7;
 constexpr sf::Vector2i LAST_CAPTION(300, 200);
-constexpr const char* LAST_CAPTION_TEXT = "LAST";
+constexpr Translation LAST_CAPTION_TEXT{.english = "LAST", .french = "TIRÉS"};
 constexpr sf::Vector2i LAST_FIRST_BOX(330, 198);
 constexpr sf::Vector2i LAST_BOX_SIZE(13, 11);
 constexpr int LAST_NUMBER_STEP = 15;
@@ -205,5 +234,8 @@ constexpr int LAST_NUMBER_TOP = 2;
 /** @brief The height of the digits of the cloth, which stand in the middle
  * of their box, one pixel right and one down. */
 constexpr int CLOTH_NUMBER_HEIGHT = 8;
+
+static_assert(lettersIn(SPIN_IN_LINE.french) <= lettersIn(SPIN_IN_LINE.english),
+              "the French countdown fits the plaque of the spin");
 
 }  // namespace rtype::client

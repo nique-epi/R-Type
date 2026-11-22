@@ -7,6 +7,7 @@
 #include "CasinoSpriteConstants.hpp"
 #include "SpokenLineConstants.hpp"
 #include "TimeConstants.hpp"
+#include "Translation.hpp"
 #include "WidgetConstants.hpp"
 
 namespace rtype::client {
@@ -48,8 +49,9 @@ constexpr const char* BUTLER_NAME = "BALTHAZAR";
 
 /** @brief What the butler says before the doors, cut in two lines by the
  * width of his panel. */
-constexpr const char* WELCOME_SPEECH =
-    "WELCOME TO THE BYDO PALACE, PILOT. THE TABLES ARE OPEN.";
+constexpr Translation WELCOME_SPEECH{
+    .english = "WELCOME TO THE BYDO PALACE, PILOT. THE TABLES ARE OPEN.",
+    .french = "BIENVENUE AU BYDO PALACE, PILOTE. LES TABLES SONT OUVERTES."};
 
 /** @brief How wide the SpokenLine of the butler is: the width of his text
  * and the padding a SpokenLine takes off it on each side; its tail, at the

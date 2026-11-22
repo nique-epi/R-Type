@@ -78,9 +78,9 @@ void paintResultPlaque(IInterfaceCanvas& canvas, std::uint8_t number) {
                          .outlined = true,
                          .alignment = TextAlignment::Center,
                          .scale = RESULT_NUMBER_SCALE});
-  canvas.write(pocketColorWordOf(number), RESULT_COLOR_WORD,
+  canvas.write(pocketColorWordOf(number, canvas.language()), RESULT_COLOR_WORD,
                TextStyle{.font = TextFont::Regular, .color = STAR_GOLD});
-  canvas.write(WINS_WORD, RESULT_WINS_WORD,
+  canvas.write(WINS_WORD.in(canvas.language()), RESULT_WINS_WORD,
                TextStyle{.font = TextFont::Small, .color = PALE_BLUE});
 }
 
@@ -89,7 +89,7 @@ void paintLastNumbers(IInterfaceCanvas& canvas,
   if (numbers.empty()) {
     return;
   }
-  canvas.write(LAST_CAPTION_TEXT, LAST_CAPTION,
+  canvas.write(LAST_CAPTION_TEXT.in(canvas.language()), LAST_CAPTION,
                TextStyle{.font = TextFont::Small, .color = PALE_BLUE});
   for (std::size_t place = 0; place < numbers.size(); ++place) {
     paintLastNumber(canvas, numbers.at(place), lastNumberBoxAt(place));

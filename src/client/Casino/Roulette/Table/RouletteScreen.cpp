@@ -221,7 +221,7 @@ RouletteReading RouletteScreen::readTable(
 void RouletteScreen::repaint(const RouletteReading& reading) {
   bars_.show(barStatesOf(reading));
   canvas_->clear();
-  paintRoulette(*canvas_, rouletteViewOf(reading));
+  paintRoulette(*canvas_, rouletteViewOf(reading, canvas_->language()));
   bars_.paint(*canvas_);
   canvas_->display();
 }

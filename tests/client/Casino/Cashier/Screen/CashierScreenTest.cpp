@@ -192,7 +192,7 @@ TEST_F(CashierScreenFixture, AnExchangeTheMasterDidNotMakeSaysWhy) {
   wait();
 
   EXPECT_THAT(navigator().calls(), IsEmpty());
-  EXPECT_NE(writingOf(canvas(), MASTER_SILENT_LINE), nullptr);
+  EXPECT_NE(writingOf(canvas(), MASTER_SILENT_LINE.english), nullptr);
 }
 
 /**

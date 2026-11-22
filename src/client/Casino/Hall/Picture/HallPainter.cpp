@@ -165,7 +165,7 @@ void paintChevrons(IInterfaceCanvas& canvas, engine::Duration since) {
 void paintTitle(IInterfaceCanvas& canvas) {
   canvas.fill(HALL_TITLE_AREA, CASINO_PANEL_INSIDE_COLOR);
   paintEdges(canvas, HALL_TITLE_AREA, CASINO_GOLD);
-  canvas.write(HALL_TITLE, HALL_TITLE_TOP_MIDDLE,
+  canvas.write(HALL_TITLE.in(canvas.language()), HALL_TITLE_TOP_MIDDLE,
                TextStyle{.font = TextFont::Regular,
                          .color = STAR_GOLD,
                          .alignment = TextAlignment::Center});

@@ -1,6 +1,8 @@
 #include "PocketColors.hpp"
 #include <algorithm>
 #include <cstdint>
+#include <string_view>
+#include "Language.hpp"
 #include "PocketShades.hpp"
 #include "RouletteColorConstants.hpp"
 #include "RouletteConstants.hpp"
@@ -25,11 +27,11 @@ PocketShades pocketShadesOf(std::uint8_t number) {
   return isRed(number) ? RED_POCKET_SHADES : BLACK_POCKET_SHADES;
 }
 
-const char* pocketColorWordOf(std::uint8_t number) {
+std::string_view pocketColorWordOf(std::uint8_t number, Language language) {
   if (number == 0) {
-    return GREEN_WORD;
+    return GREEN_WORD.in(language);
   }
-  return isRed(number) ? RED_WORD : BLACK_WORD;
+  return (isRed(number) ? RED_WORD : BLACK_WORD).in(language);
 }
 
 }  // namespace rtype::client

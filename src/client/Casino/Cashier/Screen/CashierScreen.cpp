@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
+#include <string>
 #include <utility>
 #include "AccountLinkConstants.hpp"
 #include "Ambience.hpp"
@@ -118,7 +119,7 @@ CashierScreen::CashierScreen(CashierScreenParts parts,
                                        .sounds = parts.sounds,
                                        .language = canvas_->language()})) {
   wallet_->askWallet();
-  tellerLine_.say(TELLER_GREETING);
+  tellerLine_.say(TELLER_GREETING.in(canvas_->language()));
   repaint();
 }
 
@@ -199,11 +200,14 @@ void CashierScreen::confirm() {
     return;
   }
   exchangeAsk_ = wallet_->exchange(exchangeRequestOf(way_, amount_.amount()));
-  notice_ = exchangeAsk_ == NO_ACCOUNT_ASK
-                ? CashierNotice{.text = cashierRefusalLineOf(
-                                    WalletRefusal::SignedOut),
-                                .refusal = true}
-                : CashierNotice{.text = EXCHANGING_LINE, .refusal = false};
+  notice_ =
+      exchangeAsk_ == NO_ACCOUNT_ASK
+          ? CashierNotice{.text = cashierRefusalLineOf(WalletRefusal::SignedOut,
+                                                       canvas_->language()),
+                          .refusal = true}
+          : CashierNotice{
+                .text = std::string(EXCHANGING_LINE.in(canvas_->language())),
+                .refusal = false};
 }
 
 void CashierScreen::settle() {
@@ -217,13 +221,14 @@ void CashierScreen::settle() {
   }
   exchangeAsk_ = NO_ACCOUNT_ASK;
   if (answer->refusal.has_value()) {
-    notice_ = CashierNotice{.text = cashierRefusalLineOf(*answer->refusal),
-                            .refusal = true};
-    tellerLine_.say(TELLER_REFUSED_LINE);
+    notice_ = CashierNotice{
+        .text = cashierRefusalLineOf(*answer->refusal, canvas_->language()),
+        .refusal = true};
+    tellerLine_.say(TELLER_REFUSED_LINE.in(canvas_->language()));
     return;
   }
   sinceServed_ = engine::Duration::zero();
-  tellerLine_.say(TELLER_SERVED_LINE);
+  tellerLine_.say(TELLER_SERVED_LINE.in(canvas_->language()));
 }
 
 void CashierScreen::repaint() {
@@ -239,16 +244,19 @@ void CashierScreen::repaint() {
                                      .way = way_,
                                      .motion = motion_});
   tellerLine_.paint(*canvas_, TELLER_BUBBLE_BOTTOM_LEFT);
-  paintCashierPanel(*canvas_,
-                    CashierView{.way = way_,
-                                .amount = amount_.amount(),
-                                .step = amount_.step(),
-                                .tried = exchange,
-                                .notice = balances.has_value()
-                                              ? notice_
-                                              : std::optional{CashierNotice{
-                                                    .text = READING_WALLET_LINE,
-                                                    .refusal = false}}});
+  paintCashierPanel(
+      *canvas_,
+      CashierView{
+          .way = way_,
+          .amount = amount_.amount(),
+          .step = amount_.step(),
+          .tried = exchange,
+          .notice = balances.has_value()
+                        ? notice_
+                        : std::optional{CashierNotice{
+                              .text = std::string(
+                                  READING_WALLET_LINE.in(canvas_->language())),
+                              .refusal = false}}});
   confirmChip.paint(*canvas_);
   backChip_.paint(*canvas_);
   canvas_->display();
