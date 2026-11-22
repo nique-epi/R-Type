@@ -2,7 +2,6 @@
 
 #include <SFML/Graphics/Color.hpp>
 #include <chrono>
-#include <string_view>
 #include "InterfaceColorConstants.hpp"
 #include "TimeConstants.hpp"
 #include "Translation.hpp"
