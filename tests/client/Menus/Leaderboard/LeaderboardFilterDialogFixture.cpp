@@ -7,13 +7,15 @@
 #include "PointerEvents.hpp"
 #include "WidgetConstants.hpp"
 
+using rtype::client::Language;
 using rtype::client::LeaderboardFilterChoice;
 using rtype::client::LeaderboardFilterDialog;
 using rtype::client::PRESS_DURATION;
 
 LeaderboardFilterDialogFixture::LeaderboardFilterDialogFixture() {
-  dialog_.open({},
-               [this](LeaderboardFilterChoice choice) { applied_ = choice; });
+  dialog_.open(
+      {}, [this](LeaderboardFilterChoice choice) { applied_ = choice; },
+      Language::English);
 }
 
 void LeaderboardFilterDialogFixture::choose(sf::Keyboard::Key key) {

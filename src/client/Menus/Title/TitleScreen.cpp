@@ -96,7 +96,7 @@ Menu TitleScreen::buildMenu(std::optional<std::size_t> selected) const {
                .description = std::string(PLAY_DESCRIPTION.in(language))},
               [&navigator, playScreen] { navigator.push(playScreen); })
       .button(
-          {.label = LEADERBOARD_LABEL,
+          {.label = std::string(LEADERBOARD_LABEL.in(language)),
            .description = std::string(LEADERBOARD_DESCRIPTION.in(language))},
           [&navigator] { navigator.push(LEADERBOARD_SCREEN); })
       .button({.label = std::string(SETTINGS_LABEL.in(language)),

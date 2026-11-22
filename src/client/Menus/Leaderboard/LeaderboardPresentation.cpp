@@ -9,6 +9,7 @@
 #include <vector>
 #include "ItemCell.hpp"
 #include "ItemRow.hpp"
+#include "Language.hpp"
 #include "LeaderboardAnswer.hpp"
 #include "LeaderboardFilterChoice.hpp"
 #include "LeaderboardMessage.hpp"
@@ -17,6 +18,9 @@
 #include "LeaderboardRequest.hpp"
 #include "LeaderboardScreenConstants.hpp"
 #include "ScreenConstants.hpp"
+#include "TextMark.hpp"
+#include "TextMarks.hpp"
+#include "Translation.hpp"
 #include "WidgetConstants.hpp"
 
 namespace rtype::client {
@@ -35,7 +39,8 @@ sf::Color rankColorOf(std::uint32_t rank) {
   return LEADERBOARD_RANK_COLOR;
 }
 
-ItemRow rowOf(const network::LeaderboardRow& entry, bool isOwn) {
+ItemRow rowOf(const network::LeaderboardRow& entry, bool isOwn,
+              Language language) {
   const sf::Color text =
       isOwn ? LEADERBOARD_OWN_TEXT_COLOR : LEADERBOARD_TEXT_COLOR;
   return ItemRow{
@@ -47,7 +52,7 @@ ItemRow rowOf(const network::LeaderboardRow& entry, bool isOwn) {
                     .tag = isOwn ? std::optional<std::string>(LOCAL_PLAYER_TAG)
                                  : std::nullopt},
                 ItemCell{.text = std::to_string(entry.score), .color = text},
-                ItemCell{.text = dateTextOf(entry.playedAt),
+                ItemCell{.text = dateTextOf(entry.playedAt, language),
                          .color = isOwn ? LEADERBOARD_OWN_DATE_COLOR
                                         : LEADERBOARD_DATE_COLOR}},
       .highlight = isOwn ? std::optional<sf::Color>(LEADERBOARD_OWN_ROW_COLOR)
@@ -56,7 +61,7 @@ ItemRow rowOf(const network::LeaderboardRow& entry, bool isOwn) {
 
 }  // namespace
 
-std::string dateTextOf(std::int64_t secondsSince1970) {
+std::string dateTextOf(std::int64_t secondsSince1970, Language language) {
   if (secondsSince1970 < 0 || secondsSince1970 > LAST_SHOWN_DATE_SECONDS) {
     return UNKNOWN_DATE_TEXT;
   }
@@ -68,28 +73,33 @@ std::string dateTextOf(std::int64_t secondsSince1970) {
   const auto year = static_cast<unsigned int>(static_cast<int>(date.year()) %
                                               YEARS_PER_CENTURY);
   return twoDigits(static_cast<unsigned int>(date.day())) + " " +
-         MONTH_NAMES.at(month) + " " + twoDigits(year);
+         std::string(MONTH_NAMES.at(month).in(language)) + " " +
+         twoDigits(year);
 }
 
-std::vector<ItemRow> itemRowsOf(const LeaderboardPage& page) {
+std::vector<ItemRow> itemRowsOf(const LeaderboardPage& page,
+                                Language language) {
   std::vector<ItemRow> rows;
   rows.reserve(page.rows.size());
   for (const network::LeaderboardRow& entry : page.rows) {
-    rows.push_back(rowOf(entry, page.ownRow == entry));
+    rows.push_back(rowOf(entry, page.ownRow == entry, language));
   }
   return rows;
 }
 
-std::optional<ItemRow> pinnedRowOf(const LeaderboardPage& page) {
+std::optional<ItemRow> pinnedRowOf(const LeaderboardPage& page,
+                                   Language language) {
   if (!page.ownRow.has_value() ||
       std::ranges::find(page.rows, *page.ownRow) != page.rows.end()) {
     return std::nullopt;
   }
-  return rowOf(*page.ownRow, true);
+  return rowOf(*page.ownRow, true, language);
 }
 
-std::string pinnedNoteOf(const LeaderboardPage& page) {
-  return page.rows.empty() || page.ownRow.has_value() ? "" : NO_OWN_SCORE_TEXT;
+std::string pinnedNoteOf(const LeaderboardPage& page, Language language) {
+  return page.rows.empty() || page.ownRow.has_value()
+             ? std::string()
+             : std::string(NO_OWN_SCORE_TEXT.in(language));
 }
 
 std::optional<LeaderboardMessage> messageOf(const LeaderboardPage& page) {
@@ -121,10 +131,17 @@ network::LeaderboardRequest filterOf(LeaderboardFilterChoice choice) {
           std::string(LEADERBOARD_DIFFICULTY_NAMES.at(choice.difficulty))};
 }
 
-std::string filterSummaryOf(LeaderboardFilterChoice choice) {
-  return std::string(LEADERBOARD_DIFFICULTY_LABELS.at(choice.difficulty)) +
-         SUMMARY_GAMES_TEXT + LEADERBOARD_PILOT_LABELS.at(choice.pilots) +
-         (choice.pilots == 1 ? ONE_PILOT_TEXT : SEVERAL_PILOTS_TEXT);
+std::string filterSummaryOf(LeaderboardFilterChoice choice, Language language) {
+  const std::string pilots =
+      std::string(LEADERBOARD_PILOT_LABELS.at(choice.pilots).in(language)) +
+      std::string((choice.pilots == 1 ? ONE_PILOT_TEXT : SEVERAL_PILOTS_TEXT)
+                      .in(language));
+  return withMark(withMark(std::string(FILTER_SUMMARY.in(language)),
+                           TextMark{.mark = DIFFICULTY_MARK,
+                                    .value = LEADERBOARD_DIFFICULTY_LABELS
+                                                 .at(choice.difficulty)
+                                                 .in(language)}),
+                  TextMark{.mark = PILOT_COUNT_MARK, .value = pilots});
 }
 
 }  // namespace rtype::client

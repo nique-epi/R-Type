@@ -52,7 +52,8 @@ constexpr Translation QUIT_DESCRIPTION{.english = "> LEAVE THE GAME",
                                        .french = "> QUITTER LE JEU"};
 /** @brief Label of the entry on the title and in the waiting room, title of the
  * screen it opens, and the line under the bar of the title. */
-constexpr const char* LEADERBOARD_LABEL = "RANKING";
+constexpr Translation LEADERBOARD_LABEL{.english = "RANKING",
+                                        .french = "CLASSEMENT"};
 constexpr Translation LEADERBOARD_DESCRIPTION{
     .english = "> THE BEST SCORES OF A SERVER",
     .french = "> LES MEILLEURS SCORES D'UN SERVEUR"};
@@ -114,8 +115,9 @@ static_assert(longestLettersIn(SIGN_IN_MESSAGE) <=
  * @brief The word after a number of pilots, as the waiting room counts its
  * players and the leaderboard names a number of players at the start.
  */
-constexpr const char* ONE_PILOT_TEXT = " PILOT";
-constexpr const char* SEVERAL_PILOTS_TEXT = " PILOTS";
+constexpr Translation ONE_PILOT_TEXT{.english = " PILOT", .french = " PILOTE"};
+constexpr Translation SEVERAL_PILOTS_TEXT{.english = " PILOTS",
+                                          .french = " PILOTES"};
 
 /**
  * @brief Size of the progress bar of the loading screen, centered in the

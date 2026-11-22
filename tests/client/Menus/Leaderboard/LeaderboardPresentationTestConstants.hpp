@@ -38,4 +38,8 @@ constexpr int SEVEN_DIGITS_WIDTH = 56;
 constexpr std::size_t NAME_COLUMN = 1;
 constexpr std::size_t SCORE_COLUMN = 2;
 
+/** @brief A choice of hard games of one pilot, summed up in French. */
+constexpr std::string_view FRENCH_HARD_ONE_PILOT_SUMMARY =
+    "PARTIES : DIFFICILE, 1 PILOTE";
+
 }  // namespace rtype::client::testing

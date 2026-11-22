@@ -193,16 +193,18 @@ std::unique_ptr<IScreen> buildNewGameScreen(const ScreenContext& context) {
 std::unique_ptr<IScreen> buildLeaderboardScreen(const ScreenContext& context) {
   MasterLeaderboard& global = context.services.globalLeaderboard.get();
   global.namePlayer(context.serverChoice.get().nickname);
+  const Language language = context.services.settings.get().language;
   return std::make_unique<LeaderboardScreen>(
       LeaderboardScreenParts{
           .navigator = context.navigator.get(),
           .sounds = soundsOf(context),
           .connection = context.services.connection.get(),
           .tabs = {LeaderboardTab{
-                       .label = SERVER_TAB_LABEL,
+                       .label = std::string(SERVER_TAB_LABEL.in(language)),
                        .source = &context.services.leaderboard.get()},
-                   LeaderboardTab{.label = GLOBAL_TAB_LABEL,
-                                  .source = &global}},
+                   LeaderboardTab{
+                       .label = std::string(GLOBAL_TAB_LABEL.in(language)),
+                       .source = &global}},
           .choice = OPENING_LEADERBOARD_CHOICE,
           .playfieldPointAt = playfieldMappingOf(context),
           .keyName = localizedKeyName,

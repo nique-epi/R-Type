@@ -5,10 +5,12 @@
 #include <memory>
 #include <span>
 #include <string>
+#include <utility>
 #include <vector>
 #include "ChoiceSelector.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "ISoundPlayer.hpp"
+#include "Language.hpp"
 #include "LeaderboardFilterChoice.hpp"
 #include "LeaderboardScreenConstants.hpp"
 #include "Menu.hpp"
@@ -16,6 +18,7 @@
 #include "PlayfieldMapping.hpp"
 #include "RowControl.hpp"
 #include "TimeConstants.hpp"
+#include "Translation.hpp"
 #include "ValueBinding.hpp"
 #include "WidgetConstants.hpp"
 
@@ -23,11 +26,18 @@ namespace rtype::client {
 
 namespace {
 
-/** @returns A selector of these labels over @p value, which must outlive it. */
-std::unique_ptr<RowControl> selectorOver(std::span<const char* const> labels,
-                                         std::size_t& value) {
+/** @returns A selector of these labels, written in @p language, over
+ * @p value, which must outlive it. */
+std::unique_ptr<RowControl> selectorOver(std::span<const Translation> labels,
+                                         std::size_t& value,
+                                         Language language) {
+  std::vector<std::string> texts;
+  texts.reserve(labels.size());
+  for (const Translation& label : labels) {
+    texts.emplace_back(label.in(language));
+  }
   return std::make_unique<ChoiceSelector>(
-      std::vector<std::string>(labels.begin(), labels.end()),
+      std::move(texts),
       ValueBinding<std::size_t>{
           .read = [&value] { return value; },
           .write = [&value](std::size_t chosen) { value = chosen; }});
@@ -40,17 +50,19 @@ LeaderboardFilterDialog::LeaderboardFilterDialog(ISoundPlayer& sounds)
 
 void LeaderboardFilterDialog::open(
     LeaderboardFilterChoice choice,
-    const std::function<void(LeaderboardFilterChoice)>& apply) {
+    const std::function<void(LeaderboardFilterChoice)>& apply,
+    Language language) {
   draft_ = choice;
   dialog_ =
       MenuBuilder(MenuBuilder::Frame::Dialog, sounds_)
-          .heading(FILTER_LABEL)
+          .heading(std::string(FILTER_LABEL.in(language)))
           .row({.label = DIFFICULTY_ROW_LABEL},
-               selectorOver(LEADERBOARD_DIFFICULTY_LABELS, draft_.difficulty))
-          .row({.label = PILOTS_ROW_LABEL},
-               selectorOver(LEADERBOARD_PILOT_LABELS, draft_.pilots))
+               selectorOver(LEADERBOARD_DIFFICULTY_LABELS, draft_.difficulty,
+                            language))
+          .row({.label = std::string(PILOTS_ROW_LABEL.in(language))},
+               selectorOver(LEADERBOARD_PILOT_LABELS, draft_.pilots, language))
           .cancelButton({.label = BACK_LABEL}, [this] { answered_ = true; })
-          .button({.label = APPLY_LABEL},
+          .button({.label = std::string(APPLY_LABEL.in(language))},
                   [this, apply] {
                     apply(draft_);
                     answered_ = true;

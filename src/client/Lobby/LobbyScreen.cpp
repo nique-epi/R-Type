@@ -34,6 +34,7 @@
 #include "InterfacePixel.hpp"
 #include "KeyChipParts.hpp"
 #include "KeyDown.hpp"
+#include "Language.hpp"
 #include "LobbyMap.hpp"
 #include "LobbyPartAreas.hpp"
 #include "LobbyPlace.hpp"
@@ -136,10 +137,12 @@ sf::Vector2i rulesAnchorOf(const IInterfaceCanvas& canvas,
   return {(headingEnd + pilotsStart) / SIDES_PER_AXIS, GAME_RULES_TOP};
 }
 
-/** @returns How many pilots the waiting room lists, in words. */
-std::string pilotCount(std::size_t count) {
+/** @returns How many pilots the waiting room lists, in words of
+ * @p language. */
+std::string pilotCount(std::size_t count, Language language) {
   return std::to_string(count) +
-         (count == 1 ? ONE_PILOT_TEXT : SEVERAL_PILOTS_TEXT);
+         std::string(
+             (count == 1 ? ONE_PILOT_TEXT : SEVERAL_PILOTS_TEXT).in(language));
 }
 
 /** @returns Where the bay of a slot starts: the bays stand side by side from
@@ -161,19 +164,22 @@ sf::IntRect helpChipArea() {
                                backChipArea().position.x - BUTTON_GAP);
 }
 
-/** @returns Where the room paints RANKING, BUTTON_GAP to the left of HELP. */
-sf::IntRect leaderboardChipArea() {
+/** @returns Where the room paints RANKING, written in @p language,
+ * BUTTON_GAP to the left of HELP. */
+sf::IntRect leaderboardChipArea(Language language) {
   return MenuBuilder::chipArea(
-      {.label = LEADERBOARD_LABEL, .keyName = LEADERBOARD_KEY_NAME},
+      {.label = std::string(LEADERBOARD_LABEL.in(language)),
+       .keyName = LEADERBOARD_KEY_NAME},
       helpChipArea().position.x - BUTTON_GAP);
 }
 
 /** @returns Where the room paints HANGAR, written in @p language,
  * BUTTON_GAP to the left of RANKING. */
 sf::IntRect hangarChipArea(Language language) {
-  return MenuBuilder::chipArea({.label = std::string(HANGAR_LABEL.in(language)),
-                                .keyName = HANGAR_KEY_NAME},
-                               leaderboardChipArea().position.x - BUTTON_GAP);
+  return MenuBuilder::chipArea(
+      {.label = std::string(HANGAR_LABEL.in(language)),
+       .keyName = HANGAR_KEY_NAME},
+      leaderboardChipArea(language).position.x - BUTTON_GAP);
 }
 
 /** @returns Whether @p event presses the left button inside @p area, read on
@@ -301,8 +307,10 @@ LobbyScreen::LobbyScreen(LobbyScreenParts parts,
                                  .motion = parts.motion,
                                  .chipArea = helpChipArea()}),
       leaderboardChip_(KeyChipParts{
-          .text = {.label = LEADERBOARD_LABEL, .keyName = LEADERBOARD_KEY_NAME},
-          .area = leaderboardChipArea(),
+          .text = {.label =
+                       std::string(LEADERBOARD_LABEL.in(canvas_->language())),
+                   .keyName = LEADERBOARD_KEY_NAME},
+          .area = leaderboardChipArea(canvas_->language()),
           .key = LEADERBOARD_KEY,
           .action =
               [this] {
@@ -440,7 +448,7 @@ void LobbyScreen::repaint() {
     mapVoteCard_.paint(*canvas_, menu_.selectedButton() == MAP_BUTTON);
     paintStatus(*canvas_, parts.status, status);
     paintBays();
-    const std::string pilots = pilotCount(players.size());
+    const std::string pilots = pilotCount(players.size(), canvas_->language());
     canvas_->write(pilots, PILOT_COUNT_ANCHOR, PILOT_COUNT_STYLE);
     if (rulesLine_.has_value()) {
       canvas_->write(*rulesLine_, rulesAnchorOf(*canvas_, pilots),

@@ -9,6 +9,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 #include "Animation.hpp"
@@ -26,6 +27,7 @@
 #include "ItemList.hpp"
 #include "KeyChipParts.hpp"
 #include "KeyNames.hpp"
+#include "Language.hpp"
 #include "LeaderboardFigure.hpp"
 #include "LeaderboardFilterChoice.hpp"
 #include "LeaderboardMessage.hpp"
@@ -36,6 +38,7 @@
 #include "LeaderboardScreenParts.hpp"
 #include "LeaderboardSpriteConstants.hpp"
 #include "LeaderboardTab.hpp"
+#include "LetterCounts.hpp"
 #include "MenuBuilder.hpp"
 #include "MenuScreenIdConstants.hpp"
 #include "MotionPreference.hpp"
@@ -65,8 +68,9 @@ sf::IntRect backChipArea() {
                           LEADERBOARD_CHIPS_RIGHT);
 }
 
-sf::IntRect filterChipArea() {
-  return chipAreaEndingAt({.label = FILTER_LABEL, .keyName = FILTER_KEY_NAME},
+sf::IntRect filterChipArea(Language language) {
+  return chipAreaEndingAt({.label = std::string(FILTER_LABEL.in(language)),
+                           .keyName = FILTER_KEY_NAME},
                           backChipArea().position.x - BUTTON_GAP);
 }
 
@@ -78,20 +82,21 @@ KeyChipParts backChipParts(std::function<void()> action, ISoundPlayer& sounds) {
                       .sounds = sounds};
 }
 
-KeyChipParts filterChipParts(std::function<void()> action,
-                             ISoundPlayer& sounds) {
-  return KeyChipParts{
-      .text = {.label = FILTER_LABEL, .keyName = FILTER_KEY_NAME},
-      .area = filterChipArea(),
-      .key = FILTER_KEY,
-      .action = std::move(action),
-      .sounds = sounds};
+KeyChipParts filterChipParts(std::function<void()> action, ISoundPlayer& sounds,
+                             Language language) {
+  return KeyChipParts{.text = {.label = std::string(FILTER_LABEL.in(language)),
+                               .keyName = FILTER_KEY_NAME},
+                      .area = filterChipArea(language),
+                      .key = FILTER_KEY,
+                      .action = std::move(action),
+                      .sounds = sounds};
 }
 
 /** @returns The bar under NOT_ON_SERVER_MESSAGE, selected: the one thing the
  * screen asks of the player then. */
-KeyChipParts joinBarParts(std::function<void()> action, ISoundPlayer& sounds) {
-  return KeyChipParts{.text = {.label = JOIN_LABEL},
+KeyChipParts joinBarParts(std::function<void()> action, ISoundPlayer& sounds,
+                          Language language) {
+  return KeyChipParts{.text = {.label = std::string(JOIN_LABEL.in(language))},
                       .area = JOIN_BAR,
                       .key = MENU_CONFIRM_KEY,
                       .action = std::move(action),
@@ -172,8 +177,8 @@ void paintCourt(IInterfaceCanvas& canvas,
 
 /** @brief Paints the title and its rule, and the panel. */
 void paintPanel(IInterfaceCanvas& canvas) {
-  canvas.write(LEADERBOARD_LABEL, LEADERBOARD_TITLE_ANCHOR,
-               LEADERBOARD_TITLE_STYLE);
+  canvas.write(LEADERBOARD_LABEL.in(canvas.language()),
+               LEADERBOARD_TITLE_ANCHOR, LEADERBOARD_TITLE_STYLE);
   canvas.fill(LEADERBOARD_RULE, RULE_COLOR);
   CutCornerBox(LEADERBOARD_PANEL,
                {.border = PANEL_BORDER_COLOR, .inside = PANEL_INSIDE_COLOR})
@@ -185,17 +190,22 @@ void paintPanel(IInterfaceCanvas& canvas) {
 void paintAsking(IInterfaceCanvas& canvas, engine::Duration time) {
   const auto dots =
       static_cast<std::size_t>((time / ASKING_DOT_TIME) % ASKING_DOT_STEPS);
-  canvas.write(std::string(ASKING_TEXT).append(dots, '.'), ASKING_ANCHOR,
+  const std::string_view asking = ASKING_TEXT.in(canvas.language());
+  const int widest =
+      static_cast<int>(lettersIn(asking) + ASKING_DOT_STEPS - 1) *
+      REGULAR_FONT_ADVANCE;
+  canvas.write(std::string(asking).append(dots, '.'),
+               {MESSAGE_LINE_ANCHOR.x - (widest / 2), ASKING_TOP},
                {.font = TextFont::Regular, .color = MESSAGE_LINE_COLOR});
 }
 
 /** @brief Writes what the panel says in place of rows. */
 void paintMessage(IInterfaceCanvas& canvas, LeaderboardMessage message) {
-  canvas.write(message.line, MESSAGE_LINE_ANCHOR,
+  canvas.write(message.line.in(canvas.language()), MESSAGE_LINE_ANCHOR,
                {.font = TextFont::Regular,
                 .color = MESSAGE_LINE_COLOR,
                 .alignment = TextAlignment::Center});
-  canvas.write(message.detail, MESSAGE_DETAIL_ANCHOR,
+  canvas.write(message.detail.in(canvas.language()), MESSAGE_DETAIL_ANCHOR,
                {.font = TextFont::Small,
                 .color = MESSAGE_DETAIL_COLOR,
                 .alignment = TextAlignment::Center});
@@ -225,14 +235,15 @@ LeaderboardScreen::LeaderboardScreen(LeaderboardScreenParts parts,
             navigator_->pop();
           },
           parts.sounds)),
-      filterChip_(filterChipParts([this] { openFilter(); }, parts.sounds)),
+      filterChip_(filterChipParts([this] { openFilter(); }, parts.sounds,
+                                  canvas_->language())),
       joinChip_(joinBarParts(
           [this] {
             handleEvent(sf::Event::FocusLost{});
             joinedFromHere_ = true;
             navigator_->push(CONNECTION_FOR_LEADERBOARD_SCREEN);
           },
-          parts.sounds)) {
+          parts.sounds, canvas_->language())) {
   ask();
   showPage(shownPage());
   repaint();
@@ -310,13 +321,16 @@ void LeaderboardScreen::openTab(std::size_t tab) {
 
 void LeaderboardScreen::openFilter() {
   handleEvent(sf::Event::FocusLost{});
-  filterDialog_.open(choice_, [this](LeaderboardFilterChoice picked) {
-    if (picked == choice_) {
-      return;
-    }
-    choice_ = picked;
-    ask();
-  });
+  filterDialog_.open(
+      choice_,
+      [this](LeaderboardFilterChoice picked) {
+        if (picked == choice_) {
+          return;
+        }
+        choice_ = picked;
+        ask();
+      },
+      canvas_->language());
 }
 
 const LeaderboardPage& LeaderboardScreen::shownPage() const {
@@ -326,9 +340,10 @@ const LeaderboardPage& LeaderboardScreen::shownPage() const {
 
 void LeaderboardScreen::showPage(const LeaderboardPage& page) {
   shownRevision_ = page.revision;
-  list_.setRows(itemRowsOf(page));
-  list_.setPinnedRow(pinnedRowOf(page));
-  list_.setPinnedNote(pinnedNoteOf(page));
+  const Language language = canvas_->language();
+  list_.setRows(itemRowsOf(page, language));
+  list_.setPinnedRow(pinnedRowOf(page, language));
+  list_.setPinnedNote(pinnedNoteOf(page, language));
   filterChip_.setEnabled(canBeFiltered(page));
   joinChip_.setEnabled(page.phase == LeaderboardPhase::NotOnServer);
 }
@@ -353,8 +368,8 @@ void LeaderboardScreen::repaint() {
   backChip_.paint(*canvas_);
   filterChip_.paint(*canvas_);
   if (canBeFiltered(page)) {
-    canvas_->write(filterSummaryOf(choice_), FILTER_SUMMARY_ANCHOR,
-                   FILTER_SUMMARY_STYLE);
+    canvas_->write(filterSummaryOf(choice_, canvas_->language()),
+                   FILTER_SUMMARY_ANCHOR, FILTER_SUMMARY_STYLE);
   }
   filterDialog_.paint(*canvas_);
   canvas_->display();
