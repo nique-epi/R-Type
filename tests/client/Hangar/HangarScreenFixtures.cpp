@@ -18,4 +18,11 @@ std::size_t lookImagesAtShipScale(const InterfaceCanvasRecord& painting,
       }));
 }
 
+std::size_t imagesOnTheReferenceCard(const InterfaceCanvasRecord& painting) {
+  return static_cast<std::size_t>(std::ranges::count_if(
+      painting.images, [](const RecordedImage& image) noexcept {
+        return image.visibleArea == REFERENCE_CARD;
+      }));
+}
+
 }  // namespace rtype::client::testing

@@ -247,7 +247,7 @@ void HangarScreen::repaint() {
   canvas_->fill(HANGAR_RULE, EDGE_BLUE);
   paintLocker(*canvas_, view);
   paintDockWall(*canvas_, litBeaconOf(elapsed_, motion_));
-  paintBlueprint(*canvas_, chosen_);
+  paintBlueprint(*canvas_, view);
   paintDock(*canvas_, DockScene{.palette = palette_,
                                 .shipColor = shipColor_,
                                 .worn = worn,

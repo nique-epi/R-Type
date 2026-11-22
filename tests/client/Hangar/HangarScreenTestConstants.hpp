@@ -49,6 +49,10 @@ constexpr std::uint8_t WEARS_WAR_SHARK = 26;
 constexpr std::string_view LOCKED_HULL_STATUS_TEXT =
     "LOCKED: BUY IT AT THE SHOP";
 
+/** @brief The reference card above the dock, where the chosen item is drawn
+ * in cyan: 64 x 58 at (284, 40) of the interface. */
+constexpr sf::IntRect REFERENCE_CARD{{284, 40}, {64, 58}};
+
 /** @brief The account the hangar tests sign in to, and its token. */
 constexpr std::uint64_t HANGAR_ACCOUNT_ID = 9;
 constexpr std::string_view HANGAR_TOKEN =
