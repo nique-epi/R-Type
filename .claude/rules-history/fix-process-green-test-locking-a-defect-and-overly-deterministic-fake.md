@@ -82,3 +82,7 @@ The tests of `ServerLeaderboard` jumped five seconds in one `update()`: removing
 ## Update (7 November 2026) — A guard backed up by the lookup after it
 
 `AdminConsoleCommandsFixture.RefusesWhatIsNotANickname` ran `kick` with 17 bytes and asserted that the line was refused and nothing sent. Without `isValidNickname()` in `nicknameNamedBy()`, the 17 bytes went on to `gamesPlaying()`, which found no game holding such a pilot and refused the line too, so the red proof stayed green. The test now also asserts the reason, `'ABCDEFGHIJKLMNOPQ' is not a nickname`, which only the nickname check writes, and the variant turns it red.
+
+## Update (21 November 2026) — A fade tested only at its ends
+
+`HeadphonesScreen` fades in and out of the ink of the intro. Its tests read the picture just built (all ink), once faded in (no cover), and when it gives way. A review walked the variant that drops the fade out: the notice stayed fully lit and cut to black, and every test still passed, since the time it gives way comes from another member. A test now reads the alpha of the ink halfway into the fade out, and the red proof that removes the fade turns it red.

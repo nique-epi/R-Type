@@ -196,14 +196,7 @@ void paintHint(IInterfaceCanvas& canvas, float real) {
  * and less of it until INTRO_FADE_IN_TIME: the black second and the fade
  * in. */
 void paintFade(IInterfaceCanvas& canvas, float real) {
-  const float covered = 1.0F - progressThrough(real, 0.0F, INTRO_FADE_IN_TIME);
-  if (covered <= 0.0F) {
-    return;
-  }
-  sf::Color ink = INK;
-  ink.a = static_cast<std::uint8_t>(
-      std::round(static_cast<float>(INK.a) * covered));
-  canvas.fill(INTERFACE_AREA, ink);
+  paintInkCover(canvas, 1.0F - progressThrough(real, 0.0F, INTRO_FADE_IN_TIME));
 }
 
 }  // namespace
@@ -216,6 +209,16 @@ void paintIntroOverlay(IInterfaceCanvas& canvas, float real,
   paintLogoSlam(canvas, real, look.logo);
   paintHint(canvas, real);
   paintFade(canvas, real);
+}
+
+void paintInkCover(IInterfaceCanvas& canvas, float covered) {
+  if (covered <= 0.0F) {
+    return;
+  }
+  sf::Color ink = INK;
+  ink.a = static_cast<std::uint8_t>(
+      std::round(static_cast<float>(INK.a) * covered));
+  canvas.fill(INTERFACE_AREA, ink);
 }
 
 }  // namespace rtype::client

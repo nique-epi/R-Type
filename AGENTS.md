@@ -118,6 +118,7 @@ Paths below are relative to `.claude/rules/`.
 
 **Process — `fix/process/`**
 - `fix/process/fix-process-a-model-is-called-not-copied.md`
+- `fix/process/fix-process-a-registered-screen-joins-the-registration-test.md`
 - `fix/process/fix-process-a-small-feature-is-checked-in-proportion.md`
 - `fix/process/fix-process-a-screen-without-mockup-is-validated-as-a-picture.md`
 - `fix/process/fix-process-ask-what-is-observed-before-building-a-protocol.md`
