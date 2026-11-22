@@ -26,7 +26,8 @@ namespace rtype::client {
  */
 class ServerMapTabs {
  public:
-  ServerMapTabs(IScreenNavigator& navigator, ISoundPlayer& sounds);
+  ServerMapTabs(IScreenNavigator& navigator, ISoundPlayer& sounds,
+                Language language);
 
   void handleEvent(const sf::Event& event,
                    const PlayfieldMapping& playfieldPointAt);

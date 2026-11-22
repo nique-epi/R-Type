@@ -2,6 +2,7 @@
 
 #include <SFML/Window/Keyboard.hpp>
 #include "ScreenId.hpp"
+#include "Translation.hpp"
 
 namespace rtype::client {
 
@@ -12,7 +13,7 @@ constexpr ScreenId HANGAR_SCREEN{"hangar"};
 /** @brief The name the map, the waiting room and the hangar itself show,
  * the key that opens the hangar from the map and the waiting room, and
  * what its keycap says. */
-constexpr const char* HANGAR_LABEL = "HANGAR";
+constexpr Translation HANGAR_LABEL{.english = "HANGAR", .french = "HANGAR"};
 constexpr sf::Keyboard::Key HANGAR_KEY = sf::Keyboard::Key::G;
 constexpr const char* HANGAR_KEY_NAME = "G";
 

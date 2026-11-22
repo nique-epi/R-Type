@@ -97,5 +97,7 @@ constexpr std::string_view NEW_GAME_LINE =
     "+ NEW GAME: ENTER TO SET ITS RULES.";
 constexpr std::string_view WAITING_GAME_LINE =
     "ALPHA WING, NORMAL, 3 LIVES, FRIENDLY FIRE OFF: ENTER TO JOIN.";
+constexpr std::string_view FRENCH_WAITING_GAME_LINE =
+    "ALPHA WING, NORMAL, 3 VIES, TIR AMI COUPÉ : ENTRÉE POUR REJOINDRE.";
 
 }  // namespace rtype::client::testing

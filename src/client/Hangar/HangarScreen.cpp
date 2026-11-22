@@ -235,7 +235,8 @@ void HangarScreen::repaint() {
   const LockerView view{
       .chosen = chosen_, .worn = worn, .locker = locker, .rows = rows_};
   canvas_->clear();
-  canvas_->write(HANGAR_LABEL, HANGAR_TITLE_ANCHOR, HANGAR_TITLE_STYLE);
+  canvas_->write(HANGAR_LABEL.in(canvas_->language()), HANGAR_TITLE_ANCHOR,
+                 HANGAR_TITLE_STYLE);
   canvas_->fill(HANGAR_RULE, EDGE_BLUE);
   paintLocker(*canvas_, view);
   paintDockWall(*canvas_, litBeaconOf(elapsed_, motion_));

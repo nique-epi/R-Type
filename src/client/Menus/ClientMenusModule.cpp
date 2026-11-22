@@ -177,12 +177,14 @@ std::unique_ptr<IScreen> buildServerMapScreen(const ScreenContext& context) {
  * whose games the map listed last. */
 std::unique_ptr<IScreen> buildNewGameScreen(const ScreenContext& context) {
   const GameListSnapshot& games = context.services.gameCatalog.get().snapshot();
-  return dialogScreenOf(context, newGameMenu(NewGameMenuParts{
-                                     .navigator = context.navigator.get(),
-                                     .sounds = soundsOf(context),
-                                     .choice = context.serverChoice.get(),
-                                     .server = games.server,
-                                     .difficulties = games.difficulties}));
+  return dialogScreenOf(
+      context, newGameMenu(NewGameMenuParts{
+                   .navigator = context.navigator.get(),
+                   .sounds = soundsOf(context),
+                   .choice = context.serverChoice.get(),
+                   .server = games.server,
+                   .difficulties = games.difficulties,
+                   .language = context.services.settings.get().language}));
 }
 
 /** @returns The leaderboard, opened on the filter the waiting room calls for;

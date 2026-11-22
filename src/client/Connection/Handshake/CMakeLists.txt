@@ -12,7 +12,9 @@ target_link_libraries(rtype_client_handshake
   PUBLIC
     rtype_client_connection_entity_types
     rtype_client_content_pack
+    rtype_client_language
     rtype_client_session
+    rtype_identifiers
     rtype_engine_time
     rtype_logging
     rtype_network_connection_accepted

@@ -3,6 +3,7 @@
 #include <string>
 #include <string_view>
 #include "GameRules.hpp"
+#include "Language.hpp"
 
 namespace rtype::client {
 
@@ -10,9 +11,15 @@ namespace rtype::client {
  * writes every word. */
 [[nodiscard]] std::string upperCased(std::string_view text);
 
-/** @returns The rules of a game in words, as the panel of the games and the
- * waiting room write them: its difficulty in capitals, its lives, and its
+/** @returns The name of the difficulty @p id in @p language: a difficulty
+ * the client knows by its translation, any other in capitals. */
+[[nodiscard]] std::string difficultyNameOf(std::string_view id,
+                                           Language language);
+
+/** @returns The rules of a game in words, in @p language, as the panel of the
+ * games and the waiting room write them: its difficulty, its lives, and its
  * friendly fire. */
-[[nodiscard]] std::string rulesLineOf(const network::GameRules& rules);
+[[nodiscard]] std::string rulesLineOf(const network::GameRules& rules,
+                                      Language language);
 
 }  // namespace rtype::client

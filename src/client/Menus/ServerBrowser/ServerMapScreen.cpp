@@ -50,12 +50,14 @@ namespace rtype::client {
 
 namespace {
 
-Button::Text quickPlayText() {
-  return {.label = QUICK_PLAY_LABEL, .keyName = QUICK_PLAY_KEY_NAME};
+Button::Text quickPlayText(Language language) {
+  return {.label = std::string(QUICK_PLAY_LABEL.in(language)),
+          .keyName = QUICK_PLAY_KEY_NAME};
 }
 
-Button::Text addressText() {
-  return {.label = ADDRESS_LABEL, .keyName = ADDRESS_KEY_NAME};
+Button::Text addressText(Language language) {
+  return {.label = std::string(DIRECT_CONNECT_CHIP_LABEL.in(language)),
+          .keyName = ADDRESS_KEY_NAME};
 }
 
 Button::Text backText() {
@@ -78,13 +80,14 @@ sf::IntRect backChipArea() {
   return chipAreaEndingAt(backText(), SERVER_MAP_CHIPS_RIGHT);
 }
 
-sf::IntRect addressChipArea() {
-  return chipAreaLeftOf(addressText(), backChipArea());
+sf::IntRect addressChipArea(Language language) {
+  return chipAreaLeftOf(addressText(language), backChipArea());
 }
 
 /** @returns Where QUICK PLAY lies: alone on the left, the main action. */
-sf::IntRect quickPlayChipArea() {
-  sf::IntRect area = chipAreaEndingAt(quickPlayText(), SERVER_MAP_CHIPS_RIGHT);
+sf::IntRect quickPlayChipArea(Language language) {
+  sf::IntRect area =
+      chipAreaEndingAt(quickPlayText(language), SERVER_MAP_CHIPS_RIGHT);
   area.position.x = SERVER_MAP_CHIPS_LEFT;
   return area;
 }
@@ -184,9 +187,9 @@ GameRequest requestToJoin(const GameRow& game) {
 }
 
 KeyChipParts quickPlayChipParts(std::function<void()> action,
-                                ISoundPlayer& sounds) {
-  return KeyChipParts{.text = quickPlayText(),
-                      .area = quickPlayChipArea(),
+                                ISoundPlayer& sounds, Language language) {
+  return KeyChipParts{.text = quickPlayText(language),
+                      .area = quickPlayChipArea(language),
                       .key = QUICK_PLAY_KEY,
                       .action = std::move(action),
                       .sounds = sounds,
@@ -194,9 +197,9 @@ KeyChipParts quickPlayChipParts(std::function<void()> action,
 }
 
 KeyChipParts addressChipParts(std::function<void()> action,
-                              ISoundPlayer& sounds) {
-  return KeyChipParts{.text = addressText(),
-                      .area = addressChipArea(),
+                              ISoundPlayer& sounds, Language language) {
+  return KeyChipParts{.text = addressText(language),
+                      .area = addressChipArea(language),
                       .key = ADDRESS_KEY,
                       .action = std::move(action),
                       .sounds = sounds};
@@ -224,7 +227,7 @@ ServerMapScreen::ServerMapScreen(ServerMapScreenParts parts,
       playfieldPointAt_(std::move(parts.playfieldPointAt)),
       motion_(parts.motion),
       sessionEnd_(parts.connection.get()),
-      tabs_(parts.navigator.get(), parts.sounds.get()),
+      tabs_(parts.navigator.get(), parts.sounds.get(), canvas_->language()),
       quickPlayChip_(quickPlayChipParts(
           [this] {
             if (const std::optional<ChosenGame> game =
@@ -233,9 +236,10 @@ ServerMapScreen::ServerMapScreen(ServerMapScreenParts parts,
               openConnectionTo(*choice_, *game, *navigator_);
             }
           },
-          parts.sounds)),
-      addressChip_(addressChipParts(
-          [this] { navigator_->push(CONNECTION_SCREEN); }, parts.sounds)),
+          parts.sounds, canvas_->language())),
+      addressChip_(
+          addressChipParts([this] { navigator_->push(CONNECTION_SCREEN); },
+                           parts.sounds, canvas_->language())),
       backChip_(backChipParts([this] { stepBack(); }, parts.sounds)) {
   servers_->refresh();
   wallet_->askWallet();

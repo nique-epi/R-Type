@@ -55,13 +55,14 @@ std::shared_ptr<NewGameDraft> startingDraft(
 }
 
 /** @returns The selector of the difficulty of @p draft, its names in
- * capitals. */
+ * @p language. */
 std::unique_ptr<RowControl> difficultySelector(
-    const std::shared_ptr<NewGameDraft>& draft) {
+    const std::shared_ptr<NewGameDraft>& draft, Language language) {
   std::vector<std::string> labels;
   labels.reserve(draft->difficulties.size());
-  std::ranges::transform(draft->difficulties, std::back_inserter(labels),
-                         upperCased);
+  for (const std::string& difficulty : draft->difficulties) {
+    labels.push_back(difficultyNameOf(difficulty, language));
+  }
   return std::make_unique<ChoiceSelector>(
       std::move(labels),
       ValueBinding<std::size_t>{
@@ -120,13 +121,16 @@ Menu newGameMenu(NewGameMenuParts parts) {
       startingDraft(std::move(parts.difficulties));
   ServerChoice& choice = parts.choice.get();
   IScreenNavigator& navigator = parts.navigator.get();
+  const Language language = parts.language;
   return MenuBuilder(MenuBuilder::Frame::Dialog, &parts.sounds.get())
-      .heading(NEW_GAME_HEADING)
-      .row({.label = DIFFICULTY_ROW_LABEL}, difficultySelector(draft))
-      .row({.label = NEW_GAME_LIVES_LABEL}, livesSelector(draft))
-      .row({.label = NEW_GAME_FRIENDLY_FIRE_LABEL}, friendlyFireSwitch(draft))
+      .heading(std::string(NEW_GAME_HEADING.in(language)))
+      .row({.label = DIFFICULTY_ROW_LABEL}, difficultySelector(draft, language))
+      .row({.label = std::string(NEW_GAME_LIVES_LABEL.in(language))},
+           livesSelector(draft))
+      .row({.label = std::string(NEW_GAME_FRIENDLY_FIRE_LABEL.in(language))},
+           friendlyFireSwitch(draft))
       .cancelButton({.label = BACK_LABEL}, [&navigator] { navigator.pop(); })
-      .button({.label = CREATE_LABEL},
+      .button({.label = std::string(CREATE_LABEL.in(language))},
               [draft, server = parts.server, &choice, &navigator] {
                 navigator.pop();
                 openConnectionTo(

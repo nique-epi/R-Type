@@ -113,14 +113,15 @@ void dropHeldInput(const PlayfieldMapping& pointAt, Widgets&... widgets) {
    ...);
 }
 
-/** @returns The line of @p rules, written once when the room is built;
+/** @returns The line of @p rules in @p language, written once when the room
+ * is built;
  * nothing when the client does not know the rules. */
 std::optional<std::string> rulesLineIfKnown(
-    const std::optional<network::GameRules>& rules) {
+    const std::optional<network::GameRules>& rules, Language language) {
   if (!rules.has_value()) {
     return std::nullopt;
   }
-  return rulesLineOf(*rules);
+  return rulesLineOf(*rules, language);
 }
 
 /** @returns Where the rules of the game are written: centered between the end
@@ -167,12 +168,12 @@ sf::IntRect leaderboardChipArea() {
       helpChipArea().position.x - BUTTON_GAP);
 }
 
-/** @returns Where the room paints HANGAR, BUTTON_GAP to the left of
- * RANKING. */
-sf::IntRect hangarChipArea() {
-  return MenuBuilder::chipArea(
-      {.label = HANGAR_LABEL, .keyName = HANGAR_KEY_NAME},
-      leaderboardChipArea().position.x - BUTTON_GAP);
+/** @returns Where the room paints HANGAR, written in @p language,
+ * BUTTON_GAP to the left of RANKING. */
+sf::IntRect hangarChipArea(Language language) {
+  return MenuBuilder::chipArea({.label = std::string(HANGAR_LABEL.in(language)),
+                                .keyName = HANGAR_KEY_NAME},
+                               leaderboardChipArea().position.x - BUTTON_GAP);
 }
 
 /** @returns Whether @p event presses the left button inside @p area, read on
@@ -291,7 +292,7 @@ LobbyScreen::LobbyScreen(LobbyScreenParts parts,
       palette_(parts.palette),
       motion_(parts.motion),
       place_(parts.place),
-      rulesLine_(rulesLineIfKnown(parts.rules)),
+      rulesLine_(rulesLineIfKnown(parts.rules, canvas_->language())),
       menu_(buildMenu(parts.keyName(readyKey_))),
       help_(HelpWalkthroughParts{.sounds = parts.sounds,
                                  .keys = parts.keys,
@@ -311,8 +312,9 @@ LobbyScreen::LobbyScreen(LobbyScreenParts parts,
           .sounds = parts.sounds}),
       look_(&parts.look.get()),
       hangarChip_(KeyChipParts{
-          .text = {.label = HANGAR_LABEL, .keyName = HANGAR_KEY_NAME},
-          .area = hangarChipArea(),
+          .text = {.label = std::string(HANGAR_LABEL.in(canvas_->language())),
+                   .keyName = HANGAR_KEY_NAME},
+          .area = hangarChipArea(canvas_->language()),
           .key = HANGAR_KEY,
           .action =
               [this] {

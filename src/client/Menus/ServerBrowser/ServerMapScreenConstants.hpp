@@ -7,6 +7,7 @@
 #include <chrono>
 #include <cstddef>
 #include <optional>
+#include <string_view>
 #include "CasinoScreenIdConstants.hpp"
 #include "HangarScreenIdConstants.hpp"
 #include "InterfaceConstants.hpp"
@@ -15,13 +16,15 @@
 #include "SectorMapConstants.hpp"
 #include "ServerMapTab.hpp"
 #include "ShopScreenIdConstants.hpp"
+#include "Translation.hpp"
 #include "WidgetConstants.hpp"
 
 namespace rtype::client {
 
 /** @brief The title of the map, under the tabs, SERVER_MAP_TITLE_GAP over
  * the top left corner of the map. */
-constexpr const char* SERVER_MAP_TITLE = "SECTOR MAP";
+constexpr Translation SERVER_MAP_TITLE{.english = "SECTOR MAP",
+                                       .french = "CARTE DES SECTEURS"};
 constexpr int SERVER_MAP_TITLE_GAP = 4;
 constexpr sf::Vector2i SERVER_MAP_TITLE_ANCHOR{
     SECTOR_MAP_AREA.position.x,
@@ -37,21 +40,26 @@ constexpr sf::Vector2i SERVER_MAP_TITLE_ANCHOR{
  * stands well clear of the title. The kopecks frame rises with them: its
  * amount, KOPECKS_FRAME_PADDING under its top, sits on the row of the labels.
  */
-constexpr const char* SECTORS_TAB_LABEL = "SECTORS";
-constexpr const char* CASINO_TAB_LABEL = "CASINO";
+constexpr Translation SECTORS_TAB_LABEL{.english = "SECTORS",
+                                        .french = "SECTEURS"};
+constexpr Translation CASINO_TAB_LABEL{.english = "CASINO", .french = "CASINO"};
 constexpr sf::Keyboard::Key CASINO_KEY = sf::Keyboard::Key::C;
 constexpr std::size_t SECTORS_TAB = 0;
 constexpr std::array<ServerMapTab, 4> SERVER_MAP_TABS{
-    ServerMapTab{.tab = {.label = SECTORS_TAB_LABEL, .locked = false},
+    ServerMapTab{.label = SECTORS_TAB_LABEL,
+                 .locked = false,
                  .key = std::nullopt,
                  .screen = std::nullopt},
-    ServerMapTab{.tab = {.label = HANGAR_LABEL, .locked = false},
+    ServerMapTab{.label = HANGAR_LABEL,
+                 .locked = false,
                  .key = HANGAR_KEY,
                  .screen = HANGAR_SCREEN},
-    ServerMapTab{.tab = {.label = SHOP_LABEL, .locked = false},
+    ServerMapTab{.label = SHOP_LABEL,
+                 .locked = false,
                  .key = SHOP_KEY,
                  .screen = SHOP_SCREEN},
-    ServerMapTab{.tab = {.label = CASINO_TAB_LABEL, .locked = false},
+    ServerMapTab{.label = CASINO_TAB_LABEL,
+                 .locked = false,
                  .key = CASINO_KEY,
                  .screen = CASINO_SCREEN}};
 constexpr int SERVER_MAP_TABS_TOP = SAFE_MARGIN / 2;
@@ -65,14 +73,21 @@ constexpr sf::Vector2i SERVER_MAP_KOPECKS_TOP_RIGHT{
 
 /** @brief What the map says while it has no server to show, centred on the
  * map, a line every MESSAGE_LINE_PITCH. */
-constexpr const char* SEARCHING_TITLE = "SEARCHING";
-constexpr const char* SEARCHING_DETAIL =
-    "THE LIST COMES FROM THE MASTER SERVER";
-constexpr const char* NO_SERVER_TITLE = "NO SERVER ONLINE";
-constexpr const char* NO_SERVER_DETAIL = "D: DIRECT CONNECT STILL WORKS";
-constexpr const char* MASTER_UNREACHABLE_TITLE = "MASTER UNREACHABLE";
-constexpr const char* MASTER_UNREACHABLE_DETAIL =
-    "R TO RETRY, D FOR DIRECT CONNECT";
+constexpr Translation SEARCHING_TITLE{.english = "SEARCHING",
+                                      .french = "RECHERCHE"};
+constexpr Translation SEARCHING_DETAIL{
+    .english = "THE LIST COMES FROM THE MASTER SERVER",
+    .french = "LA LISTE VIENT DU SERVEUR MAÎTRE"};
+constexpr Translation NO_SERVER_TITLE{.english = "NO SERVER ONLINE",
+                                      .french = "AUCUN SERVEUR EN LIGNE"};
+constexpr Translation NO_SERVER_DETAIL{
+    .english = "D: DIRECT CONNECT STILL WORKS",
+    .french = "D : LA CONNEXION DIRECTE MARCHE"};
+constexpr Translation MASTER_UNREACHABLE_TITLE{.english = "MASTER UNREACHABLE",
+                                               .french = "MAÎTRE INJOIGNABLE"};
+constexpr Translation MASTER_UNREACHABLE_DETAIL{
+    .english = "R TO RETRY, D FOR DIRECT CONNECT",
+    .french = "R POUR RÉESSAYER, D EN DIRECT"};
 constexpr sf::Vector2i MESSAGE_ANCHOR{240, 120};
 constexpr int MESSAGE_LINE_PITCH = 16;
 
@@ -105,14 +120,21 @@ constexpr sf::IntRect MINIMAP_KEEP_OUT{{366, 176}, {76, 34}};
 constexpr int BUBBLE_WIDTH = 120;
 constexpr sf::Vector2i BUBBLE_OFFSET{14, -8};
 constexpr int BUBBLE_FLIP_X = 240;
-constexpr const char* PILOTS_AND_GAMES_JOIN = " PILOTS - ";
-constexpr const char* GAMES_WORD = " GAMES";
+constexpr std::string_view PILOTS_MARK = "{PILOTS}";
+constexpr std::string_view GAMES_MARK = "{GAMES}";
+constexpr Translation PILOTS_AND_GAMES{
+    .english = "{PILOTS} PILOTS - {GAMES} GAMES",
+    .french = "{PILOTS} PILOTES - {GAMES} PARTIES"};
 constexpr const char* PING_AND_VERSION_JOIN = " MS - ";
 constexpr const char* NO_PING_TEXT = "--";
-constexpr const char* SLOW_WARNING = "SLOW: THE SERVER STRUGGLES";
-constexpr const char* UPDATE_WARNING = "UPDATE: ANOTHER VERSION";
-constexpr const char* OPEN_GAMES_HINT = "ENTER: ITS GAMES";
-constexpr const char* ZOOM_IN_HINT = "ENTER OR SCROLL: ZOOM IN";
+constexpr Translation SLOW_WARNING{.english = "SLOW: THE SERVER STRUGGLES",
+                                   .french = "LENT : LE SERVEUR PEINE"};
+constexpr Translation UPDATE_WARNING{.english = "UPDATE: ANOTHER VERSION",
+                                     .french = "MISE À JOUR : AUTRE VERSION"};
+constexpr Translation OPEN_GAMES_HINT{.english = "ENTER: ITS GAMES",
+                                      .french = "ENTRÉE : SES PARTIES"};
+constexpr Translation ZOOM_IN_HINT{.english = "ENTER OR SCROLL: ZOOM IN",
+                                   .french = "ENTRÉE OU MOLETTE : ZOOM"};
 
 /** @brief The chips under the map: QUICK PLAY on the left, then ADDRESS
  * and BACK against the right edge of the map. */
@@ -122,10 +144,12 @@ constexpr int SERVER_MAP_CHIPS_TOP =
 constexpr int SERVER_MAP_CHIPS_LEFT = SECTOR_MAP_AREA.position.x;
 constexpr int SERVER_MAP_CHIPS_RIGHT =
     SECTOR_MAP_AREA.position.x + SECTOR_MAP_AREA.size.x;
-constexpr const char* QUICK_PLAY_LABEL = "QUICK PLAY";
+constexpr Translation QUICK_PLAY_LABEL{.english = "QUICK PLAY",
+                                       .french = "PARTIE RAPIDE"};
 constexpr const char* QUICK_PLAY_KEY_NAME = "Q";
 constexpr sf::Keyboard::Key QUICK_PLAY_KEY = sf::Keyboard::Key::Q;
-constexpr const char* ADDRESS_LABEL = "ADDRESS";
+constexpr Translation DIRECT_CONNECT_CHIP_LABEL{.english = "ADDRESS",
+                                                .french = "ADRESSE"};
 constexpr const char* ADDRESS_KEY_NAME = "D";
 constexpr sf::Keyboard::Key ADDRESS_KEY = sf::Keyboard::Key::D;
 
@@ -151,26 +175,39 @@ constexpr int GAME_ROW_HIGHLIGHT_LEFT = 8;
 constexpr int GAME_ROW_HIGHLIGHT_RISE = 2;
 constexpr int GAME_ROW_HIGHLIGHT_HEIGHT = 12;
 constexpr int GAME_PANEL_DESCRIPTION_TOP = 152;
-constexpr const char* GAME_COLUMN_LABEL = "GAME";
-constexpr const char* PILOTS_COLUMN_LABEL = "PILOTS";
-constexpr const char* STATE_COLUMN_LABEL = "STATE";
+constexpr Translation GAME_COLUMN_LABEL{.english = "GAME", .french = "PARTIE"};
+constexpr Translation PILOTS_COLUMN_LABEL{.english = "PILOTS",
+                                          .french = "PILOTES"};
+constexpr Translation STATE_COLUMN_LABEL{.english = "STATE", .french = "ÉTAT"};
 constexpr const char* PILOTS_SEPARATOR = "/";
-constexpr const char* WAITING_WORD = "WAITING";
-constexpr const char* IN_GAME_WORD = "IN GAME";
-constexpr const char* FULL_WORD = "FULL";
-constexpr const char* JOINABLE_DESCRIPTION = ": ENTER TO JOIN.";
-constexpr const char* IN_GAME_DESCRIPTION = " IS IN GAME: IT CANNOT BE JOINED.";
-constexpr const char* FULL_DESCRIPTION = " IS FULL: IT CANNOT BE JOINED.";
-constexpr const char* NO_GAME_TITLE = "NO GAME YET";
+constexpr Translation WAITING_WORD{.english = "WAITING", .french = "ATTENTE"};
+constexpr Translation IN_GAME_WORD{.english = "IN GAME", .french = "EN JEU"};
+constexpr Translation FULL_WORD{.english = "FULL", .french = "PLEINE"};
+constexpr std::string_view GAME_MARK = "{GAME}";
+constexpr std::string_view RULES_MARK = "{RULES}";
+constexpr Translation JOINABLE_DESCRIPTION{
+    .english = "{GAME}, {RULES}: ENTER TO JOIN.",
+    .french = "{GAME}, {RULES} : ENTRÉE POUR REJOINDRE."};
+constexpr Translation IN_GAME_DESCRIPTION{
+    .english = "{GAME} IS IN GAME: IT CANNOT BE JOINED.",
+    .french = "{GAME} EST EN JEU : IMPOSSIBLE D'Y ENTRER."};
+constexpr Translation FULL_DESCRIPTION{
+    .english = "{GAME} IS FULL: IT CANNOT BE JOINED.",
+    .french = "{GAME} EST PLEINE : IMPOSSIBLE D'Y ENTRER."};
+constexpr Translation NO_GAME_TITLE{.english = "NO GAME YET",
+                                    .french = "PAS ENCORE DE PARTIE"};
 
 /** @brief The row that opens a new game, first in the panel once the master
  * answered: its label, the line that says what ENTER does, and the row of the
  * message under it when the server has no game. */
-constexpr const char* NEW_GAME_ROW_LABEL = "+ NEW GAME";
-constexpr const char* NEW_GAME_DESCRIPTION =
-    "+ NEW GAME: ENTER TO SET ITS RULES.";
+constexpr Translation NEW_GAME_ROW_LABEL{.english = "+ NEW GAME",
+                                         .french = "+ NOUVELLE PARTIE"};
+constexpr Translation NEW_GAME_DESCRIPTION{
+    .english = "+ NEW GAME: ENTER TO SET ITS RULES.",
+    .french = "+ NOUVELLE PARTIE : ENTRÉE POUR SES RÈGLES."};
 constexpr int GAME_PANEL_EMPTY_MESSAGE_ROW =
     GAME_PANEL_FIRST_ROW + (2 * GAME_ROW_PITCH);
-constexpr const char* SEARCHING_GAMES_TITLE = "ASKING THE MASTER...";
+constexpr Translation SEARCHING_GAMES_TITLE{.english = "ASKING THE MASTER...",
+                                            .french = "DEMANDE AU MAÎTRE..."};
 
 }  // namespace rtype::client

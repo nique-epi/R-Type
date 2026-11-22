@@ -2,6 +2,7 @@
 
 #include <SFML/Window/Keyboard.hpp>
 #include "ScreenId.hpp"
+#include "Translation.hpp"
 
 namespace rtype::client {
 
@@ -11,7 +12,7 @@ constexpr ScreenId SHOP_SCREEN{"shop"};
 
 /** @brief The name of the tab of the server map that opens the shop, and
  * the key that opens it from the map. */
-constexpr const char* SHOP_LABEL = "SHOP";
+constexpr Translation SHOP_LABEL{.english = "SHOP", .french = "BOUTIQUE"};
 constexpr sf::Keyboard::Key SHOP_KEY = sf::Keyboard::Key::S;
 
 }  // namespace rtype::client

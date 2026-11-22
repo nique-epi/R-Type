@@ -4,6 +4,7 @@
 #include "GameListSnapshot.hpp"
 #include "GamePanel.hpp"
 #include "GameRow.hpp"
+#include "Language.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "ServerListPhase.hpp"
 #include "ServerMapScreenFixtures.hpp"
@@ -12,7 +13,9 @@
 using rtype::client::GameListSnapshot;
 using rtype::client::GamePanel;
 using rtype::client::GameRow;
+using rtype::client::Language;
 using rtype::client::ServerListPhase;
+using rtype::client::testing::FRENCH_WAITING_GAME_LINE;
 using rtype::client::testing::LYON_SERVER_NAME;
 using rtype::client::testing::lyonGames;
 using rtype::client::testing::NEW_GAME_LINE;
@@ -189,4 +192,21 @@ TEST(GamePanel, AWaitingGameNamesItsRules) {
   panel.paint(canvas);
 
   EXPECT_NE(writingOf(record, std::string{WAITING_GAME_LINE}), nullptr);
+}
+
+/**
+ * Given the games of Lyon, the waiting game chosen, the client in French
+ * When the panel is painted
+ * Then the line under the rows names the game with its rules in French
+ */
+TEST(GamePanel, AWaitingGameNamesItsRulesInFrench) {
+  GamePanel panel;
+  panel.show(lyonGames(), std::string{LYON_SERVER_NAME});
+  panel.move(1);
+  InterfaceCanvasRecord record = recordIn(Language::French);
+  RecordingInterfaceCanvas canvas(record);
+
+  panel.paint(canvas);
+
+  EXPECT_NE(writingOf(record, std::string{FRENCH_WAITING_GAME_LINE}), nullptr);
 }
