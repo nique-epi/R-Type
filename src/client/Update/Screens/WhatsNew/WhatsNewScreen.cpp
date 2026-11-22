@@ -5,7 +5,6 @@
 #include <SFML/Window/Event.hpp>
 #include <cstddef>
 #include <memory>
-#include <string>
 #include <utility>
 #include "CutCornerBox.hpp"
 #include "HeldKey.hpp"

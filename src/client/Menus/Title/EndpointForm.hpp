@@ -1,7 +1,6 @@
 #pragma once
 
 #include <functional>
-#include "Endpoint.hpp"
 #include "EndpointReading.hpp"
 #include "Menu.hpp"
 #include "MenuBuilder.hpp"

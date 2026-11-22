@@ -5,6 +5,7 @@
 #include "ConnectionPhase.hpp"
 #include "DialogMenus.hpp"
 #include "DialogScreen.hpp"
+#include "DialogTools.hpp"
 #include "IScreen.hpp"
 #include "KeyPress.hpp"
 #include "MenuScreenIdConstants.hpp"

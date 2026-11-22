@@ -11,9 +11,9 @@ namespace rtype::client {
  * writes every word. */
 [[nodiscard]] std::string upperCased(std::string_view text);
 
-/** @returns The name of the difficulty @p id in @p language: a difficulty
- * the client knows by its translation, any other in capitals. */
-[[nodiscard]] std::string difficultyNameOf(std::string_view id,
+/** @returns The name of @p difficulty in @p language: a difficulty the
+ * client knows by its translation, any other in capitals. */
+[[nodiscard]] std::string difficultyNameOf(std::string_view difficulty,
                                            Language language);
 
 /** @returns The rules of a game in words, in @p language, as the panel of the

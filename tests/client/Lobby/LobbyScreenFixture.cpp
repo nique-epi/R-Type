@@ -6,6 +6,7 @@
 #include "ConnectionPhase.hpp"
 #include "InterfaceColorConstants.hpp"
 #include "KeyPress.hpp"
+#include "Language.hpp"
 #include "LobbyPlace.hpp"
 #include "LobbyScreen.hpp"
 #include "LobbyScreenParts.hpp"

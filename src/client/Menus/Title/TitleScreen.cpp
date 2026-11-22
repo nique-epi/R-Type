@@ -9,6 +9,7 @@
 #include "ClientVersionConstants.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "IScreenNavigator.hpp"
+#include "Language.hpp"
 #include "Menu.hpp"
 #include "MenuBuilder.hpp"
 #include "MenuScreenIdConstants.hpp"

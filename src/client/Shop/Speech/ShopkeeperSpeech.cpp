@@ -2,7 +2,6 @@
 #include <algorithm>
 #include <cstddef>
 #include <span>
-#include <string_view>
 #include "Ambience.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "ISoundPlayer.hpp"

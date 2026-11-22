@@ -4,6 +4,7 @@
 #include <string>
 #include "IInterfaceCanvas.hpp"
 #include "ISoundPlayer.hpp"
+#include "Language.hpp"
 #include "Menu.hpp"
 #include "MenuBuilder.hpp"
 #include "PlayfieldMapping.hpp"

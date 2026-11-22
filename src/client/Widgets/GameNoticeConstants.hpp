@@ -4,7 +4,6 @@
 #include <SFML/System/Vector2.hpp>
 #include <chrono>
 #include <cstddef>
-#include <string_view>
 #include "HudSpriteConstants.hpp"
 #include "InterfaceConstants.hpp"
 #include "StatusBandConstants.hpp"

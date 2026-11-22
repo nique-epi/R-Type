@@ -7,6 +7,7 @@
 #include "IInterfaceCanvas.hpp"
 #include "IScreenNavigator.hpp"
 #include "ISoundPlayer.hpp"
+#include "Language.hpp"
 #include "PlayfieldMapping.hpp"
 #include "TabRail.hpp"
 #include "TimeConstants.hpp"

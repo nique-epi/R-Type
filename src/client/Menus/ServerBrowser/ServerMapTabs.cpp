@@ -4,11 +4,13 @@
 #include <SFML/Window/Mouse.hpp>
 #include <cstddef>
 #include <optional>
+#include <string>
 #include <vector>
 #include "IInterfaceCanvas.hpp"
 #include "IScreenNavigator.hpp"
 #include "ISoundPlayer.hpp"
 #include "InterfacePixel.hpp"
+#include "Language.hpp"
 #include "PlayfieldMapping.hpp"
 #include "ScreenId.hpp"
 #include "ServerMapScreenConstants.hpp"

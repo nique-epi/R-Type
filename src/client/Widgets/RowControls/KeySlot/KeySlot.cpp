@@ -21,8 +21,8 @@ KeySlot::KeySlot(Wiring wiring) : wiring_(std::move(wiring)) {}
 
 int KeySlot::width() const {
   if (listening_) {
-    return static_cast<int>(longestLettersIn(KEY_LISTENING_TEXT)) *
-               REGULAR_FONT_ADVANCE +
+    return (static_cast<int>(longestLettersIn(KEY_LISTENING_TEXT)) *
+            REGULAR_FONT_ADVANCE) +
            (SIDES_PER_AXIS * KEY_LISTENING_PADDING);
   }
   const int keyCapWidth =

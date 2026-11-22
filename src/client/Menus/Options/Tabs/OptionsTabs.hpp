@@ -3,13 +3,11 @@
 #include <cstddef>
 #include <optional>
 #include <vector>
-#include "ISizableWindow.hpp"
 #include "Language.hpp"
 #include "Menu.hpp"
 #include "OptionsRowHandles.hpp"
 #include "OptionsTabsParts.hpp"
 #include "SelectedRow.hpp"
-#include "SettingsService.hpp"
 
 namespace rtype::client {
 

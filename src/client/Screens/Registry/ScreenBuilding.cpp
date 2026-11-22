@@ -2,6 +2,7 @@
 #include <SFML/System/Vector2.hpp>
 #include <memory>
 #include <optional>
+#include <string>
 #include <utility>
 #include "AssetLibrary.hpp"
 #include "AssetList.hpp"
@@ -12,6 +13,7 @@
 #include "IScreenNavigator.hpp"
 #include "ISoundPlayer.hpp"
 #include "InterfaceCanvas.hpp"
+#include "Language.hpp"
 #include "LoadingScreen.hpp"
 #include "LoadingScreenParts.hpp"
 #include "Menu.hpp"

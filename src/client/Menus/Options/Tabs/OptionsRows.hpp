@@ -9,12 +9,10 @@
 #include "BoundAction.hpp"
 #include "ISizableWindow.hpp"
 #include "KeyNames.hpp"
-#include "Language.hpp"
 #include "RowControl.hpp"
 #include "Setting.hpp"
 #include "SettingsService.hpp"
 #include "SliderLook.hpp"
-#include "Translation.hpp"
 
 namespace rtype::client {
 

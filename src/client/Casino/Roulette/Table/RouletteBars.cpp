@@ -5,6 +5,7 @@
 #include "IInterfaceCanvas.hpp"
 #include "ISoundPlayer.hpp"
 #include "KeyChip.hpp"
+#include "Language.hpp"
 #include "PlayfieldMapping.hpp"
 #include "RouletteBarActions.hpp"
 #include "RouletteBarStates.hpp"

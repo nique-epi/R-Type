@@ -2,7 +2,6 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
-#include <iterator>
 #include <memory>
 #include <string>
 #include <utility>
@@ -16,6 +15,7 @@
 #include "GameRules.hpp"
 #include "GameRulesLine.hpp"
 #include "IScreenNavigator.hpp"
+#include "Language.hpp"
 #include "Menu.hpp"
 #include "MenuBuilder.hpp"
 #include "NewGameDialogConstants.hpp"

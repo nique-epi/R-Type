@@ -3,7 +3,6 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
-#include <string_view>
 #include "Translation.hpp"
 
 namespace rtype::client {

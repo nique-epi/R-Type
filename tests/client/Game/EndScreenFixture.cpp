@@ -10,6 +10,7 @@
 #include "EndScreenTestConstants.hpp"
 #include "FinalPilot.hpp"
 #include "FlashPreference.hpp"
+#include "GameEnded.hpp"
 #include "InterfaceColorConstants.hpp"
 #include "Language.hpp"
 #include "MotionPreference.hpp"

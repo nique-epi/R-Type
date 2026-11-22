@@ -5,6 +5,7 @@
 #include "Language.hpp"
 #include "SignInFixtures.hpp"
 #include "SignInLines.hpp"
+#include "SignInStanding.hpp"
 #include "SignInTestConstants.hpp"
 #include "SignInText.hpp"
 

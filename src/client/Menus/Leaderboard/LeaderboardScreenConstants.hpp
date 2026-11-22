@@ -11,7 +11,6 @@
 #include "BackgroundColorConstants.hpp"
 #include "FireColorConstants.hpp"
 #include "GameRuleConstants.hpp"
-#include "InterfaceConstants.hpp"
 #include "ItemListColumn.hpp"
 #include "ItemListLayout.hpp"
 #include "LeaderboardFigure.hpp"

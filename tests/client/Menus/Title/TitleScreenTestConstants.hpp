@@ -4,7 +4,7 @@
 #include <chrono>
 #include <cstdint>
 #include <string_view>
-#include "BackgroundConstants.hpp"
+#include "PixelGridConstants.hpp"
 
 namespace rtype::client::testing {
 

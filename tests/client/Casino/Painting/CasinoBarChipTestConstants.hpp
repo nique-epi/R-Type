@@ -2,7 +2,6 @@
 
 #include <array>
 #include "CashierConstants.hpp"
-#include "CasinoBar.hpp"
 #include "CasinoEntranceConstants.hpp"
 #include "CasinoHallConstants.hpp"
 #include "RouletteScreenConstants.hpp"

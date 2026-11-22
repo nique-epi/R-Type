@@ -6,6 +6,7 @@
 #include "IInterfaceCanvas.hpp"
 #include "InterfaceColorConstants.hpp"
 #include "InterfaceConstants.hpp"
+#include "Language.hpp"
 #include "MissionBannerConstants.hpp"
 #include "TextStyle.hpp"
 #include "TimeConstants.hpp"

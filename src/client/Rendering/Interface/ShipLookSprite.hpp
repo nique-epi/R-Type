@@ -1,7 +1,6 @@
 #pragma once
 
 #include <SFML/System/Vector2.hpp>
-#include <string_view>
 #include "Translation.hpp"
 
 namespace rtype::client {

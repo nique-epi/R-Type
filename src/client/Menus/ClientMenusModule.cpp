@@ -20,6 +20,7 @@
 #include "InstallContext.hpp"
 #include "IntroScreen.hpp"
 #include "IntroScreenParts.hpp"
+#include "Language.hpp"
 #include "LeaderboardScreen.hpp"
 #include "LeaderboardScreenConstants.hpp"
 #include "LeaderboardScreenParts.hpp"

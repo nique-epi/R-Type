@@ -6,7 +6,6 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
-#include <string_view>
 #include "BackgroundColorConstants.hpp"
 #include "FireColorConstants.hpp"
 #include "InterfaceColorConstants.hpp"

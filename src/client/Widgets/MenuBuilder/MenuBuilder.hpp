@@ -10,7 +10,6 @@
 #include <string>
 #include <vector>
 #include "Button.hpp"
-#include "IScreenNavigator.hpp"
 #include "Menu.hpp"
 #include "PanelCursor.hpp"
 #include "PendingButton.hpp"

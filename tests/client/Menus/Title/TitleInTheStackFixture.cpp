@@ -3,6 +3,7 @@
 #include <memory>
 #include "DialogMenus.hpp"
 #include "DialogScreen.hpp"
+#include "DialogTools.hpp"
 #include "IScreen.hpp"
 #include "MenuScreenIdConstants.hpp"
 #include "MotionPreference.hpp"

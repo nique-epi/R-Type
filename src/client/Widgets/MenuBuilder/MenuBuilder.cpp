@@ -12,7 +12,6 @@
 #include <vector>
 #include "BarRowWidth.hpp"
 #include "Button.hpp"
-#include "IScreenNavigator.hpp"
 #include "InterfaceConstants.hpp"
 #include "KeyCap.hpp"
 #include "Menu.hpp"

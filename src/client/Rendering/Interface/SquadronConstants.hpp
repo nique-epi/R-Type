@@ -2,7 +2,6 @@
 
 #include <SFML/System/Vector2.hpp>
 #include <array>
-#include <string_view>
 #include "InterfaceColorConstants.hpp"
 #include "SquadronShip.hpp"
 #include "TextStyle.hpp"

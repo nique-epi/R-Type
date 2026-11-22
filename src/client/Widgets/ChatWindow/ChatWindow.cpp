@@ -12,7 +12,6 @@
 #include "ChatWindowConstants.hpp"
 #include "IChatChannel.hpp"
 #include "IInterfaceCanvas.hpp"
-#include "Language.hpp"
 #include "PlayerPalette.hpp"
 #include "PlayerSettings.hpp"
 #include "ProtocolConstants.hpp"

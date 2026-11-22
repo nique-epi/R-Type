@@ -5,8 +5,6 @@
 #include <memory>
 #include <span>
 #include <string>
-#include <utility>
-#include <vector>
 #include "ChoiceSelector.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "ISoundPlayer.hpp"

@@ -5,13 +5,11 @@
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Graphics/Shader.hpp>
-#include <SFML/Graphics/Texture.hpp>
 #include <SFML/Graphics/VertexArray.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <functional>
 #include <optional>
 #include <span>
-#include <string>
 #include <string_view>
 #include "ColoredPixel.hpp"
 #include "IInterfaceCanvas.hpp"

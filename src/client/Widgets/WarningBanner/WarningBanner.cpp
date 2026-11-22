@@ -12,6 +12,7 @@
 #include "IInterfaceCanvas.hpp"
 #include "InterfaceColorConstants.hpp"
 #include "InterfaceConstants.hpp"
+#include "Language.hpp"
 #include "TextStyle.hpp"
 #include "TimeConstants.hpp"
 #include "Typing.hpp"

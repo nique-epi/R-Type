@@ -8,6 +8,7 @@
 #include "ConnectionScreenFixtures.hpp"
 #include "ConnectionScreenParts.hpp"
 #include "ConnectionStatus.hpp"
+#include "Language.hpp"
 #include "PointerEvents.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"

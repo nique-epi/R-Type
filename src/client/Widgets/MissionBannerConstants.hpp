@@ -2,7 +2,6 @@
 
 #include <SFML/Graphics/Rect.hpp>
 #include <chrono>
-#include <string_view>
 #include "InterfaceConstants.hpp"
 #include "StatusBandConstants.hpp"
 #include "TimeConstants.hpp"

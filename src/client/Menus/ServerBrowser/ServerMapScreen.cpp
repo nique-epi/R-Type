@@ -8,6 +8,7 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include <string>
 #include <utility>
 #include <vector>
 #include "Ambience.hpp"
@@ -27,6 +28,7 @@
 #include "KeyChip.hpp"
 #include "KeyChipParts.hpp"
 #include "KopecksPainting.hpp"
+#include "Language.hpp"
 #include "MapDirection.hpp"
 #include "MenuBuilder.hpp"
 #include "MenuScreenIdConstants.hpp"

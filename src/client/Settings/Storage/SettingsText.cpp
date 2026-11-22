@@ -15,6 +15,7 @@
 #include "ColorMode.hpp"
 #include "InputConstants.hpp"
 #include "KeyNames.hpp"
+#include "LanguageConstants.hpp"
 #include "NamedNumber.hpp"
 #include "PixelSize.hpp"
 #include "PlayerSettings.hpp"

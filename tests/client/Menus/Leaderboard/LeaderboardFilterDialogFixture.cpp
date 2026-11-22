@@ -2,6 +2,7 @@
 #include <SFML/Window/Keyboard.hpp>
 #include <optional>
 #include "KeyPress.hpp"
+#include "Language.hpp"
 #include "LeaderboardFilterChoice.hpp"
 #include "LeaderboardFilterDialog.hpp"
 #include "PointerEvents.hpp"

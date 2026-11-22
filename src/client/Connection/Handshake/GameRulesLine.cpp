@@ -2,7 +2,6 @@
 #include <algorithm>
 #include <cctype>
 #include <cstddef>
-#include <iterator>
 #include <string>
 #include <string_view>
 #include "GameRuleConstants.hpp"
@@ -24,14 +23,14 @@ std::string upperCased(std::string_view text) {
   return upper;
 }
 
-std::string difficultyNameOf(std::string_view id, Language language) {
-  const auto known = std::ranges::find(identifiers::DIFFICULTY_ORDER, id);
-  if (known == identifiers::DIFFICULTY_ORDER.end()) {
-    return upperCased(id);
+std::string difficultyNameOf(std::string_view difficulty, Language language) {
+  for (std::size_t order = 0; order < identifiers::DIFFICULTY_ORDER.size();
+       ++order) {
+    if (identifiers::DIFFICULTY_ORDER.at(order) == difficulty) {
+      return std::string(DIFFICULTY_NAMES.at(order).in(language));
+    }
   }
-  const auto order = static_cast<std::size_t>(
-      std::distance(identifiers::DIFFICULTY_ORDER.begin(), known));
-  return std::string(DIFFICULTY_NAMES.at(order).in(language));
+  return upperCased(difficulty);
 }
 
 std::string rulesLineOf(const network::GameRules& rules, Language language) {

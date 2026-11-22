@@ -23,6 +23,7 @@
 #include "IInterfaceCanvas.hpp"
 #include "ISoundPlayer.hpp"
 #include "InterfacePixel.hpp"
+#include "Language.hpp"
 #include "Position.hpp"
 #include "SoundConstants.hpp"
 #include "TimeConstants.hpp"

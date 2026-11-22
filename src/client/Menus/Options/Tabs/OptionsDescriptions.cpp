@@ -2,7 +2,6 @@
 #include <cstddef>
 #include <optional>
 #include <string>
-#include <string_view>
 #include "BoundAction.hpp"
 #include "DisplayMode.hpp"
 #include "Dropdown.hpp"

@@ -1,5 +1,4 @@
 #include <gtest/gtest.h>
-#include <string>
 #include "TextMarks.hpp"
 #include "TextMarksTestConstants.hpp"
 

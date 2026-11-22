@@ -5,13 +5,11 @@
 #include <SFML/Window/Keyboard.hpp>
 #include <cstddef>
 #include <memory>
-#include <optional>
 #include <string_view>
 #include <vector>
 #include "BackgroundColorConstants.hpp"
 #include "InterfaceColorConstants.hpp"
 #include "InterfaceConstants.hpp"
-#include "KeyPress.hpp"
 #include "Menu.hpp"
 #include "MenuBuilder.hpp"
 #include "MenuPainting.hpp"
