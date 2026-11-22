@@ -1,9 +1,11 @@
 #include "DamageRules.hpp"
 #include <algorithm>
+#include <array>
 #include <cstdint>
 #include <optional>
 #include "AppliedHit.hpp"
 #include "Armored.hpp"
+#include "Boss.hpp"
 #include "ComponentRegistry.hpp"
 #include "CurrentAction.hpp"
 #include "DamageConstants.hpp"
@@ -20,6 +22,7 @@
 #include "MissileHit.hpp"
 #include "MissileOwner.hpp"
 #include "NetworkIdentity.hpp"
+#include "PilotCountConstants.hpp"
 #include "ScoreValue.hpp"
 #include "Shootable.hpp"
 
@@ -54,6 +57,18 @@ std::optional<std::uint8_t> shooterOf(engine::ComponentRegistry& components,
     return std::nullopt;
   }
   return owner->playerNumber;
+}
+
+/** @brief Adds @p taken to the tally @p boss keeps for @p shooter: nothing
+ * for a body that is no boss, nor for a missile of no pilot. */
+void tallyDamage(Boss* boss, std::optional<std::uint8_t> shooter, int taken) {
+  if (boss == nullptr || !shooter.has_value() ||
+      *shooter < FIRST_PILOT_NUMBER ||
+      *shooter >= FIRST_PILOT_NUMBER + MOST_PILOTS || taken <= 0) {
+    return;
+  }
+  boss->damageByPilot.at(*shooter - FIRST_PILOT_NUMBER) +=
+      static_cast<std::uint32_t>(taken);
 }
 
 /** @returns Whether @p target is Armored and in any phase of the attack it
@@ -147,6 +162,8 @@ void DamageRules::hurtTarget(engine::Entity target,
   if (applied.damage == 0) {
     return;
   }
+  tallyDamage(components_.get<Boss>(target), shooter,
+              applied.damage + std::min(health->points, 0));
   if (health->points > 0) {
     events_.publish(EntityDamage{.networkId = applied.targetNetworkId});
     return;
@@ -166,11 +183,17 @@ void DamageRules::killTarget(engine::Entity target, std::uint32_t networkId,
                              std::optional<std::uint8_t> shooter) {
   const ScoreValue* const score = components_.get<ScoreValue>(target);
   const std::uint32_t points = score == nullptr ? 0 : score->points;
+  const Boss* const boss = components_.get<Boss>(target);
+  const std::array<std::uint32_t, MOST_PILOTS> damageByPilot =
+      boss == nullptr ? std::array<std::uint32_t, MOST_PILOTS>{}
+                      : boss->damageByPilot;
   components_.destroy(target);
   events_.publish(EntityDestruction{.networkId = networkId,
                                     .cause = DestructionCause::Killed});
   if (shooter.has_value() && points > 0) {
-    events_.publish(EnemyKilled{.playerNumber = *shooter, .points = points});
+    events_.publish(EnemyKilled{.playerNumber = *shooter,
+                                .points = points,
+                                .damageByPilot = damageByPilot});
   }
 }
 

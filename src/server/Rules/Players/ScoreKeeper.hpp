@@ -20,11 +20,15 @@ class PlayerRoster;
 
 /**
  * @brief Adds the points of each enemy destroyed to the score of the player
- * who fired the missile.
+ * who fired the missile, or, for a boss, of every pilot by the damage it
+ * dealt.
  *
  * Subscribes to EnemyKilled on construction and unsubscribes on destruction.
- * Only a player connected under the number of the event is credited: a kill
- * naming a player who left, or a number no player holds, changes no score. A
+ * A kill whose damageByPilot holds any damage shares its points by that
+ * damage, rounded down, the rest of the division going to the player who
+ * destroyed it; a kill with no damage tallied gives all its points to that
+ * player. Only a player connected under a number is credited: the share of a
+ * player who left, or of a number no player holds, changes no score. A
  * score stops at its largest value instead of wrapping around. The bus and the
  * roster must outlive this object.
  */

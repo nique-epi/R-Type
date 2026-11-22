@@ -1,9 +1,11 @@
 #pragma once
 
 #include <gtest/gtest.h>
+#include <array>
 #include <cstdint>
 #include "ConnectedPlayer.hpp"
 #include "EventBus.hpp"
+#include "PilotCountConstants.hpp"
 #include "PlayerRoster.hpp"
 #include "ScoreKeeper.hpp"
 
@@ -15,6 +17,11 @@ class ScoreKeeperFixture : public ::testing::Test {
   ScoreKeeperFixture();
 
   void kill(std::uint8_t playerNumber, std::uint32_t points);
+  /** @brief Publishes the kill of a boss worth @p points by @p playerNumber,
+   * each pilot having dealt it the damage of @p damageByPilot. */
+  void killBoss(
+      std::uint8_t playerNumber, std::uint32_t points,
+      const std::array<std::uint32_t, game::MOST_PILOTS>& damageByPilot);
 
   [[nodiscard]] std::uint32_t firstScore() const;
   [[nodiscard]] std::uint32_t secondScore() const;

@@ -9,6 +9,8 @@ target_link_libraries(rtype_game_damage_rules
     rtype_game_behaviours_piloting
     rtype_game_components
     rtype_game_events
+  PRIVATE
+    rtype_game_boss
 )
 
 rtype_enable_warnings(rtype_game_damage_rules)

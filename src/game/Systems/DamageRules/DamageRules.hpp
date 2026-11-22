@@ -33,12 +33,13 @@ struct MissileHit;
  * armored in loses nothing: the missile is removed, nothing else is announced.
  * When the missile has a MissileOwner and the target that dies has a ScoreValue
  * above 0, an EnemyKilled follows the destruction, naming the owner and the
- * points. A hit naming an entity that is gone or has no NetworkIdentity is
- * ignored, so two missiles reaching the same target in one dispatch never
- * destroy it twice. Once a hit is applied and its announcements published,
- * the HitReaction of the target, when its sheet names an on_hit, is told of
- * it as an AppliedHit, a hit on a target without Health included: what the
- * handler publishes is delivered after the announcements of the hit, since
+ * points. A Boss keeps the damage each pilot's missiles took from it, and its
+ * EnemyKilled carries that tally. A hit naming an entity that is gone or has no
+ * NetworkIdentity is ignored, so two missiles reaching the same target in one
+ * dispatch never destroy it twice. Once a hit is applied and its announcements
+ * published, the HitReaction of the target, when its sheet names an on_hit, is
+ * told of it as an AppliedHit, a hit on a target without Health included: what
+ * the handler publishes is delivered after the announcements of the hit, since
  * the bus delivers in the order of publication. The bus and the registry
  * must outlive this object.
  */
