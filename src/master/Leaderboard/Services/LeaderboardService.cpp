@@ -1,6 +1,5 @@
 #include "LeaderboardService.hpp"
 #include <chrono>
-#include <cstdint>
 #include <exception>
 #include <optional>
 #include <string>

@@ -6,6 +6,7 @@
 #include "GameEndAnnouncerFixture.hpp"
 #include "GameEndAnnouncerTestConstants.hpp"
 #include "GameEnded.hpp"
+#include "GameOutcome.hpp"
 #include "Instances/GameInstanceTestConstants.hpp"
 #include "OutgoingDatagram.hpp"
 #include "SentDatagrams.hpp"
@@ -128,8 +129,7 @@ TEST_F(GameEndAnnouncerFixture, SendsTheBountyOfEachPlayer) {
 
   const std::vector<network::OutgoingDatagram> received = sentTo(FIRST_PLAYER);
   ASSERT_EQ(received.size(), 1U);
-  const network::GameEnded ended =
-      onlyMessageIn<network::GameEnded>(received.front());
+  const auto ended = onlyMessageIn<network::GameEnded>(received.front());
   ASSERT_EQ(ended.players.size(), 2U);
   EXPECT_EQ(ended.players.front().bounty, FIRST_PLAYER_BOUNTY);
   EXPECT_EQ(ended.players.back().bounty, SECOND_PLAYER_BOUNTY);

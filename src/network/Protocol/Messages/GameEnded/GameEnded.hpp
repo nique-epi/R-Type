@@ -25,8 +25,8 @@ enum class WireGameOutcome : std::uint8_t {
  * it.
  */
 struct PlayerScore {
-  std::uint8_t playerNumber;
-  std::uint32_t score;
+  std::uint8_t playerNumber{};
+  std::uint32_t score{};
   std::uint32_t bounty{0};
 
   bool operator==(const PlayerScore&) const = default;

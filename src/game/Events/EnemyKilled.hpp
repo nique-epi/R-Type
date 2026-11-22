@@ -16,8 +16,8 @@ namespace rtype::game {
  * shared by that damage, and the bounty of its ScoreValue.
  */
 struct EnemyKilled {
-  std::uint8_t playerNumber;
-  std::uint32_t points;
+  std::uint8_t playerNumber{};
+  std::uint32_t points{};
   /** @brief The damage each pilot dealt to it (DamageTally); all 0 for an
    * enemy that keeps no tally. */
   std::array<std::uint32_t, identifiers::MAXIMUM_PLAYERS> damageByPilot{};
