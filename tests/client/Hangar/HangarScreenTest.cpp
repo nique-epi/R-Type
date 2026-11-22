@@ -222,8 +222,8 @@ TEST_F(HangarScreenFixture, ALockedItemIsNotWorn) {
 TEST_F(HangarScreenFixture, ALockedCellShowsNoIcon) {
   update(rtype::engine::Duration::zero());
 
-  EXPECT_FALSE(
-      std::ranges::any_of(painting().images, [](const RecordedImage& image) {
+  EXPECT_FALSE(std::ranges::any_of(
+      painting().images, [](const RecordedImage& image) noexcept {
         return image.assetId == LOOK_SHEET_ID &&
                image.source.position.x == CROWN_ICON_LEFT_ON_THE_SHEET;
       }));
