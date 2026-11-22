@@ -470,6 +470,28 @@ TEST_F(OptionsScreenFixture, EveryDescriptionFitsBesideBack) {
 }
 
 /**
+ * Given every row of every tab, the client in French
+ * When each is selected in turn
+ * Then its French description fits between BACK and the safe margin
+ */
+TEST_F(OptionsScreenFixture, EveryFrenchDescriptionFitsBesideBack) {
+  settings().language = Language::French;
+  screen().update(PRESS_DURATION);
+  for (int tab = 0; tab < TABS; ++tab) {
+    for (std::size_t row = 0; row < ROWS_IN_THE_LONGEST_TAB; ++row) {
+      const RecordedWriting* line = descriptionOf(canvas());
+      if (line != nullptr) {
+        EXPECT_LE(DESCRIPTION_LEFT + regularTextWidth(line->text),
+                  DESCRIPTION_RIGHT)
+            << line->text;
+      }
+      tap(Key::Down);
+    }
+    openNextTab();
+  }
+}
+
+/**
  * Given the options
  * When BACK is activated by Escape
  * Then they close

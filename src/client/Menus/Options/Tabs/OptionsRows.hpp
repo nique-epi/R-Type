@@ -9,10 +9,12 @@
 #include "BoundAction.hpp"
 #include "ISizableWindow.hpp"
 #include "KeyNames.hpp"
+#include "Language.hpp"
 #include "RowControl.hpp"
 #include "Setting.hpp"
 #include "SettingsService.hpp"
 #include "SliderLook.hpp"
+#include "Translation.hpp"
 
 namespace rtype::client {
 
@@ -24,6 +26,18 @@ template <std::size_t Count>
 [[nodiscard]] std::vector<std::string> textsOf(
     const std::array<std::string_view, Count>& labels) {
   return {labels.begin(), labels.end()};
+}
+
+/** @returns The texts of a list of labels, in @p language. */
+template <std::size_t Count>
+[[nodiscard]] std::vector<std::string> textsOf(
+    const std::array<Translation, Count>& labels, Language language) {
+  std::vector<std::string> texts;
+  texts.reserve(Count);
+  for (const Translation& label : labels) {
+    texts.emplace_back(label.in(language));
+  }
+  return texts;
 }
 
 /** @returns The slider of a volume, dimmed while the sound is muted; it reads

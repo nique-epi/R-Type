@@ -128,8 +128,9 @@ std::unique_ptr<RowControl> settingSlider(SettingsService& service,
 }
 
 std::unique_ptr<RowControl> colorModeSelector(SettingsService& service) {
-  return choiceSelectorOf(service, COLOR_MODE_SETTING,
-                          textsOf(COLOR_MODE_LABELS));
+  return choiceSelectorOf(
+      service, COLOR_MODE_SETTING,
+      textsOf(COLOR_MODE_LABELS, service.settings().language));
 }
 
 std::unique_ptr<RowControl> languageSelector(SettingsService& service) {
@@ -162,7 +163,7 @@ std::unique_ptr<KeySlot> keySlot(SettingsService& service,
 std::unique_ptr<Dropdown> displayModeList(ISizableWindow& window,
                                           SettingsService& service) {
   return std::make_unique<Dropdown>(DropdownParts{
-      .choices = textsOf(DISPLAY_MODE_LABELS),
+      .choices = textsOf(DISPLAY_MODE_LABELS, service.settings().language),
       .available = [](std::size_t) { return true; },
       .value = ValueBinding<std::size_t>{
           .read =
