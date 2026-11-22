@@ -134,7 +134,7 @@ To change one of them, see [Where to intervene](#where-to-intervene).
 | Heartbeats every 500 ms, and the round trip and jitter of each player measured from their echoes; a player silent for 5 seconds is away and keeps its seat 15 seconds, then its session closes | Available, and a `Disconnection` closes the session at once | `src/server/Sessions/Tracking/` |
 | A nickname unique on the server, held with the seat | Available: a second request for the same nickname gets `NicknameTaken` | `src/server/Sessions/Roster/`, `src/server/Lobby/` |
 | Waiting room and start of the game sent to the players (`LobbyState`, `GameStarted`) | Available | `src/server/Replication/Announcements/Milestones/`, `src/server/Rules/Match/` |
-| End of a game sent to the players (`GameEnded`) | Available: when the game is won or lost, with its outcome and the score of each, until the game waits for players again | `src/server/Replication/Announcements/Milestones/`, `src/server/Rules/Match/` |
+| End of a game sent to the players (`GameEnded`) | Available: when the game is won or lost, with its outcome and the score and bounty of each, until the game waits for players again | `src/server/Replication/Announcements/Milestones/`, `src/server/Rules/Match/` |
 | Connections, departures, games started and ended, rejections and errors written as events a tool reads, with `--log-format json` | Available; the supervisor writes no event of the connection requests it redirects or refuses | `src/server/Lobby/`, `src/server/Sessions/Tracking/`, `src/server/SupervisedGames/`, `src/server/Network/Rejections/` |
 | Metrics in the journal every 10 s: duration of the ticks, time of each system, games, players, entities, round trip of each player and traffic | Available; losses are not measured yet | `src/server/Metrics/` |
 | Results of each game kept in a SQLite file, with statistics, and a leaderboard read with `LeaderboardRequest` | Available; the leaderboard of the client reads it, and nothing in the game shows the statistics | `src/server/Results/`, `src/server/Storage/`, `src/storage/` |
@@ -684,7 +684,7 @@ worldStateSender.onTick(tick, world.components());
 
 `ConnectionAcceptor` (`src/server/Lobby/`) answers the connection requests the sorter set aside for each tick, at most `CONNECTION_REQUEST_QUEUE_CAPACITY` (16), as the [Protocol](/R-Type/protocol/#connection) describes, and `PlayerRoster` (`src/server/Sessions/Roster/`) holds the players it let in: at most `MAXIMUM_PLAYERS` (4), each a `ConnectedPlayer` with its number, nickname, the game ticket its request carried (`ticket`, `GUEST_TICKET`, all zeros, for a guest; the server cannot check it and never writes it in its journal), address and port, session token, next sequence, ship id, score, newest input, and the ticks since the game last read one of its datagrams and since the server last sent it a `Heartbeat`. A new player takes the lowest free number, so the first four are 1 to 4 in the order they joined. `remove(endpoint)` frees the seat and the number of a player whose session closed; the next player to join takes the lowest free number again.
 
-A datagram of this protocol with another version is answered with `ConnectionRefused` (`IncompatibleVersion`) in a header of this version (`PROTOCOL_VERSION`, 18), whatever it holds, when it holds at least `CONNECTION_REFUSED_DATAGRAM_SIZE` (26) bytes, the size of that refusal, so the answer is never larger than the datagram; a shorter one gets nothing. Any other datagram is read only when its header is of this protocol and version and its message sizes add up; only its first `ConnectionRequest` is answered, so one datagram never gets more than one answer, and every other message is ignored. A request is answered by the first row that applies:
+A datagram of this protocol with another version is answered with `ConnectionRefused` (`IncompatibleVersion`) in a header of this version (`PROTOCOL_VERSION`, 21), whatever it holds, when it holds at least `CONNECTION_REFUSED_DATAGRAM_SIZE` (26) bytes, the size of that refusal, so the answer is never larger than the datagram; a shorter one gets nothing. Any other datagram is read only when its header is of this protocol and version and its message sizes add up; only its first `ConnectionRequest` is answered, so one datagram never gets more than one answer, and every other message is ignored. A request is answered by the first row that applies:
 
 | The request comes… | Answer |
 |---|---|
@@ -1282,6 +1282,7 @@ An enemy that has an `Armored` (`src/game/Components/Armored.hpp`) loses nothing
 
 - A Bydo has the `Health` of its sheet (`health.points`, 3 for the Drifter and the Weaver) when `World::spawn` creates it, so three missiles of a sheet without `damage` destroy it. Both values are **provisional** until gameplay tunes them. Code must read `MissileDamage`, `MISSILE_DAMAGE` and the sheet and never assume 1 or 3.
 - A Bydo destroyed by the missile of a player earns that player its points (`ScoreValue`, the `score.points` of its sheet): `DamageRules` publishes an `EnemyKilled`, and `ScoreKeeper` (`src/server/Rules/Players/`) adds them to its score.
+- A boss shares its points by damage instead: its `Boss` keeps the damage each pilot's missiles took from it (`damageByPilot`, the points the hit took, never more than it had left), its `EnemyKilled` carries that tally, and `ScoreKeeper` gives each pilot the points times its damage over the whole damage, rounded down, the rest of the division to the pilot who destroyed it. A pilot who left loses its share, and the last hit is worth no more than any other, so a squad does not fight for it. Its bounty is paid apart (see [Bounties](#bounties-payeveryplayer)).
 - Two shots that reach the same `Shootable` missile in one `dispatch()` kill it once, and the second shot flies on. A spore of the Bydo Tyrant shot down before it bursts leaves no shards.
 - The ship of a player has no `Health`: a missile of a Bydo that hits it is removed here, and what that hit and a contact with a Bydo cost belongs to the lives (see [Lives](#lives-lifekeeper)).
 - Network ids are read from the `NetworkIdentity` before the entity is destroyed. A hit naming an entity that is already gone, or that has no `NetworkIdentity`, is ignored, so two missiles that reach the same Bydo in one `dispatch()` kill it once, and the second missile is left alone.
@@ -1293,6 +1294,15 @@ rtype::engine::EventBus events;
 rtype::game::CollisionRules collisionRules{events, world.components()};
 rtype::game::DamageRules damageRules{events, world.components()};
 ```
+
+## Bounties: `payEveryPlayer`
+
+A game pays each pilot its bounty, besides its score: the kopecks the bosses destroyed and the level cleared while it was there earn it, whoever fired (see [Master](/R-Type/master/#crediting-the-games)). `ConnectedPlayer::bounty` holds it, back to 0 with the score when a new world is built.
+
+- The sheet of a boss names its bounty (`bounty` of `[gameplay.boss]`, see [Writing an entity sheet](/R-Type/entity-sheets/#gameplay-key-by-key)). Its `EnemyKilled` carries it, and `ScoreKeeper` pays it to every player connected then, an away one included, since it keeps its seat.
+- A level names the reward of its clearing (`reward` of `level.register`, see [Scripting](/R-Type/scripting/)). `GameFlow::finishIfOver()` pays it to every player connected when the game is won, before the result is recorded and told, so `GameEnded` and the result carry it. A game that plays its waves pays no reward, only the bounty of its boss.
+- `payEveryPlayer()` (`src/server/Rules/Players/Bounties.hpp`) adds a bounty to every player connected; a bounty stops at its largest value instead of wrapping around.
+- A team that restarts from a checkpoint before a boss fights it again, and is paid again when it falls, as its score is.
 
 ## Lives: `LifeKeeper`
 
@@ -1335,7 +1345,7 @@ The defeat is checked first, so a game that loses its last life on the tick its 
 
 `GameEndAnnouncer` (`src/server/Replication/Announcements/Milestones/`) then tells every player the result, as a `GameEnded` that carries the outcome, `Victory` or `Defeat` (see [Protocol](/R-Type/protocol/#a-session)):
 
-- The result is read once, when the game ends: the outcome, then every connected player, in order of number, with its score. Every copy says the same, whoever leaves meanwhile.
+- The result is read once, when the game ends: the outcome, then every connected player, in order of number, with its score and its bounty. Every copy says the same, whoever leaves meanwhile.
 - It goes to every connected player at the first tick of the end, one tick after the end was reached (the last life lost, or the last enemy of the level gone), so after the first copy of the last explosion and of its game events. It goes again to the players still connected every `TICKS_PER_GAME_ENDED` (30) ticks, until the game waits for players again `FINISHED_STATE_TICKS` (300) ticks after the end.
 - No world state goes out meanwhile. The new world then gives every player the lives of the rules and a score of 0; the players stay connected and say ready to play again.
 - `GAME_ENDED_INTERVAL` (500 ms) is **provisional**, like the protocol rate it follows; `TICKS_PER_GAME_ENDED` is that interval in whole ticks, rounded down. Code must read the constants (`src/server/ServerConstants.hpp`) and never repeat 500 or 30.
@@ -1351,7 +1361,7 @@ Every game that ends leaves a row per player in the SQLite file of its server, a
 `GameResultKeeper` (`src/server/Results/`) follows the `GameStateChanged` the bus of its game delivers. When the game enters `InProgress`, it counts the connected players. When it goes from `InProgress` to `Finished`, it hands a `GameResult` to the archive.
 
 - A row goes to each player connected when the game started. A player who leaves keeps a row, with the score and the deaths it had when it left, so leaving does not erase a bad game. A player who leaves during `Starting` was never counted.
-- The score is read when the bus delivers the end, in the tick of the end, so it is the score `GameEnded` tells the players.
+- The score and the bounty are read when the bus delivers the end, in the tick of the end, so they are those `GameEnded` tells the players.
 - Deaths are the lives of the rules (`GameSettings::lives`) minus `ConnectedPlayer::livesWithoutShip`, which holds the lives left even while the player has a ship.
 - A game ended by `finish()` or left by all its players is recorded like the others. A game with no row to write leaves nothing. A game the server stops in the middle has no end, so it leaves nothing either.
 
@@ -1393,6 +1403,7 @@ erDiagram
     TEXT account_id
     TEXT ticket
     INTEGER score
+    INTEGER bounty
     INTEGER deaths
     INTEGER played_at
     TEXT difficulty
@@ -1430,6 +1441,7 @@ The table is `STRICT`: SQLite refuses a value it cannot store in the declared ty
 | `refused_at` | When the master refused the game for good (see [Link with the master](#link-with-the-master-servermastermodule)); empty otherwise. Added by the second migration |
 | `won_looks` | The names of the look items the player won in the game (`LookItemKeeper`), separated by a space, each once, in the order it won them; empty when it won none. Added by the fifth migration |
 | `victory` | 1 when the players cleared the level, 0 otherwise, a game the server ended by itself included. Added by the fifth migration, which reads every older row as lost |
+| `bounty` | The kopecks the bosses destroyed and the level cleared while the player was there paid it (see [Bounties](#bounties-payeveryplayer)), which the server reports to the master with the game. Added by the sixth migration, which reads every older row as no bounty |
 
 The view `player_statistics` adds up the rows of each player, every difficulty together: `games_played`, `best_score`, `total_score` and `deaths`, under the account identifier when there is one and under the nickname otherwise. It holds no data of its own, so it cannot disagree with the rows. Nothing in the game reads it yet.
 

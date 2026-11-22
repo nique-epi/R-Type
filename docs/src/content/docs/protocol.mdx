@@ -11,7 +11,7 @@ This page is the specification of the protocol the client and the server speak: 
 
 ## Status of this document
 
-- This is version 20 of the protocol. It is the only version the code speaks. [Versions and compatibility](#versions-and-compatibility) says when the version changes and what two programs of different versions do; [Version 2](#version-2), [Version 3](#version-3), [Version 4](#version-4), [Version 5](#version-5), [Version 6](#version-6), [Version 7](#version-7), [Version 8](#version-8), [Version 9](#version-9), [Version 10](#version-10), [Version 11](#version-11), [Version 12](#version-12), [Version 13](#version-13), [Version 14](#version-14), [Version 15](#version-15), [Version 16](#version-16), [Version 17](#version-17), [Version 18](#version-18), [Version 19](#version-19) and [Version 20](#version-20) say what each changed from the version before, and what the rest of the second part of the project will change.
+- This is version 21 of the protocol. It is the only version the code speaks. [Versions and compatibility](#versions-and-compatibility) says when the version changes and what two programs of different versions do; [Version 2](#version-2), [Version 3](#version-3), [Version 4](#version-4), [Version 5](#version-5), [Version 6](#version-6), [Version 7](#version-7), [Version 8](#version-8), [Version 9](#version-9), [Version 10](#version-10), [Version 11](#version-11), [Version 12](#version-12), [Version 13](#version-13), [Version 14](#version-14), [Version 15](#version-15), [Version 16](#version-16), [Version 17](#version-17), [Version 18](#version-18), [Version 19](#version-19), [Version 20](#version-20) and [Version 21](#version-21) say what each changed from the version before, and what the rest of the second part of the project will change.
 - The words MUST, MUST NOT, SHOULD and MAY are used as in RFC 2119. A MUST is a rule every implementation follows to interoperate; a SHOULD names a behavior the code of this repository has and another implementation can drop without breaking the exchange.
 - Everything on this page is checked against the code of `src/network`, `src/server` and `src/client`. [Implementation status](#implementation-status) lists the rules the programs do not apply yet, so a rule never reads as working when it does not.
 - Numbers are decimal unless written `0x`. A size is in bytes.
@@ -181,7 +181,7 @@ The type identifies a message in both directions: `Disconnection` and `Heartbeat
 | 12 | `EntityDestroyed` | `entityId` `u32`, `reason` `u8`: 1 `Killed` (explosion), 2 `Removed` (no effect) | when an entity disappears, guaranteed and ordered (see [Ordered messages](#ordered-messages)) |
 | 13 | `GameEvent` | `eventNumber` `u16`, `kind` `u8`, `playerNumber` `u8`, `entityId` `u32` | see [Game events](#game-events), guaranteed and ordered |
 | 14 | `PlayerLeft` | `playerNumber` `u8`, `reason` `u8`: 1 `Left`, 2 `TimedOut`, 3 `Expelled` | to the other players, when one leaves, times out or is expelled, guaranteed and ordered |
-| 15 | `GameEnded` | `outcome` `u8`: 1 `Victory`, 2 `Defeat`, then `playerCount` `u8`, then per player `playerNumber` `u8`, `score` `u32` | when the game ends: `Victory` once the players cleared the level, its last wave over and its boss, when it has one, destroyed with every other enemy, `Defeat` when no player has a life left; then every 500 ms until the server waits for players again |
+| 15 | `GameEnded` | `outcome` `u8`: 1 `Victory`, 2 `Defeat`, then `playerCount` `u8`, then per player `playerNumber` `u8`, `score` `u32`, `bounty` `u32`, the kopecks the bosses destroyed and the level cleared while it was there paid it | when the game ends: `Victory` once the players cleared the level, its last wave over and its boss, when it has one, destroyed with every other enemy, `Defeat` when no player has a life left; then every 500 ms until the server waits for players again |
 | 16 | `ConnectionChallenge` | `cookie` `u64` | in answer to a request without a valid cookie |
 | 19 | `LeaderboardAnswer` | `playerCount` `u8`, `difficulty` `string`, `rowCount` `u8` (0 to 10), then per row `rank` `u32`, `score` `u32`, `playedAt` `i64` (seconds since 1970 UTC), `nickname` `string`; then `hasOwnRow` `bool`, followed by one row when true | in answer to a request, to the player who sent it, at most once per 500 ms per player |
 | 20 | `DeltaWorldState` | see [Delta world state](#delta-world-state) | during a game, as many times per second as the server was told to (20 by default, from 2 to 60) |
@@ -915,6 +915,10 @@ Version 19 gives `LevelStatus` three last fields, each a `u16`: `transitionLeft`
 ## Version 20
 
 Version 20 gives `LevelStatus` a last field, `continuesLeft`, a `u8`: how many times the team of the game may still restart from a checkpoint of its level (see [Level status](#level-status)). A peer of version 19 would read the new byte as a trailing byte and drop the message, so `version` became 20, and the server answers a client of version 19 with `ConnectionRefused` (`IncompatibleVersion`). The layout of the header and of every other message is the same as in version 19.
+
+## Version 21
+
+Version 21 gives each player of `GameEnded` a last field, `bounty`, a `u32`, after its score: the kopecks the bosses destroyed and the level cleared while it was there paid it, which the client adds to the kopecks of its score to show the gain of the game (see [Messages](#messages)). A peer of version 20 would read the players of the message wrong, so `version` became 21, and the server answers a client of version 20 with `ConnectionRefused` (`IncompatibleVersion`). The layout of the header and of every other message is the same as in version 20.
 
 ## Implementation status
 
