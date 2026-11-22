@@ -3,6 +3,7 @@
 #include "Caption.hpp"
 #include "EffectTools.hpp"
 #include "Entity.hpp"
+#include "Language.hpp"
 #include "Position.hpp"
 #include "TimeConstants.hpp"
 
@@ -30,7 +31,7 @@ class SoundCues {
    * alone, in UNKNOWN_PILOT_LIGHT, for a ship of no known pilot. Call it before
    * the ship is destroyed; the cue stays where the ship stood, since the ship
    * is destroyed right after and has nothing left to follow. */
-  void showPilotHit(engine::Entity ship) const;
+  void showPilotHit(engine::Entity ship, Language language) const;
 
  private:
   /** @returns A new entity writing @p caption at @p place for @p life, for

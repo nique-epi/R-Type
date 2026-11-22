@@ -30,6 +30,7 @@
 #include "SquadronStart.hpp"
 #include "TextureArea.hpp"
 #include "TimeConstants.hpp"
+#include "Typing.hpp"
 
 namespace rtype::client {
 
@@ -93,12 +94,13 @@ void paintTitle(IInterfaceCanvas& canvas, sf::IntRect box, float time) {
   if (time < SQUADRON_TITLE_START) {
     return;
   }
+  const std::string_view title = SQUADRON_TITLE.in(canvas.language());
   const auto letters = std::min(
-      SQUADRON_TITLE.size(),
+      letterCountOf(title),
       static_cast<std::size_t>(
           std::floor((time - SQUADRON_TITLE_START) / SQUADRON_LETTER_TIME)) +
           1);
-  canvas.write(SQUADRON_TITLE.substr(0, letters),
+  canvas.write(typedPrefix(title, letters),
                box.position + SQUADRON_TITLE_POSITION, SQUADRON_TITLE_STYLE);
 }
 

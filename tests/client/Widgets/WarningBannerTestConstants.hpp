@@ -45,3 +45,8 @@ constexpr std::string_view FIRST_LETTER_ON_SCREEN = "W";
 constexpr std::size_t FIRE_BAND_COUNT = 8;
 constexpr std::size_t FOURTH_FIRE_BAND = 3;
 constexpr sf::IntRect FOURTH_BAND_CLIP({0, 104}, {480, 4});
+
+/** @brief The first five letters of the French line under the word, the
+ * fifth an accented letter of two bytes, typed whole. */
+constexpr std::size_t FIVE_LETTERS = 5;
+constexpr std::string_view FRENCH_FIRST_FIVE_LETTERS = "UNE É";

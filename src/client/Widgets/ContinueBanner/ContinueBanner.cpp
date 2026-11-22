@@ -8,7 +8,10 @@
 #include "ContinueBannerConstants.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "InterfaceConstants.hpp"
+#include "Language.hpp"
 #include "MissionBannerConstants.hpp"
+#include "TextMark.hpp"
+#include "TextMarks.hpp"
 #include "TextStyle.hpp"
 #include "TimeConstants.hpp"
 #include "WidgetConstants.hpp"
@@ -37,17 +40,20 @@ int firstLineTop() {
          ((MISSION_BANNER_AREA.size.y - height) / SIDES_PER_AXIS);
 }
 
-/** @returns The second line of the banner for @p continuesLeft. */
-BannerLine secondLineOf(std::uint8_t continuesLeft) {
+/** @returns The second line of the banner for @p continuesLeft, in
+ * @p language. */
+BannerLine secondLineOf(std::uint8_t continuesLeft, Language language) {
   if (continuesLeft == 0) {
-    return BannerLine{.text = std::string{NO_CONTINUE_LEFT_TEXT},
+    return BannerLine{.text = std::string(NO_CONTINUE_LEFT_TEXT.in(language)),
                       .font = TextFont::Small,
                       .color = NO_CONTINUE_LEFT_COLOR};
   }
-  return BannerLine{.text = std::to_string(continuesLeft) +
-                            std::string{CONTINUES_LEFT_SUFFIX},
-                    .font = TextFont::Small,
-                    .color = CONTINUES_LEFT_COLOR};
+  const std::string count = std::to_string(continuesLeft);
+  return BannerLine{
+      .text = withMark(std::string(CONTINUES_LEFT.in(language)),
+                       TextMark{.mark = CONTINUE_COUNT_MARK, .value = count}),
+      .font = TextFont::Small,
+      .color = CONTINUES_LEFT_COLOR};
 }
 
 /** @brief Paints one rule of the banner, centered, on @p row. */
@@ -99,11 +105,12 @@ void ContinueBanner::paint(IInterfaceCanvas& canvas) const {
   paintRule(canvas, top - MISSION_BANNER_RULE_GAP);
   paintRule(canvas, secondTop + TEXT_LINE_HEIGHT + MISSION_BANNER_RULE_GAP - 1);
   writeLine(canvas,
-            BannerLine{.text = std::string{CONTINUE_BANNER_TITLE},
+            BannerLine{.text = std::string(
+                           CONTINUE_BANNER_TITLE.in(canvas.language())),
                        .font = TextFont::Regular,
                        .color = CONTINUE_BANNER_TITLE_COLOR},
             top);
-  writeLine(canvas, secondLineOf(*continuesLeft), secondTop);
+  writeLine(canvas, secondLineOf(*continuesLeft, canvas.language()), secondTop);
 }
 
 }  // namespace rtype::client

@@ -18,6 +18,8 @@ struct Translation {
 
   /** @returns The text in @p language. */
   [[nodiscard]] constexpr std::string_view in(Language language) const;
+
+  constexpr bool operator==(const Translation&) const = default;
 };
 
 constexpr std::string_view Translation::in(Language language) const {

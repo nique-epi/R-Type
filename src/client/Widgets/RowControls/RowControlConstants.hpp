@@ -4,6 +4,7 @@
 #include <SFML/Window/Keyboard.hpp>
 #include <string_view>
 #include "InterfaceConstants.hpp"
+#include "Translation.hpp"
 #include "WidgetConstants.hpp"
 
 namespace rtype::client {
@@ -47,8 +48,8 @@ constexpr int ROUNDING_DIVISOR = 2;
 /** @brief Switch: two cells in a sunk box, the current one filled. */
 constexpr sf::Vector2i SWITCH_CELL_SIZE(30, 10);
 constexpr int SWITCH_CELL_INSET = 1;
-constexpr const char* SWITCH_OFF_TEXT = "OFF";
-constexpr const char* SWITCH_ON_TEXT = "ON";
+constexpr Translation SWITCH_OFF_TEXT{.english = "OFF", .french = "NON"};
+constexpr Translation SWITCH_ON_TEXT{.english = "ON", .french = "OUI"};
 
 /** @brief Selector: an arrow on each side of a sunk box as wide as the
  * longest choice plus SELECTOR_BOX_PADDING. */
@@ -77,7 +78,8 @@ constexpr const char* LINK_SUFFIX = " >";
 
 /** @brief The text of a slot waiting for a key, in a sunk box, and its
  * padding. */
-constexpr const char* KEY_LISTENING_TEXT = "PRESS A KEY";
+constexpr Translation KEY_LISTENING_TEXT{.english = "PRESS A KEY",
+                                         .french = "UNE TOUCHE ?"};
 constexpr int KEY_LISTENING_PADDING = 4;
 constexpr const char* KEY_CONFLICT_FLAG = "!";
 

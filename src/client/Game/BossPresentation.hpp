@@ -15,6 +15,7 @@
 #include "IAudioService.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "ISoundPlayer.hpp"
+#include "Language.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -68,7 +69,8 @@ class BossPresentation {
    * flashes @p preference allows: the WARNING screen and the edges once an
    * Arriving status came, the bar once a status of its fight came, even when
    * the Arriving status was lost. */
-  [[nodiscard]] BossLook look(FlashPreference preference) const;
+  [[nodiscard]] BossLook look(FlashPreference preference,
+                              Language language = Language::English) const;
 
  private:
   /** @brief Silences the music, plays the alarm and asks for the music of

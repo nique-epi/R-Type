@@ -10,6 +10,7 @@
 #include "InterfaceConstants.hpp"
 #include "PixelGridConstants.hpp"
 #include "PlayfieldConstants.hpp"
+#include "Translation.hpp"
 #include "WidgetConstants.hpp"
 
 namespace rtype::client {
@@ -110,12 +111,14 @@ constexpr int LAST_LIFE_COUNT = 1;
 
 /** @brief Words of the band. */
 constexpr const char* LIVES_COUNT_PREFIX = "x";
-constexpr const char* OUT_TEXT = "OUT";
-constexpr const char* LAST_LIFE_TEXT = "LAST LIFE";
-constexpr const char* RESPAWN_TEXT = "RESPAWN";
-constexpr const char* LEFT_GAME_TEXT = "LEFT";
-constexpr const char* SIGNAL_LOST_TEXT = "SIGNAL LOST";
-constexpr const char* EXPELLED_TEXT = "EXPELLED";
+constexpr Translation OUT_TEXT{.english = "OUT", .french = "K.O."};
+constexpr Translation LAST_LIFE_TEXT{.english = "LAST LIFE",
+                                     .french = "DERNIÈRE VIE"};
+constexpr Translation RESPAWN_TEXT{.english = "RESPAWN", .french = "REVIENT"};
+constexpr Translation LEFT_GAME_TEXT{.english = "LEFT", .french = "PARTI"};
+constexpr Translation SIGNAL_LOST_TEXT{.english = "SIGNAL LOST",
+                                       .french = "SIGNAL PERDU"};
+constexpr Translation EXPELLED_TEXT{.english = "EXPELLED", .french = "EXPULSÉ"};
 
 /** @brief Colors of the band. A pilot gone from the game, out of lives, left
  * or dropped, has its chip, its name and its score dimmed. */

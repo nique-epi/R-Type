@@ -4,6 +4,7 @@
 #include "ChatEntry.hpp"
 #include "ChatView.hpp"
 #include "IInterfaceCanvas.hpp"
+#include "Language.hpp"
 #include "PlayerSettings.hpp"
 
 namespace rtype::client {
@@ -17,9 +18,10 @@ namespace rtype::client {
  */
 void paintChat(IInterfaceCanvas& canvas, const ChatView& view);
 
-/** @returns How many lines @p entries take at @p letters letters a line. */
-[[nodiscard]] int chatLineCount(std::span<const ChatEntry> entries,
-                                int letters);
+/** @returns How many lines @p entries take at @p letters letters a line,
+ * written in @p language. */
+[[nodiscard]] int chatLineCount(std::span<const ChatEntry> entries, int letters,
+                                Language language);
 
 /** @returns Whether @p entry still shows over a closed chat: younger than
  * chatSeconds. */

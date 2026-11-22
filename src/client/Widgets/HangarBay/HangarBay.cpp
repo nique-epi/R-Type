@@ -20,6 +20,7 @@
 #include "SpriteFrame.hpp"
 #include "SunkBox.hpp"
 #include "TextStyle.hpp"
+#include "Translation.hpp"
 #include "WidgetColors.hpp"
 #include "WidgetConstants.hpp"
 #include "WidgetText.hpp"
@@ -32,7 +33,7 @@ namespace {
  * alone, its word and the color of the word. */
 struct CellLook {
   std::optional<sf::Color> fill;
-  const char* word{};
+  Translation word;
   sf::Color text;
 };
 
@@ -186,7 +187,8 @@ void paintMapVote(IInterfaceCanvas& canvas, sf::Vector2i topLeft,
 
 /** @brief Writes OPEN BAY, dim, on the row of the nickname. */
 void paintOpenBayLabel(IInterfaceCanvas& canvas, sf::Vector2i topLeft) {
-  canvas.write(OPEN_BAY_TEXT, middleAnchor(topLeft, BAY_NICKNAME_TOP),
+  canvas.write(OPEN_BAY_TEXT.in(canvas.language()),
+               middleAnchor(topLeft, BAY_NICKNAME_TOP),
                nicknameRowStyle(FIELD_TEXT_COLOR));
 }
 
@@ -200,8 +202,8 @@ void paintCell(IInterfaceCanvas& canvas, sf::Vector2i topLeft,
   if (look.fill.has_value()) {
     canvas.fill(insideOf(cell), *look.fill);
   }
-  canvas.write(look.word,
-               {centeredTextLeft(cell, look.word), centeredTextTop(cell)},
+  const std::string_view word = look.word.in(canvas.language());
+  canvas.write(word, {centeredTextLeft(cell, word), centeredTextTop(cell)},
                {.font = TextFont::Regular, .color = look.text});
 }
 

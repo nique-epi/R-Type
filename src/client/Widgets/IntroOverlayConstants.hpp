@@ -9,6 +9,7 @@
 #include "IntroTimelineConstants.hpp"
 #include "SquadronConstants.hpp"
 #include "TextStyle.hpp"
+#include "Translation.hpp"
 #include "WidgetConstants.hpp"
 
 namespace rtype::client {
@@ -30,7 +31,8 @@ constexpr int INTRO_UNDERLINE_GAP = 10;
  * INTRO_CREDIT_LETTER_TIME from INTRO_CREDIT_START, then erased letter by
  * letter over INTRO_CREDIT_ERASE_TIME, ending INTRO_CREDIT_ERASE_TIME before
  * the first beat. */
-constexpr std::string_view INTRO_CREDIT = "R-TYPE TEAM PRESENTS";
+constexpr Translation INTRO_CREDIT{.english = "R-TYPE TEAM PRESENTS",
+                                   .french = "L'ÉQUIPE R-TYPE PRÉSENTE"};
 constexpr float INTRO_CREDIT_START = 0.05F;
 constexpr float INTRO_CREDIT_LETTER_TIME = 0.03F;
 constexpr float INTRO_CREDIT_ERASE_TIME = 0.2F;
@@ -49,7 +51,8 @@ constexpr float INTRO_NAME_LETTER_TIME = 0.035F;
 
 /** @brief PRESS ANY KEY, from INTRO_HINT_START, the middle of the fade of
  * the mockup (1 to 1.2 s), right-aligned at the safe margin. */
-constexpr std::string_view INTRO_HINT = "PRESS ANY KEY";
+constexpr Translation INTRO_HINT{.english = "PRESS ANY KEY",
+                                 .french = "APPUYEZ SUR UNE TOUCHE"};
 constexpr float INTRO_HINT_START = 1.1F;
 constexpr TextStyle INTRO_HINT_STYLE{.font = TextFont::Small,
                                      .color = PALE_BLUE,

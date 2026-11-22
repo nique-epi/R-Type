@@ -5,7 +5,9 @@
 #include <utility>
 #include "BarState.hpp"
 #include "IInterfaceCanvas.hpp"
+#include "InterfaceConstants.hpp"
 #include "KeyCap.hpp"
+#include "LetterCounts.hpp"
 #include "RowControlConstants.hpp"
 #include "SunkBox.hpp"
 #include "TextStyle.hpp"
@@ -19,7 +21,8 @@ KeySlot::KeySlot(Wiring wiring) : wiring_(std::move(wiring)) {}
 
 int KeySlot::width() const {
   if (listening_) {
-    return regularTextWidth(KEY_LISTENING_TEXT) +
+    return static_cast<int>(longestLettersIn(KEY_LISTENING_TEXT)) *
+               REGULAR_FONT_ADVANCE +
            (SIDES_PER_AXIS * KEY_LISTENING_PADDING);
   }
   const int keyCapWidth =
@@ -36,7 +39,7 @@ void KeySlot::paint(IInterfaceCanvas& canvas, sf::IntRect area,
                                 area.position.y + CONTROL_TEXT_TOP);
   if (listening_) {
     SunkBox(area, SunkBox::Sides::Lit).paint(canvas);
-    canvas.write(KEY_LISTENING_TEXT,
+    canvas.write(KEY_LISTENING_TEXT.in(canvas.language()),
                  textAnchor + sf::Vector2i(KEY_LISTENING_PADDING, 0),
                  {.font = TextFont::Regular, .color = AWAITED_VALUE_COLOR});
     return;

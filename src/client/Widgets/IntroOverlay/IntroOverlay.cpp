@@ -22,6 +22,7 @@
 #include "RenderingConstants.hpp"
 #include "TextStyle.hpp"
 #include "TextureArea.hpp"
+#include "Typing.hpp"
 #include "WidgetConstants.hpp"
 
 namespace rtype::client {
@@ -53,16 +54,17 @@ std::string_view typedPart(std::string_view text, float real,
   if (real < typing.start || text.empty()) {
     return {};
   }
+  const std::size_t letters = letterCountOf(text);
   std::size_t count = std::min(
-      text.size(),
+      letters,
       static_cast<std::size_t>((real - typing.start) / typing.letterTime) + 1);
   if (real >= typing.eraseStart) {
-    const float letterGone = typing.eraseTime / static_cast<float>(text.size());
+    const float letterGone = typing.eraseTime / static_cast<float>(letters);
     const std::size_t gone =
         static_cast<std::size_t>((real - typing.eraseStart) / letterGone) + 1;
-    count = std::min(count, text.size() - std::min(gone, text.size()));
+    count = std::min(count, letters - std::min(gone, letters));
   }
-  return text.substr(0, count);
+  return typedPrefix(text, count);
 }
 
 /** @returns How far the bands opened, from 0 to 1: slowly first. */
@@ -89,7 +91,7 @@ void paintBands(IInterfaceCanvas& canvas, float real) {
 /** @brief Writes the credit during the first beat. */
 void paintCredit(IInterfaceCanvas& canvas, float real) {
   const std::string_view shown =
-      typedPart(INTRO_CREDIT, real,
+      typedPart(INTRO_CREDIT.in(canvas.language()), real,
                 Typing{.start = INTRO_CREDIT_START,
                        .letterTime = INTRO_CREDIT_LETTER_TIME,
                        .eraseStart = INTRO_CREDIT_ERASE_START,
@@ -115,8 +117,9 @@ void paintNameCards(IInterfaceCanvas& canvas, float real,
     canvas.write(shown, {SAFE_MARGIN, INTRO_BAND_TEXT_TOP},
                  TextStyle{.font = TextFont::Regular, .color = colors.light});
     canvas.fill(
-        sf::IntRect({SAFE_MARGIN, INTRO_BAND_TEXT_TOP + INTRO_UNDERLINE_GAP},
-                    {static_cast<int>(shown.size()) * REGULAR_FONT_ADVANCE, 1}),
+        sf::IntRect(
+            {SAFE_MARGIN, INTRO_BAND_TEXT_TOP + INTRO_UNDERLINE_GAP},
+            {static_cast<int>(letterCountOf(shown)) * REGULAR_FONT_ADVANCE, 1}),
         colors.ship);
   }
 }
@@ -188,8 +191,8 @@ void paintHint(IInterfaceCanvas& canvas, float real) {
     return;
   }
   const int top = bandOpeningAt(real) < 1.0F ? INTRO_BAND_TEXT_TOP : FOOTER_TOP;
-  canvas.write(INTRO_HINT, {INTERFACE_AREA.size.x - SAFE_MARGIN, top},
-               INTRO_HINT_STYLE);
+  canvas.write(INTRO_HINT.in(canvas.language()),
+               {INTERFACE_AREA.size.x - SAFE_MARGIN, top}, INTRO_HINT_STYLE);
 }
 
 /** @brief Covers the whole picture with ink before time 0, then with less

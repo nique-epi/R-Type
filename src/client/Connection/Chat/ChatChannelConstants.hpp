@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <string_view>
+#include "Translation.hpp"
 
 namespace rtype::client {
 
@@ -23,7 +24,10 @@ constexpr std::size_t CHAT_LINES_KEPT = 32;
  * those lines say: a line the server never relayed back, a line refused while
  * CHAT_LINES_WAITING lines wait. */
 constexpr std::uint8_t CLIENT_WRITER = 0;
-constexpr std::string_view UNANSWERED_CHAT_TEXT = "YOUR LINE GOT NO ANSWER";
-constexpr std::string_view CHAT_QUEUE_FULL_TEXT = "TOO MANY LINES: WAIT";
+constexpr Translation UNANSWERED_CHAT_TEXT{
+    .english = "YOUR LINE GOT NO ANSWER",
+    .french = "VOTRE LIGNE EST RESTÉE SANS RÉPONSE"};
+constexpr Translation CHAT_QUEUE_FULL_TEXT{
+    .english = "TOO MANY LINES: WAIT", .french = "TROP DE LIGNES : ATTENDEZ"};
 
 }  // namespace rtype::client

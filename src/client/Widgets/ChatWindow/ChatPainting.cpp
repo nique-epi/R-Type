@@ -20,11 +20,14 @@
 #include "IInterfaceCanvas.hpp"
 #include "InterfaceColorConstants.hpp"
 #include "InterfaceConstants.hpp"
+#include "Language.hpp"
 #include "PilotColor.hpp"
 #include "PilotName.hpp"
 #include "PlayerPalette.hpp"
 #include "PlayerSettings.hpp"
 #include "SunkBox.hpp"
+#include "TextMark.hpp"
+#include "TextMarks.hpp"
 #include "TextStyle.hpp"
 #include "TimeConstants.hpp"
 #include "Typing.hpp"
@@ -90,9 +93,17 @@ sf::Color nameColorOf(const ChatEntry& entry, const PlayerPalette& palette) {
                              : CHAT_NOTICE_COLOR;
 }
 
-/** @returns The whole line of @p entry: its head, then its text. */
-std::string lineOf(const ChatEntry& entry) {
-  return headOf(entry) + entry.text;
+/** @returns What @p entry says in @p language: the wording of a line the
+ * client writes, the text of a pilot. */
+std::string textOf(const ChatEntry& entry, Language language) {
+  return entry.wording.has_value() ? std::string(entry.wording->in(language))
+                                   : entry.text;
+}
+
+/** @returns The whole line of @p entry in @p language: its head, then its
+ * text. */
+std::string lineOf(const ChatEntry& entry, Language language) {
+  return headOf(entry) + textOf(entry, language);
 }
 
 /** @brief Adds the lines of @p entry on screen to @p rows, its name split off
@@ -100,7 +111,7 @@ std::string lineOf(const ChatEntry& entry) {
 void addRowsOf(const ChatEntry& entry, const ChatView& view,
                std::vector<ChatRow>& rows) {
   const std::string head = headOf(entry);
-  const std::string line = head + entry.text;
+  const std::string line = head + textOf(entry, view.settings.get().language);
   const sf::Color name = nameColorOf(entry, view.palette);
   const sf::Color body =
       entry.playerNumber == CLIENT_WRITER ? CHAT_NOTICE_COLOR : CHAT_TEXT_COLOR;
@@ -181,10 +192,12 @@ void paintClosed(IInterfaceCanvas& canvas, const ChatView& view) {
   }
 }
 
-/** @returns The text of the line that says @p lines lines lie above. */
-std::string moreLinesText(int lines) {
-  return std::string{MORE_LINES_START} + std::to_string(lines) +
-         std::string{MORE_LINES_END};
+/** @returns The text of the line that says @p lines lines lie above, in
+ * @p language. */
+std::string moreLinesText(int lines, Language language) {
+  const std::string count = std::to_string(lines);
+  return withMark(std::string(MORE_LINES.in(language)),
+                  TextMark{.mark = LINE_COUNT_MARK, .value = count});
 }
 
 /** @brief Paints the lines of the open chat over @p bottom, the last
@@ -200,7 +213,8 @@ void paintHistory(IInterfaceCanvas& canvas, const ChatView& view, int bottom) {
   }
   if (start > 0) {
     canvas.write(
-        moreLinesText(start), {CHAT_LEFT, rowTop(bottom, end - start)},
+        moreLinesText(start, canvas.language()),
+        {CHAT_LEFT, rowTop(bottom, end - start)},
         {.font = TextFont::Small, .color = CHAT_HINT_COLOR, .outlined = true});
   }
 }
@@ -227,12 +241,15 @@ std::string_view tailOf(std::string_view text, std::size_t letters) {
 void paintLabel(IInterfaceCanvas& canvas, sf::IntRect field, int top) {
   const TextStyle label{
       .font = TextFont::Regular, .color = CHAT_LABEL_COLOR, .outlined = true};
-  canvas.write(CHAT_FIELD_LABEL, {CHAT_LEFT, top}, label);
+  const Language language = canvas.language();
+  const std::string_view say = CHAT_FIELD_LABEL.in(language);
+  const std::string_view hint = CHAT_FIELD_HINT.in(language);
+  canvas.write(say, {CHAT_LEFT, top}, label);
   const int right = field.position.x + field.size.x;
-  if (CHAT_LEFT + regularTextWidth(CHAT_FIELD_LABEL) + CHAT_HINT_GAP +
-          canvas.textWidth(CHAT_FIELD_HINT, TextFont::Small) <=
+  if (CHAT_LEFT + regularTextWidth(say) + CHAT_HINT_GAP +
+          canvas.textWidth(hint, TextFont::Small) <=
       right) {
-    canvas.write(CHAT_FIELD_HINT, {right, top},
+    canvas.write(hint, {right, top},
                  {.font = TextFont::Small,
                   .color = CHAT_HINT_COLOR,
                   .outlined = true,
@@ -274,10 +291,12 @@ void paintChat(IInterfaceCanvas& canvas, const ChatView& view) {
   paintClosed(canvas, view);
 }
 
-int chatLineCount(std::span<const ChatEntry> entries, int letters) {
+int chatLineCount(std::span<const ChatEntry> entries, int letters,
+                  Language language) {
   std::size_t lines = 0;
   for (const ChatEntry& entry : entries) {
-    lines += wrapped(lineOf(entry), static_cast<std::size_t>(letters)).size();
+    lines += wrapped(lineOf(entry, language), static_cast<std::size_t>(letters))
+                 .size();
   }
   return static_cast<int>(lines);
 }

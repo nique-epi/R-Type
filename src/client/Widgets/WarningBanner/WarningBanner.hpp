@@ -3,6 +3,7 @@
 #include <cstddef>
 #include "FlashPreference.hpp"
 #include "IInterfaceCanvas.hpp"
+#include "Language.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -31,8 +32,9 @@ struct WarningBannerLook {
  * starts closing, WARNING_BAND_CLOSING before the end. With
  * FlashPreference::Reduced, the word neither tears nor blinks.
  */
-[[nodiscard]] WarningBannerLook warningBannerAt(engine::Duration sinceArrival,
-                                                FlashPreference flashes);
+[[nodiscard]] WarningBannerLook warningBannerAt(
+    engine::Duration sinceArrival, FlashPreference flashes,
+    Language language = Language::English);
 
 /**
  * @brief Paints the screen over the playfield, never on the status band: the

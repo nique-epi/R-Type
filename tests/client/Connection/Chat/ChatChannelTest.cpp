@@ -133,7 +133,7 @@ TEST_F(ChatChannelFixture, AfterFiveSecondsTheLineGetsNoAnswer) {
   EXPECT_EQ(sentLines().size(), COPIES_BEFORE_GIVING_UP);
   ASSERT_FALSE(chat().entries().empty());
   EXPECT_EQ(chat().entries().back().playerNumber, CLIENT_WRITER);
-  EXPECT_EQ(chat().entries().back().text, UNANSWERED_CHAT_TEXT);
+  EXPECT_EQ(chat().entries().back().text, UNANSWERED_CHAT_TEXT.english);
 }
 
 /**
@@ -149,7 +149,7 @@ TEST_F(ChatChannelFixture, AFifthLineIsRefused) {
 
   EXPECT_FALSE(chat().send(FIRST_TEXT));
   ASSERT_FALSE(chat().entries().empty());
-  EXPECT_EQ(chat().entries().back().text, CHAT_QUEUE_FULL_TEXT);
+  EXPECT_EQ(chat().entries().back().text, CHAT_QUEUE_FULL_TEXT.english);
 }
 
 /**

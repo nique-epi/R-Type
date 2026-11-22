@@ -1,8 +1,10 @@
 #pragma once
 
 #include <cstdint>
+#include <optional>
 #include <string>
 #include "TimeConstants.hpp"
+#include "Translation.hpp"
 
 namespace rtype::client {
 
@@ -17,6 +19,9 @@ struct ChatEntry {
   std::string nickname;
   std::string text;
   engine::Duration age{};
+  /** @brief A line the client writes itself, in every language; nothing for
+   * the line of a pilot, written as its text. */
+  std::optional<Translation> wording = std::nullopt;
 
   bool operator==(const ChatEntry& other) const = default;
 };

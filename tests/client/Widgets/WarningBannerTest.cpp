@@ -3,6 +3,7 @@
 #include <optional>
 #include <vector>
 #include "FlashPreference.hpp"
+#include "Language.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "ScreenTestConstants.hpp"
 #include "WarningBanner.hpp"
@@ -10,6 +11,8 @@
 #include "WarningBannerTestConstants.hpp"
 
 using rtype::client::FlashPreference;
+using rtype::client::Language;
+using rtype::client::paintWarningBanner;
 using rtype::client::warningBannerAt;
 using rtype::client::WarningBannerLook;
 
@@ -181,4 +184,20 @@ TEST(WarningBanner, EachBandOfTheWordIsClippedToItsRows) {
   ASSERT_EQ(bands.size(), FIRE_BAND_COUNT);
   EXPECT_EQ(bands.at(FOURTH_FIRE_BAND).style.clip,
             std::optional<sf::IntRect>{FOURTH_BAND_CLIP});
+}
+
+/**
+ * Given the client in French and the line under the word after five letters,
+ * the fifth the accented E of ENORME
+ * When the screen is painted
+ * Then the five letters are written whole, the accent never cut in two
+ */
+TEST(WarningBanner, AnAccentedLetterOfTheLineIsTypedWhole) {
+  InterfaceCanvasRecord record = recordIn(Language::French);
+  RecordingInterfaceCanvas canvas(record);
+
+  paintWarningBanner(canvas,
+                     WarningBannerLook{.subtitleLetters = FIVE_LETTERS});
+
+  EXPECT_NE(writingOf(record, FRENCH_FIRST_FIVE_LETTERS), nullptr);
 }

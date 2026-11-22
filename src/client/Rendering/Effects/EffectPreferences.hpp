@@ -1,6 +1,7 @@
 #pragma once
 
 #include "FlashPreference.hpp"
+#include "Language.hpp"
 #include "PilotShadeConstants.hpp"
 #include "PilotShades.hpp"
 
@@ -13,6 +14,7 @@ struct EffectPreferences {
   FlashPreference flashes{FlashPreference::Full};
   PilotShades shades{STANDARD_PILOT_SHADES};
   bool soundCues{false};
+  Language language{Language::English};
 };
 
 }  // namespace rtype::client
