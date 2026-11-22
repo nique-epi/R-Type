@@ -45,4 +45,7 @@ constexpr sf::Vector2i NOWHERE_PIXEL(10, 10);
 constexpr rtype::engine::Duration DESIGN_LANDING =
     std::chrono::milliseconds(400);
 
+/** @brief The line under the stamp of a game lost, in French. */
+constexpr std::string_view FRENCH_DOWN_LINE = "PILOTES ABATTUS";
+
 }  // namespace rtype::client::testing

@@ -40,6 +40,7 @@
 #include "TextStyle.hpp"
 #include "TextureArea.hpp"
 #include "TimeConstants.hpp"
+#include "Translation.hpp"
 #include "Typing.hpp"
 #include "WidgetConstants.hpp"
 #include "WidgetText.hpp"
@@ -75,7 +76,7 @@ std::vector<sf::Vector2i> stampHolesOf(std::uint32_t seed) {
 
 /** @returns The word of the stamp: VICTORY once the squadron won, GAME OVER
  * once it lost. */
-std::string_view stampTextOf(network::WireGameOutcome outcome) {
+Translation stampTextOf(network::WireGameOutcome outcome) {
   switch (outcome) {
     case network::WireGameOutcome::Victory:
       return VICTORY_STAMP_TEXT;
@@ -87,7 +88,7 @@ std::string_view stampTextOf(network::WireGameOutcome outcome) {
 
 /** @returns The line under the stamp: MISSION CLEARED once the squadron
  * won, ALL PILOTS DOWN once it lost. */
-std::string_view summaryTextOf(network::WireGameOutcome outcome) {
+Translation summaryTextOf(network::WireGameOutcome outcome) {
   switch (outcome) {
     case network::WireGameOutcome::Victory:
       return CLEARED_TEXT;
@@ -136,7 +137,8 @@ void paintStamp(IInterfaceCanvas& canvas, const FlightLogLook& look,
   }
   const int scale = stampScaleAt(age, look.motion);
   const sf::IntRect box(page + STAMP_BOX.position, STAMP_BOX.size);
-  writeStamp(canvas, box, scale, stampTextOf(look.outcome));
+  writeStamp(canvas, box, scale,
+             stampTextOf(look.outcome).in(canvas.language()));
   if (scale == TITLE_SCALE) {
     paintStampFrame(canvas, box);
   }
@@ -145,26 +147,28 @@ void paintStamp(IInterfaceCanvas& canvas, const FlightLogLook& look,
 void paintLines(IInterfaceCanvas& canvas, const FlightLogLook& look,
                 sf::Vector2i page) {
   const engine::Duration sinceOpen = look.sinceStart - look.schedule.opened;
-  canvas.write(typedPrefix(MISSION_LOG_TEXT,
-                           lettersTypedAt(sinceOpen - MISSION_LOG_DELAY,
-                                          MISSION_LOG_LETTER_TIME,
-                                          MISSION_LOG_TEXT.size())),
-               page + MISSION_LOG_TOP_LEFT,
-               {.font = TextFont::Small, .color = PAPER_LABEL_COLOR});
-  const std::string_view summary = summaryTextOf(look.outcome);
+  const std::string_view heading = MISSION_LOG_TEXT.in(canvas.language());
   canvas.write(
-      typedPrefix(summary, lettersTypedAt(sinceOpen - DOWN_DELAY,
-                                          DOWN_LETTER_TIME, summary.size())),
-      {centeredTextLeft(sf::IntRect(page, PAGE_SIZE), summary),
-       page.y + DOWN_LINE_TOP},
-      {.font = TextFont::Regular, .color = PAPER_INK});
+      typedPrefix(heading, lettersTypedAt(sinceOpen - MISSION_LOG_DELAY,
+                                          MISSION_LOG_LETTER_TIME,
+                                          letterCountOf(heading))),
+      page + MISSION_LOG_TOP_LEFT,
+      {.font = TextFont::Small, .color = PAPER_LABEL_COLOR});
+  const std::string_view summary =
+      summaryTextOf(look.outcome).in(canvas.language());
+  canvas.write(typedPrefix(summary, lettersTypedAt(sinceOpen - DOWN_DELAY,
+                                                   DOWN_LETTER_TIME,
+                                                   letterCountOf(summary))),
+               {centeredTextLeft(sf::IntRect(page, PAGE_SIZE), summary),
+                page.y + DOWN_LINE_TOP},
+               {.font = TextFont::Regular, .color = PAPER_INK});
 }
 
 void paintTeamScore(IInterfaceCanvas& canvas, const FlightLogLook& look,
                     sf::Vector2i page) {
   const engine::Duration sinceOpen = look.sinceStart - look.schedule.opened;
   canvas.write(
-      TEAM_SCORE_TEXT,
+      TEAM_SCORE_TEXT.in(canvas.language()),
       {page.x + (PAGE_SIZE.x / SIDES_PER_AXIS), page.y + TEAM_LABEL_TOP},
       {.font = TextFont::Small,
        .color = PAPER_LABEL_COLOR,

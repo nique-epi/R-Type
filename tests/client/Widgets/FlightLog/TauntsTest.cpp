@@ -4,10 +4,15 @@
 #include <cstdint>
 #include <random>
 #include <ranges>
+#include <set>
 #include <string>
+#include <string_view>
 #include <vector>
 #include "FlightLogFixtures.hpp"
 #include "FlightLogTestConstants.hpp"
+#include "Language.hpp"
+#include "LanguageConstants.hpp"
+#include "LetterCounts.hpp"
 #include "Taunt.hpp"
 #include "TauntCondition.hpp"
 #include "TauntConstants.hpp"
@@ -15,6 +20,9 @@
 #include "TauntsFixtures.hpp"
 #include "TauntsTestConstants.hpp"
 
+using rtype::client::Language;
+using rtype::client::LANGUAGES;
+using rtype::client::lettersIn;
 using rtype::client::pickTaunt;
 using rtype::client::Taunt;
 using rtype::client::TAUNT_LINE_BREAK;
@@ -40,19 +48,50 @@ using rtype::client::testing::ZERO_SCORE;
 TEST(Taunts, ThereAreAboutTwenty) { EXPECT_GE(TAUNTS.size(), ABOUT_TWENTY); }
 
 /**
- * Given every taunt, its names the longest a nickname can be
+ * Given every taunt in every language, its names the longest a nickname can be
  * When its lines are measured
- * Then each holds 18 characters at most, so it fits the label
+ * Then each holds 18 letters at most, so it fits the label
  */
 TEST(Taunts, EveryLineFitsTheLabel) {
-  for (const Taunt& taunt : TAUNTS) {
-    for (const auto line : std::views::split(taunt.text, TAUNT_LINE_BREAK)) {
-      const std::string named =
-          withLongestName(std::string(line.begin(), line.end()));
-      SCOPED_TRACE(named);
-      EXPECT_LE(named.size(), LABEL_LINE_LETTERS);
+  for (const Language language : LANGUAGES) {
+    for (const Taunt& taunt : TAUNTS) {
+      for (const auto line :
+           std::views::split(taunt.text.in(language), TAUNT_LINE_BREAK)) {
+        const std::string named =
+            withLongestName(std::string(line.begin(), line.end()));
+        SCOPED_TRACE(named);
+        EXPECT_LE(lettersIn(named), LABEL_LINE_LETTERS);
+      }
     }
   }
+}
+
+/**
+ * Given the taunts in French, some of them adapted from English jokes
+ * When their texts are compared
+ * Then no French text shows twice, so an adaptation never repeats another
+ */
+TEST(Taunts, TheFrenchPoolHasNoTauntTwice) {
+  std::set<std::string_view> seen;
+  for (const Taunt& taunt : TAUNTS) {
+    SCOPED_TRACE(taunt.text.french);
+    EXPECT_TRUE(seen.insert(taunt.text.french).second);
+  }
+}
+
+/**
+ * Given a taunt and the French language
+ * When its lines are written
+ * Then they are its French lines
+ */
+TEST(Taunts, TheLinesFollowTheLanguage) {
+  const auto pilots = pilotsScoring({TOP_SCORE, BOTTOM_SCORE});
+  const std::vector<std::string> lines = tauntLinesOf(
+      Taunt{.text = {.english = "GOOD\nNIGHT", .french = "BONNE\nNUIT"},
+            .condition = TauntCondition::Always},
+      pilots, Language::French);
+
+  EXPECT_EQ(lines, (std::vector<std::string>{"BONNE", "NUIT"}));
 }
 
 /**
@@ -87,9 +126,10 @@ TEST(Taunts, TheNextTauntIsNeverThePrevious) {
  */
 TEST(Taunts, CarryingNeedsTheBestAheadOfTheLast) {
   const auto tied = pilotsScoring({BOTTOM_SCORE, BOTTOM_SCORE, BOTTOM_SCORE});
-  EXPECT_FALSE(tauntFits(
-      Taunt{.text = "{BEST}", .condition = TauntCondition::BestAheadOfLast},
-      tied));
+  EXPECT_FALSE(
+      tauntFits(Taunt{.text = {.english = "{BEST}", .french = "{BEST}"},
+                      .condition = TauntCondition::BestAheadOfLast},
+                tied));
 }
 
 /**
@@ -98,7 +138,8 @@ TEST(Taunts, CarryingNeedsTheBestAheadOfTheLast) {
  * Then it fits the lone pilot only
  */
 TEST(Taunts, TheSoloTauntFitsALonePilotOnly) {
-  const Taunt solo{.text = "SOLO", .condition = TauntCondition::Solo};
+  const Taunt solo{.text = {.english = "SOLO", .french = "SOLO"},
+                   .condition = TauntCondition::Solo};
   EXPECT_TRUE(tauntFits(solo, pilotsScoring({BOTTOM_SCORE})));
   EXPECT_FALSE(tauntFits(solo, pilotsScoring({BOTTOM_SCORE, SMALL_SCORE})));
 }
@@ -109,7 +150,8 @@ TEST(Taunts, TheSoloTauntFitsALonePilotOnly) {
  * Then it fits only when a pilot scored 0
  */
 TEST(Taunts, TheZeroTauntNeedsAPilotAtZero) {
-  const Taunt zero{.text = "{ZERO}", .condition = TauntCondition::ZeroScore};
+  const Taunt zero{.text = {.english = "{ZERO}", .french = "{ZERO}"},
+                   .condition = TauntCondition::ZeroScore};
   EXPECT_FALSE(tauntFits(zero, pilotsScoring({BOTTOM_SCORE, SMALL_SCORE})));
   EXPECT_TRUE(tauntFits(zero, pilotsScoring({BOTTOM_SCORE, ZERO_SCORE})));
 }
@@ -123,9 +165,10 @@ TEST(Taunts, TheBestPilotIsNamed) {
   auto pilots = pilotsScoring({TOP_SCORE, BOTTOM_SCORE});
   pilots[0].nickname = "CAPTAIN_STARDUST";
   const std::vector<std::string> lines =
-      tauntLinesOf(Taunt{.text = "{BEST}\nCARRIED THE TEAM",
+      tauntLinesOf(Taunt{.text = {.english = "{BEST}\nCARRIED THE TEAM",
+                                  .french = "{BEST}\nA PORTÉ L'ÉQUIPE"},
                          .condition = TauntCondition::BestAheadOfLast},
-                   pilots);
+                   pilots, Language::English);
 
   ASSERT_EQ(lines.size(), 2U);
   EXPECT_EQ(lines[0], "CAPTAIN_STARDUST");
@@ -139,9 +182,10 @@ TEST(Taunts, TheBestPilotIsNamed) {
 TEST(Taunts, APilotWithoutNicknameIsNamedByItsNumber) {
   auto pilots = pilotsScoring({TOP_SCORE, BOTTOM_SCORE});
   pilots[1].nickname.clear();
-  const std::vector<std::string> lines = tauntLinesOf(
-      Taunt{.text = "{LAST}", .condition = TauntCondition::BestAheadOfLast},
-      pilots);
+  const std::vector<std::string> lines =
+      tauntLinesOf(Taunt{.text = {.english = "{LAST}", .french = "{LAST}"},
+                         .condition = TauntCondition::BestAheadOfLast},
+                   pilots, Language::English);
 
   ASSERT_EQ(lines.size(), 1U);
   EXPECT_EQ(lines[0], "P2");

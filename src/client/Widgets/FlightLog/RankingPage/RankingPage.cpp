@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <optional>
 #include <string>
+#include <string_view>
 #include "Easing.hpp"
 #include "EntitySprites.hpp"
 #include "FinalPilot.hpp"
@@ -19,6 +20,7 @@
 #include "ImagePlacement.hpp"
 #include "InkTag.hpp"
 #include "InterfaceConstants.hpp"
+#include "LetterCounts.hpp"
 #include "MotionPreference.hpp"
 #include "Outline.hpp"
 #include "PaddedScore.hpp"
@@ -63,14 +65,15 @@ int leaderLeftOf(const IInterfaceCanvas& canvas, const FinalPilot& pilot) {
 
 void paintHeading(IInterfaceCanvas& canvas, engine::Duration sinceOpen,
                   sf::Vector2i page) {
-  canvas.write(
-      typedPrefix(RANKING_TEXT,
-                  lettersTypedAt(sinceOpen - RANKING_DELAY, RANKING_LETTER_TIME,
-                                 RANKING_TEXT.size())),
-      page + RANKING_HEADING_TOP_LEFT,
-      {.font = TextFont::Regular, .color = PAPER_INK});
+  const std::string_view heading = RANKING_TEXT.in(canvas.language());
+  canvas.write(typedPrefix(heading, lettersTypedAt(sinceOpen - RANKING_DELAY,
+                                                   RANKING_LETTER_TIME,
+                                                   letterCountOf(heading))),
+               page + RANKING_HEADING_TOP_LEFT,
+               {.font = TextFont::Regular, .color = PAPER_INK});
   const engine::Duration ruleStart =
-      RANKING_DELAY + typingTimeOf(RANKING_LETTER_TIME, RANKING_TEXT.size());
+      RANKING_DELAY +
+      typingTimeOf(RANKING_LETTER_TIME, lettersIn(RANKING_TEXT.english));
   const float drawn =
       easeOutCubic(progressBetween(sinceOpen, ruleStart, RULE_DRAW_TIME));
   canvas.fill(sf::IntRect(page + RANKING_RULE_TOP_LEFT,

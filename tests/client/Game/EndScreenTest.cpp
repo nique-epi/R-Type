@@ -38,6 +38,7 @@ using rtype::client::TITLE_SCREEN;
 using rtype::client::VICTORY_STAMP_TEXT;
 using rtype::client::testing::ACE_NICKNAME;
 using rtype::client::testing::DESIGN_LANDING;
+using rtype::client::testing::FRENCH_DOWN_LINE;
 using rtype::client::testing::NOVA_NICKNAME;
 using rtype::client::testing::NOWHERE_PIXEL;
 using rtype::client::testing::PROMPT_MIDDLE_PIXEL;
@@ -59,7 +60,7 @@ TEST_F(EndScreenFixture, EnterWhileTheBookOpensSkipsToTheChoices) {
 
   advance(ONE_FRAME);
 
-  EXPECT_NE(writingOf(canvas(), PROMPT_TEXT), nullptr);
+  EXPECT_NE(writingOf(canvas(), PROMPT_TEXT.english), nullptr);
   EXPECT_THAT(navigator().calls(), IsEmpty());
 }
 
@@ -191,7 +192,7 @@ TEST_F(EndScreenFixture, ThePointerLightsQuitWithoutPressingIt) {
 
   advance(PRESS_DURATION + EXIT_TIME);
 
-  const RecordedWriting* quit = writingOf(canvas(), QUIT_TEXT);
+  const RecordedWriting* quit = writingOf(canvas(), QUIT_TEXT.english);
   ASSERT_NE(quit, nullptr);
   EXPECT_EQ(quit->style.color, HOVERED_QUIT_INK);
   EXPECT_THAT(navigator().calls(), IsEmpty());
@@ -246,7 +247,7 @@ TEST_F(EndScreenFixture, TheBookLandingPlaysTheHeavyImpact) {
 TEST_F(EndScreenFixture, ReducedMotionOpensOnTheChoicesAndLeavesAtOnce) {
   rebuildWith(MotionPreference::Reduced);
   advance(ONE_FRAME);
-  ASSERT_NE(writingOf(canvas(), PROMPT_TEXT), nullptr);
+  ASSERT_NE(writingOf(canvas(), PROMPT_TEXT.english), nullptr);
 
   tap(sf::Keyboard::Key::Enter);
   advance(PRESS_DURATION);
@@ -264,9 +265,21 @@ TEST_F(EndScreenFixture, ReducedMotionOpensOnTheChoicesAndLeavesAtOnce) {
 TEST_F(EndScreenFixture, StampsAGameLostAsGameOver) {
   rebuildWith(MotionPreference::Reduced);
 
-  EXPECT_NE(writingOf(canvas(), DEFEAT_STAMP_TEXT), nullptr);
-  EXPECT_NE(writingOf(canvas(), DOWN_TEXT), nullptr);
-  EXPECT_EQ(writingOf(canvas(), VICTORY_STAMP_TEXT), nullptr);
+  EXPECT_NE(writingOf(canvas(), DEFEAT_STAMP_TEXT.english), nullptr);
+  EXPECT_NE(writingOf(canvas(), DOWN_TEXT.english), nullptr);
+  EXPECT_EQ(writingOf(canvas(), VICTORY_STAMP_TEXT.english), nullptr);
+}
+
+/**
+ * Given a game the squadron lost and the client in French
+ * When the end screen opens with reduced motion
+ * Then the line under the stamp is written in French, never in English
+ */
+TEST_F(FrenchEndScreenFixture, WritesTheLineUnderTheStampInFrench) {
+  rebuildWith(MotionPreference::Reduced);
+
+  EXPECT_NE(writingOf(canvas(), FRENCH_DOWN_LINE), nullptr);
+  EXPECT_EQ(writingOf(canvas(), DOWN_TEXT.english), nullptr);
 }
 
 /**
@@ -278,10 +291,10 @@ TEST_F(EndScreenFixture, StampsAGameLostAsGameOver) {
 TEST_F(EndScreenVictoryFixture, StampsAGameWonAsAVictory) {
   rebuildWith(MotionPreference::Reduced);
 
-  EXPECT_NE(writingOf(canvas(), VICTORY_STAMP_TEXT), nullptr);
-  EXPECT_NE(writingOf(canvas(), CLEARED_TEXT), nullptr);
-  EXPECT_EQ(writingOf(canvas(), DEFEAT_STAMP_TEXT), nullptr);
-  EXPECT_EQ(writingOf(canvas(), DOWN_TEXT), nullptr);
+  EXPECT_NE(writingOf(canvas(), VICTORY_STAMP_TEXT.english), nullptr);
+  EXPECT_NE(writingOf(canvas(), CLEARED_TEXT.english), nullptr);
+  EXPECT_EQ(writingOf(canvas(), DEFEAT_STAMP_TEXT.english), nullptr);
+  EXPECT_EQ(writingOf(canvas(), DOWN_TEXT.english), nullptr);
 }
 
 /**

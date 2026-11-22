@@ -10,6 +10,7 @@
 #include <utility>
 #include <vector>
 #include "FinalPilot.hpp"
+#include "Language.hpp"
 #include "PilotName.hpp"
 #include "Taunt.hpp"
 #include "TauntCondition.hpp"
@@ -78,9 +79,11 @@ std::size_t pickTaunt(std::span<const FinalPilot> pilots, std::mt19937& random,
 }
 
 std::vector<std::string> tauntLinesOf(const Taunt& taunt,
-                                      std::span<const FinalPilot> pilots) {
+                                      std::span<const FinalPilot> pilots,
+                                      Language language) {
   std::vector<std::string> lines;
-  for (const auto line : std::views::split(taunt.text, TAUNT_LINE_BREAK)) {
+  for (const auto line :
+       std::views::split(taunt.text.in(language), TAUNT_LINE_BREAK)) {
     lines.push_back(withNames(std::string(line.begin(), line.end()), pilots));
   }
   return lines;

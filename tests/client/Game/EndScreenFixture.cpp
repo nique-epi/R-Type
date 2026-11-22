@@ -11,6 +11,7 @@
 #include "FinalPilot.hpp"
 #include "FlashPreference.hpp"
 #include "InterfaceColorConstants.hpp"
+#include "Language.hpp"
 #include "MotionPreference.hpp"
 #include "PointerEvents.hpp"
 #include "RecordingInterfaceCanvas.hpp"
@@ -44,8 +45,17 @@ EndScreenFixture::EndScreenFixture()
 EndScreenVictoryFixture::EndScreenVictoryFixture()
     : EndScreenFixture(rtype::network::WireGameOutcome::Victory) {}
 
+FrenchEndScreenFixture::FrenchEndScreenFixture()
+    : EndScreenFixture(rtype::network::WireGameOutcome::Defeat,
+                       rtype::client::Language::French) {}
+
 EndScreenFixture::EndScreenFixture(rtype::network::WireGameOutcome outcome)
-    : result_{.pilots = {FinalPilot{.playerNumber = STARDUST_NUMBER,
+    : EndScreenFixture(outcome, rtype::client::Language::English) {}
+
+EndScreenFixture::EndScreenFixture(rtype::network::WireGameOutcome outcome,
+                                   rtype::client::Language language)
+    : canvas_(recordIn(language)),
+      result_{.pilots = {FinalPilot{.playerNumber = STARDUST_NUMBER,
                                     .nickname = std::string{STARDUST_NICKNAME},
                                     .score = STARDUST_SCORE,
                                     .isLocalPlayer = false,

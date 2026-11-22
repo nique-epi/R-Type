@@ -9,6 +9,7 @@
 #include "FlightLogSheetConstants.hpp"
 #include "FlightLogTextConstants.hpp"
 #include "InterfaceConstants.hpp"
+#include "LetterCounts.hpp"
 #include "WidgetConstants.hpp"
 
 namespace rtype::client {
@@ -145,7 +146,7 @@ constexpr std::int64_t SHAKE_SIDES = 2;
  * button under the bottom-right corner of the open book. */
 constexpr int PROMPT_TOP = 244;
 constexpr int PROMPT_WIDTH =
-    static_cast<int>(PROMPT_TEXT.size()) * REGULAR_FONT_ADVANCE;
+    static_cast<int>(lettersIn(PROMPT_TEXT.english)) * REGULAR_FONT_ADVANCE;
 constexpr int PROMPT_LEFT =
     (INTERFACE_AREA.size.x - PROMPT_WIDTH) / SIDES_PER_AXIS;
 constexpr sf::IntRect PROMPT_AREA =

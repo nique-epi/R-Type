@@ -9,6 +9,7 @@
 #include "EndScreen.hpp"
 #include "GameEnded.hpp"
 #include "GameResult.hpp"
+#include "Language.hpp"
 #include "MotionPreference.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
@@ -24,6 +25,10 @@ class EndScreenFixture : public ::testing::Test {
 
   /** @brief An end screen after a game that ended with @p outcome. */
   explicit EndScreenFixture(rtype::network::WireGameOutcome outcome);
+  /** @brief An end screen after a game that ended with @p outcome, its
+   * canvas telling its painters @p language. */
+  EndScreenFixture(rtype::network::WireGameOutcome outcome,
+                   rtype::client::Language language);
 
   /** @brief Builds the screen again, with this motion preference. */
   void rebuildWith(rtype::client::MotionPreference motion);
@@ -55,4 +60,10 @@ class EndScreenFixture : public ::testing::Test {
 class EndScreenVictoryFixture : public EndScreenFixture {
  protected:
   EndScreenVictoryFixture();
+};
+
+/** @brief An end screen after a game the squadron lost, written in French. */
+class FrenchEndScreenFixture : public EndScreenFixture {
+ protected:
+  FrenchEndScreenFixture();
 };
