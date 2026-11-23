@@ -8,14 +8,15 @@
 namespace rtype::client {
 
 /**
- * @brief The account of the master the player plays under, as long as the
- * client runs: its token, kept in memory only, never logged and never
- * written to a file, and the account the master names for it.
+ * @brief The account of the master the player plays under: its token, never
+ * logged, and the account the master names for it.
  *
  * signIn() asks the master who the token belongs to; the player is signed in
  * once the master answered with an account, and signed out again when the
  * master refused the token, or by signOut(). The screen that signs a player
- * in calls signIn(); `--session <token>` calls it at launch.
+ * in calls signIn(); at launch, the token `--session` gives is used for that
+ * launch alone, and otherwise the token the previous launch kept, so the
+ * player stays signed in from one launch to the next until signOut().
  */
 class IAccountSession {
  public:
@@ -41,7 +42,8 @@ class IAccountSession {
    * before; the player is signed out until it answers. */
   virtual void signIn(const std::string& token) = 0;
 
-  /** @brief Forgets the token: the player plays as a guest. */
+  /** @brief Forgets the token, for this launch and the next ones: the player
+   * plays as a guest. */
   virtual void signOut() = 0;
 };
 
