@@ -30,6 +30,10 @@ struct Gun {
   std::uint8_t projectileNumber{0};
   /** @brief How many projectiles a shot fires, and how they spread. */
   ShotPattern pattern{};
+  /** @brief The weapon it fires: 0 for the gun of the sheet, n for the n-th
+   * weapon of the sheet of a ship, and its level, from 1; 0 for the gun. */
+  std::uint8_t weapon{0};
+  std::uint8_t level{0};
 };
 
 }  // namespace rtype::game

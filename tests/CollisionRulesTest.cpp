@@ -8,6 +8,7 @@
 #include "CollisionScene.hpp"
 #include "CollisionSystem.hpp"
 #include "CollisionTestConstants.hpp"
+#include "CrystalTouched.hpp"
 #include "Entity.hpp"
 #include "EntitySheet.hpp"
 #include "EntitySheets.hpp"
@@ -31,6 +32,7 @@ using rtype::engine::SIMULATION_TICK_DURATION;
 using rtype::engine::SystemScheduler;
 using rtype::game::CollisionRules;
 using rtype::game::CollisionSystem;
+using rtype::game::CrystalTouched;
 using rtype::game::EntitySheet;
 using rtype::game::EntityType;
 using rtype::game::IncomingHit;
@@ -216,6 +218,30 @@ TEST_P(CollisionRulesInAnyOrder, AShipTouchingALookItemPublishesOneTouch) {
             (std::vector<LookItemTouched>{
                 LookItemTouched{.ship = ship, .item = item}}));
   EXPECT_TRUE(recorded.missileHits.empty());
+  EXPECT_TRUE(recorded.shipContacts.empty());
+}
+
+/**
+ * Given a player and a crystal
+ * When a Collision names them, in either order
+ * Then one CrystalTouched is published, naming the ship and the crystal, and
+ * no LookItemTouched
+ */
+TEST_P(CollisionRulesInAnyOrder, AShipTouchingACrystalPublishesOneTouch) {
+  CollisionScene scene;
+  const Entity ship = scene.spawn(EntityType::Player, 0.0F, 0.0F);
+  const Entity crystal = scene.spawn(EntityType::Crystal, 0.0F, 0.0F);
+  const CollisionRules rules(scene.events, scene.components);
+  Recorded recorded;
+  record(scene, recorded);
+
+  scene.events.publish(collisionOf(ship, crystal));
+  scene.events.dispatch();
+
+  EXPECT_EQ(recorded.crystalTouches,
+            (std::vector<CrystalTouched>{
+                CrystalTouched{.ship = ship, .crystal = crystal}}));
+  EXPECT_TRUE(recorded.lookItemTouches.empty());
   EXPECT_TRUE(recorded.shipContacts.empty());
 }
 

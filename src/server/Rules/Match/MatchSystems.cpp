@@ -40,6 +40,8 @@
 #include "VolleySystemParts.hpp"
 #include "WaveSpawner.hpp"
 #include "WaveSpawnerParts.hpp"
+#include "WeaponKeeper.hpp"
+#include "WeaponKeeperParts.hpp"
 #include "WeaponSystem.hpp"
 #include "WeaponSystemParts.hpp"
 #include "World.hpp"
@@ -217,6 +219,16 @@ std::unique_ptr<ExtraLifeKeeper> extraLifeKeeperFor(
                            .roster = game.roster.get()});
 }
 
+/** @returns The keeper of the crystals the players of @p world pick up. */
+std::unique_ptr<WeaponKeeper> weaponKeeperFor(GameContext& game,
+                                              game::World& world) {
+  return std::make_unique<WeaponKeeper>(
+      WeaponKeeperParts{.events = game.events.get(),
+                        .world = world,
+                        .roster = game.roster.get(),
+                        .types = game.settings.types});
+}
+
 /** @returns The system that makes the crystals the enemies of @p world drop
  * appear. */
 std::unique_ptr<DropSystem> dropSystemFor(GameContext& game,
@@ -258,12 +270,14 @@ MatchSystems::MatchSystems(const MatchSystemsParts& parts)
       lifeKeeper_(lifeKeeperFor(parts)),
       extraLifeKeeper_(extraLifeKeeperFor(parts)),
       lookItemKeeper_(lookItemKeeperFor(game_, world_)),
-      dropSystem_(dropSystemFor(game_, world_)) {}
+      dropSystem_(dropSystemFor(game_, world_)),
+      weaponKeeper_(weaponKeeperFor(game_, world_)) {}
 
 void MatchSystems::onTick(IHitArbitration& arbitration, std::uint32_t tick) {
   GameContext& game = game_.get();
   world_.get().setEnemyStrength(enemyStrengthOf(game));
   lookItemKeeper_->onTick();
+  weaponKeeper_->onTick();
   dropSystem_->onTick();
   arbitration.giveViews(world_, game.roster.get(), tick);
   if (levelDirector_ != nullptr) {

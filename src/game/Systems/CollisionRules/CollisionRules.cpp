@@ -5,6 +5,7 @@
 #include "CollisionFilter.hpp"
 #include "CollisionFiltering.hpp"
 #include "ComponentRegistry.hpp"
+#include "CrystalTouched.hpp"
 #include "Entity.hpp"
 #include "EntityType.hpp"
 #include "EventBus.hpp"
@@ -71,6 +72,10 @@ void CollisionRules::publishContactOf(CollidingEntity one,
   } else if (one.type == EntityType::Player &&
              other.type == EntityType::LookItem) {
     events_.publish(LookItemTouched{.ship = one.entity, .item = other.entity});
+  } else if (one.type == EntityType::Player &&
+             other.type == EntityType::Crystal) {
+    events_.publish(
+        CrystalTouched{.ship = one.entity, .crystal = other.entity});
   }
 }
 

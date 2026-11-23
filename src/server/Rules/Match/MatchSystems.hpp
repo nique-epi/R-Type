@@ -19,6 +19,7 @@
 #include "MatchSystemsParts.hpp"
 #include "VolleySystem.hpp"
 #include "WaveSpawner.hpp"
+#include "WeaponKeeper.hpp"
 #include "WeaponSystem.hpp"
 #include "World.hpp"
 
@@ -91,6 +92,7 @@ class MatchSystems {
   std::unique_ptr<ExtraLifeKeeper> extraLifeKeeper_;
   std::unique_ptr<LookItemKeeper> lookItemKeeper_;
   std::unique_ptr<DropSystem> dropSystem_;
+  std::unique_ptr<WeaponKeeper> weaponKeeper_;
 };
 
 }  // namespace rtype::server

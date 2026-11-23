@@ -35,7 +35,8 @@ namespace rtype::game {
  *   ViewDelay or not: LagCompensatedHitSystem records no obstacle, so the
  *   contact is judged in the present; a blocking obstacle only overlaps a
  *   ship it pins against an edge;
- * - a player and a look item become a LookItemTouched.
+ * - a player and a look item become a LookItemTouched;
+ * - a player and a crystal become a CrystalTouched.
  * A missile of a player and the ship of a player become a MissileHit only
  * with friendly fire on, when the MissileOwner of the missile and the
  * ShipPilot of the ship name two players: a missile of no player and a ship
@@ -69,8 +70,9 @@ class CollisionRules {
   [[nodiscard]] std::optional<CollidingEntity> collidingEntityOf(
       engine::Entity entity) const;
   /** @brief Publishes what the kept contact of @p one with @p other means
-   * for @p one: the MissileHit of a missile, or the ShipContact or the
-   * LookItemTouched of a ship; nothing for any other body. */
+   * for @p one: the MissileHit of a missile, or the ShipContact, the
+   * LookItemTouched or the CrystalTouched of a ship; nothing for any other
+   * body. */
   void publishContactOf(CollidingEntity one, CollidingEntity other);
   /** @returns Whether @p missile touching @p target is a hit to announce
    * here: see the rules of the class for another missile, the ship of a

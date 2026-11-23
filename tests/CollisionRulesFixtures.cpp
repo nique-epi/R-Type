@@ -4,6 +4,7 @@
 #include "Collision.hpp"
 #include "CollisionRules.hpp"
 #include "CollisionScene.hpp"
+#include "CrystalTouched.hpp"
 #include "Entity.hpp"
 #include "EntityType.hpp"
 #include "LookItemTouched.hpp"
@@ -24,6 +25,10 @@ void record(CollisionScene& scene, Recorded& recorded) {
   scene.events.subscribe<LookItemTouched>(
       [&recorded](const LookItemTouched& touched) {
         recorded.lookItemTouches.push_back(touched);
+      });
+  scene.events.subscribe<CrystalTouched>(
+      [&recorded](const CrystalTouched& touched) {
+        recorded.crystalTouches.push_back(touched);
       });
 }
 

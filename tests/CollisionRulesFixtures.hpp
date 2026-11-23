@@ -5,6 +5,7 @@
 #include <vector>
 #include "Collision.hpp"
 #include "CollisionScene.hpp"
+#include "CrystalTouched.hpp"
 #include "Entity.hpp"
 #include "EntityType.hpp"
 #include "LookItemTouched.hpp"
@@ -18,11 +19,12 @@ struct Recorded {
   std::vector<MissileHit> missileHits;
   std::vector<ShipContact> shipContacts;
   std::vector<LookItemTouched> lookItemTouches;
+  std::vector<CrystalTouched> crystalTouches;
 };
 
-/** @brief Records in @p recorded every MissileHit, ShipContact and
- * LookItemTouched of the bus of @p scene; @p recorded must outlive the
- * dispatches. */
+/** @brief Records in @p recorded every MissileHit, ShipContact,
+ * LookItemTouched and CrystalTouched of the bus of @p scene; @p recorded must
+ * outlive the dispatches. */
 void record(CollisionScene& scene, Recorded& recorded);
 
 /** @returns A player missile of @p scene at the origin, fired by the player
