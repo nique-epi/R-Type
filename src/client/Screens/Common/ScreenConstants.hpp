@@ -28,6 +28,11 @@ constexpr engine::Duration END_SCREEN_DELAY = std::chrono::milliseconds(1000);
 constexpr const char* LOGO_ID = "sprites/logo.png";
 constexpr sf::Vector2i LOGO_SIZE(210, 42);
 
+/** @brief Asset id of the red LAN 2026 ribbon the title screen lays under its
+ * logo, and its size in pixels. */
+constexpr const char* LAN_BANNER_ID = "sprites/lan_banner.png";
+constexpr sf::Vector2i LAN_BANNER_SIZE(210, 16);
+
 /** @brief Logger name the intro writes its log line under. */
 constexpr std::string_view INTRO_LOGGER_NAME = "Intro";
 
