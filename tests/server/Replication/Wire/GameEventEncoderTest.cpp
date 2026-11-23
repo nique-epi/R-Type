@@ -4,6 +4,7 @@
 #include <vector>
 #include "EntityDamage.hpp"
 #include "EventMessage.hpp"
+#include "ExtraLifeWon.hpp"
 #include "GameEvent.hpp"
 #include "GameEventConstants.hpp"
 #include "GameEventEncoder.hpp"
@@ -51,6 +52,26 @@ TEST(GameEventEncoderTest, EncodesEachKindOfGameEventWithItsFields) {
                           .kind = network::GameEventKind::PlayerEliminated,
                           .playerNumber = SECOND_PLAYER_NUMBER,
                           .entityId = 0}));
+}
+
+/**
+ * Given an encoder
+ * When the extra life of the second player is encoded
+ * Then it is a guaranteed GameEvent of kind ExtraLifeWon naming that player
+ * and no entity
+ */
+TEST(GameEventEncoderTest, EncodesAnExtraLifeWon) {
+  GameEventEncoder encoder;
+
+  const EventMessage won =
+      encoder.encode(game::ExtraLifeWon{.playerNumber = SECOND_PLAYER_NUMBER});
+
+  EXPECT_TRUE(won.guaranteed);
+  EXPECT_EQ(network::decodeMessage<network::GameEvent>(won.message.payload),
+            (network::GameEvent{.eventNumber = FIRST_EVENT_NUMBER,
+                                .kind = network::GameEventKind::ExtraLifeWon,
+                                .playerNumber = SECOND_PLAYER_NUMBER,
+                                .entityId = 0}));
 }
 
 /**

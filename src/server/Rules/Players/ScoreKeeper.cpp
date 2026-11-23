@@ -8,6 +8,7 @@
 #include "EventBus.hpp"
 #include "GameRuleConstants.hpp"
 #include "PlayerRoster.hpp"
+#include "ScoreChanged.hpp"
 #include "SeatIndex.hpp"
 
 namespace rtype::server {
@@ -38,6 +39,17 @@ PilotPoints sharesOf(const game::EnemyKilled& kill) {
   return shares;
 }
 
+/** @brief Publishes on @p events the ScoreChanged of @p player, whose score
+ * was @p before, when it grew. */
+void announceGrowth(engine::EventBus& events, const ConnectedPlayer& player,
+                    std::uint32_t before) {
+  if (player.score > before) {
+    events.publish(game::ScoreChanged{.playerNumber = player.playerNumber,
+                                      .before = before,
+                                      .after = player.score});
+  }
+}
+
 }  // namespace
 
 ScoreKeeper::ScoreKeeper(engine::EventBus& events, PlayerRoster& roster)
@@ -51,8 +63,10 @@ ScoreKeeper::~ScoreKeeper() { events_.unsubscribe(subscription_); }
 void ScoreKeeper::onEnemyKilled(const game::EnemyKilled& kill) {
   const PilotPoints shares = sharesOf(kill);
   for (ConnectedPlayer* const player : roster_.connected()) {
+    const std::uint32_t before = player->score;
     player->score = saturatedCount(std::uint64_t{player->score} +
                                    shares.at(seatIndexOf(*player)));
+    announceGrowth(events_, *player, before);
   }
   payEveryPlayer(roster_, kill.bounty);
 }

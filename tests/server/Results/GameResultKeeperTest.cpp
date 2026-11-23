@@ -32,7 +32,7 @@ TEST_F(GameResultKeeperFixture, RecordsThePlayersWhenTheGameFinishes) {
   startTheGame();
   player.score = KEEPER_SCORE;
   player.bounty = KEEPER_BOUNTY;
-  player.livesWithoutShip = NO_LIFE;
+  player.deaths = EVERY_LIFE_LOST;
 
   finishTheGame();
 
@@ -105,12 +105,12 @@ TEST(GameResultKeeper, SaysTheResultOfAGameThatIsNotVanillaIsNot) {
 }
 
 /**
- * Given a game whose rules give five lives, and a player with two left
+ * Given a game whose rules give five lives, and a player who lost three ships
+ * then got its five lives back at a checkpoint
  * When the game finishes
- * Then the player died three times: its deaths count from the lives of the
- * rules, not from the default lives
+ * Then the player died three times: a checkpoint takes no death away
  */
-TEST(GameResultKeeper, CountsDeathsFromTheLivesOfTheRules) {
+TEST(GameResultKeeper, CountsTheShipsLostWhateverGaveLivesBack) {
   PlayerRoster roster;
   RecordingResultsArchive archive;
   GameResultKeeper keeper{
@@ -132,14 +132,15 @@ TEST(GameResultKeeper, CountsDeathsFromTheLivesOfTheRules) {
                        .current = GameState::Starting});
   keeper.onStateChanged(GameStateChanged{.previous = GameState::Starting,
                                          .current = GameState::InProgress});
-  player->livesWithoutShip = TWO_LIVES_LEFT;
+  player->deaths = THREE_SHIPS_LOST;
+  player->livesWithoutShip = FIVE_LIVES_OF_THE_RULES;
 
   keeper.onStateChanged(GameStateChanged{.previous = GameState::InProgress,
                                          .current = GameState::Finished});
 
   ASSERT_EQ(archive.results().size(), 1U);
   ASSERT_EQ(archive.results().front().players.size(), 1U);
-  EXPECT_EQ(archive.results().front().players.front().deaths, THREE_LIVES_LOST);
+  EXPECT_EQ(archive.results().front().players.front().deaths, THREE_SHIPS_LOST);
 }
 
 /**

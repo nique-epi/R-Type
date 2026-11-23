@@ -11,6 +11,14 @@ namespace rtype::server {
  * included: the Lives of its ship while it has one in that world, else the
  * lives it keeps for its next ship (ConnectedPlayer::livesWithoutShip).
  */
+/**
+ * @brief Gives @p player @p lives in @p world: the Lives of its ship while it
+ * has one, and the lives it keeps for its next ship, which a ship is given
+ * and holds the same count as (ConnectedPlayer::livesWithoutShip).
+ */
+void setLivesOf(game::World& world, ConnectedPlayer& player,
+                std::uint8_t lives);
+
 [[nodiscard]] std::uint8_t livesOf(game::World& world,
                                    const ConnectedPlayer& player);
 

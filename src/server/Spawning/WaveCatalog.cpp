@@ -18,10 +18,12 @@
 #include "DataFileReading.hpp"
 #include "DataFileTable.hpp"
 #include "DifficultyLayers.hpp"
+#include "EnemyStrength.hpp"
 #include "EntitySheet.hpp"
 #include "EntitySheets.hpp"
 #include "EntityType.hpp"
 #include "GameRuleConstants.hpp"
+#include "PercentConstants.hpp"
 #include "ServerException.hpp"
 #include "SipHash.hpp"
 #include "TimeConstants.hpp"
@@ -269,14 +271,24 @@ std::optional<std::string> bossFrom(const DataFileTable& table,
   return boss;
 }
 
-/** @returns The health percent of the boss the table of one difficulty
- * gives, DEFAULT_BOSS_HEALTH_PERCENT when it gives none. */
-int bossHealthPercentFrom(const DataFileTable& table) {
-  if (!table.table.get().contains(BOSS_HEALTH_PERCENT_KEY)) {
-    return DEFAULT_BOSS_HEALTH_PERCENT;
+/** @returns The percent the key @p key of one difficulty gives, read from the
+ * layer of @p layers that gives it, game::WHOLE_PERCENT when none does;
+ * throws as engine::wholeNumberAt() when it lies outside PERCENT_KEY_RANGE. */
+int percentFrom(const DifficultyLayers& layers, std::string_view key) {
+  const DataFileTable& table = layerHolding(layers, key);
+  if (!table.table.get().contains(key)) {
+    return game::WHOLE_PERCENT;
   }
-  return static_cast<int>(engine::wholeNumberAt(table, BOSS_HEALTH_PERCENT_KEY,
-                                                BOSS_HEALTH_PERCENT_RANGE));
+  return static_cast<int>(engine::wholeNumberAt(table, key, PERCENT_KEY_RANGE));
+}
+
+/** @returns The strength of the enemies other than the boss one difficulty
+ * gives, each percent read from the layer of @p layers that gives it. */
+game::EnemyStrength enemyStrengthFrom(const DifficultyLayers& layers) {
+  return game::EnemyStrength{
+      .healthPercent = percentFrom(layers, ENEMY_HEALTH_PERCENT_KEY),
+      .gunIntervalPercent =
+          percentFrom(layers, ENEMY_GUN_INTERVAL_PERCENT_KEY)};
 }
 
 /** @returns The waves one difficulty describes, each key read from the
@@ -299,8 +311,8 @@ WavePlan planFrom(const DifficultyLayers& layers,
       .enemies = enemiesFrom(EnemyList{
           .table = layerHolding(layers, ENEMIES_KEY), .types = types}),
       .boss = bossFrom(layerHolding(layers, BOSS_KEY), types),
-      .bossHealthPercent =
-          bossHealthPercentFrom(layerHolding(layers, BOSS_HEALTH_PERCENT_KEY)),
+      .bossHealthPercent = percentFrom(layers, BOSS_HEALTH_PERCENT_KEY),
+      .enemyStrength = enemyStrengthFrom(layers),
       .lookItems = lookItemsFrom(EnemyList{
           .table = layerHolding(layers, LOOK_ITEMS_KEY), .types = types}),
       .lookItemEvery =

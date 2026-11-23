@@ -21,7 +21,7 @@ class PlayerRoster;
 /**
  * @brief Adds the points of each enemy destroyed to the score of the player
  * who fired the missile, or, for a boss, of every pilot by the damage it
- * dealt.
+ * dealt, and publishes a ScoreChanged for each score that grew.
  *
  * Subscribes to EnemyKilled on construction and unsubscribes on destruction.
  * A kill whose damageByPilot holds any damage shares its points by that

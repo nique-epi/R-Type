@@ -91,15 +91,9 @@ bool isGone(const PilotStatus& pilot) {
   return pilot.state == PilotState::OutOfLives || hasLeft(pilot);
 }
 
-/** @returns The left column of a bay, 0 to PLAYER_COLOR_COUNT - 1 from the
- * left. */
-int bayLeft(int bay) {
-  return STATUS_BAY_INSET + (bay * (STATUS_BAY_WIDTH + STATUS_BAY_GAP));
-}
-
 /** @returns The top-left corner of the bay of a pilot. */
 sf::Vector2i bayOf(const PilotStatus& pilot) {
-  return {bayLeft(colorOf(pilot)), STATUS_BAND_AREA.position.y};
+  return {statusBayLeft(colorOf(pilot)), STATUS_BAND_AREA.position.y};
 }
 
 /** @returns The bay of a pilot that has one, in the shades @p palette gives
@@ -194,7 +188,7 @@ void paintPanel(IInterfaceCanvas& canvas) {
                                   .inside = STATUS_BAND_INSIDE_COLOR})
       .paint(canvas);
   for (int bay = 1; bay < PLAYER_COLOR_COUNT; ++bay) {
-    const int ruleLeft = bayLeft(bay) - STATUS_BAY_GAP;
+    const int ruleLeft = statusBayLeft(bay) - STATUS_BAY_GAP;
     canvas.fill({{ruleLeft, STATUS_BAND_AREA.position.y + STATUS_RULE_TOP},
                  {BORDER_THICKNESS, STATUS_RULE_HEIGHT}},
                 STATUS_RULE_COLOR);
@@ -341,6 +335,10 @@ void paintBay(IInterfaceCanvas& canvas, const PilotStatus& pilot,
 }
 
 }  // namespace
+
+int statusBayLeft(int bay) {
+  return STATUS_BAY_INSET + (bay * (STATUS_BAY_WIDTH + STATUS_BAY_GAP));
+}
 
 void paintStatusBand(IInterfaceCanvas& canvas,
                      std::span<const PilotStatus> pilots,

@@ -69,7 +69,7 @@ TEST_F(EntityOrdersFixture, CreatesTheBodyWithTheIdTheScriptWasGiven) {
 /**
  * Given a script that asked for a Bydo Tyrant at 40 percent of its health
  * When the tick ends
- * Then the body has 96 of the 240 points its sheet gives
+ * Then the body has 72 of the 180 points its sheet gives
  */
 TEST_F(EntityOrdersFixture, CreatesTheBodyAtTheHealthPercentAsked) {
   const std::uint32_t networkId =

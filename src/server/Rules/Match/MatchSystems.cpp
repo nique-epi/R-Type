@@ -8,8 +8,12 @@
 #include "BossStageParts.hpp"
 #include "CollisionRules.hpp"
 #include "DamageRules.hpp"
+#include "EnemyScaling.hpp"
+#include "EnemyStrength.hpp"
 #include "EntityOrders.hpp"
 #include "EntityOrdersParts.hpp"
+#include "ExtraLifeKeeper.hpp"
+#include "ExtraLifeKeeperParts.hpp"
 #include "GameContext.hpp"
 #include "GameInstanceConstants.hpp"
 #include "GameSettings.hpp"
@@ -172,6 +176,13 @@ std::unique_ptr<LevelDirector> levelDirectorFor(GameContext& game,
                          .continues = settings.continues});
 }
 
+/** @returns The strength the enemies of @p game are made at now: the
+ * strength its difficulty gives, scaled for its connected players. */
+game::EnemyStrength enemyStrengthOf(GameContext& game) {
+  return game::scaledEnemyStrength(game.settings.waves.enemyStrength,
+                                   game.roster.get().connected().size());
+}
+
 /** @returns Whether the boss of the level may come at this tick, after
  * moving @p waves on a tick: once the last wave is over, or at once, without
  * any wave, in a game that @p startsAtBoss. */
@@ -192,6 +203,16 @@ std::unique_ptr<LifeKeeper> lifeKeeperFor(const MatchSystemsParts& parts) {
                       .roster = game.roster.get(),
                       .respawn = parts.respawn,
                       .shipsNeverDie = game.settings.startsAtBoss});
+}
+
+/** @returns The keeper of the extra lives of the players of @p parts. */
+std::unique_ptr<ExtraLifeKeeper> extraLifeKeeperFor(
+    const MatchSystemsParts& parts) {
+  const GameContext& game = parts.game.get();
+  return std::make_unique<ExtraLifeKeeper>(
+      ExtraLifeKeeperParts{.events = game.events.get(),
+                           .world = parts.world.get(),
+                           .roster = game.roster.get()});
 }
 
 /** @returns The keeper of the look items the players of @p world win. */
@@ -221,10 +242,12 @@ MatchSystems::MatchSystems(const MatchSystemsParts& parts)
       levelDirector_(levelDirectorFor(game_, world_, *entityOrders_)),
       bossStage_(bossStageFor(game_, world_, *entityOrders_)),
       lifeKeeper_(lifeKeeperFor(parts)),
+      extraLifeKeeper_(extraLifeKeeperFor(parts)),
       lookItemKeeper_(lookItemKeeperFor(game_, world_)) {}
 
 void MatchSystems::onTick(IHitArbitration& arbitration, std::uint32_t tick) {
   GameContext& game = game_.get();
+  world_.get().setEnemyStrength(enemyStrengthOf(game));
   lookItemKeeper_->onTick();
   arbitration.giveViews(world_, game.roster.get(), tick);
   if (levelDirector_ != nullptr) {

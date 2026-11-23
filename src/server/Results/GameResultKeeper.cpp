@@ -32,19 +32,17 @@ std::vector<std::string> wonLooksOf(const ConnectedPlayer& player) {
 }
 
 /**
- * @returns What @p player leaves of the game. LifeKeeper is the only one to
- * lower ConnectedPlayer::livesWithoutShip, by one per ship lost, and a ship is
- * given that value, so it holds the lives left even while the player has a
- * ship.
+ * @returns What @p player leaves of the game: its deaths are the ships
+ * LifeKeeper took from it (ConnectedPlayer::deaths), counted one by one, so a
+ * checkpoint that gives the lives back takes none of them away.
  */
-PlayerResult resultOf(const ConnectedPlayer& player, std::uint8_t lives) {
-  return PlayerResult{
-      .nickname = player.nickname,
-      .score = player.score,
-      .bounty = player.bounty,
-      .deaths = static_cast<std::uint32_t>(lives - player.livesWithoutShip),
-      .wonLooks = wonLooksOf(player),
-      .ticket = network::gameTicketText(player.ticket)};
+PlayerResult resultOf(const ConnectedPlayer& player) {
+  return PlayerResult{.nickname = player.nickname,
+                      .score = player.score,
+                      .bounty = player.bounty,
+                      .deaths = player.deaths,
+                      .wonLooks = wonLooksOf(player),
+                      .ticket = network::gameTicketText(player.ticket)};
 }
 
 }  // namespace
@@ -55,12 +53,11 @@ GameResultKeeper::GameResultKeeper(PlayerRoster& roster,
     : roster_(roster),
       archive_(archive),
       difficulty_(settings.rules.difficulty),
-      lives_(settings.rules.lives),
       vanilla_(settings.vanilla) {}
 
 void GameResultKeeper::onPlayerClosing(const ConnectedPlayer& departed) {
   if (state_ == GameState::InProgress) {
-    departed_.push_back(resultOf(departed, lives_));
+    departed_.push_back(resultOf(departed));
   }
 }
 
@@ -81,7 +78,7 @@ void GameResultKeeper::startCounting() {
 void GameResultKeeper::recordTheGame(bool victory) {
   std::vector<PlayerResult> players = std::exchange(departed_, {});
   for (const ConnectedPlayer* const player : roster_.connected()) {
-    players.push_back(resultOf(*player, lives_));
+    players.push_back(resultOf(*player));
   }
   if (players.empty()) {
     return;

@@ -59,4 +59,16 @@ constexpr float ENEMY_PATTERN_ROOM = 48.0F;
 constexpr float ENEMY_ROW_MARGIN =
     ENEMY_SPAWN_VERTICAL_MARGIN + ENEMY_PATTERN_ROOM;
 
+/** @brief Each player past the first adds this percent to the health of an
+ * enemy that is no boss: 140 % for two players, 220 % for four. Less than
+ * the 75 % of a boss (BOSS_HEALTH_PER_EXTRA_PLAYER), since every enemy of a
+ * stage is hit by the whole team only while it is on screen. */
+constexpr int ENEMY_HEALTH_PER_EXTRA_PLAYER = 40;
+
+/** @brief Each player past the first takes this percent off the ticks the gun
+ * of an enemy that is no boss waits: 90 % for two players, 70 % for four, so
+ * a team of four meets 43 % more shots, which each enemy aims at the ship
+ * nearest to it. */
+constexpr int ENEMY_GUN_INTERVAL_PER_EXTRA_PLAYER = -10;
+
 }  // namespace rtype::game

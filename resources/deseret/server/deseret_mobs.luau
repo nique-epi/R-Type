@@ -475,7 +475,8 @@ end)
 
 -- The Surveyor walks left on its tripod along the floor; left of
 -- fire_from_x and rested, it plants itself, aims with its eye lit, then fires
--- one slug from its lens at the nearest ship (aimed_slug).
+-- one slug from its lens at the nearest ship (its sheet flies it with the
+-- built-in pilot aimed).
 behaviours.register("surveyor_aim", with_attack({
 	{ name = "fire_from_x", lowest = 0, highest = 1920 },
 }), function(e)
@@ -489,25 +490,6 @@ behaviours.register("surveyor_aim", with_attack({
 		behaviours.wait(1, { direction = planted(e), ends_action = true })
 	end
 	return { direction = along(e, level.ground, SURVEYOR_GAP) }
-end)
-
--- A slug flies straight at where the nearest ship was on its first tick, as
--- the bolt of a Rail turret does; to the left when it sees no ship, or one
--- behind it.
-behaviours.register("aimed_slug", {}, function(e)
-	local data = e.data
-	if data.heading == nil then
-		local ship = e.nearest_ship
-		data.heading = LEFT
-		if ship ~= nil then
-			local x, y = ship.x - e.position.x, ship.y - e.position.y
-			local length = math.sqrt(x * x + y * y)
-			if x < 0 and length > 0 then
-				data.heading = { x = x / length, y = y / length }
-			end
-		end
-	end
-	return { direction = data.heading }
 end)
 
 -- A missile that flies straight left.

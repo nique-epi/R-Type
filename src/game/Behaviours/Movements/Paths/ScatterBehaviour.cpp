@@ -1,5 +1,4 @@
 #include "ScatterBehaviour.hpp"
-#include <cmath>
 #include <span>
 #include <string_view>
 #include "BehaviourConstants.hpp"
@@ -7,6 +6,7 @@
 #include "BehaviourView.hpp"
 #include "Direction.hpp"
 #include "Intent.hpp"
+#include "UnitHeading.hpp"
 
 namespace rtype::game {
 
@@ -19,16 +19,11 @@ std::span<const BehaviourSetting> ScatterBehaviour::settings() const {
 }
 
 Intent ScatterBehaviour::steer(const BehaviourView& view) const {
-  const float across = view.position.x - view.origin.x;
-  const float down = view.position.y - view.origin.y;
-  const float length = std::hypot(across, down);
-  if (length == 0.0F) {
-    return Intent{.direction = LEFTWARD, .shooting = true, .steered = true};
-  }
-  return Intent{
-      .direction = Direction{.x = across / length, .y = down / length},
-      .shooting = true,
-      .steered = true};
+  return Intent{.direction = headingAlong(
+                    Direction{.x = view.position.x - view.origin.x,
+                              .y = view.position.y - view.origin.y}),
+                .shooting = true,
+                .steered = true};
 }
 
 }  // namespace rtype::game

@@ -37,6 +37,7 @@ void validate(const GameEvent& message) {
       return;
     case GameEventKind::PlayerHit:
     case GameEventKind::PlayerEliminated:
+    case GameEventKind::ExtraLifeWon:
       requirePlayerWithoutEntity(message);
       return;
   }

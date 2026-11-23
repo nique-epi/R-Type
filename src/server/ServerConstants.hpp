@@ -201,7 +201,7 @@ constexpr std::string_view SHIP_SHEET_NAME = "ship";
  * are not vanilla. A test fails when the shipped file changes and this does
  * not.
  */
-constexpr std::uint64_t OFFICIAL_WAVES_FINGERPRINT = 0x9719fc671f2bf7f3;
+constexpr std::uint64_t OFFICIAL_WAVES_FINGERPRINT = 0x9ddf848faace48c6;
 
 /**
  * @brief The fingerprint of the entity sheets the game ships, as
@@ -209,7 +209,7 @@ constexpr std::uint64_t OFFICIAL_WAVES_FINGERPRINT = 0x9719fc671f2bf7f3;
  * are not vanilla. A test fails when a shipped sheet changes and this does
  * not.
  */
-constexpr std::uint64_t OFFICIAL_ENTITY_SHEETS_FINGERPRINT = 0x246e5335307ab8b9;
+constexpr std::uint64_t OFFICIAL_ENTITY_SHEETS_FINGERPRINT = 0xb44e3df69736d270;
 
 /**
  * @brief Why the games of a server are not vanilla, as the lines of its journal

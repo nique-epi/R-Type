@@ -19,6 +19,8 @@
 #include "EntityMessage.hpp"
 #include "EntityRegistry.hpp"
 #include "EntityReplicator.hpp"
+#include "ExtraLifeNotice.hpp"
+#include "ExtraLifeRises.hpp"
 #include "GameEnded.hpp"
 #include "GameResult.hpp"
 #include "GameScreenParts.hpp"
@@ -237,10 +239,12 @@ class GameScreen : public IScreen {
   DepartureFeed departures_;
   SilenceWarning silence_;
   ContinueBanner continueBanner_;
+  ExtraLifeNotice extraLives_;
   ChatWindow chat_;
   std::uint32_t paintedDepartures_{};
   bool paintedSilence_ = false;
   std::optional<std::uint8_t> paintedContinues_;
+  ExtraLifeRises paintedExtraLives_{};
   bool paintedChat_ = false;
   BossLook paintedBoss_;
   bool worldSeen_ = false;

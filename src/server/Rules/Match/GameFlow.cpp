@@ -272,6 +272,7 @@ void GameFlow::startNewWorld() {
     player->bounty = 0;
     player->wonLookNumbers.clear();
     player->livesWithoutShip = game_.settings.rules.lives;
+    player->deaths = 0;
     player->ticksUntilRespawn = 0;
   }
   shipEveryPlayer(game_.roster.get(), replication_);

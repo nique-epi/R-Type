@@ -52,7 +52,7 @@ enraged_eggs = 5
 egg_gap_ms = 200
 
 [gameplay.health]
-points = 100
+points = 360
 
 [gameplay.score]
 points = 20000

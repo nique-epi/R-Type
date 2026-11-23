@@ -36,6 +36,8 @@
 #include "EntityMessage.hpp"
 #include "EntityReplicator.hpp"
 #include "EntityReplicatorParts.hpp"
+#include "ExtraLifeNotice.hpp"
+#include "ExtraLifeRises.hpp"
 #include "FinalPilot.hpp"
 #include "FinalRanking.hpp"
 #include "FlashPreference.hpp"
@@ -161,6 +163,9 @@ struct EntityMessageRoutes {
   std::reference_wrapper<OwnPrediction> prediction;
   std::reference_wrapper<LevelTransitionScene> transition;
   std::reference_wrapper<ContinueBanner> continueBanner;
+  std::reference_wrapper<ExtraLifeNotice> extraLives;
+  /** @brief When the messages are handed over, since the start of the game. */
+  engine::Duration now;
 };
 
 /** @returns What the sky shows of the level @p status tells. */
@@ -210,8 +215,9 @@ void followLevel(const EntityMessageRoutes& routes,
  * paints and to the boss,
  * an EffectPlayed to the player of the named effects, a BossStatus to the
  * boss, an EntityDestroyed to the boss and to the replicator, a LevelStatus to
- * whoever follows the level (see followLevel()), anything else but GameEnded
- * to the replicator. */
+ * whoever follows the level (see followLevel()), a GameEvent to the notice of
+ * the extra lives and to the replicator, anything else but GameEnded to the
+ * replicator. */
 void routeEntityMessage(const EntityMessageRoutes& routes,
                         const EntityMessage& message) {
   std::visit(
@@ -234,6 +240,9 @@ void routeEntityMessage(const EntityMessageRoutes& routes,
           routes.replicator.get().apply(announced);
         } else if constexpr (std::is_same_v<Announced, network::LevelStatus>) {
           followLevel(routes, announced);
+        } else if constexpr (std::is_same_v<Announced, network::GameEvent>) {
+          routes.extraLives.get().apply(announced, routes.now);
+          routes.replicator.get().apply(announced);
         } else if constexpr (!std::is_same_v<Announced, network::GameEnded>) {
           routes.replicator.get().apply(announced);
         }
@@ -396,7 +405,9 @@ void GameScreen::applyEntityMessages() {
                                    .audio = *audio_,
                                    .prediction = prediction_,
                                    .transition = transition_,
-                                   .continueBanner = continueBanner_};
+                                   .continueBanner = continueBanner_,
+                                   .extraLives = extraLives_,
+                                   .now = effects_.sinceStart()};
   for (const EntityMessage& message : receivedEntityMessages_) {
     routeEntityMessage(routes, message);
     if (const auto* ended = std::get_if<network::GameEnded>(&message)) {
@@ -456,6 +467,7 @@ void GameScreen::repaintStatusWhenChanged() {
       departures_.revision() != paintedDepartures_ ||
       silence_.isShown() != paintedSilence_ || boss != paintedBoss_ ||
       continueBanner_.shownContinues() != paintedContinues_ ||
+      extraLives_.risesAt(effects_.sinceStart()) != paintedExtraLives_ ||
       chat_.isShown() || paintedChat_) {
     repaintStatus(boss);
   }
@@ -466,11 +478,13 @@ void GameScreen::repaintStatus(const BossLook& boss) {
       missionBannerAt(effects_.sinceStart(), settings_->language);
   paintedLanguage_ = settings_->language;
   const PlayerPalette& palette = playerPaletteOf(*settings_);
+  const ExtraLifeRises extraLives = extraLives_.risesAt(effects_.sinceStart());
   statusCanvas_->clear();
   paintBossAlert(*statusCanvas_, boss);
   paintStatusBand(*statusCanvas_, scoreBoard_.pilots(), palette);
   paintMissionBanner(*statusCanvas_, banner);
   continueBanner_.paint(*statusCanvas_);
+  ExtraLifeNotice::paint(*statusCanvas_, extraLives);
   paintBossBar(*statusCanvas_, boss.bar);
   departures_.paint(
       *statusCanvas_, palette,
@@ -484,6 +498,7 @@ void GameScreen::repaintStatus(const BossLook& boss) {
   paintedDepartures_ = departures_.revision();
   paintedSilence_ = silence_.isShown();
   paintedContinues_ = continueBanner_.shownContinues();
+  paintedExtraLives_ = extraLives;
   paintedChat_ = chat_.isShown();
   paintedBoss_ = boss;
 }

@@ -14,6 +14,7 @@
 #include "ComponentRegistry.hpp"
 #include "CurrentAction.hpp"
 #include "DamageTally.hpp"
+#include "EnemyStrength.hpp"
 #include "Entity.hpp"
 #include "EntitySheet.hpp"
 #include "EntitySheetConstants.hpp"
@@ -21,6 +22,7 @@
 #include "EntityTypeNumber.hpp"
 #include "Fragile.hpp"
 #include "Gun.hpp"
+#include "GunSheet.hpp"
 #include "Health.hpp"
 #include "HitReaction.hpp"
 #include "HitboxParts.hpp"
@@ -63,20 +65,50 @@ namespace rtype::game {
 namespace {
 
 /** @brief A body being made: the entity, the sheet of its type, where it
- * appears, the point its Pilot steers from, and its health in percent of
- * what its sheet gives. */
+ * appears, the point its Pilot steers from, its health in percent of what
+ * its sheet gives, and the strength it is made at. */
 struct BodyStart {
   engine::Entity body;
   std::reference_wrapper<const EntitySheet> sheet;
   Position position;
   Position origin;
   int healthPercent;
+  std::reference_wrapper<const EnemyStrength> strength;
 };
 
 /** @returns The health of @p start, which its sheet gives health: that
- * health taken at the percent of @p start, rounded down, never under 1. */
+ * health taken at the percent of @p start and at the health percent of its
+ * strength, rounded down once, never under 1. */
 int healthOf(const BodyStart& start, int sheetHealth) {
-  return std::max(1, sheetHealth * start.healthPercent / WHOLE_PERCENT);
+  const std::int64_t scaled = std::int64_t{sheetHealth} * start.healthPercent *
+                              start.strength.get().healthPercent /
+                              (std::int64_t{WHOLE_PERCENT} * WHOLE_PERCENT);
+  return std::max(1, static_cast<int>(scaled));
+}
+
+/** @returns @p ticks at the gun interval percent of @p strength, rounded
+ * down. */
+std::size_t ticksAt(std::size_t ticks, EnemyStrength strength) {
+  return ticks * static_cast<std::size_t>(strength.gunIntervalPercent) /
+         static_cast<std::size_t>(WHOLE_PERCENT);
+}
+
+/** @returns The gun @p sheet gives, its ticks at the gun interval percent of
+ * @p strength: never under one tick between two shots. */
+Gun gunOf(const GunSheet& sheet, EnemyStrength strength) {
+  return Gun{.intervalTicks = std::max<std::size_t>(
+                 1, ticksAt(sheet.intervalTicks, strength)),
+             .ticksUntilReady = ticksAt(sheet.firstShotTicks, strength),
+             .projectileNumber = sheet.projectileNumber};
+}
+
+/** @returns @p strength for an enemy of @p sheet that is no boss, the
+ * strength of the sheet itself for any other body. */
+EnemyStrength strengthFor(const EntitySheet& sheet, EnemyStrength strength) {
+  if (sheet.side != EntityType::Enemy || sheet.boss.has_value()) {
+    return EnemyStrength{};
+  }
+  return strength;
 }
 
 /** @brief Gives @p start what every entity of a sheet has: where it is, its
@@ -158,10 +190,7 @@ void addCombat(engine::ComponentRegistry& components, const BodyStart& start) {
                                           .bounty = bounty});
   }
   if (sheet.gun.has_value()) {
-    components.add(start.body,
-                   Gun{.intervalTicks = sheet.gun->intervalTicks,
-                       .ticksUntilReady = sheet.gun->firstShotTicks,
-                       .projectileNumber = sheet.gun->projectileNumber});
+    components.add(start.body, gunOf(*sheet.gun, start.strength.get()));
   }
   if (sheet.burst.has_value()) {
     components.add(start.body,
@@ -270,11 +299,13 @@ std::uint32_t World::spawnFrom(const EntitySheet& sheet,
   const std::uint32_t networkId = placement.reservedNetworkId.has_value()
                                       ? *placement.reservedNetworkId
                                       : networkIds_.allocate();
+  const EnemyStrength strength = strengthFor(sheet, enemyStrength_);
   const BodyStart start{.body = registry_.create(),
                         .sheet = sheet,
                         .position = placement.position,
                         .origin = placement.origin,
-                        .healthPercent = placement.healthPercent};
+                        .healthPercent = placement.healthPercent,
+                        .strength = strength};
   addPlace(components_, start);
   addMotion(components_, start);
   addRollMasks(components_, start, rolledMasks_);
@@ -293,6 +324,10 @@ std::uint32_t World::spawnFrom(const EntitySheet& sheet,
 }
 
 std::uint32_t World::reserveNetworkId() { return networkIds_.allocate(); }
+
+void World::setEnemyStrength(EnemyStrength strength) {
+  enemyStrength_ = strength;
+}
 
 bool World::removePlayer(std::uint32_t shipNetworkId) {
   const std::optional<engine::Entity> ship =

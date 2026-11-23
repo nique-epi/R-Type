@@ -23,9 +23,9 @@ using rtype::game::testing::TWO_PLAYERS;
 /**
  * Given the 240 points of the sheet of the boss and a difficulty at 100 %
  * When one to four players face it
- * Then it has 240, 300, 360 and 420 points: 25 % more per player past one
+ * Then it has 240, 420, 600 and 780 points: 75 % more per player past one
  */
-TEST(BossHealthScaling, EachPlayerPastTheFirstAddsAQuarter) {
+TEST(BossHealthScaling, EachPlayerPastTheFirstAddsThreeQuarters) {
   EXPECT_EQ(scaledBossHealth(
                 BossHealthScaling{.points = SHEET_BOSS_HEALTH,
                                   .players = ONE_PLAYER,
@@ -51,7 +51,7 @@ TEST(BossHealthScaling, EachPlayerPastTheFirstAddsAQuarter) {
 /**
  * Given the 240 points of the sheet and the 130 % of the hard difficulty
  * When one player, then four, face the boss
- * Then it has 312 points, then 546: the difficulty scales what the players
+ * Then it has 312 points, then 1014: the difficulty scales what the players
  * already scaled
  */
 TEST(BossHealthScaling, TheDifficultyScalesTheHealthOfThePlayers) {

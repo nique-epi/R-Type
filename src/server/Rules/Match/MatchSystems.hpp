@@ -9,6 +9,7 @@
 #include "CollisionRules.hpp"
 #include "DamageRules.hpp"
 #include "EntityOrders.hpp"
+#include "ExtraLifeKeeper.hpp"
 #include "GameContext.hpp"
 #include "IHitArbitration.hpp"
 #include "LevelDirector.hpp"
@@ -86,6 +87,7 @@ class MatchSystems {
   /** nullptr in a game that plays a level a script directs. */
   std::unique_ptr<BossStage> bossStage_;
   std::unique_ptr<LifeKeeper> lifeKeeper_;
+  std::unique_ptr<ExtraLifeKeeper> extraLifeKeeper_;
   std::unique_ptr<LookItemKeeper> lookItemKeeper_;
 };
 

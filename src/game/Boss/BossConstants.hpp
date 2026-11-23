@@ -8,10 +8,11 @@
 namespace rtype::game {
 
 /** @brief Each player past the first adds BOSS_HEALTH_PER_EXTRA_PLAYER
- * percent to the health of a boss: 240 points for one player, 300, 360
- * and 420 for two, three and four, as co-op shooters raise the health of
- * their bosses. */
-constexpr int BOSS_HEALTH_PER_EXTRA_PLAYER = 25;
+ * percent to the health of a boss: 240 points for one player, 420, 600 and
+ * 780 for two, three and four. A team of four fires four times as much as
+ * one pilot and takes 325 % of the health: the fight lasts 81 % of what it
+ * lasts alone. */
+constexpr int BOSS_HEALTH_PER_EXTRA_PLAYER = 75;
 
 /** @brief How long the players are warned of a boss before anything steers
  * it: 600 ms of silence, the 3200 ms WARNING, and 600 ms of margin. */
