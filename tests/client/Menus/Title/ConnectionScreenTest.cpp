@@ -454,7 +454,7 @@ TEST_F(ConnectionScreenFixture, AVersionRefusalNamesBothVersions) {
 }
 
 /**
- * Given the client in French, an attempt a server of protocol version 21
+ * Given the client in French, an attempt a server of protocol version 23
  * refused as IncompatibleVersion
  * When a frame goes by
  * Then the French status line names both versions in their places
