@@ -143,20 +143,20 @@ A test sits **beside the file it tests** (`ranking-view.ts`, `ranking-view.test.
 
 Every page lives under `app/[lang]/`, `lang` being `fr` (the default) or `en`.
 
-| Route                      | File                                  | Reads                                                                  |
-| -------------------------- | ------------------------------------- | ---------------------------------------------------------------------- |
-| `/`                        | `app/[lang]/page.tsx`                 | the servers with free seats, the latest release                        |
-| `/download`                | `download/page.tsx`                   | the latest release (GitHub)                                            |
-| `/servers`                 | `servers/page.tsx`                    | the servers, their games and their ping (the sector map)               |
-| `/servers/[id]`            | `servers/[id]/page.tsx`               | one server, its games, the load of its machine, its last 100 samples   |
-| `/host`                    | `host/page.tsx`                       | nothing; its form creates a server on the master                       |
-| `/signup`                  | `signup/page.tsx`                     | nothing; its form creates an account on the master                     |
-| `/signin`                  | `signin/page.tsx`                     | nothing; its form opens a session, then leads to `?next=`              |
-| `/link`                    | `link/page.tsx`                       | the device link of `?code=`, which the visitor connects or refuses     |
+| Route                      | File                                  | Reads                                                                                                         |
+| -------------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `/`                        | `app/[lang]/page.tsx`                 | the servers with free seats, the latest release                                                               |
+| `/download`                | `download/page.tsx`                   | the latest release (GitHub)                                                                                   |
+| `/servers`                 | `servers/page.tsx`                    | the servers, their games and their ping (the sector map)                                                      |
+| `/servers/[id]`            | `servers/[id]/page.tsx`               | one server, its games, the load of its machine, its last 100 samples                                          |
+| `/host`                    | `host/page.tsx`                       | nothing; its form creates a server on the master                                                              |
+| `/signup`                  | `signup/page.tsx`                     | nothing; its form creates an account on the master                                                            |
+| `/signin`                  | `signin/page.tsx`                     | nothing; its form opens a session, then leads to `?next=`                                                     |
+| `/link`                    | `link/page.tsx`                       | the device link of `?code=`, which the visitor connects or refuses                                            |
 | `/leaderboard`             | `leaderboard/page.tsx`                | the leaderboard, by server, for everyone or by account; the scope and filters are in the query of the address |
-| `/wiki`, `/wiki/[section]` | `wiki/`                               | nothing; `/wiki` redirects to the first article                        |
-| `/team`                    | `team/page.tsx`                       | nothing                                                                |
-| anything else              | `[...rest]/page.tsx`, `not-found.tsx` | a 404 drawn inside the layout of the site                              |
+| `/wiki`, `/wiki/[section]` | `wiki/`                               | nothing; `/wiki` redirects to the first article                                                               |
+| `/team`                    | `team/page.tsx`                       | nothing                                                                                                       |
+| anything else              | `[...rest]/page.tsx`, `not-found.tsx` | a 404 drawn inside the layout of the site                                                                     |
 
 - **The language.** [`src/proxy.ts`](src/proxy.ts) redirects a path with no language to the one the browser prefers (`Accept-Language`), French when none matches. [`app/[lang]/layout.tsx`](src/app/[lang]/layout.tsx) sets `<html lang>`, the fonts and the shell of the site.
 - **The shell.** [`components/blocks/shell/site-shell.tsx`](src/components/blocks/shell/site-shell.tsx): the announcement bar, the header and its menu, the page, and the smooth scroll.
