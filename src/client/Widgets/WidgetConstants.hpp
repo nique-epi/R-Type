@@ -30,6 +30,12 @@ constexpr int SIDES_PER_AXIS = 2;
 constexpr int SPACE_BELOW_VERSION = 4;
 constexpr int SPACE_BELOW_HEADING = 8;
 constexpr int SPACE_BELOW_SUBTITLE = 6;
+
+/** @brief Banner of a page under its logo: SPACE_ABOVE_BANNER pixels under the
+ * logo, then SPACE_BELOW_BANNER pixels before what follows; without a banner,
+ * SPACE_BELOW_HEADING follows the logo. */
+constexpr int SPACE_ABOVE_BANNER = 1;
+constexpr int SPACE_BELOW_BANNER = 4;
 constexpr sf::Vector2i RULE_SIZE(240, 1);
 constexpr int SPACE_BELOW_RULE = 9;
 

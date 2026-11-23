@@ -87,6 +87,11 @@ class MenuBuilder {
    * pixels. */
   MenuBuilder& logo(std::string assetId, sf::Vector2i size);
 
+  /** @brief Image laid under the logo of a page, shown whole, such as the
+   * ribbon of an event; a page without a logo shows none. @param size Its
+   * size, in pixels. */
+  MenuBuilder& banner(std::string assetId, sf::Vector2i size);
+
   /** @brief Line heading a page, or title of a dialog. */
   MenuBuilder& heading(std::string text);
 
@@ -195,6 +200,7 @@ class MenuBuilder {
   ISoundPlayer* sounds_;
   std::optional<std::string> version_;
   std::optional<Menu::Picture> logo_;
+  std::optional<Menu::Picture> banner_;
   std::optional<std::string> heading_;
   std::optional<std::string> subtitle_;
   std::optional<std::string> message_;

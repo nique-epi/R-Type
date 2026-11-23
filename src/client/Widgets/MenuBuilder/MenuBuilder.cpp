@@ -69,6 +69,20 @@ int placeColumnLine(Menu::Content& content, std::optional<std::string>& text,
   return line.top + TEXT_LINE_HEIGHT + line.spaceBelow;
 }
 
+/** @returns An image of a page, shown whole, not placed yet. */
+Menu::Picture pictureOf(std::string assetId, sf::Vector2i size) {
+  return Menu::Picture{.assetId = std::move(assetId), .area = {{0, 0}, size}};
+}
+
+/** @brief Lays @p banner SPACE_ABOVE_BANNER under a logo whose bottom is
+ * @p top. @returns The top of what comes under it, SPACE_BELOW_BANNER lower. */
+int placeBanner(Menu::Content& content, Menu::Picture banner, int top) {
+  banner.area.position = {SAFE_MARGIN, top + SPACE_ABOVE_BANNER};
+  const int below = banner.area.position.y + banner.area.size.y;
+  content.pictures.push_back(std::move(banner));
+  return below + SPACE_BELOW_BANNER;
+}
+
 /** @returns The top of what comes under the bars of a column. */
 int placeColumnBars(Menu::Content& content, std::vector<PendingButton>& bars,
                     int top) {
@@ -277,7 +291,12 @@ MenuBuilder& MenuBuilder::version(std::string text) {
 }
 
 MenuBuilder& MenuBuilder::logo(std::string assetId, sf::Vector2i size) {
-  logo_ = Menu::Picture{.assetId = std::move(assetId), .area = {{0, 0}, size}};
+  logo_ = pictureOf(std::move(assetId), size);
+  return *this;
+}
+
+MenuBuilder& MenuBuilder::banner(std::string assetId, sf::Vector2i size) {
+  banner_ = pictureOf(std::move(assetId), size);
   return *this;
 }
 
@@ -391,8 +410,10 @@ void MenuBuilder::placeColumn(Menu::Content& content) {
                              .spaceBelow = SPACE_BELOW_VERSION});
   if (logo_.has_value()) {
     logo_->area.position = {SAFE_MARGIN, top};
-    top += logo_->area.size.y + SPACE_BELOW_HEADING;
-    content.picture = std::move(logo_);
+    top += logo_->area.size.y;
+    content.pictures.push_back(std::move(*logo_));
+    top = banner_.has_value() ? placeBanner(content, std::move(*banner_), top)
+                              : top + SPACE_BELOW_HEADING;
   }
   top = placeColumnLine(content, heading_,
                         {.top = top,
