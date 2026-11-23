@@ -1,10 +1,8 @@
 #include "LookItemKeeperFixture.hpp"
-#include <gtest/gtest.h>
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
-#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -24,28 +22,9 @@
 #include "ShipSpawnAnnouncerParts.hpp"
 #include "ShippedEntitySheets.hpp"
 #include "World.hpp"
+#include "WorldEntityFixtures.hpp"
 
 namespace rtype::server::testing {
-
-namespace {
-
-/** @returns The entity of @p world that carries @p networkId; a default one,
- * after a failure, when none does. */
-engine::Entity entityOf(game::World& world, std::uint32_t networkId) {
-  std::optional<engine::Entity> found;
-  world.components().forEach<game::NetworkIdentity, game::Position>(
-      [&found, networkId](engine::Entity entity,
-                          const game::NetworkIdentity& identity,
-                          const game::Position& /*position*/) {
-        if (identity.networkId == networkId) {
-          found = entity;
-        }
-      });
-  EXPECT_TRUE(found.has_value());
-  return found.value_or(engine::Entity{});
-}
-
-}  // namespace
 
 LookItemKeeperFixture::LookItemKeeperFixture()
     : announcer_(ShipSpawnAnnouncerParts{
@@ -87,8 +66,8 @@ std::uint32_t LookItemKeeperFixture::spawnACrown() {
 void LookItemKeeperFixture::publishTouch(const ConnectedPlayer& player,
                                          std::uint32_t itemId) {
   events_.publish(
-      game::LookItemTouched{.ship = entityOf(world_, player.shipEntityId),
-                            .item = entityOf(world_, itemId)});
+      game::LookItemTouched{.ship = entityWithNetworkId(world_, player.shipEntityId),
+                            .item = entityWithNetworkId(world_, itemId)});
 }
 
 void LookItemKeeperFixture::deliver() { events_.dispatch(); }

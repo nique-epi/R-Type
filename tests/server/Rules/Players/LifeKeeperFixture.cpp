@@ -4,17 +4,14 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
-#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
 #include "ConnectedPlayer.hpp"
-#include "Entity.hpp"
 #include "EntityDestruction.hpp"
 #include "EntityTypesTestConstants.hpp"
 #include "LifeKeeper.hpp"
 #include "LifeKeeperParts.hpp"
-#include "NetworkIdentity.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PlayerElimination.hpp"
 #include "PlayerHit.hpp"
@@ -25,28 +22,9 @@
 #include "ShipSpawnAnnouncerParts.hpp"
 #include "ShippedEntitySheets.hpp"
 #include "World.hpp"
+#include "WorldEntityFixtures.hpp"
 
 namespace rtype::server::testing {
-
-namespace {
-
-/** @returns The entity of @p world that carries @p networkId; a default one,
- * after a failure, when none does. */
-engine::Entity entityOf(game::World& world, std::uint32_t networkId) {
-  std::optional<engine::Entity> found;
-  world.components().forEach<game::NetworkIdentity, game::Position>(
-      [&found, networkId](engine::Entity entity,
-                          const game::NetworkIdentity& identity,
-                          const game::Position& /*position*/) {
-        if (identity.networkId == networkId) {
-          found = entity;
-        }
-      });
-  EXPECT_TRUE(found.has_value());
-  return found.value_or(engine::Entity{});
-}
-
-}  // namespace
 
 LifeKeeperFixture::LifeKeeperFixture()
     : announcer_(ShipSpawnAnnouncerParts{
@@ -97,8 +75,8 @@ std::uint32_t LifeKeeperFixture::bydoOn(const ConnectedPlayer& player) {
 
 void LifeKeeperFixture::publishContact(std::uint32_t shipId,
                                        std::uint32_t enemyId) {
-  events_.publish(game::ShipContact{.player = entityOf(world_, shipId),
-                                    .enemy = entityOf(world_, enemyId)});
+  events_.publish(game::ShipContact{.player = entityWithNetworkId(world_, shipId),
+                                    .enemy = entityWithNetworkId(world_, enemyId)});
 }
 
 void LifeKeeperFixture::deliver() { events_.dispatch(); }
