@@ -1,4 +1,5 @@
 add_library(rtype_client_settings_storage STATIC
+  PlayerFile.cpp
   SettingsFile.cpp
   SettingsText.cpp
 )

@@ -64,12 +64,10 @@ constexpr int DEFAULT_LAGOMETER_BACKGROUND = 70;
 constexpr int CHAT_PAGE_STEPS = 4;
 
 /**
- * @brief The settings file, in the settings folder; the file written next to
- * it, then renamed over it, so a save cut short never leaves half a file; and
- * the largest file read, in bytes (a full file holds about 300).
+ * @brief The settings file, in the settings folder, and the largest file
+ * read, in bytes (a full file holds about 300).
  */
 constexpr const char* SETTINGS_FILE_NAME = "settings.ini";
-constexpr const char* TEMPORARY_SETTINGS_SUFFIX = ".tmp";
 constexpr std::uintmax_t MAXIMUM_SETTINGS_FILE_SIZE = 65536;
 
 /**

@@ -1,5 +1,4 @@
 #include "ClientSettingsModule.hpp"
-#include <filesystem>
 #include <optional>
 #include <string>
 #include <vector>
@@ -25,20 +24,10 @@ PlayerSettings firstLaunchSettings() {
   return settings;
 }
 
-/** @returns The file the settings are kept in, or nothing when the system
- * tells no settings folder. */
-std::optional<std::filesystem::path> settingsFileLocation() {
-  const std::optional<std::filesystem::path> folder = settingsFolder();
-  if (!folder.has_value()) {
-    return std::nullopt;
-  }
-  return *folder / SETTINGS_FILE_NAME;
-}
-
 }  // namespace
 
 ClientSettingsModule::ClientSettingsModule()
-    : file_(settingsFileLocation()),
+    : file_(settingsFolderFile(SETTINGS_FILE_NAME)),
       storage_(file_),
       service_(settings_, storage_),
       logger_(std::string{CLIENT_LOGGER_NAME}) {}
