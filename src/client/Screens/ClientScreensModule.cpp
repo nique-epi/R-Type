@@ -146,7 +146,6 @@ void ClientScreensModule::install(engine::InstallContext& context) {
   chat_ = &context.require<ChatChannel>();
   entityTable_ = &context.require<IEntityTypeTable>();
   sessionPack_ = &context.require<ISessionPack>();
-  entityTypes_ = std::make_unique<EntityTypeLooks>(*entityTable_);
   serverTicks_ = &context.require<IServerTicks>();
   serverCatalog_ = &context.require<IServerCatalog>();
   gameCatalog_ = &context.require<IGameCatalog>();
@@ -231,6 +230,7 @@ void ClientScreensModule::start() {
   if (audio_ == &silence_) {
     logger_.info("no sound module: the client runs without sound");
   }
+  entityTypes_ = std::make_unique<EntityTypeLooks>(*entityTable_);
   screens_ = std::make_unique<ClientScreens>(services(server), registry_);
   listenerHandle_ = listeners_->add([this](const sf::Event& event) {
     logInputEvent(logger_, event);

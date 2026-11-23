@@ -53,8 +53,7 @@ namespace rtype::client {
  * their screens to.
  *
  * install() provides the registry, still empty, requires the services of every
- * module listed before it, builds the EntityTypeLooks the game reads the entity
- * types of the server from, and adds two works. The sound is the one service it
+ * module listed before it, and adds two works. The sound is the one service it
  * works without: with no sound module before it, the screens get a
  * SilentAudioService the module holds, and start() writes in the journal that
  * the client runs without sound. In UPDATE_STAGE, the sky and
@@ -64,13 +63,15 @@ namespace rtype::client {
  * install() also declares the `nickname`, `server-address` and `server-port`
  * settings, whose defaults are the server and the nickname given to the
  * constructor. start() reads them once the configuration was read, logs the
- * server, and builds the screens from the registry, which every module filled
- * while it installed, since an Application installs every module before it
- * starts any. They open on the intro, or on the title when the system asks for
- * less motion. It then adds its listener of the window events: every event no
- * module started after it keeps goes to the screen on top. stop() removes that
- * listener; the screens stay until the module is destroyed, after every module
- * stopped, so the music plays on while the connection module leaves the server.
+ * server, builds the EntityTypeLooks the game reads the entity types of the
+ * server from, and builds the screens from the registry, which every module
+ * filled while it installed, since an Application installs every module before
+ * it starts any. They open on the intro, or on the title when the system asks
+ * for less motion. It then adds its listener of the window events: every event
+ * no module started after it keeps goes to the screen on top. stop() removes
+ * that listener; the screens stay until the module is destroyed, after every
+ * module stopped, so the music plays on while the connection module leaves the
+ * server.
  */
 class ClientScreensModule final : public engine::IModule,
                                   public engine::IOptionalDependencies {
