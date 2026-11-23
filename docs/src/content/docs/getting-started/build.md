@@ -66,6 +66,7 @@ Each optional module has a CMake option, on by default. Turned off, its folder i
 | `RTYPE_MODULE_MASTER_LINK` | the registration of the server with the master |
 | `RTYPE_MODULE_ADMIN_CONSOLE` | the administration console of the supervisor |
 | `RTYPE_MODULE_CHAT` | the chat of the games |
+| `RTYPE_MODULE_THREAT` | the threat of the games, which makes the enemies answer the weapons of the team |
 | `RTYPE_MODULE_PLUGINS` | the loading of plugins |
 | `RTYPE_MODULE_GAME_STATISTICS` | the `game-statistics` plugin; off whenever `RTYPE_MODULE_PLUGINS` is |
 | `RTYPE_MODULE_ACCOUNTS` | the accounts and sessions of the master |

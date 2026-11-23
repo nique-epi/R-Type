@@ -1,0 +1,5 @@
+add_library(rtype_server_threat_contract INTERFACE)
+
+target_include_directories(rtype_server_threat_contract INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(rtype_server_threat_contract INTERFACE rtype_game_threat)

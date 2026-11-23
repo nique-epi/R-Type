@@ -43,4 +43,8 @@ if(RTYPE_MODULE_CHAT)
   target_link_libraries(rtype_server_games_module PUBLIC rtype_server_chat_module)
 endif()
 
+if(RTYPE_MODULE_THREAT)
+  target_link_libraries(rtype_server_games_module PUBLIC rtype_server_threat_module)
+endif()
+
 rtype_enable_warnings(rtype_server_games_module)
