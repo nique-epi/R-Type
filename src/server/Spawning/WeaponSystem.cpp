@@ -1,6 +1,7 @@
 #include "WeaponSystem.hpp"
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <optional>
 #include <string>
@@ -177,12 +178,14 @@ std::optional<network::EntitySpawned> WeaponSystem::spawnProjectile(
   if (!launch.has_value()) {
     return std::nullopt;
   }
+  ShotAuthor author = launch->author;
+  author.shotRank = static_cast<std::uint8_t>(index);
   return spawnAt(launch->sheet.get(),
                  game::shotPlacement(shot.pattern,
                                      game::ShotStart{.point = launch->start,
                                                      .side = shot.muzzle.side},
                                      index),
-                 launch->author);
+                 author);
 }
 
 std::optional<network::EntitySpawned> WeaponSystem::spawnAt(
@@ -195,7 +198,8 @@ std::optional<network::EntitySpawned> WeaponSystem::spawnAt(
         .x = placement.position.x,
         .y = placement.position.y,
         .owner = author.owner.value_or(network::NO_OWNER),
-        .firingInput = author.firingInput};
+        .firingInput = author.firingInput,
+        .shotRank = author.shotRank};
   } catch (const engine::NetworkIdExhaustedException&) {
     logger_.warn("no projectile fired: every network id was given");
     return std::nullopt;

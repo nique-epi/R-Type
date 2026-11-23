@@ -138,6 +138,25 @@ TEST_F(ShipWeaponFixture, AFanFiresEachOfItsProjectilesForOneInput) {
 }
 
 /**
+ * Given a player whose ship holds the first level of red, a fan of three
+ * When one tick runs with shoot held
+ * Then the three EntitySpawned carry the ranks 0, 1 and 2, in the order the
+ * fan lays them, so the client tells each shot of the fan it predicted
+ */
+TEST_F(ShipWeaponFixture, RanksTheProjectilesOfAShotFromZero) {
+  ConnectedPlayer& player = connect(FIRST_PLAYER);
+  armWithRed(player);
+
+  runTicksShooting(player, 1);
+
+  const std::vector<network::EntitySpawned> spawns = spawnsSentTo(FIRST_PLAYER);
+  ASSERT_EQ(spawns.size(), RED_FIRST_LEVEL_SHOTS);
+  for (std::size_t rank = 0; rank < spawns.size(); ++rank) {
+    EXPECT_EQ(spawns.at(rank).shotRank, rank);
+  }
+}
+
+/**
  * Given a player with a ship, holding shoot
  * When one tick runs
  * Then the EntitySpawned of its missile waits for its acknowledgement as a

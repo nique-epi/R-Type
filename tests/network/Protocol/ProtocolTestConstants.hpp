@@ -166,10 +166,13 @@ constexpr std::uint8_t LAST_PLAYER_NUMBER = 4;
 constexpr std::uint8_t PLAYER_NUMBER_BELOW_THE_FIRST = 0;
 constexpr std::uint8_t PLAYER_NUMBER_ABOVE_THE_LAST = 5;
 
-/** @brief The input of an example missile, 300, and the bytes the owner and
- * the firing input take at the end of an EntitySpawned. */
+/** @brief The input of an example missile, 300, the bytes the owner and the
+ * firing input take before the shot rank that ends an EntitySpawned, and the
+ * rank of the third missile of a fan. */
 constexpr std::uint32_t SOME_FIRING_INPUT = 300;
 constexpr std::size_t OWNER_AND_INPUT_BYTE_COUNT = 5;
+constexpr std::size_t SHOT_RANK_BYTE_COUNT = 1;
+constexpr std::uint8_t THIRD_OF_A_FAN = 2;
 
 /** @brief A tick a client shows in the example input, 300, and the bytes it
  * takes at the end of a PlayerInput. */

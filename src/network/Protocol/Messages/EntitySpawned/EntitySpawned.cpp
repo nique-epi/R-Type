@@ -40,6 +40,7 @@ void encodePayload(ByteWriter& writer, const EntitySpawned& message) {
   writeCoordinate(writer, message.y);
   writer.writeUint8(message.owner);
   writer.writeUint32(message.firingInput);
+  writer.writeUint8(message.shotRank);
 }
 
 EntitySpawned decodePayload(
@@ -51,7 +52,8 @@ EntitySpawned decodePayload(
                               .x = readCoordinate(reader),
                               .y = readCoordinate(reader),
                               .owner = reader.readUint8(),
-                              .firingInput = reader.readUint32()};
+                              .firingInput = reader.readUint32(),
+                              .shotRank = reader.readUint8()};
   requireFullyRead(reader);
   validate(message);
   return message;

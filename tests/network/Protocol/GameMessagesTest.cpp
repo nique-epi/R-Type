@@ -40,6 +40,7 @@ using testing::PLAYER_NUMBER_ABOVE_THE_LAST;
 using testing::REPEATED_INPUT_LIMIT;
 using testing::SECOND_PLAYER_NUMBER;
 using testing::SECOND_PLAYER_OF_A_GAME_EVENT;
+using testing::SHOT_RANK_BYTE_COUNT;
 using testing::SHOWN_TICK_BYTE_COUNT;
 using testing::SMALLEST_WIRE_COORDINATE;
 using testing::SOME_ENTITY_OF_A_GAME_EVENT;
@@ -47,6 +48,7 @@ using testing::SOME_EVENT_NUMBER;
 using testing::SOME_FIRING_INPUT;
 using testing::SOME_INPUT_NUMBER;
 using testing::SOME_SHOWN_TICK;
+using testing::THIRD_OF_A_FAN;
 using testing::UP_AND_SHOOT;
 
 /**
@@ -301,13 +303,13 @@ TEST(PlayerInput, RefusesABitAboveTheActionsInAnEarlierAction) {
 /**
  * Given Bydo 9 at (100, 50.5)
  * When its EntitySpawned is encoded
- * Then the payload is the id, the type 3, 800 and 404 eighths, then no owner
- * and no firing input
+ * Then the payload is the id, the type 3, 800 and 404 eighths, then no owner,
+ * no firing input and the shot rank 0
  */
 TEST(EntitySpawned, EncodesTheIdTheTypeThenThePosition) {
   const auto expected =
       byteSequence({0x00, 0x00, 0x00, 0x09, 0x03, 0x03, 0x20, 0x01, 0x94, 0x00,
-                    0x00, 0x00, 0x00, 0x00});
+                    0x00, 0x00, 0x00, 0x00, 0x00});
 
   EXPECT_EQ(encodeMessage(exampleBydo()), expected);
 }
@@ -345,8 +347,9 @@ TEST(EntitySpawned, RefusesToWriteTypeZero) {
  * Then it is refused
  */
 TEST(EntitySpawned, RefusesToReadTypeZero) {
-  const auto bytes = byteSequence({0x00, 0x00, 0x00, 0x09, 0x00, 0x03, 0x20,
-                                   0x01, 0x94, 0x00, 0x00, 0x00, 0x00, 0x00});
+  const auto bytes =
+      byteSequence({0x00, 0x00, 0x00, 0x09, 0x00, 0x03, 0x20, 0x01, 0x94, 0x00,
+                    0x00, 0x00, 0x00, 0x00, 0x00});
 
   EXPECT_THROW((void)decodeMessage<EntitySpawned>(bytes),
                InvalidFieldValueException);
@@ -368,8 +371,9 @@ TEST(EntitySpawned, DecodesWhatItEncoded) {
  * Then an InvalidFieldValueException is raised, since no entity has the id 0
  */
 TEST(EntitySpawned, RefusesToReadTheEntityIdZero) {
-  const auto bytes = byteSequence({0x00, 0x00, 0x00, 0x00, 0x03, 0x03, 0x20,
-                                   0x01, 0x94, 0x00, 0x00, 0x00, 0x00, 0x00});
+  const auto bytes =
+      byteSequence({0x00, 0x00, 0x00, 0x00, 0x03, 0x03, 0x20, 0x01, 0x94, 0x00,
+                    0x00, 0x00, 0x00, 0x00, 0x00});
 
   EXPECT_THROW((void)decodeMessage<EntitySpawned>(bytes),
                InvalidFieldValueException);
@@ -417,7 +421,8 @@ TEST(EntitySpawned, RefusesAPositionCutShort) {
 /**
  * Given a missile of player 2 fired by input 300
  * When its EntitySpawned is encoded
- * Then its last five bytes are the owner 2, then 300 on four bytes
+ * Then the five bytes before the shot rank are the owner 2, then 300 on four
+ * bytes
  */
 TEST(EntitySpawned, EncodesTheOwnerThenTheFiringInput) {
   EntitySpawned missile = exampleBydo();
@@ -426,9 +431,40 @@ TEST(EntitySpawned, EncodesTheOwnerThenTheFiringInput) {
 
   const std::vector<std::byte> payload = encodeMessage(missile);
 
-  EXPECT_EQ(std::vector<std::byte>(payload.end() - OWNER_AND_INPUT_BYTE_COUNT,
-                                   payload.end()),
+  EXPECT_EQ(std::vector<std::byte>(payload.end() - SHOT_RANK_BYTE_COUNT -
+                                       OWNER_AND_INPUT_BYTE_COUNT,
+                                   payload.end() - SHOT_RANK_BYTE_COUNT),
             byteSequence({0x02, 0x00, 0x00, 0x01, 0x2C}));
+}
+
+/**
+ * Given the third missile of a fan of player 2
+ * When its EntitySpawned is encoded
+ * Then its last byte is its rank in the shot, 2
+ */
+TEST(EntitySpawned, EncodesTheShotRankLast) {
+  EntitySpawned missile = exampleBydo();
+  missile.owner = SECOND_PLAYER_NUMBER;
+  missile.shotRank = THIRD_OF_A_FAN;
+
+  const std::vector<std::byte> payload = encodeMessage(missile);
+
+  ASSERT_FALSE(payload.empty());
+  EXPECT_EQ(payload.back(), std::byte{THIRD_OF_A_FAN});
+}
+
+/**
+ * Given the third missile of a fan of player 2
+ * When its EntitySpawned is encoded then decoded
+ * Then it keeps its rank 2
+ */
+TEST(EntitySpawned, DecodesTheShotRank) {
+  EntitySpawned missile = exampleBydo();
+  missile.owner = SECOND_PLAYER_NUMBER;
+  missile.shotRank = THIRD_OF_A_FAN;
+
+  EXPECT_EQ(decodeMessage<EntitySpawned>(encodeMessage(missile)).shotRank,
+            THIRD_OF_A_FAN);
 }
 
 /**
@@ -453,8 +489,9 @@ TEST(EntitySpawned, WritesAnOwnerOfZeroToFourOnly) {
  * Then it is refused
  */
 TEST(EntitySpawned, RefusesToReadAnOwnerPastTheLastPlayer) {
-  const auto bytes = byteSequence({0x00, 0x00, 0x00, 0x09, 0x03, 0x03, 0x20,
-                                   0x01, 0x94, 0x05, 0x00, 0x00, 0x00, 0x00});
+  const auto bytes =
+      byteSequence({0x00, 0x00, 0x00, 0x09, 0x03, 0x03, 0x20, 0x01, 0x94, 0x05,
+                    0x00, 0x00, 0x00, 0x00, 0x00});
 
   EXPECT_THROW((void)decodeMessage<EntitySpawned>(bytes),
                InvalidFieldValueException);
@@ -465,10 +502,10 @@ TEST(EntitySpawned, RefusesToReadAnOwnerPastTheLastPlayer) {
  * When it is decoded
  * Then a TrailingBytesException is raised
  */
-TEST(EntitySpawned, RefusesBytesAfterTheFiringInput) {
+TEST(EntitySpawned, RefusesBytesAfterTheShotRank) {
   const auto bytes =
       byteSequence({0x00, 0x00, 0x00, 0x09, 0x03, 0x03, 0x20, 0x01, 0x94, 0x00,
-                    0x00, 0x00, 0x00, 0x00, 0x00});
+                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00});
 
   EXPECT_THROW((void)decodeMessage<EntitySpawned>(bytes),
                TrailingBytesException);
