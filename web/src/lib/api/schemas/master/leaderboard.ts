@@ -18,3 +18,20 @@ export const leaderboardSchema = z.object({
   /** The line of the player the request named, wherever it ranks. */
   player: leaderboardRowSchema.optional(),
 });
+
+/** One line of the leaderboard of the accounts: the total of the scores of an account. */
+export const accountLeaderboardRowSchema = z.object({
+  rank: z.number().int(),
+  /** The nickname of the account, whatever nickname it played under. */
+  nickname: z.string(),
+  /** The sum of the scores of every game credited to the account. */
+  score: z.number().int(),
+  /** When its last game ended, in seconds since 1970 UTC. */
+  lastPlayedAt: z.number().int(),
+});
+
+export type AccountLeaderboardRow = z.infer<typeof accountLeaderboardRowSchema>;
+
+export const accountLeaderboardSchema = z.object({
+  accounts: z.array(accountLeaderboardRowSchema),
+});

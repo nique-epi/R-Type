@@ -35,7 +35,7 @@ export type RankingSectionProps = {
 
 /**
  * The leaderboard of the site: the screen of the game with the scope and the
- * filters of the address. A tab or a filter does not change what the screen
+ * filters of the address, a tab per scope: a server, everyone, the accounts. A tab or a filter does not change what the screen
  * holds: it goes to the address that holds it, and the server reads the
  * master again for the page that comes back.
  */
@@ -49,7 +49,9 @@ export function RankingSection({
   unavailable,
 }: RankingSectionProps) {
   const router = useRouter();
-  const [serverTab = '', globalTab = ''] = copy.tabs;
+
+  const played = choice.scope === 'accounts' ? copy.emptyAccounts : copy.empty;
+  const emptyLine = unavailable ? copy.unavailable : played;
 
   function goTo(next: RankingChoice) {
     router.push(`${pathOf(locale, 'ranking')}${rankingQueryOf(next)}`, {
@@ -60,13 +62,13 @@ export function RankingSection({
   return (
     <RankingScreen
       labels={labels}
-      tabs={[serverTab, globalTab]}
+      tabs={copy.tabs}
       tab={rankingTabOf(choice)}
       onTabChange={tab => goTo(rankingChoiceOfTab(choice, tab))}
       disabledTabs={servers.length === 0 ? [0] : []}
       rows={rows}
       summary={rankingSummaryOf(choice, servers, copy, locale)}
-      empty={unavailable ? copy.unavailable : copy.empty}
+      empty={emptyLine}
       filters={rankingFiltersOf(choice, servers, copy)}
       onApplyFilters={indices =>
         goTo(rankingChoiceAfter(choice, servers, indices))
