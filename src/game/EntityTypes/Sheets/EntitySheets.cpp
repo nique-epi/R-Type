@@ -131,6 +131,17 @@ void checkGun(std::span<const EntitySheet> sheets, EntityType shooter,
   }
 }
 
+/** @throws What checkGun() throws for a level of a weapon of @p sheet, one
+ * of @p sheets. */
+void checkWeapons(std::span<const EntitySheet> sheets,
+                  const EntitySheet& sheet) {
+  for (const WeaponSheet& weapon : sheet.weapons) {
+    for (const GunSheet& level : weapon.levels) {
+      checkGun(sheets, sheet.side, level);
+    }
+  }
+}
+
 /** @throws What checkGun() throws for the gun of a sheet of @p sheets or a
  * level of one of its weapons, engine::UnknownDataFileChoiceException when a
  * missile bursts into no sheet, and InconsistentEntitySheetException when it
@@ -140,11 +151,7 @@ void checkProjectiles(std::span<const EntitySheet> sheets) {
     if (sheet.gun.has_value()) {
       checkGun(sheets, sheet.side, *sheet.gun);
     }
-    for (const WeaponSheet& weapon : sheet.weapons) {
-      for (const GunSheet& level : weapon.levels) {
-        checkGun(sheets, sheet.side, level);
-      }
-    }
+    checkWeapons(sheets, sheet);
     if (sheet.burst.has_value()) {
       const BurstSheet& burst = *sheet.burst;
       if (referencedSheet(sheets, burst.shard, burst.shardPlace).side !=
@@ -208,6 +215,16 @@ void checkVolleys(std::span<const EntitySheet> sheets) {
   }
 }
 
+/** @brief Writes in each level of the weapons of @p sheet the number of the
+ * sheet of @p sheets it fires, which checkProjectiles() found. */
+void numberWeapons(std::span<const EntitySheet> sheets, EntitySheet& sheet) {
+  for (WeaponSheet& weapon : sheet.weapons) {
+    for (GunSheet& level : weapon.levels) {
+      level.projectileNumber = findNamed(sheets, level.projectile)->number;
+    }
+  }
+}
+
 /** @brief Writes in the gun of each sheet of @p sheets, and in each level of
  * its weapons, the number of the sheet it fires, in its burst the number of
  * the sheet of its shards, in each of its volleys the number of the sheet of
@@ -220,11 +237,7 @@ void numberProjectiles(std::vector<EntitySheet>& sheets) {
       sheet.gun->projectileNumber =
           findNamed(sheets, sheet.gun->projectile)->number;
     }
-    for (WeaponSheet& weapon : sheet.weapons) {
-      for (GunSheet& level : weapon.levels) {
-        level.projectileNumber = findNamed(sheets, level.projectile)->number;
-      }
-    }
+    numberWeapons(sheets, sheet);
     if (sheet.burst.has_value()) {
       sheet.burst->shardNumber = findNamed(sheets, sheet.burst->shard)->number;
     }

@@ -26,14 +26,15 @@ std::optional<std::size_t> placeOfWeapon(const game::EntitySheet& ship,
   return static_cast<std::size_t>(found - ship.weapons.begin());
 }
 
-/** @returns The level a ship holding @p held reaches with a crystal of the
- * weapon numbered @p number, which has @p levels levels. */
+/** @returns The level a ship holding @p held reaches with a crystal of
+ * @p weapon, the weapon numbered @p number. */
 std::size_t levelAfter(const game::Gun& held, std::uint8_t number,
-                       std::size_t levels) {
+                       const game::WeaponSheet& weapon) {
   if (held.weapon != number) {
     return 1;
   }
-  return std::min<std::size_t>(std::size_t{held.level} + 1, levels);
+  return std::min<std::size_t>(std::size_t{held.level} + 1,
+                               weapon.levels.size());
 }
 
 }  // namespace
@@ -46,8 +47,7 @@ std::optional<game::Gun> gunAfterPickup(const game::Gun& held,
     return std::nullopt;
   }
   const auto number = static_cast<std::uint8_t>(*place + 1);
-  const std::size_t level =
-      levelAfter(held, number, ship.weapons.at(*place).levels.size());
+  const std::size_t level = levelAfter(held, number, ship.weapons.at(*place));
   const game::GunSheet& sheet = ship.weapons.at(*place).levels.at(level - 1);
   return game::Gun{
       .intervalTicks = sheet.intervalTicks,
