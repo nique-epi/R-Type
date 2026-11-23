@@ -40,18 +40,20 @@
 #                                   and no enemy is left
 #   boss_health_percent             optional: the health of that boss in
 #                                   percent of what its sheet gives, before
-#                                   each player past the first adds 25 %,
+#                                   each player past the first adds 75 %,
 #                                   1 to 1000; 100 when left out
 #   enemy_health_percent            optional: the health of every other enemy
 #                                   in percent of what its sheet gives,
 #                                   before each player past the first adds
-#                                   15 %, in the waves and in the levels a
+#                                   40 %, in the waves and in the levels a
 #                                   script directs alike, 1 to 1000; 100 when
 #                                   left out
 #   enemy_gun_interval_percent      optional: the ticks the gun of every
 #                                   other enemy waits, in percent of what its
 #                                   sheet gives, less for an enemy that fires
-#                                   more often, 1 to 1000; 100 when left out
+#                                   more often, before each player past the
+#                                   first takes 10 % off, 1 to 1000; 100 when
+#                                   left out
 # Numbers are integers: 2500, never 2500.0. A wave ends once every one of its
 # Bydos has appeared and none is left in the world, killed or gone on the
 # left; the pause before the next wave starts then.
