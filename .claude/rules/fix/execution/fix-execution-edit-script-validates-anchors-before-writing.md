@@ -26,6 +26,16 @@ trigger: always_on
 
 1. **The two-phase shape holds from the second file on**: a loop `for path, pairs in edits.items(): check; write` writes the first file before the second is checked, however short the edit. Fill a dictionary of new texts in the loop, write after it.
 
+### A script rewrites only the lines it adds, and checks what it kept
+
+1. **A script that inserts lines into a block (includes, a list, a table) inserts them at one place**, never by rewriting the whole span between the first and the last line it matched: lines of another kind in that span (the `<…>` includes between the first and the last `"…"` include) are lost with no error.
+2. **Before writing, compare the lines of the kind it touched, before and after**: every line that was there is still there, and the only new ones are those it meant to add. A build that passes proves nothing: a header dropped from a file is often reached through another one.
+
+### A script that cuts a file at a heading finds the heading on a line of its own
+
+1. **Cut at a heading searched with its line boundaries** (`"\n[appearance]\n"`), never at the first occurrence of its text: a comment that names `[appearance]` comes first, and everything after it is cut.
+2. **Check that the part it keeps still holds what it must** (`[gameplay]` and its `side` for an entity sheet) before writing, and read the diff of one file before the next command.
+
 ## Example
 
 - ❌ **Before (wrong)**: a script renaming `PacketMgr` in six files, writing as it goes, fails on the fourth on a guessed anchor → three files changed, three not, the build breaks.
@@ -34,3 +44,7 @@ trigger: always_on
 - ✅ **After (right)**: the six edits go into a spec file run by the batch tool (`apply_edits.py`), which checks every anchor in memory before writing any file; the anchors are read from the formatted files.
 - ❌ **Before (wrong)**: a staging script kept the `difflib` block holding the index line of the test-file rule, so the first commit of a rules pull request also carried the index line of the constants rule, added on the next line.
 - ✅ **After (right)**: the script splits each block into its lines and keeps only the lines a marker names; the staged index shows one added line per commit.
+- ❌ **Before (wrong)**: an inline script sorted the quoted includes of `WeaponSystem.cpp` by replacing the lines from the first to the last `#include "`; the six `#include <…>` between them were dropped, the build still passed, and clang-tidy found `std::optional` without its header.
+- ✅ **After (right)**: the two new includes are inserted after the line they follow, and the list of `#include` lines before and after is compared: two more, none fewer.
+- ❌ **Before (wrong)**: `t.index("[appearance]")` to swap the look of seven entity sheets; it found the `[appearance]` of the header comment, and every `[gameplay]` table was cut.
+- ✅ **After (right)**: `t.index("\n[appearance]\n") + 1`, and an assert that the kept part holds `[gameplay]` and `side = ` before any file is written.
