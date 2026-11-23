@@ -46,3 +46,21 @@ The returned reference was chosen to avoid a copy, without asking what it refers
 
 - ❌ `const NetworkConditions& checkedConditions(const NetworkConditions& conditions)` returning `conditions`.
 - ✅ `NetworkConditions checkedConditions(const NetworkConditions& conditions)`.
+
+## Update (2026-11-23) — A view member of an aggregate
+
+### Context
+
+A simplification of the master's leaderboard tests moved the GET call of the leaderboard into a shared `leaderboardCall(query)` returning a `RouteCall`.
+
+### Mistake
+
+`RouteCall::path` is a `std::string_view`; the helper filled it with `std::string{LEADERBOARD_URL} + std::string{query}`, a temporary destroyed at the end of the return statement. Every leaderboard read sent a garbage path, and 18 tests failed with `key 'scores' not found`. Caught by the test run before any commit.
+
+### Root cause
+
+The member was filled without reading its type; the original code kept the path in a named `std::string` next to the call, which the helper dropped.
+
+### Rule added
+
+The subsection "A view member of an aggregate is filled from a named variable".
