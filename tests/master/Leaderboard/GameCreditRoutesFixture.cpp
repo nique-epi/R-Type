@@ -2,6 +2,7 @@
 #include <httplib.h>
 #include <cstddef>
 #include <cstdint>
+#include <nlohmann/json_fwd.hpp>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -10,8 +11,10 @@
 #include "AccountsRoutesTestConstants.hpp"
 #include "CreatedServer.hpp"
 #include "FinishedGame.hpp"
+#include "GameCreditRoutesFixtures.hpp"
 #include "GameCreditRoutesTestConstants.hpp"
 #include "GameTicketRoutesTestConstants.hpp"
+#include "LeaderboardRoutesFixtures.hpp"
 #include "LeaderboardRoutesTestConstants.hpp"
 #include "MasterMessageText.hpp"
 #include "MasterTestConstants.hpp"
@@ -110,4 +113,24 @@ std::optional<std::size_t> GameCreditRoutesFixture::looksOfAce() const {
       sendRouteCall(master_.port(),
                     ownCall(GET_METHOD_TEXT, OWN_LOOKS_URL, aceToken_)),
       ITEMS_MEMBER_NAME);
+}
+
+void GameCreditRoutesFixture::sendAceUnderTwoNicknames() const {
+  static_cast<void>(
+      sendResult(FIRST_GAME_ID, gameOfAceWith(aceTicket(), A_THOUSAND_POINTS)));
+  static_cast<void>(sendResult(
+      SECOND_GAME_ID,
+      normalGameOfTwo({ticketedScoring(OTHER_NICKNAME_OF_ACE, aceTicket(),
+                                       TWELVE_HUNDRED_THIRTY_FOUR_POINTS)})));
+}
+
+nlohmann::json GameCreditRoutesFixture::leaderboardOf(
+    std::string_view query) const {
+  const std::string path = std::string{LEADERBOARD_URL} + std::string{query};
+  return bodyOf(
+      sendRouteCall(master_.port(), RouteCall{.method = GET_METHOD_TEXT,
+                                              .path = path,
+                                              .key = {},
+                                              .body = {},
+                                              .overHttps = false}));
 }

@@ -1,6 +1,9 @@
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <httplib.h>
 #include <cstdint>
+#include <nlohmann/json.hpp>
+#include <nlohmann/json_fwd.hpp>
 #include <optional>
 #include <string>
 #include "AccountsRoutesFixtures.hpp"
@@ -9,6 +12,7 @@
 #include "FinishedGame.hpp"
 #include "FinishedGamePlayer.hpp"
 #include "GameCreditRoutesFixture.hpp"
+#include "GameCreditRoutesFixtures.hpp"
 #include "GameCreditRoutesTestConstants.hpp"
 #include "LeaderboardRoutesFixtures.hpp"
 #include "LeaderboardRoutesTestConstants.hpp"
@@ -20,21 +24,7 @@
 
 using rtype::network::FinishedGame;
 using rtype::network::FinishedGamePlayer;
-
-namespace {
-
-/** @returns A vanilla game of two where ACE scored @p score, joined with
- * @p ticket. */
-FinishedGame gameOfAceWith(const std::string& ticket, std::uint32_t score) {
-  return normalGameOfTwo(
-      {FinishedGamePlayer{.nickname = std::string{ACE_NICKNAME},
-                          .accountId = std::nullopt,
-                          .score = score,
-                          .wonLooks = {},
-                          .ticket = ticket}});
-}
-
-}  // namespace
+using ::testing::ElementsAre;
 
 /**
  * Given ACE, whose wallet holds no kopeck, and a ticket it was given
@@ -165,6 +155,97 @@ TEST_F(GameCreditRoutesFixture, AGameThatWasNotVanillaPaysNothing) {
 
   EXPECT_EQ(sendResult(FIRST_GAME_ID, game)->status, EXPECTED_BAD_REQUEST);
   EXPECT_EQ(kopecksOfAce(), std::optional{NO_KOPECK});
+}
+
+/**
+ * Given ACE, who scored 1000 as ACE, then 1234 as ACE_2, each time with a
+ * ticket it was given
+ * When the leaderboard is read
+ * Then ACE has one row, of its best score, under the nickname of that game
+ */
+TEST_F(GameCreditRoutesFixture, AnAccountKeepsItsBestScoreUnderAnyNickname) {
+  sendAceUnderTwoNicknames();
+
+  EXPECT_THAT(membersIn<std::string>(leaderboardOf(NORMAL_FOR_TWO_QUERY),
+                                     NICKNAME_MEMBER_NAME),
+              ElementsAre(OTHER_NICKNAME_OF_ACE));
+}
+
+/**
+ * Given ACE, who scored 1000 as ACE, then 1234 as ACE_2, with its tickets
+ * When the leaderboard is read asking for ACE
+ * Then the player is that account, under the nickname of its best score
+ */
+TEST_F(GameCreditRoutesFixture,
+       ThePlayerAskedForIsFoundUnderAnyOfItsNicknames) {
+  sendAceUnderTwoNicknames();
+
+  const nlohmann::json leaderboard = leaderboardOf(ASKING_ACE_QUERY);
+
+  ASSERT_TRUE(leaderboard.contains(std::string{PLAYER_MEMBER_NAME}));
+  EXPECT_EQ(leaderboard.at(std::string{PLAYER_MEMBER_NAME})
+                .at(std::string{NICKNAME_MEMBER_NAME})
+                .get<std::string>(),
+            OTHER_NICKNAME_OF_ACE);
+}
+
+/**
+ * Given ACE, who scored 1000 with its ticket, and a guest named ACE who
+ * scored 1234
+ * When the leaderboard is read
+ * Then they are two players: a nickname names no account
+ */
+TEST_F(GameCreditRoutesFixture,
+       AGuestUnderTheNicknameOfAnAccountIsAnotherPlayer) {
+  static_cast<void>(
+      sendResult(FIRST_GAME_ID, gameOfAceWith(aceTicket(), A_THOUSAND_POINTS)));
+  static_cast<void>(sendResult(
+      SECOND_GAME_ID, normalGameOfTwo({guestScoring(
+                          ACE_NICKNAME, TWELVE_HUNDRED_THIRTY_FOUR_POINTS)})));
+
+  EXPECT_THAT(
+      membersIn<std::uint32_t>(leaderboardOf(NORMAL_FOR_TWO_QUERY),
+                               SCORE_MEMBER_NAME),
+      ElementsAre(TWELVE_HUNDRED_THIRTY_FOUR_POINTS, A_THOUSAND_POINTS));
+}
+
+/**
+ * Given two games with no ticket, where ACE scored 1000 and ACE_2 scored
+ * 1234, their server writing the account id of ACE for both
+ * When the leaderboard is read
+ * Then they are two players: an id a server writes names no account
+ */
+TEST_F(GameCreditRoutesFixture, AnAccountIdTheServerWritesNamesNoOne) {
+  FinishedGamePlayer first = guestScoring(ACE_NICKNAME, A_THOUSAND_POINTS);
+  first.accountId = aceAccountId();
+  FinishedGamePlayer second =
+      guestScoring(OTHER_NICKNAME_OF_ACE, TWELVE_HUNDRED_THIRTY_FOUR_POINTS);
+  second.accountId = aceAccountId();
+  static_cast<void>(sendResult(FIRST_GAME_ID, normalGameOfTwo({first})));
+  static_cast<void>(sendResult(SECOND_GAME_ID, normalGameOfTwo({second})));
+
+  EXPECT_THAT(
+      membersIn<std::uint32_t>(leaderboardOf(NORMAL_FOR_TWO_QUERY),
+                               SCORE_MEMBER_NAME),
+      ElementsAre(TWELVE_HUNDRED_THIRTY_FOUR_POINTS, A_THOUSAND_POINTS));
+}
+
+/**
+ * Given a ticket of ACE that paid a game where ACE scored 1234
+ * When a second game comes with the same ticket, ACE_2 scoring 1000
+ * Then the second ranks as a guest: a ticket names an account once
+ */
+TEST_F(GameCreditRoutesFixture, AUsedTicketRanksAGuest) {
+  const std::string ticket = aceTicket();
+  static_cast<void>(sendResult(
+      FIRST_GAME_ID, gameOfAceWith(ticket, TWELVE_HUNDRED_THIRTY_FOUR_POINTS)));
+  static_cast<void>(sendResult(
+      SECOND_GAME_ID, normalGameOfTwo({ticketedScoring(
+                          OTHER_NICKNAME_OF_ACE, ticket, A_THOUSAND_POINTS)})));
+
+  EXPECT_THAT(membersIn<std::string>(leaderboardOf(NORMAL_FOR_TWO_QUERY),
+                                     NICKNAME_MEMBER_NAME),
+              ElementsAre(ACE_NICKNAME, OTHER_NICKNAME_OF_ACE));
 }
 
 /**

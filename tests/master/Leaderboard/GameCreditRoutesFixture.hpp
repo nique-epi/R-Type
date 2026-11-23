@@ -4,6 +4,7 @@
 #include <httplib.h>
 #include <cstddef>
 #include <cstdint>
+#include <nlohmann/json_fwd.hpp>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -37,6 +38,13 @@ class GameCreditRoutesFixture : public ::testing::Test {
    * its path. */
   [[nodiscard]] httplib::Result readAccountLeaderboard(
       std::string_view query) const;
+
+  /** @brief Sends two games paid through tickets of ACE: ACE scoring 1000,
+   * then ACE_2 scoring 1234. */
+  void sendAceUnderTwoNicknames() const;
+
+  /** @returns The global leaderboard @p query reads, parsed. */
+  [[nodiscard]] nlohmann::json leaderboardOf(std::string_view query) const;
 
   /** @returns The kopecks of the wallet of ACE. */
   [[nodiscard]] std::optional<std::int64_t> kopecksOfAce() const;

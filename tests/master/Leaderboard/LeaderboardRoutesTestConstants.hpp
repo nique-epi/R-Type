@@ -23,13 +23,8 @@ constexpr std::string_view HARD_DIFFICULTY = "hard";
 constexpr std::uint8_t ONE_PLAYER = 1;
 constexpr std::uint8_t TWO_PLAYERS = 2;
 
-/** @brief Another nickname of the second pilot of the network tests, who
- * plays under SECOND_PILOT_ACCOUNT, beside SECOND_PILOT. */
+/** @brief Another nickname of the second pilot of the network tests. */
 constexpr std::string_view OTHER_NICKNAME_OF_SECOND_PILOT = "HUNTER_2";
-
-/** @brief The account of the second pilot in capital letters: another
- * account, since an id is compared as written. */
-constexpr std::string_view SECOND_PILOT_ACCOUNT_IN_CAPITALS = "ACCOUNT-42";
 
 /** @brief A score between FIRST_PILOT_SCORE and SECOND_PILOT_SCORE. */
 constexpr std::uint32_t MIDDLE_SCORE = 5'000;
@@ -50,8 +45,6 @@ constexpr std::string_view HARD_FOR_TWO_QUERY =
 constexpr std::string_view NORMAL_FOR_ONE_QUERY =
     "?difficulty=normal&playerCount=1";
 constexpr std::string_view SERVER_QUERY_START = "&server=";
-constexpr std::string_view ASKING_BYDO_HUNTER_QUERY =
-    "?difficulty=normal&playerCount=2&player=BYDO_HUNTER";
 constexpr std::string_view FIRST_ROW_AND_R9_QUERY =
     "?difficulty=normal&playerCount=2&limit=1&player=r9";
 

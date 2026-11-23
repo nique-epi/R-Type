@@ -49,9 +49,13 @@ void insertRow(SQLite::Database& connection, const ServerGameResult& result,
   insert.exec();
 }
 
-/** @brief Binds the filters and the page of @p query; a filter it leaves out
- * stays null. */
+/** @brief Binds the filters and the page of @p query, and the parts of the
+ * reference of a credit; a filter it leaves out stays null. */
 void bindQuery(SQLite::Statement& select, const LeaderboardQuery& query) {
+  select.bind(std::string{REFERENCE_PREFIX_PARAMETER},
+              std::string{GAME_REFERENCE_PREFIX});
+  select.bind(std::string{REFERENCE_SEPARATOR_PARAMETER},
+              std::string{GAME_REFERENCE_SEPARATOR});
   if (query.difficulty.has_value()) {
     select.bind(std::string{DIFFICULTY_PARAMETER}, *query.difficulty);
   }
