@@ -5,6 +5,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include "AccountLeaderboardRoutesTestConstants.hpp"
 #include "AccountsRoutesFixtures.hpp"
 #include "AccountsRoutesTestConstants.hpp"
 #include "CreatedServer.hpp"
@@ -77,6 +78,17 @@ httplib::Result GameCreditRoutesFixture::sendResult(
                                  .key = paris_.key,
                                  .body = rtype::network::finishedGameText(game),
                                  .overHttps = false});
+}
+
+httplib::Result GameCreditRoutesFixture::readAccountLeaderboard(
+    std::string_view query) const {
+  const std::string path =
+      std::string{ACCOUNT_LEADERBOARD_URL} + std::string{query};
+  return sendRouteCall(master_.port(), RouteCall{.method = GET_METHOD_TEXT,
+                                                 .path = path,
+                                                 .key = {},
+                                                 .body = {},
+                                                 .overHttps = false});
 }
 
 std::optional<std::int64_t> GameCreditRoutesFixture::kopecksOfAce() const {

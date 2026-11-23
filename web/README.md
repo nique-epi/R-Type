@@ -143,20 +143,20 @@ A test sits **beside the file it tests** (`ranking-view.ts`, `ranking-view.test.
 
 Every page lives under `app/[lang]/`, `lang` being `fr` (the default) or `en`.
 
-| Route                      | File                                  | Reads                                                                  |
-| -------------------------- | ------------------------------------- | ---------------------------------------------------------------------- |
-| `/`                        | `app/[lang]/page.tsx`                 | the servers with free seats, the latest release                        |
-| `/download`                | `download/page.tsx`                   | the latest release (GitHub)                                            |
-| `/servers`                 | `servers/page.tsx`                    | the servers, their games and their ping (the sector map)               |
-| `/servers/[id]`            | `servers/[id]/page.tsx`               | one server, its games, the load of its machine, its last 100 samples   |
-| `/host`                    | `host/page.tsx`                       | nothing; its form creates a server on the master                       |
-| `/signup`                  | `signup/page.tsx`                     | nothing; its form creates an account on the master                     |
-| `/signin`                  | `signin/page.tsx`                     | nothing; its form opens a session, then leads to `?next=`              |
-| `/link`                    | `link/page.tsx`                       | the device link of `?code=`, which the visitor connects or refuses     |
-| `/leaderboard`             | `leaderboard/page.tsx`                | the leaderboard; the scope and filters are in the query of the address |
-| `/wiki`, `/wiki/[section]` | `wiki/`                               | nothing; `/wiki` redirects to the first article                        |
-| `/team`                    | `team/page.tsx`                       | nothing                                                                |
-| anything else              | `[...rest]/page.tsx`, `not-found.tsx` | a 404 drawn inside the layout of the site                              |
+| Route                      | File                                  | Reads                                                                                                         |
+| -------------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `/`                        | `app/[lang]/page.tsx`                 | the servers with free seats, the latest release                                                               |
+| `/download`                | `download/page.tsx`                   | the latest release (GitHub)                                                                                   |
+| `/servers`                 | `servers/page.tsx`                    | the servers, their games and their ping (the sector map)                                                      |
+| `/servers/[id]`            | `servers/[id]/page.tsx`               | one server, its games, the load of its machine, its last 100 samples                                          |
+| `/host`                    | `host/page.tsx`                       | nothing; its form creates a server on the master                                                              |
+| `/signup`                  | `signup/page.tsx`                     | nothing; its form creates an account on the master                                                            |
+| `/signin`                  | `signin/page.tsx`                     | nothing; its form opens a session, then leads to `?next=`                                                     |
+| `/link`                    | `link/page.tsx`                       | the device link of `?code=`, which the visitor connects or refuses                                            |
+| `/leaderboard`             | `leaderboard/page.tsx`                | the leaderboard, by server, for everyone or by account; the scope and filters are in the query of the address |
+| `/wiki`, `/wiki/[section]` | `wiki/`                               | nothing; `/wiki` redirects to the first article                                                               |
+| `/team`                    | `team/page.tsx`                       | nothing                                                                                                       |
+| anything else              | `[...rest]/page.tsx`, `not-found.tsx` | a 404 drawn inside the layout of the site                                                                     |
 
 - **The language.** [`src/proxy.ts`](src/proxy.ts) redirects a path with no language to the one the browser prefers (`Accept-Language`), French when none matches. [`app/[lang]/layout.tsx`](src/app/[lang]/layout.tsx) sets `<html lang>`, the fonts and the shell of the site.
 - **The shell.** [`components/blocks/shell/site-shell.tsx`](src/components/blocks/shell/site-shell.tsx): the announcement bar, the header and its menu, the page, and the smooth scroll.
@@ -216,6 +216,10 @@ The scope and the filters are in the query (`/leaderboard?scope=server&server=7&
 the first visit), the block reads the master for that choice, and a click on a tab or a filter
 ([`ranking-section.tsx`](src/components/ranking/ranking-section.tsx)) only changes the address with `router.push`:
 the server then reads the master again. So a leaderboard can be shared by its link.
+
+The third tab (`?scope=accounts`) ranks the accounts by the total of their scores, read with
+[`getAccountLeaderboard.ts`](src/lib/api/routes/leaderboard/getAccountLeaderboard.ts). No filter narrows it, so the
+screen shows no filter there; the address keeps the difficulty and the pilots for the tab the visitor goes back to.
 
 ### Writing to the master
 

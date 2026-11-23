@@ -1,6 +1,8 @@
 #pragma once
 
 #include <chrono>
+#include <vector>
+#include "AccountLeaderboardRow.hpp"
 #include "GameCredit.hpp"
 #include "GameCreditOutcome.hpp"
 #include "GameResultRepository.hpp"
@@ -9,6 +11,7 @@
 #include "LeaderboardQuery.hpp"
 #include "Logger.hpp"
 #include "MasterDatabase.hpp"
+#include "PageRequest.hpp"
 #include "ServerGameResult.hpp"
 
 namespace rtype::master {
@@ -39,6 +42,13 @@ class LeaderboardService {
   /** @returns The page of @p query, and the row of the player it names. */
   [[nodiscard]] network::GlobalLeaderboard leaderboardOf(
       const LeaderboardQuery& query);
+
+  /** @returns The accounts of @p page, by the total of the scores of the
+   * games credited to each, every difficulty, number of players and server
+   * together; none when the master runs without wallets, which credits no
+   * game. */
+  [[nodiscard]] std::vector<network::AccountLeaderboardRow>
+  accountLeaderboardOf(const PageRequest& page);
 
  private:
   /** @brief Credits each player of @p result who joined with a ticket. */

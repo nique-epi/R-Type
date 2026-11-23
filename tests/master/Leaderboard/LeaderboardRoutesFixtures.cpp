@@ -27,6 +27,16 @@ rtype::network::FinishedGamePlayer guestScoring(std::string_view nickname,
                                             .wonLooks = {}};
 }
 
+rtype::network::FinishedGamePlayer ticketedScoring(std::string_view nickname,
+                                                   const std::string& ticket,
+                                                   std::uint32_t score) {
+  return rtype::network::FinishedGamePlayer{.nickname = std::string{nickname},
+                                            .accountId = std::nullopt,
+                                            .score = score,
+                                            .wonLooks = {},
+                                            .ticket = ticket};
+}
+
 rtype::network::FinishedGame normalGameOfTwo(
     std::vector<rtype::network::FinishedGamePlayer> players) {
   return rtype::network::FinishedGame{

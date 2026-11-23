@@ -19,6 +19,10 @@ const SERVERS = [
   { id: 7, name: 'Nebula Lyon' },
   { id: 12, name: 'Éclair Paris' },
 ];
+const ON_THE_ACCOUNTS = {
+  ...FIRST_RANKING_CHOICE,
+  scope: 'accounts' as const,
+};
 const ON_A_SERVER = {
   ...FIRST_RANKING_CHOICE,
   scope: 'server' as const,
@@ -64,6 +68,20 @@ describe('rankingChoiceOf', () => {
     );
   });
 
+  it('reads the accounts tab, which names no server, and keeps the filters of the other tabs', () => {
+    expect(
+      rankingChoiceOf(
+        { scope: 'accounts', server: '12', difficulty: 'hard', pilots: '4' },
+        SERVERS,
+      ),
+    ).toEqual({
+      scope: 'accounts',
+      serverId: null,
+      difficulty: 'hard',
+      pilots: 4,
+    });
+  });
+
   it('keeps the first value of a parameter given twice', () => {
     expect(
       rankingChoiceOf({ difficulty: ['easy', 'hard'] }, SERVERS).difficulty,
@@ -89,6 +107,17 @@ describe('rankingQueryOf', () => {
     ).toEqual(ON_A_SERVER);
   });
 
+  it('holds the accounts tab so that rankingChoiceOf reads it back', () => {
+    expect(
+      rankingChoiceOf(
+        Object.fromEntries(
+          new URLSearchParams(rankingQueryOf(ON_THE_ACCOUNTS)),
+        ),
+        SERVERS,
+      ),
+    ).toEqual(ON_THE_ACCOUNTS);
+  });
+
   it('names no server on the global tab', () => {
     expect(rankingQueryOf(FIRST_RANKING_CHOICE)).toBe(
       '?scope=global&difficulty=normal&pilots=2',
@@ -103,14 +132,20 @@ describe('rankingQueryOf', () => {
 });
 
 describe('rankingTabOf', () => {
-  it('is the first tab for a server and the second for everyone', () => {
+  it('is the first tab for a server, the second for everyone and the third for the accounts', () => {
     expect(rankingTabOf(ON_A_SERVER)).toBe(0);
     expect(rankingTabOf(FIRST_RANKING_CHOICE)).toBe(1);
+    expect(rankingTabOf(ON_THE_ACCOUNTS)).toBe(2);
   });
 
   it('is undone by rankingChoiceOfTab', () => {
     expect(rankingChoiceOfTab(FIRST_RANKING_CHOICE, 0).scope).toBe('server');
     expect(rankingChoiceOfTab(ON_A_SERVER, 1).scope).toBe('global');
+    expect(rankingChoiceOfTab(ON_A_SERVER, 2).scope).toBe('accounts');
+  });
+
+  it('keeps the scope for a tab that does not exist', () => {
+    expect(rankingChoiceOfTab(ON_A_SERVER, 3).scope).toBe('server');
   });
 });
 
@@ -165,6 +200,12 @@ describe('rankingSummaryOf', () => {
     );
   });
 
+  it('names no difficulty and no pilots for the accounts, which no filter narrows', () => {
+    expect(rankingSummaryOf(ON_THE_ACCOUNTS, SERVERS, COPY, 'fr')).toBe(
+      'COMPTES · SCORE CUMULE, TOUTES LES PARTIES',
+    );
+  });
+
   it('counts one pilot in the singular', () => {
     expect(
       rankingSummaryOf({ ...FIRST_RANKING_CHOICE, pilots: 1 }, [], COPY, 'fr'),
@@ -179,6 +220,10 @@ describe('rankingFiltersOf', () => {
         filter => filter.id,
       ),
     ).toEqual(['difficulty', 'pilots']);
+  });
+
+  it('offers no setting for the accounts', () => {
+    expect(rankingFiltersOf(ON_THE_ACCOUNTS, SERVERS, COPY)).toEqual([]);
   });
 
   it('offers the server first on the first tab, at the index of the one read', () => {
