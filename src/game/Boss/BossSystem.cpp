@@ -146,7 +146,8 @@ void BossSystem::strengthen(Health& health) const {
   health.full = scaledBossHealth(
       BossHealthScaling{.points = health.full,
                         .players = parts_.players(),
-                        .healthPercent = parts_.healthPercent});
+                        .healthPercent = parts_.healthPercent,
+                        .threatPercent = parts_.threatPercent()});
   health.points = health.full;
 }
 

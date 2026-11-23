@@ -15,6 +15,7 @@
 #include "EventBus.hpp"
 #include "FavorThePlayers.hpp"
 #include "GameContext.hpp"
+#include "GameFlowParts.hpp"
 #include "GameInstanceConstants.hpp"
 #include "GameOutcome.hpp"
 #include "GameState.hpp"
@@ -157,12 +158,12 @@ void logStart(const logging::Logger& logger, PlayerRoster& roster) {
 
 }  // namespace
 
-GameFlow::GameFlow(GameContext& game, WorldSlot& world,
-                   IGameReplication& replication)
-    : game_(game),
-      worldSlot_(world),
-      replication_(replication),
-      startBarrier_(game.roster.get(), game.send),
+GameFlow::GameFlow(const GameFlowParts& parts)
+    : game_(parts.game),
+      worldSlot_(parts.world),
+      replication_(parts.replication),
+      threat_(parts.threat),
+      startBarrier_(game_.roster.get(), game_.send),
       hitArbitration_(std::make_unique<FavorThePlayers>()),
       logger_(std::string{INSTANCES_LOGGER_NAME}) {}
 
@@ -256,9 +257,11 @@ void GameFlow::buildWorld() {
       MatchSystemsParts{.game = game_,
                         .world = world,
                         .waveSeed = game_.settings.seed + worldsBuilt_,
-                        .respawn = [this](ConnectedPlayer& player) {
-                          replication_.onPlayerJoined(player);
-                        }});
+                        .respawn =
+                            [this](ConnectedPlayer& player) {
+                              replication_.onPlayerJoined(player);
+                            },
+                        .threat = threat_});
 }
 
 void GameFlow::startNewWorld() {

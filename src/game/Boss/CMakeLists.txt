@@ -1,4 +1,4 @@
-add_library(rtype_game_boss STATIC BossSystem.cpp BossHealth.cpp TeamPercent.cpp)
+add_library(rtype_game_boss STATIC BossSystem.cpp BossHealth.cpp TeamPercent.cpp ThreatPercent.cpp)
 
 target_include_directories(rtype_game_boss PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 

@@ -20,6 +20,15 @@ constexpr int HARD_HEALTH_PERCENT = 130;
 constexpr int HARD_BOSS_HEALTH_FOR_ONE_PLAYER = 312;
 constexpr int HARD_BOSS_HEALTH_FOR_FOUR_PLAYERS = 1014;
 
+/** @brief A threat of none, of half the most and of the most, and the 240
+ * points of the boss for one player then: 175 % at half, 250 % at the
+ * most. */
+constexpr int NO_THREAT_PERCENT = 0;
+constexpr int HALF_THE_MOST_THREAT_PERCENT = 50;
+constexpr int THE_MOST_THREAT_PERCENT = 100;
+constexpr int BOSS_HEALTH_AT_HALF_THE_MOST_THREAT = 420;
+constexpr int BOSS_HEALTH_AT_THE_MOST_THREAT = 600;
+
 constexpr std::size_t NO_PLAYER = 0;
 constexpr std::size_t ONE_PLAYER = 1;
 constexpr std::size_t TWO_PLAYERS = 2;

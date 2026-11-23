@@ -14,6 +14,12 @@ namespace rtype::game {
  * lasts alone. */
 constexpr int BOSS_HEALTH_PER_EXTRA_PLAYER = 75;
 
+/** @brief At the most threat, a boss arrives with this percent more health; a
+ * smaller threat gets its share. A pilot alone at the strongest weapon fires
+ * five times its gun and meets 250 % of the health: the fight lasts half of
+ * what it lasts with the gun. */
+constexpr int BOSS_HEALTH_AT_THE_MOST_THREAT = 150;
+
 /** @brief How long the players are warned of a boss before anything steers
  * it: 600 ms of silence, the 3200 ms WARNING, and 600 ms of margin. */
 constexpr engine::Duration BOSS_ARRIVAL_WARNING =

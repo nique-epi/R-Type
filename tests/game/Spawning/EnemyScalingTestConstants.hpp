@@ -18,4 +18,15 @@ constexpr int HARD_HEALTH_FOR_FOUR = 264;
  * extra players of 10 %, 70 % of 80 %. */
 constexpr int HARD_GUN_INTERVAL_FOR_FOUR = 56;
 
+/** @brief A threat of none, of half the most and of the most, and what hard
+ * gives then: the health raised 50 % at the most, 150 % of 120 %, and 25 %
+ * at half, 125 % of 120 %; the gun interval lowered 23 % at the most, 77 %
+ * of 80 %. */
+constexpr int NO_THREAT = 0;
+constexpr int HALF_THE_MOST_THREAT = 50;
+constexpr int THE_MOST_THREAT = 100;
+constexpr int HARD_HEALTH_AT_THE_MOST_THREAT = 180;
+constexpr int HARD_HEALTH_AT_HALF_THE_MOST_THREAT = 150;
+constexpr int HARD_GUN_INTERVAL_AT_THE_MOST_THREAT = 61;
+
 }  // namespace rtype::game::testing

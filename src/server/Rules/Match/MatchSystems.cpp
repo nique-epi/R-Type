@@ -16,11 +16,13 @@
 #include "EntityOrdersParts.hpp"
 #include "ExtraLifeKeeper.hpp"
 #include "ExtraLifeKeeperParts.hpp"
+#include "Firepower.hpp"
 #include "GameContext.hpp"
 #include "GameInstanceConstants.hpp"
 #include "GameSettings.hpp"
 #include "IEntityOrders.hpp"
 #include "IHitArbitration.hpp"
+#include "IThreatLevel.hpp"
 #include "LevelConstants.hpp"
 #include "LevelDirector.hpp"
 #include "LevelDirectorParts.hpp"
@@ -34,6 +36,7 @@
 #include "PlayerController.hpp"
 #include "ServerException.hpp"
 #include "ShipBand.hpp"
+#include "ThreatReading.hpp"
 #include "TimeConstants.hpp"
 #include "TransitionHold.hpp"
 #include "VolleySystem.hpp"
@@ -180,11 +183,30 @@ std::unique_ptr<LevelDirector> levelDirectorFor(GameContext& game,
                          .continues = settings.continues});
 }
 
-/** @returns The strength the enemies of @p game are made at now: the
- * strength its difficulty gives, scaled for its connected players. */
-game::EnemyStrength enemyStrengthOf(GameContext& game) {
+/** @returns The strength the enemies of @p game are made at for its
+ * connected players: the strength its difficulty gives, scaled for them. */
+game::EnemyStrength enemyStrengthForPlayersOf(GameContext& game) {
   return game::scaledEnemyStrength(game.settings.waves.enemyStrength,
                                    game.roster.get().connected().size());
+}
+
+/** @brief Tells @p threat what the ships of @p world fire now, read against
+ * the sheets of @p game; nothing for a game without a threat. */
+void observeTheThreat(IThreatLevel* threat, game::World& world,
+                      const GameContext& game) {
+  if (threat != nullptr) {
+    threat->observe(
+        game::teamFirepowerOf(world.components(), game.settings.types));
+  }
+}
+
+/** @returns The strength the enemies of @p game are made at now: the
+ * strength its difficulty gives, scaled for its connected players, then
+ * answering the threat of @p threat. */
+game::EnemyStrength enemyStrengthOf(GameContext& game,
+                                    const IThreatLevel* threat) {
+  return game::threatenedEnemyStrength(enemyStrengthForPlayersOf(game),
+                                       threatPercentOf(threat));
 }
 
 /** @returns Whether the boss of the level may come at this tick, after
@@ -256,6 +278,7 @@ std::unique_ptr<LookItemKeeper> lookItemKeeperFor(GameContext& game,
 MatchSystems::MatchSystems(const MatchSystemsParts& parts)
     : game_(parts.game),
       world_(parts.world),
+      threat_(parts.threat),
       collisionRules_(std::make_unique<game::CollisionRules>(
           game_.get().events.get(), world_.get().components(),
           game_.get().settings.rules.friendlyFire)),
@@ -275,7 +298,8 @@ MatchSystems::MatchSystems(const MatchSystemsParts& parts)
 
 void MatchSystems::onTick(IHitArbitration& arbitration, std::uint32_t tick) {
   GameContext& game = game_.get();
-  world_.get().setEnemyStrength(enemyStrengthOf(game));
+  observeTheThreat(threat_, world_, game);
+  world_.get().setEnemyStrength(enemyStrengthOf(game, threat_));
   lookItemKeeper_->onTick();
   weaponKeeper_->onTick();
   dropSystem_->onTick();

@@ -4,10 +4,12 @@
 #include <cstdint>
 #include <memory>
 #include "GameContext.hpp"
+#include "GameFlowParts.hpp"
 #include "GameState.hpp"
 #include "IGameFlow.hpp"
 #include "IGameReplication.hpp"
 #include "IHitArbitration.hpp"
+#include "IThreatLevel.hpp"
 #include "Logger.hpp"
 #include "MatchSystems.hpp"
 #include "StartBarrier.hpp"
@@ -100,15 +102,9 @@ namespace rtype::server {
  */
 class GameFlow final : public IGameFlow {
  public:
-  /**
-   * @param game The context of the game; it must outlive the flow. The flow
-   * reads its roster, bus, systems, settings, send function and ready rule.
-   * @param world Holds the world of the game, which the flow replaces with
-   * each new world; it must outlive the flow.
-   * @param replication Tells the players how the game stands, and gives them
-   * their ships; it must outlive the flow.
-   */
-  GameFlow(GameContext& game, WorldSlot& world, IGameReplication& replication);
+  /** @brief Builds a flow on the game, the world, the replication and the
+   * threat @p parts names (see GameFlowParts). */
+  explicit GameFlow(const GameFlowParts& parts);
 
   GameFlow(const GameFlow&) = delete;
   GameFlow& operator=(const GameFlow&) = delete;
@@ -188,6 +184,7 @@ class GameFlow final : public IGameFlow {
   GameContext& game_;
   WorldSlot& worldSlot_;
   IGameReplication& replication_;
+  IThreatLevel* threat_;
   std::unique_ptr<MatchSystems> systems_;
   StartBarrier startBarrier_;
   std::unique_ptr<IHitArbitration> hitArbitration_;

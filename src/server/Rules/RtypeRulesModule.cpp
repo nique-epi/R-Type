@@ -6,10 +6,12 @@
 #include "EntityDestruction.hpp"
 #include "GameContext.hpp"
 #include "GameFlow.hpp"
+#include "GameFlowParts.hpp"
 #include "GameInstanceConstants.hpp"
 #include "IGameFlow.hpp"
 #include "IGameReplication.hpp"
 #include "IGameWorld.hpp"
+#include "IThreatLevel.hpp"
 #include "InstallContext.hpp"
 #include "PlayerController.hpp"
 #include "PlayerInput.hpp"
@@ -30,7 +32,11 @@ void RtypeRulesModule::install(GameContext& game,
                                engine::InstallContext& install) {
   game_ = &game;
   replication_ = &install.require<IGameReplication>();
-  flow_ = std::make_unique<GameFlow>(game, world_, *replication_);
+  threat_ = install.find<IThreatLevel>();
+  flow_ = std::make_unique<GameFlow>(GameFlowParts{.game = game,
+                                                   .world = world_,
+                                                   .replication = *replication_,
+                                                   .threat = threat_});
   install.provide<IGameFlow>(*flow_);
   install.provide<IGameWorld>(world_);
   install.addWork(
@@ -39,7 +45,7 @@ void RtypeRulesModule::install(GameContext& game,
 }
 
 void RtypeRulesModule::start() {
-  addRtypeSystems(*game_);
+  addRtypeSystems(*game_, threat_);
   auto scoreKeeper =
       std::make_unique<ScoreKeeper>(game_->events, game_->roster);
   flow_->begin();

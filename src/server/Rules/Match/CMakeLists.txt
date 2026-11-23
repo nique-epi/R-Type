@@ -4,6 +4,7 @@ add_library(rtype_server_rules_match STATIC
   MatchSystems.cpp
   RtypeSystems.cpp
   StartBarrier.cpp
+  ThreatReading.cpp
   WorldSlot.cpp
 )
 
@@ -20,7 +21,9 @@ target_link_libraries(rtype_server_rules_match
     rtype_server_sessions_roster
     rtype_server_rules_players
     rtype_server_spawning
+    rtype_server_threat_contract
   PRIVATE
+    rtype_game_threat
     rtype_identifiers
     rtype_network_game_started
 )

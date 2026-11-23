@@ -15,4 +15,14 @@ namespace rtype::game {
 [[nodiscard]] EnemyStrength scaledEnemyStrength(EnemyStrength difficulty,
                                                 std::size_t players);
 
+/**
+ * @returns @p strength answering a threat of @p threatPercent percent of the
+ * most: the health raised by that share of ENEMY_HEALTH_AT_THE_MOST_THREAT
+ * percent and the ticks of the guns changed by that share of
+ * ENEMY_GUN_INTERVAL_AT_THE_MOST_THREAT percent, each share rounded toward
+ * zero and each percent rounded down; a threat of 0 leaves it as it is.
+ */
+[[nodiscard]] EnemyStrength threatenedEnemyStrength(EnemyStrength strength,
+                                                    int threatPercent);
+
 }  // namespace rtype::game

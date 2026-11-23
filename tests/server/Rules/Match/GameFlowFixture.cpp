@@ -13,6 +13,7 @@
 #include "EntityTypesTestConstants.hpp"
 #include "GameEnded.hpp"
 #include "GameFlow.hpp"
+#include "GameFlowParts.hpp"
 #include "GameRuleConstants.hpp"
 #include "GameRules.hpp"
 #include "GameSettings.hpp"
@@ -61,11 +62,12 @@ GameFlowFixture::GameFlowFixture(GameSettings settings)
                .everyPlayerIsReady =
                    [this] { return readyKeeper_.everyPlayerIsReady(); }},
       replication_(context_),
-      flow_(context_, world_, replication_) {
+      flow_(GameFlowParts{
+          .game = context_, .world = world_, .replication = replication_}) {
   static_cast<void>(events_.subscribe<GameStateChanged>(
       [this](const GameStateChanged& change) { changes_.push_back(change); }));
   flow_.begin();
-  addRtypeSystems(context_);
+  addRtypeSystems(context_, nullptr);
 }
 
 ConnectedPlayer& GameFlowFixture::join(std::size_t index) {

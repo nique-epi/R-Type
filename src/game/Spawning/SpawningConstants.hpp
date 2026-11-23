@@ -79,4 +79,12 @@ constexpr int ENEMY_HEALTH_PER_EXTRA_PLAYER = 40;
  * nearest to it. */
 constexpr int ENEMY_GUN_INTERVAL_PER_EXTRA_PLAYER = -10;
 
+/** @brief At the most threat, an enemy that is no boss gets this percent more
+ * health, and its gun waits this percent fewer ticks, so it fires 30 % more
+ * often; a smaller threat gets its share of both. A team that fires five
+ * times its guns still kills a wave three times as fast: the weapons stay
+ * worth picking up. */
+constexpr int ENEMY_HEALTH_AT_THE_MOST_THREAT = 50;
+constexpr int ENEMY_GUN_INTERVAL_AT_THE_MOST_THREAT = -23;
+
 }  // namespace rtype::game

@@ -18,6 +18,9 @@ struct BossSystemParts {
   /** @brief The health of every boss in percent of the health it appeared
    * with, for the difficulty. */
   int healthPercent{WHOLE_PERCENT};
+  /** @brief The threat of the team in percent of the most, asked as the
+   * warning of a boss ends to raise its health. Must not be empty. */
+  std::function<int()> threatPercent;
 };
 
 }  // namespace rtype::game

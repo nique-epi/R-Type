@@ -13,6 +13,7 @@
 #include "ExtraLifeKeeper.hpp"
 #include "GameContext.hpp"
 #include "IHitArbitration.hpp"
+#include "IThreatLevel.hpp"
 #include "LevelDirector.hpp"
 #include "LifeKeeper.hpp"
 #include "LookItemKeeper.hpp"
@@ -77,6 +78,8 @@ class MatchSystems {
  private:
   std::reference_wrapper<GameContext> game_;
   std::reference_wrapper<game::World> world_;
+  /** nullptr in a game without the module threat. */
+  IThreatLevel* threat_;
   std::unique_ptr<game::CollisionRules> collisionRules_;
   std::unique_ptr<game::DamageRules> damageRules_;
   /** nullptr in a game that plays a level a script directs. */

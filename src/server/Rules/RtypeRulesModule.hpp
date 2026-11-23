@@ -6,6 +6,7 @@
 #include "GameFlow.hpp"
 #include "IGameModule.hpp"
 #include "IGameReplication.hpp"
+#include "IThreatLevel.hpp"
 #include "InstallContext.hpp"
 #include "ScoreKeeper.hpp"
 #include "World.hpp"
@@ -68,6 +69,8 @@ class RtypeRulesModule final : public IGameModule {
 
   GameContext* game_{nullptr};
   IGameReplication* replication_{nullptr};
+  /** nullptr in a game without the module threat. */
+  IThreatLevel* threat_{nullptr};
   WorldSlot world_;
   std::unique_ptr<GameFlow> flow_;
   std::unique_ptr<ScoreKeeper> scoreKeeper_;

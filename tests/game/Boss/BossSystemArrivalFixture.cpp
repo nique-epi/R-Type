@@ -33,7 +33,8 @@ void BossSystemArrivalFixture::useHealthPercent(int healthPercent) {
   system_ = std::make_unique<BossSystem>(
       BossSystemParts{.events = events_,
                       .players = [this] { return players_; },
-                      .healthPercent = healthPercent});
+                      .healthPercent = healthPercent,
+                      .threatPercent = [] { return NO_THREAT_PERCENT; }});
 }
 
 void BossSystemArrivalFixture::connect(std::size_t players) {
