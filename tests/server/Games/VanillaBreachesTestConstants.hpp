@@ -22,6 +22,9 @@ constexpr std::uint32_t ZERO_SEED = 0;
 constexpr std::size_t ONE_TICK_SHORTER_DELAY = DEFAULT_INPUT_DELAY_TICKS - 1;
 constexpr std::size_t ONE_TICK_LONGER_DELAY = DEFAULT_INPUT_DELAY_TICKS + 1;
 
+/** @brief The stage after the first of a level. */
+constexpr std::size_t SECOND_STAGE = 2;
+
 /** @brief Lives one on each side of the default lives. */
 constexpr std::uint8_t ONE_LIFE_FEWER = identifiers::DEFAULT_LIVES - 1;
 constexpr std::uint8_t ONE_LIFE_MORE = identifiers::DEFAULT_LIVES + 1;

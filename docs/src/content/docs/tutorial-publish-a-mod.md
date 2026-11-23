@@ -100,7 +100,7 @@ When a line reads `: the content pack is not served` instead, the supervisor run
 | `the port is chosen by the system` | the UDP port is 0, so the TCP port has no number | give a port with `-p` or `set port` |
 | `cannot listen for HTTP on 0.0.0.0 port 4242` | another program holds the TCP port | stop it, or start the supervisor on another port |
 
-The games of a mod are not vanilla: a game process logs `not vanilla: the entity sheets are not the ones the game ships`, and its scores stay on the leaderboard of its own server (see [Vanilla games](/R-Type/server/#vanilla-games-vanillabreaches)).
+The games of a mod that play the waves are not vanilla: a game process logs `not vanilla: the entity sheets are not the ones the game ships`, and its scores stay on the leaderboard of its own server. A mod whose games play a level stays vanilla while they start at its first stage, since the sheets and the scripts of a level are not judged (see [Vanilla games](/R-Type/server/#vanilla-games-vanillabreaches)).
 
 ## Step 4: open the ports
 

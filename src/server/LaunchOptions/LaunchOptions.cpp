@@ -186,8 +186,8 @@ std::string settingOptionEntries() {
       std::string(START_AT_STAGE_OPTION) + " <stage>",
       "Starts every game that plays a level at that stage of it, from " +
           std::to_string(FIRST_LEVEL_STAGE) +
-          ", where the script of the level says it starts, to test it; its "
-          "results are not vanilla, as for any level. Default: " +
+          ", where the script of the level says it starts, to test it; "
+          "past the first stage, its results are not vanilla. Default: " +
           std::to_string(FIRST_LEVEL_STAGE) + ".");
   return text;
 }

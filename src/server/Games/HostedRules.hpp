@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <optional>
 #include "GameRules.hpp"
+#include "ServerConstants.hpp"
 
 namespace rtype::server {
 
@@ -25,8 +26,10 @@ struct HostedRules {
   /** @brief Whether every game starts at its boss (`--boss`). */
   bool startsAtBoss{false};
   /** @brief Whether every game plays a level a script directs (the setting
-   * `level`), not the waves of its difficulty. */
+   * `level`, or the maps of a vote), not the waves of its difficulty. */
   bool playsALevel{false};
+  /** @brief The stage of that level the games start at (`--stage`). */
+  std::size_t startingStage{FIRST_LEVEL_STAGE};
 };
 
 }  // namespace rtype::server

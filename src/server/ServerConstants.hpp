@@ -228,8 +228,8 @@ constexpr std::string_view CHANGED_LIVES_BREACH =
 constexpr std::string_view FRIENDLY_FIRE_BREACH = "friendly fire is on";
 constexpr std::string_view STARTS_AT_BOSS_BREACH =
     "every game starts at its boss and its ships never die";
-constexpr std::string_view PLAYS_A_LEVEL_BREACH =
-    "every game plays a level a script directs, not the waves";
+constexpr std::string_view STARTS_PAST_THE_FIRST_STAGE_BREACH =
+    "every game starts its level past the first stage";
 
 /**
  * @brief Launch option followed by the program the binary runs:
