@@ -25,6 +25,12 @@ Why: the protocol went from 17 to 18, the test constants named after the version
 2. **A hit is never left as "a sample value" before the assertion that reads it is read**: `git grep -n '<NAME>' -- tests`. A constant compared with what the code builds from `PROTOCOL_VERSION` follows the bump.
 3. **The suites of point 3 gain the master's**: `ctest --test-dir build -R 'DatagramCodec|ConnectionScreen|GuaranteedDelivery|MasterMessages'`.
 
+### The search runs again on the tree merged with main
+
+1. **A test another pull request adds while the bump waits writes the old version**: before the bump is pushed or merged, merge `origin/main` (`fix-process-follow-ci-after-opening-a-pr.md`, point 2) and run the search of point 1 again on the merged tree, with the old version in each of its forms.
+2. **A translated text writes the version in another sentence**: `\bV<old>\b` finds `VERSION V21, SERVEUR V22` as it finds `REFUSED: V21, SERVER V22`; read every hit, whatever its language.
+   Calibration: run with `f7d3b20a` in place of `--` and 21 as the old version, it prints `FRENCH_VERSION_REFUSAL` of `ConnectionScreenTestConstants.hpp:82`.
+
 ## Example
 
 - ❌ **Before (wrong)**: `PROTOCOL_VERSION = 18` with `DEFAULT_HEADER_BYTES` still holding `0x11` and `SOME_OTHER_VERSION = 18` → `DatagramCodec.*` and `AVersionRefusalNamesBothVersions` red.

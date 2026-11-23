@@ -36,3 +36,6 @@ Root cause: the pattern of point 1 holds the new version as a literal constant o
 
 Added to the rule: the search for the old version as a literal constant, with its calibration on `1d156870`, the reading of the assertion before a hit is left, and the master suite among the suites run.
 
+## Update (2026-11-23) — the search runs again on the tree merged with main
+
+The French language (#393) merged with a test constant `FRENCH_VERSION_REFUSAL = "VERSION V21, SERVEUR V22"`, written while the protocol was 21. The pace of a fight (#390) then raised the protocol to 22; its search for the old version ran on its branch before #393 was in `main`, so the French text was never listed. `main` failed `FrenchConnectionScreenFixture.AVersionRefusalReadsInFrench` on both Linux jobs. The rule now asks to run the search again on the tree merged with `main` before the bump lands, and to read hits in every language.
