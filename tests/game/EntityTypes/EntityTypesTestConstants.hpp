@@ -49,6 +49,12 @@ constexpr std::string_view PLAYER_MISSILE_SHEET = "player_missile";
 constexpr std::string_view RED_SHOT_SHEET = "red_shot";
 constexpr std::string_view BLUE_SHOT_SHEET = "blue_shot";
 constexpr std::string_view YELLOW_SHOT_SHEET = "yellow_shot";
+/** @brief The sheets of the crystals of the three weapons, and of the Bydo
+ * that drops them. */
+constexpr std::string_view CRYSTAL_BLUE_SHEET = "crystal_blue";
+constexpr std::string_view CRYSTAL_CARRIER_SHEET = "crystal_carrier";
+constexpr std::string_view CRYSTAL_RED_SHEET = "crystal_red";
+constexpr std::string_view CRYSTAL_YELLOW_SHEET = "crystal_yellow";
 constexpr std::string_view ENEMY_MISSILE_SHEET = "enemy_missile";
 constexpr std::string_view VOLTJELLY_SHEET = "voltjelly";
 constexpr std::string_view REAPER_SHEET = "reaper";
@@ -89,6 +95,10 @@ constexpr std::string_view LOOK_TRICORN_SHEET = "look_tricorn";
 constexpr std::array SHIPPED_SHEET_NAMES{BLUE_SHOT_SHEET,
                                          BYDO_TYRANT_SHEET,
                                          BYDOMANCER_SHEET,
+                                         CRYSTAL_BLUE_SHEET,
+                                         CRYSTAL_CARRIER_SHEET,
+                                         CRYSTAL_RED_SHEET,
+                                         CRYSTAL_YELLOW_SHEET,
                                          DRIFTER_SHEET,
                                          DRILLBACK_SHEET,
                                          ENEMY_MISSILE_SHEET,

@@ -4,6 +4,7 @@
 #include <variant>
 #include <vector>
 #include "CollisionScene.hpp"
+#include "CrystalDropped.hpp"
 #include "DamageRules.hpp"
 #include "EnemyKilled.hpp"
 #include "Entity.hpp"
@@ -21,8 +22,9 @@ namespace rtype::game::testing {
 using Announcement = std::variant<EntityDamage, EntityDestruction>;
 
 /**
- * @brief A CollisionScene ruled by DamageRules, recording what it announces
- * and the kills it credits, in the order they are published.
+ * @brief A CollisionScene ruled by DamageRules, recording what it announces,
+ * the kills it credits and the crystals it drops, in the order they are
+ * published.
  */
 struct DamageScene {
   DamageScene();
@@ -57,6 +59,7 @@ struct DamageScene {
   DamageRules rules{scene.events, scene.components};
   std::vector<Announcement> announced;
   std::vector<EnemyKilled> kills;
+  std::vector<CrystalDropped> drops;
 };
 
 }  // namespace rtype::game::testing

@@ -15,6 +15,7 @@
 #include "CollisionSheet.hpp"
 #include "ContentName.hpp"
 #include "ContentNameConstants.hpp"
+#include "CrystalSheetReading.hpp"
 #include "DataFileReading.hpp"
 #include "DataFileTable.hpp"
 #include "EntitySheet.hpp"
@@ -366,6 +367,26 @@ void checkLookItemMatchesSide(const EntitySheet& sheet,
   }
 }
 
+/** @throws InconsistentEntitySheetException when a body names a crystal and
+ * is no crystal, or is a crystal and names none. */
+void checkCrystalMatchesSide(const EntitySheet& sheet,
+                             const engine::DataFileTable& gameplay) {
+  if (sheet.crystal.has_value() != (sheet.side == EntityType::Crystal)) {
+    throw InconsistentEntitySheetException(
+        engine::placeOfKey(gameplay, SIDE_KEY), CRYSTAL_SIDE_RULE);
+  }
+}
+
+/** @throws InconsistentEntitySheetException when a body that is no enemy
+ * drops crystals. */
+void checkDropsBelongToAnEnemy(const EntitySheet& sheet,
+                               const engine::DataFileTable& gameplay) {
+  if (!sheet.drops.empty() && sheet.side != EntityType::Enemy) {
+    throw InconsistentEntitySheetException(
+        engine::placeOfKey(gameplay, DROPS_KEY), DROPS_SIDE_RULE);
+  }
+}
+
 /** @throws InconsistentEntitySheetException when a missile has a gun, or
  * another body bursts. */
 void checkWhatItFires(const EntitySheet& sheet,
@@ -438,18 +459,22 @@ void checkMissileFliesTowardsItsEdge(const EntitySheet& sheet,
   }
 }
 
-/** @throws InconsistentEntitySheetException when the pilot of a look item does
- * not steer it, on its first tick, to the left: such an item that nobody picks
- * up would stay for the rest of the game. */
-void checkLookItemFliesLeft(const EntitySheet& sheet,
-                            const engine::DataFileTable& gameplay) {
-  if (sheet.side != EntityType::LookItem || !sheet.pilot.has_value()) {
+/** @throws InconsistentEntitySheetException when the pilot of a look item or
+ * of a crystal does not steer it, on its first tick, to the left: such an
+ * item that nobody picks up would stay for the rest of the game. */
+void checkItemFliesLeft(const EntitySheet& sheet,
+                        const engine::DataFileTable& gameplay) {
+  const bool item =
+      sheet.side == EntityType::LookItem || sheet.side == EntityType::Crystal;
+  if (!item || !sheet.pilot.has_value()) {
     return;
   }
   if (firstHorizontalSteeringOf(*sheet.pilot, sheet.motion, Position{}) >=
       0.0F) {
     throw InconsistentEntitySheetException(
-        engine::placeOfKey(gameplay, PILOT_KEY), LOOK_ITEM_HEADING_RULE);
+        engine::placeOfKey(gameplay, PILOT_KEY),
+        sheet.side == EntityType::LookItem ? LOOK_ITEM_HEADING_RULE
+                                           : CRYSTAL_HEADING_RULE);
   }
 }
 
@@ -526,7 +551,9 @@ void checkSheetHoldsTogether(const EntitySheet& sheet,
   checkContactPartsBelongToAnEnemy(sheet, gameplay);
   checkBossHasHealth(sheet, gameplay);
   checkLookItemMatchesSide(sheet, gameplay);
-  checkLookItemFliesLeft(sheet, gameplay);
+  checkItemFliesLeft(sheet, gameplay);
+  checkCrystalMatchesSide(sheet, gameplay);
+  checkDropsBelongToAnEnemy(sheet, gameplay);
   checkDamageBelongsToAMissile(sheet, gameplay);
   checkObstacleMatchesSide(sheet, gameplay);
   checkScrollMotionSide(sheet, gameplay);
@@ -543,7 +570,6 @@ EntitySheet gameplayOf(const SheetText& sheet,
   const engine::DataFileTable gameplay = gameplayTableOf(sheetRoot);
   EntitySheet read{
       .name = sheet.name,
-      .number = 0,
       .side = sideFrom(gameplay),
       .collision = collisionFrom(gameplay),
       .hitbox = hitboxOf(gameplay),
@@ -563,6 +589,8 @@ EntitySheet gameplayOf(const SheetText& sheet,
       .weapons = weaponsFrom(gameplay),
       .boss = bossFrom(gameplay),
       .lookItem = lookItemFrom(gameplay),
+      .crystal = crystalFrom(gameplay),
+      .drops = dropsFrom(gameplay),
       .visualNames = visualNamesOf(sheetTableOf(sheetRoot, APPEARANCE_KEY)),
       .damage = pointsIn<int>(gameplay, DAMAGE_KEY, DAMAGE_RANGE),
       .obstacle = obstacleContactOf(gameplay),

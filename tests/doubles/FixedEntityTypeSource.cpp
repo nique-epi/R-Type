@@ -76,6 +76,7 @@ rtype::game::CollisionBox boxOfSide(EntityType side) {
     case EntityType::Enemy:
     case EntityType::LookItem:
     case EntityType::Obstacle:
+    case EntityType::Crystal:
       return rtype::client::testing::BYDO_BOX;
   }
   return rtype::client::testing::BYDO_BOX;
@@ -149,6 +150,7 @@ const EntityAppearance& appearanceOfSide(EntityType side) {
     case EntityType::Enemy:
     case EntityType::LookItem:
     case EntityType::Obstacle:
+    case EntityType::Crystal:
       break;
   }
   return bydo;

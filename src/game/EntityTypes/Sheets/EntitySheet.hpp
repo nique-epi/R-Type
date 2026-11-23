@@ -9,6 +9,8 @@
 #include "BurstSheet.hpp"
 #include "CollisionBox.hpp"
 #include "CollisionSheet.hpp"
+#include "CrystalDrop.hpp"
+#include "DataFileText.hpp"
 #include "EntityType.hpp"
 #include "GunSheet.hpp"
 #include "HurtZone.hpp"
@@ -88,6 +90,12 @@ struct EntitySheet {
    * ship looks (the position of its name plus one); nothing for a body of
    * another side than look_item. */
   std::optional<std::uint8_t> lookItem{std::nullopt};
+  /** @brief The weapon it gives the ship that picks it up, by name, a body of
+   * side crystal only; nothing for any other body. */
+  std::optional<engine::DataFileText> crystal{std::nullopt};
+  /** @brief The crystals it drops when a missile kills it, an enemy only;
+   * empty for a body that drops nothing. */
+  std::vector<CrystalDrop> drops;
   /** @brief The effects and the looks its `[appearance]` names, which a
    * script of a body of this type may ask the client to draw. */
   SheetVisualNames visualNames;

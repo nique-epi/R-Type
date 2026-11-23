@@ -8,6 +8,7 @@
 #include "BossStage.hpp"
 #include "CollisionRules.hpp"
 #include "DamageRules.hpp"
+#include "DropSystem.hpp"
 #include "EntityOrders.hpp"
 #include "ExtraLifeKeeper.hpp"
 #include "GameContext.hpp"
@@ -89,6 +90,7 @@ class MatchSystems {
   std::unique_ptr<LifeKeeper> lifeKeeper_;
   std::unique_ptr<ExtraLifeKeeper> extraLifeKeeper_;
   std::unique_ptr<LookItemKeeper> lookItemKeeper_;
+  std::unique_ptr<DropSystem> dropSystem_;
 };
 
 }  // namespace rtype::server

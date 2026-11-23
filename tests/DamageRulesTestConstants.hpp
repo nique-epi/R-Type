@@ -24,6 +24,11 @@ constexpr std::uint32_t ENEMY_MISSILE_ID = 41;
  * has THREE_HEALTH_POINTS of the world tests. */
 constexpr int ONE_HEALTH_POINT = 1;
 
+/** @brief The sheets of the two crystals a Bydo carries: BYDO_ID (21) is odd,
+ * so it drops the second. */
+constexpr std::uint8_t CARRIED_RED_SHEET = 5;
+constexpr std::uint8_t CARRIED_BLUE_SHEET = 6;
+
 /** @brief The players whose missiles hit, the second one numbered
  * SECOND_PLAYER_NUMBER of the world tests. */
 constexpr MissileOwner FIRST_PLAYER{.playerNumber = 1};

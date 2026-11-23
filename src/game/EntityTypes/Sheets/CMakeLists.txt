@@ -1,4 +1,4 @@
-add_library(rtype_game_entity_sheets STATIC EntitySheetReader.cpp EntitySheets.cpp GunSheetReading.cpp SheetTicks.cpp ShipGunReading.cpp VolleySheetReading.cpp)
+add_library(rtype_game_entity_sheets STATIC CrystalSheetReading.cpp EntitySheetReader.cpp EntitySheets.cpp GunSheetReading.cpp SheetTicks.cpp ShipGunReading.cpp VolleySheetReading.cpp)
 
 target_include_directories(rtype_game_entity_sheets PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 

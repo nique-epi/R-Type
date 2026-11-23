@@ -35,6 +35,7 @@ float towardsShooterOf(game::EntityType type) {
     case game::EntityType::Player:
     case game::EntityType::EnemyMissile:
     case game::EntityType::LookItem:
+    case game::EntityType::Crystal:
       break;
   }
   return TOWARDS_RIGHT;

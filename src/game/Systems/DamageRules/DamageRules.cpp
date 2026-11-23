@@ -5,7 +5,9 @@
 #include <optional>
 #include "AppliedHit.hpp"
 #include "Armored.hpp"
+#include "CarriedCrystals.hpp"
 #include "ComponentRegistry.hpp"
+#include "CrystalDropped.hpp"
 #include "CurrentAction.hpp"
 #include "DamageConstants.hpp"
 #include "DamageTally.hpp"
@@ -23,6 +25,7 @@
 #include "MissileHit.hpp"
 #include "MissileOwner.hpp"
 #include "NetworkIdentity.hpp"
+#include "Position.hpp"
 #include "ScoreValue.hpp"
 #include "Shootable.hpp"
 
@@ -72,6 +75,23 @@ void tallyDamage(DamageTally* tally, std::optional<std::uint8_t> shooter,
   }
   tally->byPilot.at(*shooter - identifiers::FIRST_PLAYER_NUMBER) +=
       static_cast<std::uint32_t>(taken);
+}
+
+/** @returns The crystal @p target drops where it stands, the one of its
+ * CarriedCrystals at @p networkId modulo their count; nothing for a body
+ * that carries none or has no Position. */
+std::optional<CrystalDropped> droppedCrystalOf(
+    engine::ComponentRegistry& components, engine::Entity target,
+    std::uint32_t networkId) {
+  const auto* const carried = components.get<CarriedCrystals>(target);
+  const auto* const position = components.get<Position>(target);
+  if (carried == nullptr || position == nullptr ||
+      carried->sheetNumbers.empty()) {
+    return std::nullopt;
+  }
+  return CrystalDropped{.sheetNumber = carried->sheetNumbers.at(
+                            networkId % carried->sheetNumbers.size()),
+                        .position = *position};
 }
 
 /** @returns What @p score is worth; nothing for a body worth nothing. */
@@ -192,9 +212,14 @@ void DamageRules::killTarget(engine::Entity target, std::uint32_t networkId,
   const ScoreValue worth = valueOf(components_.get<ScoreValue>(target));
   const DamageTally* const tally = components_.get<DamageTally>(target);
   const DamageTally damage = tally == nullptr ? DamageTally{} : *tally;
+  const std::optional<CrystalDropped> dropped =
+      droppedCrystalOf(components_, target, networkId);
   components_.destroy(target);
   events_.publish(EntityDestruction{.networkId = networkId,
                                     .cause = DestructionCause::Killed});
+  if (dropped.has_value()) {
+    events_.publish(*dropped);
+  }
   if (shooter.has_value() && (worth.points > 0 || worth.bounty > 0)) {
     events_.publish(EnemyKilled{.playerNumber = *shooter,
                                 .points = worth.points,

@@ -57,6 +57,7 @@ void EffectSpawner::playExplosion(game::EntityType type, game::Position center,
       hits_.playImpact(type, center);
       return;
     case game::EntityType::LookItem:
+    case game::EntityType::Crystal:
       return;
   }
 }
@@ -83,6 +84,7 @@ void EffectSpawner::playAppearance(game::EntityType type,
     case game::EntityType::Player:
     case game::EntityType::Enemy:
     case game::EntityType::LookItem:
+    case game::EntityType::Crystal:
     case game::EntityType::Obstacle:
       return;
   }

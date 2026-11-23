@@ -1,5 +1,6 @@
 #include "DamageScene.hpp"
 #include <cstdint>
+#include "CrystalDropped.hpp"
 #include "DamageTally.hpp"
 #include "EnemyKilled.hpp"
 #include "Entity.hpp"
@@ -27,6 +28,8 @@ DamageScene::DamageScene() {
       });
   scene.events.subscribe<EnemyKilled>(
       [this](const EnemyKilled& kill) { kills.push_back(kill); });
+  scene.events.subscribe<CrystalDropped>(
+      [this](const CrystalDropped& dropped) { drops.push_back(dropped); });
 }
 
 engine::Entity DamageScene::missileOf(std::uint32_t networkId,

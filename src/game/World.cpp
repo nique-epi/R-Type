@@ -6,12 +6,15 @@
 #include <memory>
 #include <optional>
 #include <utility>
+#include <vector>
 #include "BodyPlacement.hpp"
 #include "Boss.hpp"
+#include "CarriedCrystals.hpp"
 #include "CollisionBox.hpp"
 #include "CollisionFilter.hpp"
 #include "CollisionMask.hpp"
 #include "ComponentRegistry.hpp"
+#include "CrystalDrop.hpp"
 #include "CurrentAction.hpp"
 #include "DamageTally.hpp"
 #include "EnemyStrength.hpp"
@@ -178,8 +181,22 @@ void addPilot(engine::ComponentRegistry& components, const BodyStart& start) {
                                    .settings = pilot->settings});
 }
 
+/** @brief Gives @p start the crystals its sheet drops, when it drops any. */
+void addCarriedCrystals(engine::ComponentRegistry& components,
+                        const BodyStart& start) {
+  const std::vector<CrystalDrop>& drops = start.sheet.get().drops;
+  if (drops.empty()) {
+    return;
+  }
+  CarriedCrystals carried;
+  for (const CrystalDrop& drop : drops) {
+    carried.sheetNumbers.push_back(drop.number);
+  }
+  components.add(start.body, std::move(carried));
+}
+
 /** @brief Gives @p start the Health, the ScoreValue, the Gun and the
- * ShardBurst its sheet gives. */
+ * ShardBurst its sheet gives, and the crystals it carries. */
 void addCombat(engine::ComponentRegistry& components, const BodyStart& start) {
   const EntitySheet& sheet = start.sheet.get();
   if (sheet.health.has_value()) {
@@ -203,6 +220,7 @@ void addCombat(engine::ComponentRegistry& components, const BodyStart& start) {
   if (sheet.damage.has_value()) {
     components.add(start.body, MissileDamage{.points = *sheet.damage});
   }
+  addCarriedCrystals(components, start);
 }
 
 /** @returns Whether @p sheet is a missile of an enemy that

@@ -68,6 +68,7 @@ bool hasLeftThePlayfield(EntityType type, const Position& position,
   switch (type) {
     case EntityType::Enemy:
     case EntityType::LookItem:
+    case EntityType::Crystal:
       return position.x < -ENEMY_EXIT_MARGIN;
     case EntityType::PlayerMissile:
     case EntityType::EnemyMissile:

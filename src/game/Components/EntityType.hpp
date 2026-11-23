@@ -11,7 +11,8 @@ namespace rtype::game {
  * side that fired it, because a player missile and an enemy missile do not
  * hit the same targets. A look item is the item of the locker a ship picks up.
  * An obstacle is a wall or a piece of the decor: it stops what hits it, and
- * blocks or kills a ship that touches it (Obstacle).
+ * blocks or kills a ship that touches it (Obstacle). A crystal gives the ship
+ * that picks it up the weapon its sheet names.
  */
 enum class EntityType : std::uint8_t {
   Player,
@@ -20,6 +21,7 @@ enum class EntityType : std::uint8_t {
   EnemyMissile,
   LookItem,
   Obstacle,
+  Crystal,
 };
 
 }  // namespace rtype::game

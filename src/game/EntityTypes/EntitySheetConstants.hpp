@@ -77,6 +77,10 @@ constexpr std::string_view BURST_KEY = "burst";
 constexpr std::string_view VOLLEY_KEY = "volley";
 constexpr std::string_view BOSS_KEY = "boss";
 constexpr std::string_view LOOK_ITEM_KEY = "look_item";
+/** @brief The weapon a crystal gives, by its name among the weapons of the
+ * ship; the sheets of the crystals an enemy drops when a missile kills it. */
+constexpr std::string_view CRYSTAL_KEY = "crystal";
+constexpr std::string_view DROPS_KEY = "drops";
 constexpr std::string_view MASK_KEY = "mask";
 /** @brief `[gameplay.damage]`: the health points a missile takes from what it
  * hits, in POINTS_KEY; MISSILE_DAMAGE without the table. */
@@ -93,7 +97,8 @@ constexpr std::array GAMEPLAY_KEYS{
     SCORE_KEY,    GUN_KEY,           HURT_ZONE_KEY, SURVIVES_CONTACT_KEY,
     FRAGILE_KEY,  STAYS_OUTSIDE_KEY, BURST_KEY,     VOLLEY_KEY,
     BOSS_KEY,     LOOK_ITEM_KEY,     MASK_KEY,      DAMAGE_KEY,
-    OBSTACLE_KEY, ON_HIT_KEY,        WEAPON_KEY};
+    OBSTACLE_KEY, ON_HIT_KEY,        WEAPON_KEY,    CRYSTAL_KEY,
+    DROPS_KEY};
 
 /** @brief The key of `[gameplay.obstacle]`, and the contacts it may name, with
  * the ObstacleContact of each, in the same order. */
@@ -321,10 +326,12 @@ constexpr std::string_view PLAYER_PILOT_NAME = "player";
 constexpr std::array SIDE_NAMES{
     std::string_view{"player"},         std::string_view{"enemy"},
     std::string_view{"player_missile"}, std::string_view{"enemy_missile"},
-    std::string_view{"look_item"},      std::string_view{"obstacle"}};
+    std::string_view{"look_item"},      std::string_view{"obstacle"},
+    std::string_view{"crystal"}};
 constexpr std::array SIDES{EntityType::Player,        EntityType::Enemy,
                            EntityType::PlayerMissile, EntityType::EnemyMissile,
-                           EntityType::LookItem,      EntityType::Obstacle};
+                           EntityType::LookItem,      EntityType::Obstacle,
+                           EntityType::Crystal};
 static_assert(SIDE_NAMES.size() == SIDES.size(), "one name per side");
 
 /** @brief The motions a sheet may name, and the MotionKind of each. */
@@ -455,6 +462,14 @@ constexpr std::string_view LOOK_ITEM_SIDE_RULE =
     "look_item is given by a sheet of side look_item, and only by it";
 constexpr std::string_view LOOK_ITEM_HEADING_RULE =
     "a look item flies to the left, where the playfield removes it";
+constexpr std::string_view CRYSTAL_SIDE_RULE =
+    "crystal is given by a sheet of side crystal, and only by it";
+constexpr std::string_view CRYSTAL_HEADING_RULE =
+    "a crystal flies to the left, where the playfield removes it";
+constexpr std::string_view CRYSTAL_WEAPON_RULE =
+    "a crystal names a weapon of a ship";
+constexpr std::string_view DROPS_SIDE_RULE = "only an enemy drops crystals";
+constexpr std::string_view DROPS_ITEM_RULE = "an enemy drops crystals only";
 constexpr std::string_view DAMAGE_SIDE_RULE = "only a missile deals damage";
 constexpr std::string_view ON_HIT_SIDE_RULE =
     "a ship answers a hit with its lives, never an on_hit";

@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <vector>
 #include "Armored.hpp"
+#include "CarriedCrystals.hpp"
 #include "CollisionScene.hpp"
 #include "CurrentAction.hpp"
 #include "DamageRules.hpp"
@@ -17,12 +18,14 @@
 #include "MissileHit.hpp"
 #include "MissileOwner.hpp"
 #include "NetworkIdentity.hpp"
+#include "Position.hpp"
 #include "RecordingHitHandler.hpp"
 #include "ScoreValue.hpp"
 #include "WorldTestConstants.hpp"
 
 using rtype::engine::Entity;
 using rtype::game::Armored;
+using rtype::game::CarriedCrystals;
 using rtype::game::CurrentAction;
 using rtype::game::EnemyKilled;
 using rtype::game::EntityDamage;
@@ -32,6 +35,7 @@ using rtype::game::Health;
 using rtype::game::MissileDamage;
 using rtype::game::MissileHit;
 using rtype::game::NetworkIdentity;
+using rtype::game::Position;
 using rtype::game::ScoreValue;
 using rtype::game::testing::Announcement;
 using rtype::game::testing::ARMORED_ATTACK;
@@ -41,6 +45,8 @@ using rtype::game::testing::ASH_MOTHER_BOUNTY;
 using rtype::game::testing::ASH_MOTHER_POINTS;
 using rtype::game::testing::BYDO_ID;
 using rtype::game::testing::BYDO_POINTS;
+using rtype::game::testing::CARRIED_BLUE_SHEET;
+using rtype::game::testing::CARRIED_RED_SHEET;
 using rtype::game::testing::CHARGING;
 using rtype::game::testing::CRACK_HANDLER;
 using rtype::game::testing::DAMAGE_OF_THREE;
@@ -632,6 +638,48 @@ TEST(DamageRules, AKillCarriesTheBountyOfTheBody) {
                   .damageByPilot = {},
                   .bounty = ASH_MOTHER_BOUNTY}};
   EXPECT_EQ(damage.kills, expected);
+}
+
+/**
+ * Given a Bydo of one health point, network id 21, carrying a red then a blue
+ * crystal
+ * When a missile kills it
+ * Then it drops the blue crystal, the second of two for an odd id, where it
+ * stood
+ */
+TEST(DamageRules, AKilledCarrierDropsACrystalWhereItStood) {
+  DamageScene damage;
+  const Entity body = damage.bydo(BYDO_ID, Health{.points = ONE_HEALTH_POINT});
+  damage.scene.components.add(
+      body,
+      CarriedCrystals{.sheetNumbers = {CARRIED_RED_SHEET, CARRIED_BLUE_SHEET}});
+  const Position* const stood = damage.scene.components.get<Position>(body);
+  ASSERT_NE(stood, nullptr);
+  const Position where = *stood;
+
+  damage.hit(damage.missileOf(MISSILE_ID, FIRST_PLAYER), body);
+
+  ASSERT_EQ(damage.drops.size(), 1U);
+  EXPECT_EQ(damage.drops.front().sheetNumber, CARRIED_BLUE_SHEET);
+  EXPECT_FLOAT_EQ(damage.drops.front().position.x, where.x);
+  EXPECT_FLOAT_EQ(damage.drops.front().position.y, where.y);
+}
+
+/**
+ * Given a Bydo of five health points carrying a crystal
+ * When a missile hits it once
+ * Then it drops nothing: only a kill drops a crystal
+ */
+TEST(DamageRules, AWoundedCarrierDropsNothing) {
+  DamageScene damage;
+  const Entity body =
+      damage.bydo(BYDO_ID, Health{.points = FIVE_HEALTH_POINTS});
+  damage.scene.components.add(
+      body, CarriedCrystals{.sheetNumbers = {CARRIED_RED_SHEET}});
+
+  damage.hit(damage.missileOf(MISSILE_ID, FIRST_PLAYER), body);
+
+  EXPECT_TRUE(damage.drops.empty());
 }
 
 /**

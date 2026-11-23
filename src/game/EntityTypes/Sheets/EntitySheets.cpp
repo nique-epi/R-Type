@@ -17,6 +17,7 @@
 #include "CollisionFiltering.hpp"
 #include "CollisionLayerConstants.hpp"
 #include "CollisionSheet.hpp"
+#include "CrystalDrop.hpp"
 #include "DataFilePlace.hpp"
 #include "DataFileText.hpp"
 #include "EngineException.hpp"
@@ -155,6 +156,42 @@ void checkProjectiles(std::span<const EntitySheet> sheets) {
   }
 }
 
+/** @throws engine::UnknownDataFileChoiceException when an enemy of @p sheets
+ * drops no sheet, and InconsistentEntitySheetException when it drops a sheet
+ * that is no crystal. */
+void checkDrops(std::span<const EntitySheet> sheets) {
+  for (const EntitySheet& sheet : sheets) {
+    for (const CrystalDrop& drop : sheet.drops) {
+      if (referencedSheet(sheets, drop.name, drop.place).side !=
+          EntityType::Crystal) {
+        throw InconsistentEntitySheetException(drop.place, DROPS_ITEM_RULE);
+      }
+    }
+  }
+}
+
+/** @returns Whether a ship of @p sheets holds a weapon named @p name. */
+bool aShipHoldsWeapon(std::span<const EntitySheet> sheets,
+                      std::string_view name) {
+  return std::ranges::any_of(sheets, [name](const EntitySheet& sheet) {
+    return std::ranges::any_of(sheet.weapons, [name](const WeaponSheet& held) {
+      return held.name == name;
+    });
+  });
+}
+
+/** @throws InconsistentEntitySheetException when a crystal of @p sheets names
+ * a weapon no ship holds. */
+void checkCrystals(std::span<const EntitySheet> sheets) {
+  for (const EntitySheet& sheet : sheets) {
+    if (sheet.crystal.has_value() &&
+        !aShipHoldsWeapon(sheets, sheet.crystal->text)) {
+      throw InconsistentEntitySheetException(sheet.crystal->place,
+                                             CRYSTAL_WEAPON_RULE);
+    }
+  }
+}
+
 /** @throws engine::UnknownDataFileChoiceException when a volley of a sheet of
  * @p sheets names no sheet, and InconsistentEntitySheetException when it
  * names one that is neither an enemy nor a missile of an enemy. */
@@ -173,9 +210,10 @@ void checkVolleys(std::span<const EntitySheet> sheets) {
 
 /** @brief Writes in the gun of each sheet of @p sheets, and in each level of
  * its weapons, the number of the sheet it fires, in its burst the number of
- * the sheet of its shards, and in each of its volleys the number of the sheet
- * of its bodies. checkProjectiles()
- * and checkVolleys() ran first, so every name is a sheet of @p sheets. */
+ * the sheet of its shards, in each of its volleys the number of the sheet of
+ * its bodies, and in each crystal it drops the number of its sheet.
+ * checkProjectiles(), checkVolleys() and checkDrops() ran first, so every
+ * name is a sheet of @p sheets. */
 void numberProjectiles(std::vector<EntitySheet>& sheets) {
   for (EntitySheet& sheet : sheets) {
     if (sheet.gun.has_value()) {
@@ -192,6 +230,9 @@ void numberProjectiles(std::vector<EntitySheet>& sheets) {
     }
     for (VolleySheet& volley : sheet.volleys) {
       volley.bodyNumber = findNamed(sheets, volley.body)->number;
+    }
+    for (CrystalDrop& drop : sheet.drops) {
+      drop.number = findNamed(sheets, drop.name)->number;
     }
   }
 }
@@ -274,6 +315,8 @@ EntitySheets EntitySheets::fromTexts(std::span<const SheetText> texts,
   std::vector<EntitySheet> sheets = numberedSheets(sorted, behaviours);
   checkProjectiles(sheets);
   checkVolleys(sheets);
+  checkDrops(sheets);
+  checkCrystals(sheets);
   numberProjectiles(sheets);
   writeCollisionFilters(sheets);
   return EntitySheets{std::move(sorted), std::move(behaviours),

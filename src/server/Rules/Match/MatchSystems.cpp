@@ -8,6 +8,8 @@
 #include "BossStageParts.hpp"
 #include "CollisionRules.hpp"
 #include "DamageRules.hpp"
+#include "DropSystem.hpp"
+#include "DropSystemParts.hpp"
 #include "EnemyScaling.hpp"
 #include "EnemyStrength.hpp"
 #include "EntityOrders.hpp"
@@ -215,6 +217,18 @@ std::unique_ptr<ExtraLifeKeeper> extraLifeKeeperFor(
                            .roster = game.roster.get()});
 }
 
+/** @returns The system that makes the crystals the enemies of @p world drop
+ * appear. */
+std::unique_ptr<DropSystem> dropSystemFor(GameContext& game,
+                                          game::World& world) {
+  return std::make_unique<DropSystem>(
+      DropSystemParts{.events = game.events.get(),
+                      .world = world,
+                      .roster = game.roster.get(),
+                      .send = game.send,
+                      .types = game.settings.types});
+}
+
 /** @returns The keeper of the look items the players of @p world win. */
 std::unique_ptr<LookItemKeeper> lookItemKeeperFor(GameContext& game,
                                                   game::World& world) {
@@ -243,12 +257,14 @@ MatchSystems::MatchSystems(const MatchSystemsParts& parts)
       bossStage_(bossStageFor(game_, world_, *entityOrders_)),
       lifeKeeper_(lifeKeeperFor(parts)),
       extraLifeKeeper_(extraLifeKeeperFor(parts)),
-      lookItemKeeper_(lookItemKeeperFor(game_, world_)) {}
+      lookItemKeeper_(lookItemKeeperFor(game_, world_)),
+      dropSystem_(dropSystemFor(game_, world_)) {}
 
 void MatchSystems::onTick(IHitArbitration& arbitration, std::uint32_t tick) {
   GameContext& game = game_.get();
   world_.get().setEnemyStrength(enemyStrengthOf(game));
   lookItemKeeper_->onTick();
+  dropSystem_->onTick();
   arbitration.giveViews(world_, game.roster.get(), tick);
   if (levelDirector_ != nullptr) {
     levelDirector_->onTick();

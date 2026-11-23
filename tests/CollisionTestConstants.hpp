@@ -17,21 +17,24 @@ constexpr std::uint8_t OTHER_PLAYER_NUMBER = 2;
  * the order of their names as EntitySheets numbers them, and a layer no
  * shipped sheet lies in.
  */
-constexpr std::uint32_t ENEMY_LAYER = rtype::engine::collisionLayerOf(0);
+constexpr std::uint32_t CRYSTAL_LAYER = rtype::engine::collisionLayerOf(0);
+constexpr std::uint32_t ENEMY_LAYER = rtype::engine::collisionLayerOf(1);
 constexpr std::uint32_t ENEMY_MISSILE_LAYER =
-    rtype::engine::collisionLayerOf(1);
-constexpr std::uint32_t LOOK_ITEM_LAYER = rtype::engine::collisionLayerOf(2);
-constexpr std::uint32_t PLAYER_LAYER = rtype::engine::collisionLayerOf(3);
+    rtype::engine::collisionLayerOf(2);
+constexpr std::uint32_t LOOK_ITEM_LAYER = rtype::engine::collisionLayerOf(3);
+constexpr std::uint32_t PLAYER_LAYER = rtype::engine::collisionLayerOf(4);
 constexpr std::uint32_t PLAYER_MISSILE_LAYER =
-    rtype::engine::collisionLayerOf(4);
-constexpr std::uint32_t WALL_LAYER = rtype::engine::collisionLayerOf(5);
+    rtype::engine::collisionLayerOf(5);
+constexpr std::uint32_t WALL_LAYER = rtype::engine::collisionLayerOf(6);
 
 /**
  * @brief The filter the shipped sheets give a body of each side: an enemy and
  * its missile hit the ships, a missile of a player hits the enemies, their
  * missiles and, for friendly fire, the ships, a ship hits the look items,
- * which hit nothing.
+ * which hit nothing, and a crystal hits the ships.
  */
+constexpr rtype::engine::CollisionFilter CRYSTAL_FILTER{.layer = CRYSTAL_LAYER,
+                                                        .hits = PLAYER_LAYER};
 constexpr rtype::engine::CollisionFilter ENEMY_FILTER{.layer = ENEMY_LAYER,
                                                       .hits = PLAYER_LAYER};
 constexpr rtype::engine::CollisionFilter ENEMY_MISSILE_FILTER{

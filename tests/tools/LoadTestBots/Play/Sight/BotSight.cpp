@@ -32,6 +32,7 @@ std::optional<EntityKind> kindOf(const game::NumberedEntityType* type) {
     case game::EntityType::EnemyMissile:
       return EntityKind::EnemyMissile;
     case game::EntityType::LookItem:
+    case game::EntityType::Crystal:
       return EntityKind::Item;
     case game::EntityType::Player:
     case game::EntityType::PlayerMissile:
