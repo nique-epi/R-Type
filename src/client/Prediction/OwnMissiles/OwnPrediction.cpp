@@ -4,6 +4,7 @@
 #include <vector>
 #include "BlockingObstacles.hpp"
 #include "EntityReplicator.hpp"
+#include "HeldWeapon.hpp"
 #include "IOwnMissileListener.hpp"
 #include "IPlayerInputLink.hpp"
 #include "OwnMissilesParts.hpp"
@@ -43,9 +44,11 @@ void OwnPrediction::apply(const network::WorldState& state) {
   if (ship_.shipEntityId() != shipBefore && own.has_value()) {
     missiles_.restart(own->acknowledgedInput, own->position);
   }
-  if (const std::optional<std::uint32_t> acknowledged =
-          acknowledgedInputOf(state, playerNumber_)) {
-    missiles_.acknowledge(*acknowledged);
+  if (const network::PlayerState* const player =
+          ownPlayerOf(state, playerNumber_)) {
+    missiles_.acknowledge(player->acknowledgedInput,
+                          game::HeldWeapon{.weapon = player->weapon,
+                                           .level = player->weaponLevel});
   }
 }
 

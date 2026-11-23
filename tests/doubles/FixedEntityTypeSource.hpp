@@ -21,7 +21,8 @@
  * numbered as it numbers them, each looking as appearanceOfSide() gives its
  * side; the enemy of two boxes lists TWO_BOX_ENEMY_PARTS, and the hollow
  * enemy has a collision mask of HOLLOW_ENEMY_SIDE pixels a side, its
- * HOLLOW_ENEMY_DRAWN_ROWS top rows alone drawn.
+ * HOLLOW_ENEMY_DRAWN_ROWS top rows alone drawn. Its ship holds the gun of
+ * SHIP_GUN_INTERVAL_TICKS and the two weapons FAN_WEAPON and ROWS_WEAPON name.
  */
 class FixedEntityTypeSource final : public rtype::client::IEntityTypeSource {
  public:

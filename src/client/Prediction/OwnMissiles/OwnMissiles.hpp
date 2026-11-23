@@ -6,6 +6,7 @@
 #include "ContactShape.hpp"
 #include "EntityDestroyed.hpp"
 #include "EntitySpawned.hpp"
+#include "HeldWeapon.hpp"
 #include "IOwnMissileListener.hpp"
 #include "OwnMissile.hpp"
 #include "OwnMissilesParts.hpp"
@@ -20,20 +21,24 @@ namespace rtype::client {
  * itself from its predicted ship, as Unity Netcode predicts the spawn of a
  * projectile and Unreal Tournament fires a fake one.
  *
- * Each command the prediction sends counts down the PredictedGun; a command
- * that fires creates a missile at the muzzle of the ship as predicted right
- * after it, with its shot and its muzzle flash, and the missile flies at the
- * velocity of the gun, on the timeline of the predicted ship: the missile of
- * input F is drawn, at the newest command N, (N - F) ticks of flight from its
- * start, where the server has it at the tick it applies N.
+ * Each command the prediction sends counts down the PredictedGun, armed with
+ * the gun of the weapon the ship holds (game::heldGunOf()); a command that
+ * fires creates each missile of its shot, laid at the muzzle of the ship as
+ * predicted right after it as the server lays them (game::shotPlacement()),
+ * with its shot and its muzzle flash, and each missile flies at its own
+ * velocity, on the timeline of the predicted ship: the missile of input F is
+ * drawn, at the newest command N, (N - F) ticks of flight from its start,
+ * where the server has it at the tick it applies N. A missile that scatters
+ * flies along the heading the shot gave its rank.
  *
  * The replicator hands it the EntitySpawned of the missiles of its player
  * (see IOwnMissileListener) and draws none of them. A missile of the server
- * is matched to the missile of the same firing input: the missile keeps the
- * start of the server, and the gun is put back where the server had it, so a
- * shot predicted wrongly is taken away and a shot the client did not predict
- * appears where it flies. A shot the server leaves unanswered for
- * REFUSED_SHOT_TICKS after it applied its input is taken away.
+ * is matched to the missile of the same firing input, the same rank in its
+ * shot and the same type: the missile keeps the start of the server, and the
+ * gun is put back where the server had it, so a shot predicted wrongly is taken
+ * away and a shot the client did not predict appears where it flies. A shot the
+ * server leaves unanswered for REFUSED_SHOT_TICKS after it applied its input is
+ * taken away.
  *
  * A missile that touches an enemy drawn on screen plays its impact and is
  * gone for good, whatever the server decides: the server tests it where the
@@ -57,9 +62,11 @@ class OwnMissiles final : public IOwnMissileListener {
    * them: the missiles fired fly on either way. */
   void follow(std::span<const PredictedCommand> commands, bool mayFire);
 
-  /** @brief The server applied the inputs up to @p acknowledged: the shots
-   * still unanswered REFUSED_SHOT_TICKS before it are taken away. */
-  void acknowledge(std::uint32_t acknowledged);
+  /** @brief The server applied the inputs up to @p acknowledged, and the ship
+   * holds @p held: the gun follows that weapon from now on (see
+   * PredictedGun::hold()), and the shots still unanswered REFUSED_SHOT_TICKS
+   * before @p acknowledged are taken away. */
+  void acknowledge(std::uint32_t acknowledged, game::HeldWeapon held);
 
   /** @brief Plays the impact of every missile that touches an enemy drawn on
    * screen, and takes that missile away for good. Not during a forEach. */
@@ -75,10 +82,11 @@ class OwnMissiles final : public IOwnMissileListener {
   void ownMissileDestroyed(const network::EntityDestroyed& destroyed) override;
 
  private:
-  /** @brief Fires the command @p firingInput from a ship at @p ship: nothing
-   * when a missile of the server already stands for it; the predicted shot
-   * near it moved to it, without a second shot, when there is one; a new
-   * missile otherwise. Near means less than an interval of the gun divided by
+  /** @brief Fires each missile of the command @p firingInput from a ship at
+   * @p ship, with the gun of the weapon held: nothing for a missile a missile
+   * of the server already stands for; the predicted missile of its rank near
+   * it moved to it, without a second shot, when there is one; a new missile
+   * otherwise. Near means less than an interval of the gun divided by
    * SHOT_MATCH_DIVISOR. */
   void fireOrMove(std::uint32_t firingInput, game::Position ship);
 
@@ -90,6 +98,7 @@ class OwnMissiles final : public IOwnMissileListener {
   std::vector<OwnMissile> missiles_;
   std::vector<game::ContactShape> enemyShapes_;
   std::uint32_t newestInput_{0};
+  game::HeldWeapon held_{};
   bool active_{false};
 };
 

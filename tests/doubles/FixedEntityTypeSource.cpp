@@ -15,6 +15,7 @@
 #include "PixelMask.hpp"
 #include "ShipArsenal.hpp"
 #include "ShipGun.hpp"
+#include "ShotPattern.hpp"
 
 using rtype::client::Animation;
 using rtype::client::ENTITY_SHEET_ID;
@@ -130,6 +131,44 @@ std::shared_ptr<const rtype::engine::PixelMask> maskNumbered(
   return nullptr;
 }
 
+/** @returns A gun of the ship of the double firing player_missile, every
+ * @p intervalTicks, laid as @p pattern, flying straight to the right. */
+rtype::game::ShipGun straightGun(std::uint16_t intervalTicks,
+                                 rtype::game::ShotPattern pattern) {
+  return rtype::game::ShipGun{
+      .shipType = rtype::client::testing::SHIP_TYPE_NUMBER,
+      .projectileType = rtype::client::testing::PLAYER_MISSILE_TYPE_NUMBER,
+      .intervalTicks = intervalTicks,
+      .firstShotTicks = 0,
+      .velocityX = rtype::client::testing::PLAYER_MISSILE_SPEED,
+      .velocityY = 0.0F,
+      .pattern = pattern,
+      .scatterSpeed = 0.0F};
+}
+
+/** @returns The gun of the sheet of the ship of the double: one missile every
+ * SHIP_GUN_INTERVAL_TICKS. */
+rtype::game::ShipGun sheetGun() {
+  return straightGun(rtype::client::testing::SHIP_GUN_INTERVAL_TICKS, {});
+}
+
+/** @returns The rows of the ship of the double (ROWS_WEAPON). */
+rtype::game::ShipGun rowsGun() {
+  return straightGun(rtype::client::testing::ROWS_GUN_INTERVAL_TICKS,
+                     rtype::client::testing::ROWS_PATTERN);
+}
+
+/** @returns The fan of the ship of the double (FAN_WEAPON), whose missiles
+ * scatter at the speed of player_missile. */
+rtype::game::ShipGun fanGun() {
+  rtype::game::ShipGun fan =
+      straightGun(rtype::client::testing::SHIP_GUN_INTERVAL_TICKS,
+                  rtype::client::testing::FAN_PATTERN);
+  fan.velocityX = 0.0F;
+  fan.scatterSpeed = rtype::client::testing::PLAYER_MISSILE_SPEED;
+  return fan;
+}
+
 }  // namespace
 
 const EntityAppearance& appearanceOfSide(EntityType side) {
@@ -173,17 +212,6 @@ std::optional<EntityTypeLook> FixedEntityTypeSource::lookOf(
 
 const rtype::game::ShipArsenal& FixedEntityTypeSource::shipArsenal() const {
   static const rtype::game::ShipArsenal arsenal{
-      .gun =
-          rtype::game::ShipGun{
-              .shipType = rtype::client::testing::SHIP_TYPE_NUMBER,
-              .projectileType =
-                  rtype::client::testing::PLAYER_MISSILE_TYPE_NUMBER,
-              .intervalTicks = rtype::client::testing::SHIP_GUN_INTERVAL_TICKS,
-              .firstShotTicks = 0,
-              .velocityX = rtype::client::testing::PLAYER_MISSILE_SPEED,
-              .velocityY = 0.0F,
-              .pattern = {},
-              .scatterSpeed = 0.0F},
-      .weapons = {}};
+      .gun = sheetGun(), .weapons = {{fanGun()}, {rowsGun()}}};
   return arsenal;
 }

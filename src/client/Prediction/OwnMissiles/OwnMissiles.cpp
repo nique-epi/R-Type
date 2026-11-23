@@ -8,12 +8,14 @@
 #include <vector>
 #include "AnimatedSprite.hpp"
 #include "BodyMasks.hpp"
+#include "BodyPlacement.hpp"
 #include "Bounds.hpp"
 #include "BoundsOf.hpp"
 #include "CollidingBoxes.hpp"
 #include "CollisionBox.hpp"
 #include "ComponentRegistry.hpp"
 #include "ContactShape.hpp"
+#include "Direction.hpp"
 #include "EffectSpawner.hpp"
 #include "Entity.hpp"
 #include "EntityCues.hpp"
@@ -23,6 +25,7 @@
 #include "EntityType.hpp"
 #include "EntityTypeConstants.hpp"
 #include "EntityTypeLook.hpp"
+#include "HeldWeapon.hpp"
 #include "HitboxParts.hpp"
 #include "IEntityTypeSource.hpp"
 #include "Muzzle.hpp"
@@ -34,42 +37,104 @@
 #include "PredictedCommand.hpp"
 #include "ProjectileStartPosition.hpp"
 #include "ShapeContacts.hpp"
+#include "ShipArsenal.hpp"
 #include "ShipGun.hpp"
+#include "ShipGunReading.hpp"
+#include "ShotPlacement.hpp"
+#include "ShotStart.hpp"
 #include "Sprite.hpp"
 #include "TimeConstants.hpp"
+#include "UnitHeading.hpp"
 
 namespace rtype::client {
 
 namespace {
 
-/** @returns Where a missile of the gun of @p types leaves a ship at
- * @p shipCenter, as the server puts it (projectileStartPosition()); nothing
- * when the session gives no box for the ship or the missile. */
-std::optional<game::Position> startOf(const IEntityTypeSource& types,
-                                      game::Position shipCenter) {
-  const game::ShipGun gun = types.shipArsenal().gun;
+/** @brief Where a predicted missile of a shot comes from: the input that
+ * fired it, the center of the ship that fired it, and its rank in the shot. */
+struct OwnShotStart {
+  std::uint32_t firingInput{};
+  game::Position ship{};
+  std::uint8_t rank{0};
+};
+
+/** @returns The gun of the weapon @p held of the ships of @p types. */
+const game::ShipGun& gunHeld(const IEntityTypeSource& types,
+                             game::HeldWeapon held) {
+  return game::heldGunOf(types.shipArsenal(), held);
+}
+
+/** @returns How fast missile @p rank of a shot of @p gun flies on each axis,
+ * in logical units per second: the velocity of the gun for a missile that
+ * flies straight, its scatterSpeed along the heading the shot gives that rank
+ * for one that scatters (see game::ScatterBehaviour). */
+game::Position velocityOf(const game::ShipGun& gun, std::uint8_t rank) {
+  if (gun.scatterSpeed <= 0.0F) {
+    return game::Position{.x = gun.velocityX, .y = gun.velocityY};
+  }
+  const game::BodyPlacement laid = game::shotPlacement(
+      gun.pattern,
+      game::ShotStart{.point = {}, .side = game::EntityType::Player}, rank);
+  const game::Direction heading =
+      game::headingAlong(game::Direction{.x = laid.position.x - laid.origin.x,
+                                         .y = laid.position.y - laid.origin.y});
+  return game::Position{.x = heading.x * gun.scatterSpeed,
+                        .y = heading.y * gun.scatterSpeed};
+}
+
+/** @returns Missile @p start.rank of a shot of @p gun from a ship at
+ * @p start.ship, laid as the server lays it (projectileStartPosition(), then
+ * game::shotPlacement()); nothing when the session gives no box for the ship
+ * or the missile. */
+std::optional<OwnMissile> predictedMissileOf(const IEntityTypeSource& types,
+                                             const game::ShipGun& gun,
+                                             OwnShotStart start) {
   const std::optional<EntityTypeLook> ship = types.lookOf(gun.shipType);
   const std::optional<EntityTypeLook> missile =
       types.lookOf(gun.projectileType);
   if (!ship.has_value() || !missile.has_value()) {
     return std::nullopt;
   }
-  return game::projectileStartPosition(
-      game::Muzzle{.center = shipCenter,
+  const game::Position muzzle = game::projectileStartPosition(
+      game::Muzzle{.center = start.ship,
                    .box = ship->hitbox,
                    .side = game::EntityType::Player},
       missile->hitbox);
+  const game::BodyPlacement laid = game::shotPlacement(
+      gun.pattern,
+      game::ShotStart{.point = muzzle, .side = game::EntityType::Player},
+      start.rank);
+  return OwnMissile{.firingInput = start.firingInput,
+                    .shotRank = start.rank,
+                    .start = laid.position,
+                    .velocity = velocityOf(gun, start.rank),
+                    .projectileType = gun.projectileType,
+                    .entity = std::nullopt,
+                    .serverId = std::nullopt};
+}
+
+/** @returns The missile @p missile of the server stands for, flying as the
+ * missile of its rank of a shot of @p gun. */
+OwnMissile serverShotOf(const network::EntitySpawned& missile,
+                        const game::ShipGun& gun) {
+  return OwnMissile{.firingInput = missile.firingInput,
+                    .shotRank = missile.shotRank,
+                    .start = {.x = missile.x, .y = missile.y},
+                    .velocity = velocityOf(gun, missile.shotRank),
+                    .projectileType = missile.entityType,
+                    .entity = std::nullopt,
+                    .serverId = missile.entityId};
 }
 
 /** @returns Where a missile that left @p start flies after @p ticks ticks at
- * the velocity of @p gun. */
-game::Position flownFrom(game::Position start, const game::ShipGun& gun,
+ * @p velocity. */
+game::Position flownFrom(game::Position start, game::Position velocity,
                          std::uint32_t ticks) {
   const float seconds =
       std::chrono::duration<float>(engine::SIMULATION_TICK_DURATION).count() *
       static_cast<float>(ticks);
-  return game::Position{.x = start.x + (gun.velocityX * seconds),
-                        .y = start.y + (gun.velocityY * seconds)};
+  return game::Position{.x = start.x + (velocity.x * seconds),
+                        .y = start.y + (velocity.y * seconds)};
 }
 
 /** @brief Destroys the entity that draws @p missile, when it has one. */
@@ -111,43 +176,49 @@ bool firedNear(const OwnMissile& missile, std::uint32_t firingInput,
          intervalTicks;
 }
 
+/** @returns Whether @p missile is the missile of the rank of @p shot, of its
+ * type, fired near its input for the gun @p gun (see firedNear()). */
+bool standsNear(const OwnMissile& missile, const OwnMissile& shot,
+                const game::ShipGun& gun) {
+  return missile.shotRank == shot.shotRank &&
+         missile.projectileType == shot.projectileType &&
+         firedNear(missile, shot.firingInput, gun.intervalTicks);
+}
+
 /** @returns The missile of @p missiles that no missile of the server stands
- * for yet fired nearest @p firingInput, among those fired near it (see
- * firedNear()) for the gun @p gun; nullptr when there is none. */
+ * for yet fired nearest the input of @p shot, among those that stand near it
+ * (see standsNear()); nullptr when there is none. */
 OwnMissile* nearestUnmatched(std::vector<OwnMissile>& missiles,
-                             std::uint32_t firingInput,
-                             const game::ShipGun& gun) {
+                             const OwnMissile& shot, const game::ShipGun& gun) {
   OwnMissile* nearest = nullptr;
   for (OwnMissile& missile : missiles) {
-    if (!missile.serverId.has_value() &&
-        firedNear(missile, firingInput, gun.intervalTicks) &&
+    if (!missile.serverId.has_value() && standsNear(missile, shot, gun) &&
         (nearest == nullptr ||
-         inputsBetween(missile.firingInput, firingInput) <
-             inputsBetween(nearest->firingInput, firingInput))) {
+         inputsBetween(missile.firingInput, shot.firingInput) <
+             inputsBetween(nearest->firingInput, shot.firingInput))) {
       nearest = &missile;
     }
   }
   return nearest;
 }
 
-/** @returns Whether a missile of @p missiles that the server stands for was
- * fired near @p firingInput for the gun @p gun. */
+/** @returns Whether a missile of @p missiles that the server stands for
+ * stands near @p shot (see standsNear()). */
 bool serverFiredNear(const std::vector<OwnMissile>& missiles,
-                     std::uint32_t firingInput, const game::ShipGun& gun) {
+                     const OwnMissile& shot, const game::ShipGun& gun) {
   return std::ranges::any_of(
-      missiles, [firingInput, &gun](const OwnMissile& missile) {
-        return missile.serverId.has_value() &&
-               firedNear(missile, firingInput, gun.intervalTicks);
+      missiles, [&shot, &gun](const OwnMissile& missile) {
+        return missile.serverId.has_value() && standsNear(missile, shot, gun);
       });
 }
 
 /** @returns The missile @p shot, added to @p missiles and drawn with its shot
- * and its muzzle flash; nullptr, and nothing added, when @p parts gives no
- * look for it. */
+ * and its muzzle flash, looking as its type; nullptr, and nothing added, when
+ * @p parts gives no look for it. */
 OwnMissile* fireMissile(const OwnMissilesParts& parts,
                         std::vector<OwnMissile>& missiles, OwnMissile shot) {
-  const std::optional<EntityTypeLook> look = parts.types.get().lookOf(
-      parts.types.get().shipArsenal().gun.projectileType);
+  const std::optional<EntityTypeLook> look =
+      parts.types.get().lookOf(shot.projectileType);
   if (!look.has_value()) {
     return nullptr;
   }
@@ -223,6 +294,7 @@ bool touchesAnEnemy(const engine::Bounds& missile,
 OwnMissiles::OwnMissiles(OwnMissilesParts parts) : parts_(parts) {}
 
 void OwnMissiles::restart(std::uint32_t acknowledged, game::Position ship) {
+  held_ = game::HeldWeapon{};
   for (const PredictedCommand& shot :
        gun_.arm(parts_.types.get().shipArsenal().gun, acknowledged)) {
     fireOrMove(shot.inputNumber, ship);
@@ -243,7 +315,12 @@ void OwnMissiles::follow(std::span<const PredictedCommand> commands,
   place();
 }
 
-void OwnMissiles::acknowledge(std::uint32_t acknowledged) {
+void OwnMissiles::acknowledge(std::uint32_t acknowledged,
+                              game::HeldWeapon held) {
+  if (held != held_) {
+    held_ = held;
+    gun_.hold(gunHeld(parts_.types.get(), held_));
+  }
   if (acknowledged < REFUSED_SHOT_TICKS) {
     return;
   }
@@ -283,23 +360,21 @@ void OwnMissiles::touchEnemies() {
 void OwnMissiles::activate() { active_ = true; }
 
 bool OwnMissiles::predictsOwnMissiles() const {
-  return active_ && parts_.types.get().shipArsenal().gun.projectileType !=
+  return active_ && gunHeld(parts_.types.get(), held_).projectileType !=
                         identifiers::NO_ENTITY_TYPE;
 }
 
 void OwnMissiles::ownMissileSpawned(const network::EntitySpawned& missile) {
-  const game::ShipGun gun = parts_.types.get().shipArsenal().gun;
-  const OwnMissile serverShot{.firingInput = missile.firingInput,
-                              .start = {.x = missile.x, .y = missile.y},
-                              .entity = std::nullopt,
-                              .serverId = missile.entityId};
-  OwnMissile* matched = nearestUnmatched(missiles_, missile.firingInput, gun);
+  const game::ShipGun& gun = gunHeld(parts_.types.get(), held_);
+  const OwnMissile serverShot = serverShotOf(missile, gun);
+  OwnMissile* matched = nearestUnmatched(missiles_, serverShot, gun);
   if (matched == nullptr) {
     matched = fireMissile(parts_, missiles_, serverShot);
   }
   if (matched != nullptr) {
     matched->firingInput = serverShot.firingInput;
     matched->start = serverShot.start;
+    matched->velocity = serverShot.velocity;
     matched->serverId = serverShot.serverId;
   }
   const std::vector<PredictedCommand> firing =
@@ -328,33 +403,33 @@ void OwnMissiles::ownMissileDestroyed(
 }
 
 void OwnMissiles::fireOrMove(std::uint32_t firingInput, game::Position ship) {
-  const game::ShipGun gun = parts_.types.get().shipArsenal().gun;
-  const std::optional<game::Position> start = startOf(parts_.types.get(), ship);
-  if (!start.has_value() || serverFiredNear(missiles_, firingInput, gun)) {
-    return;
+  const game::ShipGun& gun = gunHeld(parts_.types.get(), held_);
+  for (std::uint8_t rank = 0; rank < gun.pattern.count; ++rank) {
+    const std::optional<OwnMissile> shot = predictedMissileOf(
+        parts_.types.get(), gun,
+        OwnShotStart{.firingInput = firingInput, .ship = ship, .rank = rank});
+    if (!shot.has_value() || serverFiredNear(missiles_, *shot, gun)) {
+      continue;
+    }
+    if (OwnMissile* const near = nearestUnmatched(missiles_, *shot, gun)) {
+      near->firingInput = shot->firingInput;
+      near->start = shot->start;
+      near->velocity = shot->velocity;
+      continue;
+    }
+    fireMissile(parts_, missiles_, *shot);
   }
-  if (OwnMissile* const near = nearestUnmatched(missiles_, firingInput, gun)) {
-    near->firingInput = firingInput;
-    near->start = *start;
-    return;
-  }
-  fireMissile(parts_, missiles_,
-              OwnMissile{.firingInput = firingInput,
-                         .start = *start,
-                         .entity = std::nullopt,
-                         .serverId = std::nullopt});
 }
 
 void OwnMissiles::place() {
-  const game::ShipGun gun = parts_.types.get().shipArsenal().gun;
   for (const OwnMissile& missile : missiles_) {
     if (!missile.entity.has_value() || newestInput_ < missile.firingInput) {
       continue;
     }
     if (auto* const position =
             parts_.components.get().get<game::Position>(*missile.entity)) {
-      *position =
-          flownFrom(missile.start, gun, newestInput_ - missile.firingInput);
+      *position = flownFrom(missile.start, missile.velocity,
+                            newestInput_ - missile.firingInput);
     }
   }
 }

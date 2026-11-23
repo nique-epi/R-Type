@@ -3,6 +3,8 @@
 #include <array>
 #include <cstdint>
 #include "CollisionBox.hpp"
+#include "HeldWeapon.hpp"
+#include "ShotPattern.hpp"
 
 namespace rtype::client::testing {
 
@@ -56,5 +58,24 @@ constexpr int HOLLOW_ENEMY_DRAWN_ROWS = 4;
  * start, flying right at 960 units per second. */
 constexpr std::uint16_t SHIP_GUN_INTERVAL_TICKS = 20;
 constexpr float PLAYER_MISSILE_SPEED = 960.0F;
+
+/** @brief The two weapons of the ship of the double, one level each: a fan of
+ * three missiles over 24 degrees, laid 16 units ahead, which scatter at the
+ * speed of the missile every 20 ticks; and two rows 24 units apart, which fly
+ * straight every 10 ticks. */
+constexpr game::HeldWeapon FAN_WEAPON{.weapon = 1, .level = 1};
+constexpr game::HeldWeapon ROWS_WEAPON{.weapon = 2, .level = 1};
+constexpr std::uint8_t FAN_MISSILES = 3;
+constexpr float FAN_SPREAD_DEGREES = 24.0F;
+constexpr float FAN_DISTANCE = 16.0F;
+constexpr game::ShotPattern FAN_PATTERN{.count = FAN_MISSILES,
+                                        .spreadDegrees = FAN_SPREAD_DEGREES,
+                                        .stepY = 0.0F,
+                                        .distance = FAN_DISTANCE};
+constexpr std::uint8_t ROWS_MISSILES = 2;
+constexpr float ROWS_APART = 24.0F;
+constexpr game::ShotPattern ROWS_PATTERN{
+    .count = ROWS_MISSILES, .spreadDegrees = 0.0F, .stepY = ROWS_APART};
+constexpr std::uint16_t ROWS_GUN_INTERVAL_TICKS = 10;
 
 }  // namespace rtype::client::testing

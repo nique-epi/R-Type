@@ -4,6 +4,7 @@
 #include <vector>
 #include "EntityDestroyed.hpp"
 #include "EntitySpawned.hpp"
+#include "HeldWeapon.hpp"
 #include "OwnMissilesFixture.hpp"
 #include "OwnMissilesTestConstants.hpp"
 #include "RecordingSoundPlayer.hpp"
@@ -28,6 +29,7 @@ using rtype::client::testing::THIRTIETH_COMMAND;
 using rtype::client::testing::THREE_TICKS_LATER_INPUT;
 using rtype::client::testing::THREE_TICKS_OF_FLIGHT;
 using rtype::client::testing::TWO_TICKS_OF_FLIGHT;
+using rtype::game::HeldWeapon;
 using rtype::network::DestructionReason;
 using rtype::network::EntityDestroyed;
 using rtype::network::EntitySpawned;
@@ -115,7 +117,7 @@ TEST_F(OwnMissilesFixture, AShotTheClientMissedAppearsWhereItFlies) {
 TEST_F(OwnMissilesFixture, AShotWaitsForTheAnswerOfTheServer) {
   fireAt(FIRING_INPUT, SHIP_WHEN_IT_FIRES);
 
-  missiles().acknowledge(INPUT_STILL_WAITING_FOR_IT);
+  missiles().acknowledge(INPUT_STILL_WAITING_FOR_IT, HeldWeapon{});
 
   EXPECT_EQ(drawnMissiles().size(), 1U);
 }
@@ -128,7 +130,7 @@ TEST_F(OwnMissilesFixture, AShotWaitsForTheAnswerOfTheServer) {
 TEST_F(OwnMissilesFixture, ARefusedShotIsTakenAway) {
   fireAt(FIRING_INPUT, SHIP_WHEN_IT_FIRES);
 
-  missiles().acknowledge(INPUT_THAT_REFUSES_THE_FIRST_SHOT);
+  missiles().acknowledge(INPUT_THAT_REFUSES_THE_FIRST_SHOT, HeldWeapon{});
 
   EXPECT_THAT(drawnMissiles(), IsEmpty());
 }

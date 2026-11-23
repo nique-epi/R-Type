@@ -31,6 +31,11 @@ class PredictedGun {
   [[nodiscard]] std::vector<PredictedCommand> arm(game::ShipGun gun,
                                                   std::uint32_t acknowledged);
 
+  /** @brief Takes @p gun as the gun the ship holds from now on, as the server
+   * does when its ship picks up a crystal: its interval, its count to the next
+   * shot kept but never above that interval. */
+  void hold(const game::ShipGun& gun);
+
   /** @returns Whether @p command fires, and keeps it. */
   [[nodiscard]] bool fires(const PredictedCommand& command);
 

@@ -24,14 +24,11 @@ std::optional<OwnShip> ownShipOf(const network::WorldState& state,
                  .acknowledgedInput = player->acknowledgedInput};
 }
 
-std::optional<std::uint32_t> acknowledgedInputOf(
-    const network::WorldState& state, std::uint8_t playerNumber) {
+const network::PlayerState* ownPlayerOf(const network::WorldState& state,
+                                        std::uint8_t playerNumber) {
   const auto player = std::ranges::find(state.players, playerNumber,
                                         &network::PlayerState::playerNumber);
-  if (player == state.players.end()) {
-    return std::nullopt;
-  }
-  return player->acknowledgedInput;
+  return player == state.players.end() ? nullptr : &*player;
 }
 
 }  // namespace rtype::client

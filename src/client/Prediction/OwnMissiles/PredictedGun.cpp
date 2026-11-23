@@ -1,4 +1,6 @@
 #include "PredictedGun.hpp"
+#include <algorithm>
+#include <cstddef>
 #include <cstdint>
 #include <vector>
 #include "CountsDownToReady.hpp"
@@ -21,6 +23,13 @@ std::vector<PredictedCommand> PredictedGun::arm(game::ShipGun gun,
     }
   }
   return firing;
+}
+
+void PredictedGun::hold(const game::ShipGun& gun) {
+  countDown_.intervalTicks = gun.intervalTicks;
+  countDown_.ticksUntilReady =
+      std::min<std::size_t>(countDown_.ticksUntilReady, gun.intervalTicks);
+  countDown_.projectileNumber = gun.projectileType;
 }
 
 bool PredictedGun::fires(const PredictedCommand& command) {

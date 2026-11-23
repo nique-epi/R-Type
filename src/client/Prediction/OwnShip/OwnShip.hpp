@@ -26,11 +26,12 @@ struct OwnShip {
                                                std::uint8_t playerNumber);
 
 /**
- * @returns The newest input the server applied for the player @p
- * playerNumber, as @p state lists it, whether or not it lists a ship for the
- * player; nothing when it does not list the player.
+ * @returns What @p state says of the player @p playerNumber, the newest input
+ * the server applied for it and the weapon its ship holds included, whether
+ * or not it lists a ship for the player; nullptr when it does not list the
+ * player. The pointer lives as long as @p state.
  */
-[[nodiscard]] std::optional<std::uint32_t> acknowledgedInputOf(
+[[nodiscard]] const network::PlayerState* ownPlayerOf(
     const network::WorldState& state, std::uint8_t playerNumber);
 
 }  // namespace rtype::client

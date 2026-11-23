@@ -10,6 +10,8 @@ namespace rtype::game {
 struct HeldWeapon {
   std::uint8_t weapon{0};
   std::uint8_t level{0};
+
+  bool operator==(const HeldWeapon&) const = default;
 };
 
 }  // namespace rtype::game

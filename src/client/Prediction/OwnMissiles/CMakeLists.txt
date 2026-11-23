@@ -18,6 +18,7 @@ target_link_libraries(rtype_client_prediction_own_missiles
   PRIVATE
     rtype_client_entity_sprites
     rtype_engine_collision
+    rtype_game_behaviours_paths
     rtype_game_spawning
     rtype_identifiers
 )
