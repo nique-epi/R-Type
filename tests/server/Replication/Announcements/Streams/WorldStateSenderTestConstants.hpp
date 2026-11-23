@@ -93,4 +93,9 @@ constexpr std::array<std::size_t, 5> STATE_RATES_UNDER_TEST{2, 10, 20, 45, 60};
  */
 constexpr std::array<std::size_t, 3> REFUSED_STATE_RATES{1, 0, 61};
 
+/** @brief The weapon a ship fires in the world state tests: the third of its
+ * sheet, at its second level. */
+constexpr std::uint8_t SOME_WEAPON_NUMBER = 3;
+constexpr std::uint8_t SOME_WEAPON_LEVEL = 2;
+
 }  // namespace rtype::server::testing

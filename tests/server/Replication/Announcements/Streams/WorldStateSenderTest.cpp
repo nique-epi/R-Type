@@ -6,10 +6,12 @@
 #include "AppliedInput.hpp"
 #include "ConnectedPlayer.hpp"
 #include "EntityTypeNumberTestConstants.hpp"
+#include "Gun.hpp"
 #include "Invulnerable.hpp"
 #include "Lives.hpp"
 #include "NetworkConstants.hpp"
 #include "ProtocolConstants.hpp"
+#include "SenderShip.hpp"
 #include "ServerConstants.hpp"
 #include "ServerException.hpp"
 #include "ServerLobbyTestConstants.hpp"
@@ -20,6 +22,7 @@
 #include "WorldStateSenderFixture.hpp"
 #include "WorldStateSenderTestConstants.hpp"
 
+using rtype::game::Gun;
 using rtype::game::Invulnerable;
 using rtype::game::Lives;
 using rtype::network::EntityState;
@@ -55,11 +58,14 @@ using rtype::server::testing::SECOND_CLIENT_PORT;
 using rtype::server::testing::SECOND_LIVES;
 using rtype::server::testing::SECOND_SCORE;
 using rtype::server::testing::SECOND_SHIP_ID;
+using rtype::server::testing::SenderShip;
 using rtype::server::testing::SESSION_TOKEN;
 using rtype::server::testing::SHIP_NETWORK_ID;
 using rtype::server::testing::SHIP_POSITION;
 using rtype::server::testing::SHIP_TYPE_NUMBER;
 using rtype::server::testing::SHOWN_LOOK;
+using rtype::server::testing::SOME_WEAPON_LEVEL;
+using rtype::server::testing::SOME_WEAPON_NUMBER;
 using rtype::server::testing::STATE_RATES_UNDER_TEST;
 using rtype::server::testing::ticksSentTo;
 using rtype::server::testing::UNTYPED_NETWORK_ID;
@@ -337,8 +343,14 @@ TEST_F(WorldStateSenderFixture, ListsEveryPlayerWithItsOwnShipLivesAndScore) {
   first.score = FIRST_SCORE;
   second.shipEntityId = SECOND_SHIP_ID;
   second.score = SECOND_SCORE;
-  addShip(FIRST_SHIP_ID, Lives{.count = FIRST_LIVES}, Invulnerable{});
-  addShip(SECOND_SHIP_ID, Lives{.count = SECOND_LIVES}, Invulnerable{});
+  addShip(SenderShip{.networkId = FIRST_SHIP_ID,
+                     .lives = Lives{.count = FIRST_LIVES},
+                     .protection = Invulnerable{},
+                     .gun = Gun{}});
+  addShip(SenderShip{.networkId = SECOND_SHIP_ID,
+                     .lives = Lives{.count = SECOND_LIVES},
+                     .protection = Invulnerable{},
+                     .gun = Gun{}});
 
   runTicks(DEFAULT_TICKS_PER_WORLD_STATE);
 
@@ -385,14 +397,39 @@ TEST_F(WorldStateSenderFixture, ListsAPlayerWithProtectionLeftAsInvulnerable) {
   rtype::server::ConnectedPlayer& player =
       connect(FIRST_CLIENT_PORT, SESSION_TOKEN);
   player.shipEntityId = FIRST_SHIP_ID;
-  addShip(FIRST_SHIP_ID, Lives{.count = FIRST_LIVES},
-          Invulnerable{.ticksLeft = ONE_TICK_OF_PROTECTION});
+  addShip(SenderShip{
+      .networkId = FIRST_SHIP_ID,
+      .lives = Lives{.count = FIRST_LIVES},
+      .protection = Invulnerable{.ticksLeft = ONE_TICK_OF_PROTECTION},
+      .gun = Gun{}});
 
   runTicks(DEFAULT_TICKS_PER_WORLD_STATE);
 
   ASSERT_EQ(sentDatagrams().size(), 1U);
   ASSERT_EQ(decodedState(0).players.size(), 1U);
   EXPECT_TRUE(decodedState(0).players.front().invulnerable);
+}
+
+/**
+ * Given a player whose ship fires the second level of the weapon numbered 3
+ * When the first state is due
+ * Then the state lists the player with weapon 3 at level 2
+ */
+TEST_F(WorldStateSenderFixture, ListsTheWeaponOfTheShipOfEachPlayer) {
+  rtype::server::ConnectedPlayer& player =
+      connect(FIRST_CLIENT_PORT, SESSION_TOKEN);
+  player.shipEntityId = FIRST_SHIP_ID;
+  addShip(SenderShip{
+      .networkId = FIRST_SHIP_ID,
+      .lives = Lives{.count = FIRST_LIVES},
+      .protection = Invulnerable{},
+      .gun = Gun{.weapon = SOME_WEAPON_NUMBER, .level = SOME_WEAPON_LEVEL}});
+
+  runTicks(DEFAULT_TICKS_PER_WORLD_STATE);
+
+  ASSERT_EQ(decodedState(0).players.size(), 1U);
+  EXPECT_EQ(decodedState(0).players.front().weapon, SOME_WEAPON_NUMBER);
+  EXPECT_EQ(decodedState(0).players.front().weaponLevel, SOME_WEAPON_LEVEL);
 }
 
 /**

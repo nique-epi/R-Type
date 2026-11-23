@@ -1246,10 +1246,10 @@ The game screen lays a status band over the bottom `STATUS_BAND_ROWS` (24) rows 
 
 ### What the server says: `ScoreBoard`
 
-`ScoreBoard` (`rtype_client_pilots`, `src/client/Replication/Pilots/`) holds a `PilotStatus` per pilot (`src/client/Replication/Pilots/PilotStatus.hpp`): its number, nickname, score, lives and `PilotState`.
+`ScoreBoard` (`rtype_client_pilots`, `src/client/Replication/Pilots/`) holds a `PilotStatus` per pilot (`src/client/Replication/Pilots/PilotStatus.hpp`): its number, nickname, score, lives, `PilotState`, and the weapon its ship fires with its level.
 
 - It starts from the waiting room of the game (`IWaitingRoom::lobbyPlayers()`) and the number of the client: each pilot with its nickname, a score of 0 and no lives known.
-- `apply(WorldState)` sets the score and the lives of each player listed: no life left makes the pilot `OutOfLives`, an invulnerable ship `Respawning`. A state older than the newest applied is ignored, through its own `WorldStateFilter`.
+- `apply(WorldState)` sets the score, the lives and the weapon of each player listed: no life left makes the pilot `OutOfLives`, an invulnerable ship `Respawning`. A state older than the newest applied is ignored, through its own `WorldStateFilter`.
 - `apply(PlayerLeft)` makes the pilot `Left` or `SignalLost`, and no later state brings it back. The game screen calls it for every copy of `PlayerLeft`; only the first changes the pilot.
 - A number outside 1 to 4 is ignored, wherever it comes from.
 - `revision()` changes only when a pilot does.

@@ -9,12 +9,11 @@
 #include "ConnectedPlayer.hpp"
 #include "Endpoint.hpp"
 #include "EntityRegistry.hpp"
-#include "Invulnerable.hpp"
-#include "Lives.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
 #include "PlayerRoster.hpp"
 #include "Position.hpp"
+#include "SenderShip.hpp"
 #include "WorldState.hpp"
 #include "WorldStateSender.hpp"
 
@@ -56,11 +55,10 @@ class WorldStateSenderFixture : public ::testing::Test {
   void addNetworkedEntity(const network::EntityState& listed);
 
   /**
-   * @brief Adds the ship of a player: an entity under @p networkId with a
-   * ShipMotion, an Intent, @p lives and @p protection.
+   * @brief Adds the ship of a player: an entity under the network id of
+   * @p ship with a ShipMotion, an Intent, and its lives, protection and gun.
    */
-  void addShip(std::uint32_t networkId, game::Lives lives,
-               game::Invulnerable protection);
+  void addShip(const SenderShip& ship);
 
   /**
    * @brief Adds an entity with a Position and the EntityTypeNumber

@@ -58,6 +58,8 @@ void writePlayers(ByteWriter& writer, std::span<const PlayerState> players) {
     writeBool(writer, player.invulnerable);
     writer.writeUint8(player.motion);
     writer.writeUint32(player.acknowledgedInput);
+    writer.writeUint8(player.weapon);
+    writer.writeUint8(player.weaponLevel);
   }
 }
 
@@ -80,7 +82,9 @@ std::vector<PlayerState> readPlayers(ByteReader& reader) {
                                   .score = reader.readUint32(),
                                   .invulnerable = readBool(reader),
                                   .motion = readMotion(reader),
-                                  .acknowledgedInput = reader.readUint32()});
+                                  .acknowledgedInput = reader.readUint32(),
+                                  .weapon = reader.readUint8(),
+                                  .weaponLevel = reader.readUint8()});
   }
   return players;
 }

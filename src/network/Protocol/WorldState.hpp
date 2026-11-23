@@ -25,6 +25,12 @@ struct PlayerState {
   /** @brief The inputNumber of the newest PlayerInput the server applied to
    * the ship of this player, 0 while it applied none. */
   std::uint32_t acknowledgedInput{};
+  /** @brief The weapon its ship fires: 0 for the gun of the sheet, n for the
+   * n-th weapon of the sheet of the ship, and its level, from 1; both 0 while
+   * the player has no ship. Any value is read: the receiver bounds it with
+   * the weapons of the sheet it knows. */
+  std::uint8_t weapon{0};
+  std::uint8_t weaponLevel{0};
 
   bool operator==(const PlayerState&) const = default;
 };

@@ -29,12 +29,14 @@ PilotState stateListedIn(const network::PlayerState& listed) {
   return listed.invulnerable ? PilotState::Respawning : PilotState::Flying;
 }
 
-/** @returns A pilot as a world state lists it: its score and lives, and its
- * state unless it has left. */
+/** @returns A pilot as a world state lists it: its score, lives and weapon,
+ * and its state unless it has left. */
 PilotStatus listedVersionOf(PilotStatus pilot,
                             const network::PlayerState& listed) {
   pilot.score = listed.score;
   pilot.lives = listed.lives;
+  pilot.weapon = listed.weapon;
+  pilot.weaponLevel = listed.weaponLevel;
   if (!hasLeft(pilot)) {
     pilot.state = stateListedIn(listed);
   }

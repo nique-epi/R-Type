@@ -17,6 +17,7 @@
 #include "Entity.hpp"
 #include "EntitySpawnSender.hpp"
 #include "EntityTypeNumber.hpp"
+#include "Gun.hpp"
 #include "Intent.hpp"
 #include "Invulnerable.hpp"
 #include "Lives.hpp"
@@ -92,12 +93,14 @@ struct ShipReading {
   std::optional<std::uint8_t> lives;
   bool invulnerable{false};
   std::uint8_t motion{0};
+  std::uint8_t weapon{0};
+  std::uint8_t weaponLevel{0};
 };
 
 /** @returns What the ship whose network id is @p shipId in @p components tells
- * a PlayerState: its lives and protection, and the bits of the directions its
- * Intent holds and of its maneuver. Nothing is read when no ship has that id
- * and a ShipMotion. */
+ * a PlayerState: its lives and protection, the bits of the directions its
+ * Intent holds and of its maneuver, and the weapon of its Gun. Nothing is read
+ * when no ship has that id and a ShipMotion. */
 ShipReading readShip(engine::ComponentRegistry& components,
                      std::uint32_t shipId) {
   ShipReading reading;
@@ -122,6 +125,10 @@ ShipReading readShip(engine::ComponentRegistry& components,
         if (const game::Invulnerable* const protection =
                 components.get<game::Invulnerable>(ship)) {
           reading.invulnerable = protection->ticksLeft > 0;
+        }
+        if (const game::Gun* const gun = components.get<game::Gun>(ship)) {
+          reading.weapon = gun->weapon;
+          reading.weaponLevel = gun->level;
         }
       });
   return reading;
@@ -238,7 +245,9 @@ std::vector<network::PlayerState> WorldStateSender::playerStatesOf(
         .invulnerable = ship.invulnerable,
         .motion = ship.motion,
         .acknowledgedInput =
-            player->appliedInput.value_or(AppliedInput{}).inputNumber});
+            player->appliedInput.value_or(AppliedInput{}).inputNumber,
+        .weapon = ship.weapon,
+        .weaponLevel = ship.weaponLevel});
   }
   return states;
 }

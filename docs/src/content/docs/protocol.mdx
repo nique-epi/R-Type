@@ -11,7 +11,7 @@ This page is the specification of the protocol the client and the server speak: 
 
 ## Status of this document
 
-- This is version 22 of the protocol. It is the only version the code speaks. [Versions and compatibility](#versions-and-compatibility) says when the version changes and what two programs of different versions do; [Version 2](#version-2), [Version 3](#version-3), [Version 4](#version-4), [Version 5](#version-5), [Version 6](#version-6), [Version 7](#version-7), [Version 8](#version-8), [Version 9](#version-9), [Version 10](#version-10), [Version 11](#version-11), [Version 12](#version-12), [Version 13](#version-13), [Version 14](#version-14), [Version 15](#version-15), [Version 16](#version-16), [Version 17](#version-17), [Version 18](#version-18), [Version 19](#version-19), [Version 20](#version-20), [Version 21](#version-21) and [Version 22](#version-22) say what each changed from the version before, and what the rest of the second part of the project will change.
+- This is version 23 of the protocol. It is the only version the code speaks. [Versions and compatibility](#versions-and-compatibility) says when the version changes and what two programs of different versions do; [Version 2](#version-2), [Version 3](#version-3), [Version 4](#version-4), [Version 5](#version-5), [Version 6](#version-6), [Version 7](#version-7), [Version 8](#version-8), [Version 9](#version-9), [Version 10](#version-10), [Version 11](#version-11), [Version 12](#version-12), [Version 13](#version-13), [Version 14](#version-14), [Version 15](#version-15), [Version 16](#version-16), [Version 17](#version-17), [Version 18](#version-18), [Version 19](#version-19), [Version 20](#version-20), [Version 21](#version-21), [Version 22](#version-22) and [Version 23](#version-23) say what each changed from the version before, and what the rest of the second part of the project will change.
 - The words MUST, MUST NOT, SHOULD and MAY are used as in RFC 2119. A MUST is a rule every implementation follows to interoperate; a SHOULD names a behavior the code of this repository has and another implementation can drop without breaking the exchange.
 - Everything on this page is checked against the code of `src/network`, `src/server` and `src/client`. [Implementation status](#implementation-status) lists the rules the programs do not apply yet, so a rule never reads as working when it does not.
 - Numbers are decimal unless written `0x`. A size is in bytes.
@@ -54,7 +54,7 @@ Every field takes the smallest whole number of bytes its values need, and flags 
 
 | Payload | Packed | Unpacked | Saved |
 |---|---|---|---|
-| Typical world state | 268 bytes (6 + 16 per player + 9 per entity) | 376 bytes (6 + 21 per player + 13 per entity) | 108 bytes, 28.7 % |
+| Typical world state | 298 bytes (6 + 18 per player + 10 per entity) | 406 bytes (6 + 23 per player + 14 per entity) | 108 bytes, 26.6 % |
 | `PlayerInput` with 5 repeats | 15 bytes | 39 bytes | 24 bytes, 61.5 % |
 
 At 20 states and 60 inputs per second, that is 2160 bytes per second less to each client and 1440 less from it, before compression. The unpacked form is never sent: it exists only to give the figure. The test prints both sizes:
@@ -401,7 +401,7 @@ The server keeps, for each player, the highest `inputNumber` it has seen. It rea
 `WorldState` lists every player and every entity of the game, in full each time. The payload of a state with one player and one entity, byte by byte:
 
 <ByteLayout
-  label="A WorldState with one player and one entity: tick on bytes 0 to 3, playerCount on byte 4, the player on bytes 5 to 20 (playerNumber, shipEntityId, lives, score, invulnerable, motion, acknowledgedInput), entityCount on byte 21, the entity on bytes 22 to 31 (entityId, entityType, x, y, look)."
+  label="A WorldState with one player and one entity: tick on bytes 0 to 3, playerCount on byte 4, the player on bytes 5 to 22 (playerNumber, shipEntityId, lives, score, invulnerable, motion, acknowledgedInput, weapon, weaponLevel), entityCount on byte 23, the entity on bytes 24 to 33 (entityId, entityType, x, y, look)."
   rows={[
     {
       fields: [
@@ -418,6 +418,8 @@ The server keeps, for each player, the highest `inputNumber` it has seen. It rea
         { name: 'invulnerable', bytes: 1, tone: 'blue' },
         { name: 'motion', bytes: 1, tone: 'blue' },
         { name: 'acknowledgedInput', bytes: 4, tone: 'blue' },
+        { name: 'weapon', bytes: 1, tone: 'blue' },
+        { name: 'weaponLevel', bytes: 1, tone: 'blue' },
       ],
       note: 'One player, repeated playerCount times.',
     },
@@ -441,11 +443,11 @@ The server keeps, for each player, the highest `inputNumber` it has seen. It rea
 |---|---|
 | `tick` | `u32`, the simulation tick of the server, counted from the start of the game |
 | `playerCount` | `u8` (1 to 4) |
-| each player | `playerNumber` `u8`, `shipEntityId` `u32` (0 while the player has no ship), `lives` `u8`, `score` `u32`, `invulnerable` `bool`, `motion` `u8`, `acknowledgedInput` `u32` |
+| each player | `playerNumber` `u8`, `shipEntityId` `u32` (0 while the player has no ship), `lives` `u8`, `score` `u32`, `invulnerable` `bool`, `motion` `u8`, `acknowledgedInput` `u32`, `weapon` `u8`, `weaponLevel` `u8` |
 | `entityCount` | `u8` |
 | each entity | `entityId` `u32`, `entityType` `u8`, `position`, `look` `u8` (see [Named effects and looks](#named-effects-and-looks)) |
 
-`motion` says what the pilot does, one bit each from bit 0: the directions its newest `PlayerInput` holds, at their bits of `actions` (0 up, 1 down, 2 left, 3 right), then 4 its ship rolls, 5 its ship dashes. Bits 6 and 7 are 0, otherwise the message is invalid. `acknowledgedInput` is the `inputNumber` of the newest `PlayerInput` the server applied to the ship of the player, 0 while it applied none (an input the server holds before applying it is not confirmed yet, so the ship it reads is never ahead of the number): a client that predicts its own ship drops the inputs up to it and replays the others on top of the position it reads (see [Client](/R-Type/client/#own-ship-prediction-ownshippredictor-shipprediction)). The field was added to version 1 without changing `PROTOCOL_VERSION`, so two builds of version 1 may misread each other's states; version 2 has it from the start, so two programs of version 2 read the same states. A player takes 16 bytes and an entity 10, so one datagram holds up to 110 entities with 4 players. When the entities do not fit, the server sends several `WorldState` with the same `tick`, each in its own datagram, each with every player and a part of the entities. The client:
+`motion` says what the pilot does, one bit each from bit 0: the directions its newest `PlayerInput` holds, at their bits of `actions` (0 up, 1 down, 2 left, 3 right), then 4 its ship rolls, 5 its ship dashes. Bits 6 and 7 are 0, otherwise the message is invalid. `acknowledgedInput` is the `inputNumber` of the newest `PlayerInput` the server applied to the ship of the player, 0 while it applied none (an input the server holds before applying it is not confirmed yet, so the ship it reads is never ahead of the number): a client that predicts its own ship drops the inputs up to it and replays the others on top of the position it reads (see [Client](/R-Type/client/#own-ship-prediction-ownshippredictor-shipprediction)). The field was added to version 1 without changing `PROTOCOL_VERSION`, so two builds of version 1 may misread each other's states; version 2 has it from the start, so two programs of version 2 read the same states. `weapon` is the weapon the ship of the player fires: 0 for the gun its sheet gives every ship, n for the n-th `[[gameplay.weapon]]` of that sheet (see [Writing an entity sheet](/R-Type/entity-sheets/)), and `weaponLevel` its level, from 1, 0 with the gun of the sheet; both are 0 while the player has no ship. Any value is read: a client bounds them with the weapons of the sheet of the ship it knows. A player takes 18 bytes and an entity 10, so one datagram holds up to 109 entities with 4 players. When the entities do not fit, the server sends several `WorldState` with the same `tick`, each in its own datagram, each with every player and a part of the entities. The client:
 
 - ignores a `WorldState` whose `tick` is lower than the last one applied; an equal `tick` is another part of the same state. The `tick` is compared as a plain 32-bit integer, without wrap-around: it takes 2.27 years at 60 ticks per second to reach 2³². The sender checks come first, so a forged datagram cannot raise the last `tick` applied;
 - creates an entity it does not know, from its type, with its appearance effect (the shot sound of a missile, for instance);
@@ -481,15 +483,15 @@ The client:
 - drops a state whose reference it does not hold, with a warning. This does not happen while it accepts datagrams in order, since it keeps every state it rebuilds and the server only uses a reference whose every part the client accepted;
 - forgets everything when the `tick` goes back, which is a game that started over.
 
-Measured by `DeltaMeasurementTest` (`tests/server/Replication/Announcements/Streams/`), on ten seconds of a game with one player and 30 enemies, the player acknowledging every state at once, 20 states per second. A state in full takes 321 bytes with the headers, so states in full cost 6420 bytes per second:
+Measured by `DeltaMeasurementTest` (`tests/server/Replication/Announcements/Streams/`), on ten seconds of a game with one player and 30 enemies, the player acknowledging every state at once, 20 states per second. A state in full takes 353 bytes with the headers, so states in full cost 7060 bytes per second:
 
 | Enemies that move at every tick | Bytes per second to the player | Share of a state in full |
 |---|---|---|
-| 0 of 30 | 1047 | 16 % |
-| 15 of 30 | 3733 | 58 % |
-| 30 of 30 | 6420 | 100 % |
+| 0 of 30 | 1090 | 15 % |
+| 15 of 30 | 4075 | 58 % |
+| 30 of 30 | 7060 | 100 % |
 
-The gain comes only from the entities whose position did not change in the last state: an entity that moves costs 9 bytes in a delta as in a full state, so a game where everything moves at every state gains nothing, and one where half of the entities stand still saves about 40 %. `DeltaConvergenceTest` plays ten seconds over a network that loses one datagram in three and thirty in a row: every state the client rebuilds is the world at its tick, and the states after the outage are in full again.
+The gain comes only from the entities whose position did not change in the last state: an entity that moves costs 10 bytes in a delta as in a full state, so a game where everything moves at every state gains nothing, and one where half of the entities stand still saves about 40 %. `DeltaConvergenceTest` plays ten seconds over a network that loses one datagram in three and thirty in a row: every state the client rebuilds is the world at its tick, and the states after the outage are in full again.
 
 ### Game events
 
@@ -924,6 +926,10 @@ Version 21 gives each player of `GameEnded` a last field, `bounty`, a `u32`, aft
 ## Version 22
 
 Version 22 gives `GameEvent` a fourth kind, `ExtraLifeWon` (4), when the score of a player wins it a life (see [Messages](#messages)). A peer of version 21 would refuse the new kind and drop the event, so `version` became 22, and the server answers a client of version 21 with `ConnectionRefused` (`IncompatibleVersion`). The layout of the header and of every message is the same as in version 21.
+
+## Version 23
+
+Version 23 gives each player of `WorldState` and `DeltaWorldState` two last fields, `weapon` and `weaponLevel`, a `u8` each, after `acknowledgedInput`: the weapon the ship of the player fires since it picked up a crystal, and its level (see [World state](#world-state)). A player takes 18 bytes instead of 16, so a datagram holds 109 entities with four players instead of 110. A peer of version 22 would read the players and the entities of every state wrong, so `version` became 23, and the server answers a client of version 22 with `ConnectionRefused` (`IncompatibleVersion`). The layout of the header and of every other message is the same as in version 22.
 
 ## Implementation status
 

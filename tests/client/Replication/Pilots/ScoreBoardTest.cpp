@@ -99,6 +99,23 @@ TEST(ScoreBoard, AWorldStateSetsTheScoreAndTheLives) {
 }
 
 /**
+ * Given a board of three pilots
+ * When a world state lists player 1 firing its second weapon at level 2
+ * Then player 1 holds that weapon and that level
+ */
+TEST(ScoreBoard, AWorldStateSetsTheWeaponOfAPilot) {
+  ScoreBoard board = scoreBoardOfThree();
+  PlayerState armed = listedPlayer(PLAYER_ONE, LIVES);
+  armed.weapon = LISTED_WEAPON;
+  armed.weaponLevel = LISTED_WEAPON_LEVEL;
+
+  board.apply(stateListingPlayers(APPLIED_TICK, {armed}));
+
+  EXPECT_EQ(board.pilots().front().weapon, LISTED_WEAPON);
+  EXPECT_EQ(board.pilots().front().weaponLevel, LISTED_WEAPON_LEVEL);
+}
+
+/**
  * Given a board that applied a state where player 1 has 1 life
  * When an older state, where it had 3, arrives late
  * Then player 1 still has 1 life

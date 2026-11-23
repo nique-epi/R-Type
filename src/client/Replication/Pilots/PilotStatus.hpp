@@ -35,6 +35,11 @@ struct PilotStatus {
   std::optional<std::uint8_t> lives;
   PilotState state{};
   bool isLocalPlayer = false;
+  /** @brief The weapon its ship fires, as the world state lists it: 0 for the
+   * gun of the sheet of the ship, n for its n-th weapon; and its level, 0 with
+   * the gun of the sheet. */
+  std::uint8_t weapon{0};
+  std::uint8_t weaponLevel{0};
 
   bool operator==(const PilotStatus&) const = default;
 };

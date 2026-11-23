@@ -22,6 +22,7 @@
 #include "PlayerRoster.hpp"
 #include "Position.hpp"
 #include "ProtocolConstants.hpp"
+#include "SenderShip.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerConstants.hpp"
 #include "ServerLobbyTestConstants.hpp"
@@ -81,15 +82,14 @@ void WorldStateSenderFixture::addNetworkedEntity(
   }
 }
 
-void WorldStateSenderFixture::addShip(std::uint32_t networkId,
-                                      game::Lives lives,
-                                      game::Invulnerable protection) {
+void WorldStateSenderFixture::addShip(const SenderShip& ship) {
   const engine::Entity entity = entities_.create();
-  components_.add(entity, game::NetworkIdentity{.networkId = networkId});
+  components_.add(entity, game::NetworkIdentity{.networkId = ship.networkId});
   components_.add(entity, game::ShipMotion{});
   components_.add(entity, game::Intent{});
-  components_.add(entity, lives);
-  components_.add(entity, protection);
+  components_.add(entity, ship.lives);
+  components_.add(entity, ship.protection);
+  components_.add(entity, ship.gun);
 }
 
 void WorldStateSenderFixture::addEntityWithoutNetworkId(

@@ -11,8 +11,9 @@ namespace rtype::network::testing {
 
 /**
  * @returns The world state of a body the real server sent in protocol version
- * 15: @p body without its message prefix, a look 0 written after each entity
- * as version 16 carries it, decoded by WorldStateCodec.
+ * 15: @p body without its message prefix, a weapon 0 of level 0 written after
+ * each player as version 23 carries it, a look 0 after each entity as version
+ * 16 carries it, decoded by WorldStateCodec.
  */
 WorldState capturedWorldState(std::span<const std::uint8_t> body);
 

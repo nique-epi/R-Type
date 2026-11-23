@@ -19,5 +19,9 @@ constexpr std::uint8_t LIVES = 3;
 constexpr std::uint8_t LAST_LIFE = 1;
 constexpr std::uint8_t NO_LIFE = 0;
 
+/** @brief A weapon a world state lists for a pilot, and its level. */
+constexpr std::uint8_t LISTED_WEAPON = 2;
+constexpr std::uint8_t LISTED_WEAPON_LEVEL = 2;
+
 /** @brief The pilots of a board of four. */
 constexpr std::size_t PILOTS_OF_FOUR = 4;
