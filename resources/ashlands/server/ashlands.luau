@@ -184,15 +184,21 @@ local SWARM_LOW = { 480, 560, 640, 720, 800 }
 
 local HIGHWAY: { Wave } = {
 	{ at = 360, sheet = "cindermite", rows = SWARM_HIGH },
+	{ at = 600, sheet = "crystal_carrier", rows = { 540 } },
 	{ at = 960, sheet = "dunecrawler", rows = { FLOOR_ROW } },
 	{ at = 1320, sheet = "cindermite", rows = SWARM_LOW },
+	{ at = 1500, sheet = "crystal_carrier", rows = { 540 } },
 	{ at = 1680, sheet = "scrapdrone", rows = { 360, 700 } },
+	{ at = 1920, sheet = "crystal_carrier", rows = { 540 } },
 	{ at = 2160, sheet = "dunecrawler", rows = { FLOOR_ROW } },
 	{ at = 2400, sheet = "cindermite", rows = SWARM_HIGH },
+	{ at = 2580, sheet = "crystal_carrier", rows = { 540 } },
 	{ at = 2760, sheet = "scrapdrone", rows = { 300, 540, 780 } },
 	{ at = 3120, sheet = "dunecrawler", rows = { FLOOR_ROW } },
+	{ at = 3300, sheet = "crystal_carrier", rows = { 540 } },
 	{ at = 3480, sheet = "cindermite", rows = SWARM_LOW },
 	{ at = 4200, sheet = "dunecrawler", rows = { FLOOR_ROW } },
+	{ at = 4380, sheet = "crystal_carrier", rows = { 540 } },
 	{ at = 4560, sheet = "scrapdrone", rows = { 420, 660 } },
 	{ at = 4800, sheet = "cindermite", rows = SWARM_HIGH },
 }

@@ -83,11 +83,17 @@ end
 
 local OUT_OF_THE_BASE: { Wave } = {
 	{ at = 240, sheet = "drifter", rows = { 240, 540, 840 } },
+	{ at = 480, sheet = "crystal_carrier", rows = { 540 } },
 	{ at = 720, sheet = "weaver", rows = { 360, 720 } },
+	{ at = 960, sheet = "crystal_carrier", rows = { 540 } },
 	{ at = 1200, sheet = "drifter", rows = { 180, 420, 660, 900 } },
+	{ at = 1440, sheet = "crystal_carrier", rows = { 540 } },
 	{ at = 1680, sheet = "voltjelly", rows = { 300, 780 } },
+	{ at = 1920, sheet = "crystal_carrier", rows = { 540 } },
 	{ at = 2160, sheet = "weaver", rows = { 240, 540, 840 } },
+	{ at = 2400, sheet = "crystal_carrier", rows = { 540 } },
 	{ at = 2640, sheet = "drifter", rows = { 420, 660 } },
+	{ at = 2880, sheet = "crystal_carrier", rows = { 540 } },
 }
 
 local BYDO_FIELD: { Wave } = {
