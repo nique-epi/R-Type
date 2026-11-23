@@ -155,22 +155,18 @@ local FLATS: { Wave } = {
 	{ at = 480, sheet = "crystal_carrier", rows = { 400 } },
 	{ at = 600, sheet = "vultureling", rows = { 220, 340, 460 } },
 	{ at = 840, sheet = "cricket", rows = SWARM_HIGH },
-	{ at = 960, sheet = "crystal_carrier", rows = { 400 } },
 	{ at = 1080, sheet = "carrion", rows = { 420 } },
 	{ at = 1320, sheet = "tumblecage", rows = { FLOOR_ROW } },
-	{ at = 1410, sheet = "crystal_carrier", rows = { 400 } },
 	{ at = 1500, sheet = "vultureling", rows = { 260, 400 } },
 	{ at = 1680, sheet = "shroud", rows = { 420 } },
 	{ at = 1920, sheet = "vultureling", rows = { 240, 360, 480 } },
 	{ at = 2040, sheet = "crystal_carrier", rows = { 400 } },
 	{ at = 2160, sheet = "carrion", rows = { 260, 460, 660 } },
 	{ at = 2400, sheet = "vultureling", rows = { 280, 420 } },
-	{ at = 2520, sheet = "crystal_carrier", rows = { 400 } },
 	{ at = 2640, sheet = "cricket", rows = SWARM_LOW },
 	{ at = 2880, sheet = "vultureling", rows = { 220, 340, 460 } },
 	{ at = 3000, sheet = "tumblecage", rows = { FLOOR_ROW } },
 	{ at = 3120, sheet = "carrion", rows = { 380, 620 } },
-	{ at = 3240, sheet = "crystal_carrier", rows = { 400 } },
 	{ at = 3360, sheet = "shroud", rows = { 300, 700 } },
 	{ at = 3600, sheet = "vultureling", rows = { 260, 380, 500 } },
 	{ at = 3840, sheet = "carrion", rows = { 360, 600 } },
@@ -248,6 +244,7 @@ local THE_LINE: { Wave } = {
 	{ at = 15240, sheet = "shroud", rows = { 360, 620 } },
 	{ at = 15480, sheet = "carrion", rows = { 360, 580 } },
 	{ at = 15660, sheet = "vultureling", rows = { 260, 420 } },
+	{ at = 15720, sheet = "crystal_carrier", rows = { 400 } },
 }
 
 -- Kegs along the track.
@@ -303,6 +300,7 @@ local UP_THE_MESA: { Wave } = {
 	{ at = 22680, sheet = "vultureling", rows = { 260, 400, 540 } },
 	{ at = 22920, sheet = "cricket", rows = SWARM_LOW },
 	{ at = 23100, sheet = "vultureling", rows = { 300, 460 } },
+	{ at = 23160, sheet = "crystal_carrier", rows = { 400 } },
 }
 
 level.register("deseret", {

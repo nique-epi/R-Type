@@ -85,15 +85,11 @@ local OUT_OF_THE_BASE: { Wave } = {
 	{ at = 240, sheet = "drifter", rows = { 240, 540, 840 } },
 	{ at = 480, sheet = "crystal_carrier", rows = { 540 } },
 	{ at = 720, sheet = "weaver", rows = { 360, 720 } },
-	{ at = 960, sheet = "crystal_carrier", rows = { 540 } },
 	{ at = 1200, sheet = "drifter", rows = { 180, 420, 660, 900 } },
-	{ at = 1440, sheet = "crystal_carrier", rows = { 540 } },
 	{ at = 1680, sheet = "voltjelly", rows = { 300, 780 } },
 	{ at = 1920, sheet = "crystal_carrier", rows = { 540 } },
 	{ at = 2160, sheet = "weaver", rows = { 240, 540, 840 } },
-	{ at = 2400, sheet = "crystal_carrier", rows = { 540 } },
 	{ at = 2640, sheet = "drifter", rows = { 420, 660 } },
-	{ at = 2880, sheet = "crystal_carrier", rows = { 540 } },
 }
 
 local BYDO_FIELD: { Wave } = {
@@ -102,6 +98,7 @@ local BYDO_FIELD: { Wave } = {
 	{ at = 3960, sheet = "voltjelly", rows = { 180, 420, 660, 900 } },
 	{ at = 4440, sheet = "bydomancer", rows = { 540 } },
 	{ at = 4920, sheet = "weaver", rows = { 300, 780 } },
+	{ at = 5040, sheet = "crystal_carrier", rows = { 540 } },
 }
 
 local INTO_THE_PIT: { Wave } = {
@@ -128,6 +125,7 @@ local DEPTHS: { Wave } = {
 	{ at = 9360, sheet = "stalagmaw", rows = { CEILING_ROW } },
 	{ at = 9360, sheet = "sporecap", rows = { FLOOR_ROW } },
 	{ at = 10080, sheet = "lanternfin", rows = { 360, 720 } },
+	{ at = 10440, sheet = "crystal_carrier", rows = { 540 } },
 }
 
 level.register("space", {

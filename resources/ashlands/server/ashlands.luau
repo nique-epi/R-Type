@@ -187,20 +187,17 @@ local HIGHWAY: { Wave } = {
 	{ at = 600, sheet = "crystal_carrier", rows = { 540 } },
 	{ at = 960, sheet = "dunecrawler", rows = { FLOOR_ROW } },
 	{ at = 1320, sheet = "cindermite", rows = SWARM_LOW },
-	{ at = 1500, sheet = "crystal_carrier", rows = { 540 } },
 	{ at = 1680, sheet = "scrapdrone", rows = { 360, 700 } },
-	{ at = 1920, sheet = "crystal_carrier", rows = { 540 } },
 	{ at = 2160, sheet = "dunecrawler", rows = { FLOOR_ROW } },
 	{ at = 2400, sheet = "cindermite", rows = SWARM_HIGH },
 	{ at = 2580, sheet = "crystal_carrier", rows = { 540 } },
 	{ at = 2760, sheet = "scrapdrone", rows = { 300, 540, 780 } },
 	{ at = 3120, sheet = "dunecrawler", rows = { FLOOR_ROW } },
-	{ at = 3300, sheet = "crystal_carrier", rows = { 540 } },
 	{ at = 3480, sheet = "cindermite", rows = SWARM_LOW },
 	{ at = 4200, sheet = "dunecrawler", rows = { FLOOR_ROW } },
-	{ at = 4380, sheet = "crystal_carrier", rows = { 540 } },
 	{ at = 4560, sheet = "scrapdrone", rows = { 420, 660 } },
 	{ at = 4800, sheet = "cindermite", rows = SWARM_HIGH },
+	{ at = 4920, sheet = "crystal_carrier", rows = { 540 } },
 }
 
 local HIGHWAY_DECOR: { Decor } = {
@@ -238,6 +235,7 @@ local SHELTER_DECOR: { Decor } = {
 
 local INTO_THE_CORE: { Wave } = {
 	{ at = 11280, sheet = "geiger_mine", rows = { 520 } },
+	{ at = 12600, sheet = "crystal_carrier", rows = { 540 } },
 }
 
 -- The decor of the core: the way in, then the arena, laid so that it stands
@@ -259,6 +257,7 @@ local DESCENT: { Wave } = {
 	{ at = 14280, sheet = "brood_mite", rows = { 480, 600, 720 } },
 	{ at = 14640, sheet = "cindermite", rows = SWARM_HIGH },
 	{ at = 14880, sheet = "brood_mite", rows = { 300, 520, 740 } },
+	{ at = 15240, sheet = "crystal_carrier", rows = { 540 } },
 }
 
 level.register("ashlands", {
