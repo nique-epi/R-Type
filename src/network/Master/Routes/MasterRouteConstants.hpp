@@ -218,6 +218,14 @@ constexpr MasterRoute KEEP_OWN_RESULT_ROUTE{
 constexpr MasterRoute READ_LEADERBOARD_ROUTE{.method = RouteMethod::Get,
                                              .path = "/leaderboard"};
 
+/**
+ * @brief The accounts by the total of the scores of the games credited to
+ * each, every difficulty, number of players and server together, a page at a
+ * time; open to everyone.
+ */
+constexpr MasterRoute READ_ACCOUNT_LEADERBOARD_ROUTE{
+    .method = RouteMethod::Get, .path = "/leaderboard/accounts"};
+
 /** @brief The parameters of the query of the leaderboard:
  * `?difficulty=normal&playerCount=2`, then `server=7` and `player=ACE`, both
  * optional. */

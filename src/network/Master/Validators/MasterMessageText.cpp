@@ -17,6 +17,7 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
+#include "AccountLeaderboardRow.hpp"
 #include "BetsReceipt.hpp"
 #include "CasinoPlayer.hpp"
 #include "CasinoRoom.hpp"
@@ -805,6 +806,15 @@ nlohmann::json globalLeaderboardRowDocument(const GlobalLeaderboardRow& row) {
   return document;
 }
 
+nlohmann::json accountLeaderboardRowDocument(const AccountLeaderboardRow& row) {
+  nlohmann::json document;
+  document[RANK_MEMBER] = row.rank;
+  document[NICKNAME_MEMBER] = row.nickname;
+  document[SCORE_MEMBER] = row.score;
+  document[LAST_PLAYED_AT_MEMBER] = row.lastPlayedAt.time_since_epoch().count();
+  return document;
+}
+
 GlobalLeaderboardRow globalLeaderboardRowOf(const JsonField& row) {
   requireObject(row);
   return GlobalLeaderboardRow{
@@ -870,6 +880,11 @@ std::string globalLeaderboardText(const GlobalLeaderboard& leaderboard) {
     document[PLAYER_MEMBER] = globalLeaderboardRowDocument(*leaderboard.player);
   }
   return textOf(document);
+}
+
+std::string accountLeaderboardText(
+    const std::vector<AccountLeaderboardRow>& accounts) {
+  return listingText(ACCOUNTS_MEMBER, accounts, accountLeaderboardRowDocument);
 }
 
 GlobalLeaderboard globalLeaderboardFromText(std::string_view text) {

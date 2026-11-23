@@ -37,6 +37,9 @@ void LeaderboardModule::install(engine::InstallContext& context) {
   server.add(
       network::READ_LEADERBOARD_ROUTE,
       std::bind_front(&LeaderboardController::readLeaderboard, &controller));
+  server.add(network::READ_ACCOUNT_LEADERBOARD_ROUTE,
+             std::bind_front(&LeaderboardController::readAccountLeaderboard,
+                             &controller));
 }
 
 void LeaderboardModule::start() {}
