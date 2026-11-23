@@ -83,6 +83,8 @@ phase = "strike"
 sheet = "sprites/fosse/necromancer.png"
 # The name its bar writes above its gauges.
 boss_name = "NECROMANCER"
+# The music it fights to, faded in over the end of its alarm.
+boss_music = "music/escaping_a_foul_presence.mp3"
 
 # Idle: it bobs, the halo turns, the smoke rolls, the hands breathe out of phase.
 [appearance.idle]

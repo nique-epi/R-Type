@@ -102,8 +102,13 @@ void MusicPlayer::switchTo(AssetLibrary& library, std::string_view assetId) {
   }
 }
 
+void MusicPlayer::setFade(float level) {
+  fade_ = level;
+  applyVolume();
+}
+
 void MusicPlayer::applyVolume() {
-  music_.setVolume(musicVolumeOf(settings_->settings()) * track_.gain);
+  music_.setVolume(musicVolumeOf(settings_->settings()) * track_.gain * fade_);
 }
 
 }  // namespace rtype::client

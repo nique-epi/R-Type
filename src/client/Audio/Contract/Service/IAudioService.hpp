@@ -40,19 +40,18 @@ class IAudioService {
    * named last in the game plays, or the music of a game. */
   virtual void playGameMusic(const std::optional<std::string>& levelMusic) = 0;
 
-  /** @brief Stops the music of a game at once, without fade, and cancels the
-   * silence before it: playGameMusic() starts it again GAME_MUSIC_SILENCE
-   * later. The theme is left as it is.
-   * @returns False, stopping nothing, while the level plays a music of its
-   * own, which a boss leaves playing. */
-  [[nodiscard]] virtual bool silenceMusic() = 0;
+  /** @brief Stops the music of a game at once, without fade, the music a
+   * level names included, and cancels the silence before it: playGameMusic()
+   * starts it again GAME_MUSIC_SILENCE later. The theme is left as it is. */
+  virtual void silenceMusic() = 0;
 
   /** @brief Makes @p music the music of the boss (BOSS_MUSIC_ID when empty),
    * played in place of the one that plays when it differs, then stops the
-   * music of a game and the theme, and starts the music of the boss
-   * BOSS_ALARM_DURATION later, unless it plays already or is about to. Over
-   * a music a level names, which no alarm silenced, it starts at once.
-   * playTheme() and playGameMusic() stop it. */
+   * music of a game and the theme, and fades the music of the boss in over
+   * the last BOSS_MUSIC_FADE_IN of the BOSS_ALARM_DURATION that follow,
+   * unless it plays already or is about to. A boss with an empty @p music, in
+   * a level that names a music of its own, fades the music of the level back
+   * in instead. playTheme() and playGameMusic() stop it. */
   virtual void playBossMusic(std::string_view music) = 0;
 
   /** @brief Plays @p ambience under the theme, and stops the one that

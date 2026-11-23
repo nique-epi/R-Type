@@ -186,10 +186,9 @@ void BossPresentation::followMusic() {
   const bool arriving = !gameEnded_ && isArriving(tracker_, now_);
   if (arriving && !bossMusicStarted_) {
     bossMusicStarted_ = true;
-    if (audio_->silenceMusic()) {
-      sounds_->play(BOSS_ALARM_SOUND_ID);
-      audio_->playBossMusic(bossMusic_.value_or(std::string{}));
-    }
+    audio_->silenceMusic();
+    sounds_->play(BOSS_ALARM_SOUND_ID);
+    audio_->playBossMusic(bossMusic_.value_or(std::string{}));
     return;
   }
   const bool bossGone =

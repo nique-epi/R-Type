@@ -18,7 +18,7 @@ void SilentAudioService::playTheme() {}
 void SilentAudioService::playGameMusic(
     [[maybe_unused]] const std::optional<std::string>& levelMusic) {}
 
-bool SilentAudioService::silenceMusic() { return true; }
+void SilentAudioService::silenceMusic() {}
 
 void SilentAudioService::playBossMusic(
     [[maybe_unused]] std::string_view music) {}

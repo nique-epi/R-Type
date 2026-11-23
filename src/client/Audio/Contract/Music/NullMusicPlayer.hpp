@@ -15,6 +15,7 @@ class NullMusicPlayer final : public IMusicPlayer {
 
   void stop() override;
   void pause() override;
+  void setFade(float level) override;
 
   /** @returns Nothing: this music never plays. */
   [[nodiscard]] std::optional<engine::Duration> playingOffset() const override;

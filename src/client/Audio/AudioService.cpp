@@ -52,11 +52,11 @@ void AudioService::playGameMusic(const std::optional<std::string>& levelMusic) {
   soundtrack_.playGameMusic();
 }
 
-bool AudioService::silenceMusic() { return soundtrack_.silenceMusic(); }
+void AudioService::silenceMusic() { soundtrack_.silenceMusic(); }
 
 void AudioService::playBossMusic(std::string_view music) {
   bossMusic_.switchTo(*library_, music.empty() ? BOSS_MUSIC_ID : music);
-  soundtrack_.playBossMusic();
+  soundtrack_.playBossMusic(!music.empty());
 }
 
 void AudioService::setAmbience(Ambience ambience) {

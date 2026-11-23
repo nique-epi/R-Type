@@ -19,6 +19,10 @@ class IMusicPlayer : public IMusicClock {
   /** @brief Pauses a music that plays: start() then plays it on from where
    * it was. A music that does not play is left as it is. */
   virtual void pause() = 0;
+  /** @brief Scales the volume of the music by @p level, from
+   * MUSIC_FADE_SILENT to MUSIC_FADE_FULL, until the next call; a music
+   * plays at MUSIC_FADE_FULL until then. */
+  virtual void setFade(float level) = 0;
 };
 
 }  // namespace rtype::client

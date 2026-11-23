@@ -21,19 +21,16 @@ rtype::client::IMusicPlayer& RecordingAudioService::theme() { return theme_; }
 
 void RecordingAudioService::playTheme() {
   musicCalls_.push_back(MusicCall::Theme);
-  levelMusicNamed_ = false;
 }
 
 void RecordingAudioService::playGameMusic(
     const std::optional<std::string>& levelMusic) {
-  levelMusicNamed_ = levelMusicNamed_ || levelMusic.has_value();
   musicCalls_.push_back(levelMusic.has_value() ? MusicCall::LevelMusic
                                                : MusicCall::GameMusic);
 }
 
-bool RecordingAudioService::silenceMusic() {
+void RecordingAudioService::silenceMusic() {
   musicCalls_.push_back(MusicCall::Silence);
-  return !levelMusicNamed_;
 }
 
 void RecordingAudioService::playBossMusic(

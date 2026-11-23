@@ -2,6 +2,7 @@
 
 #include <optional>
 #include "IMusicPlayer.hpp"
+#include "MusicFade.hpp"
 #include "SoundtrackParts.hpp"
 #include "TimeConstants.hpp"
 
@@ -14,7 +15,8 @@ namespace rtype::client {
  * of the game and plays the theme again. A screen with a music of its own
  * pauses the theme for as long as it shows. A level may name a music of its
  * own (useLevelMusic()): it then plays in place of the music of a game, from
- * then to the next title screen, bosses included.
+ * then to the next title screen; the alarm of a boss stops it, and it comes
+ * back once the boss is gone, or after the alarm for a boss with no music.
  */
 class Soundtrack {
  public:
@@ -28,16 +30,19 @@ class Soundtrack {
    * later, unless it plays already or is about to. */
   void playGameMusic();
 
-  /** @brief Stops the theme and the music of a game, and starts the music of
-   * the boss BOSS_ALARM_DURATION later, unless it plays already or is about
-   * to; over a music of the level that plays, which no alarm silenced, it
-   * stops that music and starts the music of the boss at once. */
-  void playBossMusic();
+  /** @brief Stops the theme and the music of a game, then fades a music in
+   * over the last BOSS_MUSIC_FADE_IN of the alarm, BOSS_ALARM_DURATION long:
+   * the music of the boss when @p named says its sheet names one, or when the
+   * level plays no music of its own; the music of the level otherwise. While
+   * the alarm or the music of the boss plays, it only notes @p named. Over a
+   * music of the level that plays again after the alarm, a boss that names
+   * its music stops it and starts its own at once. */
+  void playBossMusic(bool named);
 
-  /** @brief Stops the music of a game at once and cancels the silence before
-   * it; the theme is left as it is.
-   * @returns False, stopping nothing, while the level plays its own music. */
-  [[nodiscard]] bool silenceMusic();
+  /** @brief Stops the music of a game at once, the music a level names
+   * included, and cancels the silence before it; the theme is left as it is,
+   * and playGameMusic() brings the music of the level back. */
+  void silenceMusic();
   /** @brief Pauses the theme when it plays, for a screen that plays a music
    * of its own; playTheme() then leaves it paused. */
   void pauseTheme();
@@ -46,7 +51,8 @@ class Soundtrack {
   void resumeTheme();
 
   /** @brief Moves the waits before the music of a game and the music of the
-   * boss on by @p elapsed, and starts each music once its wait is over. */
+   * boss, and the fade of the latter, on by @p elapsed, and starts each music
+   * once its wait is over. */
   void advance(engine::Duration elapsed);
 
   /** @brief Plays @p music in place of the music of a game until the next
@@ -68,6 +74,9 @@ class Soundtrack {
   IMusicPlayer* levelMusic_{nullptr};
   std::optional<engine::Duration> silenceLeft_;
   std::optional<engine::Duration> alarmLeft_;
+  MusicFade fade_;
+  /** @brief Whether the sheet of the boss of the alarm names its music. */
+  bool bossNamed_{false};
   /** @brief Whether pauseTheme() paused a theme that played, and nothing
    * stopped it since. */
   bool themePaused_{false};
