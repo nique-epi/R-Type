@@ -1,7 +1,9 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <string_view>
+#include "HeldWeapon.hpp"
 
 namespace rtype::game::testing {
 
@@ -16,6 +18,33 @@ constexpr std::uint8_t SHIPPED_PLAYER_MISSILE_NUMBER = 34;
 constexpr std::uint16_t SHIPPED_GUN_INTERVAL_TICKS = 20;
 constexpr std::uint16_t SHIPPED_GUN_FIRST_SHOT_TICKS = 0;
 constexpr float SHIPPED_PLAYER_MISSILE_SPEED = 960.0F;
+
+/** @brief The weapons of the shipped ship, red, blue and yellow, two levels
+ * each, and where red and blue stand among them. */
+constexpr std::size_t SHIPPED_WEAPON_COUNT = 3;
+constexpr std::size_t SHIPPED_LEVELS_PER_WEAPON = 2;
+constexpr std::size_t RED_PLACE = 0;
+constexpr std::size_t BLUE_PLACE = 1;
+constexpr std::size_t FIRST_LEVEL_PLACE = 0;
+constexpr std::size_t SECOND_LEVEL_PLACE = 1;
+
+/** @brief The second level of red: five red shots over 48 degrees, laid 16
+ * units ahead, scattering at 960 units per second. */
+constexpr std::uint8_t RED_SECOND_LEVEL_COUNT = 5;
+constexpr float RED_SECOND_LEVEL_SPREAD_DEGREES = 48.0F;
+constexpr float RED_SHOT_SPEED = 960.0F;
+
+/** @brief The first level of blue: two blue shots 24 rows apart every 250
+ * ms, 15 ticks, flying right at 1440 units per second. */
+constexpr std::uint8_t BLUE_FIRST_LEVEL_COUNT = 2;
+constexpr std::uint16_t BLUE_FIRST_LEVEL_INTERVAL_TICKS = 15;
+constexpr float BLUE_SHOT_SPEED = 1440.0F;
+
+/** @brief Held weapons: red at its second level, a weapon the ship does not
+ * hold, and a level red does not have. */
+constexpr HeldWeapon RED_AT_ITS_SECOND_LEVEL{.weapon = 1, .level = 2};
+constexpr HeldWeapon A_WEAPON_PAST_THE_LAST{.weapon = 9, .level = 1};
+constexpr HeldWeapon A_LEVEL_PAST_THE_LAST{.weapon = 1, .level = 3};
 
 /** @brief A ship that fires nothing. */
 constexpr std::string_view UNARMED_SHIP_SHEET_TEXT = R"([gameplay]

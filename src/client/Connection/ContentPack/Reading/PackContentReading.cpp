@@ -114,7 +114,7 @@ PackContent packContentOf(std::span<const identifiers::ContentFile> files,
   }
   return PackContent{.appearances = std::move(appearances),
                      .types = game::numberedEntityTypesOf(sheets),
-                     .gun = game::shipGunOrNoneOf(sheets),
+                     .arsenal = game::shipArsenalOrNoneOf(sheets),
                      .backgrounds = backgroundsOf(files, folders),
                      .folder = folders.pack};
 }

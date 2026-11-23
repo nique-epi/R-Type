@@ -11,6 +11,7 @@
 #include "LocalContent.hpp"
 #include "NumberedEntityType.hpp"
 #include "SheetTextFixtures.hpp"
+#include "ShipArsenal.hpp"
 
 namespace rtype::client::testing {
 
@@ -47,7 +48,7 @@ LocalContent twoEnemies() {
                .side = game::EntityType::Enemy,
                .hitboxParts = {},
                .mask = nullptr}},
-      .gun = LOOKED_UP_SHIP_GUN};
+      .arsenal = game::ShipArsenal{.gun = LOOKED_UP_SHIP_GUN, .weapons = {}}};
 }
 
 }  // namespace

@@ -76,7 +76,7 @@ TEST_F(EntityTypeLooksFixture, GivesTheBoxesTheTableListsForTheType) {
  * Then it is the gun of the table
  */
 TEST_F(EntityTypeLooksFixture, GivesTheGunOfTheTable) {
-  EXPECT_EQ(looks().shipGun(), LOOKED_UP_SHIP_GUN);
+  EXPECT_EQ(looks().shipArsenal().gun, LOOKED_UP_SHIP_GUN);
 }
 
 /**

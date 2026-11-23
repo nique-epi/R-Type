@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <optional>
 #include "EntityTypeLook.hpp"
-#include "ShipGun.hpp"
+#include "ShipArsenal.hpp"
 
 namespace rtype::client {
 
@@ -24,9 +24,10 @@ class IEntityTypeSource {
   [[nodiscard]] virtual std::optional<EntityTypeLook> lookOf(
       std::uint8_t number) const = 0;
 
-  /** @returns The gun of the ships of the session; one that predicts nothing
-   * outside a session. */
-  [[nodiscard]] virtual game::ShipGun shipGun() const = 0;
+  /** @returns The guns of the ships of the session; none that predicts
+   * anything outside a session. Read them at once, never keep the reference
+   * past the session. */
+  [[nodiscard]] virtual const game::ShipArsenal& shipArsenal() const = 0;
 };
 
 }  // namespace rtype::client

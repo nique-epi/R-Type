@@ -22,7 +22,7 @@ LocalContent localContentOf(const std::filesystem::path& assetFolder) {
       game::sheetTextsOf(files, assetFolder);
   return LocalContent{.fingerprint = network::contentFingerprintOf(pack),
                       .types = game::numberedEntityTypesOf(sheets),
-                      .gun = game::shipGunOrNoneOf(sheets)};
+                      .arsenal = game::shipArsenalOrNoneOf(sheets)};
 }
 
 }  // namespace rtype::client

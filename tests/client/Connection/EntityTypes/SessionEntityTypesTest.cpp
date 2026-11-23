@@ -116,7 +116,7 @@ TEST(SessionEntityTypes, ComesBackToItsOwnTypesOnceForgotten) {
 TEST(SessionEntityTypes, ArmsTheShipsWithTheGunOfItsOwnContent) {
   const SessionEntityTypes table{testLocalContent()};
 
-  EXPECT_EQ(table.shipGun(), LOCAL_SHIP_GUN);
+  EXPECT_EQ(table.shipArsenal().gun, LOCAL_SHIP_GUN);
 }
 
 /**
@@ -131,7 +131,7 @@ TEST(SessionEntityTypes, ArmsTheShipsWithTheGunOfThePackItPlays) {
   table.use(packContentOf(lancerFiles(),
                           PackFolders{.assets = {}, .pack = folder.path()}));
 
-  EXPECT_EQ(table.shipGun(), game::ShipGun{});
+  EXPECT_EQ(table.shipArsenal().gun, game::ShipGun{});
 }
 
 /**
@@ -147,7 +147,7 @@ TEST(SessionEntityTypes, ComesBackToItsOwnGunOnceForgotten) {
 
   table.forget();
 
-  EXPECT_EQ(table.shipGun(), LOCAL_SHIP_GUN);
+  EXPECT_EQ(table.shipArsenal().gun, LOCAL_SHIP_GUN);
 }
 
 /**

@@ -5,7 +5,7 @@
 #include "EntityType.hpp"
 #include "FixedEntityTypeTableConstants.hpp"
 #include "NumberedEntityType.hpp"
-#include "ShipGun.hpp"
+#include "ShipArsenal.hpp"
 
 namespace rtype::tools::testing {
 
@@ -52,6 +52,8 @@ const client::EntityAppearances& FixedEntityTypeTable::appearances() const {
   return appearances_;
 }
 
-game::ShipGun FixedEntityTypeTable::shipGun() const { return game::ShipGun{}; }
+const game::ShipArsenal& FixedEntityTypeTable::shipArsenal() const {
+  return arsenal_;
+}
 
 }  // namespace rtype::tools::testing

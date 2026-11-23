@@ -14,7 +14,7 @@
 #include "LocalContent.hpp"
 #include "NumberedEntityType.hpp"
 #include "PackContent.hpp"
-#include "ShipGun.hpp"
+#include "ShipArsenal.hpp"
 
 namespace rtype::client {
 
@@ -54,8 +54,8 @@ const EntityAppearances& SessionEntityTypes::appearances() const {
   return localAppearances_ != nullptr ? *localAppearances_ : none_;
 }
 
-game::ShipGun SessionEntityTypes::shipGun() const {
-  return playsThePack_ && pack_.has_value() ? pack_->gun : local_.gun;
+const game::ShipArsenal& SessionEntityTypes::shipArsenal() const {
+  return playsThePack_ && pack_.has_value() ? pack_->arsenal : local_.arsenal;
 }
 
 std::shared_ptr<const BackgroundCatalog> SessionEntityTypes::backgrounds()

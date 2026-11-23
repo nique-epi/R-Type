@@ -6,7 +6,7 @@
 #include "EntityTypeLook.hpp"
 #include "IEntityTypeTable.hpp"
 #include "NumberedEntityType.hpp"
-#include "ShipGun.hpp"
+#include "ShipArsenal.hpp"
 
 namespace rtype::client {
 
@@ -34,6 +34,8 @@ std::optional<EntityTypeLook> EntityTypeLooks::lookOf(
       .hurtZone = entry->hurtZone.has_value() ? &*entry->hurtZone : nullptr};
 }
 
-game::ShipGun EntityTypeLooks::shipGun() const { return table_->shipGun(); }
+const game::ShipArsenal& EntityTypeLooks::shipArsenal() const {
+  return table_->shipArsenal();
+}
 
 }  // namespace rtype::client

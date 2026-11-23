@@ -13,6 +13,7 @@
 #include "MaskPixel.hpp"
 #include "ObstacleContact.hpp"
 #include "PixelMask.hpp"
+#include "ShipArsenal.hpp"
 #include "ShipGun.hpp"
 
 using rtype::client::Animation;
@@ -170,12 +171,19 @@ std::optional<EntityTypeLook> FixedEntityTypeSource::lookOf(
                         .obstacle = obstacleNumbered(number)};
 }
 
-rtype::game::ShipGun FixedEntityTypeSource::shipGun() const {
-  return rtype::game::ShipGun{
-      .shipType = rtype::client::testing::SHIP_TYPE_NUMBER,
-      .projectileType = rtype::client::testing::PLAYER_MISSILE_TYPE_NUMBER,
-      .intervalTicks = rtype::client::testing::SHIP_GUN_INTERVAL_TICKS,
-      .firstShotTicks = 0,
-      .velocityX = rtype::client::testing::PLAYER_MISSILE_SPEED,
-      .velocityY = 0.0F};
+const rtype::game::ShipArsenal& FixedEntityTypeSource::shipArsenal() const {
+  static const rtype::game::ShipArsenal arsenal{
+      .gun =
+          rtype::game::ShipGun{
+              .shipType = rtype::client::testing::SHIP_TYPE_NUMBER,
+              .projectileType =
+                  rtype::client::testing::PLAYER_MISSILE_TYPE_NUMBER,
+              .intervalTicks = rtype::client::testing::SHIP_GUN_INTERVAL_TICKS,
+              .firstShotTicks = 0,
+              .velocityX = rtype::client::testing::PLAYER_MISSILE_SPEED,
+              .velocityY = 0.0F,
+              .pattern = {},
+              .scatterSpeed = 0.0F},
+      .weapons = {}};
+  return arsenal;
 }

@@ -5,7 +5,7 @@
 #include "EntityAppearances.hpp"
 #include "IEntityTypeTable.hpp"
 #include "NumberedEntityType.hpp"
-#include "ShipGun.hpp"
+#include "ShipArsenal.hpp"
 
 namespace rtype::tools::testing {
 
@@ -19,11 +19,12 @@ class FixedEntityTypeTable final : public client::IEntityTypeTable {
   [[nodiscard]] const game::NumberedEntityType* entryNumbered(
       std::uint8_t number) const override;
   [[nodiscard]] const client::EntityAppearances& appearances() const override;
-  [[nodiscard]] game::ShipGun shipGun() const override;
+  [[nodiscard]] const game::ShipArsenal& shipArsenal() const override;
 
  private:
   std::vector<game::NumberedEntityType> types_;
   client::EntityAppearances appearances_;
+  game::ShipArsenal arsenal_;
 };
 
 }  // namespace rtype::tools::testing

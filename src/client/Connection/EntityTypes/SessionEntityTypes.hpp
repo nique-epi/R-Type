@@ -14,7 +14,7 @@
 #include "LocalContent.hpp"
 #include "NumberedEntityType.hpp"
 #include "PackContent.hpp"
-#include "ShipGun.hpp"
+#include "ShipArsenal.hpp"
 
 namespace rtype::client {
 
@@ -57,7 +57,7 @@ class SessionEntityTypes final : public IEntityTypeTable, public ISessionPack {
 
   [[nodiscard]] const EntityAppearances& appearances() const override;
 
-  [[nodiscard]] game::ShipGun shipGun() const override;
+  [[nodiscard]] const game::ShipArsenal& shipArsenal() const override;
 
   [[nodiscard]] std::shared_ptr<const BackgroundCatalog> backgrounds()
       const override;

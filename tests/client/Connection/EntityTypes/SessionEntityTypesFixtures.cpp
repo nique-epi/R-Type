@@ -8,6 +8,7 @@
 #include "LocalContent.hpp"
 #include "NumberedEntityType.hpp"
 #include "SessionEntityTypesTestConstants.hpp"
+#include "ShipArsenal.hpp"
 
 namespace rtype::client::testing {
 
@@ -22,7 +23,7 @@ LocalContent testLocalContent() {
                                          .side = game::EntityType::Player,
                                          .hitboxParts = {},
                                          .mask = nullptr}},
-      .gun = LOCAL_SHIP_GUN};
+      .arsenal = game::ShipArsenal{.gun = LOCAL_SHIP_GUN, .weapons = {}}};
   content.fingerprint.bytes.fill(LOCAL_FINGERPRINT_BYTE);
   return content;
 }

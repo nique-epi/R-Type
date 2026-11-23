@@ -47,7 +47,7 @@ namespace {
  * when the session gives no box for the ship or the missile. */
 std::optional<game::Position> startOf(const IEntityTypeSource& types,
                                       game::Position shipCenter) {
-  const game::ShipGun gun = types.shipGun();
+  const game::ShipGun gun = types.shipArsenal().gun;
   const std::optional<EntityTypeLook> ship = types.lookOf(gun.shipType);
   const std::optional<EntityTypeLook> missile =
       types.lookOf(gun.projectileType);
@@ -146,8 +146,8 @@ bool serverFiredNear(const std::vector<OwnMissile>& missiles,
  * look for it. */
 OwnMissile* fireMissile(const OwnMissilesParts& parts,
                         std::vector<OwnMissile>& missiles, OwnMissile shot) {
-  const std::optional<EntityTypeLook> look =
-      parts.types.get().lookOf(parts.types.get().shipGun().projectileType);
+  const std::optional<EntityTypeLook> look = parts.types.get().lookOf(
+      parts.types.get().shipArsenal().gun.projectileType);
   if (!look.has_value()) {
     return nullptr;
   }
@@ -224,7 +224,7 @@ OwnMissiles::OwnMissiles(OwnMissilesParts parts) : parts_(parts) {}
 
 void OwnMissiles::restart(std::uint32_t acknowledged, game::Position ship) {
   for (const PredictedCommand& shot :
-       gun_.arm(parts_.types.get().shipGun(), acknowledged)) {
+       gun_.arm(parts_.types.get().shipArsenal().gun, acknowledged)) {
     fireOrMove(shot.inputNumber, ship);
   }
   place();
@@ -283,12 +283,12 @@ void OwnMissiles::touchEnemies() {
 void OwnMissiles::activate() { active_ = true; }
 
 bool OwnMissiles::predictsOwnMissiles() const {
-  return active_ && parts_.types.get().shipGun().projectileType !=
+  return active_ && parts_.types.get().shipArsenal().gun.projectileType !=
                         identifiers::NO_ENTITY_TYPE;
 }
 
 void OwnMissiles::ownMissileSpawned(const network::EntitySpawned& missile) {
-  const game::ShipGun gun = parts_.types.get().shipGun();
+  const game::ShipGun gun = parts_.types.get().shipArsenal().gun;
   const OwnMissile serverShot{.firingInput = missile.firingInput,
                               .start = {.x = missile.x, .y = missile.y},
                               .entity = std::nullopt,
@@ -328,7 +328,7 @@ void OwnMissiles::ownMissileDestroyed(
 }
 
 void OwnMissiles::fireOrMove(std::uint32_t firingInput, game::Position ship) {
-  const game::ShipGun gun = parts_.types.get().shipGun();
+  const game::ShipGun gun = parts_.types.get().shipArsenal().gun;
   const std::optional<game::Position> start = startOf(parts_.types.get(), ship);
   if (!start.has_value() || serverFiredNear(missiles_, firingInput, gun)) {
     return;
@@ -346,7 +346,7 @@ void OwnMissiles::fireOrMove(std::uint32_t firingInput, game::Position ship) {
 }
 
 void OwnMissiles::place() {
-  const game::ShipGun gun = parts_.types.get().shipGun();
+  const game::ShipGun gun = parts_.types.get().shipArsenal().gun;
   for (const OwnMissile& missile : missiles_) {
     if (!missile.entity.has_value() || newestInput_ < missile.firingInput) {
       continue;
