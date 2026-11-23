@@ -1,14 +1,11 @@
 #include "SettingsFile.hpp"
-#include <cstdint>
 #include <filesystem>
-#include <fstream>
-#include <ios>
-#include <iterator>
 #include <optional>
 #include <string>
-#include <system_error>
 #include <utility>
 #include "PathText.hpp"
+#include "PlayerFile.hpp"
+#include "PlayerFileWrite.hpp"
 #include "PlayerSettings.hpp"
 #include "SettingsConstants.hpp"
 #include "SettingsText.hpp"
@@ -22,27 +19,14 @@ PlayerSettings SettingsFile::load(const PlayerSettings& defaults) const {
   if (!path_.has_value()) {
     return defaults;
   }
-  std::error_code error;
-  const std::uintmax_t size = std::filesystem::file_size(*path_, error);
-  if (error) {
-    logger_.info("no settings file at ", logging::genericText(*path_),
+  const std::optional<std::string> text =
+      readPlayerFile(*path_, MAXIMUM_SETTINGS_FILE_SIZE, logger_);
+  if (!text.has_value()) {
+    logger_.info("no settings read from ", logging::genericText(*path_),
                  ", first launch settings used");
     return defaults;
   }
-  if (size > MAXIMUM_SETTINGS_FILE_SIZE) {
-    logger_.warn("settings file too large, ignored: ",
-                 logging::genericText(*path_));
-    return defaults;
-  }
-  std::ifstream file(*path_, std::ios::binary);
-  const std::string text((std::istreambuf_iterator<char>(file)),
-                         std::istreambuf_iterator<char>());
-  if (!file.good() && !file.eof()) {
-    logger_.warn("settings file unreadable, ignored: ",
-                 logging::genericText(*path_));
-    return defaults;
-  }
-  const SettingsReading reading = readSettingsText(text, defaults);
+  const SettingsReading reading = readSettingsText(*text, defaults);
   for (const std::string& line : reading.ignoredLines) {
     logger_.warn("settings file ", logging::genericText(*path_), ", ", line);
   }
@@ -53,40 +37,10 @@ bool SettingsFile::save(const PlayerSettings& settings) {
   if (!path_.has_value()) {
     return false;
   }
-  std::error_code error;
-  const std::filesystem::path folder = path_->parent_path();
-  if (std::filesystem::create_directories(folder, error)) {
-    std::filesystem::permissions(folder, std::filesystem::perms::owner_all,
-                                 error);
-  }
-  if (error) {
-    logger_.warn("cannot create the settings folder ",
-                 logging::genericText(folder), ": ", error.message());
-    return false;
-  }
-  std::filesystem::path temporary = *path_;
-  temporary += TEMPORARY_SETTINGS_SUFFIX;
-  if (!write(temporary, settings)) {
-    logger_.warn("cannot write ", logging::genericText(temporary));
-    std::filesystem::remove(temporary, error);
-    return false;
-  }
-  std::filesystem::rename(temporary, *path_, error);
-  if (error) {
-    logger_.warn("cannot replace ", logging::genericText(*path_), ": ",
-                 error.message());
-    std::filesystem::remove(temporary, error);
-    return false;
-  }
-  return true;
-}
-
-bool SettingsFile::write(const std::filesystem::path& file,
-                         const PlayerSettings& settings) {
-  std::ofstream stream(file, std::ios::binary | std::ios::trunc);
-  stream << settingsText(settings);
-  stream.close();
-  return !stream.fail();
+  const std::string text = settingsText(settings);
+  return replacePlayerFile(
+      PlayerFileWrite{.file = *path_, .text = text, .permissions = {}},
+      logger_);
 }
 
 }  // namespace rtype::client

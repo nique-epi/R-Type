@@ -4,13 +4,18 @@
 #include <string>
 #include "AccountLinkConstants.hpp"
 #include "IAccountLink.hpp"
+#include "ISessionTokenStorage.hpp"
 #include "SignInRefusal.hpp"
 #include "UserReading.hpp"
 
 namespace rtype::client {
 
-AccountSession::AccountSession(IAccountLink& link)
-    : link_(&link), ask_(NO_ACCOUNT_ASK) {}
+AccountSession::AccountSession(IAccountLink& link,
+                               ISessionTokenStorage& storage)
+    : link_(&link),
+      storage_(&storage),
+      ask_(NO_ACCOUNT_ASK),
+      rememberedAsk_(NO_ACCOUNT_ASK) {}
 
 bool AccountSession::signedIn() const {
   const std::optional<UserReading> reading = answer();
@@ -50,6 +55,35 @@ void AccountSession::signIn(const std::string& token) {
 void AccountSession::signOut() {
   token_.clear();
   ask_ = NO_ACCOUNT_ASK;
+  storage_->forget();
+  rememberedToken_.clear();
+}
+
+void AccountSession::restore() {
+  const std::optional<std::string> kept = storage_->load();
+  if (!kept.has_value()) {
+    return;
+  }
+  rememberedToken_ = *kept;
+  signIn(*kept);
+}
+
+void AccountSession::rememberAnswer() {
+  if (ask_ == rememberedAsk_) {
+    return;
+  }
+  const std::optional<UserReading> reading = answer();
+  if (!reading.has_value()) {
+    return;
+  }
+  rememberedAsk_ = ask_;
+  if (reading->user.has_value() && token_ != rememberedToken_) {
+    storage_->keep(token_);
+    rememberedToken_ = token_;
+  } else if (reading->refusal == SignInRefusal::TokenRefused) {
+    storage_->forget();
+    rememberedToken_.clear();
+  }
 }
 
 std::optional<UserReading> AccountSession::answer() const {
