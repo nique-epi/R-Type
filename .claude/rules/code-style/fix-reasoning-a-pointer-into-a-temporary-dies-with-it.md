@@ -17,9 +17,17 @@ paths:
 1. **A function whose parameter is `const T&` never returns that parameter as a reference**: a caller that passes a temporary keeps a reference to it after the full expression (`bugprone-return-const-ref-from-parameter`, an error of the tidy gate).
 2. **A check that hands back the value it validated returns a copy**: `NetworkConditions checkedConditions(const NetworkConditions&)`. When the copy is too costly, the check returns nothing and the caller goes on with its own object.
 
+### A view member of an aggregate is filled from a named variable
+
+1. **Before filling a member of an aggregate in a designated initializer, read its type in the header**: a `std::string_view` (or a span, a pointer) filled with a concatenation, `std::string{…} + …`, points into a temporary that dies at the end of the full expression, and a helper that returns the aggregate hands out a dangling view. `RouteCall::path` is a `std::string_view`.
+2. **Build the text into a named `std::string` that outlives the call**, then fill the member from it, as `LeaderboardRoutesFixture::readLeaderboard()` does: `const std::string path = …;` then `RouteCall{.path = path, …}` in the same function as the call.
+3. **Every request of a fixture failing at once on a missing member of its answer** (`key 'scores' not found`) is the symptom: read the views of the request before the code under test.
+
 ## Example
 
 - ❌ **Before (wrong)**: `const RecordedWriting* label = writingOf(paintingOf(menu), "BACK");` → the record dies at the `;`, the anchor reads (0, 0) and the test fails for no reason in the menu.
 - ✅ **After (right)**: `const InterfaceCanvasRecord painting = paintingOf(menu);` then `const RecordedWriting* label = writingOf(painting, "BACK");`.
 - ❌ **Before (wrong)**: `const NetworkConditions& checkedConditions(const NetworkConditions& conditions)` returning `conditions` → `returning a constant reference parameter may cause use-after-free`.
 - ✅ **After (right)**: `NetworkConditions checkedConditions(const NetworkConditions& conditions)`: a copy of five fields, once per construction of `DatagramsInFlight`.
+- ❌ **Before (wrong)**: `RouteCall leaderboardCall(std::string_view query)` returning `RouteCall{.path = std::string{LEADERBOARD_URL} + std::string{query}, …}` → 18 leaderboard tests failed on `key 'scores' not found`.
+- ✅ **After (right)**: `const std::string path = std::string{LEADERBOARD_URL} + std::string{query};` in the fixture, then `sendRouteCall(port, RouteCall{.path = path, …})`.
