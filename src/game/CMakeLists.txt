@@ -12,6 +12,7 @@ add_subdirectory(Scripting)
 add_subdirectory(ShipControl)
 add_subdirectory(Spawning)
 add_subdirectory(Systems)
+add_subdirectory(Threat)
 add_subdirectory(Waves)
 
 add_library(rtype_game STATIC World.cpp)
