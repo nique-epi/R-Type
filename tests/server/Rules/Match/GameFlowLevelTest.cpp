@@ -128,7 +128,7 @@ TEST_F(GameFlowOneContinueFixture, TellsTheDefeatOnceItsContinuesAreSpent) {
 
   tick();
 
-  const std::vector<GameEnded> ends = endsSentTo(FIRST_PLAYER);
+  const std::vector<GameEnded> ends = messagesSentTo<GameEnded>(FIRST_PLAYER);
   ASSERT_FALSE(ends.empty());
   EXPECT_EQ(ends.front().outcome, WireGameOutcome::Defeat);
 }
@@ -216,7 +216,7 @@ TEST_F(GameFlowOneStageFixture, IsWonOnceTheLevelIsCleared) {
 
   runTicks(2);
 
-  const std::vector<GameEnded> ends = endsSentTo(FIRST_PLAYER);
+  const std::vector<GameEnded> ends = messagesSentTo<GameEnded>(FIRST_PLAYER);
   ASSERT_FALSE(ends.empty());
   EXPECT_EQ(ends.front().outcome, WireGameOutcome::Victory);
 }
@@ -231,7 +231,7 @@ TEST_F(GameFlowOneStageFixture, PaysTheRewardOfTheLevelItCleared) {
 
   runTicks(2);
 
-  const std::vector<GameEnded> ends = endsSentTo(FIRST_PLAYER);
+  const std::vector<GameEnded> ends = messagesSentTo<GameEnded>(FIRST_PLAYER);
   ASSERT_FALSE(ends.empty());
   ASSERT_EQ(ends.front().players.size(), 1U);
   EXPECT_EQ(ends.front().players.front().bounty, ONE_STAGE_REWARD);
@@ -247,7 +247,7 @@ TEST_F(GameFlowBrokenLevelFixture, IsLostOnceTheLevelFailed) {
 
   runTicks(2);
 
-  const std::vector<GameEnded> ends = endsSentTo(FIRST_PLAYER);
+  const std::vector<GameEnded> ends = messagesSentTo<GameEnded>(FIRST_PLAYER);
   ASSERT_FALSE(ends.empty());
   EXPECT_EQ(ends.front().outcome, WireGameOutcome::Defeat);
   ASSERT_EQ(ends.front().players.size(), 1U);
