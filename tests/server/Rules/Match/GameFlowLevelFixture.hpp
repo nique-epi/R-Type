@@ -54,6 +54,12 @@ class GameFlowDeclaredStartFixture : public GameFlowLevelFixture {
   GameFlowDeclaredStartFixture();
 };
 
+/** @brief A game that plays `opens_in_the_caves`. */
+class GameFlowCavesFixture : public GameFlowLevelFixture {
+ public:
+  GameFlowCavesFixture();
+};
+
 /** @brief A game that plays `one_stage`. */
 class GameFlowOneStageFixture : public GameFlowLevelFixture {
  public:

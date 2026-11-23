@@ -21,8 +21,10 @@ constexpr std::size_t INT16_WIRE_SIZE = sizeof(std::int16_t);
 constexpr std::uint32_t PROTOCOL_ID = 0x52545950;
 
 /**
- * @brief The version of the protocol this code speaks. Version 22 adds the
- * ExtraLifeWon kind to GameEvent, see the Version 22 section; version 21 adds
+ * @brief The version of the protocol this code speaks. Version 23 adds the
+ * sky the level opens in to GameStarted, see the Version 23 section; version
+ * 22 adds the ExtraLifeWon kind to GameEvent, see the Version 22 section;
+ * version 21 adds
  * the bounty of each player to GameEnded, see the Version 21 section; version
  * 20
  * adds the continues left of the team to LevelStatus, see the Version 20
@@ -61,7 +63,7 @@ constexpr std::uint32_t PROTOCOL_ID = 0x52545950;
  * frame, see the Compression section; version 3 adds the outcome of a game to
  * GameEnded, see the Version 3 section.
  */
-constexpr std::uint8_t PROTOCOL_VERSION = 22;
+constexpr std::uint8_t PROTOCOL_VERSION = 23;
 
 /**
  * @brief The session token of a datagram sent before the connection is

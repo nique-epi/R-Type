@@ -17,11 +17,13 @@
 #include "GameContext.hpp"
 #include "GameInstanceConstants.hpp"
 #include "GameSettings.hpp"
+#include "GameStarted.hpp"
 #include "IEntityOrders.hpp"
 #include "IHitArbitration.hpp"
 #include "LevelConstants.hpp"
 #include "LevelDirector.hpp"
 #include "LevelDirectorParts.hpp"
+#include "LevelProgress.hpp"
 #include "LevelTransition.hpp"
 #include "LifeKeeper.hpp"
 #include "LifeKeeperParts.hpp"
@@ -281,6 +283,16 @@ std::optional<std::string_view> MatchSystems::victoryReason() const {
 
 bool MatchSystems::levelFailed() const {
   return levelDirector_ != nullptr && levelDirector_->failed();
+}
+
+network::GameStarted MatchSystems::gameStarted() const {
+  if (levelDirector_ == nullptr) {
+    return network::GameStarted{};
+  }
+  const game::LevelProgress& progress = levelDirector_->progress();
+  return network::GameStarted{.biome = progress.biome,
+                              .scrollPosition = progress.scroll.position(),
+                              .biomeSince = progress.biomeSince};
 }
 
 std::uint32_t MatchSystems::clearReward() const {

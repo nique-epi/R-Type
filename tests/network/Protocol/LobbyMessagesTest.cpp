@@ -7,7 +7,6 @@
 #include "DatagramCodec.hpp"
 #include "GameEnded.hpp"
 #include "GameLoaded.hpp"
-#include "GameStarted.hpp"
 #include "LobbyMap.hpp"
 #include "LobbyMessagesFixtures.hpp"
 #include "LobbyState.hpp"
@@ -368,37 +367,6 @@ TEST(LobbyState, RefusesToWriteAVotePastTheLastMap) {
   lobby.players.front().mapVote = SECOND_MAP;
 
   EXPECT_THROW((void)encodeMessage(lobby), InvalidFieldValueException);
-}
-
-/**
- * Given the start of a game
- * When it is encoded
- * Then the payload is empty
- */
-TEST(GameStarted, EncodesAnEmptyPayload) {
-  EXPECT_TRUE(encodeMessage(GameStarted{}).empty());
-}
-
-/**
- * Given an empty payload
- * When it is decoded as GameStarted
- * Then GameStarted comes back
- */
-TEST(GameStarted, DecodesAnEmptyPayload) {
-  const std::vector<std::byte> empty;
-
-  EXPECT_EQ(decodeMessage<GameStarted>(empty), GameStarted{});
-}
-
-/**
- * Given a payload of one byte
- * When it is decoded as GameStarted
- * Then a TrailingBytesException is raised
- */
-TEST(GameStarted, RefusesAnyByteInThePayload) {
-  const auto bytes = byteSequence({0x00});
-
-  EXPECT_THROW((void)decodeMessage<GameStarted>(bytes), TrailingBytesException);
 }
 
 /**

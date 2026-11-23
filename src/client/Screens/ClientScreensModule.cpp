@@ -6,6 +6,7 @@
 #include <string_view>
 #include <utility>
 #include <vector>
+#include "AnnouncedStart.hpp"
 #include "AssetLibrary.hpp"
 #include "AudioServiceChoice.hpp"
 #include "ChatChannel.hpp"
@@ -138,6 +139,7 @@ void ClientScreensModule::install(engine::InstallContext& context) {
   window_ = &context.require<GameWindow>();
   connection_ = &context.require<ServerSession>();
   waitingRoom_ = &context.require<WaitingRoom>();
+  announcedStart_ = &context.require<AnnouncedStart>();
   shipLooks_ = &context.require<ShipLookExchange>();
   mapBallot_ = &context.require<IMapBallot>();
   entityMessages_ = &context.require<EntityMessageQueue>();
@@ -146,7 +148,6 @@ void ClientScreensModule::install(engine::InstallContext& context) {
   chat_ = &context.require<ChatChannel>();
   entityTable_ = &context.require<IEntityTypeTable>();
   sessionPack_ = &context.require<ISessionPack>();
-  entityTypes_ = std::make_unique<EntityTypeLooks>(*entityTable_);
   serverTicks_ = &context.require<IServerTicks>();
   serverCatalog_ = &context.require<IServerCatalog>();
   gameCatalog_ = &context.require<IGameCatalog>();
@@ -203,6 +204,7 @@ ScreenServices ClientScreensModule::services(const network::Endpoint& server) {
       .window = *window_,
       .connection = *connection_,
       .waitingRoom = *waitingRoom_,
+      .announcedStart = *announcedStart_,
       .shipLooks = *shipLooks_,
       .mapBallot = *mapBallot_,
       .entityMessages = *entityMessages_,
@@ -231,6 +233,7 @@ void ClientScreensModule::start() {
   if (audio_ == &silence_) {
     logger_.info("no sound module: the client runs without sound");
   }
+  entityTypes_ = std::make_unique<EntityTypeLooks>(*entityTable_);
   screens_ = std::make_unique<ClientScreens>(services(server), registry_);
   listenerHandle_ = listeners_->add([this](const sf::Event& event) {
     logInputEvent(logger_, event);

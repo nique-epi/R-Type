@@ -81,7 +81,7 @@ TEST_F(GameFlowOneWaveLevelFixture, TellsThePlayersTheGameWasWon) {
 
   runTicks(1);
 
-  const std::vector<GameEnded> ends = endsSentTo(FIRST_PLAYER);
+  const std::vector<GameEnded> ends = messagesSentTo<GameEnded>(FIRST_PLAYER);
   ASSERT_FALSE(ends.empty());
   EXPECT_EQ(ends.front().outcome, WireGameOutcome::Victory);
 }
@@ -132,7 +132,7 @@ TEST_F(GameFlowOneWaveLevelFixture, TellsThePlayersTheGameWasLost) {
 
   runTicks(1);
 
-  const std::vector<GameEnded> ends = endsSentTo(FIRST_PLAYER);
+  const std::vector<GameEnded> ends = messagesSentTo<GameEnded>(FIRST_PLAYER);
   ASSERT_FALSE(ends.empty());
   EXPECT_EQ(ends.front().outcome, WireGameOutcome::Defeat);
 }
@@ -152,7 +152,7 @@ TEST_F(GameFlowOneWaveLevelFixture,
 
   runTicks(2);
 
-  const std::vector<GameEnded> ends = endsSentTo(FIRST_PLAYER);
+  const std::vector<GameEnded> ends = messagesSentTo<GameEnded>(FIRST_PLAYER);
   ASSERT_FALSE(ends.empty());
   EXPECT_EQ(ends.front().outcome, WireGameOutcome::Defeat);
 }

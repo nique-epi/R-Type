@@ -102,7 +102,7 @@ TEST_F(GameFlowBossLevelFixture, IsWonOnceTheBossIsDestroyed) {
 
   runTicks(1);
 
-  const std::vector<GameEnded> ends = endsSentTo(FIRST_PLAYER);
+  const std::vector<GameEnded> ends = messagesSentTo<GameEnded>(FIRST_PLAYER);
   ASSERT_FALSE(ends.empty());
   EXPECT_EQ(ends.front().outcome, WireGameOutcome::Victory);
 }

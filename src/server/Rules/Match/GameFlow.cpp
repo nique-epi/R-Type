@@ -195,7 +195,7 @@ void GameFlow::advanceState() {
         shipEveryPlayer(game_.roster.get(), replication_);
       }
       changeState(state_, GameState::Starting, game_.events.get());
-      startBarrier_.open();
+      startBarrier_.open(systems_->gameStarted());
       break;
     case GameState::Starting:
       if (startBarrier_.advance()) {

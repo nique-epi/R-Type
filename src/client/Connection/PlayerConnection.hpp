@@ -1,5 +1,6 @@
 #pragma once
 
+#include "AnnouncedStart.hpp"
 #include "ArrivalTally.hpp"
 #include "ChatChannel.hpp"
 #include "ContentLoading.hpp"
@@ -110,6 +111,7 @@ class PlayerConnection {
   network::MessageDispatcher dispatcher_;
   OrderedInbox orderedInbox_;
   GameLoadedReminder gameLoaded_;
+  AnnouncedStart announcedStart_;
   WaitingRoom waitingRoom_;
   ShipLookExchange shipLooks_;
   MapBallot mapBallot_;

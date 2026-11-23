@@ -1,11 +1,13 @@
 #include "WireTypes.hpp"
 #include <algorithm>
+#include <bit>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <string>
 #include <string_view>
+#include "BiomeName.hpp"
 #include "ByteReader.hpp"
 #include "ByteWriter.hpp"
 #include "NetworkException.hpp"
@@ -192,6 +194,26 @@ identifiers::ShipLook readShipLook(ByteReader& reader) {
                                    .hull = reader.readUint8()};
   requireValidShipLook(look);
   return look;
+}
+
+void requireValidBiome(std::string_view biome) {
+  if (!biome.empty() && !identifiers::isBiomeName(biome)) {
+    throw InvalidFieldValueException(BIOME_FIELD, biome.size());
+  }
+}
+
+void requireFiniteValue(std::string_view field, float value) {
+  if (!std::isfinite(value)) {
+    throw InvalidFieldValueException(field,
+                                     std::bit_cast<std::uint32_t>(value));
+  }
+}
+
+void requireScrollValue(std::string_view field, float value) {
+  if (!std::isfinite(value) || value < 0.0F) {
+    throw InvalidFieldValueException(field,
+                                     std::bit_cast<std::uint32_t>(value));
+  }
 }
 
 void requireFullyRead(const ByteReader& reader) {

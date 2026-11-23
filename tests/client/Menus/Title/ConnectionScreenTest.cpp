@@ -440,8 +440,8 @@ INSTANTIATE_TEST_SUITE_P(
         std::tuple(RefusalReason::LivesOutOfRange, LIVES_BOUNDS_REFUSAL)));
 
 /**
- * Given an attempt a server of protocol version 23 refused as
- * IncompatibleVersion, the client speaking version 22
+ * Given an attempt a server of protocol version 24 refused as
+ * IncompatibleVersion, the client speaking version 23
  * When a frame goes by
  * Then the status line names both versions, the client's first
  */
@@ -450,7 +450,7 @@ TEST_F(ConnectionScreenFixture, AVersionRefusalNamesBothVersions) {
         .refusal = RefusalReason::IncompatibleVersion,
         .serverVersion = NEXT_PROTOCOL_VERSION});
 
-  EXPECT_NE(writingOf(canvas(), "REFUSED: V22, SERVER V23"), nullptr);
+  EXPECT_NE(writingOf(canvas(), "REFUSED: V23, SERVER V24"), nullptr);
 }
 
 /**

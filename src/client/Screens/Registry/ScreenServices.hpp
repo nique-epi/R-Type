@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include "AnnouncedStart.hpp"
 #include "AssetLibrary.hpp"
 #include "ChatChannel.hpp"
 #include "EntityMessageQueue.hpp"
@@ -57,6 +58,9 @@ struct ScreenServices {
   std::reference_wrapper<GameWindow> window;
   std::reference_wrapper<ServerSession> connection;
   std::reference_wrapper<WaitingRoom> waitingRoom;
+  /** @brief The GameStarted of the game in progress: a game shows the sky
+   * its level opens in while it loads. */
+  std::reference_wrapper<const AnnouncedStart> announcedStart;
   std::reference_wrapper<ShipLookExchange> shipLooks;
   std::reference_wrapper<IMapBallot> mapBallot;
   std::reference_wrapper<EntityMessageQueue> entityMessages;

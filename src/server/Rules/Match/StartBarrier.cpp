@@ -29,11 +29,12 @@ StartBarrier::StartBarrier(PlayerRoster& roster,
       send_(std::move(send)),
       logger_(std::string{INSTANCES_LOGGER_NAME}) {}
 
-void StartBarrier::open() {
+void StartBarrier::open(network::GameStarted started) {
+  started_ = std::move(started);
   waitedTicks_ = 0;
   for (ConnectedPlayer* const player : roster_.connected()) {
     player->loaded = false;
-    send_(sessionDatagram(*player, network::GameStarted{}));
+    send_(sessionDatagram(*player, started_));
   }
 }
 
@@ -53,7 +54,7 @@ bool StartBarrier::advance() {
   if (waitedTicks_ % GAME_STARTED_REPEAT_TICKS == 0) {
     for (ConnectedPlayer* const player : players) {
       if (isStillLoading(player)) {
-        send_(sessionDatagram(*player, network::GameStarted{}));
+        send_(sessionDatagram(*player, started_));
       }
     }
   }

@@ -936,9 +936,9 @@ Each game's `InputKeeper` tells the newest input of each of its players from a l
 
 `StartBarrier` (`src/server/Rules/Match/`) holds the start of a game until the clients show it, so every player begins at the same moment instead of the one with the slower loading screen starting behind. The `GameFlow` of a game owns one.
 
-- `open()`, called on the tick the game goes from `WaitingForPlayers` to `Starting`, clears `ConnectedPlayer::loaded` of every connected player and sends each `GameStarted`.
+- `open(started)`, called on the tick the game goes from `WaitingForPlayers` to `Starting`, clears `ConnectedPlayer::loaded` of every connected player and sends each `started`: the `GameStarted` of the new world, which `MatchSystems::gameStarted()` fills with the biome, the scroll and the start of that biome the `LevelDirector` stands at before its first tick, at the start of its first stage or of the stage the game starts at, and leaves empty for a game that plays its waves. The client shows that sky while it loads (see [Protocol](/R-Type/protocol/#a-session)).
 - `advance()`, called on every tick of `Starting`, counts one tick and returns whether the game may start: when every connected player that is not away is loaded, or when `START_BARRIER_TICKS` (600, 10 s) ticks were counted, in which case it logs `starting without <n> player(s) who did not load the game in time` at the `warn` level under `Instances`. An away player is not waited for, as in the ready check.
-- Every `GAME_STARTED_REPEAT_TICKS` (30, half a second) ticks it sends `GameStarted` again to the players not yet loaded, so a lost copy does not cost them the whole wait.
+- Every `GAME_STARTED_REPEAT_TICKS` (30, half a second) ticks it sends that same `GameStarted` again to the players not yet loaded, so a lost copy does not cost them the whole wait.
 - `ConnectedPlayer::loaded` is set by `ReadyKeeper` when a `GameLoaded` is read, in any state of the game; only the wait reads it, and `open()` clears it, so a `GameLoaded` from before the wait changes nothing.
 - The wait is counted in ticks, like `FINISHED_STATE_TICKS`, so a stall of the server does not shorten it (see [Silent players](#silent-players-heartbeats-and-timeouts)).
 
