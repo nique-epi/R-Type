@@ -20,6 +20,15 @@
 #                                   of each wave whose number is a multiple
 #                                   of it, never the first, 1 to 100; 1 when
 #                                   left out, each wave from the second
+#   carrier                         optional: the enemy that carries a
+#                                   crystal into the waves, the name of a
+#                                   sheet of side enemy in entities/ that
+#                                   drops crystals; no carrier when left out
+#   carrier_every                   optional: the carrier comes at the start
+#                                   of each wave whose number is a multiple
+#                                   of it, never the first, 1 to 100; 2 when
+#                                   left out, every other wave from the
+#                                   second
 #   first_wave_bydos                Bydos of the first wave, 1 to 100
 #   bydos_added_per_wave            Bydos each next wave adds, 0 to 100
 #   first_spawn_interval_ms         milliseconds between two Bydos of the
@@ -60,6 +69,8 @@
 enemies = ["drifter", "drifter", "weaver"]
 look_items = ["look_crown", "look_party_hat", "look_cowboy_hat", "look_propeller_cap", "look_chapka", "look_santa_hat", "look_fez", "look_halo"]
 look_item_every = 3
+carrier = "crystal_carrier"
+carrier_every = 2
 first_wave_bydos = 2
 bydos_added_per_wave = 1
 first_spawn_interval_ms = 2500
@@ -74,6 +85,8 @@ enemy_gun_interval_percent = 130
 enemies = ["drifter", "weaver", "drifter", "voltjelly", "weaver", "reaper"]
 look_items = ["look_crown", "look_party_hat", "look_cowboy_hat", "look_propeller_cap", "look_viking_helmet", "look_wizard_hat", "look_chef_toque", "look_chapka", "look_tricorn", "look_santa_hat", "look_halo", "look_devil_horns", "look_sombrero", "look_traffic_cone", "look_fez", "look_grad_cap", "look_antennae", "look_kabuto", "look_mohawk", "look_glasses_3d", "look_monocle", "look_long_beard"]
 look_item_every = 3
+carrier = "crystal_carrier"
+carrier_every = 2
 first_wave_bydos = 3
 bydos_added_per_wave = 1
 first_spawn_interval_ms = 2000
@@ -89,6 +102,8 @@ enemy_gun_interval_percent = 100
 enemies = ["weaver", "drifter", "reaper", "weaver", "drillback", "voltjelly", "weaver", "bydomancer"]
 look_items = ["look_crown", "look_party_hat", "look_cowboy_hat", "look_propeller_cap", "look_viking_helmet", "look_wizard_hat", "look_chef_toque", "look_chapka", "look_tricorn", "look_santa_hat", "look_halo", "look_devil_horns", "look_sombrero", "look_traffic_cone", "look_fez", "look_grad_cap", "look_antennae", "look_kabuto", "look_mohawk", "look_glasses_3d", "look_monocle", "look_long_beard"]
 look_item_every = 3
+carrier = "crystal_carrier"
+carrier_every = 2
 first_wave_bydos = 4
 bydos_added_per_wave = 2
 first_spawn_interval_ms = 1500

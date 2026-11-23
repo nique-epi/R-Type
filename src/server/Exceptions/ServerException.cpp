@@ -46,6 +46,13 @@ UnknownBossException::UnknownBossException(
                       ": unknown boss \"" + boss +
                       "\"; known: " + engine::listText(known)) {}
 
+UnknownCarrierException::UnknownCarrierException(
+    const engine::DataFilePlace& place, const std::string& carrier,
+    const std::vector<std::string>& known)
+    : ServerException(engine::placeText(place) + ": " + place.key +
+                      ": unknown crystal carrier \"" + carrier +
+                      "\"; known: " + engine::listText(known)) {}
+
 InvalidLookItemListException::InvalidLookItemListException(
     const engine::DataFilePlace& place, engine::WholeNumberRange length)
     : ServerException(engine::placeText(place) + ": " + place.key +

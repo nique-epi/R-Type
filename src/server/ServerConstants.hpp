@@ -201,7 +201,7 @@ constexpr std::string_view SHIP_SHEET_NAME = "ship";
  * are not vanilla. A test fails when the shipped file changes and this does
  * not.
  */
-constexpr std::uint64_t OFFICIAL_WAVES_FINGERPRINT = 0x9ddf848faace48c6;
+constexpr std::uint64_t OFFICIAL_WAVES_FINGERPRINT = 0x16eff950d26d9834;
 
 /**
  * @brief The fingerprint of the entity sheets the game ships, as

@@ -19,4 +19,10 @@ constexpr std::size_t SECOND_WAVE = 2;
  */
 constexpr float LOOK_ITEM_ENTRY_HEIGHT = 0.5F;
 
+/**
+ * @brief Where a crystal carrier enters, from the top of the right edge: a
+ * quarter of the way down, above a look item that comes with the same wave.
+ */
+constexpr float CARRIER_ENTRY_HEIGHT = 0.25F;
+
 }  // namespace rtype::server

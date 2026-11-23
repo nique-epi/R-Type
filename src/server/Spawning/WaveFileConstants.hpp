@@ -5,6 +5,7 @@
 #include <string_view>
 #include "SipHash.hpp"
 #include "WavePlanConstants.hpp"
+#include "WaveSpacingKey.hpp"
 #include "WholeNumberRange.hpp"
 
 namespace rtype::server {
@@ -27,6 +28,15 @@ constexpr std::string_view LOOK_ITEMS_KEY = "look_items";
 constexpr std::string_view LOOK_ITEM_EVERY_KEY = "look_item_every";
 constexpr std::int64_t DEFAULT_LOOK_ITEM_EVERY =
     static_cast<std::int64_t>(LOOK_ITEM_EVERY_WAVE);
+/** @brief The optional keys of a difficulty that bring a crystal carrier into
+ * its waves: the name of the sheet of an enemy that drops crystals, and how
+ * often it comes, with each wave whose number is a multiple of it, never with
+ * the first, from 1 to MOST_WAVES_IN_A_LEVEL; DEFAULT_CARRIER_EVERY when left
+ * out. */
+constexpr std::string_view CARRIER_KEY = "carrier";
+constexpr std::string_view CARRIER_EVERY_KEY = "carrier_every";
+constexpr std::int64_t DEFAULT_CARRIER_EVERY =
+    static_cast<std::int64_t>(CARRIER_EVERY_WAVE);
 constexpr std::string_view FIRST_WAVE_BYDOS_KEY = "first_wave_bydos";
 constexpr std::string_view BYDOS_ADDED_PER_WAVE_KEY = "bydos_added_per_wave";
 constexpr std::string_view FIRST_SPAWN_INTERVAL_KEY = "first_spawn_interval_ms";
@@ -55,13 +65,15 @@ constexpr engine::WholeNumberRange PERCENT_KEY_RANGE{.lowest = 1,
 /**
  * @brief Every key the root of a waves file may hold, and every key a
  * difficulty may hold; all are required but `boss`, the three percents,
- * `look_items` and `look_item_every`. Any other key is refused, so a misspelt
- * key never goes unnoticed.
+ * `look_items`, `look_item_every`, `carrier` and `carrier_every`. Any other
+ * key is refused, so a misspelt key never goes unnoticed.
  */
 constexpr std::array ROOT_KEYS{DIFFICULTY_TABLE_KEY};
 constexpr std::array WAVE_PLAN_KEYS{ENEMIES_KEY,
                                     LOOK_ITEMS_KEY,
                                     LOOK_ITEM_EVERY_KEY,
+                                    CARRIER_KEY,
+                                    CARRIER_EVERY_KEY,
                                     FIRST_WAVE_BYDOS_KEY,
                                     BYDOS_ADDED_PER_WAVE_KEY,
                                     FIRST_SPAWN_INTERVAL_KEY,
@@ -116,6 +128,17 @@ constexpr engine::WholeNumberRange LEVEL_WAVES_RANGE{
     .lowest = 1, .highest = MOST_WAVES_IN_A_LEVEL};
 constexpr engine::WholeNumberRange LOOK_ITEM_EVERY_RANGE{
     .lowest = 1, .highest = MOST_WAVES_IN_A_LEVEL};
+constexpr engine::WholeNumberRange CARRIER_EVERY_RANGE{
+    .lowest = 1, .highest = MOST_WAVES_IN_A_LEVEL};
+
+/** @brief The keys that space the look items and the crystal carrier of a
+ * difficulty, with what each gives when left out and accepts. */
+constexpr WaveSpacingKey LOOK_ITEM_SPACING{.key = LOOK_ITEM_EVERY_KEY,
+                                           .fallback = DEFAULT_LOOK_ITEM_EVERY,
+                                           .range = LOOK_ITEM_EVERY_RANGE};
+constexpr WaveSpacingKey CARRIER_SPACING{.key = CARRIER_EVERY_KEY,
+                                         .fallback = DEFAULT_CARRIER_EVERY,
+                                         .range = CARRIER_EVERY_RANGE};
 
 /**
  * @brief What WaveCatalog::fingerprint() puts between the texts of two waves

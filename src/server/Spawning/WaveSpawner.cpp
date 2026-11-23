@@ -23,6 +23,7 @@
 #include "ServerException.hpp"
 #include "TimeConstants.hpp"
 #include "Wave.hpp"
+#include "WaveDirector.hpp"
 #include "WaveEntryPosition.hpp"
 #include "WavePlan.hpp"
 #include "WavePlanConstants.hpp"
@@ -65,6 +66,21 @@ std::vector<std::reference_wrapper<const game::EntitySheet>> lookItemSheetsOf(
   return sheets;
 }
 
+/** @returns The sheet of @p types the crystal carrier of @p waves names;
+ * nullptr when it names none.
+ * @throws game::UnknownEntityTypeException for a name of no sheet. */
+const game::EntitySheet* carrierSheetOf(const WavePlan& waves,
+                                        const game::EntitySheets& types) {
+  return waves.carrier.has_value() ? &types.named(*waves.carrier) : nullptr;
+}
+
+/** @returns Whether the wave @p director plays brings what comes with each
+ * wave whose number is a multiple of @p every, never with the first. */
+bool bringsOne(const game::WaveDirector& director, std::size_t every) {
+  const std::size_t wave = director.waveNumber();
+  return wave >= SECOND_WAVE && wave % every == 0;
+}
+
 }  // namespace
 
 WaveSpawner::WaveSpawner(WaveSpawnerParts parts)
@@ -77,6 +93,9 @@ WaveSpawner::WaveSpawner(WaveSpawnerParts parts)
       lookItems_(lookItemSheetsOf(parts.waves, parts.types.get())),
       lookItemEvery_(
           std::max(parts.waves.lookItemEvery, FEWEST_WAVES_PER_LOOK_ITEM)),
+      carrier_(carrierSheetOf(parts.waves, parts.types.get())),
+      carrierEvery_(
+          std::max(parts.waves.carrierEvery, FEWEST_WAVES_PER_CARRIER)),
       nextLookItem_(lookItems_.empty() ? 0 : parts.seed % lookItems_.size()),
       waveDirector_(parts.waves.curve) {
   logger_.info("wave spawning starts from the seed ", parts.seed);
@@ -88,9 +107,13 @@ void WaveSpawner::onTick() {
   const std::size_t wave = waveDirector_.waveNumber();
   if (wave != loggedWaveNumber_) {
     logCurrentWave();
-    if (wave >= SECOND_WAVE && wave % lookItemEvery_ == 0 &&
-        !lookItems_.empty()) {
-      spawnLookItem();
+    if (bringsOne(waveDirector_, lookItemEvery_) && !lookItems_.empty() &&
+        spawnAtEntryHeight(lookItems_[nextLookItem_ % lookItems_.size()],
+                           LOOK_ITEM_ENTRY_HEIGHT)) {
+      ++nextLookItem_;
+    }
+    if (bringsOne(waveDirector_, carrierEvery_) && carrier_ != nullptr) {
+      static_cast<void>(spawnAtEntryHeight(*carrier_, CARRIER_ENTRY_HEIGHT));
     }
   }
   for (std::size_t enemy = 0; enemy < enemiesDue; ++enemy) {
@@ -113,17 +136,15 @@ void WaveSpawner::spawnOne() {
   announce(sheet, *networkId, position);
 }
 
-void WaveSpawner::spawnLookItem() {
-  const game::EntitySheet& sheet =
-      lookItems_[nextLookItem_ % lookItems_.size()];
-  const game::Position position =
-      game::waveEntryPosition(LOOK_ITEM_ENTRY_HEIGHT);
+bool WaveSpawner::spawnAtEntryHeight(const game::EntitySheet& sheet,
+                                     float height) {
+  const game::Position position = game::waveEntryPosition(height);
   const std::optional<std::uint32_t> networkId = createEntity(sheet, position);
   if (!networkId.has_value()) {
-    return;
+    return false;
   }
-  ++nextLookItem_;
   announce(sheet, *networkId, position);
+  return true;
 }
 
 game::Position WaveSpawner::nextPosition() {

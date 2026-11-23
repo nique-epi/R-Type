@@ -61,6 +61,16 @@ class TooManyDifficultiesException : public ServerException {
                                std::size_t maximum);
 };
 
+/** @brief A difficulty names as its crystal carrier a sheet that is no enemy
+ * dropping crystals. */
+class UnknownCarrierException : public ServerException {
+ public:
+  /** @param known The carriers the server knows, in the message. */
+  UnknownCarrierException(const engine::DataFilePlace& place,
+                          const std::string& carrier,
+                          const std::vector<std::string>& known);
+};
+
 /** @brief A difficulty names as its boss a sheet that is no boss. */
 class UnknownBossException : public ServerException {
  public:

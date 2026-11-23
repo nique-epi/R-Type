@@ -35,6 +35,13 @@ struct WavePlan {
    * this count, never with the first: 1 for each wave from the second, 3 for
    * the third, the sixth, the ninth. At least 1. */
   std::size_t lookItemEvery{LOOK_ITEM_EVERY_WAVE};
+  /** @brief The sheet of the enemy that carries a crystal into the waves, an
+   * enemy that drops crystals; nothing for waves that bring none. */
+  std::optional<std::string> carrier{std::nullopt};
+  /** @brief The carrier comes with each wave whose number is a multiple of
+   * this count, never with the first: 2 for the second, the fourth, the
+   * sixth. At least 1. */
+  std::size_t carrierEvery{CARRIER_EVERY_WAVE};
 
   bool operator==(const WavePlan&) const = default;
 };

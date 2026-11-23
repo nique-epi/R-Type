@@ -50,6 +50,12 @@ namespace rtype::server {
  * not counted among the enemies of the wave, so it never holds a wave open,
  * and it draws no number from the random generator.
  *
+ * The crystal carrier the plan names, if any, enters a quarter of the way
+ * down the right edge as a wave begins, with each wave whose number is a
+ * multiple of the carrierEvery of the plan, never with the first. It is an
+ * enemy: the wave stays open until it is killed or gone on the left, and it
+ * draws no number from the random generator either.
+ *
  * Not thread-safe: use it from the simulation thread only.
  */
 class WaveSpawner {
@@ -81,12 +87,13 @@ class WaveSpawner {
  private:
   void spawnOne();
 
-  /** @brief Creates the next look item of the plan at the middle of the right
-   * edge and announces it, in the tick the director moves to a new wave: the
-   * director does so when the last wave is cleared, at the start of the pause
-   * before the next one. Skipped, with a warning, when every network id was
-   * given. */
-  void spawnLookItem();
+  /** @brief Creates a body of @p sheet on the right edge, @p height of the way
+   * down, and announces it: the look items and the carrier, in the tick the
+   * director moves to a new wave, which it does when the last wave is
+   * cleared, at the start of the pause before the next one.
+   * @returns Whether it was created; it is skipped, with a warning, when
+   * every network id was given. */
+  bool spawnAtEntryHeight(const game::EntitySheet& sheet, float height);
   [[nodiscard]] game::Position nextPosition();
   [[nodiscard]] const game::EntitySheet& nextEnemy() const;
   [[nodiscard]] std::optional<std::uint32_t> createEntity(
@@ -104,6 +111,9 @@ class WaveSpawner {
   std::vector<std::reference_wrapper<const game::EntitySheet>> enemies_;
   std::vector<std::reference_wrapper<const game::EntitySheet>> lookItems_;
   std::size_t lookItemEvery_;
+  /** nullptr for a plan that names no crystal carrier. */
+  const game::EntitySheet* carrier_;
+  std::size_t carrierEvery_;
   std::size_t spawnedCount_{0};
   /** @brief The place in lookItems_ of the next look item; it starts at the
    * seed modulo their count, so two games do not bring the same ones. */

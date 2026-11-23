@@ -11,7 +11,7 @@ Only the server reads the file: the supervisor and each game process, once, when
 
 ## A difficulty, key by key
 
-A difficulty is a table `[difficulty.<name>]` holding eight keys, a ninth, `boss`, when its level ends with a boss, a tenth, `boss_health_percent`, to make that boss sturdier or frailer, two more, `enemy_health_percent` and `enemy_gun_interval_percent`, to make every other enemy sturdier and quicker to fire or the reverse, and two last, `look_items` and `look_item_every`; every key past the eighth may be left out:
+A difficulty is a table `[difficulty.<name>]` holding eight keys, a ninth, `boss`, when its level ends with a boss, a tenth, `boss_health_percent`, to make that boss sturdier or frailer, two more, `enemy_health_percent` and `enemy_gun_interval_percent`, to make every other enemy sturdier and quicker to fire or the reverse, two more, `look_items` and `look_item_every`, and two last, `carrier` and `carrier_every`, to bring a crystal carrier into its waves; every key past the eighth may be left out:
 
 ```toml
 [difficulty.normal]
@@ -31,6 +31,8 @@ boss = "bydo_tyrant"
 | `enemies` | names | a list of 1 to 100 names | the entity sheets the Bydos are made from, in turn (see [Enemies](#enemies)) |
 | `look_items` | names | a list of 0 to 100 names; may be left out | the look items its waves bring, in turn (see [Look items](#look-items)) |
 | `look_item_every` | waves | 1 to 100; may be left out, 1 then | a look item comes with each wave whose number is a multiple of it, never the first |
+| `carrier` | a name | a sheet of side `enemy` that drops crystals; may be left out | the enemy that carries a crystal into its waves (see [Crystal carrier](#crystal-carrier)) |
+| `carrier_every` | waves | 1 to 100; may be left out, 2 then | the carrier comes with each wave whose number is a multiple of it, never the first |
 | `first_wave_bydos` | Bydos | 1 to 100 | how many Bydos the first wave holds |
 | `bydos_added_per_wave` | Bydos | 0 to 100 | how many more each next wave holds |
 | `first_spawn_interval_ms` | milliseconds | 1 to 60000 | the time between two Bydos of the first wave |
@@ -43,7 +45,7 @@ boss = "bydo_tyrant"
 | `enemy_health_percent` | percent | 1 to 1000; 100 when left out | the health of every enemy that is no boss, in percent of what its sheet gives, rounded down and never under one point; each player past the first adds `ENEMY_HEALTH_PER_EXTRA_PLAYER` (40) to it. It holds in a level a script directs too, whose enemies come from the same sheets |
 | `enemy_gun_interval_percent` | percent | 1 to 1000; 100 when left out | the ticks the gun of every enemy that is no boss waits, between two shots and before the first, in percent of what its sheet gives, rounded down and never under one tick between two shots: less for an enemy that fires more often; each player past the first adds `ENEMY_GUN_INTERVAL_PER_EXTRA_PLAYER` (-10) to it, so a team of four meets 43 % more shots. In a level too |
 
-Every key but `boss`, the three percents, `look_items` and `look_item_every` is required, and any other key is refused, so a misspelt key stops the server instead of being ignored. Every number is a TOML integer: `2500`, never `2500.0` or `"2500"`. The keys and the ranges live in `src/server/Spawning/WaveFileConstants.hpp`; the names are those of the entity sheets.
+Every key but `boss`, the three percents, `look_items`, `look_item_every`, `carrier` and `carrier_every` is required, and any other key is refused, so a misspelt key stops the server instead of being ignored. Every number is a TOML integer: `2500`, never `2500.0` or `"2500"`. The keys and the ranges live in `src/server/Spawning/WaveFileConstants.hpp`; the names are those of the entity sheets.
 
 ## How the waves grow
 
@@ -76,6 +78,10 @@ The Bydos take the names of the list in turn, and the turn carries on from one w
 
 A name of `look_items` is the name of an entity sheet of side `look_item` (see [Writing an entity sheet](/R-Type/entity-sheets/)): an item of the locker of the hangar that floats to the left and goes to the pilot whose ship touches it first. One item enters at the middle of the right edge as a wave begins, that is when its pause starts, with each wave whose number is a multiple of `look_item_every`, never the first: 1, or no key, brings one with each wave from the second; 3 brings one with the third, the sixth and the ninth. The names are taken in turn, from a place the seed of the game gives (the seed modulo the number of names), so two games do not bring the same items. It is not a Bydo: it never holds a wave open, and it draws no number from the random generator, so the Bydos of a seed keep their heights. A difficulty without the key, or with an empty list, brings none. The 22 shipped items are `look_party_hat`, `look_crown`, `look_propeller_cap`, `look_cowboy_hat`, `look_viking_helmet`, `look_wizard_hat`, `look_chef_toque`, then `look_chapka`, `look_tricorn`, `look_santa_hat`, `look_halo`, `look_devil_horns`, `look_sombrero`, `look_traffic_cone`, `look_fez`, `look_grad_cap`, `look_antennae`, `look_kabuto`, `look_mohawk`, `look_glasses_3d`, `look_monocle`, `look_long_beard`.
 
+## Crystal carrier
+
+A game that plays no level, on a server that loads none, plays the waves of its difficulty, and no level script sends the enemies that drop the crystals of the weapons. `carrier` names one: the name of an entity sheet of side `enemy` whose `drops` lists crystals (see [Writing an entity sheet](/R-Type/entity-sheets/)). It enters a quarter of the way down the right edge as a wave begins, with each wave whose number is a multiple of `carrier_every`, never the first: 2, or no key, brings one with the second, the fourth and the sixth waves. It is an enemy: the wave stays open until it is killed or gone on the left, and a missile that kills it drops one of its crystals. It draws no number from the random generator, so the Bydos of a seed keep their heights. A difficulty without `carrier` brings none.
+
 ## The shipped difficulties
 
 | Key | `easy` | `normal` | `hard` |
@@ -83,6 +89,8 @@ A name of `look_items` is the name of an entity sheet of side `look_item` (see [
 | `enemies` | `drifter`, `drifter`, `weaver` | `drifter`, `weaver`, `drifter`, `voltjelly`, `weaver`, `reaper` | `weaver`, `drifter`, `reaper`, `weaver`, `drillback`, `voltjelly`, `weaver`, `bydomancer` |
 | `look_items` | `look_crown`, `look_party_hat`, `look_cowboy_hat`, `look_propeller_cap`, `look_chapka`, `look_santa_hat`, `look_fez`, `look_halo` | the 22 shipped items, `look_crown` first | the 22 shipped items, `look_crown` first |
 | `look_item_every` | 3 | 3 | 3 |
+| `carrier` | `crystal_carrier` | `crystal_carrier` | `crystal_carrier` |
+| `carrier_every` | 2 | 2 | 2 |
 | `first_wave_bydos` | 2 | 3 | 4 |
 | `bydos_added_per_wave` | 1 | 1 | 2 |
 | `first_spawn_interval_ms` | 2500 | 2000 | 1500 |
@@ -160,7 +168,7 @@ A game process reads the whole file, every difficulty included, when it starts, 
 
 `level_waves` follows the same messages: a difficulty without it stops the server with `difficulty.normal.level_waves is missing`, and a value outside 1 to 100, or one that is not an integer, with `difficulty.normal.level_waves must be an integer from 1 to 100`. A file written before the key existed is refused the same way, so add `level_waves` to every difficulty of a file of your own.
 
-A `boss` that names no sheet, or a sheet without `[gameplay.boss]`, stops the server with the name and the bosses it knows: `difficulty.normal.boss: unknown boss "drifter"; known: bydo_tyrant`, after the place of the value.
+A `boss` that names no sheet, or a sheet without `[gameplay.boss]`, stops the server with the name and the bosses it knows: `difficulty.normal.boss: unknown boss "drifter"; known: bydo_tyrant`, after the place of the value. A `carrier` that names no enemy dropping crystals does the same with the carriers it knows: `difficulty.normal.carrier: unknown crystal carrier "drifter"; known: crystal_carrier`.
 
 Neither of the last two depends on the folder the server is started from. No assets folder means the executable was copied away from the repository; a missing file means `assets/waves/waves.toml` was moved or renamed.
 

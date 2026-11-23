@@ -32,6 +32,7 @@
 #include "WaveFileConstants.hpp"
 #include "WaveFileText.hpp"
 #include "WavePlan.hpp"
+#include "WaveSpacingKey.hpp"
 #include "WholeNumberRange.hpp"
 
 namespace rtype::server {
@@ -291,19 +292,53 @@ game::EnemyStrength enemyStrengthFrom(const DifficultyLayers& layers) {
           percentFrom(layers, ENEMY_GUN_INTERVAL_PERCENT_KEY)};
 }
 
-/** @returns The waves one difficulty describes, each key read from the
- * layer of @p layers that gives it, its enemies checked against @p types. */
-/** @returns How often a wave of the table of one difficulty brings a look
- * item, DEFAULT_LOOK_ITEM_EVERY when it gives none; throws as
- * engine::wholeNumberAt(). */
-std::size_t lookItemEveryFrom(const DataFileTable& table) {
-  if (!table.table.get().contains(LOOK_ITEM_EVERY_KEY)) {
-    return static_cast<std::size_t>(DEFAULT_LOOK_ITEM_EVERY);
+/** @returns How many waves the key @p spacing of one difficulty puts between
+ * two of what it spaces, read from the layer of @p layers that gives it;
+ * its fallback when none does. Throws as engine::wholeNumberAt() when it lies
+ * outside its range. */
+std::size_t wavesBetweenFrom(const DifficultyLayers& layers,
+                             const WaveSpacingKey& spacing) {
+  const DataFileTable& table = layerHolding(layers, spacing.key);
+  if (!table.table.get().contains(spacing.key)) {
+    return static_cast<std::size_t>(spacing.fallback);
   }
   return static_cast<std::size_t>(
-      engine::wholeNumberAt(table, LOOK_ITEM_EVERY_KEY, LOOK_ITEM_EVERY_RANGE));
+      engine::wholeNumberAt(table, spacing.key, spacing.range));
 }
 
+/** @returns The names of the sheets of @p types that are enemies dropping
+ * crystals, for the errors. */
+std::vector<std::string> carrierNamesOf(const game::EntitySheets& types) {
+  std::vector<std::string> names;
+  for (const game::EntitySheet& sheet : types.all()) {
+    if (sheet.side == game::EntityType::Enemy && !sheet.drops.empty()) {
+      names.push_back(sheet.name);
+    }
+  }
+  return names;
+}
+
+/** @returns The crystal carrier the table of one difficulty names; nothing
+ * without one.
+ * @throws engine::DataFileTextExpectedException when it is not a text, and
+ * UnknownCarrierException when it names no enemy of @p types that drops
+ * crystals. */
+std::optional<std::string> carrierFrom(const DataFileTable& table,
+                                       const game::EntitySheets& types) {
+  if (!table.table.get().contains(CARRIER_KEY)) {
+    return std::nullopt;
+  }
+  std::string carrier = engine::textAt(table, CARRIER_KEY);
+  const std::vector<std::string> carriers = carrierNamesOf(types);
+  if (std::ranges::find(carriers, carrier) == carriers.end()) {
+    throw UnknownCarrierException(engine::placeOfKey(table, CARRIER_KEY),
+                                  carrier, carriers);
+  }
+  return carrier;
+}
+
+/** @returns The waves one difficulty describes, each key read from the
+ * layer of @p layers that gives it, its enemies checked against @p types. */
 WavePlan planFrom(const DifficultyLayers& layers,
                   const game::EntitySheets& types) {
   return WavePlan{
@@ -315,8 +350,9 @@ WavePlan planFrom(const DifficultyLayers& layers,
       .enemyStrength = enemyStrengthFrom(layers),
       .lookItems = lookItemsFrom(EnemyList{
           .table = layerHolding(layers, LOOK_ITEMS_KEY), .types = types}),
-      .lookItemEvery =
-          lookItemEveryFrom(layerHolding(layers, LOOK_ITEM_EVERY_KEY))};
+      .lookItemEvery = wavesBetweenFrom(layers, LOOK_ITEM_SPACING),
+      .carrier = carrierFrom(layerHolding(layers, CARRIER_KEY), types),
+      .carrierEvery = wavesBetweenFrom(layers, CARRIER_SPACING)};
 }
 
 /** @returns The waves of every difficulty of @p laid, their enemies checked
