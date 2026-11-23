@@ -5,6 +5,7 @@
 #include <span>
 #include <string>
 #include <vector>
+#include "AnnouncedStart.hpp"
 #include "ConnectionConstants.hpp"
 #include "GameLoadedReminder.hpp"
 #include "GameStarted.hpp"
@@ -37,8 +38,10 @@ void sendReadyState(ISessionOutbox& outbox, bool ready) {
 }  // namespace
 
 WaitingRoom::WaitingRoom(network::MessageDispatcher& dispatcher,
-                         GameLoadedReminder& reminder)
-    : logger_(std::string{CONNECTION_LOGGER_NAME}), reminder_(&reminder) {
+                         GameLoadedReminder& reminder, AnnouncedStart& start)
+    : logger_(std::string{CONNECTION_LOGGER_NAME}),
+      reminder_(&reminder),
+      start_(&start) {
   dispatcher.registerHandler<network::LobbyState>(
       [this](const network::MessageOrigin&, const network::LobbyState& lobby) {
         if (outbox_ != nullptr) {
@@ -47,7 +50,11 @@ WaitingRoom::WaitingRoom(network::MessageDispatcher& dispatcher,
         }
       });
   dispatcher.registerHandler<network::GameStarted>(
-      [this](const network::MessageOrigin&, const network::GameStarted&) {
+      [this](const network::MessageOrigin&,
+             const network::GameStarted& started) {
+        if (outbox_ != nullptr) {
+          start_->hold(started);
+        }
         startGame();
       });
 }
@@ -89,6 +96,7 @@ void WaitingRoom::sessionClosed() {
   requestedReady_.reset();
   sinceReadyState_ = engine::Duration::zero();
   gameStarted_ = false;
+  start_->forget();
 }
 
 void WaitingRoom::sessionHeld(engine::Duration elapsed) {
@@ -115,6 +123,7 @@ void WaitingRoom::startGame() {
 void WaitingRoom::endGame() {
   gameStarted_ = false;
   reminder_->end();
+  start_->forget();
   logger_.info("the game ended");
 }
 

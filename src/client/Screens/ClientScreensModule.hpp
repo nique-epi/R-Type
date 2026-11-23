@@ -3,6 +3,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include "AnnouncedStart.hpp"
 #include "AssetLibrary.hpp"
 #include "ChatChannel.hpp"
 #include "ClientScreens.hpp"
@@ -133,6 +134,7 @@ class ClientScreensModule final : public engine::IModule,
   GameWindow* window_{nullptr};
   ServerSession* connection_{nullptr};
   WaitingRoom* waitingRoom_{nullptr};
+  const AnnouncedStart* announcedStart_{nullptr};
   ShipLookExchange* shipLooks_{nullptr};
   IMapBallot* mapBallot_{nullptr};
   EntityMessageQueue* entityMessages_{nullptr};

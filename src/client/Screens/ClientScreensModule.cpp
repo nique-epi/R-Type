@@ -6,6 +6,7 @@
 #include <string_view>
 #include <utility>
 #include <vector>
+#include "AnnouncedStart.hpp"
 #include "AssetLibrary.hpp"
 #include "AudioServiceChoice.hpp"
 #include "ChatChannel.hpp"
@@ -138,6 +139,7 @@ void ClientScreensModule::install(engine::InstallContext& context) {
   window_ = &context.require<GameWindow>();
   connection_ = &context.require<ServerSession>();
   waitingRoom_ = &context.require<WaitingRoom>();
+  announcedStart_ = &context.require<AnnouncedStart>();
   shipLooks_ = &context.require<ShipLookExchange>();
   mapBallot_ = &context.require<IMapBallot>();
   entityMessages_ = &context.require<EntityMessageQueue>();
@@ -202,6 +204,7 @@ ScreenServices ClientScreensModule::services(const network::Endpoint& server) {
       .window = *window_,
       .connection = *connection_,
       .waitingRoom = *waitingRoom_,
+      .announcedStart = *announcedStart_,
       .shipLooks = *shipLooks_,
       .mapBallot = *mapBallot_,
       .entityMessages = *entityMessages_,

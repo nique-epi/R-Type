@@ -1,2 +1,2 @@
-target_sources(client_connection_tests PRIVATE WaitingRoomTest.cpp ShipLookExchangeTest.cpp MapBallotTest.cpp MapBallotFixture.cpp ${RTYPE_TEST_SOURCE_DIR}/doubles/RecordingSessionOutbox.cpp)
+target_sources(client_connection_tests PRIVATE AnnouncedStartTest.cpp AnnouncedStartFixture.cpp WaitingRoomTest.cpp ShipLookExchangeTest.cpp MapBallotTest.cpp MapBallotFixture.cpp ${RTYPE_TEST_SOURCE_DIR}/doubles/RecordingSessionOutbox.cpp)
 target_include_directories(client_connection_tests PRIVATE $<TARGET_PROPERTY:rtype_network_map_vote,INTERFACE_INCLUDE_DIRECTORIES>)
