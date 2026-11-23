@@ -7,6 +7,7 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include "AccountLeaderboardRoutesTestConstants.hpp"
 #include "FinishedGame.hpp"
 #include "FinishedGamePlayer.hpp"
 #include "LeaderboardRoutesTestConstants.hpp"
@@ -29,14 +30,13 @@
  * not answer. */
 [[nodiscard]] nlohmann::json bodyOf(const httplib::Result& answer);
 
-/** @returns The member @p member of each row of the array @p list of
- * @p document, in order. */
+/** @returns The member @p member of each row of the array @p rows, in
+ * order. */
 template <typename Value>
-[[nodiscard]] std::vector<Value> membersOf(const nlohmann::json& document,
-                                           std::string_view list,
+[[nodiscard]] std::vector<Value> membersOf(const nlohmann::json& rows,
                                            std::string_view member) {
   std::vector<Value> values;
-  for (const nlohmann::json& row : document.at(std::string{list})) {
+  for (const nlohmann::json& row : rows) {
     values.push_back(row.at(std::string{member}).get<Value>());
   }
   return values;
@@ -46,5 +46,15 @@ template <typename Value>
 template <typename Value>
 [[nodiscard]] std::vector<Value> membersIn(const nlohmann::json& leaderboard,
                                            std::string_view member) {
-  return membersOf<Value>(leaderboard, SCORES_MEMBER_NAME, member);
+  return membersOf<Value>(leaderboard.at(std::string{SCORES_MEMBER_NAME}),
+                          member);
+}
+
+/** @returns The member @p member of each account of @p leaderboard, the
+ * answer of the leaderboard of the accounts, in order. */
+template <typename Value>
+[[nodiscard]] std::vector<Value> accountMembersIn(
+    const nlohmann::json& leaderboard, std::string_view member) {
+  return membersOf<Value>(leaderboard.at(std::string{ACCOUNTS_MEMBER_NAME}),
+                          member);
 }

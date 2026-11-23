@@ -35,9 +35,9 @@ TEST_F(GameCreditRoutesFixture, TheAccountLeaderboardAddsUpEveryGame) {
 
   static_cast<void>(sendResult(SECOND_GAME_ID, hardAlone));
 
-  EXPECT_EQ(membersOf<std::int64_t>(
+  EXPECT_EQ(accountMembersIn<std::int64_t>(
                 bodyOf(readAccountLeaderboard(FIRST_PAGE_OF_ACCOUNTS_QUERY)),
-                ACCOUNTS_MEMBER_NAME, SCORE_MEMBER_NAME),
+                SCORE_MEMBER_NAME),
             std::vector<std::int64_t>{TOTAL_OF_1234_AND_A_THOUSAND});
 }
 
@@ -59,9 +59,9 @@ TEST_F(GameCreditRoutesFixture, TheAccountLeaderboardRanksByTheTotal) {
       THIRD_GAME_ID, normalGameOfTwo({ticketedScoring(ACE_NICKNAME, aceTicket(),
                                                       A_THOUSAND_POINTS)})));
 
-  EXPECT_EQ(membersOf<std::string>(
+  EXPECT_EQ(accountMembersIn<std::string>(
                 bodyOf(readAccountLeaderboard(FIRST_PAGE_OF_ACCOUNTS_QUERY)),
-                ACCOUNTS_MEMBER_NAME, NICKNAME_MEMBER_NAME),
+                NICKNAME_MEMBER_NAME),
             (std::vector<std::string>{std::string{ACE_NICKNAME},
                                       std::string{BOB_NICKNAME}}));
 }
@@ -93,9 +93,9 @@ TEST_F(GameCreditRoutesFixture, TheAccountLeaderboardNamesTheAccount) {
       normalGameOfTwo({ticketedScoring(OTHER_NICKNAME_OF_SECOND_PILOT,
                                        aceTicket(), A_THOUSAND_POINTS)})));
 
-  EXPECT_EQ(membersOf<std::string>(
+  EXPECT_EQ(accountMembersIn<std::string>(
                 bodyOf(readAccountLeaderboard(FIRST_PAGE_OF_ACCOUNTS_QUERY)),
-                ACCOUNTS_MEMBER_NAME, NICKNAME_MEMBER_NAME),
+                NICKNAME_MEMBER_NAME),
             std::vector<std::string>{std::string{ACE_NICKNAME}});
 }
 
@@ -116,9 +116,9 @@ TEST_F(GameCreditRoutesFixture,
       SECOND_GAME_ID, normalGameOfTwo({ticketedScoring(ACE_NICKNAME, ticket,
                                                        A_THOUSAND_POINTS)})));
 
-  EXPECT_EQ(membersOf<std::int64_t>(
+  EXPECT_EQ(accountMembersIn<std::int64_t>(
                 bodyOf(readAccountLeaderboard(FIRST_PAGE_OF_ACCOUNTS_QUERY)),
-                ACCOUNTS_MEMBER_NAME, SCORE_MEMBER_NAME),
+                SCORE_MEMBER_NAME),
             std::vector<std::int64_t>{
                 std::int64_t{TWELVE_HUNDRED_THIRTY_FOUR_POINTS}});
 }
@@ -138,9 +138,9 @@ TEST_F(GameCreditRoutesFixture, TheAccountLeaderboardDatesTheLastGame) {
 
   static_cast<void>(sendResult(SECOND_GAME_ID, later));
 
-  EXPECT_EQ(membersOf<std::int64_t>(
+  EXPECT_EQ(accountMembersIn<std::int64_t>(
                 bodyOf(readAccountLeaderboard(FIRST_PAGE_OF_ACCOUNTS_QUERY)),
-                ACCOUNTS_MEMBER_NAME, LAST_PLAYED_AT_MEMBER_NAME),
+                LAST_PLAYED_AT_MEMBER_NAME),
             std::vector<std::int64_t>{LATER_GAME_SECOND});
 }
 
@@ -158,9 +158,9 @@ TEST_F(GameCreditRoutesFixture, TheAccountLeaderboardSharesARankBetweenEquals) {
       SECOND_GAME_ID, normalGameOfTwo({ticketedScoring(
                           BOB_NICKNAME, bobTicket(), A_THOUSAND_POINTS)})));
 
-  EXPECT_EQ(membersOf<std::int64_t>(
+  EXPECT_EQ(accountMembersIn<std::int64_t>(
                 bodyOf(readAccountLeaderboard(FIRST_PAGE_OF_ACCOUNTS_QUERY)),
-                ACCOUNTS_MEMBER_NAME, RANK_MEMBER_NAME),
+                RANK_MEMBER_NAME),
             (std::vector<std::int64_t>{BEST_RANK, BEST_RANK}));
 }
 
@@ -178,9 +178,9 @@ TEST_F(GameCreditRoutesFixture, TheAccountLeaderboardIsReadAPageAtATime) {
       SECOND_GAME_ID, normalGameOfTwo({ticketedScoring(
                           BOB_NICKNAME, bobTicket(), A_THOUSAND_POINTS)})));
 
-  EXPECT_EQ(membersOf<std::string>(
+  EXPECT_EQ(accountMembersIn<std::string>(
                 bodyOf(readAccountLeaderboard(SECOND_ACCOUNT_ALONE_QUERY)),
-                ACCOUNTS_MEMBER_NAME, NICKNAME_MEMBER_NAME),
+                NICKNAME_MEMBER_NAME),
             std::vector<std::string>{std::string{BOB_NICKNAME}});
 }
 
