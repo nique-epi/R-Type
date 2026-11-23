@@ -70,6 +70,10 @@ std::size_t GameFlowLevelFixture::enemiesInPlay() {
   return game::enemiesIn(flow().world().components());
 }
 
+GameFlowCavesFixture::GameFlowCavesFixture()
+    : GameFlowLevelFixture(
+          PlayedLevel{.name = LEVEL_THAT_OPENS_IN_THE_CAVES_NAME}) {}
+
 GameFlowTwoStagesFixture::GameFlowTwoStagesFixture()
     : GameFlowLevelFixture(PlayedLevel{.name = LEVEL_OF_TWO_STAGES_NAME}) {}
 

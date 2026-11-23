@@ -20,9 +20,9 @@ target_link_libraries(rtype_server_rules_match
     rtype_server_sessions_roster
     rtype_server_rules_players
     rtype_server_spawning
+    rtype_network_game_started
   PRIVATE
     rtype_identifiers
-    rtype_network_game_started
 )
 
 rtype_enable_warnings(rtype_server_rules_match)

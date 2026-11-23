@@ -4,19 +4,29 @@
 #include "GameEnded.hpp"
 #include "GameFlowLevelFixture.hpp"
 #include "GameFlowLevelTestConstants.hpp"
+#include "GameInstanceConstants.hpp"
+#include "GameStarted.hpp"
 #include "GameState.hpp"
 #include "Instances/GameInstanceTestConstants.hpp"
 #include "PlayerRoster.hpp"
 #include "SentDatagrams.hpp"
+#include "Spawning/LevelDirectorTestConstants.hpp"
 #include "game/Waves/WaveTestConstants.hpp"
 
 using rtype::game::testing::TICKS_TO_THE_WHOLE_FIRST_WAVE;
 using rtype::network::GameEnded;
+using rtype::network::GameStarted;
 using rtype::network::WireGameOutcome;
 using rtype::server::ConnectedPlayer;
+using rtype::server::GAME_STARTED_REPEAT_TICKS;
 using rtype::server::GameState;
+using rtype::server::testing::CAVES_BEGAN_BEFORE_THE_START;
+using rtype::server::testing::CAVES_BIOME;
+using rtype::server::testing::DECLARED_START_BIOME;
+using rtype::server::testing::DECLARED_START_SCROLL;
 using rtype::server::testing::FIRST_PLAYER;
 using rtype::server::testing::GameFlowBrokenLevelFixture;
+using rtype::server::testing::GameFlowCavesFixture;
 using rtype::server::testing::GameFlowDeclaredStartFixture;
 using rtype::server::testing::GameFlowFightingLevelFixture;
 using rtype::server::testing::GameFlowNoContinueFixture;
@@ -252,4 +262,57 @@ TEST_F(GameFlowBrokenLevelFixture, IsLostOnceTheLevelFailed) {
   EXPECT_EQ(ends.front().outcome, WireGameOutcome::Defeat);
   ASSERT_EQ(ends.front().players.size(), 1U);
   EXPECT_EQ(ends.front().players.front().bounty, 0U);
+}
+
+/**
+ * Given a game whose level opens in the caves, its player ready
+ * When the tick that starts the game runs
+ * Then the player is told the game started in the caves, begun before the
+ * start of the scroll
+ */
+TEST_F(GameFlowCavesFixture, TellsTheBiomeTheLevelOpensInAsTheGameStarts) {
+  join(FIRST_PLAYER).ready = true;
+
+  tick();
+
+  const std::vector<GameStarted> starts =
+      messagesSentTo<GameStarted>(FIRST_PLAYER);
+  ASSERT_EQ(starts.size(), 1U);
+  EXPECT_EQ(starts.front().biome, CAVES_BIOME);
+  EXPECT_FLOAT_EQ(starts.front().biomeSince, CAVES_BEGAN_BEFORE_THE_START);
+}
+
+/**
+ * Given a game whose level opens in the caves, its player still loading
+ * When GAME_STARTED_REPEAT_TICKS ticks run
+ * Then the GameStarted the player is sent again still tells the caves
+ */
+TEST_F(GameFlowCavesFixture, RepeatsTheBiomeToAPlayerStillLoading) {
+  join(FIRST_PLAYER).ready = true;
+  tick();
+
+  runTicks(GAME_STARTED_REPEAT_TICKS);
+
+  const std::vector<GameStarted> starts =
+      messagesSentTo<GameStarted>(FIRST_PLAYER);
+  ASSERT_EQ(starts.size(), 2U);
+  EXPECT_EQ(starts.back().biome, CAVES_BIOME);
+}
+
+/**
+ * Given a game that starts at the second stage of its level, which starts in
+ * the wreck at 600 units
+ * When the tick that starts the game runs
+ * Then the player is told the game started in the wreck, at 600 units
+ */
+TEST_F(GameFlowDeclaredStartFixture, TellsTheSkyOfTheStageTheGameStartsAt) {
+  join(FIRST_PLAYER).ready = true;
+
+  tick();
+
+  const std::vector<GameStarted> starts =
+      messagesSentTo<GameStarted>(FIRST_PLAYER);
+  ASSERT_EQ(starts.size(), 1U);
+  EXPECT_EQ(starts.front().biome, DECLARED_START_BIOME);
+  EXPECT_FLOAT_EQ(starts.front().scrollPosition, DECLARED_START_SCROLL);
 }
