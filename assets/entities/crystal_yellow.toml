@@ -9,8 +9,7 @@
 # and the key when a key is missing, misspelt, out of its range, or does not
 # hold together with another key or another sheet. Every number is an integer:
 # 240, never 240.0. The keys are described on the page "Writing an entity
-# sheet" of the docs. Its appearance is the one of look_crown until it is
-# drawn.
+# sheet" of the docs.
 
 [gameplay]
 side = "crystal"
@@ -21,7 +20,7 @@ pilot = "straight"
 
 [gameplay.hitbox]
 width = 48
-height = 32
+height = 48
 
 [gameplay.motion]
 kind = "steady"
@@ -31,13 +30,13 @@ top_speed = 120
 heading = -1
 
 [appearance]
-sheet = "sprites/looks.png"
+sheet = "sprites/weapons.png"
 
 [appearance.idle]
-left = 36
-top = 0
+left = 0
+top = 56
 width = 12
-height = 8
-frames = 1
-spacing = 0
-frame_ms = 1000
+height = 12
+frames = 4
+spacing = 2
+frame_ms = 150

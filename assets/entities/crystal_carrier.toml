@@ -1,6 +1,5 @@
 # The entity type crystal_carrier: a Bydo that drops a crystal when a missile
-# kills it, red, blue or yellow by turns. Its appearance is the one of the
-# Drifter until it is drawn.
+# kills it, red, blue or yellow by turns.
 # [gameplay] is what the server gives an entity of this type, [appearance] how
 # the client draws it. Both programs read this file when they start, from
 # entities/crystal_carrier.toml in the assets folder next to their executable,
@@ -36,13 +35,24 @@ points = 4
 points = 150
 
 [appearance]
-sheet = "sprites/entities.png"
+sheet = "sprites/mobs/crystal_carrier.png"
 
 [appearance.idle]
 left = 0
-top = 72
+top = 0
 width = 24
 height = 24
 frames = 2
 spacing = 2
 frame_ms = 250
+
+# The death, 48 by 48 pixels centered on the body, played once instead of the
+# Bydo explosion; the row right under it holds the same death without flash.
+[appearance.death]
+left = 0
+top = 26
+width = 48
+height = 48
+frames = 6
+spacing = 2
+frame_ms = 70

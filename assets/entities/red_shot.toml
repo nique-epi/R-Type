@@ -8,7 +8,7 @@
 # key when a key is missing, misspelt, out of its range, or does not hold
 # together with another key or another sheet. Every number is an integer: 240,
 # never 240.0. The keys are described on the page "Writing an entity sheet" of
-# the docs. Its appearance is the one of player_missile until it is drawn.
+# the docs.
 
 [gameplay]
 side = "player_missile"
@@ -17,21 +17,21 @@ hits = ["enemy", "enemy_missile", "player"]
 pilot = "scatter"
 
 [gameplay.hitbox]
-width = 64
-height = 24
+width = 32
+height = 32
 
 [gameplay.motion]
 kind = "steady"
 top_speed = 960
 
 [appearance]
-sheet = "sprites/entities.png"
+sheet = "sprites/weapons.png"
 
 [appearance.idle]
 left = 0
-top = 124
-width = 16
-height = 6
+top = 0
+width = 8
+height = 8
 frames = 2
 spacing = 2
 frame_ms = 60
