@@ -65,9 +65,9 @@ std::uint32_t LookItemKeeperFixture::spawnACrown() {
 
 void LookItemKeeperFixture::publishTouch(const ConnectedPlayer& player,
                                          std::uint32_t itemId) {
-  events_.publish(
-      game::LookItemTouched{.ship = entityWithNetworkId(world_, player.shipEntityId),
-                            .item = entityWithNetworkId(world_, itemId)});
+  events_.publish(game::LookItemTouched{
+      .ship = entityWithNetworkId(world_, player.shipEntityId),
+      .item = entityWithNetworkId(world_, itemId)});
 }
 
 void LookItemKeeperFixture::deliver() { events_.dispatch(); }

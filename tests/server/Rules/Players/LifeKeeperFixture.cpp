@@ -75,8 +75,9 @@ std::uint32_t LifeKeeperFixture::bydoOn(const ConnectedPlayer& player) {
 
 void LifeKeeperFixture::publishContact(std::uint32_t shipId,
                                        std::uint32_t enemyId) {
-  events_.publish(game::ShipContact{.player = entityWithNetworkId(world_, shipId),
-                                    .enemy = entityWithNetworkId(world_, enemyId)});
+  events_.publish(
+      game::ShipContact{.player = entityWithNetworkId(world_, shipId),
+                        .enemy = entityWithNetworkId(world_, enemyId)});
 }
 
 void LifeKeeperFixture::deliver() { events_.dispatch(); }
