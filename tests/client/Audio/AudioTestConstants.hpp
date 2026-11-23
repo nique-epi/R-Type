@@ -67,6 +67,26 @@ constexpr engine::Duration PART_OF_THE_SILENCE = std::chrono::milliseconds(600);
 constexpr engine::Duration REST_OF_THE_SILENCE = std::chrono::milliseconds(400);
 constexpr engine::Duration LONGER_THAN_THE_SILENCE = std::chrono::seconds(2);
 
+/** @brief The alarm of a boss lasts 8.232 s and the music after it fades in
+ * over its last 3 s, as asked: it enters at 5.232 s, is at half its volume
+ * 1.5 s later and at its full volume 3 s later, when the alarm ends. */
+constexpr engine::Duration THE_WHOLE_ALARM = std::chrono::milliseconds(8232);
+constexpr engine::Duration UNTIL_THE_MUSIC_OF_A_BOSS_ENTERS =
+    std::chrono::milliseconds(5232);
+constexpr engine::Duration JUST_BEFORE_THE_MUSIC_OF_A_BOSS_ENTERS =
+    UNTIL_THE_MUSIC_OF_A_BOSS_ENTERS - std::chrono::milliseconds(1);
+constexpr engine::Duration HALF_THE_FADE = std::chrono::milliseconds(1500);
+constexpr engine::Duration THE_WHOLE_FADE = std::chrono::seconds(3);
+constexpr float SILENT = 0.0F;
+constexpr float HALF_THE_VOLUME = 0.5F;
+constexpr float THE_FULL_VOLUME = 1.0F;
+
+/** @brief A sheet read 4.4 s into the alarm, when the fight of a boss starts
+ * after its warning; 4.4 s and 0.832 s make the 5.232 s the music enters at. */
+constexpr engine::Duration UNTIL_THE_FIGHT = std::chrono::milliseconds(4400);
+constexpr engine::Duration REST_OF_THE_WAIT =
+    UNTIL_THE_MUSIC_OF_A_BOSS_ENTERS - UNTIL_THE_FIGHT;
+
 /** @brief A position of the theme, far from its start. */
 constexpr engine::Duration WELL_INTO_THE_THEME = std::chrono::seconds(42);
 

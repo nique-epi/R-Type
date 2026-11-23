@@ -50,29 +50,29 @@ void Soundtrack::playGameMusic() {
   silenceLeft_ = GAME_MUSIC_SILENCE;
 }
 
-void Soundtrack::playBossMusic() {
+void Soundtrack::playBossMusic(bool named) {
   if (alarmLeft_.has_value() || bossMusic_->playingOffset().has_value()) {
+    bossNamed_ = bossNamed_ || named;
     return;
   }
   silenceLeft_.reset();
   theme_->stop();
   themePaused_ = false;
-  if (levelMusic_ != nullptr && levelMusic_->playingOffset().has_value()) {
+  if (named && levelMusic_ != nullptr &&
+      levelMusic_->playingOffset().has_value()) {
+    fade_.cancel();
     levelMusic_->stop();
     bossMusic_->start();
     return;
   }
-  gameMusic_->stop();
-  alarmLeft_ = BOSS_ALARM_DURATION;
+  gameMusic().stop();
+  bossNamed_ = named;
+  alarmLeft_ = BOSS_ALARM_DURATION - BOSS_MUSIC_FADE_IN;
 }
 
-bool Soundtrack::silenceMusic() {
-  if (levelMusic_ != nullptr) {
-    return false;
-  }
+void Soundtrack::silenceMusic() {
   silenceLeft_.reset();
-  gameMusic_->stop();
-  return true;
+  gameMusic().stop();
 }
 
 void Soundtrack::pauseTheme() {
@@ -93,6 +93,7 @@ void Soundtrack::resumeTheme() {
 
 void Soundtrack::stopBoss() {
   alarmLeft_.reset();
+  fade_.cancel();
   bossMusic_->stop();
 }
 
@@ -100,8 +101,11 @@ void Soundtrack::advance(engine::Duration elapsed) {
   if (waitOver(silenceLeft_, elapsed)) {
     gameMusic().start();
   }
+  fade_.advance(elapsed);
   if (waitOver(alarmLeft_, elapsed)) {
-    bossMusic_->start();
+    IMusicPlayer& next =
+        bossNamed_ || levelMusic_ == nullptr ? *bossMusic_ : *levelMusic_;
+    fade_.begin(next, BOSS_MUSIC_FADE_IN);
   }
 }
 

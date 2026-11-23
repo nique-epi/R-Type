@@ -1,6 +1,7 @@
 #pragma once
 
 #include <optional>
+#include "AudioConstants.hpp"
 #include "FakeMusicClock.hpp"
 #include "IMusicPlayer.hpp"
 #include "TimeConstants.hpp"
@@ -20,6 +21,10 @@ class FakeMusicPlayer : public rtype::client::IMusicPlayer {
   /** @brief Pauses a music that plays, as MusicPlayer does: start() then
    * plays it on from the position it had. */
   void pause() override;
+  /** @brief Keeps @p level for fade() to read. */
+  void setFade(float level) override;
+  /** @returns The fade level set last, MUSIC_FADE_FULL before any. */
+  [[nodiscard]] float fade() const;
 
   [[nodiscard]] std::optional<rtype::engine::Duration> playingOffset()
       const override;
@@ -35,4 +40,5 @@ class FakeMusicPlayer : public rtype::client::IMusicPlayer {
   FakeMusicClock clock_;
   bool fileRemoved_{};
   std::optional<rtype::engine::Duration> pausedAt_;
+  float fade_{rtype::client::MUSIC_FADE_FULL};
 };

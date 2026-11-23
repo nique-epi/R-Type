@@ -66,17 +66,31 @@ constexpr MusicTrack GAME_TRACK{.assetId = GAME_MUSIC_ID,
 constexpr engine::Duration GAME_MUSIC_SILENCE = std::chrono::seconds(1);
 
 /**
- * @brief Asset id of the music of the Bydo Tyrant, played in a loop from
- * BOSS_ALARM_DURATION after the boss arrives until the game ends. It carries
- * the screen like the music of a game, at the full MUSIC volume.
+ * @brief Asset id of the music of the Bydo Tyrant, played in a loop from the
+ * end of its alarm until the game ends, faded in over the last
+ * BOSS_MUSIC_FADE_IN of the alarm. It carries the screen like the music of a
+ * game, at the full MUSIC volume.
  */
 constexpr const char* BOSS_MUSIC_ID = "music/boss_theme.mp3";
 constexpr MusicTrack BOSS_TRACK{.assetId = BOSS_MUSIC_ID};
 
 /** @brief How long the alarm of the boss plays (8.232 s): the music of the
- * boss starts when it ends. */
+ * boss reaches its full volume when it ends. */
 constexpr engine::Duration BOSS_ALARM_DURATION =
     std::chrono::milliseconds(8232);
+
+/** @brief The fade level of a music that is not heard, and of one at the
+ * volume of the settings. */
+constexpr float MUSIC_FADE_SILENT = 0.0F;
+constexpr float MUSIC_FADE_FULL = 1.0F;
+
+/**
+ * @brief How long the music that follows the alarm of a boss takes to rise
+ * from silence to its full volume (3 s): it starts BOSS_MUSIC_FADE_IN before
+ * the alarm ends, over its tail, which has fallen under -44 LUFS by then,
+ * and reaches its full volume as the alarm ends.
+ */
+constexpr engine::Duration BOSS_MUSIC_FADE_IN = std::chrono::seconds(3);
 
 /**
  * @brief The ambiences, played in a loop over the whole file under the theme:
