@@ -23,10 +23,19 @@ export type RankedPlayer = {
 /** A server the first tab can read: its id on the master, and its name. */
 export type RankingServer = { id: number; name: string };
 
-/** The scope and the filters of the leaderboard in force; they live in the address of the page. */
+/** The scopes of the leaderboard, in the order of their tabs: one server, everyone, the accounts. */
+export const RANKING_SCOPES = ['server', 'global', 'accounts'] as const;
+
+export type RankingScope = (typeof RANKING_SCOPES)[number];
+
+/**
+ * The scope and the filters of the leaderboard in force; they live in the
+ * address of the page. The accounts are read with no filter: the choice
+ * keeps the difficulty and the pilots for the tab the visitor goes back to.
+ */
 export type RankingChoice = {
-  scope: 'server' | 'global';
-  /** The server of the first tab; none on the global tab. */
+  scope: RankingScope;
+  /** The server of the first tab; none on the other tabs. */
   serverId: number | null;
   difficulty: LeaderboardDifficulty;
   /** From 1 to 4. */
@@ -93,6 +102,10 @@ export function rankingChoiceOf(
     pilots: validPilots ? pilots : FIRST_RANKING_CHOICE.pilots,
   };
 
+  if (firstOf(search.scope) === 'accounts') {
+    return { scope: 'accounts', serverId: null, ...common };
+  }
+
   return asksForAServer(search) && server
     ? { scope: 'server', serverId: server.id, ...common }
     : { scope: 'global', serverId: null, ...common };
@@ -111,9 +124,9 @@ export function rankingQueryOf(choice: RankingChoice): string {
   return `?${query.toString()}`;
 }
 
-/** The tab a choice reads: 0 for a server, 1 for everyone. */
+/** The tab a choice reads: 0 for a server, 1 for everyone, 2 for the accounts. */
 export function rankingTabOf(choice: RankingChoice): number {
-  return choice.scope === 'server' ? 0 : 1;
+  return RANKING_SCOPES.indexOf(choice.scope);
 }
 
 /** The choice after a click on a tab. */
@@ -121,7 +134,7 @@ export function rankingChoiceOfTab(
   choice: RankingChoice,
   tab: number,
 ): RankingChoice {
-  return { ...choice, scope: tab === 0 ? 'server' : 'global' };
+  return { ...choice, scope: RANKING_SCOPES[tab] ?? choice.scope };
 }
 
 function twoDigits(value: number): string {
@@ -154,13 +167,17 @@ function serverNameOf(server: RankingServer): string {
   return withoutAccents(server.name).toUpperCase();
 }
 
-/** What the list shows under it: "NEBULA LYON · NORMAL GAMES, 2 PILOTS". */
+/** What the list shows under it: "NEBULA LYON · NORMAL GAMES, 2 PILOTS"; the accounts name no filter. */
 export function rankingSummaryOf(
   choice: RankingChoice,
   servers: readonly RankingServer[],
   copy: RankingCopy,
   locale: Locale,
 ): string {
+  if (choice.scope === 'accounts') {
+    return copy.summaryAccounts;
+  }
+
   const values = {
     difficulty:
       copy.difficultiesPlural[
@@ -175,12 +192,16 @@ export function rankingSummaryOf(
     : format(copy.summaryGlobal, values);
 }
 
-/** The settings of the filter dialog: the server on the first tab, then the difficulty and the pilots. */
+/** The settings of the filter dialog: the server on the first tab, then the difficulty and the pilots; none for the accounts. */
 export function rankingFiltersOf(
   choice: RankingChoice,
   servers: readonly RankingServer[],
   copy: RankingCopy,
 ): RankingFilter[] {
+  if (choice.scope === 'accounts') {
+    return [];
+  }
+
   const common: RankingFilter[] = [
     {
       id: 'difficulty',

@@ -204,8 +204,8 @@ export const frPages = {
   rankingPage: {
     eyebrow: 'Scores',
     title: 'Classement',
-    lede: 'Par serveur ou pour tout le monde.',
-    tabs: ['Serveur', 'Global'],
+    lede: 'Par serveur, pour tout le monde, ou par compte.',
+    tabs: ['Serveur', 'Global', 'Comptes'],
     filters: { server: 'Serveur', difficulty: 'Difficulte', pilots: 'Pilotes' },
     difficulties: ['FACILE', 'NORMAL', 'DIFFICILE'],
     difficultiesPlural: ['FACILES', 'NORMALES', 'DIFFICILES'],
@@ -226,7 +226,9 @@ export const frPages = {
     pilotCount: { one: '{count} PILOTE', other: '{count} PILOTES' },
     summaryGlobal: 'GLOBAL · PARTIES {difficulty}, {pilots}',
     summaryServer: '{server} · PARTIES {difficulty}, {pilots}',
+    summaryAccounts: 'COMPTES · SCORE CUMULE, TOUTES LES PARTIES',
     empty: 'Personne n’a encore joué ces parties',
+    emptyAccounts: 'Aucun compte n’a encore joué de partie',
     unavailable: 'Le master ne répond pas : aucun score à afficher',
   },
   wikiPage: {

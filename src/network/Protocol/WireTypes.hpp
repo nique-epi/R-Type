@@ -158,6 +158,29 @@ void requireValidShipLook(const identifiers::ShipLook& look);
 void requireValidLookItem(std::uint8_t item);
 
 /**
+ * @brief Checks that @p biome, the biome a level shows, is empty, before the
+ * level names one, or a biome name (see identifiers::isBiomeName()).
+ * @throws InvalidFieldValueException naming BIOME_FIELD when it is neither.
+ */
+void requireValidBiome(std::string_view biome);
+
+/**
+ * @brief Checks that @p value, the field @p field of a scroll, is a finite
+ * number.
+ * @throws InvalidFieldValueException naming @p field, with the bits of
+ * @p value, when it is not.
+ */
+void requireFiniteValue(std::string_view field, float value);
+
+/**
+ * @brief Checks that @p value, the field @p field of a scroll, is a finite
+ * number from 0.
+ * @throws InvalidFieldValueException naming @p field, with the bits of
+ * @p value, when it is not.
+ */
+void requireScrollValue(std::string_view field, float value);
+
+/**
  * @brief Checks that a payload was read to its end.
  * @throws TrailingBytesException when bytes remain in @p reader.
  */

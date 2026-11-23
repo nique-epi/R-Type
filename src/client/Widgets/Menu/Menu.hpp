@@ -94,8 +94,9 @@ class Menu {
     bool selectsOnHover = true;
     /** @brief The panel of a dialog. */
     std::optional<sf::IntRect> panel;
-    /** @brief The logo of a page. */
-    std::optional<Picture> picture;
+    /** @brief The images of a page, painted in this order: its logo, then the
+     * banner under it. */
+    std::vector<Picture> pictures;
     /** @brief The rule under the header of a page. */
     std::optional<sf::IntRect> rule;
     std::vector<Label> labels;

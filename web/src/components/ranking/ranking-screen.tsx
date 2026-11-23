@@ -53,8 +53,8 @@ export type RankingScreenLabels = {
 };
 
 export type RankingScreenProps = {
-  /** The two scopes of the leaderboard: this server, everyone. */
-  tabs: readonly [string, string];
+  /** The scopes of the leaderboard, a tab each: this server, everyone, the accounts. */
+  tabs: readonly string[];
   tab: number;
   onTabChange: (tab: number) => void;
   /** The tabs that cannot be opened, such as the one of a server while the master lists none. */
@@ -64,14 +64,19 @@ export type RankingScreenProps = {
   summary: React.ReactNode;
   /** What the frame says while it holds no pilot: nobody has played those games, or the master does not answer. */
   empty: React.ReactNode;
+  /** The settings of the filter; with none, the screen shows no filter. */
   filters: readonly RankingFilter[];
   onApplyFilters: (indices: readonly number[]) => void;
   onBack: () => void;
   labels: RankingScreenLabels;
 };
 
-const TAB_LEFT = 196;
-const TAB_STEP = 288;
+/** The tabs share the width between the two keycaps, a gap between two of them. */
+const TABS_LEFT = 196;
+const TABS_WIDTH = 568;
+const TAB_GAP = 8;
+/** The border of a tab, which the line that opens the frame under it leaves. */
+const TAB_BORDER = 2;
 const ROW_TOP = 14;
 const ROW_STEP = 26;
 /** The first three ranks are drawn in white, white, then bronze, as on the podium of the client. */
@@ -83,8 +88,9 @@ const PODIUM_COLORS = [
 
 /**
  * The leaderboard screen of the client, in the page: two flags and two
- * guards around the title, a tab per scope (Q and E), the ten best pilots
- * whose scores count up as they slide in, and the filter (F).
+ * guards around the title, a tab per scope (Q opens the one before, E the
+ * one after), the ten best pilots whose scores count up as they slide in,
+ * and the filter (F) when the scope has one.
  */
 export function RankingScreen({
   tabs,
@@ -103,6 +109,10 @@ export function RankingScreen({
   const first = useRef(true);
   const [filterOpen, setFilterOpen] = useState(false);
   const fullscreen = useFullscreen(root);
+  const tabWidth =
+    (TABS_WIDTH - TAB_GAP * (tabs.length - 1)) / Math.max(1, tabs.length);
+  const tabLeft = (index: number) => TABS_LEFT + index * (tabWidth + TAB_GAP);
+  const filtered = filters.length > 0;
 
   useMotion(
     () => {
@@ -146,14 +156,34 @@ export function RankingScreen({
     }
   }
 
+  /** Opens the nearest tab that can be opened, `step` tabs away or further. */
+  function changeTabBy(step: number) {
+    for (
+      let index = tab + step;
+      index >= 0 && index < tabs.length;
+      index += step
+    ) {
+      if (!disabledTabs.includes(index)) {
+        onTabChange(index);
+        return;
+      }
+    }
+  }
+
+  function openFilter() {
+    if (filtered) {
+      setFilterOpen(true);
+    }
+  }
+
   function onKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
     if (filterOpen) {
       return;
     }
     runShortcut(event, {
-      q: () => changeTab(0),
-      e: () => changeTab(1),
-      f: () => setFilterOpen(true),
+      q: () => changeTabBy(-1),
+      e: () => changeTabBy(1),
+      f: openFilter,
       z: fullscreen.toggle,
       escape: onBack,
     });
@@ -203,7 +233,7 @@ export function RankingScreen({
         <button
           type="button"
           aria-label={labels.previousTab}
-          onClick={() => changeTab(0)}
+          onClick={() => changeTabBy(-1)}
           className="absolute top-26 left-40 cursor-pointer"
         >
           <Keycap size="sm">{labels.keys.previousTab}</Keycap>
@@ -211,7 +241,7 @@ export function RankingScreen({
         <button
           type="button"
           aria-label={labels.nextTab}
-          onClick={() => changeTab(1)}
+          onClick={() => changeTabBy(1)}
           className="absolute top-26 left-193 cursor-pointer"
         >
           <Keycap size="sm">{labels.keys.nextTab}</Keycap>
@@ -228,10 +258,10 @@ export function RankingScreen({
                 disabled={disabledTabs.includes(index)}
                 onClick={() => changeTab(index)}
                 className={cn(
-                  'cut-top-8 absolute top-25 h-8 w-70 cursor-pointer bg-edge-blue disabled:cursor-not-allowed disabled:opacity-40',
+                  'cut-top-8 absolute top-25 h-8 cursor-pointer bg-edge-blue disabled:cursor-not-allowed disabled:opacity-40',
                   open && 'h-[34px] bg-hud-cyan',
                 )}
-                style={{ left: TAB_LEFT + index * TAB_STEP }}
+                style={{ left: tabLeft(index), width: tabWidth }}
               >
                 <span
                   className={cn(
@@ -294,8 +324,11 @@ export function RankingScreen({
         </CutFrame>
         <span
           aria-hidden="true"
-          className="absolute top-33 h-0.5 w-69 bg-sky"
-          style={{ left: TAB_LEFT + 2 + tab * TAB_STEP }}
+          className="absolute top-33 h-0.5 bg-sky"
+          style={{
+            left: tabLeft(tab) + TAB_BORDER,
+            width: tabWidth - 2 * TAB_BORDER,
+          }}
         />
 
         <GameText
@@ -306,12 +339,11 @@ export function RankingScreen({
           {summary}
         </GameText>
         <div className="absolute top-113 right-40 flex gap-4">
-          <GameChip
-            shortcut={labels.keys.filter}
-            onClick={() => setFilterOpen(true)}
-          >
-            {labels.filterButton}
-          </GameChip>
+          {filtered ? (
+            <GameChip shortcut={labels.keys.filter} onClick={openFilter}>
+              {labels.filterButton}
+            </GameChip>
+          ) : null}
           <GameChip
             shortcut={labels.keys.fullscreen}
             onClick={fullscreen.toggle}

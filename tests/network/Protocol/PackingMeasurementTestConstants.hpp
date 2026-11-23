@@ -33,7 +33,7 @@ constexpr std::size_t VERSION_15_ENTITY_BYTES = 9;
  */
 constexpr std::size_t VERSION_15_PLAYER_BYTES = 16;
 
-/** @brief Bytes version 23 writes after each player: its weapon and level. */
+/** @brief Bytes version 24 writes after each player: its weapon and level. */
 constexpr std::size_t PLAYER_WEAPON_BYTES = 2;
 
 /** @brief Bytes version 16 writes after each entity: its look. */
@@ -44,7 +44,7 @@ constexpr std::size_t ENTITY_LOOK_BYTES = 1;
  * game of four: its payload of 268 bytes, captured in protocol version 15, is
  * 6 + 4 * 16 + 22 * 9; with the look each entity carries since version 16, it
  * is 6 + 4 * 16 + 22 * 10, and with the weapon each player carries since
- * version 23, 6 + 4 * 18 + 22 * 10.
+ * version 24, 6 + 4 * 18 + 22 * 10.
  */
 constexpr std::size_t CAPTURED_PLAYERS = 4;
 constexpr std::size_t CAPTURED_ENTITIES = 22;

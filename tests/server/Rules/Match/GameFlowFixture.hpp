@@ -9,14 +9,15 @@
 #include "EntitySheets.hpp"
 #include "EventBus.hpp"
 #include "GameContext.hpp"
-#include "GameEnded.hpp"
 #include "GameFlow.hpp"
 #include "GameReplication.hpp"
 #include "GameSettings.hpp"
 #include "GameStateChanged.hpp"
+#include "MessagePayload.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PlayerRoster.hpp"
 #include "ReadyKeeper.hpp"
+#include "SentDatagrams.hpp"
 #include "SessionHooks.hpp"
 #include "SystemScheduler.hpp"
 #include "WavePlan.hpp"
@@ -62,9 +63,17 @@ class GameFlowFixture : public ::testing::Test {
   /** @brief Destroys every Bydo of the world, as if they were all killed. */
   void clearTheBydos();
 
-  /** @returns The GameEnded sent to the player at @p index, oldest first. */
-  [[nodiscard]] std::vector<network::GameEnded> endsSentTo(
-      std::size_t index) const;
+  /** @returns Every Message sent to the player at @p index, oldest first. */
+  template <network::DecodableMessage Message>
+  [[nodiscard]] std::vector<Message> messagesSentTo(std::size_t index) const {
+    std::vector<Message> messages;
+    for (const network::OutgoingDatagram& datagram :
+         sentTo(sent_, playerEndpoint(index))) {
+      const std::vector<Message> carried = messagesIn<Message>(datagram);
+      messages.insert(messages.end(), carried.begin(), carried.end());
+    }
+    return messages;
+  }
 
   [[nodiscard]] GameFlow& flow();
   [[nodiscard]] PlayerRoster& roster();

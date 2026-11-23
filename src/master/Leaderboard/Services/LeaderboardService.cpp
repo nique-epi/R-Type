@@ -4,17 +4,19 @@
 #include <optional>
 #include <string>
 #include <vector>
+#include "AccountLeaderboardRow.hpp"
 #include "FinishedGamePlayer.hpp"
 #include "GameCredit.hpp"
 #include "GameCreditOutcome.hpp"
 #include "GameGain.hpp"
 #include "GameKopecks.hpp"
+#include "GameReferenceConstants.hpp"
 #include "GlobalLeaderboard.hpp"
 #include "IAccountWallet.hpp"
 #include "LeaderboardQuery.hpp"
-#include "LeaderboardServiceConstants.hpp"
 #include "MasterConstants.hpp"
 #include "MasterDatabase.hpp"
+#include "PageRequest.hpp"
 #include "ServerGameResult.hpp"
 
 namespace rtype::master {
@@ -64,6 +66,11 @@ bool LeaderboardService::keepResult(const ServerGameResult& result,
 network::GlobalLeaderboard LeaderboardService::leaderboardOf(
     const LeaderboardQuery& query) {
   return results_.leaderboardOf(query);
+}
+
+std::vector<network::AccountLeaderboardRow>
+LeaderboardService::accountLeaderboardOf(const PageRequest& page) {
+  return results_.accountLeaderboardOf(page);
 }
 
 void LeaderboardService::credit(const ServerGameResult& result,

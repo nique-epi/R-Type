@@ -121,12 +121,11 @@ void Menu::paint(IInterfaceCanvas& canvas) const {
   if (content_.rule.has_value()) {
     canvas.fill(*content_.rule, RULE_COLOR);
   }
-  if (content_.picture.has_value()) {
-    canvas.drawImage(
-        TextureArea{.assetId = content_.picture->assetId,
-                    .rectangle = {{0, 0}, content_.picture->area.size}},
-        ImagePlacement{.topLeft = content_.picture->area.position},
-        INTERFACE_AREA);
+  for (const Picture& picture : content_.pictures) {
+    canvas.drawImage(TextureArea{.assetId = picture.assetId,
+                                 .rectangle = {{0, 0}, picture.area.size}},
+                     ImagePlacement{.topLeft = picture.area.position},
+                     INTERFACE_AREA);
   }
   for (const Label& label : content_.labels) {
     label.paint(canvas);

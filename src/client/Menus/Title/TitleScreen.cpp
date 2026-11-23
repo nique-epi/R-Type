@@ -92,6 +92,7 @@ Menu TitleScreen::buildMenu(std::optional<std::size_t> selected) const {
   return MenuBuilder(MenuBuilder::Frame::Page, sounds_)
       .version(GAME_VERSION_TEXT)
       .logo(LOGO_ID, LOGO_SIZE)
+      .banner(LAN_BANNER_ID, LAN_BANNER_SIZE)
       .subtitle(std::string(TITLE_SUBTITLE.in(language)))
       .button({.label = std::string(PLAY_LABEL.in(language)),
                .description = std::string(PLAY_DESCRIPTION.in(language))},

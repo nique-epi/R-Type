@@ -33,6 +33,11 @@ class GameCreditRoutesFixture : public ::testing::Test {
   [[nodiscard]] httplib::Result sendResult(
       std::string_view gameId, const rtype::network::FinishedGame& game) const;
 
+  /** @returns The answer to the leaderboard of the accounts, @p query after
+   * its path. */
+  [[nodiscard]] httplib::Result readAccountLeaderboard(
+      std::string_view query) const;
+
   /** @returns The kopecks of the wallet of ACE. */
   [[nodiscard]] std::optional<std::int64_t> kopecksOfAce() const;
 

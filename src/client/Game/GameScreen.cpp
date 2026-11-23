@@ -9,7 +9,6 @@
 #include <memory>
 #include <optional>
 #include <random>
-#include <string>
 #include <type_traits>
 #include <utility>
 #include <variant>
@@ -63,6 +62,7 @@
 #include "Logger.hpp"
 #include "MissionBanner.hpp"
 #include "MissionStart.hpp"
+#include "OpeningSky.hpp"
 #include "OwnMissilesParts.hpp"
 #include "OwnPrediction.hpp"
 #include "OwnShip.hpp"
@@ -181,10 +181,8 @@ SkyLevel skyLevelOf(const network::LevelStatus& status) {
  * of a game. */
 void showLevel(const EntityMessageRoutes& routes,
                const network::LevelStatus& status) {
-  routes.sky.get().showLevel(skyLevelOf(status));
-  if (const std::optional<std::string> music = routes.sky.get().biomeMusic()) {
-    routes.audio.get().playGameMusic(music);
-  }
+  showLevelWithItsMusic(routes.sky.get(), routes.audio.get(),
+                        skyLevelOf(status));
 }
 
 /** @returns The rows the ships fly between in the biome @p status names: its

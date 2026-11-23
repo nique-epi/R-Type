@@ -1,6 +1,5 @@
 #include "ClientGameModule.hpp"
 #include <memory>
-#include <optional>
 #include <random>
 #include <string>
 #include <vector>
@@ -16,6 +15,7 @@
 #include "InstallContext.hpp"
 #include "InterpolationTally.hpp"
 #include "ModuleConstants.hpp"
+#include "OpeningSky.hpp"
 #include "PlayerPreferences.hpp"
 #include "PlayerSettings.hpp"
 #include "ScreenAssets.hpp"
@@ -51,10 +51,12 @@ void loadEntitySounds(const ScreenContext& context) {
 
 /** @returns The loading screen of gameAssetsOf() while some are not loaded,
  * the game screen once they all are, which counts in @p tally how it shows
- * the other entities. */
+ * the other entities; both over the sky the level opens in (see
+ * openTheLevel()). */
 std::unique_ptr<IScreen> buildGameScreen(const ScreenContext& context,
                                          InterpolationTally& tally) {
-  context.services.audio.get().playGameMusic(std::nullopt);
+  openTheLevel(context.services.announcedStart.get(), context.sky.get(),
+               context.services.audio.get());
   loadEntitySounds(context);
   std::unique_ptr<IScreen> loading =
       loadingScreenUnlessLoaded(context, gameAssetsOf(context), GAME_SCREEN);

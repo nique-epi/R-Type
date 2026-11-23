@@ -202,8 +202,8 @@ export const enPages: PageCopy = {
   rankingPage: {
     eyebrow: 'Scores',
     title: 'Leaderboard',
-    lede: 'By server or for everyone.',
-    tabs: ['Server', 'Global'],
+    lede: 'By server, for everyone, or by account.',
+    tabs: ['Server', 'Global', 'Accounts'],
     filters: { server: 'Server', difficulty: 'Difficulty', pilots: 'Pilots' },
     difficulties: ['EASY', 'NORMAL', 'HARD'],
     difficultiesPlural: ['EASY', 'NORMAL', 'HARD'],
@@ -224,7 +224,9 @@ export const enPages: PageCopy = {
     pilotCount: { one: '{count} PILOT', other: '{count} PILOTS' },
     summaryGlobal: 'GLOBAL · {difficulty} GAMES, {pilots}',
     summaryServer: '{server} · {difficulty} GAMES, {pilots}',
+    summaryAccounts: 'ACCOUNTS · TOTAL SCORE, EVERY GAME',
     empty: 'Nobody has played these games yet',
+    emptyAccounts: 'No account has played a game yet',
     unavailable: 'The master does not answer: no score to show',
   },
   wikiPage: {

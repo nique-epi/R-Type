@@ -6,7 +6,6 @@ target_link_libraries(rtype_network_level_status
   PUBLIC
     rtype_network_protocol
   PRIVATE
-    rtype_identifiers
     rtype_network_wire_types
     rtype_network_byte_writer
     rtype_network_byte_reader

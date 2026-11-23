@@ -4,6 +4,7 @@
 #include <optional>
 #include <span>
 #include <vector>
+#include "AnnouncedStart.hpp"
 #include "GameLoadedReminder.hpp"
 #include "ISessionObserver.hpp"
 #include "ISessionOutbox.hpp"
@@ -19,8 +20,8 @@ namespace rtype::client {
 /**
  * @brief The waiting room of the session, as the server shows it. It keeps the
  * players of the newest LobbyState, and learns that the game started from a
- * GameStarted, or from a WorldState when the GameStarted was lost (see
- * EntityMessageQueue).
+ * GameStarted, which it hands to the announced start, or from a WorldState
+ * when the GameStarted was lost (see EntityMessageQueue).
  *
  * setReady() sends a ReadyState at once, then again every READY_STATE_INTERVAL
  * while the waiting room shows another value. A game that ended is no longer
@@ -36,9 +37,11 @@ class WaitingRoom final : public IWaitingRoom, public ISessionObserver {
    * registered; it must outlive the room.
    * @param reminder Told when the game starts and ends; it must outlive the
    * room.
+   * @param start Holds each GameStarted of the session, forgotten when the
+   * game ends or the session closes; it must outlive the room.
    */
   WaitingRoom(network::MessageDispatcher& dispatcher,
-              GameLoadedReminder& reminder);
+              GameLoadedReminder& reminder, AnnouncedStart& start);
 
   [[nodiscard]] std::span<const network::LobbyPlayer> lobbyPlayers()
       const override;
@@ -53,7 +56,7 @@ class WaitingRoom final : public IWaitingRoom, public ISessionObserver {
                      ISessionOutbox& outbox) override;
 
   /** @brief Forgets the players, the maps, the ready state asked for and
-   * the start of the game. */
+   * the start of the game, the announced one included. */
   void sessionClosed() override;
 
   /** @brief Sends the ReadyState again once READY_STATE_INTERVAL passed while
@@ -66,12 +69,13 @@ class WaitingRoom final : public IWaitingRoom, public ISessionObserver {
   void startGame();
 
   /** @brief Notes that the game ended: the waiting room can be entered
-   * again. */
+   * again, and the announced start is forgotten. */
   void endGame();
 
  private:
   logging::Logger logger_;
   GameLoadedReminder* reminder_;
+  AnnouncedStart* start_;
   ISessionOutbox* outbox_{nullptr};
   std::vector<network::LobbyPlayer> players_;
   std::vector<network::LobbyMap> maps_;

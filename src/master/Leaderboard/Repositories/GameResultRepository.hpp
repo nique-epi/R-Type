@@ -1,14 +1,19 @@
 #pragma once
 
+#include <vector>
+#include "AccountLeaderboardRow.hpp"
 #include "GlobalLeaderboard.hpp"
 #include "LeaderboardQuery.hpp"
 #include "MasterDatabase.hpp"
+#include "PageRequest.hpp"
 #include "ServerGameResult.hpp"
 
 namespace rtype::master {
 
 /** @brief The table `game_results`: the only code that writes its SQL. Each
- * call runs behind the lock of the MasterDatabase. */
+ * call runs behind the lock of the MasterDatabase. The leaderboard of the
+ * accounts also reads `credited_results` and `users`, which it never
+ * writes. */
 class GameResultRepository {
  public:
   explicit GameResultRepository(MasterDatabase& database);
@@ -26,6 +31,11 @@ class GameResultRepository {
    * player it names, wherever it ranks. */
   [[nodiscard]] network::GlobalLeaderboard leaderboardOf(
       const LeaderboardQuery& query);
+
+  /** @returns The accounts of @p page, by rank: the total of the scores of
+   * the games credited to each (ACCOUNT_LEADERBOARD_QUERY). */
+  [[nodiscard]] std::vector<network::AccountLeaderboardRow>
+  accountLeaderboardOf(const PageRequest& page);
 
  private:
   MasterDatabase& database_;

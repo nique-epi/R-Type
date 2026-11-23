@@ -21,7 +21,7 @@ class SilentAudioService final : public IAudioService {
   [[nodiscard]] IMusicPlayer& theme() override;
   void playTheme() override;
   void playGameMusic(const std::optional<std::string>& levelMusic) override;
-  [[nodiscard]] bool silenceMusic() override;
+  void silenceMusic() override;
   void playBossMusic(std::string_view music) override;
   void setAmbience(Ambience ambience) override;
   [[nodiscard]] Ambience ambience() const override;

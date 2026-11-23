@@ -65,7 +65,7 @@ void appendRecords(std::vector<std::byte>& converted,
 }
 
 /** @returns @p payload, a WorldState of protocol version 15, with a weapon 0
- * of level 0 after each of its players, as version 23 writes them, and a look
+ * of level 0 after each of its players, as version 24 writes them, and a look
  * 0 after each of its entities, as version 16 writes them. */
 std::vector<std::byte> inTheCurrentLayout(std::span<const std::byte> payload) {
   const auto playerCount =

@@ -13,6 +13,7 @@ target_link_libraries(rtype_client_account_module
     rtype_engine_modules
   PRIVATE
     rtype_client_constants
+    rtype_client_platform
     rtype_engine_time
 )
 

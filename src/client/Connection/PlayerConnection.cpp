@@ -38,7 +38,7 @@ PlayerConnection::PlayerConnection(const network::NetworkConditions& conditions,
     : network_(anyInterfaceAnyPort(), conditions),
       router_(network_),
       orderedInbox_(dispatcher_),
-      waitingRoom_(dispatcher_, gameLoaded_),
+      waitingRoom_(dispatcher_, gameLoaded_, announcedStart_),
       shipLooks_(dispatcher_, waitingRoom_),
       mapBallot_(waitingRoom_),
       entityMessages_(dispatcher_, waitingRoom_, gameLoaded_),
@@ -75,6 +75,7 @@ void PlayerConnection::provideParts(engine::InstallContext& context) {
   entityTypes_.drawLocalWith(context.require<EntityAppearances>());
   context.provide(session_);
   context.provide(waitingRoom_);
+  context.provide(announcedStart_);
   context.provide(shipLooks_);
   context.provide<IMapBallot>(mapBallot_);
   context.provide(entityMessages_);

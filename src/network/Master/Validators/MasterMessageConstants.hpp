@@ -168,6 +168,11 @@ constexpr std::string_view RANK_MEMBER = "rank";
 constexpr std::string_view SERVER_ID_MEMBER = "serverId";
 constexpr std::string_view SERVER_NAME_MEMBER = "serverName";
 
+/** @brief The members of the leaderboard of the accounts and of its rows,
+ * beside RANK_MEMBER, NICKNAME_MEMBER and SCORE_MEMBER. */
+constexpr std::string_view ACCOUNTS_MEMBER = "accounts";
+constexpr std::string_view LAST_PLAYED_AT_MEMBER = "lastPlayedAt";
+
 /**
  * @brief The id of a game a server draws, `lower(hex(randomblob(16)))` in
  * SQLite: GAME_ID_BYTES random bytes in lowercase hexadecimal, GAME_ID_SIZE

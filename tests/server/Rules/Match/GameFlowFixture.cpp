@@ -11,7 +11,6 @@
 #include "EntitySheets.hpp"
 #include "EntityType.hpp"
 #include "EntityTypesTestConstants.hpp"
-#include "GameEnded.hpp"
 #include "GameFlow.hpp"
 #include "GameRuleConstants.hpp"
 #include "GameRules.hpp"
@@ -20,7 +19,6 @@
 #include "GameStateChanged.hpp"
 #include "Instances/GameInstanceTestConstants.hpp"
 #include "Lives.hpp"
-#include "MessageType.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PlayerRoster.hpp"
 #include "Position.hpp"
@@ -115,18 +113,6 @@ void GameFlowFixture::clearTheBydos() {
           world_.current().components().destroy(entity);
         }
       });
-}
-
-std::vector<network::GameEnded> GameFlowFixture::endsSentTo(
-    std::size_t index) const {
-  std::vector<network::GameEnded> ends;
-  for (const network::OutgoingDatagram& datagram :
-       testing::sentTo(sent_, playerEndpoint(index))) {
-    if (onlyMessageTypeOf(datagram) == network::MessageType::GameEnded) {
-      ends.push_back(onlyMessageIn<network::GameEnded>(datagram));
-    }
-  }
-  return ends;
 }
 
 GameFlow& GameFlowFixture::flow() { return flow_; }

@@ -32,6 +32,7 @@
 using rtype::client::CLICK_SOUND_ID;
 using rtype::client::CONNECTION_TO_CHOSEN_SERVER_SCREEN;
 using rtype::client::ENTITY_SHEET_ID;
+using rtype::client::LAN_BANNER_ID;
 using rtype::client::Language;
 using rtype::client::LEADERBOARD_SCREEN;
 using rtype::client::LOGO_ID;
@@ -48,13 +49,17 @@ using rtype::client::TitleScreenParts;
 using rtype::client::UPDATE_SCREEN;
 using rtype::client::WHATS_NEW_SCREEN;
 using rtype::client::testing::FRENCH_PLAY_LABEL;
+using rtype::client::testing::LAN_BANNER_TOP_LEFT;
 using rtype::client::testing::LOGO_TOP_LEFT;
 using rtype::client::testing::PLAY_BAR_MIDDLE;
 using rtype::client::testing::SHIP_SIZE;
 using rtype::client::testing::SHIPS_IN_PLACE_ON_THE_TITLE;
 using rtype::client::testing::TITLE_FRAME;
 using rtype::client::testing::TITLE_SEED;
+using ::testing::AllOf;
+using ::testing::Contains;
 using ::testing::ElementsAre;
+using ::testing::Field;
 using ::testing::IsEmpty;
 using ::testing::UnorderedElementsAreArray;
 
@@ -67,6 +72,18 @@ TEST_F(TitleScreenFixture, TheFirstFrameAlreadyShowsTheLogo) {
   ASSERT_FALSE(canvas().images.empty());
   EXPECT_EQ(canvas().images.front().assetId, LOGO_ID);
   EXPECT_EQ(canvas().images.front().topLeft, LOGO_TOP_LEFT);
+}
+
+/**
+ * Given the title screen just built
+ * When nothing happened yet
+ * Then its picture holds the LAN ribbon, one row under the logo
+ */
+TEST_F(TitleScreenFixture, TheFirstFrameShowsTheLanRibbonUnderTheLogo) {
+  EXPECT_THAT(
+      canvas().images,
+      Contains(AllOf(Field(&RecordedImage::assetId, LAN_BANNER_ID),
+                     Field(&RecordedImage::topLeft, LAN_BANNER_TOP_LEFT))));
 }
 
 /**

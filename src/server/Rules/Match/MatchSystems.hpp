@@ -12,6 +12,7 @@
 #include "EntityOrders.hpp"
 #include "ExtraLifeKeeper.hpp"
 #include "GameContext.hpp"
+#include "GameStarted.hpp"
 #include "IHitArbitration.hpp"
 #include "LevelDirector.hpp"
 #include "LifeKeeper.hpp"
@@ -59,6 +60,12 @@ class MatchSystems {
 
   /** @returns Whether the script of the level the game plays failed. */
   [[nodiscard]] bool levelFailed() const;
+
+  /** @returns The GameStarted that opens this world: the biome and the scroll
+   * the level its script directs stands at before its first tick, at the
+   * start of its first stage or of the stage the game starts at; no biome and
+   * a scroll at 0 in a game that plays its waves. */
+  [[nodiscard]] network::GameStarted gameStarted() const;
 
   /** @returns The kopecks every pilot present earns once the game is won:
    * the reward of the level its script directs, 0 in a game that plays its

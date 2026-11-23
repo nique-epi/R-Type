@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <optional>
 #include <vector>
+#include "AnnouncedStart.hpp"
 #include "ArrivalTally.hpp"
 #include "ConnectionPhase.hpp"
 #include "ConnectionRequest.hpp"
@@ -117,7 +118,8 @@ class ServerSessionFixture : public ::testing::Test {
   RecordingDatagramLink link_;
   network::MessageDispatcher dispatcher_;
   GameLoadedReminder gameLoaded_;
-  WaitingRoom waitingRoom_{dispatcher_, gameLoaded_};
+  AnnouncedStart announcedStart_;
+  WaitingRoom waitingRoom_{dispatcher_, gameLoaded_, announcedStart_};
   ShipLookExchange shipLooks_{dispatcher_, waitingRoom_};
   EntityMessageQueue entityMessages_{dispatcher_, waitingRoom_, gameLoaded_};
   SimulatedClock clock_;

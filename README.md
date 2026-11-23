@@ -205,7 +205,7 @@ The client is given the IPv4 address and the port of the server, `127.0.0.1` and
 ./r-type_client --session rts_<64 hexadecimal digits>
 ```
 
-`--session` signs the client in to the account of a session of the master, the token `POST /api/sessions` answers (see [the master page](https://nique-epi.github.io/R-Type/master/#accounts-and-sessions-accountsmodule)): its games then credit kopecks and looks to that account, and the shop, the hangar and the casino read and spend what it holds on the master. The token stays in memory, never in a file or the journal. Without it the player is a guest: it wears the starter kit, earns nothing, and the shop and the casino ask it to sign in. The routes of an account answer over HTTPS only, so the master is one behind Caddy, as `https://master.rtype.app` is.
+`--session` signs the client in to the account of a session of the master, the token `POST /api/sessions` answers (see [the master page](https://nique-epi.github.io/R-Type/master/#accounts-and-sessions-accountsmodule)): its games then credit kopecks and looks to that account, and the shop, the hangar and the casino read and spend what it holds on the master. That token stays in memory for that launch only, never in a file or the journal. Without it, the client signs in with the token kept by the last sign-in (the file `session` next to `settings.ini`, readable by the player only, removed by SIGN OUT), so a player stays signed in from one launch to the next; a player who never signed in is a guest: it wears the starter kit, earns nothing, and the shop and the casino ask it to sign in. The routes of an account answer over HTTPS only, so the master is one behind Caddy, as `https://master.rtype.app` is.
 
 ```bash
 ./r-type_client --network bad

@@ -2,6 +2,7 @@
 
 #include <filesystem>
 #include <optional>
+#include <string_view>
 
 namespace rtype::client {
 
@@ -15,5 +16,10 @@ namespace rtype::client {
  * user's local application data.
  */
 [[nodiscard]] std::optional<std::filesystem::path> settingsFolder();
+
+/** @returns The file @p name in settingsFolder(), or nothing when the system
+ * does not tell the folder. */
+[[nodiscard]] std::optional<std::filesystem::path> settingsFolderFile(
+    std::string_view name);
 
 }  // namespace rtype::client
