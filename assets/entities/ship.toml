@@ -27,6 +27,57 @@ interval_ms = 333
 first_shot_ms = 0
 projectile = "player_missile"
 
+# The weapons a crystal of their name gives the ship, each with two levels: a
+# second crystal of the same color takes it to the second.
+[[gameplay.weapon]]
+name = "red"
+
+[[gameplay.weapon.level]]
+interval_ms = 333
+projectile = "red_shot"
+count = 3
+spread_deg = 24
+distance = 16
+
+[[gameplay.weapon.level]]
+interval_ms = 333
+projectile = "red_shot"
+count = 5
+spread_deg = 48
+distance = 16
+
+[[gameplay.weapon]]
+name = "blue"
+
+[[gameplay.weapon.level]]
+interval_ms = 250
+projectile = "blue_shot"
+count = 2
+step_y = 24
+
+[[gameplay.weapon.level]]
+interval_ms = 200
+projectile = "blue_shot"
+count = 3
+step_y = 24
+
+[[gameplay.weapon]]
+name = "yellow"
+
+[[gameplay.weapon.level]]
+interval_ms = 333
+projectile = "yellow_shot"
+count = 3
+spread_deg = 160
+distance = 16
+
+[[gameplay.weapon.level]]
+interval_ms = 333
+projectile = "yellow_shot"
+count = 5
+spread_deg = 160
+distance = 16
+
 [gameplay.mask]
 file = "masks/ship.txt"
 erosion = 1

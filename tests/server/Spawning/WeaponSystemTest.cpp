@@ -111,6 +111,33 @@ TEST_F(ShipWeaponFixture, NamesThePlayerAndTheInputThatFired) {
 }
 
 /**
+ * Given a player whose ship holds the first level of red, a fan of three, and
+ * whose newest applied input is input 41
+ * When one tick runs with shoot held
+ * Then it is sent three EntitySpawned of red shots, each naming that player
+ * and input 41
+ */
+TEST_F(ShipWeaponFixture, AFanFiresEachOfItsProjectilesForOneInput) {
+  ConnectedPlayer& player = connect(FIRST_PLAYER);
+  armWithRed(player);
+  player.appliedInput = AppliedInput{.inputNumber = SOME_APPLIED_INPUT,
+                                     .shownTick = NO_SHOWN_TICK};
+
+  runTicksShooting(player, 1);
+
+  const std::vector<network::EntitySpawned> spawns = spawnsSentTo(FIRST_PLAYER);
+  ASSERT_EQ(spawns.size(), RED_FIRST_LEVEL_SHOTS);
+  const std::uint8_t redShot = game::testing::shippedEntitySheets()
+                                   .named(game::testing::RED_SHOT_SHEET)
+                                   .number;
+  for (const network::EntitySpawned& spawn : spawns) {
+    EXPECT_EQ(spawn.entityType, redShot);
+    EXPECT_EQ(spawn.owner, player.playerNumber);
+    EXPECT_EQ(spawn.firingInput, SOME_APPLIED_INPUT);
+  }
+}
+
+/**
  * Given a player with a ship, holding shoot
  * When one tick runs
  * Then the EntitySpawned of its missile waits for its acknowledgement as a

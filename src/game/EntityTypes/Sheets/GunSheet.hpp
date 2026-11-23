@@ -4,12 +4,14 @@
 #include <cstdint>
 #include <string>
 #include "DataFilePlace.hpp"
+#include "ShotPattern.hpp"
 
 namespace rtype::game {
 
 /**
- * @brief The table `[gameplay.gun]` of a sheet, its durations turned into
- * whole simulation ticks, the nearest ones.
+ * @brief The table `[gameplay.gun]` of a sheet, or a level of one of its
+ * weapons, its durations turned into whole simulation ticks, the nearest
+ * ones.
  */
 struct GunSheet {
   /** @brief Ticks between two shots, at least 1. */
@@ -24,6 +26,8 @@ struct GunSheet {
   /** @brief Where the file names that sheet, for the error EntitySheets raises
    * when it names no sheet or a sheet of the wrong side. */
   engine::DataFilePlace projectilePlace;
+  /** @brief How many projectiles a shot fires, and how they spread. */
+  ShotPattern pattern{};
 };
 
 }  // namespace rtype::game

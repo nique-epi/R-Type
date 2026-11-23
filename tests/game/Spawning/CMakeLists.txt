@@ -1,1 +1,1 @@
-target_sources(game_tests PRIVATE EnemyScalingTest.cpp ProjectileStartPositionTest.cpp VolleyPlacementTest.cpp VolleyPlacementFixtures.cpp PlacedEnemySpawnerTest.cpp)
+target_sources(game_tests PRIVATE EnemyScalingTest.cpp ProjectileStartPositionTest.cpp VolleyPlacementTest.cpp VolleyPlacementFixtures.cpp ShotPlacementTest.cpp PlacedEnemySpawnerTest.cpp)

@@ -68,6 +68,7 @@ constexpr std::string_view BEHAVIOUR_KEY = "behaviour";
 constexpr std::string_view HEALTH_KEY = "health";
 constexpr std::string_view SCORE_KEY = "score";
 constexpr std::string_view GUN_KEY = "gun";
+constexpr std::string_view WEAPON_KEY = "weapon";
 constexpr std::string_view HURT_ZONE_KEY = "hurt_zone";
 constexpr std::string_view SURVIVES_CONTACT_KEY = "survives_contact";
 constexpr std::string_view FRAGILE_KEY = "fragile";
@@ -92,7 +93,7 @@ constexpr std::array GAMEPLAY_KEYS{
     SCORE_KEY,    GUN_KEY,           HURT_ZONE_KEY, SURVIVES_CONTACT_KEY,
     FRAGILE_KEY,  STAYS_OUTSIDE_KEY, BURST_KEY,     VOLLEY_KEY,
     BOSS_KEY,     LOOK_ITEM_KEY,     MASK_KEY,      DAMAGE_KEY,
-    OBSTACLE_KEY, ON_HIT_KEY};
+    OBSTACLE_KEY, ON_HIT_KEY,        WEAPON_KEY};
 
 /** @brief The key of `[gameplay.obstacle]`, and the contacts it may name, with
  * the ObstacleContact of each, in the same order. */
@@ -158,11 +159,11 @@ constexpr std::array STEADY_MOTION_KEYS{KIND_KEY, TOP_SPEED_KEY};
 constexpr std::string_view POINTS_KEY = "points";
 constexpr std::array POINTS_KEYS{POINTS_KEY};
 
-/** @brief The keys of `[gameplay.gun]`, durations in milliseconds. */
+/** @brief The keys of `[gameplay.gun]` that time its shots and name what it
+ * fires, durations in milliseconds; its other keys follow the volleys. */
 constexpr std::string_view INTERVAL_KEY = "interval_ms";
 constexpr std::string_view FIRST_SHOT_KEY = "first_shot_ms";
 constexpr std::string_view PROJECTILE_KEY = "projectile";
-constexpr std::array GUN_KEYS{INTERVAL_KEY, FIRST_SHOT_KEY, PROJECTILE_KEY};
 
 /** @brief The keys of `[gameplay.burst]`: when a missile bursts, into how
  * many shards, and the sheet of its shards. */
@@ -247,6 +248,37 @@ constexpr engine::WholeNumberRange VOLLEY_SPREAD_RANGE{.lowest = 0,
 constexpr engine::WholeNumberRange VOLLEY_DISTANCE_RANGE{.lowest = 0,
                                                          .highest = 1024};
 constexpr engine::WholeNumberRange VOLLEY_GAP_RANGE{.lowest = 0, .highest = 15};
+
+/** @brief The keys of `[gameplay.gun]`: its interval, its first shot and its
+ * projectile, required, then how many projectiles a shot fires, the fan they
+ * spread over (degrees), the rows between two of them and how far ahead of
+ * the muzzle they start: one projectile straight ahead without them. */
+constexpr std::array GUN_KEYS{INTERVAL_KEY, FIRST_SHOT_KEY, PROJECTILE_KEY,
+                              COUNT_KEY,    SPREAD_KEY,     STEP_Y_KEY,
+                              DISTANCE_KEY};
+constexpr engine::WholeNumberRange GUN_SHOT_COUNT_RANGE{.lowest = 1,
+                                                        .highest = 8};
+constexpr engine::WholeNumberRange GUN_SPREAD_RANGE{.lowest = 0,
+                                                    .highest = 180};
+constexpr engine::WholeNumberRange GUN_STEP_RANGE{.lowest = 0, .highest = 256};
+constexpr engine::WholeNumberRange GUN_DISTANCE_RANGE{.lowest = 0,
+                                                      .highest = 256};
+
+/** @brief The keys of a weapon of a ship, `[[gameplay.weapon]]`: its name and
+ * its levels, `[[gameplay.weapon.level]]`, each a gun with no first shot. */
+constexpr std::string_view WEAPON_NAME_KEY = "name";
+constexpr std::string_view WEAPON_LEVEL_KEY = "level";
+constexpr std::array WEAPON_KEYS{WEAPON_NAME_KEY, WEAPON_LEVEL_KEY};
+constexpr std::array WEAPON_LEVEL_KEYS{INTERVAL_KEY, PROJECTILE_KEY,
+                                       COUNT_KEY,    SPREAD_KEY,
+                                       STEP_Y_KEY,   DISTANCE_KEY};
+/** @brief The most weapons a ship holds, and the levels of each. */
+constexpr std::size_t MOST_WEAPONS = 7;
+constexpr std::size_t MOST_WEAPON_LEVELS = 2;
+/** @brief How far ahead of the point it steers from a gun lays a missile,
+ * in logical units, as the check of its heading judges it: a missile that
+ * flies away from that point flies on towards its edge. */
+constexpr float MISSILE_LAID_AHEAD = 1.0F;
 
 /** @brief The keys of `[gameplay.boss]`: the percentage of its full health
  * it enrages below, and the attacks of its rage and its arrival, required;
@@ -364,6 +396,17 @@ constexpr std::string_view MASK_DRAWN_RULE = "a mask draws at least one pixel";
 constexpr std::string_view MASK_AND_PARTS_RULE =
     "a sheet gives a mask or several hitbox boxes, never both";
 constexpr std::string_view MISSILE_GUN_RULE = "a missile has no gun";
+constexpr std::string_view WEAPON_SIDE_RULE =
+    "only the sheet of a ship holds weapons";
+constexpr std::string_view WEAPON_COUNT_RULE = "a ship holds at most 7 weapons";
+constexpr std::string_view WEAPON_NAME_RULE =
+    "two weapons of a ship never share a name";
+constexpr std::string_view WEAPON_LEVEL_RULE = "a weapon has one or two levels";
+constexpr std::string_view FAN_PILOT_RULE =
+    "a gun whose projectiles spread flies them with the scatter pilot";
+constexpr std::string_view SCATTER_DISTANCE_RULE =
+    "a gun of projectiles that fly scattering lays them ahead of its muzzle, "
+    "at a distance";
 constexpr std::string_view BURST_SIDE_RULE =
     "only a missile bursts into shards";
 constexpr std::string_view BOSS_SIDE_RULE =

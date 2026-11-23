@@ -76,19 +76,21 @@ class WeaponSystem {
    * fire. */
   void collectShots();
 
-  /** @brief Creates the projectile of @p shot and tells every connected
-   * player. */
+  /** @brief Creates each projectile of @p shot, in the order of its pattern,
+   * and tells every connected player of each; stops at the first that cannot
+   * be created. */
   void fire(const WeaponShot& shot);
 
   /**
-   * @returns The EntitySpawned of the projectile created for @p shot, naming
+   * @returns The EntitySpawned of projectile @p index of @p shot, laid by
+   * game::shotPlacement(), naming
    * its owner and its firing input for a missile of a player, or
    * nothing when every network id was given, which is logged, or when the
    * projectile is a missile of a player whose shooter belongs to no connected
    * player.
    */
   [[nodiscard]] std::optional<network::EntitySpawned> spawnProjectile(
-      const WeaponShot& shot);
+      const WeaponShot& shot, std::size_t index);
 
   /**
    * @returns The EntitySpawned of a body of @p sheet made at @p placement,

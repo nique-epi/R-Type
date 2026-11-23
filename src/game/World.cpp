@@ -94,12 +94,14 @@ std::size_t ticksAt(std::size_t ticks, EnemyStrength strength) {
 }
 
 /** @returns The gun @p sheet gives, its ticks at the gun interval percent of
- * @p strength: never under one tick between two shots. */
+ * @p strength: never under one tick between two shots, and the shape of its
+ * shots. */
 Gun gunOf(const GunSheet& sheet, EnemyStrength strength) {
   return Gun{.intervalTicks = std::max<std::size_t>(
                  1, ticksAt(sheet.intervalTicks, strength)),
              .ticksUntilReady = ticksAt(sheet.firstShotTicks, strength),
-             .projectileNumber = sheet.projectileNumber};
+             .projectileNumber = sheet.projectileNumber,
+             .pattern = sheet.pattern};
 }
 
 /** @returns @p strength for an enemy of @p sheet that is no boss, the

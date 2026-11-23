@@ -9,6 +9,7 @@
 #include <string_view>
 #include <utility>
 #include <vector>
+#include "BehaviourConstants.hpp"
 #include "BehaviourRegistry.hpp"
 #include "BuiltInBehaviours.hpp"
 #include "BurstSheet.hpp"
@@ -29,6 +30,7 @@
 #include "SheetText.hpp"
 #include "SheetTextReading.hpp"
 #include "VolleySheet.hpp"
+#include "WeaponSheet.hpp"
 
 namespace rtype::game {
 
@@ -99,19 +101,47 @@ const EntitySheet& referencedSheet(std::span<const EntitySheet> sheets,
   return *found;
 }
 
-/** @throws engine::UnknownDataFileChoiceException when the gun of a sheet of
- * @p sheets fires no sheet, or a missile bursts into no sheet, and
- * InconsistentEntitySheetException when a gun fires a sheet of another side
- * than projectileSideOf() its shooter, or a missile bursts into missiles of
- * another side than its own. */
+/** @returns Whether a body of @p sheet flies away from where it starts, as
+ * the scatter pilot steers it. */
+bool fliesScattering(const EntitySheet& sheet) {
+  return sheet.pilot.has_value() &&
+         sheet.pilot->behaviour.get().name() == SCATTER_BEHAVIOUR_NAME;
+}
+
+/** @throws engine::UnknownDataFileChoiceException when @p gun, held by a body
+ * of side @p shooter, fires no sheet of @p sheets, and
+ * InconsistentEntitySheetException when it fires a sheet of another side
+ * than projectileSideOf() @p shooter, spreads projectiles that do not fly
+ * scattering, or lays projectiles that fly scattering on its muzzle. */
+void checkGun(std::span<const EntitySheet> sheets, EntityType shooter,
+              const GunSheet& gun) {
+  const EntitySheet& projectile =
+      referencedSheet(sheets, gun.projectile, gun.projectilePlace);
+  if (projectile.side != projectileSideOf(shooter)) {
+    throw InconsistentEntitySheetException(gun.projectilePlace,
+                                           PROJECTILE_SIDE_RULE);
+  }
+  if (gun.pattern.spreadDegrees > 0.0F && !fliesScattering(projectile)) {
+    throw InconsistentEntitySheetException(gun.projectilePlace, FAN_PILOT_RULE);
+  }
+  if (fliesScattering(projectile) && gun.pattern.distance <= 0.0F) {
+    throw InconsistentEntitySheetException(gun.projectilePlace,
+                                           SCATTER_DISTANCE_RULE);
+  }
+}
+
+/** @throws What checkGun() throws for the gun of a sheet of @p sheets or a
+ * level of one of its weapons, engine::UnknownDataFileChoiceException when a
+ * missile bursts into no sheet, and InconsistentEntitySheetException when it
+ * bursts into missiles of another side than its own. */
 void checkProjectiles(std::span<const EntitySheet> sheets) {
   for (const EntitySheet& sheet : sheets) {
     if (sheet.gun.has_value()) {
-      const GunSheet& gun = *sheet.gun;
-      if (referencedSheet(sheets, gun.projectile, gun.projectilePlace).side !=
-          projectileSideOf(sheet.side)) {
-        throw InconsistentEntitySheetException(gun.projectilePlace,
-                                               PROJECTILE_SIDE_RULE);
+      checkGun(sheets, sheet.side, *sheet.gun);
+    }
+    for (const WeaponSheet& weapon : sheet.weapons) {
+      for (const GunSheet& level : weapon.levels) {
+        checkGun(sheets, sheet.side, level);
       }
     }
     if (sheet.burst.has_value()) {
@@ -141,15 +171,21 @@ void checkVolleys(std::span<const EntitySheet> sheets) {
   }
 }
 
-/** @brief Writes in the gun of each sheet of @p sheets the number of the sheet
- * it fires, in its burst the number of the sheet of its shards, and in each
- * of its volleys the number of the sheet of its bodies. checkProjectiles()
+/** @brief Writes in the gun of each sheet of @p sheets, and in each level of
+ * its weapons, the number of the sheet it fires, in its burst the number of
+ * the sheet of its shards, and in each of its volleys the number of the sheet
+ * of its bodies. checkProjectiles()
  * and checkVolleys() ran first, so every name is a sheet of @p sheets. */
 void numberProjectiles(std::vector<EntitySheet>& sheets) {
   for (EntitySheet& sheet : sheets) {
     if (sheet.gun.has_value()) {
       sheet.gun->projectileNumber =
           findNamed(sheets, sheet.gun->projectile)->number;
+    }
+    for (WeaponSheet& weapon : sheet.weapons) {
+      for (GunSheet& level : weapon.levels) {
+        level.projectileNumber = findNamed(sheets, level.projectile)->number;
+      }
     }
     if (sheet.burst.has_value()) {
       sheet.burst->shardNumber = findNamed(sheets, sheet.burst->shard)->number;

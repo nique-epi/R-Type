@@ -10,6 +10,14 @@ constexpr float FACING_RIGHT = 1.0F;
 constexpr float FACING_LEFT = -1.0F;
 
 /**
+ * @brief The heading of the middle of a shot, in degrees from the left as a
+ * volley counts it: a ship of a player fires to the right, an enemy to the
+ * left (see shotPlacement()).
+ */
+constexpr float RIGHTWARD_SHOT_DEGREES = 180.0F;
+constexpr float LEFTWARD_SHOT_DEGREES = 0.0F;
+
+/**
  * @brief Where the ships of the players appear, across the playfield: the
  * share of its width between its left edge and the center of a new ship.
  */

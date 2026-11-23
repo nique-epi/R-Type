@@ -19,6 +19,10 @@ class ShipWeaponFixture : public WeaponSystemFixture {
    * of its number starts. */
   ConnectedPlayer& connect(std::size_t index);
 
+  /** @brief Gives the ship of @p player the gun of the first level of the
+   * red weapon of the shipped ship, ready at once. */
+  void armWithRed(const ConnectedPlayer& player);
+
   /** @brief Runs @p count ticks in which only @p shooter holds shoot. */
   void runTicksShooting(ConnectedPlayer& shooter, std::size_t count);
 

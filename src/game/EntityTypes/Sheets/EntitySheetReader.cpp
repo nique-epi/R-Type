@@ -1,6 +1,5 @@
 #include "EntitySheetReader.hpp"
 #include <algorithm>
-#include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <span>
@@ -22,7 +21,7 @@
 #include "EntitySheetConstants.hpp"
 #include "EntityType.hpp"
 #include "GameException.hpp"
-#include "GunSheet.hpp"
+#include "GunSheetReading.hpp"
 #include "IBehaviour.hpp"
 #include "IHitHandler.hpp"
 #include "IsAMissile.hpp"
@@ -33,6 +32,7 @@
 #include "SheetActionReading.hpp"
 #include "SheetText.hpp"
 #include "SheetTextReading.hpp"
+#include "SheetTicks.hpp"
 #include "SheetVisualNames.hpp"
 #include "ShipControlConstants.hpp"
 #include "ShipLookConstants.hpp"
@@ -44,13 +44,6 @@
 namespace rtype::game {
 
 namespace {
-
-/** @returns The whole simulation ticks nearest to @p duration: 333 ms are 20
- * ticks at 60 per second, 1500 ms are 90, 0 ms are 0. */
-std::size_t nearestTicksIn(engine::Duration duration) {
-  return static_cast<std::size_t>((duration + HALF_A_TICK) /
-                                  engine::SIMULATION_TICK_DURATION);
-}
 
 /** @returns The table `[gameplay]` of @p root, as sheetTableOf() reads it,
  * once it holds no unknown key. */
@@ -204,26 +197,6 @@ std::optional<Points> pointsIn(const engine::DataFileTable& gameplay,
   }
   engine::refuseUnknownKeys(*table, POINTS_KEYS);
   return static_cast<Points>(engine::wholeNumberAt(*table, POINTS_KEY, range));
-}
-
-/** @returns The gun of `[gameplay.gun]`, its durations in the nearest whole
- * ticks, at least MINIMUM_GUN_INTERVAL_TICKS between two shots; nothing
- * without it. */
-std::optional<GunSheet> gunFrom(const engine::DataFileTable& gameplay) {
-  const std::optional<engine::DataFileTable> gun =
-      engine::optionalTableAt(gameplay, GUN_KEY);
-  if (!gun.has_value()) {
-    return std::nullopt;
-  }
-  engine::refuseUnknownKeys(*gun, GUN_KEYS);
-  return GunSheet{
-      .intervalTicks = std::max(MINIMUM_GUN_INTERVAL_TICKS,
-                                nearestTicksIn(engine::millisecondsAt(
-                                    *gun, INTERVAL_KEY, GUN_INTERVAL_RANGE))),
-      .firstShotTicks = nearestTicksIn(
-          engine::millisecondsAt(*gun, FIRST_SHOT_KEY, FIRST_SHOT_RANGE)),
-      .projectile = engine::textAt(*gun, PROJECTILE_KEY),
-      .projectilePlace = engine::placeOfKey(*gun, PROJECTILE_KEY)};
 }
 
 /** @returns How `[gameplay.burst]` bursts a missile; nothing without it. */
@@ -408,11 +381,11 @@ void checkWhatItFires(const EntitySheet& sheet,
 }
 
 /** @returns The horizontal share of the Direction @p pilot asks of a body of
- * @p motion on its first tick: below 0 to the left, above 0 to the right, 0
- * for a body that stays. */
+ * @p motion on its first tick, laid at @p laidAt from the point it steers
+ * from: below 0 to the left, above 0 to the right, 0 for a body that stays. */
 float firstHorizontalSteeringOf(const PilotSheet& pilot,
-                                const MotionSheet& motion) {
-  const BehaviourView firstTick{.position = Position{},
+                                const MotionSheet& motion, Position laidAt) {
+  const BehaviourView firstTick{.position = laidAt,
                                 .origin = Position{},
                                 .age = engine::SIMULATION_TICK_DURATION,
                                 .elapsed = engine::SIMULATION_TICK_DURATION,
@@ -429,16 +402,37 @@ bool fliesTowardsItsEdge(EntityType side, float horizontalSteering) {
                                            : horizontalSteering < 0.0F;
 }
 
+/** @returns Where a gun lays a missile of @p side, from the point it steers
+ * from: MISSILE_LAID_AHEAD units on the side it flies to, the right for a
+ * missile of a player, the left for one of an enemy. */
+Position laidAheadFor(EntityType side) {
+  return Position{.x = side == EntityType::PlayerMissile ? MISSILE_LAID_AHEAD
+                                                         : -MISSILE_LAID_AHEAD,
+                  .y = 0.0F};
+}
+
+/** @returns Whether @p pilot, the pilot of the missile @p sheet, steers it,
+ * on its first tick, towards the edge that removes it, laid on the point it
+ * steers from or laid ahead of it by a gun (see laidAheadFor()). */
+bool steersTowardsItsEdge(const EntitySheet& sheet, const PilotSheet& pilot) {
+  return fliesTowardsItsEdge(
+             sheet.side,
+             firstHorizontalSteeringOf(pilot, sheet.motion, Position{})) ||
+         fliesTowardsItsEdge(
+             sheet.side, firstHorizontalSteeringOf(pilot, sheet.motion,
+                                                   laidAheadFor(sheet.side)));
+}
+
 /** @throws InconsistentEntitySheetException when the pilot of a missile does
- * not steer it, on its first tick, towards the edge that removes it: such a
- * missile that hits nothing would live for the rest of the game. */
+ * not steer it towards the edge that removes it (see
+ * steersTowardsItsEdge()): such a missile that hits nothing would live for
+ * the rest of the game. */
 void checkMissileFliesTowardsItsEdge(const EntitySheet& sheet,
                                      const engine::DataFileTable& gameplay) {
   if (!isAMissile(sheet.side) || !sheet.pilot.has_value()) {
     return;
   }
-  if (!fliesTowardsItsEdge(
-          sheet.side, firstHorizontalSteeringOf(*sheet.pilot, sheet.motion))) {
+  if (!steersTowardsItsEdge(sheet, *sheet.pilot)) {
     throw InconsistentEntitySheetException(
         engine::placeOfKey(gameplay, PILOT_KEY), MISSILE_HEADING_RULE);
   }
@@ -452,7 +446,8 @@ void checkLookItemFliesLeft(const EntitySheet& sheet,
   if (sheet.side != EntityType::LookItem || !sheet.pilot.has_value()) {
     return;
   }
-  if (firstHorizontalSteeringOf(*sheet.pilot, sheet.motion) >= 0.0F) {
+  if (firstHorizontalSteeringOf(*sheet.pilot, sheet.motion, Position{}) >=
+      0.0F) {
     throw InconsistentEntitySheetException(
         engine::placeOfKey(gameplay, PILOT_KEY), LOOK_ITEM_HEADING_RULE);
   }
@@ -486,6 +481,16 @@ void checkScrollMotionSide(const EntitySheet& sheet,
       sheet.side != EntityType::Enemy && sheet.side != EntityType::Obstacle) {
     throw InconsistentEntitySheetException(
         engine::placeOfKey(gameplay, MOTION_KEY), SCROLL_MOTION_SIDE_RULE);
+  }
+}
+
+/** @throws InconsistentEntitySheetException when a body that is no ship holds
+ * weapons. */
+void checkWeaponsBelongToAShip(const EntitySheet& sheet,
+                               const engine::DataFileTable& gameplay) {
+  if (!sheet.weapons.empty() && sheet.side != EntityType::Player) {
+    throw InconsistentEntitySheetException(
+        engine::placeOfKey(gameplay, WEAPON_KEY), WEAPON_SIDE_RULE);
   }
 }
 
@@ -526,6 +531,7 @@ void checkSheetHoldsTogether(const EntitySheet& sheet,
   checkObstacleMatchesSide(sheet, gameplay);
   checkScrollMotionSide(sheet, gameplay);
   checkOnHitBelongsToABody(sheet, gameplay);
+  checkWeaponsBelongToAShip(sheet, gameplay);
 }
 
 }  // namespace
@@ -554,6 +560,7 @@ EntitySheet gameplayOf(const SheetText& sheet,
       .staysOutside = holdsMarker(gameplay, STAYS_OUTSIDE_KEY),
       .burst = burstFrom(gameplay),
       .volleys = volleysFrom(gameplay),
+      .weapons = weaponsFrom(gameplay),
       .boss = bossFrom(gameplay),
       .lookItem = lookItemFrom(gameplay),
       .visualNames = visualNamesOf(sheetTableOf(sheetRoot, APPEARANCE_KEY)),

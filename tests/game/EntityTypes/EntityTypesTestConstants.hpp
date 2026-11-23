@@ -45,6 +45,10 @@ constexpr std::string_view DRIFTER_SHEET = "drifter";
 constexpr std::string_view WEAVER_SHEET = "weaver";
 constexpr std::string_view WEAVER_BOLT_SHEET = "weaver_bolt";
 constexpr std::string_view PLAYER_MISSILE_SHEET = "player_missile";
+/** @brief The sheets of the shots of the red, blue and yellow weapons. */
+constexpr std::string_view RED_SHOT_SHEET = "red_shot";
+constexpr std::string_view BLUE_SHOT_SHEET = "blue_shot";
+constexpr std::string_view YELLOW_SHOT_SHEET = "yellow_shot";
 constexpr std::string_view ENEMY_MISSILE_SHEET = "enemy_missile";
 constexpr std::string_view VOLTJELLY_SHEET = "voltjelly";
 constexpr std::string_view REAPER_SHEET = "reaper";
@@ -82,7 +86,8 @@ constexpr std::string_view LOOK_TRICORN_SHEET = "look_tricorn";
 
 /** @brief The names of every sheet the game ships, in the order of their
  * names, so of their numbers. */
-constexpr std::array SHIPPED_SHEET_NAMES{BYDO_TYRANT_SHEET,
+constexpr std::array SHIPPED_SHEET_NAMES{BLUE_SHOT_SHEET,
+                                         BYDO_TYRANT_SHEET,
                                          BYDOMANCER_SHEET,
                                          DRIFTER_SHEET,
                                          DRILLBACK_SHEET,
@@ -112,6 +117,7 @@ constexpr std::array SHIPPED_SHEET_NAMES{BYDO_TYRANT_SHEET,
                                          ORB_SHARD_SHEET,
                                          PLAYER_MISSILE_SHEET,
                                          REAPER_SHEET,
+                                         RED_SHOT_SHEET,
                                          RUNE_ORB_SHEET,
                                          SHIP_SHEET,
                                          TYRANT_DIVER_SHEET,
@@ -120,6 +126,7 @@ constexpr std::array SHIPPED_SHEET_NAMES{BYDO_TYRANT_SHEET,
                                          TYRANT_SPORE_SHARD_SHEET,
                                          VOLTJELLY_SHEET,
                                          WEAVER_SHEET,
-                                         WEAVER_BOLT_SHEET};
+                                         WEAVER_BOLT_SHEET,
+                                         YELLOW_SHOT_SHEET};
 
 }  // namespace rtype::game::testing

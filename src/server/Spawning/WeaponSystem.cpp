@@ -33,6 +33,8 @@
 #include "ProtocolConstants.hpp"
 #include "ShardBurst.hpp"
 #include "ShotAuthor.hpp"
+#include "ShotPlacement.hpp"
+#include "ShotStart.hpp"
 #include "WeaponShot.hpp"
 #include "WeaponSystemConstants.hpp"
 #include "WeaponSystemParts.hpp"
@@ -68,7 +70,8 @@ std::optional<WeaponShot> shotOf(engine::ComponentRegistry& components,
   return WeaponShot{
       .muzzle = game::Muzzle{.center = *position, .box = *box, .side = *side},
       .projectileNumber = gun.projectileNumber,
-      .shooterId = identity->networkId};
+      .shooterId = identity->networkId,
+      .pattern = gun.pattern};
 }
 
 /**
@@ -157,24 +160,29 @@ void WeaponSystem::collectShots() {
 }
 
 void WeaponSystem::fire(const WeaponShot& shot) {
-  const std::optional<network::EntitySpawned> projectile =
-      spawnProjectile(shot);
-  if (projectile.has_value()) {
+  for (std::size_t index = 0; index < shot.pattern.count; ++index) {
+    const std::optional<network::EntitySpawned> projectile =
+        spawnProjectile(shot, index);
+    if (!projectile.has_value()) {
+      return;
+    }
     announce(*projectile);
   }
 }
 
 std::optional<network::EntitySpawned> WeaponSystem::spawnProjectile(
-    const WeaponShot& shot) {
+    const WeaponShot& shot, std::size_t index) {
   const std::optional<ProjectileLaunch> launch =
       launchOf(shot, *types_, *roster_);
   if (!launch.has_value()) {
     return std::nullopt;
   }
-  return spawnAt(
-      launch->sheet.get(),
-      game::BodyPlacement{.position = launch->start, .origin = launch->start},
-      launch->author);
+  return spawnAt(launch->sheet.get(),
+                 game::shotPlacement(shot.pattern,
+                                     game::ShotStart{.point = launch->start,
+                                                     .side = shot.muzzle.side},
+                                     index),
+                 launch->author);
 }
 
 std::optional<network::EntitySpawned> WeaponSystem::spawnAt(

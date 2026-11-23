@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include "ShotPattern.hpp"
 
 namespace rtype::game {
 
@@ -27,6 +28,8 @@ struct Gun {
   /** @brief The number of the sheet of what the gun fires, as
    * EntitySheets::numbered() finds it. */
   std::uint8_t projectileNumber{0};
+  /** @brief How many projectiles a shot fires, and how they spread. */
+  ShotPattern pattern{};
 };
 
 }  // namespace rtype::game

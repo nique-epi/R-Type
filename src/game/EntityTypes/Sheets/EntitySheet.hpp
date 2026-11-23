@@ -19,6 +19,7 @@
 #include "PilotSheet.hpp"
 #include "SheetVisualNames.hpp"
 #include "VolleySheet.hpp"
+#include "WeaponSheet.hpp"
 
 namespace rtype::game {
 
@@ -78,6 +79,9 @@ struct EntitySheet {
   /** @brief The volleys it fires as it enters some of its actions, in the
    * order of the file; empty for a body that fires none. */
   std::vector<VolleySheet> volleys;
+  /** @brief The weapons a ship may hold besides its gun, in the order of the
+   * file; empty for any other body. */
+  std::vector<WeaponSheet> weapons;
   /** @brief What makes it a boss; nothing for any other body. */
   std::optional<BossSheet> boss{std::nullopt};
   /** @brief The item of the locker it gives, as its number in the catalog of

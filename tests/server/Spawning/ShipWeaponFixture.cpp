@@ -8,6 +8,8 @@
 #include "Entity.hpp"
 #include "EntityType.hpp"
 #include "EntityTypesTestConstants.hpp"
+#include "Gun.hpp"
+#include "GunSheet.hpp"
 #include "Intent.hpp"
 #include "MissileOwner.hpp"
 #include "Position.hpp"
@@ -16,6 +18,7 @@
 #include "ServerLobbyTestConstants.hpp"
 #include "ShipStartPosition.hpp"
 #include "ShippedEntitySheets.hpp"
+#include "WeaponSystemTestConstants.hpp"
 
 namespace rtype::server::testing {
 
@@ -26,6 +29,19 @@ ConnectedPlayer& ShipWeaponFixture::connect(std::size_t index) {
       game::testing::shippedEntitySheets().named(game::testing::SHIP_SHEET),
       game::shipStartPosition(player->playerNumber, network::MAXIMUM_PLAYERS));
   return *player;
+}
+
+void ShipWeaponFixture::armWithRed(const ConnectedPlayer& player) {
+  const game::GunSheet& red = game::testing::shippedEntitySheets()
+                                  .named(game::testing::SHIP_SHEET)
+                                  .weapons.at(RED_WEAPON_INDEX)
+                                  .levels.front();
+  auto* const gun = world().shipComponentOf<game::Gun>(player.shipEntityId);
+  ASSERT_NE(gun, nullptr) << "the player has no ship";
+  *gun = game::Gun{.intervalTicks = red.intervalTicks,
+                   .ticksUntilReady = 0,
+                   .projectileNumber = red.projectileNumber,
+                   .pattern = red.pattern};
 }
 
 void ShipWeaponFixture::runTicksShooting(ConnectedPlayer& shooter,
