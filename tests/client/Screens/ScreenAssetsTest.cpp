@@ -39,6 +39,8 @@ using rtype::client::FLIGHT_LOG_SHEET_ID;
 using rtype::client::gameAssets;
 using rtype::client::HUD_SHEET_ID;
 using rtype::client::introAssets;
+using rtype::client::LAN_BANNER_ID;
+using rtype::client::LAN_BANNER_SIZE;
 using rtype::client::LEADERBOARD_SHEET_ID;
 using rtype::client::loadInterfaceAssets;
 using rtype::client::LOGO_ID;
@@ -150,6 +152,15 @@ TEST(ScreenAssets, TheTitleLoadsItsLogoAndTheEntitySheet) {
 /**
  * Given the assets of the title screen
  * When their textures are listed
+ * Then they hold the LAN ribbon the title lays under its logo
+ */
+TEST(ScreenAssets, TheTitleLoadsTheLanRibbon) {
+  EXPECT_THAT(titleAssets().textures, IsSupersetOf({LAN_BANNER_ID}));
+}
+
+/**
+ * Given the assets of the title screen
+ * When their textures are listed
  * Then they hold the sheet of the leaderboard, since it is pushed over the
  * title and the waiting room without loading
  */
@@ -206,6 +217,7 @@ TEST(ScreenAssets, AGameKeepsEveryTextureOfTheTitle) {
  */
 TEST(ScreenAssets, TheIntroLoadsTheTitleAndTheEffectSheet) {
   std::vector<std::string> expected{LOGO_ID,
+                                    LAN_BANNER_ID,
                                     ENTITY_SHEET_ID,
                                     HUD_SHEET_ID,
                                     PROFESSOR_SHEET_ID,
@@ -290,6 +302,19 @@ TEST(ScreenAssets, TheLogoFileHasTheSizeTheTitleLaysOut) {
   ASSERT_TRUE(logo.loadFromFile(repositoryAssets() / LOGO_ID));
 
   EXPECT_EQ(sf::Vector2i(logo.getSize()), LOGO_SIZE);
+}
+
+/**
+ * Given the LAN ribbon file of the repository
+ * When it is read
+ * Then it has the size the title screen lays it out with
+ */
+TEST(ScreenAssets, TheLanRibbonFileHasTheSizeTheTitleLaysOut) {
+  sf::Image ribbon;
+
+  ASSERT_TRUE(ribbon.loadFromFile(repositoryAssets() / LAN_BANNER_ID));
+
+  EXPECT_EQ(sf::Vector2i(ribbon.getSize()), LAN_BANNER_SIZE);
 }
 
 /**
