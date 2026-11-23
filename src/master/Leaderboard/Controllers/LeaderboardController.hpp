@@ -42,6 +42,14 @@ class LeaderboardController {
   [[nodiscard]] network::ApiResponse readLeaderboard(
       const network::ApiRequest& request);
 
+  /**
+   * @returns The answer of `GET /api/leaderboard/accounts`: 200 and the page
+   * asked for of the accounts, by the total of their scores; 400 when the
+   * limit or the offset is out of its bounds.
+   */
+  [[nodiscard]] network::ApiResponse readAccountLeaderboard(
+      const network::ApiRequest& request);
+
  private:
   LeaderboardService service_;
   ServersService& servers_;

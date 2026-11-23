@@ -2,6 +2,7 @@ import type { FetchSchemaRoutes } from '@better-fetch/fetch';
 import { z } from 'zod';
 
 import {
+  accountLeaderboardSchema,
   LEADERBOARD_DIFFICULTIES,
   leaderboardSchema,
   MAXIMUM_LEADERBOARD_PLAYERS,
@@ -19,5 +20,12 @@ export const leaderboardEndpointsSchema = {
       offset: z.number().int().min(0).optional(),
     }),
     output: leaderboardSchema,
+  },
+  '@get/leaderboard/accounts': {
+    query: z.object({
+      limit: z.number().int().min(1).max(MAXIMUM_PAGE_SIZE).optional(),
+      offset: z.number().int().min(0).optional(),
+    }),
+    output: accountLeaderboardSchema,
   },
 } satisfies FetchSchemaRoutes;

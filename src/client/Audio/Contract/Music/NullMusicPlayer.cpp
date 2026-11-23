@@ -10,6 +10,8 @@ void NullMusicPlayer::stop() {}
 
 void NullMusicPlayer::pause() {}
 
+void NullMusicPlayer::setFade([[maybe_unused]] float level) {}
+
 std::optional<engine::Duration> NullMusicPlayer::playingOffset() const {
   return std::nullopt;
 }

@@ -726,13 +726,26 @@ TEST(EntityAppearances, ReadsTheMusicOfEachBossOfDeseret) {
 }
 
 /**
- * Given the sheet of the Necromancer, which names no music
+ * Given the sheet of the Necromancer
+ * When a client reads it
+ * Then it names the music it fights to
+ */
+TEST(EntityAppearances, TheNecromancerNamesItsMusic) {
+  const EntityAppearances appearances = fosseAppearances();
+  const EntityAppearance* const read = appearances.named(NECROMANCER_SHEET);
+  ASSERT_NE(read, nullptr);
+
+  EXPECT_EQ(read->bossMusic, NECROMANCER_MUSIC);
+}
+
+/**
+ * Given the shipped sheet of the Bydo Tyrant, which names no music
  * When a client reads it
  * Then its music is empty, so it fights to the music of a boss
  */
 TEST(EntityAppearances, ABossWithoutMusicHasNone) {
-  const EntityAppearances appearances = fosseAppearances();
-  const EntityAppearance* const read = appearances.named(NECROMANCER_SHEET);
+  const EntityAppearances appearances = shippedAppearances();
+  const EntityAppearance* const read = appearances.named(BYDO_TYRANT_SHEET);
   ASSERT_NE(read, nullptr);
 
   EXPECT_TRUE(read->bossMusic.empty());

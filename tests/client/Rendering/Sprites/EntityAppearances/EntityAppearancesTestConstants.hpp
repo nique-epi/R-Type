@@ -390,10 +390,13 @@ color = "pink"
 constexpr std::string_view NECROMANCER_SHEET = "necromancer";
 constexpr std::string_view NECROMANCER_BOSS_NAME = "NECROMANCER";
 
-/** @brief The two bosses of Deseret and the music each sheet names; the
- * Necromancer names none, so it fights to the music of a boss. */
+/** @brief The two bosses of Deseret and the music each sheet names, and the
+ * music of the Necromancer; the Bydo Tyrant names none, so it fights to the
+ * music of a boss. */
 constexpr std::string_view IRON_PILGRIM_SHEET = "iron_pilgrim";
 constexpr std::string_view IRON_PILGRIM_MUSIC =
     "music/freight_train_boogie.mp3";
 constexpr std::string_view OLD_WIDOW_SHEET = "old_widow";
 constexpr std::string_view OLD_WIDOW_MUSIC = "music/stratosphere_boogie.mp3";
+constexpr std::string_view NECROMANCER_MUSIC =
+    "music/escaping_a_foul_presence.mp3";

@@ -34,3 +34,7 @@ void FakeMusicPlayer::setPlayingOffset(
 }
 
 void FakeMusicPlayer::removeTheFile() { fileRemoved_ = true; }
+
+void FakeMusicPlayer::setFade(float level) { fade_ = level; }
+
+float FakeMusicPlayer::fade() const { return fade_; }

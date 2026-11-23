@@ -3,13 +3,17 @@
 #include <SQLiteCpp/Statement.h>
 #include <cstdint>
 #include <string>
+#include <vector>
+#include "AccountLeaderboardRow.hpp"
 #include "EpochSeconds.hpp"
 #include "FinishedGamePlayer.hpp"
+#include "GameReferenceConstants.hpp"
 #include "GlobalLeaderboard.hpp"
 #include "GlobalLeaderboardRow.hpp"
 #include "LeaderboardQuery.hpp"
 #include "LeaderboardRepositoryConstants.hpp"
 #include "MasterDatabase.hpp"
+#include "PageRequest.hpp"
 #include "ServerGameResult.hpp"
 #include "ServersRepositoryConstants.hpp"
 #include "StatementParts.hpp"
@@ -76,6 +80,15 @@ network::GlobalLeaderboardRow rowIn(const SQLite::Statement& select) {
       .serverName = select.getColumn(SERVER_NAME_COLUMN).getString()};
 }
 
+network::AccountLeaderboardRow accountRowIn(const SQLite::Statement& select) {
+  return network::AccountLeaderboardRow{
+      .rank = select.getColumn(BOARD_RANK_COLUMN).getInt64(),
+      .nickname = select.getColumn(NICKNAME_COLUMN).getString(),
+      .score = select.getColumn(SCORE_COLUMN).getInt64(),
+      .lastPlayedAt =
+          dateOfEpochSeconds(select.getColumn(PLAYED_AT_COLUMN).getInt64())};
+}
+
 /** @brief Files the row @p select is on in @p leaderboard: in its page, as
  * its player, or both; the first row of the player is its best. */
 void fileRow(const SQLite::Statement& select,
@@ -117,6 +130,24 @@ network::GlobalLeaderboard GameResultRepository::leaderboardOf(
       fileRow(select, leaderboard);
     }
     return leaderboard;
+  });
+}
+
+std::vector<network::AccountLeaderboardRow>
+GameResultRepository::accountLeaderboardOf(const PageRequest& page) {
+  return database_.run([&page](SQLite::Database& connection) {
+    SQLite::Statement select{connection,
+                             std::string{ACCOUNT_LEADERBOARD_QUERY}};
+    select.bind(std::string{REFERENCE_PREFIX_PARAMETER},
+                std::string{GAME_REFERENCE_PREFIX});
+    select.bind(std::string{REFERENCE_SEPARATOR_PARAMETER},
+                std::string{GAME_REFERENCE_SEPARATOR});
+    bindPage(select, page);
+    std::vector<network::AccountLeaderboardRow> accounts;
+    while (select.executeStep()) {
+      accounts.push_back(accountRowIn(select));
+    }
+    return accounts;
   });
 }
 

@@ -4,6 +4,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include "AudioConstants.hpp"
 #include "IMusicPlayer.hpp"
 #include "ISettingsListener.hpp"
 #include "Logger.hpp"
@@ -56,6 +57,8 @@ class MusicPlayer : public IMusicPlayer, public ISettingsListener {
   void stop() override;
   /** @brief Pauses the music when it plays; start() then resumes it. */
   void pause() override;
+  /** @brief Scales its volume by @p level at once. */
+  void setFade(float level) override;
 
   /** @brief Sets the volume the settings now hold when @p changed moves it, so
    * the options change the music at once; ignores the other settings. */
@@ -72,6 +75,7 @@ class MusicPlayer : public IMusicPlayer, public ISettingsListener {
   logging::Logger logger_;
   sf::Music music_;
   bool opened_{false};
+  float fade_{MUSIC_FADE_FULL};
 };
 
 }  // namespace rtype::client

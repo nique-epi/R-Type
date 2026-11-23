@@ -3,6 +3,8 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <vector>
+#include "AccountLeaderboardRow.hpp"
 #include "BetsReceipt.hpp"
 #include "CasinoRoomListing.hpp"
 #include "CasinoRoomState.hpp"
@@ -196,6 +198,12 @@ namespace rtype::network {
  * player left out when it has none, written as registrationText() writes. */
 [[nodiscard]] std::string globalLeaderboardText(
     const GlobalLeaderboard& leaderboard);
+
+/** @returns @p accounts as the JSON answer of `GET /api/leaderboard/accounts`,
+ * `{"accounts":[{"rank":1,"nickname":"ACE","score":2234,
+ * "lastPlayedAt":1800000000}]}`, written as registrationText() writes. */
+[[nodiscard]] std::string accountLeaderboardText(
+    const std::vector<AccountLeaderboardRow>& accounts);
 
 /**
  * @returns The leaderboard @p text holds, as globalLeaderboardText() writes

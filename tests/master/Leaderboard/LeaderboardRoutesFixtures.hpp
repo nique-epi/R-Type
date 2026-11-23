@@ -15,6 +15,11 @@
 [[nodiscard]] rtype::network::FinishedGamePlayer guestScoring(
     std::string_view nickname, std::uint32_t score);
 
+/** @returns A player of nickname @p nickname who joined with @p ticket and
+ * scored @p score. */
+[[nodiscard]] rtype::network::FinishedGamePlayer ticketedScoring(
+    std::string_view nickname, const std::string& ticket, std::uint32_t score);
+
 /** @returns A vanilla game of "normal" for two players, ended at GAME_DATE,
  * whose rows are @p players. */
 [[nodiscard]] rtype::network::FinishedGame normalGameOfTwo(
@@ -24,14 +29,22 @@
  * not answer. */
 [[nodiscard]] nlohmann::json bodyOf(const httplib::Result& answer);
 
+/** @returns The member @p member of each row of the array @p list of
+ * @p document, in order. */
+template <typename Value>
+[[nodiscard]] std::vector<Value> membersOf(const nlohmann::json& document,
+                                           std::string_view list,
+                                           std::string_view member) {
+  std::vector<Value> values;
+  for (const nlohmann::json& row : document.at(std::string{list})) {
+    values.push_back(row.at(std::string{member}).get<Value>());
+  }
+  return values;
+}
+
 /** @returns The member @p member of each score of @p leaderboard, in order. */
 template <typename Value>
 [[nodiscard]] std::vector<Value> membersIn(const nlohmann::json& leaderboard,
                                            std::string_view member) {
-  std::vector<Value> values;
-  for (const nlohmann::json& row :
-       leaderboard.at(std::string{SCORES_MEMBER_NAME})) {
-    values.push_back(row.at(std::string{member}).get<Value>());
-  }
-  return values;
+  return membersOf<Value>(leaderboard, SCORES_MEMBER_NAME, member);
 }

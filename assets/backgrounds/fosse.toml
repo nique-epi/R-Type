@@ -1,6 +1,10 @@
 # The Pit: three layers of walls, cut from the maps of its LDtk project, and
 # no star. The background arrives through its nearest layer.
 
+# The level plays Mistaken Identity while this biome shows; the alarm of a
+# boss stops it, and it comes back once the boss is gone.
+music = "music/mistaken_identity.mp3"
+
 [[layer]]
 name = "far walls"
 motion = { parallax = 0.25 }

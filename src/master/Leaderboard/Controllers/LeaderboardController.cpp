@@ -159,4 +159,15 @@ network::ApiResponse LeaderboardController::readLeaderboard(
       .body = network::globalLeaderboardText(service_.leaderboardOf(*query))};
 }
 
+network::ApiResponse LeaderboardController::readAccountLeaderboard(
+    const network::ApiRequest& request) {
+  const std::optional<PageRequest> page = pageOf(request);
+  if (!page.has_value()) {
+    return invalidPageRefusal();
+  }
+  return network::ApiResponse{.status = OK_STATUS,
+                              .body = network::accountLeaderboardText(
+                                  service_.accountLeaderboardOf(*page))};
+}
+
 }  // namespace rtype::master

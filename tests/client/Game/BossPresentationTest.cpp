@@ -42,24 +42,25 @@ TEST_F(BossPresentationFixture, TheArrivalSilencesTheMusic) {
 /**
  * Given a level that plays a music of its own
  * When the boss starts to arrive
- * Then no alarm plays and no music of the boss is asked for: the silence the
- * arrival asks for is refused, and the music of the level plays on
+ * Then the music is silenced, the alarm plays and the music of the boss is
+ * asked for, as in a level with no music of its own
  */
-TEST_F(BossPresentationFixture, TheMusicOfALevelPlaysOnThroughTheArrival) {
+TEST_F(BossPresentationFixture, TheAlarmPlaysOverTheMusicOfALevel) {
   playLevelMusic();
 
   presentation().apply(PRESENTED_BOSS_ARRIVING);
 
-  EXPECT_THAT(sounds().played(), Not(Contains(BOSS_ALARM_SOUND_ID)));
-  EXPECT_EQ(audio().musicCalls(), (std::vector<MusicCall>{MusicCall::LevelMusic,
-                                                          MusicCall::Silence}));
+  EXPECT_EQ(sounds().played(), std::vector<std::string>{BOSS_ALARM_SOUND_ID});
+  EXPECT_EQ(audio().musicCalls(),
+            (std::vector<MusicCall>{MusicCall::LevelMusic, MusicCall::Silence,
+                                    MusicCall::BossMusic}));
 }
 
 /**
  * Given a level that plays a music of its own, and a boss whose sheet names
  * the music it fights to, arriving
  * When the first status of its fight arrives
- * Then the music of the boss is asked for, in place of the music of the level
+ * Then the music of its sheet is asked for again, for the end of the alarm
  */
 TEST_F(BossPresentationFixture, TheMusicOfABossSheetTakesOverTheMusicOfALevel) {
   playLevelMusic();
@@ -68,26 +69,29 @@ TEST_F(BossPresentationFixture, TheMusicOfABossSheetTakesOverTheMusicOfALevel) {
 
   presentation().apply(PRESENTED_BOSS_FIGHTING);
 
-  EXPECT_EQ(audio().musicCalls(),
-            (std::vector<MusicCall>{MusicCall::LevelMusic, MusicCall::Silence,
-                                    MusicCall::BossMusic}));
+  EXPECT_EQ(
+      audio().musicCalls(),
+      (std::vector<MusicCall>{MusicCall::LevelMusic, MusicCall::Silence,
+                              MusicCall::BossMusic, MusicCall::BossMusic}));
 }
 
 /**
  * Given a level that plays a music of its own, and a boss whose sheet names
  * no music, arriving
  * When the first status of its fight arrives
- * Then no music of the boss is asked for: the music of the level plays on
+ * Then no music of the boss is asked for again: the soundtrack gives the
+ * level its music back after the alarm
  */
-TEST_F(BossPresentationFixture, ABossWithoutMusicLeavesTheMusicOfALevel) {
+TEST_F(BossPresentationFixture, ABossWithoutMusicAsksForNoMusicOfItsOwn) {
   playLevelMusic();
   placeNamedBoss();
   presentation().apply(PRESENTED_BOSS_ARRIVING);
 
   presentation().apply(PRESENTED_BOSS_FIGHTING);
 
-  EXPECT_EQ(audio().musicCalls(), (std::vector<MusicCall>{MusicCall::LevelMusic,
-                                                          MusicCall::Silence}));
+  EXPECT_EQ(audio().musicCalls(),
+            (std::vector<MusicCall>{MusicCall::LevelMusic, MusicCall::Silence,
+                                    MusicCall::BossMusic}));
 }
 
 /**

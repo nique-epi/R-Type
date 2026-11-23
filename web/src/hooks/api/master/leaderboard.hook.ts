@@ -14,12 +14,36 @@ export type Ranking = {
 };
 
 /**
+ * Reads the leaderboard of the accounts: the total of the scores of each,
+ * whatever the difficulty, the pilots and the server, dated by its last game.
+ */
+async function getAccountRanking(): Promise<Ranking> {
+  const { data, error } = await api.leaderboard.getAccountLeaderboard({
+    limit: RANKING_LENGTH,
+  });
+
+  return error
+    ? { available: false, players: [] }
+    : {
+        available: true,
+        players: data.map(({ lastPlayedAt, ...account }) => ({
+          ...account,
+          playedAt: lastPlayedAt,
+        })),
+      };
+}
+
+/**
  * Reads the leaderboard a choice names: one difficulty and one number of
- * players, of one server or of all. A master that does not answer gives no
- * player and says so, so the page can tell it from a leaderboard nobody has
- * played yet.
+ * players, of one server or of all, or the accounts, which no filter
+ * narrows. A master that does not answer gives no player and says so, so
+ * the page can tell it from a leaderboard nobody has played yet.
  */
 export async function getRanking(choice: RankingChoice): Promise<Ranking> {
+  if (choice.scope === 'accounts') {
+    return getAccountRanking();
+  }
+
   const { data, error } = await api.leaderboard.getLeaderboard({
     difficulty: choice.difficulty,
     playerCount: choice.pilots,
