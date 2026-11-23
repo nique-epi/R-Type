@@ -12,4 +12,8 @@ namespace rtype::client::testing {
 [[nodiscard]] std::size_t lookImagesAtShipScale(
     const InterfaceCanvasRecord& painting, std::optional<sf::IntRect> source);
 
+/** @returns How many images @p painting draws inside the reference card. */
+[[nodiscard]] std::size_t imagesOnTheReferenceCard(
+    const InterfaceCanvasRecord& painting);
+
 }  // namespace rtype::client::testing

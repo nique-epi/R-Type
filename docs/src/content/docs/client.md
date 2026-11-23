@@ -692,7 +692,7 @@ The room tells the help where it paints each part (`LobbyPartAreas`): the bays f
 
 ## Hangar: `HangarScreen`, `ShipLooks`
 
-`HangarScreen` (`src/client/Hangar/`) dresses the ship of the player. The hangar module adds it to the registry as `HANGAR_SCREEN`; the HANGAR tab of the server map and the waiting room push it, and it hides the screen below, which goes on running. On the left, a glass locker of three cells a row, four rows shown at a time, with a scroll mark on its right upright (`Hangar/Locker/`); on the right, the bay (`Hangar/Dock/`): the ship of the player, four times its size, held by four white arms, and above it the reference card of the chosen item, its drawing and its size in pixels. The ship takes the color of the player once a server accepted them, the first color before.
+`HangarScreen` (`src/client/Hangar/`) dresses the ship of the player. The hangar module adds it to the registry as `HANGAR_SCREEN`; the HANGAR tab of the server map and the waiting room push it, and it hides the screen below, which goes on running. On the left, a glass locker of three cells a row, four rows shown at a time, with a scroll mark on its right upright (`Hangar/Locker/`); on the right, the bay (`Hangar/Dock/`): the ship of the player, four times its size, held by four white arms, and above it the reference card of the chosen item, its drawing and its size in pixels; for an item the locker does not hold, the card stays empty, as its cell does, so pointing at a locked cell never shows its look. The ship takes the color of the player once a server accepted them, the first color before.
 
 | Input | Effect |
 |---|---|

@@ -30,6 +30,7 @@
 #include "IInterfaceCanvas.hpp"
 #include "ImagePlacement.hpp"
 #include "InterfaceColorConstants.hpp"
+#include "LockerView.hpp"
 #include "MetalPatch.hpp"
 #include "MetalTexture.hpp"
 #include "MetalTextureConstants.hpp"
@@ -345,10 +346,13 @@ void paintDockWall(IInterfaceCanvas& canvas, std::optional<int> litBeacon) {
   paintLightAndBeacons(canvas, litBeacon);
 }
 
-void paintBlueprint(IInterfaceCanvas& canvas, std::size_t item) {
+void paintBlueprint(IInterfaceCanvas& canvas, const LockerView& view) {
   paintBlueprintPaper(canvas);
+  if (!view.locker.items.test(view.chosen)) {
+    return;
+  }
   const sf::IntRect card = BLUEPRINT_AREA;
-  const BlueprintDrawing drawing = blueprintDrawingOf(item);
+  const BlueprintDrawing drawing = blueprintDrawingOf(view.chosen);
   const sf::Vector2i size = drawing.image.rectangle.size;
   const sf::Vector2i topLeft(
       card.position.x +

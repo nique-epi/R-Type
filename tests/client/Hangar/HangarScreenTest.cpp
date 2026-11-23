@@ -25,6 +25,7 @@ using rtype::client::SIGN_IN_NEEDED_SCREEN;
 using rtype::client::testing::CROWN_CELL_MIDDLE;
 using rtype::client::testing::CROWN_ICON_LEFT_ON_THE_SHEET;
 using rtype::client::testing::HangarScreenFixture;
+using rtype::client::testing::imagesOnTheReferenceCard;
 using rtype::client::testing::LOCKED_STATUS_TEXT;
 using rtype::client::testing::LOOK_SHEET_ID;
 using rtype::client::testing::lookImagesAtShipScale;
@@ -222,8 +223,8 @@ TEST_F(HangarScreenFixture, ALockedItemIsNotWorn) {
 TEST_F(HangarScreenFixture, ALockedCellShowsNoIcon) {
   update(rtype::engine::Duration::zero());
 
-  EXPECT_FALSE(
-      std::ranges::any_of(painting().images, [](const RecordedImage& image) {
+  EXPECT_FALSE(std::ranges::any_of(
+      painting().images, [](const RecordedImage& image) noexcept {
         return image.assetId == LOOK_SHEET_ID &&
                image.source.position.x == CROWN_ICON_LEFT_ON_THE_SHEET;
       }));
@@ -239,6 +240,27 @@ TEST_F(HangarScreenFixture, TheStatusOfALockedItemSaysHowToGetIt) {
   press(Key::Right);
 
   EXPECT_NE(writingOf(painting(), LOCKED_STATUS_TEXT), nullptr);
+}
+
+/**
+ * Given a hangar with the starter kit
+ * When the crown, which the locker does not hold, is chosen
+ * Then the reference card draws nothing, so it never shows a locked look
+ */
+TEST_F(HangarScreenFixture, TheCardOfALockedItemShowsNoDrawing) {
+  press(Key::Right);
+  press(Key::Right);
+
+  EXPECT_EQ(imagesOnTheReferenceCard(painting()), 0U);
+}
+
+/**
+ * Given a hangar with the starter kit
+ * When it opens on the top hat, which the locker holds
+ * Then the reference card draws it
+ */
+TEST_F(HangarScreenFixture, TheCardOfAnOwnedItemShowsItsDrawing) {
+  EXPECT_EQ(imagesOnTheReferenceCard(painting()), 1U);
 }
 
 /**
