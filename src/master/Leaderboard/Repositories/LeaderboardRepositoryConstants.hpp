@@ -25,10 +25,13 @@ VALUES
 /**
  * @brief The best row of each player of one leaderboard, the best score first.
  *
- * A player is an account, under any nickname, its id compared as written; or a
- * guest, one per nickname compared with NOCASE (ASCII letters folded only),
- * whatever its server. The window `pilot` holds the rows of one player. Among
- * them, the earliest of the best scores counts.
+ * A player is an account, under any nickname; or a guest, one per nickname
+ * compared with NOCASE (ASCII letters folded only), whatever its server. A row
+ * belongs to the account its ticket paid, found in credited_results by its
+ * reference as ACCOUNT_LEADERBOARD_QUERY finds it; any other row is a guest's,
+ * whatever account_id its server wrote, since a server cannot know an account.
+ * The window `pilot` holds the rows of one player. Among them, the earliest of
+ * the best scores counts.
  *
  * board_rank gives equal scores one rank; board_place orders them, the
  * earliest game first, then by nickname and account, so a page is the same at
@@ -39,25 +42,33 @@ VALUES
  */
 constexpr std::string_view LEADERBOARD_QUERY = R"sql(
 WITH best AS (
-  SELECT server_id, nickname, account_id, score, played_at,
+  SELECT game_results.server_id, game_results.nickname,
+         credited_results.user_id, game_results.score, game_results.played_at,
          ROW_NUMBER() OVER (
-           pilot ORDER BY score DESC, played_at ASC, server_id ASC)
+           pilot ORDER BY game_results.score DESC, game_results.played_at ASC,
+                          game_results.server_id ASC)
            AS position,
-         MAX(COALESCE(nickname = :player COLLATE NOCASE, 0)) OVER pilot
-           AS named
+         MAX(COALESCE(game_results.nickname = :player COLLATE NOCASE, 0))
+           OVER pilot AS named
   FROM game_results
-  WHERE (:difficulty IS NULL OR difficulty = :difficulty)
-    AND (:player_count IS NULL OR player_count = :player_count)
-    AND (:server_id IS NULL OR server_id = :server_id)
+  LEFT JOIN credited_results
+    ON credited_results.reference =
+       :reference_prefix || game_results.server_id || :reference_separator
+       || game_results.game_id || :reference_separator
+       || game_results.nickname
+  WHERE (:difficulty IS NULL OR game_results.difficulty = :difficulty)
+    AND (:player_count IS NULL OR game_results.player_count = :player_count)
+    AND (:server_id IS NULL OR game_results.server_id = :server_id)
   WINDOW pilot AS (
-    PARTITION BY account_id,
-                 CASE WHEN account_id IS NULL THEN nickname END COLLATE NOCASE)
+    PARTITION BY credited_results.user_id,
+                 CASE WHEN credited_results.user_id IS NULL
+                      THEN game_results.nickname END COLLATE NOCASE)
 ),
 ranked AS (
   SELECT server_id, nickname, score, played_at, named,
          RANK() OVER (ORDER BY score DESC) AS board_rank,
          ROW_NUMBER() OVER (
-           ORDER BY score DESC, played_at ASC, nickname ASC, account_id ASC)
+           ORDER BY score DESC, played_at ASC, nickname ASC, user_id ASC)
            AS board_place
   FROM best
   WHERE position = 1

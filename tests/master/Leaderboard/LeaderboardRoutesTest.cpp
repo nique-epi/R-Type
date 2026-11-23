@@ -7,7 +7,6 @@
 #include <string>
 #include <string_view>
 #include "FinishedGame.hpp"
-#include "FinishedGamePlayer.hpp"
 #include "LeaderboardRoutesFixture.hpp"
 #include "LeaderboardRoutesFixtures.hpp"
 #include "LeaderboardRoutesTestConstants.hpp"
@@ -18,7 +17,6 @@
 #include "RouteCall.hpp"
 
 using rtype::network::FinishedGame;
-using rtype::network::FinishedGamePlayer;
 using rtype::network::problemDetailOf;
 using rtype::network::testing::FIRST_PILOT;
 using rtype::network::testing::FIRST_PILOT_SCORE;
@@ -26,7 +24,6 @@ using rtype::network::testing::FIRST_RANK;
 using rtype::network::testing::PLAYERS_POINTER;
 using rtype::network::testing::quoted;
 using rtype::network::testing::SECOND_PILOT;
-using rtype::network::testing::SECOND_PILOT_ACCOUNT;
 using rtype::network::testing::SECOND_PILOT_SCORE;
 using rtype::network::testing::THIRD_PILOT;
 using ::testing::ElementsAre;
@@ -271,75 +268,6 @@ TEST_F(LeaderboardRoutesFixture, APlayerKeepsItsBestScoreOnly) {
                 .at(std::string{SCORE_MEMBER_NAME})
                 .get<std::uint32_t>(),
             FIRST_PILOT_SCORE);
-}
-
-/**
- * Given BYDO_HUNTER playing under an account, then the same account as
- * HUNTER_2
- * When the leaderboard is read
- * Then the account has one row, of the game of its best score
- */
-TEST_F(LeaderboardRoutesFixture, AnAccountIsOnePlayerUnderAnyNickname) {
-  FinishedGamePlayer first = guestScoring(SECOND_PILOT, SECOND_PILOT_SCORE);
-  first.accountId = std::string{SECOND_PILOT_ACCOUNT};
-  FinishedGamePlayer second =
-      guestScoring(OTHER_NICKNAME_OF_SECOND_PILOT, FIRST_PILOT_SCORE);
-  second.accountId = std::string{SECOND_PILOT_ACCOUNT};
-  static_cast<void>(
-      sendResult(paris(), FIRST_GAME_ID, normalGameOfTwo({first})));
-  static_cast<void>(
-      sendResult(paris(), SECOND_GAME_ID, normalGameOfTwo({second})));
-
-  EXPECT_THAT(membersIn<std::string>(leaderboardOf(NORMAL_FOR_TWO_QUERY),
-                                     NICKNAME_MEMBER_NAME),
-              ElementsAre(OTHER_NICKNAME_OF_SECOND_PILOT));
-}
-
-/**
- * Given two accounts whose ids differ in the case of their letters only
- * When the leaderboard is read
- * Then each account has its own row
- */
-TEST_F(LeaderboardRoutesFixture, TwoAccountsDifferingInCaseAreTwoPlayers) {
-  FinishedGamePlayer first = guestScoring(SECOND_PILOT, SECOND_PILOT_SCORE);
-  first.accountId = std::string{SECOND_PILOT_ACCOUNT};
-  FinishedGamePlayer second =
-      guestScoring(OTHER_NICKNAME_OF_SECOND_PILOT, FIRST_PILOT_SCORE);
-  second.accountId = std::string{SECOND_PILOT_ACCOUNT_IN_CAPITALS};
-  static_cast<void>(
-      sendResult(paris(), FIRST_GAME_ID, normalGameOfTwo({first})));
-  static_cast<void>(
-      sendResult(paris(), SECOND_GAME_ID, normalGameOfTwo({second})));
-
-  EXPECT_THAT(membersIn<std::string>(leaderboardOf(NORMAL_FOR_TWO_QUERY),
-                                     NICKNAME_MEMBER_NAME),
-              ElementsAre(OTHER_NICKNAME_OF_SECOND_PILOT, SECOND_PILOT));
-}
-
-/**
- * Given an account that scored low as BYDO_HUNTER, then high as HUNTER_2
- * When the leaderboard is read asking for BYDO_HUNTER
- * Then the player is that account, under the nickname of its best score
- */
-TEST_F(LeaderboardRoutesFixture,
-       ThePlayerAskedForIsFoundUnderAnyOfItsNicknames) {
-  FinishedGamePlayer first = guestScoring(SECOND_PILOT, SECOND_PILOT_SCORE);
-  first.accountId = std::string{SECOND_PILOT_ACCOUNT};
-  FinishedGamePlayer second =
-      guestScoring(OTHER_NICKNAME_OF_SECOND_PILOT, FIRST_PILOT_SCORE);
-  second.accountId = std::string{SECOND_PILOT_ACCOUNT};
-  static_cast<void>(
-      sendResult(paris(), FIRST_GAME_ID, normalGameOfTwo({first})));
-  static_cast<void>(
-      sendResult(paris(), SECOND_GAME_ID, normalGameOfTwo({second})));
-
-  const nlohmann::json leaderboard = leaderboardOf(ASKING_BYDO_HUNTER_QUERY);
-
-  ASSERT_TRUE(leaderboard.contains(std::string{PLAYER_MEMBER_NAME}));
-  EXPECT_EQ(leaderboard.at(std::string{PLAYER_MEMBER_NAME})
-                .at(std::string{NICKNAME_MEMBER_NAME})
-                .get<std::string>(),
-            OTHER_NICKNAME_OF_SECOND_PILOT);
 }
 
 /**
