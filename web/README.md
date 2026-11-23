@@ -153,7 +153,7 @@ Every page lives under `app/[lang]/`, `lang` being `fr` (the default) or `en`.
 | `/signup`                  | `signup/page.tsx`                     | nothing; its form creates an account on the master                     |
 | `/signin`                  | `signin/page.tsx`                     | nothing; its form opens a session, then leads to `?next=`              |
 | `/link`                    | `link/page.tsx`                       | the device link of `?code=`, which the visitor connects or refuses     |
-| `/leaderboard`             | `leaderboard/page.tsx`                | the leaderboard; the scope and filters are in the query of the address |
+| `/leaderboard`             | `leaderboard/page.tsx`                | the leaderboard, by server, for everyone or by account; the scope and filters are in the query of the address |
 | `/wiki`, `/wiki/[section]` | `wiki/`                               | nothing; `/wiki` redirects to the first article                        |
 | `/team`                    | `team/page.tsx`                       | nothing                                                                |
 | anything else              | `[...rest]/page.tsx`, `not-found.tsx` | a 404 drawn inside the layout of the site                              |
@@ -216,6 +216,10 @@ The scope and the filters are in the query (`/leaderboard?scope=server&server=7&
 the first visit), the block reads the master for that choice, and a click on a tab or a filter
 ([`ranking-section.tsx`](src/components/ranking/ranking-section.tsx)) only changes the address with `router.push`:
 the server then reads the master again. So a leaderboard can be shared by its link.
+
+The third tab (`?scope=accounts`) ranks the accounts by the total of their scores, read with
+[`getAccountLeaderboard.ts`](src/lib/api/routes/leaderboard/getAccountLeaderboard.ts). No filter narrows it, so the
+screen shows no filter there; the address keeps the difficulty and the pilots for the tab the visitor goes back to.
 
 ### Writing to the master
 
