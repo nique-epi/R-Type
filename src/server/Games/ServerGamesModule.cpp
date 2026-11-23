@@ -263,7 +263,8 @@ HostedRules hostedRulesOf(const GameSettings& game, const WaveCatalog& catalog,
       .inputDelayTicks = game.inputDelayTicks,
       .gameRules = game.rules,
       .startsAtBoss = game.startsAtBoss,
-      .playsALevel = game.level.has_value() || !game.maps.empty()};
+      .playsALevel = game.level.has_value() || !game.maps.empty(),
+      .startingStage = game.startingStage};
 }
 
 /** @returns The setting LEVEL_SETTING_NAME, declared in @p configuration:

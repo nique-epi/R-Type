@@ -56,6 +56,53 @@ TEST(VanillaBreaches, OtherEntitySheetsAreNotVanilla) {
 }
 
 /**
+ * Given a game that plays a level, with the entity sheets of its resources
+ * When the game is judged
+ * Then it is vanilla: the sheets of a level are not judged
+ */
+TEST(VanillaBreaches, ALevelWithTheSheetsOfItsResourcesIsVanilla) {
+  EXPECT_TRUE(vanillaBreaches(
+                  HostedRules{.wavesFingerprint = OFFICIAL_WAVES_FINGERPRINT,
+                              .sheetsFingerprint = ANOTHER_SHEETS_FINGERPRINT,
+                              .seed = std::nullopt,
+                              .inputDelayTicks = DEFAULT_INPUT_DELAY_TICKS,
+                              .playsALevel = true})
+                  .empty());
+}
+
+/**
+ * Given a game that plays a level from its second stage
+ * When the game is judged
+ * Then the stage is the only reason it is not vanilla
+ */
+TEST(VanillaBreaches, ALevelStartedPastItsFirstStageIsNotVanilla) {
+  EXPECT_EQ(vanillaBreaches(HostedRules{
+                .wavesFingerprint = OFFICIAL_WAVES_FINGERPRINT,
+                .sheetsFingerprint = OFFICIAL_ENTITY_SHEETS_FINGERPRINT,
+                .seed = std::nullopt,
+                .inputDelayTicks = DEFAULT_INPUT_DELAY_TICKS,
+                .playsALevel = true,
+                .startingStage = SECOND_STAGE}),
+            std::vector<std::string_view>{STARTS_PAST_THE_FIRST_STAGE_BREACH});
+}
+
+/**
+ * Given a game that plays the waves, with a starting stage set to the second
+ * When the game is judged
+ * Then it is vanilla: the stage only moves a game that plays a level
+ */
+TEST(VanillaBreaches, AStageWithoutALevelIsVanilla) {
+  EXPECT_TRUE(
+      vanillaBreaches(
+          HostedRules{.wavesFingerprint = OFFICIAL_WAVES_FINGERPRINT,
+                      .sheetsFingerprint = OFFICIAL_ENTITY_SHEETS_FINGERPRINT,
+                      .seed = std::nullopt,
+                      .inputDelayTicks = DEFAULT_INPUT_DELAY_TICKS,
+                      .startingStage = SECOND_STAGE})
+          .empty());
+}
+
+/**
  * Given a seed of 0
  * When the games are judged
  * Then the seed is the only reason they are not vanilla: 0 is a seed too

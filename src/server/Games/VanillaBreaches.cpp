@@ -12,7 +12,8 @@ std::vector<std::string_view> vanillaBreaches(const HostedRules& rules) {
   if (rules.wavesFingerprint != OFFICIAL_WAVES_FINGERPRINT) {
     breaches.push_back(MODIFIED_WAVES_BREACH);
   }
-  if (rules.sheetsFingerprint != OFFICIAL_ENTITY_SHEETS_FINGERPRINT) {
+  if (!rules.playsALevel &&
+      rules.sheetsFingerprint != OFFICIAL_ENTITY_SHEETS_FINGERPRINT) {
     breaches.push_back(MODIFIED_ENTITY_SHEETS_BREACH);
   }
   if (rules.seed.has_value()) {
@@ -30,8 +31,8 @@ std::vector<std::string_view> vanillaBreaches(const HostedRules& rules) {
   if (rules.startsAtBoss) {
     breaches.push_back(STARTS_AT_BOSS_BREACH);
   }
-  if (rules.playsALevel) {
-    breaches.push_back(PLAYS_A_LEVEL_BREACH);
+  if (rules.playsALevel && rules.startingStage != FIRST_LEVEL_STAGE) {
+    breaches.push_back(STARTS_PAST_THE_FIRST_STAGE_BREACH);
   }
   return breaches;
 }

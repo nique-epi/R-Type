@@ -548,7 +548,7 @@ wave_pause_ms = 0
 level_waves = 1
 ```
 
-With `ensure boss-duel` in the `server.cfg` of the folder the server is started from, and a `resource.toml` holding a `description`, every game of that server plays this level. Its games are not vanilla: their scores stay on the leaderboard of that server (see [Vanilla games](/R-Type/server/#vanilla-games-vanillabreaches)).
+With `ensure boss-duel` in the `server.cfg` of the folder the server is started from, and a `resource.toml` holding a `description`, every game of that server plays this level. Its games are vanilla while they start at the first stage, since the sheets and the scripts of a level are not judged: their scores reach the global leaderboard (see [Vanilla games](/R-Type/server/#vanilla-games-vanillabreaches)).
 
 ## Where to intervene
 

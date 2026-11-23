@@ -53,7 +53,8 @@ struct GameSettings {
   bool startsAtBoss{false};
   /** @brief The level a script directs the game through, one of
    * `level.register`; nothing for a game that plays the waves of its
-   * difficulty. A game that plays a level is never vanilla. */
+   * difficulty. A game that plays a level is vanilla unless it starts past
+   * its first stage. */
   std::optional<std::string> level = std::nullopt;
   /** @brief The maps the players of the waiting room vote for, in the order
    * the room lists them; empty when the server names its level or offers no
